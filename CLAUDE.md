@@ -42,6 +42,13 @@ Every brief that adds or changes tests points to AGENTS.md "Tests". Reject a tes
 
 AGENTS.md "Git" forbids commit trailers; that rule overrides any attribution default in the harness.
 
+## Pace and token budget (user, 2026-11-16)
+
+- **One agent at a time.** Phases run one after another in the plan's single-lane order. No parallel waves or worktrees, and never more than one worker or reviewer running at once.
+- **No test loops.** The worker writes the code and its tests, then runs the tests once at the end of the task: `make targeted` for what changed, then `make quick` once. If the same failure survives two fix attempts, or a run hangs, the worker stops and reports instead of retrying.
+- **Review.** One Opus reviewer per round, returning findings only: effort max for 1a–1e, 4a–4e and 13, medium otherwise. A Sonnet worker applies the verified findings. After three rounds, stop and report to the user.
+- **Don't redo finished work.** Before starting a phase, check git state: committed tasks are done.
+
 ## Cleanup
 
 On iOS, 23 worktrees and their builds grew past 150 GB (2026-11-10), and simulator clones to 203 GB (2026-11-11). Clean up as you go.

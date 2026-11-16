@@ -62,6 +62,8 @@ Write every new or changed test this way. These rules translate the iOS Tests ru
    - Layout and geometry → Robolectric Compose tests.
    - Emulator → only for native controls, navigation, system UI, IME, permissions and system appearance/locale.
    - Never test logic through a screen.
+   - **ViewModels carry the logic; screens stay thin** (user, 2026-11-16; iOS does the same with its `*Model` tests). A screen is a stateless `XScreen(state, onEvent)`; its ViewModel takes repositories, clock and dispatchers through its constructor. Test behaviour as JVM tests on the ViewModel's UI state (`runTest`, fake clock, fake repositories), never through Compose.
+   - **Never assert copy on a screen.** No test checks that a string appears on screen (no `onNodeWithText`, `hasText`, `assertTextEquals`). Copy is covered by the string generator tests (en/nl parity) and the board captures. Screen tests find nodes by test tag and check structure only.
 2. **One emulator journey per feature, at most.** Every other emulator test seeds a state and checks one screen.
 3. **Emulator tests launch seeded** (`docs/research/13-testing-tooling.md` §5). Never sign in through the form or click through earlier steps. Only the auth tests type credentials.
 4. **Exact queries and waits.**

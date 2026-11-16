@@ -649,7 +649,7 @@ Each has a default; the plan proceeds on the default and records the answer here
 3. Tests follow AGENTS.md "Tests": the cheapest layer, the budgets (`build/test-results/*/timings.json`), and at most one emulator journey per feature.
 4. Every new visible string exists in en and nl, and no literal reaches `Text`. No raw color, `MaterialTheme.colorScheme` or device geometry appears outside `:core:designsystem` and generated files (Konsist, Lint).
 5. **UI phases:**
-   - Every board state has a Robolectric guard at `small`, `pixel8`, `foldInner`, `landscapeSideNav` and `largeFont`, in en and nl, and in light and dark where the board has the state.
+   - Every board state has a Robolectric guard in light only, because theme never changes geometry: at `small` and `largeFont` in nl (the longest copy), and once at `pixel8` in en. `foldInner` and `landscapeSideNav` run only for screens with a wide or side-navigation layout. Light and dark, and every other combination, are covered by the captures (user, 2026-11-16: test smart, not exhaustively; this overrides the wider matrix in briefs written earlier, and the orchestrator trims each brief when it refreshes it).
    - `make captures ONLY=<screens>` was compared with the boards by the Opus reviewer.
    - Each difference is fixed, or recorded with its board name.
 6. Debug runs are StrictMode-clean: no disk or network work on the main thread.
