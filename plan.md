@@ -720,7 +720,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - Run `git init -b main` and add `.gitignore` (`build/`, `.gradle/`, `.kotlin/`, `local.properties`, `.idea/`, `*.iml`, `captures/`, `*.hprof`, `*.jks` except `app/debug.keystore`, `.claude/*.lock`, `.claude/settings.local.json`).
   - The first commit, `docs: add android plan, agent rules, research and boards`, holds `plan.md`, `AGENTS.md`, `CLAUDE.md`, `docs/research/`, `_design/` and `.gitignore`. Then create `feat/phase-0a-scaffold`.
   - Add `tools/ios-pin.txt` (`f391a1fa`) and `tools/web-pin.txt` (`e36368ec82e6c44c0a5b1c624324e2a4fb5ddd19`).
-- [ ] **Wrapper.**
+- [x] **Wrapper.**
   - Bootstrap with the cached distribution: `~/.gradle/wrapper/dists/gradle-9.4.1-bin/arn2x92ynaizyzdaamcbpbhtj/gradle-9.4.1/bin/gradle wrapper --gradle-version 9.9.1 --distribution-type bin --gradle-distribution-sha256-sum d8a18a7a841dd5df825d35a685fad6f2d7f12ac0c280e57b67c27b4a520ba228`. After that, use only `./gradlew`.
   - If AGP 9.5.1 rejects 9.9.1, use 9.6.0 with its SHA-256 from A1 and record it (OQ-A35).
 - [ ] **Settings and catalog.**
