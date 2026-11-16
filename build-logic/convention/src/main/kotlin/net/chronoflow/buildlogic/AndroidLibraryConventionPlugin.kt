@@ -13,7 +13,11 @@ class AndroidLibraryConventionPlugin : Plugin<Project> {
             configureTestLauncher()
             extensions.configure<LibraryExtension> {
                 compileSdk = 37
-                defaultConfig.minSdk = 29
+                defaultConfig {
+                    minSdk = 29
+                    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+                    testInstrumentationRunnerArguments["timeout_msec"] = "60000"
+                }
                 compileOptions {
                     sourceCompatibility = JAVA_VERSION
                     targetCompatibility = JAVA_VERSION
