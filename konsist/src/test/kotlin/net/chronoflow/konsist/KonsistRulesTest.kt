@@ -101,6 +101,18 @@ class KonsistRulesTest {
 
     @Test fun noLiteralTextInTextAllowsControl() = noLiteralTextInText(allowed("noLiteralTextInText"))
 
+    @Test fun insetsOnlyAtRoot() = insetsOnlyAtRoot(projectScope)
+
+    @Test fun insetsOnlyAtRootRejectsPlantedViolation() {
+        assertFailure { insetsOnlyAtRoot(violations("insetsOnlyAtRoot")) }.messageContains("insetsOnlyAtRoot violated")
+    }
+
+    @Test fun testingNotInMain() = testingNotInMain(projectScope)
+
+    @Test fun testingNotInMainRejectsPlantedViolation() {
+        assertFailure { testingNotInMain(violations("testingNotInMain")) }.messageContains("UsesFixtures.kt")
+    }
+
     private companion object {
         val projectScope: KoScope by lazy { projectScope() }
     }

@@ -983,7 +983,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 **Delivers.** Sets up every test tier before product code. It commits profiles.json with the measured pixel AVD insets, Robolectric and Roborazzi with reference-free guards, a tier registry with per-test budgets, and the debug seed harness (SeedReceiverActivity, TestSeeds, the ScreenTest base) with a release-readiness test. It adds the :benchmark module with the perf variants, a cold-start benchmark on the empty app, and check-benchmarks.py with its failing fixture. It runs the ConfigurationPolicy spike (font cap 1.3, en/nl locale coercion, LTR, the device-config read below API 33) and verifies instrumentation timeouts, recording both outcomes. make quick stays under 60 s.
 
 **Tasks**
-- [ ] **Profiles.**
+- [x] **Profiles.**
   - `core/testing/src/main/resources/profiles.json` holds `small`, `pixel8`, `foldInner`, `landscapeSideNav` and `largeFont` (`13 §4.4`).
   - Measure the `pixel` AVD's status-bar and gesture insets once with `adb shell dumpsys window | grep -i inset`, cross-check them against a debug log of `WindowInsets.safeDrawing`, and commit them.
   - Add a `DeviceProfiles.kt` loader.

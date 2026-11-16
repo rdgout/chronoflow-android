@@ -7,7 +7,9 @@ android {
 }
 
 dependencies {
-    implementation(libs.compose.runtime)
+    api(libs.compose.runtime)
+    api(libs.compose.ui)
+    api(libs.compose.foundation)
 
     testImplementation(libs.junit4)
     testImplementation(libs.assertk)

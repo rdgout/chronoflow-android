@@ -211,3 +211,45 @@ fun noLiteralTextInText(scope: KoScope) {
             .map { "${it.path}: ${it.name}" }
     fail("noLiteralTextInText", violations)
 }
+
+private val insetsReadRegex =
+    Regex(
+        """\bWindowInsets\.(Companion\.)?(safeDrawing|safeContent|systemBars|statusBars|navigationBars|displayCutout)\b""",
+    )
+private val insetsImportRegex =
+    Regex(
+        """^androidx\.compose\.foundation\.layout\.(safeDrawing|safeContent|systemBars|statusBars|navigationBars|displayCutout)$""",
+    )
+
+private fun mayReadWindowInsets(path: String): Boolean {
+    val normalized = path.replace('\\', '/')
+    return normalized.endsWith("app/src/main/kotlin/net/chronoflow/app/MainActivity.kt") ||
+        normalized.contains("/core/testing-compose/") ||
+        normalized.contains("/src/androidTest")
+}
+
+fun insetsOnlyAtRoot(scope: KoScope) {
+    val violations =
+        scope
+            .moduleFiles()
+            .filterNot { mayReadWindowInsets(it.path) }
+            .filter { file ->
+                insetsReadRegex.containsMatchIn(file.text) ||
+                    file.imports.any { insetsImportRegex.matches(it) }
+            }.map { it.path }
+    fail("insetsOnlyAtRoot", violations)
+}
+
+fun testingNotInMain(scope: KoScope) {
+    val violations =
+        scope
+            .moduleFiles()
+            .filter { it.sourceSet == "main" && !it.module.startsWith("core/testing") }
+            .filter { file ->
+                file.imports.any {
+                    it == "net.chronoflow.core.testing" ||
+                        it.startsWith("net.chronoflow.core.testing.")
+                }
+            }.map { it.path }
+    fail("testingNotInMain", violations)
+}
