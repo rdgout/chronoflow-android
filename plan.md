@@ -936,7 +936,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - every request DTO encodes to exactly its fixture's key set (`review-request.json`, `save-request.json`, `guest-review-request.json`);
   - unknown enum values become `Unknown(raw)`;
   - `unknown-field.json` decodes.
-- [x] **Make targets** `contracts` and `contracts-check`; the check is part of `generators-check`.
+- [ ] **Make targets** `contracts` and `contracts-check`; the check is part of `generators-check`.
 
 **Acceptance**
 - The generated contracts are fresh, and every fixture decodes.
