@@ -5,3 +5,8 @@ plugins {
 android {
     namespace = "net.chronoflow.core.designsystem"
 }
+
+dependencies {
+    implementation(libs.compose.runtime)
+    implementation(libs.compose.ui.graphics)
+}
