@@ -95,6 +95,7 @@ class KonsistRulesTest {
             messageContains("TextLiteral.kt: positional")
             messageContains("TextLiteral.kt: named")
             messageContains("TextLiteral.kt: raw")
+            messageContains("TextLiteral.kt: namedNotFirst")
         }
     }
 

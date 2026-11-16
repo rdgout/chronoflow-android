@@ -11,3 +11,7 @@ fun named(name: String) {
 fun raw() {
     BasicText("""raw""")
 }
+
+fun namedNotFirst() {
+    Text(modifier = Modifier, text = "Hi")
+}
