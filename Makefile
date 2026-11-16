@@ -127,9 +127,11 @@ plan-copy-check:
 
 contracts:
 	python3 -I tools/contracts-gen/copy_fixtures.py --ios-repo "$(IOS_REPO)"
+	python3 -I tools/contracts-gen/generate_kotlin.py --web-repo "$(WEB_REPO)"
 
 contracts-check:
 	python3 -I tools/contracts-gen/copy_fixtures.py --ios-repo "$(IOS_REPO)" --check
+	python3 -I tools/contracts-gen/generate_kotlin.py --web-repo "$(WEB_REPO)" --check
 
 snapshots captures perf:
 	@echo "make $@: lands in Phase 0e (feat/phase-0e-test-harness)" >&2; exit 1

@@ -919,7 +919,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 **Delivers.** Writes tools/contracts-gen/generate_kotlin.py, a Kotlin-emitting twin of the iOS generator that reads the web TypeScript types at e36368ec with the same roots, overrides and overlays. It adds the hand-written auth, account, passkey, wizard-input and error-envelope DTOs and the DataFailure type in :core:model. The iOS fixtures (account, auth, errors, S1–S6 plans, trips, wizard wire) are copied into :core:testing with a checksum manifest. Tests prove that every fixture decodes and that every request body encodes with the right keys.
 
 **Tasks**
-- [ ] **Generator** `tools/contracts-gen/generate_kotlin.py` (stdlib).
+- [x] **Generator** `tools/contracts-gen/generate_kotlin.py` (stdlib).
   - It reads `resources/js/types/App/**/index.ts` at `tools/web-pin.txt` through `git -C $WEB_REPO show`.
   - Roots: `ApiTripListItem`, `ApiTripDetail`, `ApiTripInput`, `ApiTripReview`, `ApiTripSaveResult`, `ApiTripInputSnapshot`, `ApiAirportSearchResults` and their enums.
   - It applies the iOS overrides and overlays, including `ScreeningQuestion = 'shift_work'`.
@@ -941,7 +941,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - every request DTO encodes to exactly its fixture's key set (`review-request.json`, `save-request.json`, `guest-review-request.json`);
   - unknown enum values become `Unknown(raw)`;
   - `unknown-field.json` decodes.
-- [ ] **Make targets** `contracts` and `contracts-check`; the check is part of `generators-check`.
+- [x] **Make targets** `contracts` and `contracts-check`; the check is part of `generators-check`.
 
 **Acceptance**
 - The generated contracts are fresh, and every fixture decodes.
