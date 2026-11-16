@@ -11,10 +11,16 @@ internal val Project.libs: VersionCatalog
 
 internal fun VersionCatalog.library(alias: String) = findLibrary(alias).get()
 
-internal fun Project.addDependency(configuration: String, notation: Any) {
+internal fun Project.addDependency(
+    configuration: String,
+    notation: Any,
+) {
     dependencies.add(configuration, notation)
 }
 
-internal fun Project.addDependency(configuration: String, notation: Provider<*>) {
+internal fun Project.addDependency(
+    configuration: String,
+    notation: Provider<*>,
+) {
     dependencies.add(configuration, notation)
 }

@@ -8,8 +8,12 @@ import assertk.assertions.messageContains
 import org.junit.Test
 
 class VersionPropertiesTest {
-    private fun props(major: String = "0", minor: String = "1", patch: String = "0", build: String = "0") =
-        "versionMajor=$major\nversionMinor=$minor\nversionPatch=$patch\nversionBuild=$build\n"
+    private fun props(
+        major: String = "0",
+        minor: String = "1",
+        patch: String = "0",
+        build: String = "0",
+    ) = "versionMajor=$major\nversionMinor=$minor\nversionPatch=$patch\nversionBuild=$build\n"
 
     @Test
     fun firstVersionIsZeroOneZero() {

@@ -28,7 +28,10 @@ dependencies {
 
 gradlePlugin {
     plugins {
-        fun plugin(id: String, className: String) {
+        fun plugin(
+            id: String,
+            className: String,
+        ) {
             register(id) {
                 this.id = id
                 implementationClass = "net.chronoflow.buildlogic.$className"
@@ -43,5 +46,6 @@ gradlePlugin {
         plugin("chronoflow.sqldelight", "SqlDelightConventionPlugin")
         plugin("chronoflow.android.test", "AndroidTestConventionPlugin")
         plugin("chronoflow.roborazzi", "RoborazziConventionPlugin")
+        plugin("chronoflow.spotless", "SpotlessConventionPlugin")
     }
 }

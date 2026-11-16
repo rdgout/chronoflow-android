@@ -25,6 +25,8 @@ class LaunchPathViolationPolicyTest {
 
     @Test
     fun doesNotCrashOnFrameworkOnlyStacks() {
-        assertThat(LaunchPathViolationPolicy.shouldCrash(true, true, listOf("android.os.Foo", "java.io.File"))).isFalse()
+        assertThat(
+            LaunchPathViolationPolicy.shouldCrash(true, true, listOf("android.os.Foo", "java.io.File")),
+        ).isFalse()
     }
 }

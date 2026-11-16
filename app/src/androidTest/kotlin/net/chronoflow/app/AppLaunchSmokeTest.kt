@@ -18,6 +18,9 @@ class AppLaunchSmokeTest {
     fun launchesAsNativeDebugUnderStrictMode() {
         compose.waitUntil(5_000) { !(compose.activity.application as ChronoFlowApp).launchPath.isActive }
         assertThat(compose.activity.packageName).isEqualTo("net.chronoflow.app.native.debug")
-        assertThat(compose.activity.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)).isTrue()
+        assertThat(
+            compose.activity.lifecycle.currentState
+                .isAtLeast(Lifecycle.State.RESUMED),
+        ).isTrue()
     }
 }

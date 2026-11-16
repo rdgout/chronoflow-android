@@ -9,4 +9,5 @@ plugins {
     alias(libs.plugins.roborazzi) apply false
     alias(libs.plugins.spotless) apply false
     alias(libs.plugins.baselineprofile) apply false
+    id("chronoflow.spotless")
 }

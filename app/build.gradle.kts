@@ -12,6 +12,10 @@ android {
     androidResources {
         generateLocaleConfig = true
     }
+
+    lint {
+        checkDependencies = true
+    }
 }
 
 dependencies {

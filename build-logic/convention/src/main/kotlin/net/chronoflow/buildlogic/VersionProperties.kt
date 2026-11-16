@@ -2,7 +2,10 @@ package net.chronoflow.buildlogic
 
 import java.util.Properties
 
-data class AppVersion(val name: String, val code: Int)
+data class AppVersion(
+    val name: String,
+    val code: Int,
+)
 
 object VersionProperties {
     fun parse(text: String): AppVersion {
@@ -17,11 +20,17 @@ object VersionProperties {
         )
     }
 
-    private fun read(props: Properties, key: String, range: IntRange): Int {
-        val raw = props.getProperty(key)?.trim()
-            ?: throw IllegalArgumentException("version.properties: $key is missing")
-        val value = raw.toIntOrNull()
-            ?: throw IllegalArgumentException("version.properties: $key must be a number, was '$raw'")
+    private fun read(
+        props: Properties,
+        key: String,
+        range: IntRange,
+    ): Int {
+        val raw =
+            props.getProperty(key)?.trim()
+                ?: throw IllegalArgumentException("version.properties: $key is missing")
+        val value =
+            raw.toIntOrNull()
+                ?: throw IllegalArgumentException("version.properties: $key must be a number, was '$raw'")
         require(value in range) { "version.properties: $key must be in $range, was $value" }
         return value
     }
