@@ -5,6 +5,7 @@ import assertk.assertThat
 import assertk.assertions.containsExactly
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
+import assertk.assertions.isNull
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -96,5 +97,41 @@ class ContractsTests {
         assertThat(obj["language"]).isEqualTo(JsonPrimitive("nl"))
         assertThat(obj.containsKey("deviceID")).isEqualTo(false)
         assertThat(ApiJson.response.decodeFromString(RegisterInput.serializer(), text)).isEqualTo(input)
+    }
+
+    private val assertionJson =
+        """{"id":"AA","rawId":"AA==","type":"public-key",""" +
+            """"response":{"clientDataJSON":"AA","authenticatorData":"AA==","signature":"AA","userHandle":null}}"""
+
+    @Test
+    fun passkeyNullAndEncoding() {
+        val assertion = ApiJson.response.decodeFromString(ApiPasskeyAssertion.serializer(), assertionJson)
+        assertThat(assertion.response.userHandle).isNull()
+        val input = ApiPasskeyLoginInput("fake", assertion, "fake-device", "Pixel")
+        val text = ApiJson.request.encodeToString(ApiPasskeyLoginInput.serializer(), input)
+        assertThat(ApiJson.response.decodeFromString(ApiPasskeyLoginInput.serializer(), text)).isEqualTo(input)
+        listOf(
+            assertionJson.replace("public-key", "password"),
+            assertionJson.replace(""""signature":"AA",""", ""),
+        ).forEach { bad ->
+            assertFailure { ApiJson.response.decodeFromString(ApiPasskeyAssertion.serializer(), bad) }
+                .isInstanceOf<SerializationException>()
+        }
+    }
+
+    @Test
+    fun nullablePasskeyUserHandleAndDiscriminators() {
+        listOf("", ""","userHandle":null""", ""","userHandle":""""").forEach { member ->
+            val text = """{"clientDataJSON":"AA","authenticatorData":"AA==","signature":"AA"$member}"""
+            val response = ApiJson.response.decodeFromString(ApiPasskeyAssertionResponse.serializer(), text)
+            assertThat(response.userHandle == null || response.userHandle == "").isEqualTo(true)
+        }
+        val options =
+            """{"challenge":"AA","rpId":"app.chronoflow.net","timeout":60000,""" +
+                """"userVerification":"required","allowCredentials":[]}"""
+        listOf(options.replace("required", "preferred"), options.replace("[]", "[{}]")).forEach { invalid ->
+            assertFailure { ApiJson.response.decodeFromString(ApiPasskeyRequestOptions.serializer(), invalid) }
+                .isInstanceOf<SerializationException>()
+        }
     }
 }

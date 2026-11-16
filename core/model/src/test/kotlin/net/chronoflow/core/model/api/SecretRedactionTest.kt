@@ -49,4 +49,17 @@ class SecretRedactionTest {
 
     @Test
     fun reviewIdentity() = check(ApiReviewIdentity("token", 1, 1, null, secret))
+
+    @Test
+    fun passkeyChallenge() =
+        check(
+            ApiPasskeyChallenge(secret, ApiPasskeyRequestOptions("c", "rp", 1, UserVerification.Required, emptyList())),
+        )
+
+    @Test
+    fun passkeyLoginInput() {
+        val assertion =
+            ApiPasskeyAssertion("id", "raw", CredentialType.PublicKey, ApiPasskeyAssertionResponse("c", "a", "s"))
+        check(ApiPasskeyLoginInput(secret, assertion, "dev", "Pixel", guestSecret = secret))
+    }
 }
