@@ -10,7 +10,7 @@ from pathlib import Path
 ROOT = Path(os.environ.get("TARGETED_ROOT") or Path(__file__).resolve().parent.parent)
 JVM_MODULES = {
     "core:model", "core:plan", "core:sync", "core:reminders", "core:wizard", "core:network",
-    "core:data-mock", "core:testing", "konsist", "tools:tokengen", "build-logic:convention",
+    "core:data-mock", "core:testing", "core:testing-junit", "konsist", "tools:tokengen", "build-logic:convention",
 }
 GRADLE = ["./gradlew", "--console=plain"]
 APP_TEST_RUNNER = "net.chronoflow.app.native.debug.test/androidx.test.runner.AndroidJUnitRunner"

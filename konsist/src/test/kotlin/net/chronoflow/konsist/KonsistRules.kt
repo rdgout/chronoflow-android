@@ -14,6 +14,7 @@ private val jvmCoreModules =
         "core/network",
         "core/data-mock",
         "core/testing",
+        "core/testing-junit",
     )
 
 private fun fail(

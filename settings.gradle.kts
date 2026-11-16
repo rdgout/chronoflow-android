@@ -45,6 +45,7 @@ include(
     ":core:network",
     ":core:data-mock",
     ":core:testing",
+    ":core:testing-junit",
     ":core:database",
     ":core:datastore",
     ":core:data",

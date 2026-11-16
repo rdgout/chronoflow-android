@@ -9,7 +9,7 @@ WEB_REPO ?= /Users/rickgout/Sites/chronoflow-new
 export IOS_REPO WEB_REPO
 GRADLE := ./gradlew --console=plain
 RUN_TIER := Scripts/run-tier.sh
-JVM_MODULES := core:model core:plan core:sync core:reminders core:wizard core:network core:data-mock core:testing konsist tools:tokengen
+JVM_MODULES := core:model core:plan core:sync core:reminders core:wizard core:network core:data-mock core:testing core:testing-junit konsist tools:tokengen
 SMOKE := net.chronoflow.core.testing.tiers.Smoke
 SMOKE_TASK := :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.annotation=$(SMOKE)
 GENERATORS :=
