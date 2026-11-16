@@ -799,7 +799,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 **Delivers.** Ports iOS TokenGen to a JVM tool (:tools:tokengen) that converts the OKLCH values in tokens.json to sRGB with the exact iOS math. It writes the committed Kotlin tokens (colors, sky ramp, type scale, dimensions, the JVM timeline palette), the launch color resources and a TokenGenReport.md. The iOS report is the golden test for all 84 hex values, and verifyTokens joins make generators-check. The phase also copies the ten Figtree and Fraunces TTFs with a hash manifest, builds the adaptive launcher icon from _design/canvas/icon/android and the notification icon, and rasterizes the light and night launch_moon PNGs from the iOS moon SVGs. It adds no UI.
 
 **Tasks**
-- [ ] **TokenGen port** (`tools/tokengen`, `:tools:tokengen`, a JVM application).
+- [x] **TokenGen port** (`tools/tokengen`, `:tools:tokengen`, a JVM application).
   - `ColorMath.kt`: OKLCH → OKLab → linear sRGB → gamma-encoded sRGB, with the iOS gamut and rounding rules.
   - `Source.kt`: the derived colors of iOS `Source.swift:66-113`, and the sky ramp.
   - Inputs: `_design/canvas/ds/chronoflow/tokens.json`, plus the three iOS `*.source.json` files read at the pin.
