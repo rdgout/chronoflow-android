@@ -62,4 +62,7 @@ class SecretRedactionTest {
             ApiPasskeyAssertion("id", "raw", CredentialType.PublicKey, ApiPasskeyAssertionResponse("c", "a", "s"))
         check(ApiPasskeyLoginInput(secret, assertion, "dev", "Pixel", guestSecret = secret))
     }
+
+    @Test
+    fun guestReviewInputRedactsItsSecret() = check(guestReviewInput().copy(guestSecret = secret))
 }

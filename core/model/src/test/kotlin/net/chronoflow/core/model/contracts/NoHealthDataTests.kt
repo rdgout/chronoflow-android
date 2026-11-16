@@ -14,6 +14,8 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import net.chronoflow.core.model.api.AccountSnapshot
 import net.chronoflow.core.model.api.ApiJson
+import net.chronoflow.core.model.api.ApiTripReviewInput
+import net.chronoflow.core.model.api.wizardInput
 import net.chronoflow.core.testing.Fixtures
 import org.junit.Test
 
@@ -131,5 +133,19 @@ class NoHealthDataTests {
                 ApiJson.response.encodeToString(AccountSnapshot.serializer(), value),
             ) as JsonObject
         assertThat((encoded["settings"] as JsonObject)["bodyClock"]).isEqualTo(value.settings.bodyClock)
+    }
+
+    @Test
+    fun reviewEncodingDropsRetiredFieldsEvenAfterMutation() {
+        val profile =
+            JsonObject(
+                retired.associateWith { no } +
+                    mapOf("exclude_caffeine" to yes, "flight_movement_breaks" to no, "shift_work" to no),
+            )
+        val request = ApiTripReviewInput(wizardInput(), profile = profile)
+        val text = ApiJson.request.encodeToString(ApiTripReviewInput.serializer(), request)
+        val encoded = ApiJson.response.parseToJsonElement(text) as JsonObject
+        assertThat(encoded["profile"])
+            .isEqualTo(obj("exclude_caffeine" to yes, "flight_movement_breaks" to no, "shift_work" to no))
     }
 }
