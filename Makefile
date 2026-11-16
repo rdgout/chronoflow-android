@@ -15,13 +15,15 @@ GENERATOR_CHECKS :=
 GENERATORS += tokens
 GENERATORS += icons
 GENERATORS += strings
+GENERATORS += plan-copy
 GENERATOR_CHECKS += tokens-check
 GENERATOR_CHECKS += fonts-check
 GENERATOR_CHECKS += assets-check
 GENERATOR_CHECKS += strings-check
+GENERATOR_CHECKS += plan-copy-check
 
 .PHONY: quick check test format lint targeted generate generators-check size emu emu-down emu-clean avd-create matrix du
-.PHONY: strings-check tokens tokens-check fonts fonts-check icons assets assets-check strings plan-copy contracts snapshots captures perf perf-timeline baseline-profile
+.PHONY: plan-copy-check strings-check tokens tokens-check fonts fonts-check icons assets assets-check strings plan-copy contracts snapshots captures perf perf-timeline baseline-profile
 
 quick:
 	$(RUN_TIER) quick --results '*/build/test-results/test/*.xml' --results '*/*/build/test-results/test/*.xml' --results 'build-logic/convention/build/test-results/test/*.xml' -- $(GRADLE) spotlessCheck $(JVM_MODULES:%=:%:test) :build-logic:convention:test
@@ -114,7 +116,10 @@ strings-check:
 	python3 -I -m unittest discover -s tools/l10n -t tools/l10n -p 'test_*.py'
 
 plan-copy:
-	@echo "make $@: lands in Phase 0c (feat/phase-0c-strings)" >&2; exit 1
+	python3 -I tools/l10n/plan_copy.py --ios "$(IOS_REPO)"
+
+plan-copy-check:
+	python3 -I tools/l10n/plan_copy.py --ios "$(IOS_REPO)" --check
 
 contracts:
 	@echo "make $@: lands in Phase 0d (feat/phase-0d-contracts)" >&2; exit 1
