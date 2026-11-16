@@ -160,3 +160,22 @@ fun routesAreSerializable(scope: KoScope) {
             .map { "${it.path}: ${it.name}" }
     fail("routesAreSerializable", violations)
 }
+
+private val literalTextRegex = Regex("""\b(Basic)?Text\(\s*(text\s*=\s*)?("|\"\"\")""")
+
+fun noLiteralTextInText(scope: KoScope) {
+    val violations =
+        scope
+            .functions()
+            .filter { function ->
+                val sourceSet = sourceSetOf(function.path)
+                sourceSet != null && !isTestSourceSet(sourceSet)
+            }.filterNot { function ->
+                function.annotations.any {
+                    it.name.startsWith("Preview") ||
+                        it.name.endsWith("Preview")
+                }
+            }.filter { literalTextRegex.containsMatchIn(it.text) }
+            .map { "${it.path}: ${it.name}" }
+    fail("noLiteralTextInText", violations)
+}

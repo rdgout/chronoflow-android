@@ -49,8 +49,14 @@ class CopyIndexResolutionTest {
     fun apostropheAndTermsTagsAreLiteral() {
         assertThat(text(CopyTable.Reminders, "Allow them in your phone's settings to get reminders."))
             .isEqualTo("Allow them in your phone's settings to get reminders.")
-        assertThat(text(CopyTable.Auth, "By creating an account you agree to the <terms>terms</terms> and <privacy>privacy policy</privacy>."))
-            .isEqualTo("By creating an account you agree to the <terms>terms</terms> and <privacy>privacy policy</privacy>.")
+        assertThat(
+            text(
+                CopyTable.Auth,
+                "By creating an account you agree to the <terms>terms</terms> and <privacy>privacy policy</privacy>.",
+            ),
+        ).isEqualTo(
+            "By creating an account you agree to the <terms>terms</terms> and <privacy>privacy policy</privacy>.",
+        )
     }
 
     @Test
@@ -62,6 +68,8 @@ class CopyIndexResolutionTest {
     @Test
     @Config(qualifiers = "nl")
     fun overlayDutch() {
-        assertThat(context.getString(R.string.android_two_factor_intro_b1)).isEqualTo("Je hebt een authenticator-app nodig.")
+        assertThat(
+            context.getString(R.string.android_two_factor_intro_b1),
+        ).isEqualTo("Je hebt een authenticator-app nodig.")
     }
 }

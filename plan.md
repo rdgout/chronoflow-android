@@ -885,7 +885,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - `core/ui/src/main/res/values/strings_untranslatable.xml` holds `app_name` "ChronoFlow".
 - [x] **Plan copy.** Copy `PlanCopy.json` verbatim to `core/plan/src/main/resources/plan_copy.json`, with its hash in `tools/l10n/plan_copy.sha256`. Add `make plan-copy` and its check.
 - [x] **CopyIndex.kt** (generated, `:core:ui`): maps an iOS key to its `R.string` or `R.plurals` id per table. It serves keys resolved at runtime: server error codes, reminder kinds and enum labels.
-- [ ] **Locale wiring.**
+- [x] **Locale wiring.**
   - `app_name` already sits in `core/ui/src/main/res/values/strings_untranslatable.xml` (done in 0a, OQ-0a-4).
   - `:app` sets `androidResources { generateLocaleConfig = true }` and adds `app/src/main/res/resources.properties` (`unqualifiedResLocale=en`). (done in 0a)
   - Lint errors: `MissingTranslation`, `ExtraTranslation`, `StringFormatInvalid`, `StringFormatCount` and `PluralsCandidate`.

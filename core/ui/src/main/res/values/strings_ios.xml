@@ -160,7 +160,7 @@
     <!-- auth: Use a recovery code instead -->
     <string name="auth_use_a_recovery_code_instead">Use a recovery code instead</string>
     <!-- auth: Use at least %lld characters. -->
-    <string name="auth_use_at_least_n_characters">Use at least %1$d characters.</string>
+    <string name="auth_use_at_least_n_characters" tools:ignore="PluralsCandidate">Use at least %1$d characters.</string>
     <!-- auth: Use at least 12 characters, with uppercase and lowercase letters, numbers and symbols. Choose a password that has not appeared in a data leak. -->
     <string name="auth_use_at_least_12_characters_with_uppe_46e32e">Use at least 12 characters, with uppercase and lowercase letters, numbers and symbols. Choose a password that has not appeared in a data leak.</string>
     <!-- auth: Use at least one letter. -->
@@ -172,7 +172,7 @@
     <!-- auth: Use both uppercase and lowercase letters. -->
     <string name="auth_use_both_uppercase_and_lowercase_letters">Use both uppercase and lowercase letters.</string>
     <!-- auth: Use no more than %lld characters. -->
-    <string name="auth_use_no_more_than_n_characters">Use no more than %1$d characters.</string>
+    <string name="auth_use_no_more_than_n_characters" tools:ignore="PluralsCandidate">Use no more than %1$d characters.</string>
     <!-- auth: Use your authenticator app -->
     <string name="auth_use_your_authenticator_app">Use your authenticator app</string>
     <!-- auth: Verify -->
