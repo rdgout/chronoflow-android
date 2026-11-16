@@ -122,7 +122,7 @@ How the harness works:
 | `make tokens` / `make fonts` / `make assets` | Generates the tokens / copies the fonts and checks their hash manifest / rasterizes the launch moon and builds the icons. |
 | `make strings` / `make plan-copy` / `make contracts` | Generates the en and nl strings from the iOS catalogs / copies `plan_copy.json` and checks its hash / generates the Kotlin contracts. |
 | `make generators-check` | Regenerates into `build/`, diffs against every committed output, and runs the generator tests. |
-| `make size` | Release bundle size for arm64, xxhdpi and en. Warns above 8 MB; fails above 12 MB or on any `.so` file. |
+| `make size` | Release bundle size for arm64, xxhdpi and en. Warns above 8 MB; fails above 12 MB or on any `.so` file except the OQ-0a-22 allow-list (plan.md). |
 | `make emu` / `make emu-down` | Boots the headless `pixel` emulator with the functional device prep / stops every running emulator. |
 | `make emu-clean` | Wipes the `pixel` data. Refuses while tests run. |
 | `make avd-create AVD=fold\|small\|api29` | Creates a T2 AVD. On request only. |

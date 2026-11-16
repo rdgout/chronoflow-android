@@ -475,7 +475,7 @@ Every screen scrolls when height-constrained. The minimum width is 280 dp; below
 
 - **Signing:** the upload key stays outside the repo; `CF_UPLOAD_*` live in `~/.gradle/gradle.properties`. The committed `app/debug.keystore` is never listed in production `assetlinks.json`.
 - **Bundle:** `bundle { language { enableSplit = false } }`, so in-app language switching works offline.
-- **Size:** download ≤ 8 MB, fail above 12 MB (`bundletool get-size total`); no `.so` files.
+- **Size:** download ≤ 8 MB, fail above 12 MB (`bundletool get-size total`); no `.so` except the OQ-0a-22 allow-list.
 - **Tracks:** internal, then closed (12 testers × 14 days for a personal account), then staged 10/50/100%.
 - **Play:** Data safety answers from `14 §9.2`; policy checklist P1–P11 (`14 §10`).
 
@@ -537,7 +537,7 @@ Every screen scrolls when height-constrained. The minimum width is 280 dp; below
 | Jump to the last day | ≤ 6 flings | same | functional | `timelineLastDay` | 1e |
 | Peak memory, large60 scroll | RSS anon ≤ 150 / ≤ 80 MiB | ≤ 150 / ≤ 100 MiB | ≤ 150 MiB | `MemoryUsageMetric(Mode.Max)` in `timelineScroll`; growth from first to last iteration is reported, > 40 MiB warns | 1e |
 | Peak memory to Welcome | below RN | — | report | `MemoryUsageMetric` in `StartupBenchmark` | 13 |
-| Download size | ≤ 8 MB; fail above 12 MB; no `.so` | — | — | `bundletool build-apks --device-spec` (arm64, xxhdpi, en) + `get-size total`; `make size` | 0a (gate), 13 |
+| Download size | ≤ 8 MB; fail above 12 MB; no `.so` except the OQ-0a-22 allow-list | — | — | `bundletool build-apks --device-spec` (arm64, xxhdpi, en) + `get-size total`; `make size` | 0a (gate), 13 |
 | `make quick` | < 60 s warm | — | — | `Scripts/measure-tiers.sh` → `build/tier-timings.json` | 0a |
 | `make check` | < 5 min warm, with the `pixel` emulator running | — | — | Same | 0a, 13 |
 
@@ -626,6 +626,7 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A45 | Release while the timeline scroll rows are still "open: device only"? | No: the pre-upload checklist in `docs/play.md` needs one passing `DEVICE_CLASS=reference make perf-timeline` (120 Hz) and one passing `DEVICE_CLASS=lowEnd make perf-timeline` before the first production upload, or the user's waiver recorded here. Phases 13 and 14 may still close with device rows open | 13, 14 |
 | OQ-A46 | Compose `TimelineTargets` (20–40 semantics nodes per day) always, or only while accessibility is on? (research `04` OQ-T25) | Always: UiAutomator, Macrobenchmark, Switch Access and Voice Access need them. If a low-end run shows `timelineTargetsMaxMs` above 1 ms, compose them only while `AccessibilityManager.isEnabled` (observed as state; UiAutomation counts as enabled) | 1d, 1e, 13 |
 | OQ-A47 | App Startup initializers other than ProcessLifecycle and ProfileInstaller (for example EmojiCompat, merged by Compose text) | Remove them (AGENTS "Performance"). Compose then draws emoji with the phone's own font, so emoji newer than that font show as boxes on old phones. 3a records the inventory and the measured saving | 3a, 13 |
+| OQ-0a-22 | Native libraries in the bundle? | Allow only `libandroidx.graphics.path.so` (Compose graphics-path; excluding it breaks Path conversion below API 34); fail on any other `.so` | 0a, 13 |
 
 ## Tasks
 
@@ -745,7 +746,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - The `:konsist` module enforces the A3 rules. Each rule has a planted violation under `konsist/src/test/resources/violations/` that `KonsistRulesTest` must reject.
 - [x] **Release gates.**
   - `verifyReleaseManifest` is a build-logic task wired into `check`. It fails on each of the six cases in "Android spec: manifest and permissions". `VerifyReleaseManifestTest` feeds it one planted manifest per case.
-  - `measureBundleSize` (`make size`) runs `bundletool build-apks --device-spec` (arm64, xxhdpi, en) and `get-size total`. It warns above 8 MB, fails above 12 MB, and fails on any `.so` file.
+  - `measureBundleSize` (`make size`) runs `bundletool build-apks --device-spec` (arm64, xxhdpi, en) and `get-size total`. It warns above 8 MB, fails above 12 MB, and fails on any `.so` file except the OQ-0a-22 allow-list.
 - [x] **Makefile and scripts.**
   - Every target in AGENTS.md "Commands". A target whose phase has not landed prints the phase that adds it and exits 1.
   - `Scripts/ci.sh`: `make generate check`, then `git diff --exit-code`.
@@ -2777,7 +2778,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - Review the R8 keep rules in `src/main/keepRules/*.keep` (serialization, Nav3 keys), with `-assumenosideeffects` for `Log.v`, `Log.d` and `Log.i`.
   - `bundle { language { enableSplit = false } }` (OQ-A39).
   - The final `verifyReleaseManifest` allowlist.
-  - `make size`: at most 8 MB download, no `.so`.
+  - `make size`: at most 8 MB download, no `.so` except the OQ-0a-22 allow-list.
 - [ ] **Profiles.** Extend `BaselineProfileGenerator` with the startup journey (launch → Today), the trip journey (`04 §10.5`), and the wizard up to Ready. Regenerate and commit; `BaselineProfileMode.Require` must pass.
 - [ ] **Performance budget.**
   - Run every row of "Performance budget" on `pixel`, and on a reference and a low-end device when attached (OQ-A22).
