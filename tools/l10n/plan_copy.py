@@ -57,6 +57,7 @@ def main(argv=None, read=read_plan_copy):
         target.parent.mkdir(parents=True, exist_ok=True)
         with open(target, "wb") as f:
             f.write(source)
+        hash_file.parent.mkdir(parents=True, exist_ok=True)
         with open(hash_file, "w", encoding="utf-8", newline="\n") as f:
             f.write(f"{sha256(source)}  {TARGET}\n")
         print(f"{TARGET}: {len(source)} bytes, sha256 {sha256(source)}")
