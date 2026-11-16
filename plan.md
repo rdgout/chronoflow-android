@@ -743,7 +743,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - Kotlin `allWarningsAsErrors`, plus `stability_config.conf` and the compiler reports behind `-PcomposeReports=true`.
   - `:app:analyzeReleaseR8Config` in `check`, if AGP 9.5.1 provides it (`11` names it); otherwise record its absence.
   - The `:konsist` module enforces the A3 rules. Each rule has a planted violation under `konsist/src/test/resources/violations/` that `KonsistRulesTest` must reject.
-- [ ] **Release gates.**
+- [x] **Release gates.**
   - `verifyReleaseManifest` is a build-logic task wired into `check`. It fails on each of the six cases in "Android spec: manifest and permissions". `VerifyReleaseManifestTest` feeds it one planted manifest per case.
   - `measureBundleSize` (`make size`) runs `bundletool build-apks --device-spec` (arm64, xxhdpi, en) and `get-size total`. It warns above 8 MB, fails above 12 MB, and fails on any `.so` file.
 - [ ] **Makefile and scripts.**
