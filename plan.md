@@ -867,7 +867,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 **Delivers.** Builds tools/l10n/xcstrings2android.py from the research prototype. It reads the 13 iOS String Catalogs at the pinned commit and writes namespaced en and nl string resources with plurals, a stable name lock and an Android-only overlay. The phase copies PlanCopy.json verbatim with a SHA-256 check, generates CopyIndex.kt for keys resolved at runtime, enables generateLocaleConfig and turns the translation Lint checks into errors. After this phase no visible string can exist without its Dutch twin.
 
 **Tasks**
-- [ ] **Generator** `tools/l10n/xcstrings2android.py` (stdlib, `python3 -I`), built from the `10` Appendix A prototype (`10-copy-l10n.md:430`).
+- [x] **Generator** `tools/l10n/xcstrings2android.py` (stdlib, `python3 -I`), built from the `10` Appendix A prototype (`10-copy-l10n.md:430`).
   - It reads the 13 catalogs at `tools/ios-pin.txt` through `git -C $IOS_REPO show`.
   - It writes `core/ui/src/main/res/values/strings_ios.xml` and `values-nl/strings_ios.xml`.
   - Names are `<table>_<slug>`, capped at 48 characters, with a sha1-6 suffix on collision. They are frozen in the append-only `tools/l10n/names.lock.json`.

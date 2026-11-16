@@ -4,6 +4,7 @@ SHELL := /bin/bash
 export ANDROID_HOME ?= /opt/homebrew/share/android-commandlinetools
 export JAVA_HOME ?= $(shell /usr/libexec/java_home -v 17)
 export ANDROID_SERIAL ?= emulator-5554
+IOS_REPO ?= /Users/rickgout/Sites/chronoflow-ios
 GRADLE := ./gradlew --console=plain
 RUN_TIER := Scripts/run-tier.sh
 JVM_MODULES := core:model core:plan core:sync core:reminders core:wizard core:network core:data-mock core:testing konsist tools:tokengen
@@ -13,12 +14,14 @@ GENERATORS :=
 GENERATOR_CHECKS :=
 GENERATORS += tokens
 GENERATORS += icons
+GENERATORS += strings
 GENERATOR_CHECKS += tokens-check
 GENERATOR_CHECKS += fonts-check
 GENERATOR_CHECKS += assets-check
+GENERATOR_CHECKS += strings-check
 
 .PHONY: quick check test format lint targeted generate generators-check size emu emu-down emu-clean avd-create matrix du
-.PHONY: tokens tokens-check fonts fonts-check icons assets assets-check strings plan-copy contracts snapshots captures perf perf-timeline baseline-profile
+.PHONY: strings-check tokens tokens-check fonts fonts-check icons assets assets-check strings plan-copy contracts snapshots captures perf perf-timeline baseline-profile
 
 quick:
 	$(RUN_TIER) quick --results '*/build/test-results/test/*.xml' --results '*/*/build/test-results/test/*.xml' --results 'build-logic/convention/build/test-results/test/*.xml' -- $(GRADLE) spotlessCheck $(JVM_MODULES:%=:%:test) :build-logic:convention:test
@@ -103,7 +106,14 @@ assets:
 assets-check:
 	python3 -I tools/assets/build_assets.py check
 
-strings plan-copy:
+strings:
+	python3 -I tools/l10n/xcstrings2android.py --ios "$(IOS_REPO)"
+
+strings-check:
+	python3 -I tools/l10n/xcstrings2android.py --ios "$(IOS_REPO)" --check
+	python3 -I -m unittest discover -s tools/l10n -t tools/l10n -p 'test_*.py'
+
+plan-copy:
 	@echo "make $@: lands in Phase 0c (feat/phase-0c-strings)" >&2; exit 1
 
 contracts:
