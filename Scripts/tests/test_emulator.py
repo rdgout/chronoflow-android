@@ -12,7 +12,7 @@ echo "$(basename "$0") $*" >> "$FAKE_LOG"
 
 ADB_BODY = r"""case "$*" in
   devices*) printf 'List of devices attached\n%b\n' "${FAKE_DEVICES:-}" ;;
-  *getprop*sys.boot_completed*) echo 1 ;;
+  *getprop*sys.boot_completed*) echo "${FAKE_BOOT-1}" ;;
 esac"""
 
 
@@ -71,6 +71,14 @@ class EmulatorTest(unittest.TestCase):
             "shell input keyevent 82",
         ):
             self.assertIn("adb -s emulator-5554 " + expected, calls)
+
+    def test_ensure_fails_fast_when_the_emulator_dies_at_start(self):
+        (self.bin / "emulator").write_text(SHIM % "echo boom; exit 1")
+        env = dict(self.env, FAKE_DEVICES="", FAKE_BOOT="")
+        result = run([EMULATOR_SH, "ensure"], env, timeout=20)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("exited before boot", result.stderr)
+        self.assertLess(result.elapsed, 15)
 
     def test_create_rejects_unknown_avd(self):
         self.assertEqual(run([EMULATOR_SH, "create", "tablet"], self.env).returncode, 2)

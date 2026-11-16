@@ -54,13 +54,18 @@ boot() {
   local log="$ROOT/build/emulator/$avd.log"
   # shellcheck disable=SC2086
   nohup "$EMULATOR" -avd "$avd" -port "$port" -no-window -no-audio -no-boot-anim -gpu host $extra >"$log" 2>&1 &
+  local pid=$!
   disown || true
-  "$ADB" -s "$serial" wait-for-device
   local i
   for i in $(seq 1 90); do
     if [ "$("$ADB" -s "$serial" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = 1 ]; then
       grep -iE "renderer|gpu" "$log" | head -3 || true
       return 0
+    fi
+    if ! kill -0 "$pid" 2>/dev/null; then
+      echo "emulator.sh: the emulator for $avd exited before boot; last log lines:" >&2
+      tail -20 "$log" >&2
+      return 1
     fi
     sleep 2
   done
