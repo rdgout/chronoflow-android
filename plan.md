@@ -737,7 +737,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - In `app/src/debug/`, a `network_security_config.xml` that allows cleartext to `10.0.2.2` only.
   - `version.properties` with the A2 `versionCode` formula, and a committed `app/debug.keystore`.
   - Test: `AppLaunchSmokeTest` (`@Smoke`, emulator) launches under StrictMode `penaltyDeath`. `adb shell pm list packages` must show `net.chronoflow.app.native.debug`, which proves the `native` segment works (OQ-A1, Risk 14).
-- [ ] **Quality gates.**
+- [x] **Quality gates.**
   - Spotless with ktlint 1.8.0 and the Compose rules 0.6.8 (`.editorconfig`).
   - Lint with `abortOnError`, `warningsAsErrors` and `checkDependencies`, configured in `lint.xml`.
   - Kotlin `allWarningsAsErrors`, plus `stability_config.conf` and the compiler reports behind `-PcomposeReports=true`.
