@@ -819,7 +819,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - Fraunces 400 and 500 at opsz 20, 32 and 48 (OQ-A10).
 
   `fonts.sha256` records the pin, source path and hash of each; `FontHashTest` checks them.
-- [ ] **Launcher icon.**
+- [x] **Launcher icon.**
   - `app/src/main/res/mipmap-anydpi/ic_launcher.xml` and `ic_launcher_round.xml`: adaptive, with background, foreground and monochrome layers.
   - The layers are vector drawables converted unchanged from `_design/canvas/icon/android/*.svg` (OQ-A43), with colors from `_design/canvas/icon/colors.json`. Record the conversion method in `docs/assets.md`.
   - Test: `AdaptiveIconTest` checks the 108 dp viewport, all three layers, and a single-color monochrome layer.

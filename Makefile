@@ -12,11 +12,12 @@ SMOKE_TASK := :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunner
 GENERATORS :=
 GENERATOR_CHECKS :=
 GENERATORS += tokens
+GENERATORS += icons
 GENERATOR_CHECKS += tokens-check
 GENERATOR_CHECKS += fonts-check
 
 .PHONY: quick check test format lint targeted generate generators-check size emu emu-down emu-clean avd-create matrix du
-.PHONY: tokens tokens-check fonts fonts-check assets strings plan-copy contracts snapshots captures perf perf-timeline baseline-profile
+.PHONY: tokens tokens-check fonts fonts-check icons assets strings plan-copy contracts snapshots captures perf perf-timeline baseline-profile
 
 quick:
 	$(RUN_TIER) quick --results '*/build/test-results/test/*.xml' --results '*/*/build/test-results/test/*.xml' --results 'build-logic/convention/build/test-results/test/*.xml' -- $(GRADLE) spotlessCheck $(JVM_MODULES:%=:%:test) :build-logic:convention:test
@@ -91,6 +92,9 @@ matrix:
 du:
 	@du -sh ~/.gradle/caches ~/.android/avd build 2>/dev/null || true
 	@git worktree list --porcelain | sed -n 's/^worktree //p' | while read -r wt; do du -sh "$$wt"; done
+
+icons:
+	python3 -I tools/assets/build_assets.py icons
 
 assets:
 	@echo "make $@: lands in Phase 0b (feat/phase-0b-tokens)" >&2; exit 1

@@ -53,7 +53,7 @@ These are warm, mostly up-to-date runs. A cold `make check` after a source chang
 | Lint probe | `if (Build.VERSION.SDK_INT >= 21)` around `setContent`: `./gradlew :app:lintDebug` exit 1, `MainActivity.kt:13: Error: Unnecessary; SDK_INT is always >= 29 [ObsoleteSdkInt]`. Reverted. |
 | `allWarningsAsErrors` probe | Kotlin 2.4.21 does not report an unused variable on the command line, so `val unused = 1` compiles. Probe used a redundant cast instead: `./gradlew --no-build-cache :app:compileDebugKotlin` exit 1, `e: warnings found and -Werror specified`, `MainActivity.kt:14:27 Cast is redundant.` Reverted. (Deviation from the brief's probe.) |
 | Spotless probe | trailing spaces on a line of `MainActivity.kt`: `spotlessCheck` fails and names `app/src/main/kotlin/net/chronoflow/app/MainActivity.kt`. Reverted. |
-| `lint.xml` ignores | `GradleDependency`, `NewerVersionAvailable`, `AndroidGradlePluginVersion` (versions are pinned by A1, not by Lint); `MissingApplicationIcon` (0b adds the icon and removes the line, OQ-0a-5). |
+| `lint.xml` ignores | `GradleDependency`, `NewerVersionAvailable`, `AndroidGradlePluginVersion` (versions are pinned by A1, not by Lint). |
 | `tools:ignore` on `MainActivity` | `DiscouragedApi` and `LockedOrientationActivity`, because A10/D16 fixes `screenOrientation="portrait"`. |
 | `:app:analyzeReleaseR8Config` | present; `make check` runs it. Output: `R8 Keep Rules analysis report generated: build/reports/r8/r8-config-analyzer-release.html`. |
 | `verifyReleaseManifest` on the real app | `./gradlew :app:verifyReleaseManifest` passes; `build/reports/verifyReleaseManifest.txt` holds `OK`. |
