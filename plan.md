@@ -450,7 +450,7 @@ Every screen scrolls when height-constrained. The minimum width is 280 dp; below
 ### Android spec: manifest and permissions (`14 §6`)
 
 - **Permissions:**
-  - Release allows only: `INTERNET`, `ACCESS_NETWORK_STATE`, `POST_NOTIFICATIONS`, `RECEIVE_BOOT_COMPLETED`, `WAKE_LOCK` (merged by WorkManager).
+  - Release allows only: `INTERNET`, `ACCESS_NETWORK_STATE`, `POST_NOTIFICATIONS`, `RECEIVE_BOOT_COMPLETED`, `WAKE_LOCK` (merged by WorkManager), plus androidx.core's `<applicationId>.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` (OQ-0a-20).
   - Banned: `SCHEDULE_EXACT_ALARM`, `USE_EXACT_ALARM`, `FOREGROUND_SERVICE*`, calendar, `CAMERA`, `READ_PHONE_STATE`, `AD_ID` (`tools:node="remove"`), Firebase/c2dm, badges.
 - **Application attributes:** `allowBackup="false"`, `dataExtractionRules`, `usesCleartextTraffic="false"`, `enableOnBackInvokedCallback="true"`, `localeConfig`, `supportsRtl="false"`.
 - **MainActivity:** `singleTask`, exported, `configChanges` (A8), `screenOrientation="portrait"`, `windowSoftInputMode="adjustResize"`, App Link filters. No `directBootAware`.

@@ -1,6 +1,9 @@
 package net.chronoflow.buildlogic
 
+import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.dsl.ApplicationExtension
+import com.android.build.api.variant.ApplicationAndroidComponentsExtension
+import net.chronoflow.buildlogic.manifest.VerifyReleaseManifestTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.configure
@@ -51,5 +54,18 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
                 }
                 configureLint(lint)
             }
+            val verifyTasks = mutableListOf<org.gradle.api.tasks.TaskProvider<VerifyReleaseManifestTask>>()
+            extensions.configure<ApplicationAndroidComponentsExtension> {
+                onVariants(selector().withBuildType("release")) { variant ->
+                    verifyTasks +=
+                        tasks.register("verifyReleaseManifest", VerifyReleaseManifestTask::class.java) {
+                            mergedManifest.set(variant.artifacts.get(SingleArtifact.MERGED_MANIFEST))
+                            applicationId.set(variant.applicationId)
+                            allowedExportedComponents.set(emptySet())
+                            report.set(layout.buildDirectory.file("reports/verifyReleaseManifest.txt"))
+                        }
+                }
+            }
+            tasks.named("check").configure { dependsOn(provider { verifyTasks.toList() }) }
         }
 }
