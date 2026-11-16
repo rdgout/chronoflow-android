@@ -12,7 +12,8 @@ import net.chronoflow.core.model.contracts.require
 import net.chronoflow.core.model.contracts.stringAt
 
 @Serializable(with = AccountSettings.Serializer::class)
-data class AccountSettings(
+@ConsistentCopyVisibility
+data class AccountSettings private constructor(
     val bodyClock: JsonObject,
     val sleepAnswered: Boolean,
     val preferences: JsonObject,
@@ -20,6 +21,24 @@ data class AccountSettings(
     val planCredits: JsonObject,
     val policies: AccountPolicies,
 ) {
+    companion object {
+        operator fun invoke(
+            bodyClock: JsonObject,
+            sleepAnswered: Boolean,
+            preferences: JsonObject,
+            reminders: JsonObject,
+            planCredits: JsonObject,
+            policies: AccountPolicies,
+        ) = AccountSettings(
+            ProfilePreferences.bodyClock(bodyClock),
+            sleepAnswered,
+            preferences,
+            reminders,
+            planCredits,
+            policies,
+        )
+    }
+
     object Serializer : ObjectSerializer<AccountSettings>("net.chronoflow.core.model.api.AccountSettings") {
         override fun decode(
             json: Json,
@@ -50,7 +69,8 @@ data class AccountSettings(
 }
 
 @Serializable(with = AccountSnapshot.Serializer::class)
-data class AccountSnapshot(
+@ConsistentCopyVisibility
+data class AccountSnapshot private constructor(
     val id: String,
     val name: String,
     val email: String,
@@ -60,6 +80,28 @@ data class AccountSnapshot(
     val billing: JsonObject,
     val security: JsonObject,
 ) {
+    companion object {
+        operator fun invoke(
+            id: String,
+            name: String,
+            email: String,
+            hasVerifiedEmail: Boolean,
+            settings: AccountSettings,
+            readiness: JsonObject,
+            billing: JsonObject,
+            security: JsonObject,
+        ) = AccountSnapshot(
+            id,
+            name,
+            email,
+            hasVerifiedEmail,
+            settings,
+            ProfilePreferences.readiness(readiness, settings.bodyClock),
+            billing,
+            security,
+        )
+    }
+
     object Serializer : ObjectSerializer<AccountSnapshot>("net.chronoflow.core.model.api.AccountSnapshot") {
         override fun decode(
             json: Json,

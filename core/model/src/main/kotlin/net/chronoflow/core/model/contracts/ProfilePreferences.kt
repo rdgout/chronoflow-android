@@ -88,8 +88,7 @@ object ProfilePreferences {
     fun promptAnswers(values: Map<String, JsonPrimitive>): Map<String, JsonPrimitive> =
         promptAnswers(values as Map<String, JsonElement>).mapValues { it.value as JsonPrimitive }
 
-    fun reviewPrompts(prompts: List<ApiReviewPrompt>): List<ApiReviewPrompt> =
-        prompts.filter { isSupported(it) }.map { it.copy(answer = promptAnswers(it.answer)) }
+    fun reviewPrompts(prompts: List<ApiReviewPrompt>): List<ApiReviewPrompt> = prompts.filter { isSupported(it) }
 
     fun isSupported(prompt: ApiReviewPrompt): Boolean {
         if (prompt.kind ==

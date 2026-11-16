@@ -187,9 +187,12 @@ def generate(sources):
 
             redacted = to_string(name, kname, fields)
             if name in CUSTOM:
-                lines = [f'@Serializable(with = {kname}.Serializer::class)', f'data class {kname}(']
+                private = name == 'ApiReviewPrompt'
+                lines = [f'@Serializable(with = {kname}.Serializer::class)'] + (['@ConsistentCopyVisibility'] if private else [])
+                lines += [f'data class {kname}{" private constructor" if private else ""}(']
                 lines += params(False) + [') {']
                 lines += redacted + ([''] if redacted else [])
+                lines += cleaning_factory(name, kname, fields)
                 lines += custom_serializer(name, kname, fields)
                 lines += ['}', '', '@Serializable', f'internal data class {kname}Wire(']
                 lines += params(True) + [')']
@@ -218,6 +221,21 @@ def to_string(name, kname, fields):
             ref = '${if (' + prop + ' == null) "null" else "***"}' if kind.endswith('?') else '***'
         parts.append(f'{prop}={ref}')
     return ['    override fun toString(): String =', f'        "{kname}({", ".join(parts)})"']
+
+
+def cleaning_factory(name, kname, fields):
+    """Public construction of a type whose iOS init cleans its inputs; `copy` stays private with the constructor."""
+    if name != 'ApiReviewPrompt':
+        return []
+    lines = ['    companion object {', '        operator fun invoke(']
+    lines += [f'            {identifier(k)}: {kind},' for k, kind, _ in fields]
+    lines += [f'        ) = {kname}(']
+    for key, _, _ in fields:
+        prop = identifier(key)
+        value = 'ProfilePreferences.promptAnswers(answer.filterKeys { it in fields })' if key == 'answer' else prop
+        lines.append(f'            {prop} = {value},')
+    lines += ['        )', '    }', '']
+    return lines
 
 
 def custom_serializer(name, kname, fields):

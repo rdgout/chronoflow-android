@@ -278,7 +278,8 @@ data class ApiReviewPrice(
 )
 
 @Serializable(with = ApiReviewPrompt.Serializer::class)
-data class ApiReviewPrompt(
+@ConsistentCopyVisibility
+data class ApiReviewPrompt private constructor(
     val id: String,
     val kind: PromptKind,
     val blocking: Boolean,
@@ -292,6 +293,36 @@ data class ApiReviewPrompt(
     val side: WindowSide?,
     val deviceMin: Int?,
 ) {
+    companion object {
+        operator fun invoke(
+            id: String,
+            kind: PromptKind,
+            blocking: Boolean,
+            required: Boolean,
+            text: CopyLine,
+            scope: ApiReviewPromptScope,
+            target: ReviewPromptTarget,
+            fields: List<String>,
+            answer: Map<String, JsonPrimitive>,
+            shape: ApiReviewPromptShape,
+            side: WindowSide?,
+            deviceMin: Int?,
+        ) = ApiReviewPrompt(
+            id = id,
+            kind = kind,
+            blocking = blocking,
+            required = required,
+            text = text,
+            scope = scope,
+            target = target,
+            fields = fields,
+            answer = ProfilePreferences.promptAnswers(answer.filterKeys { it in fields }),
+            shape = shape,
+            side = side,
+            deviceMin = deviceMin,
+        )
+    }
+
     object Serializer : KSerializer<ApiReviewPrompt> {
         override val descriptor: SerialDescriptor =
             SerialDescriptor("net.chronoflow.core.model.contracts.ApiReviewPrompt", ApiReviewPromptWire.serializer().descriptor)

@@ -174,7 +174,7 @@ def swift_declarations(text):
 
 def kotlin_declarations(text):
     declarations = {}
-    for match in re.finditer(r'^data class (\w+)\(\n(.*?)^\)', text, re.S | re.M):
+    for match in re.finditer(r'^data class (\w+)(?: private constructor)?\(\n(.*?)^\)', text, re.S | re.M):
         props = re.findall(r'^    (?:@SerialName\("[^"]+"\) )?val `?(\w+)`?:', match.group(2), re.M)
         declarations[match.group(1)] = ('struct', props)
     for match in re.finditer(r'^sealed interface (\w+) : RawEnum \{\n(.*?)^\}', text, re.S | re.M):
