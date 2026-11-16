@@ -8,6 +8,7 @@ import org.jetbrains.kotlin.compose.compiler.gradle.ComposeCompilerGradlePluginE
 
 internal fun Project.configureCompose() {
     pluginManager.apply("org.jetbrains.kotlin.plugin.compose")
+    pluginManager.apply("chronoflow.roborazzi")
     extensions.getByType<CommonExtension>().buildFeatures.compose = true
     val bom = libs.library("compose-bom")
     addDependency("implementation", dependencies.platform(bom))

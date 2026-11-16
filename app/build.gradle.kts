@@ -41,7 +41,6 @@ dependencies {
     implementation(project(":core:navigation"))
     implementation(project(":core:ui"))
     debugImplementation(project(":core:data-mock"))
-    debugImplementation(libs.compose.ui.test.manifest)
 
     implementation(libs.androidx.activity.compose)
     implementation(libs.compose.ui)
