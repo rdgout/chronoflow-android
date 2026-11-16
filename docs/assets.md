@@ -15,3 +15,7 @@ Conversion rules (OQ-A43: the layers are converted unchanged, nothing is redrawn
 - `mipmap-anydpi/ic_launcher.xml` and `ic_launcher_round.xml`: `<adaptive-icon>` with the three layers. `minSdk` is 29, so no `-v26` qualifier is needed.
 
 Safe zone: launchers show the middle 72 dp of the 108 dp canvas and mask it to their own shape (circle radius 33 dp at most). The stroked moon box [1, 23] in a 24-unit space maps to at most 23.3 dp from the centre, inside the 33 dp safe radius. The outer moon radius is 142 px of 1024 (14.98 dp), and the visible size is 41.6 % as on iOS (`docs/research/08-design-system.md` §11.2). `AdaptiveIconTest` guards these numbers and `LauncherIconInflationTest` inflates the icon on Robolectric to catch path errors.
+
+## Notification icon
+
+`app/src/main/res/drawable/ic_stat_moon.xml` is a 24 dp vector on a 24 viewport with the moon outline path verbatim from `_design/canvas/icon/layers/moon-white.svg`: stroke `#FFFFFFFF`, width 2, round caps and joins, no fill. Android uses only its alpha channel for the status bar. Lint `IconColors` and `NotificationIconTest` guard it. It stays unused until Phase 12b.

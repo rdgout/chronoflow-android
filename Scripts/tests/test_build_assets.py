@@ -23,6 +23,7 @@ class BuildAssetsTest(unittest.TestCase):
         second = build_assets.generate_icons(root)
         self.assertEqual(first, second)
         self.assertIn("app/src/main/res/mipmap-anydpi/ic_launcher.xml", first)
+        self.assertIn("app/src/main/res/drawable/ic_stat_moon.xml", first)
 
     def test_background_stop_that_differs_from_colors_json_fails(self):
         root = self.make_root()

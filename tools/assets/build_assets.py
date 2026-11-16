@@ -108,6 +108,18 @@ def foreground_xml(moon, color, source):
     )
 
 
+def stat_icon_xml(moon):
+    return (
+        '<?xml version="1.0" encoding="utf-8"?>\n'
+        f"{header(ICON_DIR + '/layers/moon-white.svg')}\n"
+        f'<vector xmlns:android="{ANDROID_NS}"\n'
+        '    android:width="24dp"\n    android:height="24dp"\n'
+        '    android:viewportWidth="24"\n    android:viewportHeight="24">\n'
+        f"{moon_path(dict(moon, width=number(moon['width'])), moon['stroke'], 4)}"
+        "</vector>\n"
+    )
+
+
 def adaptive_xml():
     return (
         '<?xml version="1.0" encoding="utf-8"?>\n'
@@ -129,8 +141,12 @@ def generate_icons(root):
         raise AssetError(f"adaptive-foreground.svg stroke {foreground['stroke']} differs from colors.json dawn {colors['dawn']}")
     if monochrome["stroke"].lower() != "#ffffff":
         raise AssetError(f"adaptive-monochrome.svg stroke {monochrome['stroke']} is not #ffffff")
+    stat = parse_moon(read_svg(root, "layers/moon-white.svg"), "moon-white.svg")
+    if stat["stroke"].lower() != "#ffffff":
+        raise AssetError(f"moon-white.svg stroke {stat['stroke']} is not #ffffff")
     res = "app/src/main/res"
     return {
+        f"{res}/drawable/ic_stat_moon.xml": stat_icon_xml(stat),
         f"{res}/drawable/ic_launcher_background.xml": background_xml(stops),
         f"{res}/drawable/ic_launcher_foreground.xml": foreground_xml(foreground, foreground["stroke"], "adaptive-foreground.svg"),
         f"{res}/drawable/ic_launcher_monochrome.xml": foreground_xml(monochrome, monochrome["stroke"], "adaptive-monochrome.svg"),

@@ -823,7 +823,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - `app/src/main/res/mipmap-anydpi/ic_launcher.xml` and `ic_launcher_round.xml`: adaptive, with background, foreground and monochrome layers.
   - The layers are vector drawables converted unchanged from `_design/canvas/icon/android/*.svg` (OQ-A43), with colors from `_design/canvas/icon/colors.json`. Record the conversion method in `docs/assets.md`.
   - Test: `AdaptiveIconTest` checks the 108 dp viewport, all three layers, and a single-color monochrome layer.
-- [ ] **Notification icon** `ic_stat_moon`: 24 dp, white, alpha only, from the moon outline. Lint `IconColors` passes.
+- [x] **Notification icon** `ic_stat_moon`: 24 dp, white, alpha only, from the moon outline. Lint `IconColors` passes.
 - [ ] **Launch moon.**
   - `make assets` rasterizes iOS `Assets/moon/launch-moon-light.svg` and `-dark.svg` (read at the pin) with `/opt/homebrew/bin/rsvg-convert` at 1152 × 1152 px.
   - The outputs are `app/src/main/res/drawable-xxxhdpi/launch_moon.png` and `drawable-night-xxxhdpi/launch_moon.png`.
