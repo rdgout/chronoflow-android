@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "profiles": {
+    "small": {"widthDp": 360, "heightDp": 640, "density": 2.0, "fontScale": 1.0, "navigation": "threeButton", "insetsDp": {"top": 24, "left": 0, "bottom": 48, "right": 0}, "source": "research 13 §4.4", "purpose": "worst-case height (iOS se)"},
+    "pixel8": {"widthDp": 411, "heightDp": 914, "density": 2.625, "fontScale": 1.0, "navigation": "gesture", "insetsPx": {"top": 132, "left": 0, "bottom": 63, "right": 0}, "source": "measured pixel AVD 2026-11-17", "purpose": "reference phone (iOS 17e)"},
+    "foldInner": {"widthDp": 841, "heightDp": 701, "density": 2.625, "fontScale": 1.0, "navigation": "gesture", "insetsFrom": "pixel8", "source": "derived from pixel8, not measured", "purpose": ">= 600 dp layout (iOS duo/wide)"},
+    "landscapeSideNav": {"widthDp": 914, "heightDp": 411, "density": 2.625, "fontScale": 1.0, "navigation": "threeButton", "insetsDp": {"top": 24, "left": 0, "bottom": 0, "right": 48}, "source": "research 13 §4.4", "purpose": "asymmetric side inset (iOS duo rail)"},
+    "largeFont": {"basedOn": "pixel8", "fontScale": 2.0, "purpose": "root font-scale cap (iOS AX5 vs xxLarge)"}
+  }
+}
