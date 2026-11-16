@@ -729,7 +729,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - `gradle.properties`: the values from "Android spec: build", plus `android.onlyEnableUnitTestForTheTestedBuildType=false` so that `testReleaseUnitTest` exists. Verify the flag; if AGP rejects it, enable release unit tests in `:app` only.
   - Test: `./gradlew buildEnvironment | grep kotlin-gradle-plugin` prints 2.4.21, and a second `./gradlew help` reuses the configuration cache.
 - [x] **Convention plugins.** Add the ten plugins of "Android spec: build" in `build-logic/convention`. Each module's `build.gradle.kts` applies exactly one of them and sets its A2 namespace. Test: `./gradlew assembleDebug` builds every module.
-- [ ] **Minimal app.**
+- [x] **Minimal app.**
   - `ChronoFlowApp`: debug StrictMode per A21, and a lazy `AppGraph` placeholder that does no I/O.
   - `MainActivity` with an empty Compose root.
   - The manifest per "Android spec: manifest and permissions", with only `INTERNET` and `ACCESS_NETWORK_STATE` for now.
@@ -870,7 +870,8 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 - [ ] **Plan copy.** Copy `PlanCopy.json` verbatim to `core/plan/src/main/resources/plan_copy.json`, with its hash in `tools/l10n/plan_copy.sha256`. Add `make plan-copy` and its check.
 - [ ] **CopyIndex.kt** (generated, `:core:ui`): maps an iOS key to its `R.string` or `R.plurals` id per table. It serves keys resolved at runtime: server error codes, reminder kinds and enum labels.
 - [ ] **Locale wiring.**
-  - `:app` sets `androidResources { generateLocaleConfig = true }` and adds `app/src/main/res/resources.properties` (`unqualifiedResLocale=en`).
+  - `app_name` already sits in `core/ui/src/main/res/values/strings_untranslatable.xml` (done in 0a, OQ-0a-4).
+  - `:app` sets `androidResources { generateLocaleConfig = true }` and adds `app/src/main/res/resources.properties` (`unqualifiedResLocale=en`). (done in 0a)
   - Lint errors: `MissingTranslation`, `ExtraTranslation`, `StringFormatInvalid`, `StringFormatCount` and `PluralsCandidate`.
   - A Konsist rule forbids a string literal as the first argument of `Text(` outside tests and previews.
 - [ ] **StringParityTest** (JVM, parses the XML): every en name has an nl twin with the same placeholders and plural quantities. Record the counts.
