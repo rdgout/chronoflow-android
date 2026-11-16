@@ -1,5 +1,6 @@
 package net.chronoflow.konsist
 
+import assertk.all
 import assertk.assertFailure
 import assertk.assertions.messageContains
 import org.junit.Test
@@ -70,7 +71,10 @@ class ModuleGraphTest {
 
     @Test
     fun onlyAppDependsOnFeatureModulesRejectsPlantedViolation() {
-        assertFailure { onlyAppDependsOnFeatures(planted, skipResources = false) }
-            .messageContains("modules other than app depend on feature modules")
+        assertFailure { onlyAppDependsOnFeatures(planted, skipResources = false) }.all {
+            messageContains("modules other than app depend on feature modules")
+            messageContains("core/ui/build.gradle.kts".replace('/', File.separatorChar))
+            messageContains("feature/today/build.gradle.kts".replace('/', File.separatorChar))
+        }
     }
 }

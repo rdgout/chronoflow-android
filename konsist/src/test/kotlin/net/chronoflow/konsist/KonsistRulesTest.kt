@@ -1,5 +1,6 @@
 package net.chronoflow.konsist
 
+import assertk.all
 import assertk.assertFailure
 import assertk.assertions.messageContains
 import com.lemonappdev.konsist.api.Konsist
@@ -28,7 +29,10 @@ class KonsistRulesTest {
     @Test fun jvmCoreModulesImportNoAndroidOrComposeRejectsPlantedViolation() {
         assertFailure {
             jvmCoreModulesImportNoAndroidOrCompose(violations("jvmCoreModulesImportNoAndroidOrCompose"))
-        }.messageContains("jvmCoreModulesImportNoAndroidOrCompose violated")
+        }.all {
+            messageContains("UsesCompose.kt: androidx.compose.ui.graphics.Color")
+            messageContains("UsesLog.kt: android.util.Log")
+        }
     }
 
     @Test fun onlyAppImportsFeatures() = onlyAppImportsFeatures(projectScope)
@@ -58,7 +62,11 @@ class KonsistRulesTest {
     @Test fun noSleepInTests() = noSleepInTests(projectScope)
 
     @Test fun noSleepInTestsRejectsPlantedViolation() {
-        assertFailure { noSleepInTests(violations("noSleepInTests")) }.messageContains("noSleepInTests violated")
+        assertFailure { noSleepInTests(violations("noSleepInTests")) }.all {
+            messageContains("noSleepInTests violated")
+            messageContains("SleepsUiTest.kt")
+            messageContains("SleepsTest.kt")
+        }
     }
 
     @Test fun viewModelsEndWithViewModel() = viewModelsEndWithViewModel(projectScope)
