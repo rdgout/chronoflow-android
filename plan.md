@@ -761,7 +761,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
     - `create` makes a T2 AVD on request only: `fold` (`pixel_9_pro_fold`) and `small` (`small_phone`) on the installed API 36 image, and `api29` (`pixel_8`) on `system-images;android-29;google_apis;arm64-v8a`, which `sdkmanager` installs on first use.
   - `Scripts/measure-tiers.sh` writes `build/tier-timings.json`.
   - Test: `Scripts/test_scripts.sh` drives `run-tier.sh` with short caps and a hanging stand-in command.
-- [ ] **Measure and record.** In `docs/tooling.md`, record:
+- [x] **Measure and record.** In `docs/tooling.md`, record:
   - the warm `make quick` and `make check` times, three runs each;
   - what the worker sandbox can do: the Gradle daemon, `adb`, the emulator and `.git/index.lock`;
   - the commands the orchestrator must therefore run outside the sandbox.
