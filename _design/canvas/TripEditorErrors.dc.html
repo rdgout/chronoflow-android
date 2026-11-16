@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>New trip, fix flight details</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="ds/chronoflow/components/bundle.css">
+<script src="ds/chronoflow/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+@font-face{font-family:'Figtree';src:url("/_blob/74876cc764ebb15bf4ae98bcdbf3140c") format("woff2");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:'Figtree';src:url("/_blob/741b1ce40b46479a73d934d0d5be9774") format("woff2");font-weight:500;font-style:normal;font-display:swap}
+@font-face{font-family:'Figtree';src:url("/_blob/079d83fda74d66d1f31e35072f71201d") format("woff2");font-weight:600;font-style:normal;font-display:swap}
+@font-face{font-family:'Figtree';src:url("/_blob/991830890debdac04981f1a27656ed5c") format("woff2");font-weight:700;font-style:normal;font-display:swap}
+@font-face{font-family:'Fraunces';src:url("/_blob/fc815083784d00806d267d81858d2414") format("woff2");font-weight:400 500;font-style:normal;font-display:swap}
+body{margin:0}
+</style>
+</helmet>
+<div data-theme="{{theme}}" style="position: relative; width: 375px; height: 812px; overflow: hidden; background: var(--background); color: var(--foreground); font-family: var(--font-sans);">
+  <div style="position: absolute; inset: 0 0 96px 0; overflow-y: auto;">
+    <header style="position: sticky; top: 0; z-index: 10; height: 56px; box-sizing: border-box; display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; align-items: center; gap: 8px; padding: 0 8px; border-bottom: 1px solid var(--border); background: color-mix(in oklab, var(--background) 72%, transparent); -webkit-backdrop-filter: blur(20px) saturate(1.8); backdrop-filter: blur(20px) saturate(1.8);">
+      <a href="Trips.dc.html" aria-label="Close" style="display: grid; place-items: center; width: 44px; height: 44px; border-radius: 9999px; color: var(--foreground);">
+        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+      </a>
+      <p style="margin: 0; text-align: center; font-size: 16px; line-height: 24px; font-weight: 600;">New trip</p>
+      <span aria-hidden="true"></span>
+    </header>
+
+    <main style="padding: 16px 16px 24px; display: flex; flex-direction: column; gap: 16px;">
+      <div role="alert" style="display: flex; align-items: flex-start; gap: 12px; padding: 12px; border-radius: 22px; border: 1px solid var(--destructive); background: var(--card); font-size: 14px; line-height: 20px;">
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 2px; color: var(--destructive);"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="8" y2="12"></line><line x1="12" x2="12.01" y1="16" y2="16"></line></svg>
+        <p style="margin: 0;"><span style="font-weight: 600;">Fix 2 things in Flight 2</span> before you review your plan.</p>
+      </div>
+
+      <p style="margin: 0; font-size: 14px; line-height: 20px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted-foreground);">Outbound</p>
+
+      <div style="display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 8px 16px; box-sizing: border-box; border-radius: 22px; border: 1px solid var(--border); background: var(--card);">
+        <x-import component-from-global-scope="ChronoFlow.CategorySwatch" category="flight" size="sm"></x-import>
+        <span style="flex: 1; min-width: 0;"><span style="display: block; font-size: 16px; line-height: 24px; font-weight: 500;">Flight 1 · AMS → DXB</span><span style="display: block; font-size: 14px; line-height: 20px; color: var(--muted-foreground); font-variant-numeric: tabular-nums;">Mon 12 Oct · 14:40 → 23:25</span></span>
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; color: var(--dawn-text);"><path d="M20 6 9 17l-5-5"></path></svg>
+      </div>
+
+      <article aria-label="Flight 2, 2 problems" style="display: flex; flex-direction: column; gap: 10px; padding: 16px; border-radius: 26px; border: 1px solid var(--border); background: var(--card); box-shadow: var(--shadow-soft);">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <x-import component-from-global-scope="ChronoFlow.CategorySwatch" category="flight" size="sm"></x-import>
+          <p style="flex: 1; margin: 0; font-size: 16px; line-height: 24px; font-weight: 600;">Flight 2</p>
+        </div>
+        <a href="TripAirportSearch.dc.html" style="display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 8px 14px; box-sizing: border-box; border-radius: 18px; background: var(--surface-2); color: var(--foreground); text-decoration: none;">
+          <span style="flex: 1; min-width: 0;"><span style="display: block; font-size: 12px; line-height: 16px; color: var(--muted-foreground);">From</span><span style="display: block; font-size: 16px; line-height: 24px; font-weight: 500;">DXB · Dubai International</span></span>
+          <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; color: var(--muted-foreground);"><path d="m9 18 6-6-6-6"></path></svg>
+        </a>
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <a href="TripAirportSearch.dc.html" aria-invalid="true" aria-describedby="err-to" style="display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 8px 14px; box-sizing: border-box; border-radius: 18px; border: 2px solid var(--destructive); background: var(--surface-2); color: var(--foreground); text-decoration: none;">
+            <span style="flex: 1; min-width: 0;"><span style="display: block; font-size: 12px; line-height: 16px; color: var(--muted-foreground);">To</span><span style="display: block; font-size: 16px; line-height: 24px; color: var(--muted-foreground);">Choose an airport</span></span>
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; color: var(--muted-foreground);"><path d="m9 18 6-6-6-6"></path></svg>
+          </a>
+          <p id="err-to" style="margin: 0; display: flex; align-items: flex-start; gap: 6px; font-size: 14px; line-height: 20px; color: var(--destructive);"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 2px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="8" y2="12"></line><line x1="12" x2="12.01" y1="16" y2="16"></line></svg>Choose the airport you land at.</p>
+        </div>
+        <button type="button" style="display: flex; width: 100%; align-items: center; gap: 12px; min-height: 60px; padding: 8px 14px; box-sizing: border-box; border: 0; border-radius: 18px; background: var(--surface-2); color: var(--foreground); font: inherit; text-align: left;">
+          <span style="flex: 1; min-width: 0;"><span style="display: block; font-size: 12px; line-height: 16px; color: var(--muted-foreground);">Departs · Dubai time</span><span style="display: block; font-size: 16px; line-height: 24px; font-weight: 500; font-variant-numeric: tabular-nums;">Tue 13 Oct · 02:05</span></span>
+          <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; color: var(--muted-foreground);"><path d="m9 18 6-6-6-6"></path></svg>
+        </button>
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <button type="button" aria-invalid="true" aria-describedby="err-arr" style="display: flex; width: 100%; align-items: center; gap: 12px; min-height: 60px; padding: 8px 14px; box-sizing: border-box; border: 2px solid var(--destructive); border-radius: 18px; background: var(--surface-2); color: var(--foreground); font: inherit; text-align: left;">
+            <span style="flex: 1; min-width: 0;"><span style="display: block; font-size: 12px; line-height: 16px; color: var(--muted-foreground);">Arrives · local time</span><span style="display: block; font-size: 16px; line-height: 24px; font-weight: 500; font-variant-numeric: tabular-nums;">Mon 12 Oct · 16:35</span></span>
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; color: var(--muted-foreground);"><path d="m9 18 6-6-6-6"></path></svg>
+          </button>
+          <p id="err-arr" style="margin: 0; display: flex; align-items: flex-start; gap: 6px; font-size: 14px; line-height: 20px; color: var(--destructive);"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 2px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="8" y2="12"></line><line x1="12" x2="12.01" y1="16" y2="16"></line></svg>Check the departure and arrival times.</p>
+        </div>
+      </article>
+    </main>
+  </div>
+
+  <footer style="position: absolute; left: 0; right: 0; bottom: 0; display: grid; padding: 12px 16px 32px; border-top: 1px solid var(--border); background: color-mix(in oklab, var(--background) 72%, transparent); -webkit-backdrop-filter: blur(20px) saturate(1.8); backdrop-filter: blur(20px) saturate(1.8);">
+    <a href="TripEditor.dc.html" class="inline-flex shrink-0 items-center justify-center gap-2 text-sm font-medium whitespace-nowrap transition-colors rounded-full bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-6" style="text-decoration: none;">Review your plan</a>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"$preview":{"width":375,"height":812}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { theme: this.props.theme ?? 'light' };
+  }
+}
+</script>
+</body>
+</html>

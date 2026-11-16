@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Step 2 of 4: sleep</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="ds/chronoflow/components/bundle.css">
+<script src="ds/chronoflow/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+@font-face{font-family:'Figtree';src:url("/_blob/74876cc764ebb15bf4ae98bcdbf3140c") format("woff2");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:'Figtree';src:url("/_blob/741b1ce40b46479a73d934d0d5be9774") format("woff2");font-weight:500;font-style:normal;font-display:swap}
+@font-face{font-family:'Figtree';src:url("/_blob/079d83fda74d66d1f31e35072f71201d") format("woff2");font-weight:600;font-style:normal;font-display:swap}
+@font-face{font-family:'Figtree';src:url("/_blob/991830890debdac04981f1a27656ed5c") format("woff2");font-weight:700;font-style:normal;font-display:swap}
+@font-face{font-family:'Fraunces';src:url("/_blob/fc815083784d00806d267d81858d2414") format("woff2");font-weight:400 500;font-style:normal;font-display:swap}
+body{margin:0}
+</style>
+</helmet>
+<div data-theme="{{theme}}" style="position: relative; width: 375px; height: 812px; overflow: hidden; background: var(--background); color: var(--foreground); font-family: var(--font-sans);">
+  <div style="position: absolute; inset: 0 0 96px 0; overflow-y: auto;">
+    <header style="position: sticky; top: 0; z-index: 10; display: flex; flex-direction: column; gap: 8px; padding: 6px 8px 12px; border-bottom: 1px solid var(--border); background: color-mix(in oklab, var(--background) 72%, transparent); -webkit-backdrop-filter: blur(20px) saturate(1.8); backdrop-filter: blur(20px) saturate(1.8);">
+      <div style="display: flex; align-items: center; justify-content: space-between; height: 44px;">
+        <a href="GuestFlight.dc.html" style="display: inline-flex; align-items: center; gap: 2px; height: 44px; padding: 0 12px 0 4px; border-radius: 9999px; color: var(--foreground); text-decoration: none; font-size: 16px; line-height: 24px;"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg>Back</a>
+        <a href="GuestFlight.dc.html" style="display: inline-flex; align-items: center; height: 44px; padding: 0 12px; border-radius: 9999px; color: var(--foreground); text-decoration: none; font-size: 14px; line-height: 20px; font-weight: 500;">Start again</a>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px; padding: 0 8px;">
+        <p style="margin: 0; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dawn-text);">Step 2 of 4 · Sleep</p>
+        <div role="progressbar" aria-label="Step 2 of 4" aria-valuemin="0" aria-valuemax="4" aria-valuenow="2" style="height: 6px; border-radius: 9999px; background: var(--muted); overflow: hidden;"><div style="width: 50%; height: 100%; border-radius: 9999px; background: var(--dawn);"></div></div>
+      </div>
+    </header>
+
+    <main style="padding: 24px 16px 24px; display: flex; flex-direction: column; gap: 20px;">
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <h1 style="margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 30px; line-height: 36px; letter-spacing: -0.01em;">Your sleep</h1>
+        <p style="margin: 0; font-size: 16px; line-height: 24px; color: var(--muted-foreground);">Your normal rhythm is where your plan starts.</p>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;">
+        <a href="PickerTime.dc.html" aria-label="Usual bedtime, 23:00. Change" style="text-decoration: none; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-height: 84px; padding: 14px 16px; box-sizing: border-box; border-radius: 22px; border: 1px solid var(--border); background: var(--card); color: var(--foreground); font: inherit; text-align: left;"><span style="font-size: 14px; line-height: 20px; color: var(--muted-foreground);">Usual bedtime</span><span style="font-size: 24px; line-height: 32px; font-weight: 600; font-variant-numeric: tabular-nums;">23:00</span></a>
+        <button type="button" aria-label="Usual wake time, 07:00. Change" style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-height: 84px; padding: 14px 16px; box-sizing: border-box; border-radius: 22px; border: 1px solid var(--border); background: var(--card); color: var(--foreground); font: inherit; text-align: left;"><span style="font-size: 14px; line-height: 20px; color: var(--muted-foreground);">Usual wake time</span><span style="font-size: 24px; line-height: 32px; font-weight: 600; font-variant-numeric: tabular-nums;">07:00</span></button>
+      </div>
+      <p id="chrono-l" style="margin: 0; font-size: 16px; line-height: 24px; font-weight: 500;">When do you naturally feel most awake?</p>
+      <div role="radiogroup" aria-labelledby="chrono-l" style="display: flex; flex-direction: column; gap: 8px;">
+        <sc-for list="{{chronotypes}}" as="c" hint-placeholder-count="4">
+          <x-import component-from-global-scope="ChronoFlow.ChoiceCard" title="{{c.title}}" hint="{{c.hint}}" selected="{{c.selected}}" on-select="{{c.pick}}"></x-import>
+        </sc-for>
+      </div>
+    </main>
+  </div>
+
+  <footer style="position: absolute; left: 0; right: 0; bottom: 0; display: grid; padding: 12px 16px 32px; border-top: 1px solid var(--border); background: color-mix(in oklab, var(--background) 72%, transparent); -webkit-backdrop-filter: blur(20px) saturate(1.8); backdrop-filter: blur(20px) saturate(1.8);">
+    <a href="GuestHealth.dc.html" class="inline-flex shrink-0 items-center justify-center gap-2 text-sm font-medium whitespace-nowrap transition-colors rounded-full bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-6" style="text-decoration: none;">Next: health &amp; age</a>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"$preview":{"width":375,"height":812}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { chronotype: 'between' };
+  }
+  renderVals() {
+    const types = [
+      { id: 'early', title: 'Early bird', hint: 'Up early, tired in the evening' },
+      { id: 'between', title: 'In between', hint: 'Your energy follows a normal working day.' },
+      { id: 'owl', title: 'Night owl', hint: 'You come alive late and find early starts hard.' },
+      { id: 'unsure', title: 'Not sure', hint: 'We use your sleep times instead.' }
+    ];
+    return {
+      theme: this.props.theme ?? 'light',
+      chronotypes: types.map((t) => ({ ...t, selected: this.state.chronotype === t.id, pick: () => this.setState({ chronotype: t.id }) }))
+    };
+  }
+}
+</script>
+</body>
+</html>

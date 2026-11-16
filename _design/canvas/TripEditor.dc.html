@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>New trip</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="ds/chronoflow/components/bundle.css">
+<script src="ds/chronoflow/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+@font-face{font-family:'Figtree';src:url("/_blob/74876cc764ebb15bf4ae98bcdbf3140c") format("woff2");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:'Figtree';src:url("/_blob/741b1ce40b46479a73d934d0d5be9774") format("woff2");font-weight:500;font-style:normal;font-display:swap}
+@font-face{font-family:'Figtree';src:url("/_blob/079d83fda74d66d1f31e35072f71201d") format("woff2");font-weight:600;font-style:normal;font-display:swap}
+@font-face{font-family:'Figtree';src:url("/_blob/991830890debdac04981f1a27656ed5c") format("woff2");font-weight:700;font-style:normal;font-display:swap}
+@font-face{font-family:'Fraunces';src:url("/_blob/fc815083784d00806d267d81858d2414") format("woff2");font-weight:400 500;font-style:normal;font-display:swap}
+body{margin:0}
+</style>
+</helmet>
+<div data-theme="{{theme}}" style="position: relative; width: 375px; height: 4200px; overflow: hidden; background: var(--background); color: var(--foreground); font-family: var(--font-sans);">
+  <header style="position: sticky; top: 0; z-index: 10; height: 56px; box-sizing: border-box; display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; align-items: center; gap: 8px; padding: 0 8px; border-bottom: 1px solid var(--border); background: color-mix(in oklab, var(--background) 72%, transparent); -webkit-backdrop-filter: blur(20px) saturate(1.8); backdrop-filter: blur(20px) saturate(1.8);">
+    <a href="TripDiscard.dc.html" aria-label="Close" style="display: grid; place-items: center; width: 44px; height: 44px; border-radius: 9999px; color: var(--foreground);">
+      <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+    </a>
+    <p style="margin: 0; text-align: center; font-size: 16px; line-height: 24px; font-weight: 600;">New trip</p>
+    <span aria-hidden="true"></span>
+  </header>
+
+  <main style="padding: 24px 16px 32px; display: flex; flex-direction: column; gap: 28px;">
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <h1 style="margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 30px; line-height: 36px; letter-spacing: -0.01em;">Your flights</h1>
+      <p style="margin: 0; font-size: 16px; line-height: 24px; color: var(--muted-foreground);">Copy each flight from your booking. Times are local at each airport.</p>
+    </div>
+
+    <!-- Journeys: outbound and return -->
+    <sc-for list="{{journeys}}" as="j" hint-placeholder-count="2">
+      <section aria-label="{{j.title}}" style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+          <h2 style="margin: 0; font-family: var(--font-sans); font-size: 14px; line-height: 20px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted-foreground);">{{j.title}}</h2>
+          <sc-if value="{{j.isReturn}}" hint-placeholder-val="{{ false }}">
+            <x-import component-from-global-scope="ChronoFlow.Button" variant="ghost" size="sm">Remove return</x-import>
+          </sc-if>
+        </div>
+
+        <sc-for list="{{j.items}}" as="it" hint-placeholder-count="3">
+          <sc-if value="{{it.isConn}}" hint-placeholder-val="{{ false }}">
+            <div style="display: flex; align-items: center; gap: 8px; color: var(--muted-foreground);">
+              <span aria-hidden="true" style="flex: 1; border-top: 2px dotted var(--border);"></span>
+              <span style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 9999px; background: var(--surface-2); color: var(--foreground); font-size: 14px; line-height: 20px; font-variant-numeric: tabular-nums;">
+                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                {{it.text}}
+              </span>
+              <span aria-hidden="true" style="flex: 1; border-top: 2px dotted var(--border);"></span>
+            </div>
+          </sc-if>
+          <sc-if value="{{it.isLeg}}" hint-placeholder-val="{{ true }}">
+            <article aria-label="{{it.title}}" style="display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 26px; border: 1px solid var(--border); background: var(--card); box-shadow: var(--shadow-soft);">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <x-import component-from-global-scope="ChronoFlow.CategorySwatch" category="flight" size="sm"></x-import>
+                <p style="flex: 1; margin: 0; font-size: 16px; line-height: 24px; font-weight: 600;">{{it.title}}</p>
+                <sc-if value="{{it.hasNum}}" hint-placeholder-val="{{ true }}"><x-import component-from-global-scope="ChronoFlow.MetaChip">{{it.num}}</x-import></sc-if>
+                <sc-if value="{{it.canRemove}}" hint-placeholder-val="{{ true }}"><x-import component-from-global-scope="ChronoFlow.Button" variant="ghost" size="sm" aria-label="{{it.removeLabel}}">Remove</x-import></sc-if>
+              </div>
+              <div style="border-radius: 22px; background: var(--surface-2); overflow: hidden;">
+                <a href="TripAirportSearch.dc.html" style="display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 8px 14px; box-sizing: border-box; color: var(--foreground); text-decoration: none;">
+                  <span style="flex: 1; min-width: 0;"><span style="display: block; font-size: 12px; line-height: 16px; color: var(--muted-foreground);">From</span><span style="display: block; font-size: 16px; line-height: 24px; font-weight: 500;">{{it.from}}</span></span>
+                  <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; color: var(--muted-foreground);"><path d="m9 18 6-6-6-6"></path></svg>
+                </a>
+                <a href="TripAirportSearch.dc.html" style="display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 8px 14px; box-sizing: border-box; border-top: 1px solid var(--border); color: var(--foreground); text-decoration: none;">
+                  <span style="flex: 1; min-width: 0;"><span style="display: block; font-size: 12px; line-height: 16px; color: var(--muted-foreground);">To</span><span style="display: block; font-size: 16px; line-height: 24px; font-weight: 500;">{{it.to}}</span></span>
+                  <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; color: var(--muted-foreground);"><path d="m9 18 6-6-6-6"></path></svg>
+                </a>
+                <a href="PickerDateTime.dc.html" style="display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 8px 14px; box-sizing: border-box; border-top: 1px solid var(--border); color: var(--foreground); text-decoration: none;">
+                  <span style="flex: 1; min-width: 0;"><span style="display: block; font-size: 12px; line-height: 16px; color: var(--muted-foreground);">{{it.depLabel}}</span><span style="display: block; font-size: 16px; line-height: 24px; font-weight: 500; font-variant-numeric: tabular-nums;">{{it.dep}}</span></span>
+                  <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; color: var(--muted-foreground);"><path d="m9 18 6-6-6-6"></path></svg>
+                </a>
+                <a href="PickerDateTime.dc.html" style="display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 8px 14px; box-sizing: border-box; border-top: 1px solid var(--border); color: var(--foreground); text-decoration: none;">
+                  <span style="flex: 1; min-width: 0;"><span style="display: block; font-size: 12px; line-height: 16px; color: var(--muted-foreground);">{{it.arrLabel}}</span><span style="display: block; font-size: 16px; line-height: 24px; font-weight: 500; font-variant-numeric: tabular-nums;">{{it.arr}}</span></span>
+                  <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; color: var(--muted-foreground);"><path d="m9 18 6-6-6-6"></path></svg>
+                </a>
+              </div>
+              <button type="button" aria-expanded="{{it.openStr}}" onClick="{{it.toggle}}" style="display: flex; width: 100%; align-items: center; gap: 8px; min-height: 44px; padding: 0 4px; border: 0; background: transparent; color: var(--foreground); font: inherit; text-align: left;">
+                <span style="flex: 1; min-width: 0;"><span style="display: block; font-size: 14px; line-height: 20px; font-weight: 600;">Flight number and seat</span><span style="display: block; font-size: 14px; line-height: 20px; color: var(--muted-foreground);">{{it.optSummary}}</span></span>
+                <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="{{it.chevStyle}}"><path d="m6 9 6 6 6-6"></path></svg>
+              </button>
+              <sc-if value="{{it.open}}" hint-placeholder-val="{{ false }}">
+                <div style="display: flex; flex-direction: column; gap: 16px; padding: 0 4px 4px;">
+                  <x-import component-from-global-scope="ChronoFlow.Field" id="{{it.numId}}" label="Flight number (optional)" default-value="{{it.num}}" hint="Only a label for you. We don't look it up."></x-import>
+                  <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <p id="{{it.sideId}}" style="margin: 0; font-size: 14px; line-height: 20px; font-weight: 500;">Window side</p>
+                    <div role="radiogroup" aria-labelledby="{{it.sideId}}" style="display: flex; flex-wrap: wrap; gap: 8px;">
+                      <sc-for list="{{it.sides}}" as="o" hint-placeholder-count="3">
+                        <button type="button" role="radio" aria-checked="{{o.checked}}" onClick="{{o.pick}}" style="{{o.style}}"><sc-if value="{{o.selected}}" hint-placeholder-val="{{ false }}"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--dawn-text);"><path d="M20 6 9 17l-5-5"></path></svg></sc-if>{{o.label}}</button>
+                      </sc-for>
+                    </div>
+                  </div>
+                  <button type="button" role="switch" aria-checked="{{it.flat.checked}}" onClick="{{it.flat.toggle}}" style="display: flex; width: 100%; align-items: center; gap: 12px; min-height: 48px; padding: 0; border: 0; background: transparent; color: var(--foreground); font: inherit; text-align: left;">
+                    <span style="flex: 1; font-size: 14px; line-height: 20px; font-weight: 500;">Lie-flat seat</span>
+                    <span aria-hidden="true" class="ios-switch" data-on="{{it.flat.checked}}"></span>
+                  </button>
+                </div>
+              </sc-if>
+            </article>
+          </sc-if>
+        </sc-for>
+
+        <div style="display: grid; gap: 4px;">
+          <x-import component-from-global-scope="ChronoFlow.Button" variant="outline" size="lg">
+            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>
+            Add flight
+          </x-import>
+          <p style="margin: 0; font-size: 12px; line-height: 16px; color: var(--muted-foreground); text-align: center;">{{j.addHint}}</p>
+        </div>
+      </section>
+    </sc-for>
+
+    <!-- Sleep for this trip -->
+    <section aria-labelledby="sleep-title" style="display: flex; flex-direction: column; gap: 16px; padding: 20px; border-radius: 26px; border: 1px solid var(--border); background: var(--card); box-shadow: var(--shadow-soft);">
+      <h2 id="sleep-title" style="margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 20px; line-height: 28px; letter-spacing: -0.01em;">Your sleep for this trip</h2>
+      <button type="button" role="switch" aria-checked="{{saved.checked}}" aria-describedby="saved-desc" onClick="{{saved.toggle}}" style="display: flex; width: 100%; align-items: center; gap: 12px; min-height: 52px; padding: 0; border: 0; background: transparent; color: var(--foreground); font: inherit; text-align: left;">
+        <span style="flex: 1; font-size: 16px; line-height: 24px; font-weight: 500;">Use my saved sleep and chronotype</span>
+        <span aria-hidden="true" class="ios-switch" data-on="{{saved.checked}}"></span>
+      </button>
+      <sc-if value="{{useSaved}}" hint-placeholder-val="{{ true }}">
+        <p id="saved-desc" style="margin: 0; font-size: 14px; line-height: 20px; color: var(--muted-foreground); font-variant-numeric: tabular-nums;">Bed 23:00, up 07:00 · In between. <a href="SetBodyClock.dc.html" style="color: var(--foreground); text-decoration: underline; text-underline-offset: 0.2em;">Edit in Body clock</a></p>
+      </sc-if>
+      <sc-if value="{{customSleep}}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <p style="margin: 0; font-size: 14px; line-height: 20px; color: var(--muted-foreground);">Only for this trip. Your saved answers stay as they are.</p>
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;">
+            <button type="button" aria-label="Usual bedtime, 00:00. Change" style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-height: 84px; padding: 14px 16px; box-sizing: border-box; border-radius: 22px; border: 1px solid var(--border); background: var(--surface-2); color: var(--foreground); font: inherit; text-align: left;"><span style="font-size: 14px; line-height: 20px; color: var(--muted-foreground);">Usual bedtime</span><span style="font-size: 24px; line-height: 32px; font-weight: 600; font-variant-numeric: tabular-nums;">00:00</span></button>
+            <button type="button" aria-label="Usual wake time, 08:00. Change" style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-height: 84px; padding: 14px 16px; box-sizing: border-box; border-radius: 22px; border: 1px solid var(--border); background: var(--surface-2); color: var(--foreground); font: inherit; text-align: left;"><span style="font-size: 14px; line-height: 20px; color: var(--muted-foreground);">Wake time</span><span style="font-size: 24px; line-height: 32px; font-weight: 600; font-variant-numeric: tabular-nums;">08:00</span></button>
+          </div>
+          <p id="trip-chrono" style="margin: 0; font-size: 14px; line-height: 20px; font-weight: 500;">When do you naturally feel most awake?</p>
+          <div role="radiogroup" aria-labelledby="trip-chrono" style="display: flex; flex-wrap: wrap; gap: 8px;">
+            <sc-for list="{{chronos}}" as="o" hint-placeholder-count="4">
+              <button type="button" role="radio" aria-checked="{{o.checked}}" onClick="{{o.pick}}" style="{{o.style}}"><sc-if value="{{o.selected}}" hint-placeholder-val="{{ false }}"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--dawn-text);"><path d="M20 6 9 17l-5-5"></path></svg></sc-if>{{o.label}}</button>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+    </section>
+
+    <!-- Preparation -->
+    <section aria-labelledby="prep-title" style="display: flex; flex-direction: column; gap: 16px; padding: 20px; border-radius: 26px; border: 1px solid var(--border); background: var(--card); box-shadow: var(--shadow-soft);">
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <h2 id="prep-title" style="margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 20px; line-height: 28px; letter-spacing: -0.01em;">Preparation before departure</h2>
+          <x-import component-from-global-scope="ChronoFlow.Badge" variant="outline">Optional</x-import>
+        </div>
+        <p style="margin: 0; font-size: 14px; line-height: 20px; color: var(--muted-foreground);">Start shifting before you fly, within times that work for you.</p>
+      </div>
+      <div style="display: flex; align-items: center; gap: 4px;">
+        <span style="flex: 1; font-size: 16px; line-height: 24px; font-weight: 500;">Preparation days</span>
+        <x-import component-from-global-scope="ChronoFlow.Button" variant="outline" size="touch" aria-label="Fewer preparation days" on-click="{{prepLess}}"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path></svg></x-import>
+        <span aria-live="polite" style="width: 40px; text-align: center; font-size: 18px; line-height: 24px; font-weight: 600; font-variant-numeric: tabular-nums;">{{prepDays}}</span>
+        <x-import component-from-global-scope="ChronoFlow.Button" variant="outline" size="touch" aria-label="More preparation days" on-click="{{prepMore}}"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg></x-import>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;">
+        <button type="button" aria-label="Earliest bedtime you can manage, 21:30. Change" style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-height: 84px; padding: 14px 16px; box-sizing: border-box; border-radius: 22px; border: 1px solid var(--border); background: var(--surface-2); color: var(--foreground); font: inherit; text-align: left;"><span style="font-size: 14px; line-height: 20px; color: var(--muted-foreground);">Earliest bedtime</span><span style="font-size: 24px; line-height: 32px; font-weight: 600; font-variant-numeric: tabular-nums;">21:30</span></button>
+        <button type="button" aria-label="Latest wake-up you can manage, 08:30. Change" style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-height: 84px; padding: 14px 16px; box-sizing: border-box; border-radius: 22px; border: 1px solid var(--border); background: var(--surface-2); color: var(--foreground); font: inherit; text-align: left;"><span style="font-size: 14px; line-height: 20px; color: var(--muted-foreground);">Latest wake-up</span><span style="font-size: 24px; line-height: 32px; font-weight: 600; font-variant-numeric: tabular-nums;">08:30</span></button>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <p id="busy-before" style="margin: 0; font-size: 16px; line-height: 24px; font-weight: 500;">Busy times before departure</p>
+        <div role="radiogroup" aria-labelledby="busy-before" style="display: flex; flex-wrap: wrap; gap: 8px;">
+          <sc-for list="{{busyOpts}}" as="o" hint-placeholder-count="2">
+            <button type="button" role="radio" aria-checked="{{o.checked}}" onClick="{{o.pick}}" style="{{o.style}}"><sc-if value="{{o.selected}}" hint-placeholder-val="{{ false }}"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--dawn-text);"><path d="M20 6 9 17l-5-5"></path></svg></sc-if>{{o.label}}</button>
+          </sc-for>
+        </div>
+        <sc-if value="{{someBusy}}" hint-placeholder-val="{{ true }}">
+          <ul style="margin: 0; padding: 0; list-style: none; border-radius: 22px; background: var(--surface-2); overflow: hidden;">
+            <li style="display: flex; align-items: center; gap: 8px; min-height: 56px; padding: 4px 4px 4px 14px; box-sizing: border-box;">
+              <span style="flex: 1; font-size: 16px; line-height: 24px; font-variant-numeric: tabular-nums;">Fri 9 Oct · 09:00–17:30</span>
+              <x-import component-from-global-scope="ChronoFlow.Button" variant="ghost" size="touch" aria-label="Remove busy time Friday 9 October"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></x-import>
+            </li>
+            <li style="display: flex; align-items: center; gap: 8px; min-height: 56px; padding: 4px 4px 4px 14px; box-sizing: border-box; border-top: 1px solid var(--border);">
+              <span style="flex: 1; font-size: 16px; line-height: 24px; font-variant-numeric: tabular-nums;">Sun 11 Oct · 19:00–23:00</span>
+              <x-import component-from-global-scope="ChronoFlow.Button" variant="ghost" size="touch" aria-label="Remove busy time Sunday 11 October"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></x-import>
+            </li>
+          </ul>
+          <div style="display: grid;"><x-import component-from-global-scope="ChronoFlow.Button" variant="ghost" size="lg"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>Add a busy time</x-import></div>
+        </sc-if>
+      </div>
+    </section>
+
+    <!-- Optional details -->
+    <section aria-labelledby="opt-title" style="display: flex; flex-direction: column; gap: 12px;">
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <h2 id="opt-title" style="margin: 0; font-family: var(--font-sans); font-size: 14px; line-height: 20px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted-foreground);">Optional details</h2>
+        <p style="margin: 0; font-size: 14px; line-height: 20px; color: var(--muted-foreground);">The more we know, the better your plan fits your days.</p>
+      </div>
+      <div style="border-radius: 26px; border: 1px solid var(--border); background: var(--card); overflow: hidden;">
+        <sc-for list="{{details}}" as="d" hint-placeholder-count="4">
+          <div style="{{d.wrapStyle}}">
+            <button type="button" aria-expanded="{{d.openStr}}" onClick="{{d.toggle}}" style="display: flex; width: 100%; align-items: center; gap: 12px; min-height: 64px; padding: 10px 16px; box-sizing: border-box; border: 0; background: transparent; color: var(--card-foreground); font: inherit; text-align: left;">
+              <span style="flex: 1; min-width: 0;"><span style="display: block; font-size: 16px; line-height: 24px; font-weight: 500;">{{d.title}}</span><span style="display: block; font-size: 14px; line-height: 20px; color: var(--muted-foreground); font-variant-numeric: tabular-nums;">{{d.summary}}</span></span>
+              <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="{{d.chevStyle}}"><path d="m6 9 6 6 6-6"></path></svg>
+            </button>
+            <sc-if value="{{d.isAirport}}" hint-placeholder-val="{{ false }}">
+              <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding: 0 16px 16px;">
+                <x-import component-from-global-scope="ChronoFlow.Field" id="leave-at" label="Leave for the airport" default-value="11:30"></x-import>
+                <x-import component-from-global-scope="ChronoFlow.Field" id="leave-min" label="Journey (minutes)" inputmode="numeric" default-value="45"></x-import>
+              </div>
+            </sc-if>
+            <sc-if value="{{d.isArrival}}" hint-placeholder-val="{{ false }}">
+              <div style="display: flex; flex-direction: column; gap: 12px; padding: 0 16px 16px;">
+                <x-import component-from-global-scope="ChronoFlow.Field" id="arr-min" label="Journey to your stay (minutes)" inputmode="numeric" default-value="75"></x-import>
+                <p id="arr-how" style="margin: 0; font-size: 14px; line-height: 20px; font-weight: 500;">How do you get there?</p>
+                <div role="radiogroup" aria-labelledby="arr-how" style="display: flex; flex-wrap: wrap; gap: 8px;">
+                  <sc-for list="{{arrivalHow}}" as="o" hint-placeholder-count="3">
+                    <button type="button" role="radio" aria-checked="{{o.checked}}" onClick="{{o.pick}}" style="{{o.style}}"><sc-if value="{{o.selected}}" hint-placeholder-val="{{ false }}"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--dawn-text);"><path d="M20 6 9 17l-5-5"></path></svg></sc-if>{{o.label}}</button>
+                  </sc-for>
+                </div>
+                <x-import component-from-global-scope="ChronoFlow.Field" id="room-from" label="Room available from" default-value="15:00" hint="Local time at your stay."></x-import>
+              </div>
+            </sc-if>
+            <sc-if value="{{d.isStay}}" hint-placeholder-val="{{ false }}">
+              <div style="display: flex; flex-direction: column; gap: 12px; padding: 0 16px 16px;">
+                <x-import component-from-global-scope="ChronoFlow.Field" id="nights" label="Nights at your destination" inputmode="numeric" default-value="8"></x-import>
+                <x-import component-from-global-scope="ChronoFlow.Field" id="busy-stay" label="Busy during your stay" default-value="Mon–Fri 09:00–18:00" hint="Meetings or plans the advice should work around."></x-import>
+              </div>
+            </sc-if>
+            <sc-if value="{{d.isEnd}}" hint-placeholder-val="{{ false }}">
+              <div style="display: flex; flex-direction: column; gap: 12px; padding: 0 16px 16px;">
+                <x-import component-from-global-scope="ChronoFlow.Field" id="checkout" label="Check-out" default-value="Wed 21 Oct, 11:00"></x-import>
+                <p id="end-extra" style="margin: 0; font-size: 14px; line-height: 20px; font-weight: 500;">Somewhere to rest before your flight?</p>
+                <div role="radiogroup" aria-labelledby="end-extra" style="display: flex; flex-wrap: wrap; gap: 8px;">
+                  <sc-for list="{{endOpts}}" as="o" hint-placeholder-count="3">
+                    <button type="button" role="radio" aria-checked="{{o.checked}}" onClick="{{o.pick}}" style="{{o.style}}"><sc-if value="{{o.selected}}" hint-placeholder-val="{{ false }}"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--dawn-text);"><path d="M20 6 9 17l-5-5"></path></svg></sc-if>{{o.label}}</button>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <div style="display: flex; flex-direction: column; gap: 8px; padding-top: 8px; border-top: 1px solid var(--border);">
+      <a href="TripReview.dc.html" class="inline-flex shrink-0 items-center justify-center gap-2 text-sm font-medium whitespace-nowrap transition-colors rounded-full bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-6" style="text-decoration: none;">Review your plan</a>
+      <p style="margin: 0; font-size: 12px; line-height: 16px; color: var(--muted-foreground); text-align: center;">Saved as a draft as you go.</p>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"$preview":{"width":375,"height":4200}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      open: { o1: true },
+      side: { o1: 'left', o2: 'right', r1: 'unsure', r2: 'unsure' },
+      flat: { o2: true },
+      useSaved: true, chrono: 'owl', prepDays: 3, busy: 'some',
+      details: { airport: true }, arrivalHow: 'passenger', endOpt: 'late'
+    };
+  }
+  renderVals() {
+    const s = this.state;
+    const pill = (on) =>
+      'display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 16px; box-sizing: border-box; border-radius: 9999px; font-family: var(--font-sans); font-size: 14px; line-height: 20px; background: var(--card); color: var(--foreground); ' +
+      (on ? 'border: 2px solid var(--dawn); font-weight: 600;' : 'border: 2px solid var(--border); font-weight: 500;');
+    const sw = (on) => ({
+      checked: on ? 'true' : 'false',
+      trackStyle: 'position: relative; flex-shrink: 0; width: 52px; height: 32px; border-radius: 9999px; background: ' + (on ? 'var(--primary)' : 'color-mix(in oklab, var(--muted-foreground) 40%, transparent)') + ';',
+      knobStyle: 'position: absolute; top: 3px; left: ' + (on ? '23px' : '3px') + '; width: 26px; height: 26px; border-radius: 9999px; background: ' + (on ? 'var(--primary-foreground)' : 'var(--card)') + '; box-shadow: var(--shadow-soft);'
+    });
+    const radio = (key, opts) => opts.map(([id, label]) => ({
+      id, label, selected: s[key] === id, checked: s[key] === id ? 'true' : 'false', style: pill(s[key] === id),
+      pick: () => this.setState({ [key]: id })
+    }));
+    const chev = (open) => 'flex-shrink: 0; color: var(--muted-foreground); transition: transform 150ms ease; transform: rotate(' + (open ? '180deg' : '0deg') + ');';
+    const sideNames = { left: 'Window left', right: 'Window right', unsure: 'Side not sure' };
+    const leg = (id, n, num, from, to, dep, depZone, arr, arrZone) => {
+      const open = !!s.open[id];
+      const side = s.side[id];
+      const flat = !!s.flat[id];
+      return {
+        isLeg: true, isConn: false, title: 'Flight ' + n, num, hasNum: !!num, canRemove: true, removeLabel: 'Remove flight ' + n,
+        from, to, dep, arr,
+        depLabel: 'Departs · ' + depZone + ' time', arrLabel: 'Arrives · ' + arrZone + ' time',
+        open, openStr: open ? 'true' : 'false', chevStyle: chev(open),
+        optSummary: (num ? num + ' · ' : '') + sideNames[side] + (flat ? ' · lie-flat' : ''),
+        toggle: () => this.setState({ open: { ...this.state.open, [id]: !open } }),
+        numId: 'num-' + id, sideId: 'side-' + id,
+        sides: [['left', 'Left'], ['right', 'Right'], ['unsure', 'Not sure']].map(([v, label]) => ({
+          label, selected: side === v, checked: side === v ? 'true' : 'false', style: pill(side === v),
+          pick: () => this.setState({ side: { ...this.state.side, [id]: v } })
+        })),
+        flat: { ...sw(flat), toggle: () => this.setState({ flat: { ...this.state.flat, [id]: !flat } }) }
+      };
+    };
+    const conn = (text) => ({ isLeg: false, isConn: true, text });
+    const detailDefs = [
+      { id: 'airport', title: 'Leaving for the airport', summary: 'Leave 11:30 · 45 min journey' },
+      { id: 'arrival', title: 'Arrival', summary: '75 min to your stay · as a passenger · room from 15:00' },
+      { id: 'stay', title: 'Nights at your destination', summary: '8 nights · busy on weekdays' },
+      { id: 'end', title: 'End of stay', summary: 'Check-out Wed 21 Oct, 11:00 · late check-out or a day room' }
+    ];
+    return {
+      theme: this.props.theme ?? 'light',
+      journeys: [
+        {
+          title: 'Outbound', isReturn: false, addHint: 'A new flight starts from Tokyo Narita (NRT).',
+          items: [
+            leg('o1', 1, 'EK 148', 'AMS · Amsterdam Schiphol', 'DXB · Dubai International', 'Mon 12 Oct · 14:40', 'Amsterdam', 'Mon 12 Oct · 23:25', 'Dubai'),
+            conn('Connecting in Dubai, 2 h 40'),
+            leg('o2', 2, 'EK 318', 'DXB · Dubai International', 'NRT · Tokyo Narita', 'Tue 13 Oct · 02:05', 'Dubai', 'Tue 13 Oct · 16:35', 'Tokyo')
+          ]
+        },
+        {
+          title: 'Return', isReturn: true, addHint: 'A new flight starts from Amsterdam Schiphol (AMS).',
+          items: [
+            leg('r1', 1, 'EK 319', 'NRT · Tokyo Narita', 'DXB · Dubai International', 'Wed 21 Oct · 22:30', 'Tokyo', 'Thu 22 Oct · 04:50', 'Dubai'),
+            conn('Connecting in Dubai, 3 h 10'),
+            leg('r2', 2, '', 'DXB · Dubai International', 'AMS · Amsterdam Schiphol', 'Thu 22 Oct · 08:00', 'Dubai', 'Thu 22 Oct · 13:05', 'Amsterdam')
+          ]
+        }
+      ],
+      saved: { ...sw(s.useSaved), toggle: () => this.setState({ useSaved: !this.state.useSaved }) },
+      useSaved: s.useSaved, customSleep: !s.useSaved,
+      chronos: radio('chrono', [['early', 'Early bird'], ['between', 'In between'], ['owl', 'Night owl'], ['unsure', 'Not sure']]),
+      prepDays: String(s.prepDays),
+      prepLess: () => this.setState({ prepDays: Math.max(0, this.state.prepDays - 1) }),
+      prepMore: () => this.setState({ prepDays: Math.min(7, this.state.prepDays + 1) }),
+      busyOpts: radio('busy', [['none', 'No busy hours'], ['some', 'Some busy hours']]),
+      someBusy: s.busy === 'some',
+      arrivalHow: radio('arrivalHow', [['passenger', 'As a passenger'], ['drive', 'Driving myself']]),
+      endOpts: radio('endOpt', [['none', 'Neither'], ['late', 'Late check-out or a day room']]),
+      details: detailDefs.map((d, i) => {
+        const open = !!s.details[d.id];
+        return {
+          ...d, openStr: open ? 'true' : 'false', chevStyle: chev(open),
+          isAirport: open && d.id === 'airport', isArrival: open && d.id === 'arrival',
+          isStay: open && d.id === 'stay', isEnd: open && d.id === 'end',
+          wrapStyle: i > 0 ? 'border-top: 1px solid var(--border);' : '',
+          toggle: () => this.setState({ details: { ...this.state.details, [d.id]: !open } })
+        };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Leave the trip editor</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="ds/chronoflow/components/bundle.css">
+<script src="ds/chronoflow/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+@font-face{font-family:'Figtree';src:url("/_blob/74876cc764ebb15bf4ae98bcdbf3140c") format("woff2");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:'Figtree';src:url("/_blob/741b1ce40b46479a73d934d0d5be9774") format("woff2");font-weight:500;font-style:normal;font-display:swap}
+@font-face{font-family:'Figtree';src:url("/_blob/079d83fda74d66d1f31e35072f71201d") format("woff2");font-weight:600;font-style:normal;font-display:swap}
+@font-face{font-family:'Figtree';src:url("/_blob/991830890debdac04981f1a27656ed5c") format("woff2");font-weight:700;font-style:normal;font-display:swap}
+@font-face{font-family:'Fraunces';src:url("/_blob/fc815083784d00806d267d81858d2414") format("woff2");font-weight:400 500;font-style:normal;font-display:swap}
+body{margin:0}
+</style>
+</helmet>
+<div data-theme="{{theme}}" style="position: relative; width: 375px; height: 812px; overflow: hidden; background: var(--background); color: var(--foreground); font-family: var(--font-sans);">
+  <div aria-hidden="true" style="position: absolute; inset: 0; overflow: hidden;">
+    <dc-import name="TripEditor" theme="{{theme}}" hint-size="375px,812px"></dc-import>
+  </div>
+  <a href="TripEditor.dc.html" aria-label="Close" style="position: absolute; inset: 0; background: rgba(0, 0, 0, 0.2);"></a>
+  <div style="position: absolute; inset: 0; display: grid; place-items: center; padding: 0 24px;">
+    <section role="alertdialog" aria-modal="true" aria-labelledby="dd-title" class="ios ios-glass ios-alert" style="background: color-mix(in oklab, var(--card) 82%, transparent);">
+      <h2 id="dd-title">{{c.title}}</h2>
+      <p>{{c.body}}</p>
+      <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 14px;">
+        <a href="{{c.keepHref}}" class="ios-alert-btn" data-role="default">{{c.keep}}</a>
+        <a href="{{c.discardHref}}" class="ios-alert-btn" data-role="destructive">{{c.discard}}</a>
+        <a href="TripEditor.dc.html" class="ios-alert-btn">Keep editing</a>
+      </div>
+    </section>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"mode":{"editor":"enum","options":["new","edit"],"default":"new"},"$preview":{"width":375,"height":812}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const c = (this.props.mode ?? 'new') === 'edit'
+      ? { title: 'Discard your changes?', body: 'Amsterdam → Tokyo keeps its current flights and plan. Your changes are only on this phone and will be removed.', keep: 'Save changes', keepHref: 'TripReviewUpdate.dc.html', discard: 'Discard changes', discardHref: 'Plan.dc.html' }
+      : { title: 'Keep this draft?', body: 'Your flights and answers are saved as a draft on this phone. Come back to it from My trips, or throw it away.', keep: 'Keep draft and close', keepHref: 'Trips.dc.html', discard: 'Discard draft', discardHref: 'Trips.dc.html' };
+    return { theme: this.props.theme ?? 'light', c };
+  }
+}
+</script>
+</body>
+</html>

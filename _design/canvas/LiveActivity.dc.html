@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Live Activity (iOS)</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="ds/chronoflow/components/bundle.css">
+<script src="ds/chronoflow/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+@font-face{font-family:'Figtree';src:url("/_blob/74876cc764ebb15bf4ae98bcdbf3140c") format("woff2");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:'Figtree';src:url("/_blob/741b1ce40b46479a73d934d0d5be9774") format("woff2");font-weight:500;font-style:normal;font-display:swap}
+@font-face{font-family:'Figtree';src:url("/_blob/079d83fda74d66d1f31e35072f71201d") format("woff2");font-weight:600;font-style:normal;font-display:swap}
+@font-face{font-family:'Figtree';src:url("/_blob/991830890debdac04981f1a27656ed5c") format("woff2");font-weight:700;font-style:normal;font-display:swap}
+@font-face{font-family:'Fraunces';src:url("/_blob/fc815083784d00806d267d81858d2414") format("woff2");font-weight:400 500;font-style:normal;font-display:swap}
+body{margin:0}
+</style>
+</helmet>
+<div data-theme="{{theme}}" style="width: 390px; min-height: 1900px; box-sizing: border-box; padding: 28px 16px 40px; background: var(--background); color: var(--foreground); font-family: var(--font-sans); display: flex; flex-direction: column; gap: 28px;">
+
+  <header style="display: flex; flex-direction: column; gap: 6px;">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <img src="/_blob/c59f1dcbf603a4fea627677b2761c5eb" alt="" width="28" height="28" style="width: 28px; height: 28px;">
+      <span style="font-size: 14px; line-height: 20px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted-foreground);">iOS · Live Activity</span>
+    </div>
+    <h1 style="margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 30px; line-height: 36px; letter-spacing: -0.01em;">The step you're on, at a glance</h1>
+    <p style="margin: 0; font-size: 15px; line-height: 22px; color: var(--muted-foreground);">Shows the current step, the time left and what comes next. Starts with the first step of the plan's day and ends after the last one. Tapping it opens Today.</p>
+  </header>
+
+  <!-- LOCK SCREEN -->
+  <section style="display: flex; flex-direction: column; gap: 12px;">
+    <h2 style="margin: 0; font-size: 14px; line-height: 20px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted-foreground);">Lock screen</h2>
+    <sc-for list="{{lock}}" as="w" hint-placeholder-count="2">
+      <div data-theme="{{w.theme}}" style="{{w.wall}}">
+        <div style="{{w.st0}}">
+          <div style="font-size: 15px; line-height: 20px; font-weight: 600;">Tuesday 13 October</div>
+          <div style="font-size: 76px; line-height: 80px; font-weight: 600; letter-spacing: -0.02em;">09:45</div>
+        </div>
+        <div style="{{w.banner}}">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <img src="/_blob/c59f1dcbf603a4fea627677b2761c5eb" alt="" width="20" height="20" style="width: 20px; height: 20px; border-radius: 5px;">
+            <span style="{{w.st1}}">ChronoFlow · Amsterdam → Tokyo</span>
+            <span style="{{w.st2}}">Day 2</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <x-import component-from-global-scope="ChronoFlow.CategorySwatch" category="avoid_light" size="md"></x-import>
+            <div style="flex: 1; min-width: 0;">
+              <div style="{{w.st3}}">Avoid bright light</div>
+              <div style="{{w.st4}}">Sunglasses on, dim warm light</div>
+            </div>
+            <div style="text-align: right; font-variant-numeric: tabular-nums;">
+              <div style="{{w.st5}}">45</div>
+              <div style="{{w.st6}}">min left</div>
+            </div>
+          </div>
+          <div role="progressbar" aria-label="Step progress" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100" style="{{w.st7}}">
+            <div style="width: 40%; height: 100%; border-radius: 9999px; background: var(--dawn);"></div>
+          </div>
+          <div style="{{w.st8}}">
+            <span style="{{w.st9}}">Next</span>
+            <span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Train to the hotel</span>
+            <span style="{{w.st9}}">10:15</span>
+          </div>
+        </div>
+        <span style="{{w.st10}}">{{w.label}}</span>
+      </div>
+    </sc-for>
+  </section>
+
+  <!-- DYNAMIC ISLAND -->
+  <section style="display: flex; flex-direction: column; gap: 12px;">
+    <h2 style="margin: 0; font-size: 14px; line-height: 20px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted-foreground);">Dynamic Island</h2>
+    <p style="margin: 0; font-size: 14px; line-height: 20px; color: var(--muted-foreground);">The island is always black. It is shown here over a light and a dark app so you can check contrast in both.</p>
+
+    <sc-for list="{{islands}}" as="s" hint-placeholder-count="2">
+      <div style="{{s.ground}}">
+        <span style="{{s.st11}}">{{s.label}}</span>
+
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
+          <div data-theme="dark" style="display: flex; align-items: center; justify-content: space-between; width: 236px; height: 37px; padding: 0 12px 0 8px; box-sizing: border-box; border-radius: 9999px; background: #000; color: #fff;">
+            <x-import component-from-global-scope="ChronoFlow.CategorySwatch" category="avoid_light" size="sm"></x-import>
+            <span style="font-size: 15px; line-height: 20px; font-weight: 600; color: var(--dawn); font-variant-numeric: tabular-nums;">45m</span>
+          </div>
+          <span style="{{s.st12}}">Compact</span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="width: 160px; height: 37px; border-radius: 9999px; background: #000;"></div>
+            <div data-theme="dark" style="display: grid; place-items: center; width: 37px; height: 37px; border-radius: 9999px; background: #000;">
+              <x-import component-from-global-scope="ChronoFlow.CategorySwatch" category="avoid_light" size="sm"></x-import>
+            </div>
+          </div>
+          <span style="{{s.st12}}">Minimal, when another app's activity is also running</span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%;">
+          <div data-theme="dark" style="width: 100%; box-sizing: border-box; padding: 16px 20px 18px; border-radius: 44px; background: #000; color: #fff; display: flex; flex-direction: column; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <x-import component-from-global-scope="ChronoFlow.CategorySwatch" category="avoid_light" size="md"></x-import>
+              <div style="flex: 1; min-width: 0;">
+                <div style="font-size: 17px; line-height: 22px; font-weight: 600;">Avoid bright light</div>
+                <div style="font-size: 13px; line-height: 18px; color: rgba(235,235,245,0.68);">Until 10:30 · Tokyo time</div>
+              </div>
+              <div style="text-align: right; font-variant-numeric: tabular-nums;">
+                <div style="font-size: 24px; line-height: 28px; font-weight: 600; color: var(--dawn);">45</div>
+                <div style="font-size: 12px; line-height: 16px; color: rgba(235,235,245,0.68);">min left</div>
+              </div>
+            </div>
+            <div aria-hidden="true" style="height: 6px; border-radius: 9999px; background: rgba(255,255,255,0.18); overflow: hidden;">
+              <div style="width: 40%; height: 100%; border-radius: 9999px; background: var(--dawn);"></div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px; font-size: 14px; line-height: 20px; color: rgba(235,235,245,0.68); font-variant-numeric: tabular-nums;">
+              <span style="font-weight: 600; color: #fff;">Next</span>
+              <span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Train to the hotel</span>
+              <span style="font-weight: 600; color: #fff;">10:15</span>
+            </div>
+          </div>
+          <span style="{{s.st12}}">Expanded, on long press</span>
+        </div>
+      </div>
+    </sc-for>
+  </section>
+
+  <!-- RULES -->
+  <section style="display: flex; flex-direction: column; gap: 12px;">
+    <h2 style="margin: 0; font-size: 14px; line-height: 20px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted-foreground);">How it behaves</h2>
+    <div style="display: flex; flex-direction: column; border-radius: 22px; background: var(--surface-2); overflow: hidden;">
+      <sc-for list="{{rules}}" as="r" hint-placeholder-count="4">
+        <div style="{{r.st13}}">
+          <span aria-hidden="true" style="display: grid; place-items: center; width: 32px; height: 32px; flex-shrink: 0; border-radius: 9999px; background: var(--card); color: var(--foreground); font-size: 15px; font-weight: 600;">{{r.n}}</span>
+          <span style="flex: 1;"><span style="display: block; font-size: 16px; line-height: 22px; font-weight: 600;">{{r.title}}</span><span style="display: block; font-size: 14px; line-height: 20px; color: var(--muted-foreground);">{{r.body}}</span></span>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"$preview":{"width":390,"height":1900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const wallBase = 'display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 28px 12px 16px; border-radius: 32px; overflow: hidden;';
+    const bannerBase = 'width: 100%; box-sizing: border-box; display: flex; flex-direction: column; gap: 12px; padding: 14px 16px; border-radius: 24px; -webkit-backdrop-filter: blur(24px) saturate(1.8); backdrop-filter: blur(24px) saturate(1.8);';
+    const ground = (bg) => 'display: flex; flex-direction: column; align-items: center; gap: 18px; padding: 16px 12px 20px; border-radius: 28px; background: ' + bg + ';';
+    const deco = (list, f) => list.map(o => Object.assign({}, o, f(o)));
+    const v = {
+      theme: this.props.theme ?? 'light',
+      lock: [
+        { theme: 'light', label: 'Light lock screen', wall: wallBase + ' background: oklch(0.86 0.03 250);', clockInk: 'oklch(0.22 0.03 265)',
+          banner: bannerBase + ' background: rgba(255,255,255,0.72);', ink: 'oklch(0.2 0.03 265)', sub: 'oklch(0.42 0.03 265)', track: 'oklch(0.2 0.03 265 / 0.12)', line: 'oklch(0.2 0.03 265 / 0.12)' },
+        { theme: 'dark', label: 'Dark lock screen', wall: wallBase + ' background: oklch(0.24 0.04 268);', clockInk: 'oklch(0.97 0.01 265)',
+          banner: bannerBase + ' background: rgba(28,28,30,0.72);', ink: '#fff', sub: 'rgba(235,235,245,0.68)', track: 'rgba(255,255,255,0.18)', line: 'rgba(255,255,255,0.14)' }
+      ],
+      islands: [
+        { label: 'Over a light app', ground: ground('oklch(0.97 0.006 265)'), labelInk: 'oklch(0.42 0.03 265)' },
+        { label: 'Over a dark app', ground: ground('oklch(0.2 0.03 268)'), labelInk: 'rgba(235,235,245,0.7)' }
+      ],
+      rules: [
+        { n: '1', border: '0', title: 'Works offline', body: 'Built from the plan stored on the phone. It moves to the next step on schedule with no connection.' },
+        { n: '2', border: '1px solid var(--border)', title: 'Shows one step', body: 'The most important current step. If two overlap, the higher priority one wins; ties go to the one that ends first.' },
+        { n: '3', border: '1px solid var(--border)', title: 'Times in the local zone', body: 'After a time zone change, times switch to the new zone, as on the trip page.' },
+        { n: '4', border: '1px solid var(--border)', title: 'Turn it off in Preferences', body: 'Under Reminders. Notifications and the Live Activity are separate switches.' }
+      ]
+    };
+    v.lock = deco(v.lock, o => ({ st0: 'text-align: center; color: ' + o.clockInk + '; font-variant-numeric: tabular-nums;', st1: 'flex: 1; font-size: 13px; line-height: 18px; font-weight: 600; color: ' + o.sub + ';', st2: 'font-size: 13px; line-height: 18px; color: ' + o.sub + ';', st3: 'font-size: 17px; line-height: 22px; font-weight: 600; color: ' + o.ink + ';', st4: 'font-size: 14px; line-height: 20px; color: ' + o.sub + ';', st5: 'font-size: 24px; line-height: 28px; font-weight: 600; color: ' + o.ink + ';', st6: 'font-size: 12px; line-height: 16px; color: ' + o.sub + ';', st7: 'height: 6px; border-radius: 9999px; background: ' + o.track + '; overflow: hidden;', st8: 'display: flex; align-items: center; gap: 8px; padding-top: 10px; border-top: 1px solid ' + o.line + '; font-size: 14px; line-height: 20px; color: ' + o.sub + '; font-variant-numeric: tabular-nums;', st9: 'font-weight: 600; color: ' + o.ink + ';', st10: 'font-size: 12px; line-height: 16px; color: ' + o.clockInk + '; opacity: 0.8;' }));
+    v.islands = deco(v.islands, o => ({ st11: 'font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: ' + o.labelInk + ';', st12: 'font-size: 12px; line-height: 16px; color: ' + o.labelInk + ';' }));
+    v.rules = deco(v.rules, o => ({ st13: 'display: flex; gap: 14px; padding: 14px 16px; border-top: ' + o.border + ';' }));
+    return v;
+  }
+}
+</script>
+</body>
+</html>

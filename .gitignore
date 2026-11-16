@@ -1,0 +1,14 @@
+build/
+.gradle/
+.kotlin/
+local.properties
+.idea/
+*.iml
+captures/
+*.hprof
+.DS_Store
+*.jks
+*.keystore
+!app/debug.keystore
+.claude/*.lock
+.claude/settings.local.json

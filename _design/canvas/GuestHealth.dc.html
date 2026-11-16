@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Step 3 of 4: health and age</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="ds/chronoflow/components/bundle.css">
+<script src="ds/chronoflow/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+@font-face{font-family:'Figtree';src:url("/_blob/74876cc764ebb15bf4ae98bcdbf3140c") format("woff2");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:'Figtree';src:url("/_blob/741b1ce40b46479a73d934d0d5be9774") format("woff2");font-weight:500;font-style:normal;font-display:swap}
+@font-face{font-family:'Figtree';src:url("/_blob/079d83fda74d66d1f31e35072f71201d") format("woff2");font-weight:600;font-style:normal;font-display:swap}
+@font-face{font-family:'Figtree';src:url("/_blob/991830890debdac04981f1a27656ed5c") format("woff2");font-weight:700;font-style:normal;font-display:swap}
+@font-face{font-family:'Fraunces';src:url("/_blob/fc815083784d00806d267d81858d2414") format("woff2");font-weight:400 500;font-style:normal;font-display:swap}
+body{margin:0}
+</style>
+</helmet>
+<div data-theme="{{theme}}" style="position: relative; width: 375px; height: 812px; overflow: hidden; background: var(--background); color: var(--foreground); font-family: var(--font-sans);">
+  <div style="position: absolute; inset: 0 0 96px 0; overflow-y: auto;">
+    <header style="position: sticky; top: 0; z-index: 10; display: flex; flex-direction: column; gap: 8px; padding: 6px 8px 12px; border-bottom: 1px solid var(--border); background: color-mix(in oklab, var(--background) 72%, transparent); -webkit-backdrop-filter: blur(20px) saturate(1.8); backdrop-filter: blur(20px) saturate(1.8);">
+      <div style="display: flex; align-items: center; justify-content: space-between; height: 44px;">
+        <a href="GuestSleep.dc.html" style="display: inline-flex; align-items: center; gap: 2px; height: 44px; padding: 0 12px 0 4px; border-radius: 9999px; color: var(--foreground); text-decoration: none; font-size: 16px; line-height: 24px;"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg>Back</a>
+        <a href="GuestFlight.dc.html" style="display: inline-flex; align-items: center; height: 44px; padding: 0 12px; border-radius: 9999px; color: var(--foreground); text-decoration: none; font-size: 14px; line-height: 20px; font-weight: 500;">Start again</a>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px; padding: 0 8px;">
+        <p style="margin: 0; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dawn-text);">Step 3 of 4 · Health &amp; age</p>
+        <div role="progressbar" aria-label="Step 3 of 4" aria-valuemin="0" aria-valuemax="4" aria-valuenow="3" style="height: 6px; border-radius: 9999px; background: var(--muted); overflow: hidden;"><div style="width: 75%; height: 100%; border-radius: 9999px; background: var(--dawn);"></div></div>
+      </div>
+    </header>
+
+    <main style="padding: 24px 16px 24px; display: flex; flex-direction: column; gap: 20px;">
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <h1 style="margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 30px; line-height: 36px; letter-spacing: -0.01em;">Health &amp; age</h1>
+        <p style="margin: 0; font-size: 16px; line-height: 24px; color: var(--muted-foreground);">Bright light and caffeine timing aren't safe for everyone, so we check first.</p>
+      </div>
+      <sc-for list="{{qs}}" as="q" hint-placeholder-count="7">
+        <div style="{{q.boxStyle}}">
+          <p id="{{q.labelId}}" style="margin: 0; font-size: 16px; line-height: 24px; font-weight: 500;">{{q.label}}</p>
+          <sc-if value="{{q.missing}}" hint-placeholder-val="{{ false }}"><span style="display: flex;"><x-import component-from-global-scope="ChronoFlow.Badge" variant="dawn">Needs an answer</x-import></span></sc-if>
+          <div role="radiogroup" aria-labelledby="{{q.labelId}}" style="display: flex; flex-wrap: wrap; gap: 8px;">
+            <sc-for list="{{q.options}}" as="o" hint-placeholder-count="2">
+              <button type="button" role="radio" aria-checked="{{o.checked}}" onClick="{{o.pick}}" style="{{o.style}}"><sc-if value="{{o.selected}}" hint-placeholder-val="{{ false }}"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--dawn-text);"><path d="M20 6 9 17l-5-5"></path></svg></sc-if>{{o.label}}</button>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </main>
+  </div>
+
+  <footer style="position: absolute; left: 0; right: 0; bottom: 0; display: grid; padding: 12px 16px 32px; border-top: 1px solid var(--border); background: color-mix(in oklab, var(--background) 72%, transparent); -webkit-backdrop-filter: blur(20px) saturate(1.8); backdrop-filter: blur(20px) saturate(1.8);">
+    <a href="GuestReview.dc.html" class="inline-flex shrink-0 items-center justify-center gap-2 text-sm font-medium whitespace-nowrap transition-colors rounded-full bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-6" style="text-decoration: none;">Next: review your plan</a>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"$preview":{"width":375,"height":812}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { a: { age: '18-64', caffeine: 'no', pregnant: 'no', bipolar: 'no', eyes: 'no', clots: null, shifts: 'no' } };
+  }
+  renderVals() {
+    const a = this.state.a;
+    const yesNo = [{ id: 'yes', label: 'Yes' }, { id: 'no', label: 'No' }];
+    const pill = (on) =>
+      'display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 16px; box-sizing: border-box; border-radius: 9999px; font-family: var(--font-sans); font-size: 14px; line-height: 20px; background: var(--card); color: var(--foreground); ' +
+      (on ? 'border: 2px solid var(--dawn); font-weight: 600;' : 'border: 2px solid var(--border); font-weight: 500;');
+    const q = (id, label, options) => {
+      const missing = a[id] == null;
+      return {
+        label, missing, labelId: 'g-' + id,
+        boxStyle: 'display: flex; flex-direction: column; gap: 8px; ' + (missing
+          ? 'padding: 12px; border-radius: 22px; border: 1px solid color-mix(in oklab, var(--dawn) 40%, transparent); background: color-mix(in oklab, var(--dawn) 10%, transparent);'
+          : 'padding: 0;'),
+        options: options.map((op) => ({
+          ...op, selected: a[id] === op.id, checked: a[id] === op.id ? 'true' : 'false', style: pill(a[id] === op.id),
+          pick: () => this.setState({ a: { ...this.state.a, [id]: op.id } })
+        }))
+      };
+    };
+    return {
+      theme: this.props.theme ?? 'light',
+      qs: [
+        q('age', 'Your age', [{ id: 'under18', label: 'Under 18' }, { id: '18-64', label: '18–64' }, { id: '65+', label: '65 or older' }]),
+        q('pregnant', 'Are you pregnant or breastfeeding?', yesNo),
+        q('bipolar', 'Do you have bipolar disorder?', yesNo),
+        q('eyes', 'Do you have an eye condition, or take medicine that makes you sensitive to light?', yesNo),
+        q('clots', 'Are you at higher risk of blood clots?', yesNo),
+        q('shifts', 'Do you work shifts or have an irregular sleep pattern?', yesNo),
+        q('caffeine', 'Have you been told to avoid caffeine?', yesNo)
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

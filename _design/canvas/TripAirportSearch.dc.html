@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Choose the arrival airport</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="ds/chronoflow/components/bundle.css">
+<script src="ds/chronoflow/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+@font-face{font-family:'Figtree';src:url("/_blob/74876cc764ebb15bf4ae98bcdbf3140c") format("woff2");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:'Figtree';src:url("/_blob/741b1ce40b46479a73d934d0d5be9774") format("woff2");font-weight:500;font-style:normal;font-display:swap}
+@font-face{font-family:'Figtree';src:url("/_blob/079d83fda74d66d1f31e35072f71201d") format("woff2");font-weight:600;font-style:normal;font-display:swap}
+@font-face{font-family:'Figtree';src:url("/_blob/991830890debdac04981f1a27656ed5c") format("woff2");font-weight:700;font-style:normal;font-display:swap}
+@font-face{font-family:'Fraunces';src:url("/_blob/fc815083784d00806d267d81858d2414") format("woff2");font-weight:400 500;font-style:normal;font-display:swap}
+body{margin:0}
+</style>
+</helmet>
+<div data-theme="{{theme}}" style="position: relative; width: 375px; height: 812px; overflow: hidden; background: var(--background); color: var(--foreground); font-family: var(--font-sans);">
+  <div style="position: absolute; inset: 0; overflow-y: auto;">
+    <header style="position: sticky; top: 0; z-index: 10; display: flex; flex-direction: column; gap: 12px; padding: 6px 16px 16px; border-bottom: 1px solid var(--border); background: color-mix(in oklab, var(--background) 72%, transparent); -webkit-backdrop-filter: blur(20px) saturate(1.8); backdrop-filter: blur(20px) saturate(1.8);">
+      <div style="display: grid; grid-template-columns: 80px minmax(0, 1fr) 80px; align-items: center; height: 44px;">
+        <a href="TripEditor.dc.html" style="display: inline-flex; align-items: center; height: 44px; color: var(--foreground); text-decoration: none; font-size: 16px; line-height: 24px;">Cancel</a>
+        <p style="margin: 0; text-align: center; font-size: 16px; line-height: 24px; font-weight: 600;">Flight 1 · To</p>
+        <span aria-hidden="true"></span>
+      </div>
+      <x-import component-from-global-scope="ChronoFlow.Field" id="airport-q" type="search" label="Search airports" default-value="Dub" autocomplete="off" hint="City, airport name or 3-letter code."></x-import>
+    </header>
+
+    <main style="padding: 16px 16px 40px; display: flex; flex-direction: column; gap: 8px;">
+      <p role="status" style="margin: 0; font-size: 14px; line-height: 20px; color: var(--muted-foreground);">5 airports</p>
+      <ul aria-label="Airports" style="margin: 0; padding: 0; list-style: none; border-radius: 22px; border: 1px solid var(--border); background: var(--card); overflow: hidden;">
+        <sc-for list="{{airports}}" as="a" hint-placeholder-count="5">
+          <li style="{{a.liStyle}}">
+            <a href="TripEditor.dc.html" style="display: flex; align-items: center; gap: 14px; min-height: 64px; padding: 10px 16px; box-sizing: border-box; color: var(--card-foreground); text-decoration: none;">
+              <span style="width: 48px; flex-shrink: 0; font-family: var(--font-display); font-size: 20px; line-height: 28px; letter-spacing: -0.01em;">{{a.code}}</span>
+              <span style="flex: 1; min-width: 0;"><span style="display: block; font-size: 16px; line-height: 24px; font-weight: 500;">{{a.name}}</span><span style="display: block; font-size: 14px; line-height: 20px; color: var(--muted-foreground);">{{a.place}}</span></span>
+            </a>
+          </li>
+        </sc-for>
+      </ul>
+    </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"$preview":{"width":375,"height":812}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const list = [
+      ['DXB', 'Dubai International', 'Dubai, United Arab Emirates'],
+      ['DWC', 'Al Maktoum International', 'Dubai, United Arab Emirates'],
+      ['DUB', 'Dublin', 'Dublin, Ireland'],
+      ['DBV', 'Dubrovnik', 'Dubrovnik, Croatia'],
+      ['DBO', 'Dubbo', 'Dubbo, Australia']
+    ];
+    return {
+      theme: this.props.theme ?? 'light',
+      airports: list.map(([code, name, place], i) => ({ code, name, place, liStyle: i > 0 ? 'border-top: 1px solid var(--border);' : '' }))
+    };
+  }
+}
+</script>
+</body>
+</html>

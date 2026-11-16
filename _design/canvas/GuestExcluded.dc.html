@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Guest, no plan available</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="ds/chronoflow/components/bundle.css">
+<script src="ds/chronoflow/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+@font-face{font-family:'Figtree';src:url("/_blob/74876cc764ebb15bf4ae98bcdbf3140c") format("woff2");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:'Figtree';src:url("/_blob/741b1ce40b46479a73d934d0d5be9774") format("woff2");font-weight:500;font-style:normal;font-display:swap}
+@font-face{font-family:'Figtree';src:url("/_blob/079d83fda74d66d1f31e35072f71201d") format("woff2");font-weight:600;font-style:normal;font-display:swap}
+@font-face{font-family:'Figtree';src:url("/_blob/991830890debdac04981f1a27656ed5c") format("woff2");font-weight:700;font-style:normal;font-display:swap}
+@font-face{font-family:'Fraunces';src:url("/_blob/fc815083784d00806d267d81858d2414") format("woff2");font-weight:400 500;font-style:normal;font-display:swap}
+body{margin:0}
+</style>
+</helmet>
+<div data-theme="{{theme}}" style="position: relative; width: 375px; height: 812px; overflow: hidden; background: var(--background); color: var(--foreground); font-family: var(--font-sans);">
+  <div style="position: absolute; inset: 0 0 96px 0; overflow-y: auto;">
+    <header style="position: sticky; top: 0; z-index: 10; display: flex; flex-direction: column; gap: 8px; padding: 6px 8px 12px; border-bottom: 1px solid var(--border); background: color-mix(in oklab, var(--background) 72%, transparent); -webkit-backdrop-filter: blur(20px) saturate(1.8); backdrop-filter: blur(20px) saturate(1.8);">
+      <div style="display: flex; align-items: center; justify-content: space-between; height: 44px;">
+        <a href="GuestSleep.dc.html" style="display: inline-flex; align-items: center; gap: 2px; height: 44px; padding: 0 12px 0 4px; border-radius: 9999px; color: var(--foreground); text-decoration: none; font-size: 16px; line-height: 24px;"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg>Back</a>
+        <a href="GuestFlight.dc.html" style="display: inline-flex; align-items: center; height: 44px; padding: 0 12px; border-radius: 9999px; color: var(--foreground); text-decoration: none; font-size: 14px; line-height: 20px; font-weight: 500;">Start again</a>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px; padding: 0 8px;">
+        <p style="margin: 0; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dawn-text);">Step 3 of 4 · Health &amp; age</p>
+        <div role="progressbar" aria-label="Step 3 of 4" aria-valuemin="0" aria-valuemax="4" aria-valuenow="3" style="height: 6px; border-radius: 9999px; background: var(--muted); overflow: hidden;"><div style="width: 75%; height: 100%; border-radius: 9999px; background: var(--dawn);"></div></div>
+      </div>
+    </header>
+
+    <main style="padding: 24px 16px 24px; display: flex; flex-direction: column; gap: 20px;">
+      <div style="display: flex; flex-direction: column; gap: 10px; padding: 20px; border-radius: 26px; border: 1px solid color-mix(in oklab, var(--dawn) 40%, transparent); background: color-mix(in oklab, var(--dawn) 10%, var(--card));">
+        <span aria-hidden="true" style="display: grid; place-items: center; width: 48px; height: 48px; border-radius: 9999px; background: var(--card); color: var(--dawn-text);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg></span>
+        <h1 style="margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 28px; line-height: 34px; letter-spacing: -0.01em;">No plan available</h1>
+        <p style="margin: 0; font-size: 16px; line-height: 24px;">Based on your health answers, light and caffeine timing may not be right for you, so we can't build a plan. Your doctor can tell you what's safe when you travel.</p>
+      </div>
+      <p style="margin: 0; font-size: 14px; line-height: 20px; color: var(--muted-foreground);">Your answers stay on this phone and aren't sent to us. If you answered by mistake, change your answers.</p>
+    </main>
+  </div>
+
+  <footer style="position: absolute; left: 0; right: 0; bottom: 0; display: grid; gap: 4px; padding: 12px 16px 32px; border-top: 1px solid var(--border); background: color-mix(in oklab, var(--background) 72%, transparent); -webkit-backdrop-filter: blur(20px) saturate(1.8); backdrop-filter: blur(20px) saturate(1.8);">
+    <a href="GuestHealth.dc.html" class="inline-flex shrink-0 items-center justify-center gap-2 text-sm font-medium whitespace-nowrap transition-colors rounded-full border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-6" style="height: 48px; color: var(--foreground); text-decoration: none;">Change my answers</a>
+    <a href="Main.dc.html" class="inline-flex shrink-0 items-center justify-center gap-2 text-sm font-medium whitespace-nowrap transition-colors rounded-full hover:bg-accent hover:text-accent-foreground h-10 px-6" style="height: 44px; color: var(--foreground); text-decoration: none;">Close</a>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"$preview":{"width":375,"height":812}}'>
+class Component extends DCLogic {
+  renderVals() { return { theme: this.props.theme ?? 'light' }; }
+}
+</script>
+</body>
+</html>
