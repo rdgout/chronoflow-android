@@ -947,7 +947,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 - [x] **Fixtures.**
   - Copy iOS `Tests/DataAccessTests/Fixtures/{account,auth,errors,plans,trips,wizard}/*.json`, including S1–S6 and S6-RETURN-10N, into `core/testing/src/main/resources/fixtures/`.
   - `fixtures.sha256` records the pin, source path and hash of each; `FixtureManifestTest` checks them.
-- [ ] **Decode and encode tests** (`core/model/src/test`):
+- [x] **Decode and encode tests** (`core/model/src/test`):
   - every fixture decodes;
   - every request DTO encodes to exactly its fixture's key set (`review-request.json`, `save-request.json`, `guest-review-request.json`);
   - unknown enum values become `Unknown(raw)`;
