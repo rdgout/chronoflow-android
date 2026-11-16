@@ -19,3 +19,11 @@ Safe zone: launchers show the middle 72 dp of the 108 dp canvas and mask it to t
 ## Notification icon
 
 `app/src/main/res/drawable/ic_stat_moon.xml` is a 24 dp vector on a 24 viewport with the moon outline path verbatim from `_design/canvas/icon/layers/moon-white.svg`: stroke `#FFFFFFFF`, width 2, round caps and joins, no fill. Android uses only its alpha channel for the status bar. Lint `IconColors` and `NotificationIconTest` guard it. It stays unused until Phase 12b.
+
+## Launch moon
+
+`app/src/main/res/drawable-xxxhdpi/launch_moon.png` (light) and `drawable-night-xxxhdpi/launch_moon.png` (night) are 1152 x 1152 px, which is 288 dp at xxxhdpi. They hold the moon glyph (104 dp, offset 92) with the glow baked in (Gaussian blur sigma 9, alpha 0.45) and fit inside the 192 dp launch circle. Phase 3a shows them on the system splash and the launch overlay.
+
+Command: `make assets` (`python3 -I tools/assets/build_assets.py icons moon`). It reads `Assets/moon/launch-moon-{light,dark}.svg` from iOS at the pin with `git show`, checks their SHA-256, and runs `/opt/homebrew/bin/rsvg-convert -w 1152 -h 1152`. `tools/assets/assets.sha256` records the pin, the rsvg-convert version, the two iOS inputs, the two substituted SVGs and the two PNGs. `make assets-check` verifies those hashes and never rasterizes or reads the iOS repo. Raster output is not part of `make generate`.
+
+Substitution (OQ-0b-3): the iOS SVGs paint the stroke as `color(display-p3 r g b)`, which rsvg-convert 2.63.4 does not understand, so it renders a fully transparent PNG. The script checks that each file has exactly one such stroke and that its channels equal the `dawn` P3 cell of `tools/tokengen/TokenGenReport.md`, then replaces only that attribute with the sRGB hex of the same row (`#E78A45` light, `#F2AD73` night) and writes `tools/assets/moon/launch-moon-{light,dark}.srgb.svg`. The app is sRGB only (OQ-A7, iOS D10), so the sRGB value is the right one. `LaunchMoonAssetTest` guards against a blank render.

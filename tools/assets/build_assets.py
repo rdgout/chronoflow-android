@@ -1,11 +1,17 @@
 """Builds the launcher icon, the notification icon and the launch moon from the design files.
 
 `icons [--out DIR]` writes the vector drawables and the adaptive-icon XML deterministically.
-`check` regenerates them into build/assets-check and compares the bytes with the committed files.
+`moon` rasterizes the launch moon from the iOS SVGs at the pin (needs rsvg-convert and the iOS repo).
+`check` regenerates the icons into build/assets-check, compares the bytes with the committed files and
+verifies the hash manifest of the moon; it never rasterizes and never reads the iOS repo.
 """
 
+import hashlib
+import importlib.util
 import json
+import os
 import re
+import subprocess
 import sys
 from decimal import Decimal
 from pathlib import Path
@@ -166,6 +172,91 @@ def run_icons(root, out_dir):
     write_outputs(generate_icons(root), out_dir)
 
 
+MOON_SOURCES = {
+    "light": ("Assets/moon/launch-moon-light.svg", "5c6f92500ea5f03edb16a74a9f41eb148f34668e1ef2ef5550316dfbce6d0066"),
+    "dark": ("Assets/moon/launch-moon-dark.svg", "71909bcfffbf4283bc35604acad4cd7b431ec67e900687183ec73606aa033134"),
+}
+MOON_SIZE = 1152
+MANIFEST = "tools/assets/assets.sha256"
+REPORT = "tools/tokengen/TokenGenReport.md"
+
+
+def moon_outputs():
+    return {
+        theme: (
+            f"tools/assets/moon/launch-moon-{theme}.srgb.svg",
+            "app/src/main/res/drawable-xxxhdpi/launch_moon.png" if theme == "light" else "app/src/main/res/drawable-night-xxxhdpi/launch_moon.png",
+        )
+        for theme in MOON_SOURCES
+    }
+
+
+def dawn_cells(report):
+    """The `dawn` row of the token report: {theme: (sRGB hex, P3 channels as written)}."""
+    for line in report.splitlines():
+        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+        if cells and cells[0] == "dawn" and len(cells) == 5:
+            return {"light": (cells[1], cells[2]), "dark": (cells[3], cells[4])}
+    raise AssetError("the token report has no dawn row")
+
+
+def substitute_stroke(svg, p3, srgb_hex):
+    """Replaces the one display-p3 stroke with its sRGB hex, after checking it is the dawn color."""
+    found = re.findall(r'stroke="color\(display-p3 ([\d. ]+)\)"', svg)
+    if len(found) != 1:
+        raise AssetError(f"expected exactly one display-p3 stroke, found {len(found)}")
+    if found[0] != p3:
+        raise AssetError(f"stroke P3 {found[0]} differs from the dawn P3 {p3} of the token report")
+    return svg.replace(f'stroke="color(display-p3 {found[0]})"', f'stroke="{srgb_hex}"')
+
+
+def sha256(data):
+    return hashlib.sha256(data).hexdigest()
+
+
+def read_ios(repo, pin, path):
+    result = subprocess.run(["git", "-C", str(repo), "show", f"{pin}:{path}"], capture_output=True)
+    if result.returncode != 0:
+        raise AssetError(f"cannot read {path} at {pin} in {repo}: {result.stderr.decode().strip()}")
+    return result.stdout
+
+
+def run_moon(root):
+    repo = Path(os.environ.get("CF_IOS_REPO", "/Users/rickgout/Sites/chronoflow-ios"))
+    rsvg = os.environ.get("CF_RSVG", "/opt/homebrew/bin/rsvg-convert")
+    pin = (root / "tools/ios-pin.txt").read_text().strip()
+    cells = dawn_cells((root / REPORT).read_text())
+    version = subprocess.run([rsvg, "--version"], capture_output=True, text=True, check=True).stdout.splitlines()[0].strip()
+    lines = []
+    for theme, (ios_path, expected) in MOON_SOURCES.items():
+        data = read_ios(repo, pin, ios_path)
+        if sha256(data) != expected:
+            raise AssetError(f"{ios_path} hash {sha256(data)} differs from the expected {expected}")
+        hex_color, p3 = cells[theme]
+        svg_path, png_path = moon_outputs()[theme]
+        svg_out = root / svg_path
+        svg_out.parent.mkdir(parents=True, exist_ok=True)
+        svg_out.write_bytes(substitute_stroke(data.decode("utf-8"), p3, hex_color).encode("utf-8"))
+        png_out = root / png_path
+        png_out.parent.mkdir(parents=True, exist_ok=True)
+        subprocess.run([rsvg, "-w", str(MOON_SIZE), "-h", str(MOON_SIZE), str(svg_out), "-o", str(png_out)], check=True)
+        lines.append(f"{sha256(data)}  {ios_path}  -")
+        lines.append(f"{sha256(svg_out.read_bytes())}  -  {svg_path}")
+        lines.append(f"{sha256(png_out.read_bytes())}  -  {png_path}")
+    manifest = root / MANIFEST
+    manifest.write_text(f"# ios-pin {pin}\n# {version}\n" + "\n".join(sorted(lines, key=lambda line: line.split("  ")[2])) + "\n")
+
+
+def verify_manifest(root):
+    path = root / MANIFEST
+    if not path.is_file():
+        raise AssetError(f"missing {MANIFEST}; run `make assets`")
+    spec = importlib.util.spec_from_file_location("check_sha256_manifest", ROOT / "Scripts/check-sha256-manifest.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.check(path, root)
+
+
 def run_check(root):
     out_dir = root / "build/assets-check"
     outputs = generate_icons(root)
@@ -173,20 +264,29 @@ def run_check(root):
     stale = [path for path, text in sorted(outputs.items()) if not (root / path).is_file() or (root / path).read_bytes() != text.encode("utf-8")]
     for path in stale:
         print(f"stale generated output: {path}", file=sys.stderr)
-    return 1 if stale else 0
+    problems = verify_manifest(root)
+    for problem in problems:
+        print(f"{MANIFEST}: {problem}", file=sys.stderr)
+    return 1 if stale or problems else 0
 
 
 def main(argv, root=ROOT):
-    if not argv or argv[0] not in ("icons", "check"):
-        print("usage: build_assets.py icons [--out DIR] | check", file=sys.stderr)
+    commands = [arg for arg in argv if arg in ("icons", "moon", "check")]
+    if not commands or "check" in commands and len(commands) > 1:
+        print("usage: build_assets.py [icons [--out DIR]] [moon] | check", file=sys.stderr)
         return 2
     try:
-        if argv[0] == "icons":
-            out = Path(argv[argv.index("--out") + 1]) if "--out" in argv else root
-            run_icons(root, out if out.is_absolute() else root / out)
-            return 0
-        return run_check(root)
-    except AssetError as error:
+        status = 0
+        for command in commands:
+            if command == "icons":
+                out = Path(argv[argv.index("--out") + 1]) if "--out" in argv else root
+                run_icons(root, out if out.is_absolute() else root / out)
+            elif command == "moon":
+                run_moon(root)
+            else:
+                status = run_check(root)
+        return status
+    except (AssetError, subprocess.CalledProcessError) as error:
         print(f"build_assets: {error}", file=sys.stderr)
         return 1
 

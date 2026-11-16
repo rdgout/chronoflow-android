@@ -824,11 +824,11 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - The layers are vector drawables converted unchanged from `_design/canvas/icon/android/*.svg` (OQ-A43), with colors from `_design/canvas/icon/colors.json`. Record the conversion method in `docs/assets.md`.
   - Test: `AdaptiveIconTest` checks the 108 dp viewport, all three layers, and a single-color monochrome layer.
 - [x] **Notification icon** `ic_stat_moon`: 24 dp, white, alpha only, from the moon outline. Lint `IconColors` passes.
-- [ ] **Launch moon.**
+- [x] **Launch moon.**
   - `make assets` rasterizes iOS `Assets/moon/launch-moon-light.svg` and `-dark.svg` (read at the pin) with `/opt/homebrew/bin/rsvg-convert` at 1152 × 1152 px.
   - The outputs are `app/src/main/res/drawable-xxxhdpi/launch_moon.png` and `drawable-night-xxxhdpi/launch_moon.png`.
   - `assets.sha256` records input and output hashes. `generators-check` checks the manifest and never re-rasterizes.
-- [ ] **Make targets** `tokens`, `fonts` and `assets`; `generators-check` covers all three.
+- [x] **Make targets** `tokens`, `fonts` and `assets`; `generators-check` covers all three.
 
 **Acceptance**
 - All 84 of 84 hex values match, the ramp is within tolerance, and the output is deterministic.
@@ -926,7 +926,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - every request DTO encodes to exactly its fixture's key set (`review-request.json`, `save-request.json`, `guest-review-request.json`);
   - unknown enum values become `Unknown(raw)`;
   - `unknown-field.json` decodes.
-- [ ] **Make targets** `contracts` and `contracts-check`; the check is part of `generators-check`.
+- [x] **Make targets** `contracts` and `contracts-check`; the check is part of `generators-check`.
 
 **Acceptance**
 - The generated contracts are fresh, and every fixture decodes.
