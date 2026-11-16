@@ -992,7 +992,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - A JDK 21 test launcher through foojay (fallback: OQ-A27), with `@GraphicsMode(NATIVE)` and `@Config(sdk = [36])`.
   - `ProfileRule` applies size, density, font scale, locale and night mode.
   - Stored references are off by default; `SNAPSHOT_RECORD=1 make snapshots` records them.
-- [ ] **Reference-free guards** (`core/testing/…/Guards.kt`), each with a self-test on a planted bad layout:
+- [x] **Reference-free guards** (`core/testing/…/Guards.kt`), each with a self-test on a planted bad layout:
   - every text node lies inside the window and is not truncated unless marked as ellipsizable;
   - touch targets are at least 48 dp;
   - interactive nodes lie inside `safeDrawing` and do not overlap;
