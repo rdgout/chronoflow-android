@@ -728,7 +728,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - `gradle/libs.versions.toml` holds every A1 version.
   - `gradle.properties`: the values from "Android spec: build", plus `android.onlyEnableUnitTestForTheTestedBuildType=false` so that `testReleaseUnitTest` exists. Verify the flag; if AGP rejects it, enable release unit tests in `:app` only.
   - Test: `./gradlew buildEnvironment | grep kotlin-gradle-plugin` prints 2.4.21, and a second `./gradlew help` reuses the configuration cache.
-- [ ] **Convention plugins.** Add the ten plugins of "Android spec: build" in `build-logic/convention`. Each module's `build.gradle.kts` applies exactly one of them and sets its A2 namespace. Test: `./gradlew assembleDebug` builds every module.
+- [x] **Convention plugins.** Add the ten plugins of "Android spec: build" in `build-logic/convention`. Each module's `build.gradle.kts` applies exactly one of them and sets its A2 namespace. Test: `./gradlew assembleDebug` builds every module.
 - [ ] **Minimal app.**
   - `ChronoFlowApp`: debug StrictMode per A21, and a lazy `AppGraph` placeholder that does no I/O.
   - `MainActivity` with an empty Compose root.

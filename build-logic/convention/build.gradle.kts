@@ -25,3 +25,23 @@ dependencies {
     testImplementation(libs.junit4)
     testImplementation(libs.assertk)
 }
+
+gradlePlugin {
+    plugins {
+        fun plugin(id: String, className: String) {
+            register(id) {
+                this.id = id
+                implementationClass = "net.chronoflow.buildlogic.$className"
+            }
+        }
+        plugin("chronoflow.android.application", "AndroidApplicationConventionPlugin")
+        plugin("chronoflow.android.application.compose", "AndroidApplicationComposeConventionPlugin")
+        plugin("chronoflow.android.library", "AndroidLibraryConventionPlugin")
+        plugin("chronoflow.android.library.compose", "AndroidLibraryComposeConventionPlugin")
+        plugin("chronoflow.android.feature", "AndroidFeatureConventionPlugin")
+        plugin("chronoflow.jvm.library", "JvmLibraryConventionPlugin")
+        plugin("chronoflow.sqldelight", "SqlDelightConventionPlugin")
+        plugin("chronoflow.android.test", "AndroidTestConventionPlugin")
+        plugin("chronoflow.roborazzi", "RoborazziConventionPlugin")
+    }
+}
