@@ -55,6 +55,9 @@ class SecretRedactionTest {
     fun reviewIdentity() = check(ApiReviewIdentity(draft, 1, 1, null, secret))
 
     @Test
+    fun tripSaveInput() = check(ApiTripSaveInput(draft, 1, 1))
+
+    @Test
     fun passkeyChallenge() =
         check(
             ApiPasskeyChallenge(secret, ApiPasskeyRequestOptions("c", "rp", 1, UserVerification.Required, emptyList())),

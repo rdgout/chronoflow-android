@@ -53,6 +53,11 @@ data class ApiTripSaveInput(
     @SerialName("input_revision") val inputRevision: Int,
     @SerialName("review_revision") val reviewRevision: Int,
 ) {
+    override fun toString(): String =
+        "ApiTripSaveInput(draftToken=${redacted(
+            draftToken,
+        )}, inputRevision=$inputRevision, reviewRevision=$reviewRevision)"
+
     companion object {
         fun from(identity: ApiReviewIdentity): ApiTripSaveInput {
             val revision = identity.reviewRevision
