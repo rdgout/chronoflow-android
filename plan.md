@@ -933,7 +933,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - Test: `tools/contracts-gen/test_generate_kotlin.py`; a planted TS change must fail `--check`.
 - [ ] **Hand-written DTOs** in `core/model/…/api/`: auth, account, the settings sections, passkeys, wizard input and the error envelope. `core/model/…/DataFailure.kt` mirrors the cases of iOS `DataFailure.swift`.
 - [x] **ApiJson.** Decoding uses `Json { ignoreUnknownKeys = true; explicitNulls = false }`. Request encoders keep explicit nulls where null matters (check `status`), and PATCH diffs are `JsonObject`.
-- [ ] **Fixtures.**
+- [x] **Fixtures.**
   - Copy iOS `Tests/DataAccessTests/Fixtures/{account,auth,errors,plans,trips,wizard}/*.json`, including S1–S6 and S6-RETURN-10N, into `core/testing/src/main/resources/fixtures/`.
   - `fixtures.sha256` records the pin, source path and hash of each; `FixtureManifestTest` checks them.
 - [ ] **Decode and encode tests** (`core/model/src/test`):
