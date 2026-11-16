@@ -746,7 +746,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 - [x] **Release gates.**
   - `verifyReleaseManifest` is a build-logic task wired into `check`. It fails on each of the six cases in "Android spec: manifest and permissions". `VerifyReleaseManifestTest` feeds it one planted manifest per case.
   - `measureBundleSize` (`make size`) runs `bundletool build-apks --device-spec` (arm64, xxhdpi, en) and `get-size total`. It warns above 8 MB, fails above 12 MB, and fails on any `.so` file.
-- [ ] **Makefile and scripts.**
+- [x] **Makefile and scripts.**
   - Every target in AGENTS.md "Commands". A target whose phase has not landed prints the phase that adds it and exits 1.
   - `Scripts/ci.sh`: `make generate check`, then `git diff --exit-code`.
   - `Scripts/run-tier.sh`:

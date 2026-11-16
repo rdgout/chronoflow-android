@@ -1,0 +1,42 @@
+import sys
+import unittest
+
+from helpers import ROOT, run
+
+TARGETED = str(ROOT / "Scripts" / "targeted.py")
+
+
+def targeted(*args, env=None):
+    return run([sys.executable, "-I", TARGETED, "--print", *args], env, cwd=str(ROOT))
+
+
+class TargetedTest(unittest.TestCase):
+    def test_jvm_test_uses_tests_filter(self):
+        result = targeted("konsist:KonsistRulesTest#noGlobalScope")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn(":konsist:test --tests '*.KonsistRulesTest.noGlobalScope'", result.stdout)
+        self.assertIn("run-tier.sh targeted --results", result.stdout)
+
+    def test_emulator_test_runs_through_the_device_tier(self):
+        result = targeted("app:AppLaunchSmokeTest", env={"REUSE_BUILD": ""})
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("run-tier.sh targeted-emu --device", result.stdout)
+        self.assertIn(":app:connectedDebugAndroidTest", result.stdout)
+        self.assertIn("class=net.chronoflow.app.AppLaunchSmokeTest", result.stdout)
+
+    def test_reuse_build_instruments_under_the_lock(self):
+        result = targeted("app:AppLaunchSmokeTest", env={"REUSE_BUILD": "1"})
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue(result.stdout.startswith("python3 -I Scripts/device_lock.py --"), result.stdout)
+        self.assertIn("am instrument", result.stdout)
+        self.assertIn("class net.chronoflow.app.AppLaunchSmokeTest", result.stdout)
+
+    def test_unknown_module_exits_2(self):
+        self.assertEqual(targeted("nope:X").returncode, 2)
+
+    def test_unknown_class_exits_2(self):
+        self.assertEqual(targeted("konsist:NoSuchClass").returncode, 2)
+
+
+if __name__ == "__main__":
+    unittest.main()
