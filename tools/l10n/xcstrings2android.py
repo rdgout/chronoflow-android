@@ -42,6 +42,7 @@ TABLES = [
 DEBUG_ONLY = {("app", "Debug route: %@")}
 MAXLEN = 48
 LOCK_PATH = "tools/l10n/names.lock.json"
+OVERLAY_PATH = "tools/l10n/android-only.json"
 LINT_IGNORES_PATH = "tools/l10n/lint-ignores.json"
 UNTRANSLATABLE_PATH = "core/ui/src/main/res/values/strings_untranslatable.xml"
 MAIN = "core/ui/src/main/res"
@@ -316,6 +317,49 @@ def process_tables(catalogs, lock, used):
     return items
 
 
+OVERLAY_NAME = re.compile(r"^android_[a-z0-9_]+$")
+
+
+def process_overlay(overlay, items, lock_names, reserved):
+    """Validates the Android-only entries and converts them; returns (entries, replaced {(prefix, key): entry})."""
+    known = {(i.prefix, i.key) for i in items}
+    taken = set(lock_names) | set(reserved)
+    seen, replaced, entries = set(), {}, []
+    for e in overlay.get("entries", []):
+        name = e.get("name", "")
+        where = f"{OVERLAY_PATH}: {name!r}"
+        if not OVERLAY_NAME.match(name) or len(name) > MAXLEN:
+            raise GenError(f"{where}: name must match android_[a-z0-9_]+ and be at most {MAXLEN} characters")
+        if name in seen or name in taken:
+            raise GenError(f"{where}: name clash")
+        seen.add(name)
+        for lang in ("en", "nl"):
+            if not str(e.get(lang, "")).strip():
+                raise GenError(f"{where}: missing or empty {lang}")
+            check_values(f"{where} [{lang}]", "single", e[lang])
+        if e.get("review") not in ("needs review", "approved"):
+            raise GenError(f"{where}: review must be 'needs review' or 'approved'")
+        slots = arg_slots(e["en"], [e["en"]])
+        en = convert(f"{where} [en]", e["en"], slots)
+        nl = convert(f"{where} [nl]", e["nl"], slots)
+        check_same_args(where, [en], [nl])
+        positions = sorted(en.args)
+        if positions != list(range(1, len(positions) + 1)):
+            raise GenError(f"{where}: argument positions {positions} are not contiguous")
+        for r in e.get("replaces", []):
+            ref = (r["table"], r["key"])
+            if ref not in known:
+                raise GenError(f"{where}: replaces unknown iOS key {ref}")
+            if ref in replaced:
+                raise GenError(f"{where}: {ref} is already replaced by {replaced[ref]['name']}")
+            replaced[ref] = e
+        entries.append(Item("android", "Android", e["en"], name, "single", en, nl, True, False,
+                            arg_labels(e["en"], slots, positions)))
+        entries[-1].review = e["review"]
+        entries[-1].replaces = e.get("replaces", [])
+    return entries, replaced
+
+
 def header(pin, source):
     return (
         '<?xml version="1.0" encoding="utf-8"?>\n'
@@ -358,18 +402,28 @@ def build(catalogs, lock, overlay=None, reserved=frozenset(), pin="0" * 40, lint
     for lid, name in lock.items():
         if name in reserved:
             raise GenError(f'"{name}" is defined in strings_untranslatable.xml and locked for {lid!r}')
-    used = set(lock.values()) | set(reserved)
+    overlay_names = [e.get("name", "") for e in (overlay or {}).get("entries", [])]
+    used = set(lock.values()) | set(reserved) | set(overlay_names)
     items = process_tables(catalogs, lock, used)
+    android, replaced = process_overlay(overlay or {}, items, set(lock.values()), reserved)
     names = [i.name for i in items]
     if len(names) != len(set(names)):
         raise GenError("duplicate resource name in the output")
     files = {}
     src = f"chronoflow-ios@{pin[:8]}"
-    main_items = [i for i in items if not i.debug]
+    main_items = [i for i in items if not i.debug and (i.prefix, i.key) not in replaced]
     debug_items = [i for i in items if i.debug]
     for lang, folder in (("en", "values"), ("nl", "values-nl")):
         files[f"{MAIN}/{folder}/strings_ios.xml"] = xml_file(pin, src, main_items, lang, lint_ignores)
         files[f"{DEBUG}/{folder}/strings_ios_debug.xml"] = xml_file(pin, src, debug_items, lang, lint_ignores)
+    if overlay is not None:
+        for lang, folder in (("en", "values"), ("nl", "values-nl")):
+            body = "".join(
+                render_item(i, lang, f"android: {i.key} (review: {i.review})", lint_ignores) for i in android
+            )
+            files[f"{MAIN}/{folder}/strings_android.xml"] = (
+                header(pin, OVERLAY_PATH) + body + "</resources>\n"
+            ).encode("utf-8")
     lock_text = json.dumps(dict(sorted(lock.items())), ensure_ascii=False, indent=1) + "\n"
     files[LOCK_PATH] = lock_text.encode("utf-8")
     return Result(files, lock)
@@ -391,7 +445,9 @@ def load_inputs(root):
     reserved = set()
     if untranslatable.exists():
         reserved = set(re.findall(r'name="([^"]+)"', untranslatable.read_text(encoding="utf-8")))
-    return lock, reserved, ignores
+    overlay_file = root / OVERLAY_PATH
+    overlay = json.loads(overlay_file.read_text(encoding="utf-8")) if overlay_file.exists() else None
+    return lock, reserved, ignores, overlay
 
 
 def main(argv=None, read=read_catalogs):
@@ -405,8 +461,8 @@ def main(argv=None, read=read_catalogs):
     pin = a.pin or (REPO / "tools/ios-pin.txt").read_text(encoding="utf-8").strip()
     try:
         catalogs = read(a.ios, pin)
-        lock, reserved, ignores = load_inputs(root)
-        result = build(catalogs, lock, reserved=reserved, pin=pin, lint_ignores=ignores)
+        lock, reserved, ignores, overlay = load_inputs(root)
+        result = build(catalogs, lock, overlay, reserved=reserved, pin=pin, lint_ignores=ignores)
     except PinNotFound as e:
         print(str(e), file=sys.stderr)
         return 2

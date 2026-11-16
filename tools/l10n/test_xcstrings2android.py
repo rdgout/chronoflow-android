@@ -236,6 +236,53 @@ class GeneratorTest(unittest.TestCase):
         self.assertTrue(xml.endswith("</resources>\n"))
 
 
+def overlay_entry(**kw):
+    e = {"name": "android_x", "en": "Hello", "nl": "Hallo", "replaces": [], "review": "needs review"}
+    e.update(kw)
+    return {"entries": [e]}
+
+
+class OverlayTest(unittest.TestCase):
+    def test_overlay_written_in_both_languages(self):
+        r = run({AUTH: cat(A=single("a", "b"))}, overlay=overlay_entry())
+        self.assertIn('<string name="android_x">Hello</string>', r.files["core/ui/src/main/res/values/strings_android.xml"].decode())
+        self.assertIn("<!-- android: Hello (review: needs review) -->", r.files["core/ui/src/main/res/values-nl/strings_android.xml"].decode())
+        self.assertIn(">Hallo</string>", r.files["core/ui/src/main/res/values-nl/strings_android.xml"].decode())
+
+    def test_overlay_missing_dutch_fails(self):
+        with self.assertRaisesRegex(g.GenError, "missing or empty nl"):
+            run({}, overlay=overlay_entry(nl=" "))
+
+    def test_overlay_unknown_replaced_key_fails(self):
+        with self.assertRaisesRegex(g.GenError, "replaces unknown iOS key"):
+            run({AUTH: cat(A=single("a", "b"))}, overlay=overlay_entry(replaces=[{"table": "auth", "key": "Gone"}]))
+
+    def test_overlay_name_clash_fails(self):
+        with self.assertRaisesRegex(g.GenError, "name clash"):
+            run({AUTH: cat(A=single("a", "b"))}, {"auth\tA": "android_x"}, overlay=overlay_entry())
+        with self.assertRaisesRegex(g.GenError, "name clash"):
+            run({}, reserved={"android_x"}, overlay=overlay_entry())
+        with self.assertRaisesRegex(g.GenError, "name must match"):
+            run({}, overlay=overlay_entry(name="plain"))
+
+    def test_overlay_validation_rules(self):
+        with self.assertRaisesRegex(g.GenError, "positions differ"):
+            run({}, overlay=overlay_entry(en="%@ %@", nl="%@"))
+        with self.assertRaisesRegex(g.GenError, "review must be"):
+            run({}, overlay=overlay_entry(review="maybe"))
+        twice = overlay_entry(replaces=[{"table": "auth", "key": "A"}])
+        twice["entries"].append(dict(twice["entries"][0], name="android_y"))
+        with self.assertRaisesRegex(g.GenError, "already replaced"):
+            run({AUTH: cat(A=single("a", "b"))}, overlay=twice)
+
+    def test_replaced_keys_are_not_emitted_but_stay_locked(self):
+        r = run({AUTH: cat(A=single("a", "b"), B=single("c", "d"))},
+                overlay=overlay_entry(replaces=[{"table": "auth", "key": "A"}]))
+        self.assertNotIn("auth_a", en_xml(r))
+        self.assertIn('name="auth_b"', en_xml(r))
+        self.assertEqual(r.lock["auth\tA"], "auth_a")
+
+
 class MainTest(unittest.TestCase):
     def fake_read(self, ios, pin):
         return {AUTH: cat(A=single("a", "b"))}

@@ -785,8 +785,6 @@
     <string name="reminders_notifications_are_blocked_for_c_210a5a">Meldingen voor ChronoFlow zijn geblokkeerd.</string>
     <!-- reminders: Open phone settings -->
     <string name="reminders_open_phone_settings">Telefooninstellingen openen</string>
-    <!-- reminders: Open your phone's Settings. -->
-    <string name="reminders_open_your_phone_s_settings">Open de Instellingen van je telefoon.</string>
     <!-- reminders: Push reminders -->
     <string name="reminders_push_reminders">Pushherinneringen</string>
     <!-- reminders: Remind me ahead by -->
@@ -801,12 +799,8 @@
     <string name="reminders_seek_bright_light_from_time">Zoek vanaf %1$s fel licht.</string>
     <!-- reminders: Settings -->
     <string name="reminders_settings">Instellingen</string>
-    <!-- reminders: Tap Notifications, then ChronoFlow. -->
-    <string name="reminders_tap_notifications_then_chronoflow">Tik op Meldingen en daarna op ChronoFlow.</string>
     <!-- reminders: This device can't show reminders. -->
     <string name="reminders_this_device_can_t_show_reminders">Dit apparaat kan geen herinneringen tonen.</string>
-    <!-- reminders: Turn on Allow notifications. -->
-    <string name="reminders_turn_on_allow_notifications">Zet Sta meldingen toe aan.</string>
     <!-- reminders: Turn on reminders -->
     <string name="reminders_turn_on_reminders">Herinneringen aanzetten</string>
     <!-- reminders: Turn on reminders? -->
@@ -1171,8 +1165,6 @@
     <string name="settings_show_codes">Codes tonen</string>
     <!-- settings: Show recovery codes -->
     <string name="settings_show_recovery_codes">Herstelcodes tonen</string>
-    <!-- settings: Sign in with Face ID, a fingerprint or your screen lock instead of your password. -->
-    <string name="settings_sign_in_with_face_id_a_fingerpri_36f250">Log in met Face ID, een vingerafdruk of je schermvergrendeling in plaats van je wachtwoord.</string>
     <!-- settings: Sign in with only your password or passkey -->
     <string name="settings_sign_in_with_only_your_password_892dad">Meld je aan met alleen je wachtwoord of passkey</string>
     <!-- settings: Sign out -->
@@ -1350,8 +1342,6 @@
     <string name="settings_you_come_alive_late_and_find_ear_2e439b">Je komt laat op gang en vindt vroeg opstaan lastig.</string>
     <!-- settings: You get recovery codes for when you lose your phone. -->
     <string name="settings_you_get_recovery_codes_for_when_505e13">Je krijgt herstelcodes voor als je je telefoon kwijtraakt.</string>
-    <!-- settings: You need an authenticator app, like the one built into Passwords on iPhone. -->
-    <string name="settings_you_need_an_authenticator_app_li_316098">Je hebt een authenticator-app nodig, zoals die in Wachtwoorden op de iPhone.</string>
     <!-- settings: You wake early without an alarm and fade in the evening. -->
     <string name="settings_you_wake_early_without_an_alarm_f9b380">Je wordt vroeg wakker zonder wekker en bent in de avond moe.</string>
     <!-- settings: You'll be asked for your password first. -->
