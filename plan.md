@@ -808,7 +808,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
     - `core/plan/…/generated/TimelinePalette.generated.kt` (ARGB ints);
     - `app/src/main/res/values{,-night}/colors_launch.xml`;
     - `tools/tokengen/TokenGenReport.md`, with the sRGB hex values and the P3 values for reference (OQ-A7).
-- [ ] **Golden tests** (`tools/tokengen/src/test`):
+- [x] **Golden tests** (`tools/tokengen/src/test`):
   - all 84 hex values equal the iOS `Tools/TokenGen/TokenGenReport.md`;
   - the sky ramp is within ±0.25/255 per channel at 1,001 points;
   - two runs give byte-identical output.

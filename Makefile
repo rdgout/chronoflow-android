@@ -11,9 +11,11 @@ SMOKE := net.chronoflow.core.testing.tiers.Smoke
 SMOKE_TASK := :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.annotation=$(SMOKE)
 GENERATORS :=
 GENERATOR_CHECKS :=
+GENERATORS += tokens
+GENERATOR_CHECKS += tokens-check
 
 .PHONY: quick check test format lint targeted generate generators-check size emu emu-down emu-clean avd-create matrix du
-.PHONY: tokens fonts assets strings plan-copy contracts snapshots captures perf perf-timeline baseline-profile
+.PHONY: tokens tokens-check fonts assets strings plan-copy contracts snapshots captures perf perf-timeline baseline-profile
 
 quick:
 	$(RUN_TIER) quick --results '*/build/test-results/test/*.xml' --results '*/*/build/test-results/test/*.xml' --results 'build-logic/convention/build/test-results/test/*.xml' -- $(GRADLE) spotlessCheck $(JVM_MODULES:%=:%:test) :build-logic:convention:test
@@ -39,6 +41,12 @@ targeted:
 
 generate:
 	@if [ -z "$(strip $(GENERATORS))" ]; then echo "generate: no generators yet (0b, 0c, 0d add them)"; else $(MAKE) $(GENERATORS); fi
+
+tokens:
+	sh tools/tokengen/copy-ios-inputs.sh && $(GRADLE) -q :tools:tokengen:generateTokens
+
+tokens-check:
+	python3 -I Scripts/check-sha256-manifest.py tools/tokengen/ios-inputs.sha256 && $(GRADLE) -q :tools:tokengen:verifyTokens :tools:tokengen:test
 
 generators-check:
 	@if [ -z "$(strip $(GENERATOR_CHECKS))" ]; then echo "generators-check: nothing to check yet"; else $(MAKE) $(GENERATOR_CHECKS); fi
@@ -77,7 +85,7 @@ du:
 	@du -sh ~/.gradle/caches ~/.android/avd build 2>/dev/null || true
 	@git worktree list --porcelain | sed -n 's/^worktree //p' | while read -r wt; do du -sh "$$wt"; done
 
-tokens fonts assets:
+fonts assets:
 	@echo "make $@: lands in Phase 0b (feat/phase-0b-tokens)" >&2; exit 1
 
 strings plan-copy:

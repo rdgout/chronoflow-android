@@ -105,6 +105,22 @@ Other library components: `androidx.profileinstaller.ProfileInstallReceiver` (ex
 - **Branch hygiene.** The Makefile/scripts commit also added `Scripts/**/__pycache__/*.pyc` by mistake; `chore: ignore python bytecode` untracks them and adds `__pycache__/` and `*.pyc` to `.gitignore`.
 - OQ-0a-1 through OQ-0a-21 defaults were applied as written (OQ-0a-3 and OQ-0a-4 annotations are in `plan.md` "Locale wiring"; OQ-0a-19 and OQ-0a-20 edits are in `plan.md`).
 
+## Phase 0b: stale-output proof
+
+Worker, 2026-11-16. One hex edited by hand in `CfColors.generated.kt` (`Color(0xFF1F285A)` to `Color(0xFF1F285B)`), then `make generators-check`:
+
+```
+python3 -I Scripts/check-sha256-manifest.py tools/tokengen/ios-inputs.sha256 && ./gradlew --console=plain -q :tools:tokengen:verifyTokens :tools:tokengen:test
+TokenGen: stale generated output: core/designsystem/src/main/kotlin/net/chronoflow/core/designsystem/generated/CfColors.generated.kt
+...
+Execution failed for task ':tools:tokengen:verifyTokens' (registered in build file 'tools/tokengen/build.gradle.kts').
+> Process 'command '/Library/Java/JavaVirtualMachines/zulu-17.jdk/Contents/Home/bin/java'' finished with non-zero exit value 1
+make[1]: *** [tokens-check] Error 1
+make: *** [generators-check] Error 2
+```
+
+After `git checkout` of the file, `make generators-check` exits 0. The check needs neither the network nor the iOS repo: it hashes the pinned iOS inputs, regenerates every output in memory and compares bytes.
+
 ## Pending: orchestrator
 
 - Cold-boot path of `Scripts/emulator.sh ensure`, `down` and `wipe` against a real emulator (not exercised; `pixel` was already booted).
