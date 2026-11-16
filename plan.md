@@ -890,7 +890,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - `:app` sets `androidResources { generateLocaleConfig = true }` and adds `app/src/main/res/resources.properties` (`unqualifiedResLocale=en`). (done in 0a)
   - Lint errors: `MissingTranslation`, `ExtraTranslation`, `StringFormatInvalid`, `StringFormatCount` and `PluralsCandidate`.
   - A Konsist rule forbids a string literal as the first argument of `Text(` outside tests and previews.
-- [ ] **StringParityTest** (JVM, parses the XML): every en name has an nl twin with the same placeholders and plural quantities. Record the counts.
+- [x] **StringParityTest** (JVM, parses the XML): every en name has an nl twin with the same placeholders and plural quantities. Record the counts.
 
 **Acceptance**
 - The generator reproduces the committed XML, and `--check` fails on drift.
