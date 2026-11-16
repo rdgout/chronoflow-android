@@ -997,7 +997,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - touch targets are at least 48 dp;
   - interactive nodes lie inside `safeDrawing` and do not overlap;
   - headings are marked.
-- [ ] **Tier registry.**
+- [x] **Tier registry.**
   - Annotations `@Smoke`, `@Layout`, `@Snapshot`, `@Capture` and `@Perf`. `TierRegistryTest` checks that every Robolectric and emulator test class has exactly one.
   - A Gradle test listener writes per-test durations to `build/test-results/<tier>/timings.json`. It fails a JVM test over 1 s or a Robolectric test over 5 s, unless the test is annotated `@PerfBudget`. Wall-clock budget tests are annotated `@TimingGate` instead: they run only in the serial `timingTest` task (`make timing`, the last step of `make quick` and `make test`), in one test JVM on one Gradle worker, after every other test task.
 - [ ] **Seed harness**, debug only, in `app/src/debug/kotlin/net/chronoflow/debug/`.

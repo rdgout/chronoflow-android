@@ -114,6 +114,74 @@ class RunTierTest(unittest.TestCase):
         self.assertLess(result.elapsed, 3)
         self.assertFalse(marker.exists())
 
+    def _xml(self, tier_dir="out", cases=(("a.B", "t1", "0.1"),)):
+        (self.root / tier_dir).mkdir(exist_ok=True)
+        body = "".join('<testcase classname="%s" name="%s" time="%s"/>' % c for c in cases)
+        (self.root / tier_dir / "TEST-a.xml").write_text("<testsuite>%s</testsuite>" % body)
+
+    def _timings(self, entries, name="1.json"):
+        import json
+
+        (self.root / "tm").mkdir(exist_ok=True)
+        (self.root / "tm" / name).write_text(json.dumps({"tier": "t", "tests": entries}))
+
+    @staticmethod
+    def _entry(kind="jvm", ms=10, budget=1000, status="ok", method="t1"):
+        return {"class": "a.B", "method": method, "kind": kind, "sdk": "default", "ms": ms, "budgetMs": budget, "status": status}
+
+    def _report(self):
+        import json
+
+        return json.loads((self.root / "build" / "test-results" / "t" / "timings.json").read_text())
+
+    def test_listener_over_budget_fails(self):
+        self._xml()
+        self._timings([self._entry(ms=1200, status="over")])
+        result = self.tier("t", "--results", "out/*.xml", "--timings", "tm/*.json", "--", "true")
+        self.assertEqual(result.returncode, 3)
+        self.assertIn("over budget: jvm a.B#t1 1200 ms > 1000 ms", result.stderr)
+
+    def test_exempt_and_warmup_pass(self):
+        self._xml(cases=(("a.B", "t1", "0.1"), ("a.B", "t2", "0.1")))
+        self._timings(
+            [
+                self._entry(kind="robolectric", ms=12000, budget=20000, status="warmup"),
+                self._entry(ms=6000, budget=None, status="exempt", method="t2"),
+            ]
+        )
+        result = self.tier("t", "--results", "out/*.xml", "--timings", "tm/*.json", "--", "true")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self._report()["overBudget"], 0)
+
+    def test_emulator_xml_over_budget_fails(self):
+        self._xml(cases=(("a.B", "t1", "10.5"),))
+        result = self.tier("t", "--results", "out/*.xml", "--emulator", "--", "true")
+        self.assertEqual(result.returncode, 3)
+        self.assertIn("over budget: emulator a.B#t1 10500 ms > 10000 ms", result.stderr)
+
+    def test_missing_timing_files_fail(self):
+        self._xml()
+        result = self.tier("t", "--results", "out/*.xml", "--timings", "tm/*.json", "--", "true")
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("wrote no timing files", result.stderr)
+
+    def test_xml_without_listener_entry_is_not_budgeted(self):
+        self._xml(cases=(("a.B", "t1", "0.1"), ("c.D", "other", "0.1")))
+        self._timings([self._entry()])
+        result = self.tier("t", "--results", "out/*.xml", "--timings", "tm/*.json", "--", "true")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        report = self._report()
+        self.assertEqual(len(report["budgetChecks"]), 1)
+        self.assertEqual(report["unbudgeted"], ["c.D#other"])
+
+    def test_slowest_lists_top_ten(self):
+        self._xml()
+        self._timings([self._entry(ms=i, method="m%d" % i) for i in range(1, 16)])
+        result = self.tier("t", "--results", "out/*.xml", "--timings", "tm/*.json", "--", "true")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        slowest = self._report()["slowest"]
+        self.assertEqual([c["ms"] for c in slowest], list(range(15, 5, -1)))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -14,13 +14,14 @@ class TargetedTest(unittest.TestCase):
     def test_jvm_test_uses_tests_filter(self):
         result = targeted("konsist:KonsistRulesTest#noGlobalScope")
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn(":konsist:test --tests '*.KonsistRulesTest.noGlobalScope'", result.stdout)
+        self.assertIn(":konsist:test -Pcf.tier=targeted --tests '*.KonsistRulesTest.noGlobalScope'", result.stdout)
+        self.assertIn("--timings 'konsist/build/cf-timings/test/*.json'", result.stdout)
         self.assertIn("run-tier.sh targeted --results", result.stdout)
 
     def test_emulator_test_runs_through_the_device_tier(self):
         result = targeted("app:AppLaunchSmokeTest", env={"REUSE_BUILD": ""})
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("run-tier.sh targeted-emu --device", result.stdout)
+        self.assertIn("run-tier.sh targeted-emu --device --emulator", result.stdout)
         self.assertIn(":app:connectedDebugAndroidTest", result.stdout)
         self.assertIn("class=net.chronoflow.app.AppLaunchSmokeTest", result.stdout)
 
@@ -34,7 +35,7 @@ class TargetedTest(unittest.TestCase):
     def test_release_source_set_runs_through_the_release_task(self):
         result = targeted("app:ReleaseAppIdentityTest")
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn(":app:testReleaseUnitTest --tests '*.ReleaseAppIdentityTest'", result.stdout)
+        self.assertIn(":app:testReleaseUnitTest -Pcf.tier=targeted --tests '*.ReleaseAppIdentityTest'", result.stdout)
 
     def test_unknown_module_exits_2(self):
         self.assertEqual(targeted("nope:X").returncode, 2)
