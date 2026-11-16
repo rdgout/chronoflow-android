@@ -723,7 +723,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 - [x] **Wrapper.**
   - Bootstrap with the cached distribution: `~/.gradle/wrapper/dists/gradle-9.4.1-bin/arn2x92ynaizyzdaamcbpbhtj/gradle-9.4.1/bin/gradle wrapper --gradle-version 9.9.1 --distribution-type bin --gradle-distribution-sha256-sum d8a18a7a841dd5df825d35a685fad6f2d7f12ac0c280e57b67c27b4a520ba228`. After that, use only `./gradlew`.
   - If AGP 9.5.1 rejects 9.9.1, use 9.6.0 with its SHA-256 from A1 and record it (OQ-A35).
-- [ ] **Settings and catalog.**
+- [x] **Settings and catalog.**
   - `settings.gradle.kts`: `includeBuild("build-logic")`, the foojay resolver 1.0.0, `RepositoriesMode.FAIL_ON_PROJECT_REPOS`, and every module of A3.
   - `gradle/libs.versions.toml` holds every A1 version.
   - `gradle.properties`: the values from "Android spec: build", plus `android.onlyEnableUnitTestForTheTestedBuildType=false` so that `testReleaseUnitTest` exists. Verify the flag; if AGP rejects it, enable release unit tests in `:app` only.
