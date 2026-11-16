@@ -627,6 +627,16 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A46 | Compose `TimelineTargets` (20–40 semantics nodes per day) always, or only while accessibility is on? (research `04` OQ-T25) | Always: UiAutomator, Macrobenchmark, Switch Access and Voice Access need them. If a low-end run shows `timelineTargetsMaxMs` above 1 ms, compose them only while `AccessibilityManager.isEnabled` (observed as state; UiAutomation counts as enabled) | 1d, 1e, 13 |
 | OQ-A47 | App Startup initializers other than ProcessLifecycle and ProfileInstaller (for example EmojiCompat, merged by Compose text) | Remove them (AGENTS "Performance"). Compose then draws emoji with the phone's own font, so emoji newer than that font show as boxes on old phones. 3a records the inventory and the measured saving | 3a, 13 |
 | OQ-0a-22 | Native libraries in the bundle? | Allow only `libandroidx.graphics.path.so` (Compose graphics-path; excluding it breaks Path conversion below API 34); fail on any other `.so` | 0a, 13 |
+| OQ-0b-1 | Where does `PlanMetrics` live? `08 §3.1` lists it inside `CfDimens`, but its consumer `:core:plan` is a JVM module that cannot depend on `:core:designsystem` | `core/plan/…/generated/PlanMetrics.generated.kt` (Double, dp), as iOS keeps it in `PlanCore` | 0b, 1b, 1c |
+| OQ-0b-2 | Port all iOS TokenGen outputs now (Auth, Settings, Terms, Welcome, PlanUI, Press, LaunchPaint, TypeMetrics), or only colors, sky and type? | All of them now (the iOS files are exact goldens and Phases 2, 3a, 3c, 5a, 9 and 10 need them) | 0b |
+| OQ-0b-3 | The iOS moon SVGs use `color(display-p3 …)`, which rsvg-convert 2.63.4 renders blank | Substitute the sRGB `dawn` hex (`#E78A45` / `#F2AD73`) into a committed copy, then rasterize | 0b |
+| OQ-0b-4 | The plan's acceptance asks for the moon "on the system splash", but the splash theme that shows `launch_moon` is Phase 3a | 0b records the launcher icon and the default system splash (adaptive icon); the `launch_moon` splash screenshot is 3a's acceptance | 0b, 3a |
+| OQ-0b-5 | Dimension values as raw `Float` or Compose `Dp`/`TextUnit`? | Raw `const val Float` in dp or sp as named; Phase 2 wraps them (several iOS `CGFloat` metrics are font sizes) | 0b, 2 |
+| OQ-0b-6 | Generate the token `screenDayTitle` (18/28) next to `planDayTitle` (18/26)? | Yes, as iOS does; the day header uses `planDayTitle` (OQ-A9) | 0b, 2 |
+| OQ-0b-7 | Android-only derived colors | Generate `systemSelected` (for `toM3()`) and `wizardPickerFill` (iOS emits it); no `pickerSelected` or glass colors (OQ-A6) | 0b, 2 |
+| OQ-0b-8 | Open-source licences screen for the OFL fonts | Ship the OFL texts in `assets/licenses/`; no screen until a board exists | 0b |
+| OQ-0b-9 | `UnusedResources` findings for outputs consumed later (fonts, `launch_moon`, `launch_sky_top`, `ic_stat_moon`) | Path-scoped ignores in `lint.xml`, each naming its consuming phase (2, 3a, 12b) and removed by that phase | 0b, 2, 3a, 12b |
+| OQ-0b-10 | The brief asked for a port of fdlibm `erf`; the sources are not available offline | `Erf.kt` uses the all-positive power series 2/sqrt(pi)·exp(−x²)·Σ 2ⁿx²ⁿ⁺¹/(2n+1)!!, which matches libm to 1e-15 (`ErfTest`, 8 points) and the iOS `LaunchPaint` goldens to 1e-9. Replace it with fdlibm if bit-exactness is ever needed | 0b |
 
 ## Tasks
 
