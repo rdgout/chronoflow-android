@@ -38,7 +38,7 @@ data class ApiPasskeyLoginInput(
 ) {
     override fun toString(): String =
         "ApiPasskeyLoginInput(challengeId=${redacted(challengeId)}, credential=$credential, deviceID=$deviceID, " +
-            "deviceName=$deviceName, draftToken=$draftToken, guestSecret=${redacted(guestSecret)})"
+            "deviceName=$deviceName, draftToken=${redacted(draftToken)}, guestSecret=${redacted(guestSecret)})"
 }
 
 @Serializable

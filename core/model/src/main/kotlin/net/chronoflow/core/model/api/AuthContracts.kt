@@ -23,7 +23,7 @@ data class PasswordSignInInput(
         "PasswordSignInInput(email=$email, password=${redacted(
             password,
         )}, deviceID=$deviceID, deviceName=$deviceName, " +
-            "draftToken=$draftToken, guestSecret=${redacted(guestSecret)})"
+            "draftToken=${redacted(draftToken)}, guestSecret=${redacted(guestSecret)})"
 }
 
 @Serializable
@@ -43,7 +43,7 @@ data class RegisterInput(
     override fun toString(): String =
         "RegisterInput(name=$name, email=$email, password=${redacted(password)}, " +
             "passwordConfirmation=${redacted(passwordConfirmation)}, deviceID=$deviceID, deviceName=$deviceName, " +
-            "language=$language, draftToken=$draftToken, inputRevision=$inputRevision, " +
+            "language=$language, draftToken=${redacted(draftToken)}, inputRevision=$inputRevision, " +
             "reviewRevision=$reviewRevision, guestSecret=${redacted(guestSecret)})"
 }
 

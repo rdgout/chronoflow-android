@@ -8,17 +8,21 @@ import org.junit.Test
 
 class SecretRedactionTest {
     private val secret = "s3cr3t-value"
+    private val draft = "dr4ft-token"
 
     private fun check(value: Any) {
         assertThat(value.toString()).doesNotContain(secret)
+        assertThat(value.toString()).doesNotContain(draft)
         assertThat(value.toString()).contains("***")
     }
 
     @Test
-    fun signInInput() = check(PasswordSignInInput("a@b.c", secret, "dev", "Pixel", guestSecret = secret))
+    fun signInInput() =
+        check(PasswordSignInInput("a@b.c", secret, "dev", "Pixel", draftToken = draft, guestSecret = secret))
 
     @Test
-    fun registerInput() = check(RegisterInput("N", "a@b.c", secret, secret, "dev", "Pixel", guestSecret = secret))
+    fun registerInput() =
+        check(RegisterInput("N", "a@b.c", secret, secret, "dev", "Pixel", draftToken = draft, guestSecret = secret))
 
     @Test
     fun resetPasswordInput() = check(ResetPasswordInput(secret, "a@b.c", secret, secret))
@@ -48,7 +52,7 @@ class SecretRedactionTest {
     fun recoveryCodes() = check(ApiRecoveryCodes(listOf(secret)))
 
     @Test
-    fun reviewIdentity() = check(ApiReviewIdentity("token", 1, 1, null, secret))
+    fun reviewIdentity() = check(ApiReviewIdentity(draft, 1, 1, null, secret))
 
     @Test
     fun passkeyChallenge() =
@@ -60,7 +64,7 @@ class SecretRedactionTest {
     fun passkeyLoginInput() {
         val assertion =
             ApiPasskeyAssertion("id", "raw", CredentialType.PublicKey, ApiPasskeyAssertionResponse("c", "a", "s"))
-        check(ApiPasskeyLoginInput(secret, assertion, "dev", "Pixel", guestSecret = secret))
+        check(ApiPasskeyLoginInput(secret, assertion, "dev", "Pixel", draftToken = draft, guestSecret = secret))
     }
 
     @Test

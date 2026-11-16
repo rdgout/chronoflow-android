@@ -653,6 +653,7 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-0d-9 | `fixtures.sha256` is shared with 1a (`intl-cases.json`) and 1b (`mock-seed.json`) | One manifest; each script owns its own lines; `FixtureManifestTest` checks every line. | 0d, 1a, 1b |
 | OQ-0d-10 | The brief names `api/GuestTripReviewInput.kt`, but ktlint `filename` requires a file with one class to carry its name | `api/ApiGuestTripReviewInput.kt`. The test-only `contracts/PlanParts.kt` keeps its brief name with a file-level suppression of that rule. | 0d |
 | OQ-0d-11 | A TypeScript reference to a type outside the graph (`Array<string>`) raises `KeyError` in the iOS generator | `ValueError("unsupported type: ...")`, as the brief asks for every unsupported syntax. | 0d |
+| OQ-0d-12 | Is the guest draft token a secret? | Yes: it can claim a guest trip, so it is redacted from `toString` and logs and kept out of saved state like other secrets. | 0d |
 
 ## Tasks
 

@@ -32,7 +32,7 @@ REQUEST_ROOT_TYPES = ['ApiTripInput']
 SWIFT_KEYWORDS = {'public', 'private', 'internal', 'return', 'case', 'default', 'extension', 'repeat', 'in', 'is', 'switch', 'where', 'throw', 'throws', 'try', 'false', 'true', 'none', 'operator'}
 KOTLIN_KEYWORDS = {'as', 'break', 'class', 'continue', 'do', 'else', 'false', 'for', 'fun', 'if', 'in', 'interface', 'is', 'null', 'object', 'package', 'return', 'super', 'this', 'throw', 'true', 'try', 'typealias', 'typeof', 'val', 'var', 'when', 'while'}
 # Secrets never reach a log through toString (AGENTS.md "Secrets").
-REDACTED = {('ApiReviewIdentity', 'guestSecret')}
+REDACTED = {('ApiReviewIdentity', 'guestSecret'), ('ApiReviewIdentity', 'token')}
 RESERVED_CASES = {'Unknown', 'Serializer', 'Companion'}
 IMPORTS = {
     'KSerializer': 'kotlinx.serialization.KSerializer',

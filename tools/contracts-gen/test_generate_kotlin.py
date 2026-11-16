@@ -89,7 +89,7 @@ class GeneratorTests(unittest.TestCase):
             'ApiReviewIdentity': '{\nreadonly token: string,\nreadonly guestSecret: string | null,\n}',
         }))
         self.assertIn('override fun toString(): String =', result)
-        self.assertIn('"ApiReviewIdentity(token=${token}, guestSecret=${if (guestSecret == null) "null" else "***"})"', result)
+        self.assertIn('"ApiReviewIdentity(token=***, guestSecret=${if (guestSecret == null) "null" else "***"})"', result)
 
     def test_enum_case_collision_is_rejected(self):
         with self.assertRaisesRegex(ValueError, 'colliding enum cases'):
