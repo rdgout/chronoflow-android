@@ -34,6 +34,10 @@ abstract class MeasureBundleSizeTask : DefaultTask() {
     @get:Inject
     abstract val exec: ExecOperations
 
+    init {
+        outputs.upToDateWhen { false }
+    }
+
     @TaskAction
     fun measure() {
         val aab = bundle.get().asFile
