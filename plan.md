@@ -814,7 +814,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - two runs give byte-identical output.
 
   `verifyTokens` regenerates into `build/` and diffs; it is part of `make generators-check`.
-- [ ] **Fonts.** Copy the ten TTFs into `core/designsystem/src/main/res/font/`, named `figtree_400.ttf` … `fraunces_500_opsz48.ttf`:
+- [x] **Fonts.** Copy the ten TTFs into `core/designsystem/src/main/res/font/`, named `figtree_400.ttf` … `fraunces_500_opsz48.ttf`:
   - Figtree 400, 500, 600 and 700;
   - Fraunces 400 and 500 at opsz 20, 32 and 48 (OQ-A10).
 

@@ -13,9 +13,10 @@ GENERATORS :=
 GENERATOR_CHECKS :=
 GENERATORS += tokens
 GENERATOR_CHECKS += tokens-check
+GENERATOR_CHECKS += fonts-check
 
 .PHONY: quick check test format lint targeted generate generators-check size emu emu-down emu-clean avd-create matrix du
-.PHONY: tokens tokens-check fonts assets strings plan-copy contracts snapshots captures perf perf-timeline baseline-profile
+.PHONY: tokens tokens-check fonts fonts-check assets strings plan-copy contracts snapshots captures perf perf-timeline baseline-profile
 
 quick:
 	$(RUN_TIER) quick --results '*/build/test-results/test/*.xml' --results '*/*/build/test-results/test/*.xml' --results 'build-logic/convention/build/test-results/test/*.xml' -- $(GRADLE) spotlessCheck $(JVM_MODULES:%=:%:test) :build-logic:convention:test
@@ -47,6 +48,12 @@ tokens:
 
 tokens-check:
 	python3 -I Scripts/check-sha256-manifest.py tools/tokengen/ios-inputs.sha256 && $(GRADLE) -q :tools:tokengen:verifyTokens :tools:tokengen:test
+
+fonts:
+	sh tools/fonts/copy-fonts.sh
+
+fonts-check:
+	python3 -I Scripts/check-sha256-manifest.py core/designsystem/fonts.sha256 && $(GRADLE) -q :core:designsystem:testDebugUnitTest --tests '*FontHashTest'
 
 generators-check:
 	@if [ -z "$(strip $(GENERATOR_CHECKS))" ]; then echo "generators-check: nothing to check yet"; else $(MAKE) $(GENERATOR_CHECKS); fi
@@ -85,7 +92,7 @@ du:
 	@du -sh ~/.gradle/caches ~/.android/avd build 2>/dev/null || true
 	@git worktree list --porcelain | sed -n 's/^worktree //p' | while read -r wt; do du -sh "$$wt"; done
 
-fonts assets:
+assets:
 	@echo "make $@: lands in Phase 0b (feat/phase-0b-tokens)" >&2; exit 1
 
 strings plan-copy:

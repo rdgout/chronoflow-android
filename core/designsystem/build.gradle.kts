@@ -9,4 +9,6 @@ android {
 dependencies {
     implementation(libs.compose.runtime)
     implementation(libs.compose.ui.graphics)
+
+    testImplementation(libs.junit4)
 }
