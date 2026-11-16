@@ -227,7 +227,7 @@ An Android-only deviation needs an open question with a default, recorded below,
 - **Copy promises a clock shift, never symptom relief.**
 - **No unneeded comments;** comment only the why. No static initialisers or eager singletons.
 - **Git:**
-  - `git init -b main`; the first commit holds only `plan.md`, `AGENTS.md`, `CLAUDE.md`, `docs/`, `_design/` and `.gitignore`.
+  - `git init -b main`; the first commit holds only `plan.md`, `AGENTS.md`, `CLAUDE.md`, `docs/research/`, `_design/` and `.gitignore`.
   - Then one branch per phase, `feat/phase-<id>-<slug>`, stacked: a phase starts from the stack top once its dependencies are in the stack, and parallel phases are rebased onto the stack top in completion order ("Tasks"). Never commit to `main` after the first docs commit.
   - Atomic Conventional Commits (`type(scope): subject`, lower-case imperative) that tick the task here in the same commit.
   - No `Co-Authored-By` or any other trailer (iOS OQ 1).
@@ -713,12 +713,12 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - `Docs/tooling.md`
   - `Docs/ui-test-tiers.md`
 
-**Delivers.** Creates the git repository; its first commit holds only plan.md, AGENTS.md, CLAUDE.md, docs/, _design/ and .gitignore. Adds the Gradle 9.9.1 wrapper, the version catalog and the build-logic convention plugins, and creates every module of the A3 graph as a skeleton so the Konsist rules guard module boundaries from day one. A minimal :app (Application, MainActivity, manifest allowlist, debug StrictMode, debug network config) installs and launches as net.chronoflow.app.native.debug. Spotless with ktlint, Lint as errors, Konsist, verifyReleaseManifest and the size gate are wired, together with the Makefile, Scripts/ci.sh, run-tier.sh, emulator.sh and measure-tiers.sh. The phase measures make quick and make check, records the numbers, and proves which tiers the worker sandbox can run. It adds no product code.
+**Delivers.** Creates the git repository; its first commit holds only plan.md, AGENTS.md, CLAUDE.md, docs/research/, _design/ and .gitignore. Adds the Gradle 9.9.1 wrapper, the version catalog and the build-logic convention plugins, and creates every module of the A3 graph as a skeleton so the Konsist rules guard module boundaries from day one. A minimal :app (Application, MainActivity, manifest allowlist, debug StrictMode, debug network config) installs and launches as net.chronoflow.app.native.debug. Spotless with ktlint, Lint as errors, Konsist, verifyReleaseManifest and the size gate are wired, together with the Makefile, Scripts/ci.sh, run-tier.sh, emulator.sh and measure-tiers.sh. The phase measures make quick and make check, records the numbers, and proves which tiers the worker sandbox can run. It adds no product code.
 
 **Tasks**
-- [ ] **Repository.**
+- [x] **Repository.**
   - Run `git init -b main` and add `.gitignore` (`build/`, `.gradle/`, `.kotlin/`, `local.properties`, `.idea/`, `*.iml`, `captures/`, `*.hprof`, `*.jks` except `app/debug.keystore`, `.claude/*.lock`, `.claude/settings.local.json`).
-  - The first commit, `docs: add android plan, agent rules, research and boards`, holds `plan.md`, `AGENTS.md`, `CLAUDE.md`, `docs/`, `_design/` and `.gitignore`. Then create `feat/phase-0a-scaffold`.
+  - The first commit, `docs: add android plan, agent rules, research and boards`, holds `plan.md`, `AGENTS.md`, `CLAUDE.md`, `docs/research/`, `_design/` and `.gitignore`. Then create `feat/phase-0a-scaffold`.
   - Add `tools/ios-pin.txt` (`f391a1fa`) and `tools/web-pin.txt` (`e36368ec82e6c44c0a5b1c624324e2a4fb5ddd19`).
 - [ ] **Wrapper.**
   - Bootstrap with the cached distribution: `~/.gradle/wrapper/dists/gradle-9.4.1-bin/arn2x92ynaizyzdaamcbpbhtj/gradle-9.4.1/bin/gradle wrapper --gradle-version 9.9.1 --distribution-type bin --gradle-distribution-sha256-sum d8a18a7a841dd5df825d35a685fad6f2d7f12ac0c280e57b67c27b4a520ba228`. After that, use only `./gradlew`.
