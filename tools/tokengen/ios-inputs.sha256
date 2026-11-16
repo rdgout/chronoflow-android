@@ -1,0 +1,14 @@
+# ios-pin f391a1fac33eb0f0ea9e3f565206b91118e793d0
+e1047f3b2cd78d42be89e39f5ac5993b6398cba07eac64f538d1767956d183a7  Tools/TokenGen/Plan.source.json  tools/tokengen/ios/Plan.source.json
+9a405b0b17383071e373119a1d2320496286a41eca1c117cbeba4d3ff3b93bd2  Tools/TokenGen/PlanUI.source.json  tools/tokengen/ios/PlanUI.source.json
+92d65d29c7a8a35410f062bd3cbdc2fbbaa69984dc042a0c07b4fe15fb804a39  Tools/TokenGen/Settings.source.json  tools/tokengen/ios/Settings.source.json
+bfc03b104925a38104c9380aafb501b8b6338d799987a29389c87c4d6d3e29d8  Packages/ChronoFlowKit/Sources/DesignSystem/AuthTokens.generated.swift  tools/tokengen/src/test/resources/ios/AuthTokens.generated.swift
+a6d0948bf6eab3db6878a0398a8b474e9d5599c65db37e220b808f9e89e62108  Packages/ChronoFlowKit/Sources/DesignSystem/CfSky.generated.swift  tools/tokengen/src/test/resources/ios/CfSky.generated.swift
+2cb92faeeb6d226e9e2298d3a0b0ee305cdb4b1adaf84d6287e248fba2e3aeb6  Packages/ChronoFlowKit/Sources/PlanCore/PlanMetrics.generated.swift  tools/tokengen/src/test/resources/ios/PlanMetrics.generated.swift
+ed024ba8d2f8e4de34997569a8ad0cb63911947834f1ce96f0c8b63f94d04926  Packages/ChronoFlowKit/Sources/DesignSystem/PlanTypeMetrics.generated.swift  tools/tokengen/src/test/resources/ios/PlanTypeMetrics.generated.swift
+a4724ab404fa5ce9b2432d2d91fb72dd517dd83de0c7b5adb48fb642c360dddf  Packages/ChronoFlowKit/Sources/DesignSystem/PlanUITokens.generated.swift  tools/tokengen/src/test/resources/ios/PlanUITokens.generated.swift
+60849c2859462053501cc0dc132e5f7e41230cb40cc25d3e2dd859602a59710a  Packages/ChronoFlowKit/Sources/DesignSystem/SettingsTokens.generated.swift  tools/tokengen/src/test/resources/ios/SettingsTokens.generated.swift
+a2cdd5f4219b3d057b00c53ddaa25bc6e2561c69e9bbbd8cd85ed73596f9edf7  Packages/ChronoFlowKit/Sources/DesignSystem/TermsTokens.generated.swift  tools/tokengen/src/test/resources/ios/TermsTokens.generated.swift
+ebf4420b4f5c6878f38393163e2c1eb199c5b1bf1a158c40a5f523a0fef6a3a6  Tools/TokenGen/TokenGenReport.md  tools/tokengen/src/test/resources/ios/TokenGenReport.md
+45ac05ad22482618121c80356acc23dae7bf71a0226d8e3d425628e07e72abbe  Packages/ChronoFlowKit/Sources/DesignSystem/TypeMetrics.generated.swift  tools/tokengen/src/test/resources/ios/TypeMetrics.generated.swift
+1fd1a44d007968033ffc9036475f21e2379ce99b545a398c51f0dc457801d754  Packages/ChronoFlowKit/Sources/DesignSystem/WelcomeTokens.generated.swift  tools/tokengen/src/test/resources/ios/WelcomeTokens.generated.swift
