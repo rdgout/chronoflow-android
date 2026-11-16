@@ -31,6 +31,11 @@ class TargetedTest(unittest.TestCase):
         self.assertIn("am instrument", result.stdout)
         self.assertIn("class net.chronoflow.app.AppLaunchSmokeTest", result.stdout)
 
+    def test_release_source_set_runs_through_the_release_task(self):
+        result = targeted("app:ReleaseAppIdentityTest")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn(":app:testReleaseUnitTest --tests '*.ReleaseAppIdentityTest'", result.stdout)
+
     def test_unknown_module_exits_2(self):
         self.assertEqual(targeted("nope:X").returncode, 2)
 

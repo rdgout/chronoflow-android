@@ -53,7 +53,13 @@ def plan(selectors):
             key = (module, "instrumented")
             groups.setdefault(key, []).append(fqcn + ("#" + method if method else ""))
         elif find_class(module_dir, cls):
-            key = (module, "jvm" if module in JVM_MODULES else "android")
+            if module in JVM_MODULES:
+                kind = "jvm"
+            elif find_class(module_dir, cls, "testRelease"):
+                kind = "android-release"
+            else:
+                kind = "android"
+            key = (module, kind)
             groups.setdefault(key, []).append("*.%s%s" % (cls, "." + method if method else ""))
         else:
             fail("class '%s' not found in %s" % (cls, module))
@@ -79,7 +85,7 @@ def plan(selectors):
                        "-Pandroid.testInstrumentationRunnerArguments.class=" + ",".join(items)]
                 )
         else:
-            task = ":test" if kind == "jvm" else ":testDebugUnitTest"
+            task = {"jvm": ":test", "android-release": ":testReleaseUnitTest"}.get(kind, ":testDebugUnitTest")
             results = "%s/build/test-results/**/*.xml" % module.replace(":", "/")
             tests = []
             for item in items:
