@@ -239,7 +239,10 @@ data class ApiReviewIdentity(
     val reviewRevision: Int?,
     val sourceRevision: String?,
     val guestSecret: String?,
-)
+) {
+    override fun toString(): String =
+        "ApiReviewIdentity(token=${token}, inputRevision=${inputRevision}, reviewRevision=${reviewRevision}, sourceRevision=${sourceRevision}, guestSecret=${if (guestSecret == null) "null" else "***"})"
+}
 
 @Serializable
 data class ApiReviewItinerary(

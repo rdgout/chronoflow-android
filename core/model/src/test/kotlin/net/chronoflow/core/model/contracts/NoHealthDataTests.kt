@@ -9,8 +9,10 @@ import assertk.assertions.isNull
 import assertk.assertions.isSameInstanceAs
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import net.chronoflow.core.model.api.AccountSnapshot
 import net.chronoflow.core.model.api.ApiJson
 import net.chronoflow.core.testing.Fixtures
 import org.junit.Test
@@ -91,5 +93,43 @@ class NoHealthDataTests {
         assertThat(response.detail.plan.prompts).isEmpty()
         val clean = Fixtures.bytes("trips/detail.json")
         assertThat(TripDetailResponse.decode(clean).data).isSameInstanceAs(clean)
+    }
+
+    @Test
+    fun legacyAccountDecodingDiscardsHealthAnswersAndReadinessTargets() {
+        val raw = fixtureObject("account/snapshot.json")
+        val settings = raw["settings"] as JsonObject
+        var body = (settings["bodyClock"] as JsonObject)
+        for (key in retired) body = body.with(ProfilePreferences.camel(key), yes)
+        body =
+            body
+                .with("excludeCaffeine", null)
+                .with("flightMovementBreaks", null)
+                .with("invalidDrafts", obj("pregnancy" to no, "shift_work" to JsonNull))
+        val readiness =
+            obj(
+                "variant" to JsonPrimitive("health-adjusted"),
+                "lightDevicesAllowed" to no,
+                "missing" to JsonArray(retired.map { obj("question" to JsonPrimitive(it)) }),
+                "adjustments" to
+                    JsonArray(listOf(obj("key" to JsonPrimitive("old health copy"), "args" to JsonArray(emptyList())))),
+            )
+        val patched = raw.with("settings", settings.with("bodyClock", body)).with("readiness", readiness)
+        val text = ApiJson.response.encodeToString(JsonElement.serializer(), patched)
+        val value = ApiJson.response.decodeFromString(AccountSnapshot.serializer(), text)
+        for (key in retired) assertThat(value.settings.bodyClock[ProfilePreferences.camel(key)]).isNull()
+        assertThat(value.settings.bodyClock["invalidDrafts"]).isEqualTo(obj("shift_work" to JsonNull))
+        assertThat(value.settings.bodyClock["excludeCaffeine"]).isEqualTo(no)
+        assertThat(value.settings.bodyClock["flightMovementBreaks"]).isEqualTo(no)
+        assertThat(value.readiness["lightDevicesAllowed"]).isNull()
+        assertThat(value.readiness["variant"]).isEqualTo(JsonPrimitive("needs-answers"))
+        assertThat(value.readiness["missing"])
+            .isEqualTo(JsonArray(listOf(obj("question" to JsonNull), obj("question" to JsonPrimitive("shift_work")))))
+        assertThat(value.readiness["adjustments"]).isEqualTo(JsonArray(emptyList()))
+        val encoded =
+            ApiJson.response.parseToJsonElement(
+                ApiJson.response.encodeToString(AccountSnapshot.serializer(), value),
+            ) as JsonObject
+        assertThat((encoded["settings"] as JsonObject)["bodyClock"]).isEqualTo(value.settings.bodyClock)
     }
 }
