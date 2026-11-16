@@ -283,6 +283,47 @@ class OverlayTest(unittest.TestCase):
         self.assertEqual(r.lock["auth\tA"], "auth_a")
 
 
+INDEX = "core/ui/src/main/kotlin/net/chronoflow/core/ui/l10n/generated/CopyIndex.generated.kt"
+
+
+def index_text(r):
+    return r.files[INDEX].decode("utf-8")
+
+
+class CopyIndexTest(unittest.TestCase):
+    def test_copy_index_escapes_kotlin_literals(self):
+        key = 'a "b" $c \\ d\n'
+        r = run({AUTH: cat(**{key: single(key, key)})})
+        self.assertIn('"a \\"b\\" \\$c \\\\ d\\n" -> CopyEntry(', index_text(r))
+
+    def test_copy_index_redirects_single_replacement_only(self):
+        catalogs = {SETTINGS: cat(One=single("a", "b"), Two=single("c", "d"), Three=single("e", "f"))}
+        overlay = {"entries": [
+            {"name": "android_one", "en": "X", "nl": "Y", "replaces": [{"table": "settings", "key": "One"}], "review": "approved"},
+            {"name": "android_two", "en": "Z", "nl": "W", "replaces": [{"table": "settings", "key": "Two"}, {"table": "settings", "key": "Three"}], "review": "approved"},
+        ]}
+        text = index_text(run(catalogs, overlay=overlay))
+        self.assertIn('"One" -> CopyEntry(R.string.android_one, false, emptyList())', text)
+        self.assertIn('"X" -> CopyEntry(R.string.android_one', text)
+        self.assertNotIn('"Two" ->', text)
+        self.assertNotIn('"Three" ->', text)
+
+    def test_copy_index_omits_debug_and_one_keys(self):
+        r = run({APP: cat(**{"Debug route: %@": single("Debug route: %@", "Debugroute: %@"), "Today": single("Today", "Vandaag")}),
+                 WIZARD: cat(**{"{{count}} nights": single("{{count}} nights", "x {{count}}"),
+                                "{{count}} nights_one": single("{{count}} night", "y {{count}}")})})
+        text = index_text(r)
+        self.assertNotIn("Debug route", text)
+        self.assertNotIn("nights_one", text)
+        self.assertIn('"Today" -> CopyEntry(R.string.app_today, false, emptyList())', text)
+        self.assertIn('"{{count}} nights" -> CopyEntry(R.plurals.wizard_count_nights, true, listOf("count"))', text)
+
+    def test_copy_index_has_no_load_time_allocation(self):
+        text = index_text(run({AUTH: cat(A=single("a", "b"))}))
+        self.assertNotIn("mapOf", text)
+        self.assertNotIn("arrayOf", text)
+
+
 class MainTest(unittest.TestCase):
     def fake_read(self, ios, pin):
         return {AUTH: cat(A=single("a", "b"))}
