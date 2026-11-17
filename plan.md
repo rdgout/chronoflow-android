@@ -1177,7 +1177,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 **Delivers.** Implements the per-day static drawing as an immutable struct-of-arrays op list (DayDrawing), built by a pure JVM builder in :core:plan behind a TextMetrics interface. The builder follows the iOS renderer's draw order, category styles and tile content rules. The phase adds the Android TextPaint metrics, the hit index, the accessibility target list, the replay onto a native Canvas with shared resources (hatch and dot shaders, parsed lucide paths) and the bounded DayDrawingCache. JVM and Robolectric tests hold the build budgets (5 ms per day, 150 ms per width, 512 KiB per drawing) and reference-free render guards in light and dark.
 
 **Tasks**
-- [ ] **DayDrawing.kt** (`:core:plan`): op codes in a `ByteArray`, coordinates in a `FloatArray`, colors in an `IntArray`, plus text runs and path ids. It is immutable and reports `estimatedBytes`.
+- [x] **DayDrawing.kt** (`:core:plan`): op codes in a `ByteArray`, coordinates in a `FloatArray`, colors in an `IntArray`, plus text runs and path ids. It is immutable and reports `estimatedBytes`.
 - [ ] **DayDrawingBuilder.kt.**
   - Same draw order as iOS `TimelineRenderer.swift`.
   - Category styles (`04 §3.8`) from `TimelinePalette.generated.kt`, and the tile content rules (`§3.9`).
