@@ -1015,11 +1015,11 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - Perf variants `benchmarkRelease` and `nonMinifiedRelease` take extra sources from `app/src/perf/`. Verify this works; otherwise use the OQ-A28 fallback and record it.
   - `StartupBenchmark`: cold start, 10 iterations, `CompilationMode.Partial`, `StartupTimingMetric`.
   - `make perf` appends rows to `docs/perf-startup.md`.
-- [ ] **Results checker** `Scripts/check-benchmarks.py`, with `benchmark/budgets.json` (metric → device class → hard and aim values).
+- [x] **Results checker** `Scripts/check-benchmarks.py`, with `benchmark/budgets.json` (metric → device class → hard and aim values).
   - It reads every `*-benchmarkData.json` under `build/outputs/connected_android_test_additional_output/`.
   - It fails on a missing, non-finite or over-budget value.
   - It computes jank % and the hitch ratio from the per-frame runs, and prints `Startup metric: …` and `Timeline metric: …` lines.
-  - Its test, `Scripts/test_check_benchmarks.py`, runs in quick: the 0.81 s first-frame fixture must fail, and so must a missing metric.
+  - Its test, `Scripts/tests/test_check_benchmarks.py`, runs in quick: the 0.81 s first-frame fixture must fail, and so must a missing metric.
 - [ ] **Hang caps.**
   - Verify that the runner honors `timeout_msec=60000` (OQ-A29): a temporary 70 s test must fail at about 60 s; then delete it.
   - Gradle `Test` tasks time out after 10 min.

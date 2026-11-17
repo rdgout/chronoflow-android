@@ -1,0 +1,36 @@
+{
+  "context": {
+    "build": {
+      "model": "sdk_gphone64_arm64",
+      "version": {
+        "sdk": 36
+      }
+    }
+  },
+  "benchmarks": [
+    {
+      "name": "timelineFirstFrame",
+      "className": "net.chronoflow.benchmark.TimelineBenchmark",
+      "metrics": {
+        "timelineFirstFrameFirstMs": {
+          "minimum": 610.0,
+          "maximum": 810.0,
+          "median": 642.5,
+          "runs": [
+            610.0,
+            640.0,
+            700.0,
+            810.0,
+            655.0,
+            630.0,
+            620.0,
+            645.0,
+            660.0,
+            635.0
+          ]
+        }
+      },
+      "sampledMetrics": {}
+    }
+  ]
+}
