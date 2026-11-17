@@ -253,3 +253,46 @@ fun testingNotInMain(scope: KoScope) {
             }.map { it.path }
     fail("testingNotInMain", violations)
 }
+
+private val timeHygieneModules = setOf("core/plan", "core/sync", "core/reminders", "core/wizard")
+private val timeHygienePatterns =
+    listOf(
+        "Locale.getDefault",
+        "TimeZone.getDefault",
+        "ZoneId.systemDefault",
+        "System.currentTimeMillis",
+        "Instant.now(",
+        "LocalDate.now(",
+        "LocalDateTime.now(",
+        "ZonedDateTime.now(",
+        "OffsetDateTime.now(",
+        "Clock.systemDefaultZone",
+        "Clock.systemUTC",
+        "SimpleDateFormat",
+        "Calendar.getInstance",
+        "DateTimeFormatter.ofLocalized",
+        "String.format(",
+    )
+private val literalFormatRegex = Regex("\"\\s*\\.format\\(")
+
+fun noDefaultLocaleZoneOrClockInLogic(scope: KoScope) {
+    val violations =
+        scope
+            .moduleFiles()
+            .filter { it.module in timeHygieneModules && it.sourceSet == "main" }
+            .filterNot { it.path.endsWith(".generated.kt") || it.path.replace('\\', '/').contains("/generated/") }
+            .flatMap { file ->
+                val literal = timeHygienePatterns.filter { file.text.contains(it) }
+                val formatted =
+                    if (literalFormatRegex.containsMatchIn(
+                            file.text,
+                        )
+                    ) {
+                        listOf("\"...\".format(")
+                    } else {
+                        emptyList()
+                    }
+                (literal + formatted).map { "${file.path}: $it" }
+            }
+    fail("noDefaultLocaleZoneOrClockInLogic", violations)
+}

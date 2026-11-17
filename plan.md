@@ -1093,7 +1093,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - `CheckState.kt`: check keys, and mark merging with pending marks.
   - `PlanLogic.kt`: optional and hidden steps; `show_optional_items` is never sent.
   - `PlanClock.kt`: an interface, with `FakePlanClock` in `:core:testing`.
-- [ ] **Time hygiene.**
+- [x] **Time hygiene.**
   - A `ZoneRules` cache and cached `DateTimeFormatter`s.
   - A Konsist rule forbids `Locale.getDefault`, `TimeZone.getDefault`, `ZoneId.systemDefault` and `System.currentTimeMillis` in `:core:plan`, `:core:sync`, `:core:reminders` and `:core:wizard`.
 - [ ] **Ported tests.** Port every non-geometry case of iOS `Tests/PlanCoreTests`, with the Swift names; geometry follows in 1b.
