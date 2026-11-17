@@ -1280,7 +1280,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 **Delivers.** Proves the timeline architecture before any UI polish. It adds the timelineFirstFrame, timelineScroll (exactly 15 flings × 3 iterations on large60) and timelineLastDay Macrobenchmarks with frame, memory, trace-section and placeholder metrics. It generates and commits the baseline and startup profiles and extends check-benchmarks.py with the timeline budgets for the emulator and for devices. The first run and a Perfetto review are recorded in docs/perf-timeline.md, which also records, with numbers, whether design B stands or a fallback (Picture, strips, custom View) is needed.
 
 **Tasks**
-- [ ] **TimelineBenchmark** (`benchmark/…/TimelineBenchmark.kt`). All three use `CompilationMode.Partial(BaselineProfileMode.Require)` and `androidx.benchmark.suppressErrors=EMULATOR` on the AVD.
+- [x] **TimelineBenchmark** (`benchmark/…/TimelineBenchmark.kt`). All three use `CompilationMode.Partial(BaselineProfileMode.Require)` and `androidx.benchmark.suppressErrors=EMULATOR` on the AVD.
   - `timelineFirstFrame`: cold start, 10 iterations, extra `cf.trip-page=large60`, with `TraceSectionMetric("cf.timeline.firstFrame")` and `StartupTimingMetric`.
   - `timelineScroll`: the setup launches and waits for `trip.timeline.ready`. The measured part is exactly 15 flings on `trip.page` with a width/5 gesture margin, using `FrameTimingMetric`, `MemoryUsageMetric(Mode.Max)` and the placeholder count. It runs 3 iterations, each from a fresh launch, then asserts that the day label advanced.
   - `timelineLastDay`: the menu, then `trip.dayMenu.day.59`, must reach `trip.plan.end` within 6 flings.
