@@ -1485,7 +1485,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 - A 60 fps `adb shell screenrecord`, reviewed frame by frame, shows no flash.
 - `first-commit` and the cold TTID are recorded in `docs/perf-startup.md`.
 
-**Validation (2026-11-17):** The allocation guard uses the orchestrator-approved five-round minimum rule to ignore one-time VM costs while retaining a zero-allocation steady-state requirement. The required `make perf-timeline` found the 1 px marker and completed its functional cases, but the orchestrator declared its timings **INVALID for judgement** because the host was busy with other builds and simulators. Its CPU band check failed both measurements; no timeline-performance conclusion is drawn from them.
+**Validation (2026-11-17):** The final targeted allocation test, `make quick` and `make check` pass. The allocation guard uses the orchestrator-approved five-round minimum rule to ignore one-time VM costs while retaining a zero-allocation steady-state requirement. The required `make perf-timeline` found the 1 px marker and completed its functional cases, but the orchestrator declared its timings **INVALID for judgement** because the host was busy with other builds and simulators. Its CPU band check failed both measurements; no timeline-performance conclusion is drawn from them.
 
 
 ### Phase 3b: Readiness reducer, endings and process policy (`feat/phase-3b-launch-readiness`)
