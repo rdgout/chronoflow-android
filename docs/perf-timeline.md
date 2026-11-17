@@ -206,7 +206,22 @@ Reference (Pixel 8 class) and low-end (Pixel 4a or Galaxy A15/A16 class) rows: o
 
 ## 12. Decision
 
-pending (Task 9).
+**Design B stands (emulator, 2026-11-17, `061f921`).** R1 (light, 1.0), R2 (dark, 1.0) and R3 (light, font scale 1.3) passed every emulator gate and functional row of plan.md "Where gates apply"; the compiler lines of section 8 are skippable. Device: `pixel` (`sdk_gphone64_arm64`, API 36, `-gpu host`, 60 Hz), `benchmarkRelease`, `Partial(Require)`, `make perf-timeline`. Numbers from the section 6 rows and the run logs (emulator numbers, not device claims):
+
+| Value | R1 light 1.0 | R2 dark 1.0 | R3 light 1.3 | Gate |
+|---|---|---|---|---|
+| First frame median / max (ms) | 92.4 / 96.9 | 80.2 / 107.8 | 84.3 / 102.5 | each <= 800 |
+| Decode / prepare / typeface mean (ms) | 8.5 / 9.5 / 1.7 | 7.5 / 7.8 / 1.7 | 7.9 / 8.2 / 1.6 | report |
+| Peak RSS anon max (MiB) | 103.5 | 103.5 | 103.5 | <= 150 |
+| Builds on main | 0 | 0 | 0 | 0 |
+| Placeholder max per iteration | 0 | 0 | 0 | <= 6 |
+| Replay max (ms) | 0.7 | 1.4 | 0.4 | report (B' trigger > 1 ms on low-end only) |
+| Main P99 / RenderThread P99 max (ms) | 2.0 / 4.5 | 1.9 / 4.5 | 1.9 / 4.6 | report |
+| CPU P50 / P90 / P99 (ms) | 3.1 / 3.9 / 5.2 | 3.2 / 3.9 / 5.1 | 3.2 / 4.0 / 5.1 | P90, P99: band (these rows start the baseline) |
+| Jank % / hitch ms/s max | 0.0 / 0.0 | 0.0 / 0.0 | 0.0 / 0.0 | report |
+| Scroll, Last day | ok, ok | ok, ok | ok, ok | functional |
+
+Device rows open: device only (OQ-A22, OQ-A45); B' is re-evaluated on the first low-end run if `timelineReplayMaxMs` > 1 ms (OQ-T27). R2's replay max of 1.4 ms is an emulator number and is only recorded. GC per iteration (7 to 10) and the recomposition count (OQ-1e-15) are open review items, not gates. `make perf` (startup) still passes with `Require`: median TTID 95.0 ms, REPORT.
 
 ## 13. Tooling notes
 
