@@ -4,7 +4,7 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import net.chronoflow.core.model.contracts.Language
 import net.chronoflow.core.model.contracts.TripDetailLegView
-import net.chronoflow.core.testing.MockTripTemplates
+import net.chronoflow.core.testing.LargeTimelineFixtures
 import org.junit.Test
 
 class TripPageCopyTests {
@@ -53,10 +53,7 @@ class TripPageCopyTests {
         assertThat(tripDatesText("2026-10", "2026-1", Language.En, pageCopy = en)).isEqualTo("2026-10–2026-1")
         assertThat(tripMetaText("2026-10-12", "2026-10-18", listOf(" KL 861 ", "", "JL 1"), Language.En, en))
             .isEqualTo("12–18 Oct · KL 861 · JL 1")
-    }
-
-    @Test fun outboundFlightNumbersFillTheSubtitle() {
-        val detail = MockTripTemplates.templates()[2].detail
+        val detail = LargeTimelineFixtures.fixture("S3").detail
         val from = detail.trip.from
         val to = detail.trip.to
         val legs =
@@ -72,7 +69,7 @@ class TripPageCopyTests {
     }
 
     @Test fun preparationPreservesNoticeTones() {
-        val detail = MockTripTemplates.templates()[2].detail
+        val detail = LargeTimelineFixtures.fixture("S3").detail
         val layouts = layoutPlan(detail.plan, detail.timeline)
         val problems = mutableListOf<String>()
         for (language in listOf(Language.En, Language.Nl)) {
