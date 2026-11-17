@@ -1331,7 +1331,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 **Delivers.** Builds ChronoFlowTheme on the generated tokens: CompositionLocals for colors, type, shapes, spacing and Reduce Motion, plus the toM3() mapping so Material 3 system components are tinted by tokens. It adds cfPress, the soft shadows, the sky brush, the designed primitives (CfButton in five sizes, the text-field decoration, cards, rows, pills, badges, banners, skeletons) and thin wrappers for system components (top app bars, switch, sheet, alert, snackbar, segmented buttons, pull to refresh, progress). It generates the lucide and Material Symbols vectors, adds the haptics interface and contrast tests, and adds Konsist rules that keep MaterialTheme.colorScheme and raw colors out of feature code.
 
 **Tasks**
-- [ ] **Theme** (`core/designsystem/…/theme/`).
+- [x] **Theme** (`core/designsystem/…/theme/`).
   - `ChronoFlowTheme(darkTheme)`, with `CfColors` provided through a static `LocalCfColors`.
   - `CfType`: one `FontFamily` per Fraunces optical size, chosen by text size: ≥ 40 → opsz 48, ≥ 26 → opsz 32, else opsz 20.
   - `LocalCfShapes`, `LocalCfSpacing`, `LocalReduceMotion`, and the ripple and text-selection colors.
