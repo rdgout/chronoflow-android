@@ -50,7 +50,7 @@ Each Fraunces optical size has one cached family. The generator has already reso
 
 The landed Material 3 1.4.0 exposes 48 color roles. `ToM3Test` checks every public color getter, so a newly added role fails until mapped. Designed code reads `CfTheme`, not Material color roles.
 
-System overrides: checked switch track = dawn and thumb = dawnForeground; progress and refresh fill = dawn; active segment = systemSelected; sheet = card, 38 dp top corners, 640 dp maximum width and the default Material handle; alert = popover; Snackbar = foreground with background text and action. Date/time controls retain their native structure. The Material 3 version has a public `TimePickerDialog`; no custom dialog fallback is needed.
+System overrides: checked switch track = dawn and thumb = dawnForeground; progress and refresh fill = dawn; active segment = systemSelected; sheet = card, 38 dp top corners, 640 dp maximum width and the default Material handle; alert = popover; Snackbar = foreground with background text and action. Date/time controls retain their native structure. The Material 3 version has a public `TimePickerDialog`; no custom dialog fallback is needed. Its 1.4.0 implementation draws a default Surface over its `containerColor` background (confirmed in the cached library bytecode). The wrapper scopes only the Material `surface` role to popover for that dialog, and passes popover to the picker colors. The root disables tonal color elevation explicitly: Material can replace the alpha of a transparent surfaceTint, which otherwise darkens a default surface. Native shadows remain native. `TimePickerTintTest` checks the actual dialog edge pixels in both themes.
 
 ## Contrast: KNOWN_GAPS
 
@@ -105,7 +105,26 @@ Crops: [light](design-system/shadow-light.png), [dark](design-system/shadow-dark
 
 Geometry uses `LayoutMatrix.phone`: small-nl, largeFont-nl, pixel8-en, light only. Wide native-window checks additionally use foldInner-en and landscapeSideNav-en. Captures cover en/nl and light/dark separately. Each parameter is an individual test. No screen test asserts copy. Stored JVM references are opt-in and compare JVM with JVM only.
 
-Gallery captures and visual comparison are pending. Intended source-priority differences, to verify in the captures:
+The first layout run exposed harness assumptions that do not describe native controls. Centered text rounds both line edges independently (measured Dutch button: text width 241 px, line edges 167/409 px); the text guard permits that one physical pixel, without permitting exceeded lines. Small buttons use 6 dp vertical padding to preserve the bundle's 32 dp visual height, with a separate 48 dp target; the brief's 8 dp padding would make them 36 dp. Other sizes retain 8 dp.
+
+Material segments intentionally share their 1 dp border, and the clock dial's circular targets overlap as rectangles. They are exempt from the inappropriate rectangle-overlap assertion. Native dialog coordinates are window-local, so activity-inset assertions are not applied to them; device captures verify their native rendering. Whole-display system-chrome placement review remains in Phase 14 (OQ-A42). The sheet width is checked directly against 640 dp on the wide cases. Date cells may distribute one physical pixel unevenly; only native calendar targets allow that rounding. The sheet handle retains its Material drawing and gets a 48 dp minimum interactive modifier. Skeleton ink uses a 2-channel-level threshold (muted/background differs by less than the general guard's 16); small native windows use a 0.1% ink floor rather than a whole-page 0.5% floor. Blank renders still fail.
+
+Worker visual review, 2026-11-17: all 13 Robolectric gallery sections in all four language/theme combinations were inspected (four-column contact sheets and full-size Fields/Buttons/Banners plus dialog images). All 13 corresponding device contact sheets were also inspected. The corrected Sheet/TimePicker sections were recaptured after review; a further Dutch calendar review identified the activity-locale issue described below. Comparisons use the named boards' `.dc.html` source values, not a pixel overlay between different renderers. Contact sheets are local evidence under `build/phase2-validation/contact/` and `build/phase2-validation/contact-device/`.
+
+| Board | Verified result / intentional difference |
+|---|---|
+| `Main` | Dawn and OnSky use the token fills, 52 dp minimum height and 16 sp 600/500 labels. The neutral gallery background makes the translucent OnSky fill less visible than on the board sky. Sky samples are separately checked; no dots or shadow are added. |
+| `AuthStates` | Error-banner fill/border, 18 dp radius, 18 dp circle-alert and stacked 14/20 title/message match the source. Dutch wraps naturally. Fields have no fill; error rows wrap without ellipsis. The caller can suppress announcements as on iOS. |
+| `SetStates`, `SetHome`, `Set2FA` | Row-card radius 22, full-width dividers, 36 dp discs, 16 dp glyphs, 20 dp chevrons and disabled opacity 0.5 match. Lock and chevron can coexist. Selected pills include the iOS check absent on the board. Badges use the board fills and outlines. |
+| `SheetStates` | Skeleton sizes/radii and low-contrast muted fill match. Skeletons are static because iOS wins over the pulse in the bundle. Small buttons retain a 32 dp visual box with a 48 dp target. |
+| `ItemDetail`, `SheetStates` | Sheet surface is card with 38 dp top corners. The handle, dialog buttons, calendar, clock dial, switch, segmented buttons and refresh indicator are native Material; their geometry intentionally differs from the drawn iOS chrome. |
+| `SetStates` toast | The implementation uses the specified native Snackbar instead of the designed toast. Its action is background-colored in both themes to avoid the dark-theme dawn contrast failure. |
+
+The OQ-2-22 title check uses two additional light-only captures (`make captures ONLY=measurements/phase2`, 8.15 s, two PNGs). The Dutch gallery title “Wachtwoord wijzigen” fits without truncation in both the large and small native app bars on small-nl and largeFont-nl (root cap 1.3). Both PNGs were viewed: `build/captures/measurements/phase2/Bars_{small,largeFont}_nl_light.png`. The title remains single-line/ellipsizable for longer feature-owned titles; those belong to their screen guards. These measurement captures live outside the `designsystem/` prefix, whose 13 × 4 set remains exactly 52 PNGs.
+
+All native windows rendered on Robolectric, so no `DEVICE_ONLY` exemption or skipped capture section was needed. Device captures additionally verify their native rendering. The initial review caught and corrected a gray time-picker surface, English sheet copy and native calendar headings in the Dutch gallery, and the standalone spinner inheriting black in dark mode. The gallery resolves sheet copy before entering the native window because that window supplies a fresh view context. Device captures additionally set and restore the real application locale before launching their activity so Material calendar headings use the same locale as the weekday grid; the real app's locale remains an activity/root configuration policy. No screenshot is asserted for its copy.
+
+Source-priority differences:
 
 - `Main`: no pattern-dots layer (user decision); no card shadow.
 - `SetStates`: selected pills include the iOS checkmark; the board has none.
@@ -117,4 +136,32 @@ Gallery captures and visual comparison are pending. Intended source-priority dif
 
 The brief predates M0/M1. This phase extends the existing 0b generated tokens and 1c `tools/icons` pipeline, retains `make vectors`, and uses 0e's tiers, `ProfileRule`, `LayoutMatrix`, `Guards` and `BoardCapture`. It does not replace those systems. The Material Symbols source is `@material-symbols/svg-400` 0.48.2, published 2026-10-27, selected with the two-week cutoff on 2026-11-17 and verified against npm's archive hash. Lucide remains the boards' 0.511.0 shapes.
 
-Validation results are pending; no performance or fidelity claim is made until the corresponding measurement is recorded.
+## Validation
+
+Worker, 2026-11-17, Apple M4 Max; JVM native graphics SDK 36 and pixel API 36, as indicated. Test commands ran once per group, followed by scoped fixes only. Initial failures in color-rule parsing, native-control geometry assumptions and picker surface tint were corrected and their affected methods passed on the first scoped fix for each failure. No hang or two-fix stop threshold occurred.
+
+| Evidence | Result / wall time |
+|---|---|
+| Phase design-system targeted classes | 24 tests passed; remaining groups and fixes recorded below |
+| Konsist raw-color parser regression | scoped method passed, 29.84 s including recompilation |
+| Layout/harness scoped fixes | 26 cases passed, 23.02 s |
+| RootOverrides parity/release and seeded native-control test | passed, 71.07 s including builds; native test 3.35 s |
+| Time-picker surface pixels | both themes passed, 5.47 s |
+| `make captures ONLY=designsystem` | 52 PNGs, 57.50 s; affected sections recaptured after fixes |
+| Final `make captures DEVICE=1 ONLY=designsystem` | 52 PNGs, 273.11 s wall including device-lock wait (Gradle 28 s); slowest case 0.604 s |
+| `make captures DEVICE=1 ONLY=Nope` | passed, 0 PNGs, 36.19 s |
+| `SNAPSHOT_RECORD=1 make snapshots` | passed, 8.29 s; exactly the seven requested design-system references added |
+| `make baseline-profile` | passed, 467.87 s; outputs committed bfa817f |
+| `make perf` | exited 0, 44.41 s; median 95.8 ms, original 0e-relative 5% acceptance **unmet** |
+| `make perf-timeline` | passed, 289.96 s; metrics and report-only trend below |
+| Standalone `make quick` | failed budget checks, 15.30 s: spacing rule 1193 ms, route rule 1436 ms |
+| Scoped rule-budget fix | six methods passed, 3.44 s; spacing rule 267 ms, route rule 2 ms, all planted/control cases pass |
+| `make check` quick prerequisite | passed: 876 budget checks, zero over budget, 6.12 s main tier + 1.87 s build logic + tooling + 2.49 s timing |
+
+The original startup comparison is retained: 95.8 ms is +8.0% against 0e's 88.7 ms, versus +0.8% against M1's 95.0 ms. The compilation modes differ between those historical baselines. See `docs/perf-startup.md` and OQ-A66; emulator measurements are not device claims. The timeline benchmark passed in 289.96 s: first-frame median/max 88.8/97.5 ms, CPU P50/P90/P99 3.3/6.5/8.8 ms, RSS peak 103.2 MiB, zero main-thread builds and placeholders. Replay max 2.9 ms is a retained +262% report-only trend. See `docs/perf-timeline.md` for the matching-workload comparison and archive.
+
+The saved before/after statuses for all three read-only sibling repositories are identical. Their pre-existing untracked files remain untouched. No Android-only copy was added. All exact command output is retained locally in `build/phase2-*.log`; timing/result XML is additionally written by the 0e tier harness. An optional sandbox-blocked process diagnostic is recorded verbatim in `docs/tooling.md`.
+
+The boundary-rule fix scans only candidate feature files for annotated Metrics objects and skips the route hierarchy walk when no NavKey root/reference exists. It changes no limits or exemptions. The single `make check` invocation then stopped on `ModifierFactoryExtensionFunction` for `fieldSemantics` (53.52 s total). The helper was converted to an equivalent Modifier extension (8098dfd), formatted and committed; the remaining exact Makefile steps resumed from lint/release without another top-level quick/check invocation. The resumed steps all passed in **44.40 s** total: lint/release/manifest/R8 10.06 s (27 release tests); layout 19.40 s (197 tests); generator checks passed; emulator smoke 8.79 s (10 tests, slowest 0.742 s). All budget checks were green. Local evidence is retained under `build/phase2-validation/final-gates/` and `build/phase2-check-resumed.log`.
+
+The final StrictMode review found an existing smoke-test-only disk read: `ScreenTestHarnessTest` called `Activity.filesDir` inside `onActivity`. c42aa25 moves that read to the instrumentation test worker. Its exact method passed on the first scoped rerun (5.36 s wall, 0.466 s test time), and `adb logcat -d -T '11-17 09:03:22.000' -s StrictMode` covering the new 09:04:59–09:05:00 run was empty. The earlier violations and clean follow-up are retained in `build/phase2-strictmode{,-after-fix}.log`. No StrictMode policy was relaxed.

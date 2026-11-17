@@ -185,3 +185,24 @@ A temporary `HangCapProbeTest` (`@Smoke`, `CountDownLatch(1).await(70, SECONDS)`
 
 - `docs/device-matrix.md` has the measured `pixel` insets (top 132 px, bottom 63 px, gesture navigation) and `PixelProfileInsetsTest` passes on `pixel`.
 - `make perf` on `pixel` (emulator, `benchmarkRelease`, `Partial(UseIfAvailable)`, `-gpu host`): `Startup metric: startupCold timeToInitialDisplayMs median=88.7 ms REPORT` (min 79.9, max 97.1); the row is in `docs/perf-startup.md`. Emulator numbers are regression signals, not device claims. `build/emulator/gpu-mode` did not exist because the emulator was booted before this phase; it was written by hand after `ps` showed `-gpu host` (a later cold boot through `Scripts/emulator.sh ensure` writes it).
+
+## Phase 2: primitive captures
+
+`make captures ONLY=designsystem` writes 52 Robolectric PNGs under `build/captures/designsystem/` (13 sections × en/nl × light/dark). All native windows render on SDK 36; no device-only skips were needed. `make captures DEVICE=1 ONLY=designsystem` writes the matching 52 under `build/captures/device/designsystem/`. Each language/theme/section is a separate parameterized test, keeping the per-test budget visible.
+
+`BoardCapture.capture(rule, name)` retains its signature. It selects the JVM path only when `Build.FINGERPRINT == "robolectric"`; the instrumentation registry also exists on Robolectric and cannot distinguish them. On pixel, AGP supplies `additionalTestOutputDir` and pulls the images to `core/ui/build/outputs/connected_android_test_additional_output/debugAndroidTest/connected/pixel(AVD) - 16/designsystem/`. The fallback external-files path was not needed. `Scripts/capture-device.py` runs the Gradle invocation and PNG copy under the host-wide device lock. A nonmatching prefix (`make captures DEVICE=1 ONLY=Nope`) passed with zero PNGs.
+
+The androidTest dependency on `:core:testing-compose` excludes `org.robolectric` and `io.github.takahirom.roborazzi`; those JVM dependencies do not belong in the device APK. The device gallery sets and restores the target application's real locale before/after the Compose activity: a composition-local override alone leaves native dialog headings in the activity locale. The JVM gallery uses `ProfileRule` as before. `make captures ONLY=measurements/phase2` adds two light-only Dutch app-bar measurements on small/largeFont outside the 52-PNG gallery prefix.
+
+Native-window guards use window-local geometry. Activity-inset assertions and rectangular overlap assertions do not describe separate windows or circular clock targets. Device captures verify native rendering; whole-display system-chrome placement review remains in Phase 14 (OQ-A42). Designed components retain the full guard set; the measured one-physical-pixel text/calendar rounding and native shared segment borders are documented in `docs/design-system.md`.
+
+An optional host-process diagnostic could not run in the sandbox:
+
+```text
+$ ps -axo pid,etime,command | rg 'baseline|connectedNonMinified|GradleWrapperMain|run_tier'
+zsh:1: operation not permitted: ps
+```
+
+Device logcat showed the profile iterations progressing; no required Gradle, adb or emulator command was blocked. Kotlin daemon marker creation under `~/Library/Application Support/kotlin/daemon/` also logs `Operation not permitted`; Kotlin's fallback compilation succeeds. No permission escalation or sibling-repo write was used.
+
+Phase 2 gate close-out: the standalone quick run failed two rule budgets (1193/1436 ms); the rules were narrowed without changing limits and their six affected methods passed (267/2 ms for the project checks). The quick prerequisite in `make check` passed 876 budget checks with zero over budget. That single check invocation stopped on a modifier-factory lint issue, which was fixed directly; its remaining Makefile steps resumed once and passed (27 release tests, 197 layout tests, generators, 10 smoke tests). Exact logs are `build/phase2-{quick,rule-budget-fix1,check,check-resumed}.log`. A final log review found a pre-existing `filesDir` read in ScreenTestHarnessTest's onActivity callback; the test now reads on its worker, and its scoped rerun passed with clean fresh StrictMode output.

@@ -635,6 +635,16 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A54 | `CLIP_TILE` only when a tile's content can leave its quadratic shape, instead of always clipping as iOS does (OQ-1c-17). | Conditional, by the exact square-root test; pixel-identical. Affects 1c. |
 | OQ-A55 | A text run narrower than "…" is dropped; iOS clips the full line to its rect (OQ-1c-20). | Drop the run (at most a one-glyph sliver differs). Affects 1c. |
 | OQ-A56 | `DayDrawing`'s constructor is public (the brief said internal) so the `saveLayerAlpha` reference test can slice an op list from `:feature:trip` tests. | Public, documented as builder and test use only. Affects 1c. |
+| OQ-A57 | Sheet container: mapping says popover; pinned iOS and ItemDetail use card (Phase 2 OQ-2-2) | Use card; preserve the 38 dp top corners and 640 dp maximum width | 2 |
+| OQ-A58 | Drag handle: mapping says border; iOS uses its system grabber (OQ-2-3) | Use the default Material DragHandle, with the mapped mutedForeground role and Material alpha, plus a 48 dp minimum interactive target | 2, 14 |
+| OQ-A59 | Snackbar dawn action has only 1.61:1 contrast on foreground in dark (OQ-2-5) | Use background for the Snackbar action; retain dawn for inversePrimary in toM3 | 2 |
+| OQ-A60 | Skeleton bundle pulses while pinned iOS is static (OQ-2-6) | Static skeletons in both motion modes; the spinner remains animated | 2 |
+| OQ-A61 | The planned offline banner has no in-scope board (OQ-2-14) | CfBanner is the auth error banner; info uses CfNotice; the feature owning an offline board builds that state | 2, 4d |
+| OQ-A62 | Lucide version and shapes differ between the boards and newer releases (OQ-2-15) | Extend the existing generator with board bundle and inline SVG sources, pinned to the boards' 0.511.0 shapes | 2 |
+| OQ-A63 | Dawn fills on light surfaces fail 3:1 (OQ-2-7) | Keep the board's dawn fill on switch, progress and refresh; retain the explicit contrast-gap tests; use dawnText for text and selected checks | 2, 14 |
+| OQ-A64 | Native Material calendar cells can round one physical pixel below 48 dp, while segments share borders and clock-dial hit rectangles overlap | Preserve Material controls. Allow one physical pixel of native-calendar rounding; keep native window placement and circular targets under Material; verify native rendering on the emulator and retain whole-display system-chrome review in Phase 14; keep strict guards for designed controls | 2, 14 |
+| OQ-A65 | The brief combines a 32 dp Small button with 20 dp text and 8 dp vertical padding, which makes 36 dp | Follow the bundle's 32 dp Small visual height with 6 dp vertical padding and a separate 48 dp target; other button sizes retain 8 dp padding and text can wrap | 2 |
+| OQ-A66 | Phase 2 cold start is 95.8 ms: +8.0% against 0e 88.7 ms (Partial UseIfAvailable), +0.8% against M1 95.0 ms (Partial Require). Which baseline should future theme comparisons use? | Retain the brief's original 5% criterion as unmet; keep both comparisons and defer any baseline reset to an explicit user decision. Phase 3a measures the real launch overlay separately | 2, 3a, 13 |
 | OQ-0a-22 | Native libraries in the bundle? | Allow only `libandroidx.graphics.path.so` (Compose graphics-path; excluding it breaks Path conversion below API 34); fail on any other `.so` | 0a, 13 |
 | OQ-0b-1 | Where does `PlanMetrics` live? `08 §3.1` lists it inside `CfDimens`, but its consumer `:core:plan` is a JVM module that cannot depend on `:core:designsystem` | `core/plan/…/generated/PlanMetrics.generated.kt` (Double, dp), as iOS keeps it in `PlanCore` | 0b, 1b, 1c |
 | OQ-0b-2 | Port all iOS TokenGen outputs now (Auth, Settings, Terms, Welcome, PlanUI, Press, LaunchPaint, TypeMetrics), or only colors, sky and type? | All of them now (the iOS files are exact goldens and Phases 2, 3a, 3c, 5a, 9 and 10 need them) | 0b |
@@ -1370,7 +1380,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - `MaterialTheme.colorScheme`, `Color(0x…)` and named `Color.*` constants are forbidden outside `:core:designsystem`.
   - Feature dp values come from `CfDimens`, `CfSpacing`, or a screen `*Metrics` object that names its board.
 - [x] **Shadow fidelity** (Risk 19). Render `CfCard` with `softShadow1` in light and dark and compare it with the `Main` and `SetStates` board renders. Record the result and any adjustment in `docs/design-system.md` before more cards are built.
-- [ ] **Guards** for every primitive: light and dark, en and nl, `small` and `largeFont`. Stored Roborazzi references are opt-in, and for the primitives only.
+- [x] **Guards** for every primitive: light-only `LayoutMatrix.phone` (`small`-nl, `largeFont`-nl, `pixel8`-en), plus wide native-window checks; en/nl and light/dark gallery captures. Stored Roborazzi references are opt-in, and for the primitives only.
 
 **Acceptance**
 - The role and contrast tests pass.
