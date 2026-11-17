@@ -8,12 +8,14 @@ import kotlinx.coroutines.test.runTest
 import net.chronoflow.core.model.launch.Gate
 import net.chronoflow.core.model.launch.LaunchReadiness
 import net.chronoflow.core.model.launch.SessionPresence
+import net.chronoflow.core.model.launch.SignedOutReadiness
 import net.chronoflow.core.testing.tiers.Logic
 import net.chronoflow.feature.launch.model.LaunchKind
 import net.chronoflow.feature.launch.model.LaunchRoute
 import net.chronoflow.feature.launch.model.ManualLaunchClock
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -131,6 +133,37 @@ class LaunchControllerLifecycleTest {
             assertFalse(controller.overlayActive)
             assertFalse(controller.handOffComplete)
             assertFalse(controller.holdsSystemSplash())
+        }
+
+    @Test fun warmStartBeforeTheColdSessionResolvesRoutesHeadlessly() =
+        runTest(timeout = 60.seconds) {
+            val clocks = mutableListOf<ManualLaunchClock>()
+            var attempts = 0
+            val controller =
+                LaunchController(
+                    moon = { error("no drawing") },
+                    scope = backgroundScope,
+                    clockFactory = { ManualLaunchClock().also { clocks += it } },
+                    readinessFactory = {
+                        attempts++
+                        if (attempts == 1) LifecycleReadiness(unresolvedSession = true) else SignedOutReadiness
+                    },
+                )
+            controller.captureReduceMotion(true, false)
+            controller.onActivityCreated(null, false)
+            controller.onFirstDraw(Rect())
+            runCurrent()
+            assertTrue(controller.overlayActive)
+            assertNull(controller.route)
+            assertEquals(LaunchKind.Warm, controller.onActivityCreated(null, false))
+            runCurrent()
+            assertEquals(2, attempts)
+            assertEquals(LaunchRoute.Welcome, controller.route)
+            assertEquals(Duration.ZERO, requireNotNull(controller.coordinator).state.exitStart)
+            assertTrue(clocks.all { it.pendingSleeps == 0 })
+            assertFalse(controller.overlayActive)
+            assertFalse(controller.holdsSystemSplash())
+            controller.onActivityDestroyed()
         }
 }
 

@@ -217,4 +217,18 @@ python3 -I Scripts/device_lock.py -- ./gradlew --console=plain :benchmark:connec
 
 The test launches the explicit `MainActivity` component with `am start -W`, kills the background process with `am kill`, waits for its PID to disappear through `UiDevice.wait`, then proves the relaunch has a different PID and shows `launch.opening`. It explicitly disables Reduce Motion so the splash remains observable with functional animator scales at 0. Both `benchmarkRelease` and `nonMinifiedRelease` target `net.chronoflow.app.native` (also the `targetAppId` fallback); `app.root` and `route.*` tags are exposed by the main-source root in release variants. `make baseline-profile` selects only `BaselineProfileGenerator`: benchmark rule filtering alone cannot exclude this plain JUnit test.
 
+To diagnose only startup on the pixel emulator, under the same device lock (no profile generation or history append):
+
+```sh
+python3 -I Scripts/device_lock.py -- bash -c '
+set -e
+restore() { Scripts/emulator.sh prep-functional emulator-5554; }
+trap restore EXIT
+Scripts/emulator.sh prep-perf emulator-5554
+./gradlew --console=plain :benchmark:connectedBenchmarkReleaseAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=net.chronoflow.benchmark.StartupBenchmark -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.enabledRules=Macrobenchmark -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.suppressErrors=EMULATOR -Pandroid.testInstrumentationRunnerArguments.timeout_msec=60000
+'
+```
+
+Macrobenchmark calls the WARM measure block once cold with `iteration == null` before iteration 0. That unmeasured preparation waits for the normal cold hand-off; each measured warm iteration still requires no overlay and a route within the original 2 s bound. The diagnostic command uses scales 1 so it exercises the complete cold preparation, and restores functional settings under the same lock. Use `make perf` on a quiet host for recorded performance results.
+
 The functional hand-off/stall proofs use the debug `LaunchController.frameLog` ring buffer. The existing `compositionObserver` remains a composition counter. Read `CfLaunchProof` in logcat for ready/slow/stall hand-off end times and the sampled stall gap.

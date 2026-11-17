@@ -57,6 +57,9 @@ class StartupBenchmark {
             setupBlock = { pressHome() },
         ) {
             startActivityAndWait()
+            // Macrobenchmark invokes this block cold with iteration=null before the first WARM iteration.
+            if (iteration == null) check(device.wait(Until.gone(By.res("launch.opening")), 5000))
+            check(!device.hasObject(By.res("launch.opening")))
             check(device.wait(Until.hasObject(By.res("route.welcome")), 2000))
         }
 }
