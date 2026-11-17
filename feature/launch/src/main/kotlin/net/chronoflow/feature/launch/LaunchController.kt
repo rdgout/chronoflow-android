@@ -43,6 +43,7 @@ class LaunchController(
     private val readinessFactory: (LaunchClock) -> LaunchReadiness = { SignedOutReadiness },
     private val statusIo: CoroutineDispatcher = Dispatchers.IO,
     val frameLog: LaunchFrameLog? = null,
+    private val onReadinessStarted: (Long, LaunchOverrides) -> Unit = { _, _ -> },
 ) {
     private var capturedAppearance: LaunchAppearance? = null
     val appearance: LaunchAppearance get() = checkNotNull(capturedAppearance)
@@ -102,7 +103,14 @@ class LaunchController(
     }
 
     private fun rebuildHandOff() {
-        val timeline = LaunchHandOffTimeline.build(opening, launchState)
+        val timeline =
+            if (overrides.mode !=
+                null
+            ) {
+                overrides.timeline(opening)
+            } else {
+                LaunchHandOffTimeline.build(opening, launchState)
+            }
         handOff =
             HandOffPlan(
                 LaunchFrameSampler(timeline),
@@ -112,11 +120,20 @@ class LaunchController(
     }
 
     private fun startReadiness() {
-        if (readinessStarted || handOffComplete || overrides.freezeAt != null) return
+        if (readinessStarted || handOffComplete) return
         readinessStarted = true
+        onReadinessStarted(t0Nanos, overrides)
+        if (overrides.mode == LaunchMode.Slow) prepareStatus()
+        if (overrides.mode != null || overrides.freezeAt != null) return
         tracing.beginReady()
         coordinator =
-            LaunchCoordinator(readinessFactory(clock), clock, reduceMotion, scope = scope, onChange = ::onLaunchChange)
+            LaunchCoordinator(
+                (overrides.readiness ?: readinessFactory)(clock),
+                clock,
+                reduceMotion,
+                scope = scope,
+                onChange = ::onLaunchChange,
+            )
         coordinator?.start()
     }
 
@@ -163,7 +180,11 @@ class LaunchController(
     }
 
     private fun prepareStatus() {
-        if (launchState.statusStart == null || statusRaster != null || statusJob?.isActive == true) return
+        if ((launchState.statusStart == null && overrides.mode != LaunchMode.Slow) ||
+            statusRaster != null || statusJob?.isActive == true || t0Nanos == UNSET
+        ) {
+            return
+        }
         val request = statusRequest ?: return
         statusJob =
             scope.launch {

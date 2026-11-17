@@ -1524,7 +1524,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - the forced signed-out exit at 8 s.
 
   Known endings are scheduled on the frame clock ahead of time.
-- [ ] **StubReadiness** (debug and perf only), driven by `cf.readyAt` and a stub outcome extra. Name the extra after the iOS `LaunchArguments.swift` equivalent. 4e replaces the stub everywhere except perf.
+- [x] **StubReadiness** (debug and perf only), driven by `cf.readyAt` and a stub outcome extra. Name the extra after the iOS `LaunchArguments.swift` equivalent. 4e replaces the stub everywhere except perf.
 - [ ] **LaunchController**, process-level, in `AppGraph`.
   - The overlay plays once per process (D14), and a warm start gets a 300 ms fade.
   - It detects a process-death restore (A8) and turns it into a cold launch.

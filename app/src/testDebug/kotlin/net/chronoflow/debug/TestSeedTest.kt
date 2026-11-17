@@ -114,4 +114,16 @@ class TestSeedTest {
         }
         org.junit.Assert.assertNull(TestSeed.parse(emptyMap()).holdSplash)
     }
+
+    @Test fun launchReadinessKeysAreForwardedVerbatim() {
+        val extras =
+            mapOf(
+                "cf.session" to "in",
+                "cf.gate" to "terms",
+                "cf.stored" to "no",
+                "cf.readyDelay" to "3.5",
+                "cf.mode" to "slow",
+            )
+        org.junit.Assert.assertEquals(extras, TestSeed.parse(extras).raw)
+    }
 }

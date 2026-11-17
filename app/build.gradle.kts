@@ -43,6 +43,7 @@ android {
 }
 
 dependencies {
+    testImplementation(testFixtures(project(":feature:launch")))
     implementation(project(":feature:launch"))
     implementation(project(":feature:auth"))
     implementation(project(":feature:onboarding"))

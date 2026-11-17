@@ -66,6 +66,7 @@ fun LaunchOverlay(
         )
     }
     LaunchedEffect(controller) {
+        controller.awaitFirstDraw()
         if (controller.overrides.freezeAt != null) return@LaunchedEffect
         if (controller.reduceMotion) controller.onOpeningSettled()
         runLaunchOpening(

@@ -32,6 +32,16 @@ class ReleaseReadinessTest {
         missing("net.chronoflow.app.perf.JankStatsInstaller")
     }
 
+    @Test fun releaseShipsNoLaunchDiagnosticsOrStub() {
+        missing("net.chronoflow.app.perf.StubReadiness")
+        org.junit.Assert.assertEquals(
+            LaunchDiagnostics.None,
+            net.chronoflow.app.perf.LaunchDiagnosticsParser.parse(
+                mapOf("cf.session" to "in", "cf.mode" to "ready", "cf.mainThreadStall" to "500"),
+            ),
+        )
+    }
+
     @Test
     fun releaseIsNotDebuggable() {
         assertThat(BuildConfig.DEBUG).isFalse()
