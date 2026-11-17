@@ -21,6 +21,8 @@ import androidx.compose.ui.unit.dp
 import net.chronoflow.core.designsystem.generated.CfDarkColors
 import net.chronoflow.core.designsystem.generated.CfLightColors
 import net.chronoflow.core.designsystem.theme.ChronoFlowTheme
+import net.chronoflow.core.testing.DeviceProfiles
+import net.chronoflow.core.testing.compose.ProfileHost
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import kotlin.math.abs
@@ -32,14 +34,16 @@ abstract class PrimitiveTestFixture {
 
     protected fun host(content: @Composable () -> Unit) {
         compose.setContent {
-            ChronoFlowTheme(darkTheme = dark) {
-                Box(
-                    Modifier
-                        .testTag("fixture")
-                        .fillMaxSize()
-                        .background(colors.background)
-                        .padding(16.dp),
-                ) { content() }
+            ProfileHost(DeviceProfiles.pixel8) {
+                ChronoFlowTheme(darkTheme = dark) {
+                    Box(
+                        Modifier
+                            .testTag("fixture")
+                            .fillMaxSize()
+                            .background(colors.background)
+                            .padding(16.dp),
+                    ) { content() }
+                }
             }
         }
     }

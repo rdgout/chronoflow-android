@@ -41,8 +41,8 @@ class SystemDialogTintTest(
 ) : PrimitiveTestFixture() {
     @Test fun sheetKeepsTheCardSurface() {
         host { CfModalBottomSheet({}, Modifier.testTag("sheet")) { Box(Modifier.size(100.dp, 100.dp)) } }
-        val p = pixels("sheet")
-        assertTokenColor(p[p.width - 4, p.height / 2], colors.card)
+        val p = compose.onNode(isDialog()).captureToImage().toPixelMap()
+        assertTokenColor(p[p.width / 2, p.height - (24 * compose.density.density).toInt()], colors.card)
     }
 
     @Test fun alertKeepsThePopoverSurface() {
@@ -67,7 +67,7 @@ class SystemDialogTintTest(
             CfSnackbarHost(state, Modifier.testTag("snackbar"))
         }
         val p = pixels("snackbar")
-        assertTokenColor(p[p.width / 2, (4 * compose.density.density).toInt()], colors.foreground)
+        assertTokenColor(p[p.width / 2, (16 * compose.density.density).toInt()], colors.foreground)
         val action = compose.onNode(hasAnyAncestor(hasTestTag("snackbar")) and hasClickAction())
         assertEquals(
             colors.background,
