@@ -32,13 +32,13 @@ import net.chronoflow.core.plan.PreparedPlan
 import net.chronoflow.core.plan.drawing.DayDrawingCache
 import net.chronoflow.core.plan.drawing.DayDrawingKey
 import net.chronoflow.core.plan.drawing.TextMetrics
+import net.chronoflow.core.plan.drawing.TimelineTraceNames
 import net.chronoflow.core.plan.generated.TimelinePalette
 import net.chronoflow.core.plan.trippage.openingDay
 import net.chronoflow.core.plan.trippage.projectDayClocks
 import net.chronoflow.feature.trip.timeline.DayClocks
 import net.chronoflow.feature.trip.timeline.DrawingRequest
 import net.chronoflow.feature.trip.timeline.TimelineDrawingRepository
-import net.chronoflow.feature.trip.timeline.TimelineTraceNames
 import net.chronoflow.feature.trip.timeline.TimelineTracer
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean

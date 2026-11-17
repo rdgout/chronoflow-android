@@ -104,6 +104,8 @@ def judge(value, gate, signed=False):
         return "REPORT", ""
     if "warn" in gate:
         return ("WARN", "") if value > gate["warn"] else ("PASS", "")
+    if "min" in gate and value < gate["min"]:
+        return "FAIL", "below minimum"
     if "hard" in gate and value > gate["hard"]:
         return "FAIL", "over hard"
     if "aim" in gate and value > gate["aim"]:
@@ -174,7 +176,7 @@ def _fmt(value):
 def _suffix(gate):
     parts = []
     if gate:
-        for key in ("hard", "aim", "warn"):
+        for key in ("hard", "aim", "warn", "min"):
             if key in gate:
                 parts.append("%s=%s" % (key, gate[key]))
     return (" [" + " ".join(parts) + "]") if parts else ""
@@ -194,8 +196,10 @@ def derived_values(entry, bench, refresh_hz="60"):
         overrun = (sampled.get("frameOverrunMs") or metrics.get("frameOverrunMs") or {}).get("runs")
         if not overrun:
             return None, "frameOverrunMs is missing (needs API 31+)"
+        if any(not list(_flatten(r)) for r in overrun):
+            return None, "frameOverrunMs has an empty iteration"
         if metric == "jankPercent":
-            return [jank_percent(list(_flatten(r))) for r in overrun if list(_flatten(r))], ""
+            return [jank_percent(list(_flatten(r))) for r in overrun], ""
         try:
             hz = float(refresh_hz)
         except (TypeError, ValueError):
@@ -314,6 +318,9 @@ def check_timeline(args, budgets):
                 )
                 failed = True
                 continue
+        if metric in ("timelineBuildCount", "timelineReplayCount") and len(vals) != 3:
+            print("%s metric: %s needs all three iterations" % (label, metric), file=sys.stderr)
+            failed = True
         gate = timeline_gate(entry, args.device_class)
         feature = None
         if metric == "frameDurationCpuMs" and stat in ("P90", "P99"):

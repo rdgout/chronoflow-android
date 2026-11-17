@@ -19,6 +19,7 @@ import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.unit.Constraints
 import net.chronoflow.core.plan.drawing.DayDrawing
 import net.chronoflow.core.plan.drawing.TimelineTarget
+import net.chronoflow.core.plan.drawing.TimelineTraceNames
 import kotlin.math.roundToInt
 
 /**

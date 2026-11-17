@@ -3,7 +3,7 @@ package net.chronoflow.feature.trip.timeline.host
 import android.view.Choreographer
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
-import net.chronoflow.feature.trip.timeline.TimelineTraceNames
+import net.chronoflow.core.plan.drawing.TimelineTraceNames
 import net.chronoflow.feature.trip.timeline.TimelineTracer
 
 /**

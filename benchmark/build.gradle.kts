@@ -14,4 +14,5 @@ dependencies {
     implementation(libs.androidx.benchmark.macro.junit4)
     implementation(libs.androidx.test.ext.junit)
     implementation(project(":core:testing"))
+    implementation(project(":core:plan"))
 }

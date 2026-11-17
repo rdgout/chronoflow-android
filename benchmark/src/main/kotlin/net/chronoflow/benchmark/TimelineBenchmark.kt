@@ -16,6 +16,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.Direction
 import androidx.test.uiautomator.Until
+import net.chronoflow.core.plan.drawing.TimelineTraceNames
 import net.chronoflow.core.testing.tiers.Perf
 import org.junit.Rule
 import org.junit.Test
@@ -45,7 +46,7 @@ class TimelineBenchmark {
             metrics =
                 listOf(
                     TraceSectionMetric(
-                        "cf.timeline.firstFrame",
+                        TimelineTraceNames.FIRST_FRAME,
                         TraceSectionMetric.Mode.First,
                         label = "timelineFirstFrame",
                     ),
@@ -73,13 +74,25 @@ class TimelineBenchmark {
                     FrameTimingMetric(),
                     MemoryUsageMetric(MemoryUsageMetric.Mode.Max),
                     TraceSectionMetric(
-                        "cf.timeline.placeholder",
+                        TimelineTraceNames.PLACEHOLDER,
                         TraceSectionMetric.Mode.Count,
                         label = "timelinePlaceholder",
                     ),
-                    TraceSectionMetric("cf.timeline.replay", TraceSectionMetric.Mode.Max, label = "timelineReplay"),
-                    TraceSectionMetric("cf.timeline.replay", TraceSectionMetric.Mode.Count, label = "timelineReplay"),
-                    TraceSectionMetric("cf.timeline.targets", TraceSectionMetric.Mode.Max, label = "timelineTargets"),
+                    TraceSectionMetric(
+                        TimelineTraceNames.REPLAY,
+                        TraceSectionMetric.Mode.Max,
+                        label = "timelineReplay",
+                    ),
+                    TraceSectionMetric(
+                        TimelineTraceNames.REPLAY,
+                        TraceSectionMetric.Mode.Count,
+                        label = "timelineReplay",
+                    ),
+                    TraceSectionMetric(
+                        TimelineTraceNames.TARGETS,
+                        TraceSectionMetric.Mode.Max,
+                        label = "timelineTargets",
+                    ),
                     TimelineTraceMetric(),
                 ),
             iterations = 3,

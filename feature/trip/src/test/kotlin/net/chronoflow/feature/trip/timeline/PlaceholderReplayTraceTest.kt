@@ -1,5 +1,6 @@
 package net.chronoflow.feature.trip.timeline
 
+import net.chronoflow.core.plan.drawing.TimelineTraceNames
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

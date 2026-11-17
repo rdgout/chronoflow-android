@@ -257,17 +257,33 @@
       "metric": "frameCount",
       "stat": "present",
       "unit": "count"
+    },
+    {
+      "test": "timelineScroll",
+      "metric": "timelineBuildCount",
+      "stat": "each",
+      "unit": "count",
+      "all": {
+        "min": 1
+      }
+    },
+    {
+      "test": "timelineScroll",
+      "metric": "timelineReplayCount",
+      "stat": "each",
+      "unit": "count",
+      "all": {
+        "min": 1
+      }
     }
   ],
   "timelinePage": "host",
   "timelineReportOnly": {
     "timelineScroll": [
       "timelineScrollWindowMs",
-      "timelineBuildCount",
       "timelineRecomposeCount",
       "timelineGcCount",
       "timelineReplayMaxMs",
-      "timelineReplayCount",
       "frameCount",
       "memoryHeapSizeMaxKb",
       "timelinePlaceholderToReplayMaxMs",

@@ -31,6 +31,7 @@ import net.chronoflow.core.plan.DayLayout
 import net.chronoflow.core.plan.PreparedDay
 import net.chronoflow.core.plan.TimelineGeometry
 import net.chronoflow.core.plan.drawing.DayDrawingKey
+import net.chronoflow.core.plan.drawing.TimelineTraceNames
 import net.chronoflow.core.plan.generated.TimelinePalette
 import net.chronoflow.core.ui.R
 

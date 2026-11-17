@@ -1,5 +1,6 @@
 package net.chronoflow.feature.trip.timeline
 
+import net.chronoflow.core.plan.drawing.TimelineTraceNames
 import java.util.concurrent.atomic.AtomicInteger
 
 /** A cached layer can keep showing its placeholder without drawing again, so measure until its first replay. */

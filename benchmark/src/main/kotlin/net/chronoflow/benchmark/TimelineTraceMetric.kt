@@ -4,6 +4,7 @@ import androidx.benchmark.macro.ExperimentalMetricApi
 import androidx.benchmark.macro.Metric
 import androidx.benchmark.macro.TraceMetric
 import androidx.benchmark.traceprocessor.TraceProcessor
+import net.chronoflow.core.plan.drawing.TimelineTraceNames
 import kotlin.math.ceil
 
 /**
@@ -28,9 +29,9 @@ class TimelineTraceMetric(
         session: TraceProcessor.Session,
     ): List<Metric.Measurement> =
         listOf(
-            "timelineDecodeMs" to "cf.timeline.decode",
-            "timelinePrepareMs" to "cf.timeline.prepare",
-            "timelineTypefaceMs" to "cf.timeline.typeface",
+            "timelineDecodeMs" to TimelineTraceNames.DECODE,
+            "timelinePrepareMs" to TimelineTraceNames.PREPARE,
+            "timelineTypefaceMs" to TimelineTraceNames.TYPEFACE,
         ).mapNotNull { (metric, section) ->
             val dur =
                 session
@@ -73,9 +74,10 @@ class TimelineTraceMetric(
         out +=
             Metric.Measurement(
                 "timelineBuildOnMainCount",
-                count(session, pkg, "($MAIN) AND slice.name = 'cf.timeline.build'"),
+                count(session, pkg, "($MAIN) AND slice.name = '${TimelineTraceNames.BUILD}'"),
             )
-        out += Metric.Measurement("timelineBuildCount", count(session, pkg, "slice.name = 'cf.timeline.build'"))
+        out +=
+            Metric.Measurement("timelineBuildCount", count(session, pkg, "slice.name = '${TimelineTraceNames.BUILD}'"))
         out +=
             Metric.Measurement(
                 "timelineRecomposeCount",
@@ -103,7 +105,7 @@ class TimelineTraceMetric(
                         COUNT(CASE WHEN slice.dur < 0 THEN 1 END) AS unfinished
                     FROM slice JOIN process_track ON slice.track_id = process_track.id
                     JOIN process USING(upid)
-                    WHERE process.name = '$pkg' AND slice.name = 'cf.timeline.placeholderToReplay'
+                    WHERE process.name = '$pkg' AND slice.name = '${TimelineTraceNames.PLACEHOLDER_TO_REPLAY}'
                     """.trimIndent(),
                 ).first()
         out += Metric.Measurement("timelinePlaceholderToReplayMaxMs", placeholder.long("max_dur") / NS_PER_MS)

@@ -156,7 +156,7 @@ class TimelineCheckTest(unittest.TestCase):
     def test_timeline_derived_values_are_computed_per_iteration(self):
         result = timeline_check(TIMELINE / "pass", row_dir=temp_dir(self))
         self.assertIn("jankPercent each=2.0 %", result.stdout)
-        self.assertIn("hitchRatioMsPerS each=0.7 ms/s", result.stdout)
+        self.assertIn("hitchRatioMsPerS each=0.6 ms/s", result.stdout)
         self.assertIn("memoryRssAnonGrowthKb single=1000.0 KiB", result.stdout)
 
     def test_hitch_uses_active_frames_despite_idle_waits(self):
@@ -182,6 +182,27 @@ class TimelineCheckTest(unittest.TestCase):
         result = timeline_check(TIMELINE / "no-scroll-window", row_dir=temp_dir(self))
         self.assertEqual(result.returncode, 1)
         self.assertIn("timelineScrollWindowMs", result.stderr)
+
+    def test_timeline_zero_builds_fails(self):
+        def empty(b, _):
+            b["timelineScroll"]["metrics"]["timelineBuildCount"]["runs"][1] = 0
+        result = timeline_check(self.variant(empty), row_dir=temp_dir(self))
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("timelineBuildCount each=0.0 count [min=1] FAIL", result.stdout)
+
+    def test_timeline_zero_replays_fails(self):
+        def empty(b, _):
+            b["timelineScroll"]["metrics"]["timelineReplayCount"]["runs"][1] = 0
+        result = timeline_check(self.variant(empty), row_dir=temp_dir(self))
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("timelineReplayCount each=0.0 count [min=1] FAIL", result.stdout)
+
+    def test_timeline_empty_jank_iteration_fails(self):
+        def empty(b, _):
+            b["timelineScroll"]["sampledMetrics"]["frameOverrunMs"]["runs"][1] = []
+        result = timeline_check(self.variant(empty), row_dir=temp_dir(self))
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("frameOverrunMs has an empty iteration", result.stderr)
 
     def test_timeline_nan_fails(self):
         def nan(b, _):
