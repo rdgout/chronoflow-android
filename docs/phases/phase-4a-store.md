@@ -1,9 +1,10 @@
 # Phase 4a brief: account store, session secrets and device identity
 
-- **Branch:** `feat/phase-4a-store`, from the stack top once 0d is in the stack (0a and 0e are always assumed). Wave 3: 1a, 2 and 9a run beside you in their own worktrees, so keep edits to shared files (`plan.md`, `Makefile`, `gradle/libs.versions.toml`, `settings.gradle.kts`) small.
-- **Depends on:** 0d (`AccountID`, `ApiJson`), 0e (tier annotations, `DeviceConfig`, `LanguageChoice`, `ThemeChoice`, `DeviceConfigFile`, `TestSeeds`). **Unblocks:** 4d (repositories, sync), 4e (session controller, wiper), 5a (device identity), 9b (drafts), 10a/10b (device preferences), 12b/12c (reminder tables, permission flag).
-- **Plan entry:** `plan.md` "### Phase 4a" (l.1463–1514) and decision A5 (l.92).
+- **Branch:** `feat/phase-4a-store`, already created from the Phase 3c stack top. Work directly in the main checkout, one phase at a time. Phases 0a–0e, 1a–1e, 2 and 3a–3c are landed; the former parallel-worktree instructions no longer apply.
+- **Depends on:** 0d, API contract generator and fixtures (`AccountID`, `api.ApiJson`), and 0e, test harness, device profiles and perf wiring (tier annotations, `config.DeviceConfig`, `config.LanguageChoice`, `config.ThemeChoice`, app `config.DeviceConfigFile`, debug `TestSeeds`). **Unblocks:** 4d (repositories, sync), 4e (session controller, wiper), 5a (device identity), 9b (drafts), 10a/10b (device preferences), 12b/12c (reminder tables, permission flag).
+- **Plan entry:** `plan.md` "### Phase 4a" (l.1631–1682 at refresh) and decision A5 (l.92).
 - **Brief written:** 2026-11-16 by the orchestrator, from iOS at `f391a1fa` (`git -C /Users/rickgout/Sites/chronoflow-ios rev-parse HEAD` = `f391a1fac33eb0f0ea9e3f565206b91118e793d0`). Revised the same day so that it hands 1a, 4d, 4e, 5a and 9b exactly what their briefs expect (§4.2). Checked the same day against iOS at the pin, web `e36368ec`, `plan.md` and AGENTS.md: the hashes, line citations, schema, records, Swift test names and cases were confirmed; test isolation, cross-module visibility, the backup-rules test and the DataStore singleton were corrected.
+- **Refreshed:** 2026-11-18 against the landed Phase 3c tree. Kotlin signatures, module plugins, catalog aliases, backup rules, tier annotations and downstream hand-ins checked. No earlier-phase production behaviour needs changing in this refresh. Android references below use headings and paths rather than stale line numbers.
 - **Boards:** none. This phase has no UI and no screen. Do not add any.
 - **Tests:** AGENTS.md "Tests". Three tiers:
   - plain JVM (JUnit 4, assertk, kotlinx-coroutines-test, Turbine): no tier annotation;
@@ -33,15 +34,17 @@ Give later phases a safe local store and the device-level files. There is no UI.
 
 | What | Path | Why |
 |---|---|---|
-| Plan | `plan.md` l.1463–1514 (Phase 4a); A3 (module rules, l.90); A5 (persistence, l.92); "Android spec: seeds and test hooks" (l.465); "Open questions for the user" (l.570); Phase 4d (l.1597–1637), 4e, 9b entries | Scope; where new OQ rows go; the bullets you edit in Task 10 |
-| Agent rules | `AGENTS.md` "Tests", "Commands", "Git" (no trailers), "Traps" (rethrow `CancellationException`; Robolectric needs the JDK 21 toolchain; no JUnit `Timeout` rule under Robolectric) | How to work |
-| Research | `docs/research/02-ios-architecture.md` §4.1–§4.4, §4.9–§4.10, §7; `docs/research/14-gaps.md` §3; `docs/research/09-rn-android-lessons.md` §5 | iOS store and session design; RN storage lessons |
-| 0a brief | `docs/phases/phase-0a-scaffold.md`: module table l.127–128; `chronoflow.sqldelight` l.336; OQ-0a-6 l.805; `data_extraction_rules.xml` l.393; `DataExtractionRulesTest` l.413; Konsist rules l.495–504; `Scripts/targeted.py` l.663–667 | What exists |
-| 0d brief | `docs/phases/phase-0d-contracts.md`: `ApiJson` l.167–173; `AccountID` l.185; `OutboxKind` l.260; `ProfilePreferences` l.379; `SessionAccount`/`AccountPolicies` l.432–433 | Types you reuse |
-| 0e brief | `docs/phases/phase-0e-test-harness.md`: tiers §5 l.126–134; T1 tier registry l.166–179; T4 `LanguageChoice`/`ThemeChoice`/`DeviceConfig` l.227–243; T10 `DeviceConfigFile` l.392–405; T11 `TestSeeds.apply` l.461–468; `TestSeedsApplyTest` l.479 | Types and files you move or extend |
-| Downstream briefs | `phase-1a-plan-core.md` l.262–270 and OQ-1a-6 (l.421); `phase-4d-sync.md` §4 "What 4a, 4b and 4c hand you" items 1–6 and §5.1 "Module split" (find them by heading: that brief is revised in parallel, so line numbers move); `phase-4e-session.md` §5.1 (l.148–163), §5.3 AccountWiper (l.264–272), T4 (l.488–507); `phase-9b-wizard-data.md` §4 item 5 (l.158–166) and §6.5 (l.424–457); `phase-5a-sign-in.md` l.368 | What they expect from you (§4.2). Do not implement their parts. |
+| Plan | `plan.md`: Phase 4a; A3 (module rules); A5 (persistence); "Android spec: seeds and test hooks"; "Performance budget"; "Open questions for the user"; Phase 4d, 4e and 9b | Scope, decisions and bookkeeping |
+| Agent rules | `AGENTS.md`, in full | Working, performance, test and Git rules |
+| Research | `docs/research/02-ios-architecture.md` §4.1–§4.4, §4.9–§4.10, §7; `docs/research/14-gaps.md` §3; `docs/research/09-rn-android-lessons.md` §5 | Store and session background |
+| Landed 0a | `build-logic/convention/src/main/kotlin/net/chronoflow/buildlogic/{SqlDelightConventionPlugin,AndroidLibraryConventionPlugin,JvmLibraryConventionPlugin}.kt`, `gradle/libs.versions.toml`, `Scripts/targeted.py`, `Makefile`, `app/src/main/res/xml/data_extraction_rules.xml` | SQLDelight is applied without fallback; existing catalog aliases and test tiers are available; all nine backup domains are present |
+| Landed 0d | `core/model/src/main/kotlin/net/chronoflow/core/model/AccountID.kt`, `api/{ApiJson,SessionContracts}.kt`, `OutboxKind.kt`, `contracts/ProfilePreferences.kt` | Reuse landed names and signatures |
+| Landed 0e–3c | `core/model/…/config/*`, `app/src/main/kotlin/net/chronoflow/app/config/DeviceConfigFile.kt`, `app/src/main/kotlin/net/chronoflow/app/ConfigurationPolicy.kt`, `app/src/debug/kotlin/net/chronoflow/debug/TestSeeds.kt`, `core/testing/…/tiers/*` | Preserve the existing launch exception, config encoding, seeds and tier behaviour |
+| Downstream briefs | `phase-4d-sync.md` §4 items 1–6 and §5.1; `phase-4e-session.md` §5.1, §5.3 and T4; `phase-9b-wizard-data.md` §4 and §6.5; `phase-5a-sign-in.md` device identity hand-in | Deliver §4.2 without implementing later phases |
 
-Read the landed code, not only the briefs: `core/model/src/main/kotlin/net/chronoflow/core/model/` (`AccountID.kt`, `api/ApiJson.kt`, `api/SessionContracts.kt`, `contracts/ProfilePreferences.kt`, `config/*`), `app/src/main/kotlin/net/chronoflow/app/config/DeviceConfigFile.kt`, `app/src/debug/kotlin/net/chronoflow/debug/TestSeeds.kt`, `app/src/main/res/xml/data_extraction_rules.xml`, `core/testing/src/main/kotlin/net/chronoflow/core/testing/tiers/`, `build-logic/`, `Makefile`. Before Task 2, run `ls core/model/src/main/kotlin/net/chronoflow/core/model/store/ 2>/dev/null` to see whether 1a has landed. **If a landed signature differs from this brief, follow the landed code and say so in your hand-off.**
+The 1a files `core/model/src/main/kotlin/net/chronoflow/core/model/store/{PlanVersionRecord,CheckMarkRecord,TripPlanSnapshot}.kt` and `core/model/…/CheckOffChange.kt` are already landed. `PlanVersionRecord.detail` is `ByteArray`; `CheckMarkRecord.ordinal` is `Int`; `TripPlanSnapshot` has no trip field. Leave them unchanged; 4d owns their database mapping. `:core:model` already exposes coroutines with `api` and has coroutines-test, and `:app` already depends on database/datastore. Add only missing dependencies; do not downgrade those existing `api` dependencies.
+
+The device-config move in Task 8 must also update `app/src/androidTest/kotlin/net/chronoflow/app/DeviceConfigStrictModeTest.kt` and `app/src/test/kotlin/net/chronoflow/app/ConfigurationPolicyTest.kt`; the seed test is `app/src/testDebug/kotlin/net/chronoflow/debug/TestSeedsApplyTest.kt`.
 
 ### 2.2 iOS (read-only): `git -C /Users/rickgout/Sites/chronoflow-ios show f391a1fa:<path>`
 
@@ -81,7 +84,7 @@ None. This phase makes no network call and adds no DTO.
 - **Repositories** (`AccountRepository`, `TripRepository`, `SettingsRepository`, `OutboxRepository` with `enqueue`), `AccountModel`, `StoreApplication`, `LocalMutations`, `CanonicalJson`, `StoreTime`, the preserving login upsert (OQ-A40), the plan-version and check-mark mapping, and the LocalStore tests that use them [4d; `plan.md` 4d "Repositories" puts them in `core/data/…/repository/`].
 - `DraftRecord`, `DraftRepository`, the `drafts` named queries and the draft halves of `RecordsTests` [9b].
 - `AccountWiper`, `SessionAccountDatabase`, `SessionAccountStore`, `AccountReadinessRepository`, `SessionController`, the teardown order, `AppGraph` wiring, and their tests (`AccountWiperTests`, `SessionAccountDatabaseTests`, `AccountReadinessTests`) [4e]. You ship only the `WipeMarker` file helper that 4e's wiper uses.
-- `PlanVersionRecord`, `CheckMarkRecord`, `TripPlanSnapshot`, `CheckOffChange` [1a, OQ-1a-6]. Do not create them, even if 1a has not landed (OQ-4a-16).
+- `PlanVersionRecord`, `CheckMarkRecord`, `TripPlanSnapshot`, `CheckOffChange` [1a, OQ-1a-6]. Do not create them, their files are already landed (OQ-4a-16).
 - Guest secrets (Keystore alias `<keychainService>.guest`) and `guest-wizard.json` [11a/11b].
 - Queries on `scheduled_reminder`/`reminder_ledger` [12b]; reading `notificationPermissionRequested` [12c]; mirroring language to `LocaleManager` [10a] and theme to `UiModeManager` [10b] from the settings screens.
 - `NoHealthDataMigration` and its test: Android never has a pre-v2 database (OQ-4a-8).
@@ -105,8 +108,8 @@ None. This phase makes no network call and adds no DTO.
 | `:core:datastore` (`chronoflow.android.library`) | `net.chronoflow.core.datastore` | `SessionCipher`, `AndroidKeystoreSessionCipher`, `KeystoreSessionStore`, `DevicePreferences`, `DeviceIdentityStore`, `DeviceConfigFile` (moved from `:app`), `AndroidDeviceName`, `WipeMarker` |
 | `:app` | `app/src/test`, `app/src/androidTest` | `BackupRulesTest`, `StoragePathsTest`, `KeystoreSessionStoreTest`, `StoreThreadingSmokeTest`; edits to `ConfigurationPolicy` imports and `TestSeeds` |
 
-Dependencies (add only what is missing; use 0a's catalog aliases, never new versions):
-- `:core:model`: `implementation(libs.kotlinx.coroutines.core)` (OQ-4a-18); `testImplementation(libs.kotlinx.coroutines.test)`.
+Dependencies (add only what is missing; the listed aliases already exist in gradle/libs.versions.toml; never add versions):
+- `:core:model`: keep the existing `api(libs.kotlinx.coroutines.core)` and `testImplementation(libs.kotlinx.coroutines.test)` (OQ-4a-18).
 - `:core:database`: `api(project(":core:model"))`, `implementation(libs.sqldelight.android.driver)`, `implementation(libs.kotlinx.coroutines.core)`; `testImplementation(libs.sqldelight.sqlite.driver)`, `testImplementation(project(":core:testing"))` (tier annotations), Robolectric, `androidx.test:core`, Turbine, assertk, coroutines-test.
 - `:core:datastore`: `api(project(":core:model"))`, `implementation(libs.androidx.datastore.preferences)`, coroutines; the same test libraries.
 - `:app`: `implementation(project(":core:datastore"))`, `implementation(project(":core:database"))`.
@@ -120,7 +123,7 @@ Dependencies (add only what is missing; use 0a's catalog aliases, never new vers
 | 4d §4 items 1–6 (it now quotes this brief's names, including the spelling `accountID`) | `SyncEpoch` with `child()`, `check()` (throws a `CancellationException` subtype when invalid **or** when the coroutine is cancelled), `whileValid`, `invalidate()`, `generation: Long`, in a JVM module; `SessionMutationPermit.whileValid`; `AccountDatabase` with `accountID`, `read`, `write(permit)`, `write(epoch, permit)`, `observe`, `validate(epoch)`, `open`, `close`, constructible over an injected `(File) -> SqlDriver`; `AccountRecord`, `TripRecord`, `SettingsRecord`, `OutboxRecord` in `net.chronoflow.core.model.store` with JSON columns as `String`; `UUIDv7.generate(millisecondsSince1970: Long, randomBytes: ByteArray): UUID` | Tasks 1, 2, 4, 5 |
 | 9b §4 item 5 | `SyncEpoch.isValid` (non-throwing), `StoreFailure`, `TripRecord`/`SettingsRecord`/`OutboxRecord`; `dirty` as an `INTEGER` column without an adapter | Tasks 1, 3, 4 |
 | 4e §5.1, §5.3, T4 | `StoredSession` (`toString()` → `token=<redacted>`), `SessionPresence.SignedIn(accountId)`, `SessionStore` (JVM interface that `KeystoreSessionStore` implements), `SessionMutationPermit` with a public `invalidate()`, a `WipeMarker` writing the JSON string `"<uuid>"` atomically, an `AccountDatabase` taking `root: File` and a driver factory; a Keystore store whose file and alias can be overridden (`ChronoFlowMock.uitest.<id>`) | Tasks 1, 4, 7, 8 |
-| 5a l.368 | `DeviceIdentityStore.identity()` and the device-name rule | Task 8 |
+| 5a device identity hand-in | `DeviceIdentityStore.identity()` and the device-name rule | Task 8 |
 | 1a OQ-1a-6 | 4a does **not** define `PlanVersionRecord`/`CheckMarkRecord` (1a owns them in `…model.store`) | §3 |
 
 ### 4.3 Rules for every class in this phase [R]
@@ -137,7 +140,7 @@ Dependencies (add only what is missing; use 0a's catalog aliases, never new vers
 
 ## 5. Tasks
 
-One commit per task, in this order. Each commit builds and passes `make quick`. Conventional Commits, lower-case imperative subject, **no trailer of any kind**. Test constants (iOS `T/LocalStoreTests` helpers): `accountA = "019a562b-8000-7000-8000-000000000001"`, `accountB = "019a562b-8000-7000-8000-000000000002"`.
+One commit per task, in this order. Run targeted tests for each task; run `make quick` once at the end (user instruction, 2026-11-18). All commits must be GPG-signed; stop if signing fails. Conventional Commits, lower-case imperative subject, **no trailer of any kind**. Test constants (iOS `T/LocalStoreTests` helpers): `accountA = "019a562b-8000-7000-8000-000000000001"`, `accountB = "019a562b-8000-7000-8000-000000000002"`.
 
 ### Task 1. Session primitives in `:core:model`
 
@@ -593,7 +596,7 @@ Commit: `test(app): guard store calls against main-thread disk access`. Ticks pl
 
 ## 6. Acceptance criteria
 
-Run from the worktree root with `ANDROID_HOME` set, and `pixel` booted for items 3 and 5.
+Run from the checkout root with `ANDROID_HOME` set and the existing `pixel` emulator. The user's run policy supersedes the original broad gates below: targeted tests per task, emulator classes once via `make targeted`, and `make quick` once at the end. Do not run `make perf`, `make perf-timeline` or `make baseline-profile`. Report any outstanding gates and numbers.
 
 1. `./gradlew :core:model:test :core:database:testDebugUnitTest :core:datastore:testDebugUnitTest :app:testDebugUnitTest :app:testReleaseUnitTest` passes.
 2. `make targeted ONLY="core:database:SchemaParityTest core:database:SqlSafetyTest core:database:AccountDatabaseGuardTests#writeAfterItsEpochEndedIsRefused"` passes: the plan's "the schema matches iOS" and "a write after its epoch ended is refused".
@@ -605,7 +608,7 @@ Run from the worktree root with `ANDROID_HOME` set, and `pixel` booted for items
 8. `shasum -a 256 core/database/src/test/resources/ios-schema-v1.sql core/database/src/test/resources/rn-schema-v1.json` prints the two hashes in Task 3.
 9. `grep -rnE "Log\.|println|Timber" core/database/src/main core/datastore/src/main core/model/src/main/kotlin/net/chronoflow/core/model/session` prints nothing.
 10. `grep -rn "class AccountRepository\|class AccountWiper\|class SessionAccountDatabase\|class DraftRecord\|class PlanVersionRecord\|class CheckMarkRecord\|class AccountModel" core/ app/ --include=*.kt` prints nothing from this branch's commits (ownership, §3).
-11. The seven 4a checkboxes in `plan.md` are ticked in the commits named above; the wording fixes, the 4d/9b bullet notes and the OQ rows are in. Ten commits, Conventional Commits, no trailers.
+11. The seven 4a checkboxes in `plan.md` are ticked in the commits named above; the wording fixes, the 4d/9b bullet notes and the OQ rows are in. Ten task commits plus the brief-refresh commit, all signed Conventional Commits, no trailers.
 12. Nothing was written to `/Users/rickgout/Sites/chronoflow-ios`, `/Users/rickgout/Sites/chronoflow-new` or `/Users/rickgout/Sites/chronoflow-mobile`: `git -C <repo> status --porcelain` is the same before and after (record both).
 
 No screenshots and no perf numbers belong to this phase.
@@ -665,6 +668,8 @@ No screenshots and no perf numbers belong to this phase.
 
 ## 8. Open questions (proceed on the default; add each to plan.md "Open questions for the user" in the commit that applies it)
 
+The identifiers `OQ-4a-1` through `OQ-4a-18` are local to this brief. Their plan identifiers are **OQ-A113 through OQ-A130**, respectively (highest existing is OQ-A112; OQ-A68 stays unused). Every task instruction below to add an OQ-4a row means add its mapped OQ-A row with `(4a-N)` in the question.
+
 | # | Question | Default |
 |---|---|---|
 | OQ-4a-1 | The plan writes `transaction { epoch.whileValid { permit?.whileValid { body() } } }`, which releases the locks before COMMIT. iOS holds them through COMMIT (`AccountDatabase.swift:124–137`, `SyncEpoch.swift:33`). | Follow iOS: `epoch.whileValid { permit?.whileValid { transaction { body() } } }`; fix A5 and the 4a bullet (Task 5). |
@@ -682,9 +687,9 @@ No screenshots and no perf numbers belong to this phase.
 | OQ-4a-13 | `JdbcAccountDriverFactory` sits in `:core:database/src/test`, so 4d/4e tests in `:core:data` cannot use it. | 4d moves it to a `testFixtures` source set or a small `:core:database-testing` module, whichever AGP 9 supports without disabling built-in Kotlin. |
 | OQ-4a-14 | iOS OQ 26: excluding everything from backup loses unsent outbox rows on device restore. | Keep excluding everything (A5); revisit before shipping. |
 | OQ-4a-15 | `SessionMutationPermit.invalidate()` is public (iOS: internal to AppCore), because 4e's issuer lives in `:core:sync`. | Public, with KDoc; the 4e reviewer checks that only `SessionController` calls it. |
-| OQ-4a-16 | `plan_versions`/`check_marks` mapping needs 1a's `PlanVersionRecord` (`detail: ByteArray`) and `CheckMarkRecord`, and 1a runs in parallel. | 4a maps only the four records; 4d (after 1a is in the stack) adds the plan and check-mark mapping, storing `detail` as strict UTF-8 text. |
+| OQ-4a-16 | `plan_versions`/`check_marks` mapping needs 1a's `PlanVersionRecord` (`detail: ByteArray`) and `CheckMarkRecord`, and those 1a records are already landed. | 4a maps only the four records; 4d adds the plan and check-mark mapping, storing `detail` as strict UTF-8 text. |
 | OQ-4a-17 | iOS `DeviceIdentityStore` shares one in-flight task, so concurrent callers see the same error; a `Mutex` makes each waiting caller retry in turn. | `Mutex`; the observable contract (one write, no caching of a failure) is the same. |
-| OQ-4a-18 | Should `:core:model` stay free of `kotlinx.coroutines`? 4d needs `SyncEpoch.check()` to see coroutine cancellation. | Add `kotlinx-coroutines-core` to `:core:model`; Konsist rule 2 forbids only `android.*` and Compose there. |
+| OQ-4a-18 | Should `:core:model` stay free of `kotlinx.coroutines`? 4d needs `SyncEpoch.check()` to see coroutine cancellation. | Keep the existing `api(libs.kotlinx.coroutines.core)` in `:core:model`; Konsist rule 2 forbids only `android.*` and Compose there. |
 
 ---
 
