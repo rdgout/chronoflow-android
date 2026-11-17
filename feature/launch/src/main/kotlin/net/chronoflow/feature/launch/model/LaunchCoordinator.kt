@@ -16,7 +16,7 @@ class LaunchCoordinator(
     val clock: LaunchClock,
     private val reduceMotion: Boolean,
     initialState: LaunchState = LaunchState(),
-    scope: CoroutineScope,
+    private val scope: CoroutineScope,
     private val onChange: (LaunchState, List<LaunchEffect>) -> Unit,
 ) {
     var state = initialState
@@ -55,8 +55,8 @@ class LaunchCoordinator(
         state = step.state
         val effects = reached.effects + step.effects
         if (previous != state || effects.isNotEmpty()) onChange(state, effects)
+        if (LaunchEffect.ForceReady in effects) scope.launch { readiness.allowFirstLoad() }
         if (stopped) return
-        if (LaunchEffect.ForceReady in effects) work.launch { readiness.allowFirstLoad() }
         val deadline = state.welcomeDeadline
         if (previous.welcomeDeadline != deadline && deadline != null && !state.didCommitExit) {
             welcomeDeadlineJob?.cancel()

@@ -78,6 +78,36 @@ class LaunchCoordinatorTests(
             assertEquals(0, clock.pendingSleeps)
         }
 
+    @Test fun forceReadySurvivesStopFromOnChange() =
+        runTest(timeout = 60.seconds) {
+            val clock = ManualLaunchClock()
+            val source =
+                object : TestReadiness() {
+                    override suspend fun gate(): Gate = awaitCancellation()
+                }
+            lateinit var coordinator: LaunchCoordinator
+            coordinator =
+                LaunchCoordinator(source, clock, true, scope = backgroundScope) { state, _ ->
+                    if (state.route != null) coordinator.stop()
+                }
+            coordinator.start()
+            runCurrent()
+            assertEquals(null, coordinator.state.route)
+            assertEquals(0, source.forced)
+            clock.advance(8.seconds)
+            runCurrent()
+            assertTrue(coordinator.state.didForceReady)
+            assertEquals(LaunchRoute.Today, coordinator.state.route)
+            assertEquals(0, clock.pendingSleeps)
+            assertEquals(1, source.forced)
+            clock.advance(9.seconds)
+            coordinator.send(LaunchEvent.Reached(clock.now))
+            coordinator.start()
+            coordinator.stop()
+            runCurrent()
+            assertEquals(1, source.forced)
+        }
+
     @Test fun stopCancelsPendingTimersBeforeAnyDeadline() =
         runTest(timeout = 60.seconds) {
             val clock = ManualLaunchClock()
