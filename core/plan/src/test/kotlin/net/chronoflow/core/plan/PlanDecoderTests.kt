@@ -73,6 +73,17 @@ class PlanDecoderTests {
             assertThat(worker.dispatches).isGreaterThan(0)
         }
 
+    @Test fun snapshotMergeRunsOnTheInjectedWorker() =
+        runTest(timeout = 60.seconds) {
+            val worker = CountingDispatcher(StandardTestDispatcher(testScheduler))
+            val decoder = PlanDecoder(worker)
+            val record = recordOf(tripDetail())
+            decoder.detail(record)
+            val before = worker.dispatches
+            decoder.detail(TripPlanSnapshot(record))
+            assertThat(worker.dispatches).isGreaterThan(before)
+        }
+
     @Test fun evictForcesTheNextCallToDecodeAgain() =
         runTest(timeout = 60.seconds) {
             val decoder = decoder()

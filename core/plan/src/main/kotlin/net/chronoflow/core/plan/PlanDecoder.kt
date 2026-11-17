@@ -52,9 +52,11 @@ class PlanDecoder(
 
     suspend fun detail(snapshot: TripPlanSnapshot): TripDetail? {
         val record = snapshot.plan ?: return null
-        val decoded = detail(record)
-        return decoded.copy(
-            checkState = mergedCheckState(decoded.plan, record.inputHash, snapshot.checks, snapshot.pendingChecks),
-        )
+        return withContext(worker) {
+            val decoded = detail(record)
+            decoded.copy(
+                checkState = mergedCheckState(decoded.plan, record.inputHash, snapshot.checks, snapshot.pendingChecks),
+            )
+        }
     }
 }
