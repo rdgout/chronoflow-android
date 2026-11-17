@@ -65,7 +65,8 @@ class CfCardRowColorsTest(
             }
         }
         val faded = colors.muted.copy(alpha = .5f).compositeOver(colors.card)
-        assertTrue(pixels("disabled").hasInk(faded))
+        val disabled = pixels("disabled")
+        assertTokenColor(disabled[(20 * compose.density.density).toInt(), disabled.height / 2], faded)
         assertTrue(pixels("destructive").hasInk(colors.destructive))
     }
 
