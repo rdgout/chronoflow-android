@@ -328,11 +328,11 @@ chronoflow-android/
 
    On API < 33 it reads the ≤ 64 B `noBackupFilesDir/device-config` file (language choice). This is the only pre-frame read. It also captures the splash appearance (A11).
 3. **`MainActivity.onCreate`**, in this order:
-   - `installSplashScreen()`, then `super.onCreate()`;
-   - the process-death check (A8);
+   - classify saved state with `launch.onActivityCreated` before `super.onCreate` (A8);
+   - `installSplashScreen()`, then `super.onCreate(null)` for a process-death restore, otherwise pass the original bundle;
    - `enableEdgeToEdge(SystemBarStyle.dark(TRANSPARENT))` and `window.isNavigationBarContrastEnforced = false`;
    - `setContent { CfRoot() }`;
-   - `splash.setKeepOnScreenCondition { !launch.overlayPlaced }` and `setOnExitAnimationListener { it.remove() }`.
+   - `splash.setKeepOnScreenCondition { launch.holdsSystemSplash() }`; only the claiming activity holds it until placement. The exit listener removes a claimed/recreated splash immediately; an unclaimed warm splash fades for 300 ms.
 4. **First frame.** `CfRoot` composes the overlay first. Its first layout (`onPlaced`) sets `overlayPlaced`, which releases the keep condition in the same traversal; its first draw marks `first-commit` (= `t0`). App content composes below it on the next frame. The overlay clock is wall time from `t0` (`System.nanoTime`), so a main-thread stall skips frames and never slows the timeline (`05 §15.2`).
 5. **After `first-commit`**, on `Dispatchers.IO`:
    - the session restore (Keystore decrypt, then DB open; trace `session`);
@@ -343,7 +343,7 @@ chronoflow-android/
 
    The readiness reducer receives these events and owns the 1500/2000/8000 ms rules (`ready`, `exit` traces).
 6. **Hand-off.** Signed in: the app at `max(1500, ready)`. Signed out: Welcome at `max(1600, ready)`, then the intro (`intro` trace), then `reportFullyDrawn()` when Welcome is interactive. When signed in, `reportFullyDrawn()` follows the first Today content frame.
-7. **Warm start** (activity recreated, same process): no overlay, a 300 ms fade. **Process death:** a cold launch (A8).
+7. **Warm start** (new activity, same process): no overlay, a 300 ms system-splash fade. A configuration recreation resumes a running overlay at the same t0 with the same timeline and coordinator; it never holds the system splash. **Process death:** a cold launch (A8), detected by a mismatched or missing saved `cf.launch.processToken`; saved UI state is discarded.
 
 ### Android spec: configuration and appearance
 
@@ -466,7 +466,9 @@ Every screen scrolls when height-constrained. The minimum width is 280 dp; below
 ### Android spec: seeds and test hooks (debug only)
 
 - **Seed names** are identical to iOS (`12 §2`): `CF_AUTH_TEST_ID`, `CF_UI_TEST_PROFILE=screen|launch`, `CF_AUTH_TEST_SIGNED_IN=demo|twofactor`, `CF_AUTH_TEST_WALKTHROUGH_SEEN`, `CF_AUTH_TEST_AUDIT_SCREEN`/`STATE`, `CF_PLAN_TEST_ROUTE=trips|trip:<id>[:list]`, `CF_PLAN_TEST_POSITION=summary`, `CF_PLAN_TEST_SHEET=step:<id>|legend`, `CF_SETTINGS_ROUTE`, `CF_WIZARD_AUTO_OPEN`, `CF_WIZARD_BOARD_CAPTURE`, `CF_MOCK_DELAY` (default 0).
-- **Intent extras:** `cf.trip-page=S1…S6|large30|large60|<uuid>`, `cf.timeline-fixtures`, `cf.settings.theme`, `cf.settings.language`, `cf.reduceMotion`, `cf.freezeAt`, `cf.readyAt`, `cf.mainThreadStall`, `cf.holdSplash`.
+- **Intent extras:** `cf.trip-page=S1…S6|large30|large60|<uuid>`, `cf.timeline-fixtures`, `cf.settings.theme`, `cf.settings.language`, `cf.reduceMotion`, `cf.freezeAt`, `cf.readyAt`, `cf.mainThreadStall`, `cf.holdSplash`, `cf.session`, `cf.gate`, `cf.stored`, `cf.readyDelay`, `cf.mode`.
+- **Launch diagnostics** (String extras, debug and perf only): `cf.session=in|signedIn|out|signedOut|never` (default native), `cf.gate=verify|terms|walkthrough|app` (default app), `cf.stored=yes|no|never` (default yes), `cf.readyDelay` in finite seconds `0…60` (default 0). Presence of any stub key injects `StubReadiness`; otherwise `SignedOutReadiness` remains the default until 4e. `cf.readyDelay` is an absolute time on the shared launch clock, not a second delay from collection.
+- **Fixed diagnostic endings:** `cf.mode=ready|slow` bypasses readiness and leaves the route empty after removal; `welcome` is deferred to 3c. `cf.readyAt` is finite ms `0…60000`, default 4600, for slow mode. `cf.mainThreadStall` uses the same ms range and blocks from 300 ms after t0. Invalid values use the defaults. Release parsing and stalls are no-ops. `cf.freezeAt` still freezes a debug frame; `cf.holdSplash` remains debug only.
 - **Entry point:** `net.chronoflow.debug.SeedReceiverActivity` (debug-exported, in `app/src/debug`) applies `TestSeeds.apply` (`13 §5`), then starts `MainActivity`.
 - **Mock accounts:** `demo@example.com` / `password`; `twofactor@example.com` / `password`, code `123456`, recovery `AbCdEf1234-GhIjKl5678`. Account ids `0199a3c0-0000-7000-8000-000000000000` / `…0001`; trips `…0001` (AMS→HND, active), `…0002` (AMS→JFK, upcoming).
 - **Release readiness:** `testReleaseUnitTest` asserts that `Class.forName("net.chronoflow.debug.SeedReceiverActivity")` throws and that the mock never seeds.
@@ -646,8 +648,8 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A65 | The brief combines a 32 dp Small button with 20 dp text and 8 dp vertical padding, which makes 36 dp | Follow the bundle's 32 dp Small visual height with 6 dp vertical padding and a separate 48 dp target; other button sizes retain 8 dp padding and text can wrap | 2 |
 | OQ-A66 | Phase 2 cold start is 95.8 ms: +8.0% against 0e 88.7 ms (Partial UseIfAvailable), +0.8% against M1 95.0 ms (Partial Require). Which baseline should future theme comparisons use? | Use M1's 95.0 ms with Partial(Require) as the like-for-like reference (user, Phase 2 review round 1). Phase 2's 95.8 ms is +0.8% and passes the 5% limit. Retain the older 0e result as history; Phase 3a measures the real launch overlay separately | 2, 3a, 13 |
 | OQ-A67 | Who sets system-bar icon appearance after the Phase 3a hand-off? Research 08 row 24 says themed surfaces follow the theme; review currently observes white status-bar icons on the light background. | Resolved by Phase 3a Task 7b: light theme → dark status-bar icons, dark theme → light icons through enableEdgeToEdge; sky screens retain light icons. Review round 1: CfRoot paints CfTheme.colors.background behind content (generated CfLightColors/CfDarkColors.background, from theme.css --background and Trips.dc.html:24); the navy window background remains for splash handover | 3a |
-| OQ-A69 | (3a-1) What does the app show after the opening until 3b lands? | The overlay holds the 1500 ms frame, stops its frame loop, hides and shields the content. Work on the app with `CF_UI_TEST_PROFILE=screen`. | 3a |
-| OQ-A70 | (3a-2) Activity recreated within the process during or after the splash (locale or font-scale change) in 3a. | No overlay and no keep condition on the new activity (D14 minimal); 3b adds the 300 ms fade and decides whether a recreated activity resumes a running overlay at its wall-clock position. | 3a |
+| OQ-A69 | (3a-1) What does the app show after the opening until 3b lands? | Answered by Phase 3b: readiness schedules the ending, removes the overlay on its completion frame and reveals the route placeholder; the opening no longer holds forever. | 3a, 3b |
+| OQ-A70 | (3a-2) Activity recreated within the process during or after the splash. | Answered by Phase 3b: a configuration recreation resumes a running overlay with the same t0, timeline and coordinator and never holds the system splash; a new warm activity gets no overlay and a 300 ms system-splash fade. | 3a, 3b |
 | OQ-A71 | (3a-3) Navigation-bar icon color on the sky (`05` OQ A9). | From the sky's bottom per captured appearance: light → dark icons (`SystemBarStyle.light`), dark → light icons; contrast enforcement off; verify on the Task 11 recording. | 3a |
 | OQ-A72 | (3a-4) Android-only debug hook `cf.holdSplash` for the parity screenshot. | Add it as a `TestSeed` field, debug only, listed in "Android spec: seeds and test hooks"; the in-process test releases it through `LaunchController.splashHeld`, so no exported receiver exists; release has no `TestSeed` (`ReleaseReadinessTest`). | 3a |
 | OQ-A73 | (3a-5) Wordmark vector source. | Generated once from the Fraunces 400 opsz32 TTF with HarfBuzz `hb-view` 15.1.0 (kerning) plus CoreText-style tracking; committed with a hash manifest. Fallback if `hb-view` output proves unusable: build the path at runtime off the main thread with `Paint.getTextPath` before 1000 ms. | 3a |
@@ -661,6 +663,23 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A81 | (3a-13) Instrumented tests share one process, but the overlay is once per process. | Debug-checked `AppGraph.resetLaunchForTest()` gives each launch-profile `@Smoke` test a fresh `LaunchController`; traces are not re-armed. Later phases may reuse the hook. | 3a |
 | OQ-A82 | (3a-14) `TimelinePresentedMarker` uses `PRESENTED_MARKER_SIZE_DP.dp`, which the extended dp rule (Task 8b) would flag. | Rewrite it as a 1 px layout node, no exemption; `make perf-timeline` once to prove the benchmark still finds it. Fallback: one documented file exemption in the rule. | 3a |
 | OQ-A83 | Launch sun on windows shorter than 667 dp | Keep iOS geometry unchanged; no sun-visibility rule below 667 dp. Shorter windows retain moon/wordmark containment and finite-value guards | 3a |
+| OQ-A84 | (3b-1) Signed-out ending before Welcome (3c) exists. | Interim: the welcome exit's container row only (opacity 1 → 0 over W+700 → W+950, ease-out; rm → the ready exit), then the Welcome placeholder. 3c replaces it with `withWelcomeExit`. | 3b |
+| OQ-A85 | (3b-2) Plan says the stub is "driven by `cf.readyAt` and a stub outcome extra". iOS drives the stub with `-cf.session/-cf.gate/-cf.stored/-cf.readyDelay` (seconds) and uses `-cf.readyAt` (ms) only for `-cf.mode slow`. | Port iOS exactly: the four stub extras plus `cf.mode`/`cf.readyAt` with iOS meanings and units. | 3b |
+| OQ-A86 | (3b-3) Port `cf.mode` (fixed endings without readiness)? | Yes, `ready` and `slow`, debug and perf only; `welcome` waits for 3c. iOS keeps `-cf.mode ready` in Release for the device proof; Android uses the perf variant for that. | 3b |
+| OQ-A87 | (3b-4) `cf.mainThreadStall` in which variants? | Debug and perf; never release. | 3b |
+| OQ-A88 | (3b-5) Activity recreated (locale, font scale) while the overlay runs (OQ-3a-2). | Resume at the wall-clock position with the same `t0`, timeline and coordinator; no keep condition; no restart. If the status raster was prepared for another locale or font scale, prepare it again (the line is hidden until it is ready). | 3b |
+| OQ-A89 | (3b-6) Activity finished during the splash. | Complete the launch at once (iOS `sceneDidDisconnect`); a later warm start shows the known route, or runs a headless coordinator (rm semantics) until the route is known. | 3b |
+| OQ-A90 | (3b-7) How to detect a process-death restore. | A per-process token (`pid:startElapsedRealtime`) in the saved state; a mismatch or absence with a non-null bundle is a restore; `super.onCreate(null)`. | 3b |
+| OQ-A91 | (3b-8) Route type before 4e. | `LaunchRoute` (Welcome, Today, Verify, Terms, Walkthrough) in `:feature:launch`; 4e maps it onto `Route`. | 3b |
+| OQ-A92 | (3b-9) `PendingLaunchIntent` in `LaunchState`. | Omitted until 4e, which adds the field and the assertion in `endingIsChosenOnceAndIntentNeverRoutes`. | 3b |
+| OQ-A93 | (3b-10) Placeholder look (no board). | Debug: the catalog text "Debug route: %@" (`app_debug_route_x`, drawn by `app/src/debug` `DebugRouteLabel`, OQ-0c-4) with id `route.<name>` (iOS OQ 8); release/perf: no text. Background: CfSky for Welcome, `background` token otherwise. | 3b |
+| OQ-A94 | (3b-11) System bars after the hand-off (the spec only says "light until the hand-off ends"). | Welcome route: light icons (sky). Other routes: icons follow the resolved app theme (`SystemBarStyle.light` in light, `dark` in dark), applied once through `enableEdgeToEdge` at `handOffComplete`. Status icons follow this rule; navigation icons retain OQ-A71. | 3b |
+| OQ-A95 | (3b-12) `CF_UI_TEST_PROFILE=screen` "skips the splash and readiness", but something must pick the route before 4e. | No overlay; a headless coordinator (rm semantics) picks the route from the stub or signed-out default; 4e's session seeds take over. | 3b |
+| OQ-A96 | (3b-13) Who emits the `session` trace? | 4e (with `StoredDataReadiness`); 3b reserves cookie 5. | 3b |
+| OQ-A97 | (3b-14) Process-death proof needs a second process. | `ProcessDeathLaunchTest` in `:benchmark` on the perf variant (UiAutomator, `am kill`, `monkey` relaunch), run with `make perf`; the restore branch itself is proven by `ProcessDeathRestoreTest` on Robolectric. | 3b |
+| OQ-A98 | (3b-15) plan.md lists a "failure" readiness event; iOS has none. | No `Failure` event; failures resolve through the 8 s rule (unknown → signed out, signed in → forced). 4e may revisit if its session source needs one. | 3b |
+| OQ-A99 | (3b-16) plan.md's stall test reads positions "through a debug `LaunchProbe`"; 3a's `compositionObserver` callback only counts compositions. | Read from the debug `controller.frameLog` ring buffers; leave `compositionObserver` unchanged. | 3b |
+| OQ-A100 | (3b-17) Diagnostic `cf.mode` `ready`/`slow`: which route after removal? | None, as iOS (`SceneDelegate.swift:161–171` navigates only for `welcome`): the content stays empty and `reportFullyDrawn()` is not called. | 3b |
 | OQ-0a-22 | Native libraries in the bundle? | Allow only `libandroidx.graphics.path.so` (Compose graphics-path; excluding it breaks Path conversion below API 34); fail on any other `.so` | 0a, 13 |
 | OQ-0b-1 | Where does `PlanMetrics` live? `08 §3.1` lists it inside `CfDimens`, but its consumer `:core:plan` is a JVM module that cannot depend on `:core:designsystem` | `core/plan/…/generated/PlanMetrics.generated.kt` (Double, dp), as iOS keeps it in `PlanCore` | 0b, 1b, 1c |
 | OQ-0b-2 | Port all iOS TokenGen outputs now (Auth, Settings, Terms, Welcome, PlanUI, Press, LaunchPaint, TypeMetrics), or only colors, sky and type? | All of them now (the iOS files are exact goldens and Phases 2, 3a, 3c, 5a, 9 and 10 need them) | 0b |
@@ -1514,7 +1533,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 **Tasks**
 - [x] **LaunchReadiness.kt** (pure).
   - [x] **Seams and reducer** (3b Task 1): core readiness interfaces and the pure reducer with the ported JVM cases.
-  - Events: session known (signed in or signed out), data ready, failure.
+  - Events: session, gate, stored data, moon anchor, reached time and exit completion. No failure event (OQ-3b-15); unresolved readiness uses the 8 s rule.
   - The 1500/2000/8000 ms rules; an ending is never cut short.
   - Port the iOS readiness cases on a fake clock.
 - [x] **Ending timelines** (3b Task 3): ready exit, slow status and interim welcome container fade.
@@ -1524,14 +1543,16 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - the forced signed-out exit at 8 s.
 
   Known endings are scheduled on the frame clock ahead of time.
-- [x] **StubReadiness** (debug and perf only), driven by `cf.readyAt` and a stub outcome extra. Name the extra after the iOS `LaunchArguments.swift` equivalent. 4e replaces the stub everywhere except perf.
+- [x] **StubReadiness** (debug and perf only), driven by the iOS `cf.session`, `cf.gate`, `cf.stored` and `cf.readyDelay` extras. `cf.readyAt` belongs to fixed slow mode. 4e replaces the stub everywhere except perf.
 - [x] **LaunchController**, process-level, in `AppGraph`.
   - The overlay plays once per process (D14), and a warm start gets a 300 ms fade.
   - It detects a process-death restore (A8) and turns it into a cold launch.
   - It owns `overlayPlaced`.
 - [x] **Traces** `ready` and `exit`. Place `reportFullyDrawn()` per spec step 6; while signed in, it follows the first app frame until Today lands in 7. Add `StartupBenchmark` in WARM mode.
-- [x] **Stall test.** `LaunchStallTest` (emulator): with `cf.mainThreadStall=500`, the overlay position after the stall equals the wall-clock position, read through a debug `LaunchProbe`. The animation is never stretched (OQ-A19).
+- [x] **Stall test.** `LaunchStallTest` (emulator): with `cf.mainThreadStall=500`, the overlay position after the stall equals the wall-clock position, read through the debug `LaunchController.frameLog` ring buffers. The animation is never stretched (OQ-A19).
 - [x] **Hand-off targets.** Signed in goes to the app root placeholder; signed out goes to the Welcome placeholder until 3c.
+
+- [x] **Captures, status guards and docs** (3b Task 10): frozen ready/slow endings, both languages across all five status profiles, and the launch seed/OQ documentation.
 
 **Acceptance**
 - When readiness arrives before 1500 ms, the hand-off ends at 1900 ms ± 1 frame from `t0` (trace), and the forced exit comes at 8 s.

@@ -32,6 +32,7 @@ internal fun launchController(
     },
     readiness: (LaunchClock) -> LaunchReadiness = { SignedOutReadiness },
     frameLog: LaunchFrameLog? = null,
+    overrides: LaunchOverrides = LaunchOverrides(freezeAt = ms?.milliseconds),
 ): LaunchController {
     val context = ApplicationProvider.getApplicationContext<Context>()
     return LaunchController(
@@ -62,7 +63,7 @@ internal fun launchController(
     ).apply {
         captureAppearance(context.resources.configuration)
         captureReduceMotion(!reduced, null)
-        claimOverlay(LaunchOverrides(freezeAt = ms?.milliseconds))
+        claimOverlay(overrides)
     }
 }
 

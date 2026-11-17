@@ -9,7 +9,6 @@ android {
 
 dependencies {
     implementation(libs.androidx.core.splashscreen)
-    testImplementation(testFixtures(project(":feature:launch")))
     testFixturesImplementation(libs.kotlinx.coroutines.core)
     testFixturesImplementation(platform(libs.compose.bom))
     testFixturesImplementation(libs.compose.runtime)

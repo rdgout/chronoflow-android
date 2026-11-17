@@ -156,7 +156,7 @@ Review round 1 final validation: the single `make quick` invocation passed in **
 
 ## Phase 3b: functional emulator validation
 
-2026-11-17, Phase 3b Task 9 on `pixel` / API 36 / 60 Hz, debug build, functional animator scales 0 with `cf.reduceMotion=false`. These are functional emulator measurements, not physical-device performance claims.
+2026-11-17, Phase 3b Task 9 (`6775c73` plus the Task 9 changes committed as `4ad6f65`) on `pixel` / API 36 / 60 Hz, debug build, functional animator scales 0 with `cf.reduceMotion=false`. These are functional emulator measurements, not physical-device performance claims.
 
 | Run / command | Hand-off end from t0 (ms) | Stall sample gap / sampled-vs-wall error (ms) | Result |
 |---|---|---|---|
@@ -168,3 +168,19 @@ The user classified the one-off 3920.19 ms slow result as one dropped emulator f
 The stall proof reads the debug `LaunchController.frameLog` ring buffers; `compositionObserver` remains the composition counter. The separate-process `ProcessDeathLaunchTest` compiles and is wired into `make perf`; execution is pending with the quiet-host orchestrator. No perf/profile tier was run by this phase worker. Warm TTID, cold TTFD, ready/exit durations, benchmark gates and regenerated profiles remain pending.
 
 Evidence: `build/phase3b-validation/task9-emulator/`, `task9-timings.json`, and `task9-orchestrator-rerun/`. The preserved initial failure remains evidence; it was not overwritten by a worker retry.
+
+## Phase 3b: ending captures and status guards
+
+`make targeted ONLY="feature:launch:LaunchStatusGuardTest app:LaunchModeTimelineTests"` passed in **6.32 s wall**. The ten status guards cover small, pixel8, foldInner, landscapeSideNav and largeFont in English and Dutch at the configured font cap. They prepare the actual status raster on IO, sample the slow hand-off at 2600 ms, and check its text/dot bounds against the horizontal safe bounds and the wordmark box. Diagnostic timelines now use the same `LaunchHandOffTimeline` builder as readiness-driven endings; the existing mode-equivalence test passes.
+
+`make captures ONLY=SplashScreen,SplashSlow` passed in **13.42 s wall** and wrote **58 PNGs** under `build/captures/`: the 33 existing opening captures and all **25** new ending frames. `LaunchEndingCaptureTest` produced 25 results, no skips or failures (3.462 s combined test time). The new frames are ready 1700/1900, slow 2000/2600/4900 and slow Reduce Motion 2600, for pixel8/small in light/dark, plus slow 2600 pixel8/nl/light. Each slow frame waits for its status raster before capture. An opaque generated app-background token sits below the overlay, matching the real root during its fade.
+
+The ready 1700/1900 and slow 2600/4900 light frames, Dutch slow 2600, and small dark/Reduce Motion frames were inspected. At native ready 1900 the overlay is fully transparent and the app background is visible. SplashSpec's captioned 1900 frame embeds board time 1700, so it still shows the older board hold; the native 1500–1900 exit follows S3. Slow 2600 retains the status and three dots; slow 4900 fades the entire scene into the app background. The centred moon, shifted wordmark/status composition, no stars and arc-length path retain the settled S1–S5 rules. Reduce Motion shows the static moon/status with constant dots. No new designed destination was added.
+
+Phase 3b records its 17 defaults as OQ-A84–A100 and marks OQ-A69/A70 answered. OQ-A68 remains unused. The plan now documents the exact diagnostic keys, units, defaults, variants and process/recreation order.
+
+Final validation invoked `make quick` once (**14.04 s wall**). Its JVM/logic tier reported 1,092 cases and stopped on two module-graph checks: an explicit dependency on the launch module's own test fixtures was redundant because AGP exposes those fixtures automatically. Removing that dependency preserved the architecture rules; the two failed methods plus `LaunchClockTests` passed through `make targeted` in **3.79 s**. The remaining quick steps then passed separately: build-logic **1.20 s**, script tooling **12.92 s** (104 script cases and 24 contract cases passed; one parity case initially lacked Make's exported environment and passed with the exports restored in **0.13 s**), l10n **0.08 s**, icons **0.07 s**, and serial timing **2.17 s**. The complete quick sequence, including the scoped corrections, totals **34.43 s**; the original command's failure is retained rather than reported as a passing invocation. No per-test budget overrun was reported.
+
+`./gradlew --console=plain :app:lintDebug :app:testReleaseUnitTest :app:verifyReleaseManifest :app:analyzeReleaseR8Config -Pcf.tier=quick` took **29.57 s**: release tests, manifest verification and R8 analysis passed; lint requested the equivalent KTX `createBitmap` call in the status raster. After that equivalent API substitution, `make targeted ONLY="feature:launch:LaunchStatusRasterTest"` passed in **3.92 s** and `./gradlew --console=plain :app:lintDebug` passed in **6.13 s**. `make format` also passed. Full commands, outputs and timings are retained under `build/phase3b-validation/`; the combined `make check` target was not repeated.
+
+Quiet-host work remains with the orchestrator: `make baseline-profile` to regenerate both committed profiles through the hand-off, then `make perf` on the final profiled build (warm TTID; cold TTFD, `readyFirstMs`, `exitFirstMs`; existing startup/launch gates; `ProcessDeathLaunchTest`). Physical-device gates remain open under OQ-A22. No perf/profile tier or physical-device claim was made by this worker.
