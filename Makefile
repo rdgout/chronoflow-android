@@ -3,7 +3,6 @@ SHELL := /bin/bash
 .NOTPARALLEL:
 export ANDROID_HOME ?= /opt/homebrew/share/android-commandlinetools
 export JAVA_HOME ?= $(shell /usr/libexec/java_home -v 17)
-export ANDROID_SERIAL ?= emulator-5554
 IOS_REPO ?= /Users/rickgout/Sites/chronoflow-ios
 WEB_REPO ?= /Users/rickgout/Sites/chronoflow-new
 export IOS_REPO WEB_REPO

@@ -5,7 +5,9 @@ set -u
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 ADB="${ADB:-${ANDROID_HOME:-/opt/homebrew/share/android-commandlinetools}/platform-tools/adb}"
-SERIAL="${ANDROID_SERIAL:-emulator-5554}"
+PERF_SUITE="baseline-profile"
+source Scripts/perf-device.sh
+resolve_perf_device || exit $?
 GRADLEW="${GRADLEW:-./gradlew}"
 EMULATOR_SH="${EMULATOR_SH:-Scripts/emulator.sh}"
 STATE_DIR="${CF_EMULATOR_STATE_DIR:-$ROOT/build/emulator}"
@@ -20,11 +22,7 @@ step() {
   fi
 }
 
-attached="$("$ADB" devices | grep -Ec '[[:space:]]device$' || true)"
-if [ "$attached" != 1 ]; then
-  echo "baseline-profile: exactly one device must be attached, found $attached" >&2
-  exit 1
-fi
+
 for prop in ro.boot.qemu ro.kernel.qemu; do
   if [ "$(dev shell getprop "$prop" | tr -d '\r')" = 1 ]; then
     GPU=unknown
@@ -37,8 +35,13 @@ for prop in ro.boot.qemu ro.kernel.qemu; do
   fi
 done
 
-trap '"$EMULATOR_SH" prep-functional' EXIT
-"$EMULATOR_SH" prep-perf
+trap '"$EMULATOR_SH" prep-functional "$SERIAL"' EXIT
+"$EMULATOR_SH" prep-perf "$SERIAL"
+prep_status=$?
+if [ "$prep_status" != 0 ]; then
+  echo "baseline-profile: prep-perf failed with status $prep_status" >&2
+  exit "$prep_status"
+fi
 
 # Each collect runs up to 15 launches, far over the 60 s default; raise the cap rather than lower maxIterations.
 step "$GRADLEW" --console=plain :app:generateBaselineProfile \

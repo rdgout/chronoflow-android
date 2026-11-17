@@ -8,6 +8,7 @@ PERF = str(SCRIPTS / "perf-startup.sh")
 ADB = r"""#!/bin/bash
 echo "adb $*" >> "$FAKE_LOG"
 case "$*" in
+  get-serialno*) echo "${FAKE_SERIAL:-emulator-5554}" ;;
   devices*) printf 'List of devices attached\nemulator-5554\tdevice\n' ;;
   *getprop*qemu*) echo "${FAKE_QEMU:-1}" ;;
   *animator_duration_scale*) echo "${FAKE_SCALE:-1.0}" ;;
@@ -38,6 +39,7 @@ class PerfStartupTest(unittest.TestCase):
     def perf(self, **extra):
         env = {
             "ADB": str(self.tmp / "adb"),
+            "ANDROID_SERIAL": "",
             "GRADLEW": str(self.tmp / "gradlew"),
             "EMULATOR_SH": str(self.tmp / "emulator.sh"),
             "CHECK_BENCHMARKS": str(self.tmp / "checker"),
@@ -68,8 +70,8 @@ class PerfStartupTest(unittest.TestCase):
     def test_trap_restores_the_scales_after_a_failure(self):
         self.perf(FAKE_GRADLE_EXIT="3")
         calls = self.calls()
-        self.assertIn("emulator.sh prep-perf", calls)
-        self.assertEqual(calls[-1], "emulator.sh prep-functional")
+        self.assertIn("emulator.sh prep-perf emulator-5554", calls)
+        self.assertEqual(calls[-1], "emulator.sh prep-functional emulator-5554")
 
     def test_a_non_host_gpu_on_an_emulator_refuses(self):
         (self.state / "gpu-mode").write_text("swiftshader_indirect\n")

@@ -5,7 +5,9 @@ set -u
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 ADB="${ADB:-${ANDROID_HOME:-/opt/homebrew/share/android-commandlinetools}/platform-tools/adb}"
-SERIAL="${ANDROID_SERIAL:-emulator-5554}"
+PERF_SUITE="perf-startup"
+source Scripts/perf-device.sh
+resolve_perf_device || exit $?
 GRADLEW="${GRADLEW:-./gradlew}"
 EMULATOR_SH="${EMULATOR_SH:-Scripts/emulator.sh}"
 CHECKER="${CHECK_BENCHMARKS:-python3 -I Scripts/check-benchmarks.py}"
@@ -22,11 +24,7 @@ step() {
   fi
 }
 
-attached="$("$ADB" devices | grep -Ec '[[:space:]]device$' || true)"
-if [ "$attached" != 1 ]; then
-  echo "perf-startup: exactly one device must be attached, found $attached" >&2
-  exit 1
-fi
+
 
 IS_EMU=0
 for prop in ro.boot.qemu ro.kernel.qemu; do
@@ -47,8 +45,13 @@ else
 fi
 
 rm -rf "$RESULTS_DIR"
-trap '"$EMULATOR_SH" prep-functional' EXIT
-"$EMULATOR_SH" prep-perf
+trap '"$EMULATOR_SH" prep-functional "$SERIAL"' EXIT
+"$EMULATOR_SH" prep-perf "$SERIAL"
+prep_status=$?
+if [ "$prep_status" != 0 ]; then
+  echo "perf-startup: prep-perf failed with status $prep_status" >&2
+  exit "$prep_status"
+fi
 scale="$(dev shell settings get global animator_duration_scale | tr -d '\r')"
 if [ "$scale" != 1 ] && [ "$scale" != 1.0 ]; then
   echo "perf-startup: animator_duration_scale is '$scale', not 1; a perf run with the scales off measures nothing" >&2

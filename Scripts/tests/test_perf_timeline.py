@@ -7,7 +7,8 @@ PERF = str(SCRIPTS / "perf-timeline.sh")
 ADB = r"""#!/bin/bash
 echo "adb $*" >> "$FAKE_LOG"
 case "$*" in
-  devices*) printf 'List of devices attached\nemulator-5554\tdevice\n' ;;
+  get-serialno*) echo "${FAKE_SERIAL:-emulator-5554}" ;;
+  devices*) printf 'List of devices attached\n'; if [ "${FAKE_DEVICE_COUNT:-1}" = 1 ]; then printf '%s\tdevice\n' "${FAKE_SERIAL:-emulator-5554}"; elif [ "${FAKE_DEVICE_COUNT:-1}" = 2 ]; then printf 'one\tdevice\ntwo\tdevice\n'; fi ;;
   *getprop*qemu*) echo "${FAKE_QEMU:-1}" ;;
   *persist.sys.locale*) echo "${FAKE_LOCALE:-en-US}" ;;
   *animator_duration_scale*) echo "${FAKE_SCALE:-1.0}" ;;
@@ -25,7 +26,8 @@ exit "${codes[$i]}"
 """
 
 EMULATOR = r"""#!/bin/bash
-echo "emulator.sh $* THEME=${THEME:-} FONT_SCALE=${FONT_SCALE:-}" >> "$FAKE_LOG"
+echo "emulator.sh $* SERIAL=${ANDROID_SERIAL:-} THEME=${THEME:-} FONT_SCALE=${FONT_SCALE:-}" >> "$FAKE_LOG"
+if [ "$1" = prep-perf ]; then exit "${FAKE_PREP_EXIT:-0}"; fi
 """
 
 
@@ -51,6 +53,7 @@ class PerfTimelineTest(unittest.TestCase):
     def perf(self, **extra):
         env = {
             "ADB": str(self.tmp / "adb"),
+            "ANDROID_SERIAL": "",
             "GRADLEW": str(self.tmp / "gradlew"),
             "EMULATOR_SH": str(self.tmp / "emulator.sh"),
             "CHECK_BENCHMARKS": str(self.tmp / "checker"),
@@ -62,6 +65,29 @@ class PerfTimelineTest(unittest.TestCase):
 
     def calls(self, prefix):
         return [c for c in self.log.read_text().splitlines() if c.startswith(prefix)]
+
+    def test_unset_serial_selects_and_prepares_the_physical_device(self):
+        result = self.perf(FAKE_QEMU="0", FAKE_SERIAL="physical-123")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("adb get-serialno", self.calls("adb"))
+        self.assertIn("emulator.sh prep-perf physical-123 SERIAL=physical-123 THEME=light FONT_SCALE=1.0", self.calls("emulator.sh"))
+        self.assertTrue(any(c.startswith("adb -s physical-123 shell") for c in self.calls("adb")))
+
+    def test_prep_failure_stops_before_gradle_even_if_scales_are_one(self):
+        result = self.perf(FAKE_PREP_EXIT="7")
+        self.assertEqual(result.returncode, 7)
+        self.assertIn("prep-perf failed with status 7", result.stderr)
+        self.assertEqual(self.calls("gradlew"), [])
+
+    def test_no_device_fails_clearly(self):
+        result = self.perf(FAKE_DEVICE_COUNT="0")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("exactly one device must be attached, found 0", result.stderr)
+
+    def test_several_devices_fail_clearly(self):
+        result = self.perf(FAKE_DEVICE_COUNT="2")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("exactly one device must be attached, found 2", result.stderr)
 
     def test_suppress_errors_only_on_an_emulator(self):
         self.assertEqual(self.perf(FAKE_QEMU="1").returncode, 0)
@@ -87,7 +113,7 @@ class PerfTimelineTest(unittest.TestCase):
 
     def test_theme_and_font_scale_reach_prep_and_the_checker(self):
         self.assertEqual(self.perf(THEME="dark", FONT_SCALE="1.3").returncode, 0)
-        self.assertIn("emulator.sh prep-perf THEME=dark FONT_SCALE=1.3", self.calls("emulator.sh"))
+        self.assertIn("emulator.sh prep-perf emulator-5554 SERIAL=emulator-5554 THEME=dark FONT_SCALE=1.3", self.calls("emulator.sh"))
         checker = self.calls("checker")[0]
         self.assertIn("--theme dark", checker)
         self.assertIn("--font-scale 1.3", checker)
@@ -104,7 +130,7 @@ class PerfTimelineTest(unittest.TestCase):
         result = self.perf(FAKE_GRADLE_EXIT="3")
         self.assertEqual(result.returncode, 3)
         self.assertEqual(len(self.calls("checker")), 1)
-        self.assertTrue(self.calls("emulator.sh")[-1].startswith("emulator.sh prep-functional"))
+        self.assertTrue(self.calls("emulator.sh")[-1].startswith("emulator.sh prep-functional emulator-5554"))
 
     def test_a_band_miss_reruns_once(self):
         result = self.perf(FAKE_CHECK_EXITS="4 0")
