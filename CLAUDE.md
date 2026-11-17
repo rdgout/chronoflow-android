@@ -2,7 +2,7 @@
 
 ## Orchestration (Claude)
 
-Sonnet workers implement and Opus reviewers review. Claude orchestrates and does not hand-write feature code.
+Codex implements (from Phase 2; Sonnet did 0a–1e) and Opus reviewers review. Claude orchestrates and does not hand-write feature code.
 
 1. **Brief.** Every phase's brief, `docs/phases/phase-<id>-<slug>.md`, was written in advance (2026-11-16) from the phase's entry in `plan.md`. The briefs stay untracked in the main checkout until their phase starts (0a OQ-0a-19). A brief holds:
    - the deliverables, tasks and acceptance;
@@ -12,7 +12,7 @@ Sonnet workers implement and Opus reviewers review. Claude orchestrates and does
    - a pointer to AGENTS.md "Tests".
 
    Before the worker starts, refresh the brief against the stack top. Copy it into the phase's worktree and re-check every fact it states about earlier phases' code (names, signatures, paths and line numbers, usually under "This repo", "Inputs to read" or "Hand-ins to verify"). Patch the brief wherever the stack differs, then commit it on the phase branch as `docs(phases): add the <id> brief`. Tell the worker to repeat those checks first and to stop on any mismatch.
-2. **Implement.** Start one worker subagent with model `sonnet` per phase, on the phase's branch. Phases that run in parallel (plan.md "Parallel waves") each get their own worktree, created from the stack top: `git worktree add ../chronoflow-android-wt/phase-<id> -b feat/phase-<id>-<slug> <stack-top>`.
+2. **Implement.** Run one Codex job per phase on the phase's branch (user, 2026-11-17): `codex exec -C <repo> -s workspace-write --add-dir <repo>/.git --add-dir ~/.gradle --add-dir ~/.android -c sandbox_workspace_write.network_access=true -o <report> - < <prompt>`. The sibling repos stay outside its writable roots. Phases that run in parallel (plan.md "Parallel waves") each get their own worktree, created from the stack top: `git worktree add ../chronoflow-android-wt/phase-<id> -b feat/phase-<id>-<slug> <stack-top>`.
 
    Subagent shells start in the main checkout on every call. The worker prompt therefore names the phase's absolute path (for a worktree, `/Users/rickgout/Sites/chronoflow-android-wt/phase-<id>`), and every command runs as `cd <path> && …`, `make -C <path> …` or `git -C <path> …`, with absolute file paths. The worker's first command is a preflight: `git -C <path> rev-parse --abbrev-ref HEAD` must print `feat/phase-<id>-<slug>`, or the worker stops and reports it.
 3. **Review.** Opus reviewer subagents check the diff against:
@@ -46,7 +46,7 @@ AGENTS.md "Git" forbids commit trailers; that rule overrides any attribution def
 
 - **One agent at a time.** Phases run one after another in the plan's single-lane order. No parallel waves or worktrees, and never more than one worker or reviewer running at once.
 - **No test loops.** The worker writes the code and its tests, then runs the tests once at the end of the task: `make targeted` for what changed, then `make quick` once. If the same failure survives two fix attempts, or a run hangs, the worker stops and reports instead of retrying.
-- **Review.** One Opus reviewer per round, returning findings only: effort max for 1a–1e, 4a–4e and 13, medium otherwise. A Sonnet worker applies the verified findings. After three rounds, stop and report to the user.
+- **Review.** One Opus reviewer per round, returning findings only: effort max for 1a–1e, 4a–4e and 13, medium otherwise. A Codex job applies the verified findings. After three rounds, stop and report to the user.
 - **Don't redo finished work.** Before starting a phase, check git state: committed tasks are done.
 
 ## Cleanup
