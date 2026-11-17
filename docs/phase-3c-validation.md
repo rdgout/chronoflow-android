@@ -2,7 +2,7 @@
 
 Worker, 2026-11-18. Branch `feat/phase-3c-welcome`; pixel AVD API 36 for device tests, debug builds, functional animator scales 0 unless a test explicitly seeds Reduce Motion false. JVM renders use Robolectric native graphics SDK 36. Performance results and physical-device claims are not inferred from these checks.
 
-Tasks 1–10 are implemented. The manual TalkBack focus check and quiet-host benchmark/profile runs remain open with the user. The final documentation commit contains the Task 10 plan checkbox, OQ-A101–112, the seed/font-gate specification and the five contrast exceptions in `docs/design-system.md`. OQ-A68 remains unused.
+Tasks 1–10 are implemented. The manual TalkBack focus check passed (orchestrator, 2026-11-18), and the quiet-host profile and benchmark runs passed (`docs/perf-startup.md`, 9217531 and 7af8580). The final documentation commit contains the Task 10 plan checkbox, OQ-A101–112, the seed/font-gate specification and the five contrast exceptions in `docs/design-system.md`. OQ-A68 remains unused.
 
 ## Commits
 
@@ -108,7 +108,7 @@ The 42 Welcome PNGs are local evidence in `build/captures/`: 12 Main_final profi
 
 ## Open manual check
 
-- [ ] **OQ-A103 / OQ-3c-3 — user-owned, pending:** with TalkBack enabled on pixel, cold-launch signed out with cf.reduceMotion=false. After the dissolve, verify the first accessibility-focused item is ChronoFlow (the wordmark). Automated reading-order/heading/button-role tests pass, but do not prove TalkBack focus. No focus override was introduced without a failed manual check.
+- [x] **OQ-A103 / OQ-3c-3 — checked 2026-11-18 by the orchestrator:** TalkBack on, pixel emulator (API 36), debug build at 7af8580, cold launch signed out with cf.reduceMotion=false and animator scales 1. After the dissolve, TalkBack's first accessibility focus was the ChronoFlow wordmark (screenshot). No focus override needed.
 
 ## Quiet-host work for the user
 
