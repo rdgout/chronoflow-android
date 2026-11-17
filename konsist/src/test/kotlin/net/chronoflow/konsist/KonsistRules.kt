@@ -275,31 +275,46 @@ private val timeHygienePatterns =
         "DateTimeFormatter.ofLocalized",
         "String.format(",
     )
+
+private class LocaleCall(
+    val regex: Regex,
+    val needsTopLevelComma: Boolean,
+)
+
 private val localeRequiredCalls =
     listOf(
-        Regex("DateTimeFormatter\\.ofPattern\\("),
-        Regex("NumberFormat\\.get\\w*Instance\\("),
-        Regex("DecimalFormatSymbols\\("),
+        LocaleCall(Regex("DateTimeFormatter\\.ofPattern\\("), needsTopLevelComma = true),
+        LocaleCall(Regex("NumberFormat\\.get\\w*Instance\\("), needsTopLevelComma = false),
+        LocaleCall(Regex("DecimalFormatSymbols\\("), needsTopLevelComma = false),
+        LocaleCall(Regex("DecimalFormatSymbols\\.getInstance\\("), needsTopLevelComma = false),
     )
 
 private fun callsWithoutLocale(
     text: String,
-    call: Regex,
+    call: LocaleCall,
 ): List<String> =
-    call
+    call.regex
         .findAll(text)
         .mapNotNull { match ->
             var depth = 1
+            var topLevelComma = false
             var i = match.range.last + 1
             while (i < text.length && depth > 0) {
                 when (text[i]) {
                     '(' -> depth++
                     ')' -> depth--
+                    ',' -> if (depth == 1) topLevelComma = true
                 }
                 i++
             }
-            val args = text.substring(match.range.last + 1, i)
-            if (args.contains("Locale")) null else match.value + ")"
+            val args = text.substring(match.range.last + 1, i - 1)
+            val allowed =
+                if (call.needsTopLevelComma) {
+                    topLevelComma || text.startsWith(".withLocale(", i)
+                } else {
+                    args.isNotBlank()
+                }
+            if (allowed) null else match.value + ")"
         }.toList()
 
 private val literalFormatRegex = Regex("\"\\s*\\.format\\(")

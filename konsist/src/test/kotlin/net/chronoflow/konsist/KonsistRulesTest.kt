@@ -137,6 +137,7 @@ class KonsistRulesTest {
             messageContains("UsesNumberFormatInstance.kt")
             messageContains("UsesDecimalFormat.kt")
             messageContains("UsesDecimalFormatSymbols.kt")
+            messageContains("UsesDecimalFormatSymbolsGetInstance.kt")
             messageContains("UsesLocalTimeNow.kt")
             messageContains("UsesSimpleDateFormat.kt")
             messageContains("UsesCalendarInstance.kt")
