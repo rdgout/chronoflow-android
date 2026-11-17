@@ -264,6 +264,8 @@ private val timeHygienePatterns =
         "Instant.now(",
         "LocalDate.now(",
         "LocalDateTime.now(",
+        "LocalTime.now(",
+        "DecimalFormat(",
         "ZonedDateTime.now(",
         "OffsetDateTime.now(",
         "Clock.systemDefaultZone",
@@ -273,6 +275,33 @@ private val timeHygienePatterns =
         "DateTimeFormatter.ofLocalized",
         "String.format(",
     )
+private val localeRequiredCalls =
+    listOf(
+        Regex("DateTimeFormatter\\.ofPattern\\("),
+        Regex("NumberFormat\\.get\\w*Instance\\("),
+        Regex("DecimalFormatSymbols\\("),
+    )
+
+private fun callsWithoutLocale(
+    text: String,
+    call: Regex,
+): List<String> =
+    call
+        .findAll(text)
+        .mapNotNull { match ->
+            var depth = 1
+            var i = match.range.last + 1
+            while (i < text.length && depth > 0) {
+                when (text[i]) {
+                    '(' -> depth++
+                    ')' -> depth--
+                }
+                i++
+            }
+            val args = text.substring(match.range.last + 1, i)
+            if (args.contains("Locale")) null else match.value + ")"
+        }.toList()
+
 private val literalFormatRegex = Regex("\"\\s*\\.format\\(")
 
 fun noDefaultLocaleZoneOrClockInLogic(scope: KoScope) {
@@ -282,7 +311,9 @@ fun noDefaultLocaleZoneOrClockInLogic(scope: KoScope) {
             .filter { it.module in timeHygieneModules && it.sourceSet == "main" }
             .filterNot { it.path.endsWith(".generated.kt") || it.path.replace('\\', '/').contains("/generated/") }
             .flatMap { file ->
-                val literal = timeHygienePatterns.filter { file.text.contains(it) }
+                val literal =
+                    timeHygienePatterns.filter { file.text.contains(it) } +
+                        localeRequiredCalls.flatMap { callsWithoutLocale(file.text, it) }
                 val formatted =
                     if (literalFormatRegex.containsMatchIn(
                             file.text,
