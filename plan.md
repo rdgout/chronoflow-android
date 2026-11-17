@@ -1231,13 +1231,13 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - A `LazyColumn` with one item per day (`key = dayId`, `contentType = "day"`).
   - A plain sticky day header from the generated type and color tokens; the designed header comes in 6b.
   - A minimal M3 day menu (`trip.dayMenu.day.<n>`) and a plain end item (`trip.plan.end`).
-- [ ] **DayTimeline composable.**
+- [x] **DayTimeline composable.**
   - Its size comes from constraints only.
   - It requests its drawing from `TimelineDrawingRepository`, which builds on `Dispatchers.Default.limitedParallelism(2)`, prefetches ±2 days and uses the 1c cache.
   - Until the drawing is ready it draws a placeholder (background and ticks). It then replays it in `Modifier.drawWithCache` inside `graphicsLayer {}`.
   - One `pointerInput` resolves taps through `HitIndex`; for now it only invokes a callback, and the sheet comes in 6d.
   - `TimelineTargets` become invisible semantics nodes with labels, `traversalIndex` and `onClick`.
-- [ ] **NowLine.** It is the only clock reader. It is placed with `Modifier.offset { }` from the minute state, so a tick invalidates only the NowLine.
+- [x] **NowLine.** It is the only clock reader. It is placed with `Modifier.offset { }` from the minute state, so a tick invalidates only the NowLine.
 - [ ] **SystemPlanClock** (`core/data/…/clock/`).
   - Minute ticks aligned to the wall minute.
   - `ACTION_TIME_TICK`, `ACTION_TIME_CHANGED`, `ACTION_TIMEZONE_CHANGED` and `ACTION_DATE_CHANGED` receivers, registered only while the app is started.
