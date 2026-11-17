@@ -1178,7 +1178,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 
 **Tasks**
 - [x] **DayDrawing.kt** (`:core:plan`): op codes in a `ByteArray`, coordinates in a `FloatArray`, colors in an `IntArray`, plus text runs and path ids. It is immutable and reports `estimatedBytes`.
-- [ ] **DayDrawingBuilder.kt.**
+- [x] **DayDrawingBuilder.kt.**
   - Same draw order as iOS `TimelineRenderer.swift`.
   - Category styles (`04 §3.8`) from `TimelinePalette.generated.kt`, and the tile content rules (`§3.9`).
   - The compact rule: no text inside tiles below a 640 dp window width, or in tiny tiles.

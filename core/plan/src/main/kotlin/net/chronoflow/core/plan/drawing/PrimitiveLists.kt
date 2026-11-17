@@ -16,6 +16,8 @@ internal class FloatList(
         for (i in 0 until other.size) add(other.data[i])
     }
 
+    fun at(index: Int): Float = data[index]
+
     fun clear() {
         size = 0
     }

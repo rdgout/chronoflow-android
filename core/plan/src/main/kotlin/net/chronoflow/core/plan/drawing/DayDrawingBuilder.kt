@@ -11,6 +11,7 @@ import net.chronoflow.core.plan.TimelineGeometry
 import net.chronoflow.core.plan.TimelineTileFrame
 import net.chronoflow.core.plan.generated.PlanMetrics
 import net.chronoflow.core.plan.generated.TimelinePalette
+import net.chronoflow.core.plan.timelineBlockFrame
 import net.chronoflow.core.plan.timelineLanes
 import kotlin.math.max
 import kotlin.math.min
@@ -25,6 +26,8 @@ object DayDrawingBuilder {
     /** The marker glyph is a letter the renderer draws, not copy. */
     internal const val INFO_MARKER_GLYPH = "i"
     private const val JOINER = " · "
+    private const val DIVIDER_TRAVERSAL = 10000f
+    private const val TICK_TRAVERSAL = 20000f
 
     /**
      * [precomposite] is false only for `PrecompositedAlphaTest`'s reference, which wraps each tile in a real layer.
@@ -223,9 +226,86 @@ object DayDrawingBuilder {
                 main.textStyles.toArray(),
                 main.glyphs.toArray(),
                 dividerFrames.toArray(),
-                emptyList(),
-                HitIndex.Empty,
+                targets(),
+                hitIndex(),
             )
+        }
+
+        fun hitIndex(): HitIndex {
+            val tiles = geometry.tiles
+            val frames = FloatArray(tiles.size * HitIndex.TILE_STRIDE)
+            for ((i, tile) in tiles.withIndex()) {
+                val o = i * HitIndex.TILE_STRIDE
+                frames[o] = px(tile.hitFrame.minX)
+                frames[o + 1] = px(tile.hitFrame.minY)
+                frames[o + 2] = px(tile.hitFrame.maxX)
+                frames[o + 3] = px(tile.hitFrame.maxY)
+                frames[o + 4] = px(tile.frame.midY)
+            }
+            return HitIndex(
+                Array(tiles.size) { tiles[it].blockID },
+                frames,
+                Array(layout.markers.size) { layout.markers[it].block.id },
+                FloatArray(layout.markers.size) { px(layout.markers[it].top) },
+                Array(layout.changes.size) { layout.changes[it].block.id },
+                FloatArray(layout.changes.size) { px(layout.changes[it].top) },
+                px(PlanMetrics.gutterWidth),
+                px(PlanMetrics.minTouchTarget / 2),
+            )
+        }
+
+        /** Blocks, then divider pills, then visible ticks (`DayTimelineView.swift:117-158`); "Now" belongs to the host. */
+        fun targets(): List<TimelineTarget> {
+            val out = ArrayList<TimelineTarget>(day.blocks.size + layout.dividers.size + layout.ticks.size)
+            for ((i, block) in day.blocks.withIndex()) {
+                val frame = timelineBlockFrame(block.id, geometry, layout) ?: continue
+                out.add(
+                    TimelineTarget(
+                        TimelineTarget.Kind.BLOCK,
+                        block.id,
+                        block.accessibilityLabel,
+                        px(frame.minX),
+                        px(frame.minY),
+                        px(frame.maxX),
+                        px(frame.maxY),
+                        i.toFloat(),
+                        "trip.block.${block.id}",
+                    ),
+                )
+            }
+            for (j in layout.dividers.indices) {
+                out.add(
+                    TimelineTarget(
+                        TimelineTarget.Kind.DIVIDER,
+                        null,
+                        day.dividerLabels[j],
+                        dividerFrames.at(j * 4),
+                        dividerFrames.at(j * 4 + 1),
+                        dividerFrames.at(j * 4 + 2),
+                        dividerFrames.at(j * 4 + 3),
+                        DIVIDER_TRAVERSAL + j.toFloat(),
+                        null,
+                    ),
+                )
+            }
+            for ((k, tick) in layout.ticks.withIndex()) {
+                if (!tick.visible) continue
+                val y = px(tick.top)
+                out.add(
+                    TimelineTarget(
+                        TimelineTarget.Kind.TICK,
+                        null,
+                        day.ticks[k],
+                        0f,
+                        y - lineH / 2,
+                        px(PlanMetrics.gutterWidth),
+                        y + lineH / 2,
+                        TICK_TRAVERSAL + k.toFloat(),
+                        null,
+                    ),
+                )
+            }
+            return out
         }
 
         fun laneX(i: Int): Float =
