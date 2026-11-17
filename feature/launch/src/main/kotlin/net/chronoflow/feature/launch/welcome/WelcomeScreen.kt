@@ -77,7 +77,7 @@ fun WelcomeScreen(
             modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
             heading = {
                 Column(verticalArrangement = Arrangement.spacedBy(WelcomeTokens.groupGap.dp)) {
-                    WelcomeBrand(moonAnchorStore, Modifier.introItem(0, presented, now))
+                    WelcomeBrand(moonAnchorStore, wordmarkModifier = Modifier.introItem(0, presented, now))
                     Box(Modifier.padding(top = WelcomeTokens.eyebrowMargin.dp)) {
                         Text(
                             stringResource(R.string.welcome_jet_lag_planner).uppercase(locale),
