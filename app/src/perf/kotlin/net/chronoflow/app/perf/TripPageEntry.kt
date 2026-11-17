@@ -3,6 +3,8 @@ package net.chronoflow.app.perf
 import android.content.Intent
 import android.util.Log
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -10,10 +12,12 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.withContext
 import net.chronoflow.app.AppGraph
 import net.chronoflow.core.model.contracts.Language
 import net.chronoflow.core.plan.FixedPlanClock
 import net.chronoflow.core.plan.PlanClock
+import net.chronoflow.core.testing.LargeTimelineFixtures
 import net.chronoflow.feature.trip.timeline.TextPaintMetrics
 import net.chronoflow.feature.trip.timeline.TimelinePage
 import net.chronoflow.feature.trip.timeline.TimelineTypefaces
@@ -48,6 +52,11 @@ private fun TripPage(
     name: String,
     clock: PlanClock,
 ) {
+    // The fixture is generated before the ViewModel exists: its init begins the first-frame section, which must not include generation.
+    val bytes by produceState<ByteArray?>(null, name) {
+        value = withContext(Dispatchers.Default) { LargeTimelineFixtures.detailBytes(name) }
+    }
+    val fixture = bytes ?: return
     val language = if (LocalConfiguration.current.locales[0].language == "nl") Language.Nl else Language.En
     val appContext = LocalContext.current.applicationContext
     // A locale change recreates the activity but keeps the ViewModel store, and the language is a constructor argument.
@@ -58,7 +67,7 @@ private fun TripPage(
                 viewModelFactory {
                     initializer {
                         TimelineHostViewModel(
-                            source = FixtureTimelineSource(name, Dispatchers.Default),
+                            source = FixtureTimelineSource(fixture),
                             clock = clock,
                             language = language,
                             compute = Dispatchers.Default,

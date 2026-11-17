@@ -8,6 +8,7 @@ import kotlinx.coroutines.test.runTest
 import net.chronoflow.app.perf.FixtureTimelineSource
 import net.chronoflow.core.model.store.PlanVersionRecord
 import net.chronoflow.core.plan.PlanDecoder
+import net.chronoflow.core.testing.LargeTimelineFixtures
 import org.junit.Test
 import kotlin.time.Duration.Companion.seconds
 
@@ -18,7 +19,7 @@ class FixtureTimelineSourceTest {
         runTest(timeout = 60.seconds) {
             val decoder = PlanDecoder(Dispatchers.Default)
             for (name in names) {
-                val input = FixtureTimelineSource(name, Dispatchers.Default).inputs().first()
+                val input = FixtureTimelineSource(LargeTimelineFixtures.detailBytes(name)).inputs().first()
                 val detail = decoder.detail(PlanVersionRecord("fixture", name, input.detailBytes, ""))
                 assertThat(detail.plan.days.isNotEmpty()).isEqualTo(true)
             }
@@ -26,7 +27,7 @@ class FixtureTimelineSourceTest {
 
     @Test fun large60DecodesTo60Days() =
         runTest(timeout = 60.seconds) {
-            val input = FixtureTimelineSource("large60", Dispatchers.Default).inputs().first()
+            val input = FixtureTimelineSource(LargeTimelineFixtures.detailBytes("large60")).inputs().first()
             val detail =
                 PlanDecoder(
                     Dispatchers.Default,

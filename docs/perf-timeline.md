@@ -76,7 +76,8 @@ Perfetto (`adb shell perfetto -t 15s -a net.chronoflow.app.native.debug gfx view
 
 - `cf.timeline.build`: 17 slices, all on `DefaultDispatch*` threads, none on the main thread.
 - `cf.timeline.replay`: 13 slices, all on the main thread. `cf.timeline.placeholder`: 1 slice.
-- `cf.timeline.firstFrame`: one async slice, 818 ms (debug build on the emulator; it covers fixture read, decode, layout, prepare, typeface load and the first build). Pending 1e for any budget.
+- `cf.timeline.firstFrame`: one async slice, 818 ms before the fix (debug build on the emulator, large60; it included fixture generation). It now starts after the fixture is generated, as in iOS `TripPageDiagnosticRoot`, and covers decode, layout, prepare, typeface load and the first build. Pending 1e for any budget.
+- `cf.timeline.firstFrame` after generating the fixture before the section starts (2026-11-17, `pixel`, debug build, cold start, large60, Perfetto `-t 8s -a net.chronoflow.app.native.debug gfx view sched dalvik`, three runs, `build/phase-1d-after-{1,2,3}.pftrace`): 212 ms, 225 ms, 214 ms. The old 818 ms included the roughly 579 ms large60 generator.
 
 ### Compose stability (`./gradlew :feature:trip:compileReleaseKotlin -PcomposeReports=true`)
 
