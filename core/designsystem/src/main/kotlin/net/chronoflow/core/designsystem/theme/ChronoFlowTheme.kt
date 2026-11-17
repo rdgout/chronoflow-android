@@ -12,10 +12,14 @@ import androidx.compose.material3.RippleConfiguration
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.platform.LocalHapticFeedback
 import net.chronoflow.core.designsystem.generated.CfColors
 import net.chronoflow.core.designsystem.generated.CfDarkColors
 import net.chronoflow.core.designsystem.generated.CfLightColors
+import net.chronoflow.core.designsystem.haptics.AndroidHaptics
+import net.chronoflow.core.designsystem.haptics.LocalHaptics
 
 val LocalCfColors = staticCompositionLocalOf<CfColors> { error("LocalCfColors is provided by ChronoFlowTheme") }
 val LocalCfType = staticCompositionLocalOf<CfType> { error("LocalCfType is provided by ChronoFlowTheme") }
@@ -34,8 +38,11 @@ fun ChronoFlowTheme(
     reduceMotion: Boolean = LocalReduceMotion.current,
     content: @Composable () -> Unit,
 ) {
+    val feedback = LocalHapticFeedback.current
+    val haptics = remember(feedback) { AndroidHaptics(feedback) }
     val colors = if (darkTheme) CfDarkColors else CfLightColors
     CompositionLocalProvider(
+        LocalHaptics provides haptics,
         LocalCfColors provides colors,
         LocalCfType provides type,
         LocalCfShapes provides shapes,
