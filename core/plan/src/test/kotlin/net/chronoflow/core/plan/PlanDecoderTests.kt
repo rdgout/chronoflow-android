@@ -2,9 +2,11 @@ package net.chronoflow.core.plan
 
 import assertk.assertFailure
 import assertk.assertThat
+import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isGreaterThan
 import assertk.assertions.isInstanceOf
+import assertk.assertions.isNull
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
@@ -17,7 +19,9 @@ import kotlinx.serialization.json.jsonObject
 import net.chronoflow.core.model.api.ApiJson
 import net.chronoflow.core.model.contracts.BlockType
 import net.chronoflow.core.model.contracts.Lane
+import net.chronoflow.core.model.store.CheckMarkRecord
 import net.chronoflow.core.model.store.PlanVersionRecord
+import net.chronoflow.core.model.store.TripPlanSnapshot
 import net.chronoflow.core.testing.Fixtures
 import org.junit.Test
 import kotlin.time.Duration.Companion.seconds
@@ -85,5 +89,21 @@ class PlanDecoderTests {
         runTest(timeout = 60.seconds) {
             val record = PlanVersionRecord("t", "h", "{".encodeToByteArray(), "now")
             assertFailure { decoder().detail(record) }.isInstanceOf<SerializationException>()
+        }
+
+    @Test fun snapshotMergesMarks() =
+        runTest(timeout = 60.seconds) {
+            val decoder = decoder()
+            assertThat(decoder.detail(TripPlanSnapshot(plan = null))).isNull()
+            val value = tripDetail()
+            val record = recordOf(value)
+            val block = value.plan.blocks.first { it.actionable && it.checkKey != null }
+            val key = block.checkKey!!
+            val row =
+                CheckMarkRecord(record.tripId, record.inputHash, key.type.raw, key.localDate, key.ordinal, "done", "t")
+            val merged = decoder.detail(TripPlanSnapshot(record, listOf(row)))!!
+            assertThat(merged.checkState.marks.size).isEqualTo(1)
+            assertThat(decoder.detail(record).checkState.marks).isEmpty()
+            assertThat(decoder.decodeCount).isEqualTo(1)
         }
 }

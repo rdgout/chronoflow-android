@@ -8,6 +8,7 @@ import kotlinx.serialization.json.Json
 import net.chronoflow.core.model.api.ApiJson
 import net.chronoflow.core.model.contracts.TripDetail
 import net.chronoflow.core.model.store.PlanVersionRecord
+import net.chronoflow.core.model.store.TripPlanSnapshot
 
 class PlanDecoder(
     private val worker: CoroutineDispatcher,
@@ -47,5 +48,13 @@ class PlanDecoder(
 
     suspend fun evict(tripID: String) {
         mutex.withLock { cache.keys.removeAll { it.trip == tripID } }
+    }
+
+    suspend fun detail(snapshot: TripPlanSnapshot): TripDetail? {
+        val record = snapshot.plan ?: return null
+        val decoded = detail(record)
+        return decoded.copy(
+            checkState = mergedCheckState(decoded.plan, record.inputHash, snapshot.checks, snapshot.pendingChecks),
+        )
     }
 }

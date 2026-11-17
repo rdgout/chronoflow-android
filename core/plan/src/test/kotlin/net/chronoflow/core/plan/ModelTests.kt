@@ -6,6 +6,8 @@ import assertk.assertions.isEqualTo
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import net.chronoflow.core.model.api.ApiJson
+import net.chronoflow.core.model.contracts.CheckMark
+import net.chronoflow.core.model.contracts.CheckStatus
 import net.chronoflow.core.model.contracts.TripDetail
 import net.chronoflow.core.model.store.PlanVersionRecord
 import org.junit.Test
@@ -35,4 +37,17 @@ class ModelTests {
             assertThat(decoder.detail(reencoded(value)).plan.blocks).isEmpty()
             assertThat(decoder.decodeCount).isEqualTo(3)
         }
+
+    @Test fun localProgressCountsStartsAndKeepsSkippedSeparate() {
+        val value = tripDetail()
+        val blocks = value.plan.blocks.filter { it.actionable && it.checkKey != null }
+        val marks =
+            blocks.take(2).mapIndexed { index, block ->
+                CheckMark(block.checkKey!!, if (index == 0) CheckStatus.Done else CheckStatus.Skipped, block.startUtc)
+            }
+        val state = buildCheckState(value.plan, marks)
+        assertThat(state.marks.size).isEqualTo(marks.size)
+        assertThat(state.days.sumOf { it.done }).isEqualTo(minOf(1, marks.size))
+        assertThat(state.days.sumOf { it.skipped }).isEqualTo(maxOf(0, marks.size - 1))
+    }
 }
