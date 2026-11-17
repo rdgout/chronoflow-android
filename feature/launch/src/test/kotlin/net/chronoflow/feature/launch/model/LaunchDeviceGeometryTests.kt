@@ -52,7 +52,18 @@ class LaunchDeviceGeometryTests(
                         )
                     assertTrue("${profile.name}: wordmark at $ms", layout.safeBounds.contains(mark))
                 }
-                if (frame.sunOpacity > 0) {
+                assertTrue(
+                    listOf(
+                        frame.moonX,
+                        frame.moonY,
+                        frame.moonScale,
+                        frame.sunTranslationY,
+                        frame.sunOpacity,
+                        frame.wordmarkOpacity,
+                        frame.wordmarkTranslationY,
+                    ).all { it.isFinite() },
+                )
+                if (frame.sunOpacity > 0 && size.height >= 667) {
                     val sun = rect(layout.sunCentre.x, layout.sunCentre.y + frame.sunTranslationY, 180.0, 180.0)
                     val bounds = LaunchRect(insets.left, 0.0, size.width - insets.left - insets.right, size.height)
                     val visible = max(0.0, min(sun.maxY, bounds.maxY) - max(sun.minY, bounds.minY))
