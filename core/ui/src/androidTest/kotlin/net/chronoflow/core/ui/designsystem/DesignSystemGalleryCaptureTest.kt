@@ -13,6 +13,7 @@ import net.chronoflow.core.testing.compose.designsystem.GallerySection
 import net.chronoflow.core.testing.tiers.Capture
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.RuleChain
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
@@ -23,7 +24,9 @@ class DesignSystemGalleryCaptureTest(
     private val language: AppLanguage,
     private val dark: Boolean,
 ) {
-    @get:Rule val compose = createComposeRule()
+    private val compose = createComposeRule()
+
+    @get:Rule val rules: RuleChain = RuleChain.outerRule(GalleryLocaleRule(language)).around(compose)
 
     @Test fun capturePrimitiveSection() {
         compose.setContent {
