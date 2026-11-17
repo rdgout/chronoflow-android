@@ -1339,7 +1339,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 - [x] **Material mapping.**
   - `toM3()` per "Android spec: Material mapping"; `ToM3Test` pins every role.
   - `ContrastTest` checks the text and background pairs used on the boards, in light and dark, against WCAG AA (4.5:1 for body text, 3:1 for large text and UI). A board pair that fails becomes a design question; it is not changed.
-- [ ] **Effects.**
+- [x] **Effects.**
   - `Modifier.cfPress()`: a `Modifier.Node` with scale 0.97, alpha 0.85, 120 ms and cubic-bezier(0.25, 0.1, 0.25, 1); alpha only with Reduce Motion.
   - `softShadow1` and `softShadow2` through `Modifier.dropShadow`, from the tokens.
   - `Brush.sky()` from `CfSky`. No blur.
