@@ -1513,6 +1513,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 
 **Tasks**
 - [ ] **LaunchReadiness.kt** (pure).
+  - [x] **Seams and reducer** (3b Task 1): core readiness interfaces and the pure reducer with the ported JVM cases.
   - Events: session known (signed in or signed out), data ready, failure.
   - The 1500/2000/8000 ms rules; an ending is never cut short.
   - Port the iOS readiness cases on a fake clock.
