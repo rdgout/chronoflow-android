@@ -34,6 +34,7 @@ class TimelineTypefaces(
             context: Context,
             io: CoroutineDispatcher = Dispatchers.IO,
         ): TimelineTypefaces {
+            if (!TimelineGlyphPaths.isParsed) withContext(io) { TimelineGlyphPaths.warm() }
             cached?.let { return it }
             return mutex.withLock {
                 cached ?: withContext(io) {
