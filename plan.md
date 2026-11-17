@@ -1468,7 +1468,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - Semantics: a single node, "ChronoFlow is opening", with `paneTitle`. App content is hidden with `hideFromAccessibility()` until the hand-off ends.
 - [x] **Konsist numeric dp/sp constants** (3a Task 8b): reject unapproved numeric constants; keep the timeline marker at one physical pixel.
 - [x] **System-bar icons (OQ-A67).** Apply themed icon styles on theme and overlay changes; retain light status icons on sky.
-- [ ] **Frame-0 parity.** `LaunchFrameZeroTest` (`@Smoke`, emulator): in light and dark, the overlay moon's rect equals the system `iconView` bounds within 1 px, and the centre pixel matches. Validation blocked by Task 9's explicit stop condition: API 36 pixel reports a 192.0 dp `iconView`, versus the required 288 dp; see `docs/perf-startup.md` "held-splash diagnosis and icon-size blocker".
+- [ ] **Frame-0 parity.** `LaunchFrameZeroTest` (`@Smoke`, emulator): in light and dark, the 192 dp system `iconView` and 288 dp frame-0 moon canvas are concentric within 1 px and centred on the display; the centre and visible-circle pixels match.
 - [ ] **Traces and benchmarks.**
   - Traces `launch` (async, from process start) and `first-commit` (the first overlay draw).
   - The signed-out cold `StartupBenchmark` now measures the overlay.

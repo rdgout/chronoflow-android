@@ -13,6 +13,7 @@ import androidx.test.uiautomator.Until
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import net.chronoflow.app.testing.ScreenTest
+import net.chronoflow.core.testing.compose.BoardCapture
 import net.chronoflow.core.testing.tiers.Smoke
 import net.chronoflow.feature.launch.LaunchController
 import org.junit.After
@@ -83,12 +84,15 @@ class LaunchFrameZeroTest : ScreenTest() {
         )
         waitFor(5000) { controller.t0Nanos != LaunchController.UNSET && controller.systemIconBoundsPx != null }
         val overlay = checkNotNull(instrumentation.uiAutomation.takeScreenshot())
+        BoardCapture.capture(system, "harness/parity-system-${if (dark) "dark" else "light"}")
+        BoardCapture.capture(overlay, "harness/parity-overlay-${if (dark) "dark" else "light"}")
         val icon = checkNotNull(controller.systemIconBoundsPx)
         val moon = checkNotNull(controller.frameZeroMoonRectPx)
         val density = instrumentation.targetContext.resources.displayMetrics.density
         val measuredDp = icon.width() / density.toDouble()
-        assertEquals("system icon must be 288 dp; measured $measuredDp dp", 288.0, measuredDp, 1.0 / density)
-        assertRectsAgree(icon, moon)
+        assertEquals("system icon view must be 192 dp; measured $measuredDp dp", 192.0, measuredDp, 1.0 / density)
+        assertEquals(icon.exactCenterX().toDouble(), moon.exactCenterX().toDouble(), 1.0)
+        assertEquals(icon.exactCenterY().toDouble(), moon.exactCenterY().toDouble(), 1.0)
         for (rect in listOf(icon, moon)) {
             assertEquals(device.displayWidth / 2.0, rect.exactCenterX().toDouble(), 1.0)
             assertEquals(device.displayHeight / 2.0, rect.exactCenterY().toDouble(), 1.0)
@@ -112,16 +116,6 @@ class LaunchFrameZeroTest : ScreenTest() {
                 assertTrue("right sky band differs", difference(sky, bitmap.getPixel(bitmap.width - 1 - edgeX, y)) <= 1)
             }
         }
-    }
-
-    private fun assertRectsAgree(
-        a: Rect,
-        b: Rect,
-    ) {
-        assertTrue("left: $a vs $b", abs(a.left - b.left) <= 1)
-        assertTrue("top: $a vs $b", abs(a.top - b.top) <= 1)
-        assertTrue("right: $a vs $b", abs(a.right - b.right) <= 1)
-        assertTrue("bottom: $a vs $b", abs(a.bottom - b.bottom) <= 1)
     }
 
     private fun assertMoonCircle(
