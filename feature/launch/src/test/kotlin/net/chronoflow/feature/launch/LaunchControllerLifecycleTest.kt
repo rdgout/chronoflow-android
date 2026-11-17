@@ -165,6 +165,63 @@ class LaunchControllerLifecycleTest {
             assertFalse(controller.holdsSystemSplash())
             controller.onActivityDestroyed()
         }
+
+    @Test fun recreatedReadyDiagnosticDoesNotStartReadiness() =
+        assertDiagnosticRelaunchRemainsEmpty(LaunchOverrides(mode = LaunchMode.Ready), recreated = true)
+
+    @Test fun recreatedSlowDiagnosticDoesNotStartReadiness() =
+        assertDiagnosticRelaunchRemainsEmpty(LaunchOverrides(mode = LaunchMode.Slow), recreated = true)
+
+    @Test fun warmReadyDiagnosticDoesNotStartReadiness() =
+        assertDiagnosticRelaunchRemainsEmpty(LaunchOverrides(mode = LaunchMode.Ready), recreated = false)
+
+    @Test fun warmSlowDiagnosticDoesNotStartReadiness() =
+        assertDiagnosticRelaunchRemainsEmpty(LaunchOverrides(mode = LaunchMode.Slow), recreated = false)
+
+    @Test fun warmFrozenLaunchDoesNotStartReadiness() =
+        assertDiagnosticRelaunchRemainsEmpty(LaunchOverrides(freezeAt = 1.seconds), recreated = false)
+
+    private fun assertDiagnosticRelaunchRemainsEmpty(
+        overrides: LaunchOverrides,
+        recreated: Boolean,
+    ) = runTest(timeout = 60.seconds) {
+        val clock = ManualLaunchClock()
+        var readinessStarts = 0
+        val controller =
+            LaunchController(
+                moon = { error("no drawing") },
+                processToken = "same",
+                nanoTime = { 0L },
+                scope = backgroundScope,
+                clockFactory = { clock },
+                readinessFactory = {
+                    readinessStarts++
+                    SignedOutReadiness
+                },
+            )
+        controller.captureReduceMotion(true, false)
+        assertEquals(LaunchKind.Cold, controller.onActivityCreated(null, false, overrides))
+        controller.onFirstDraw(Rect())
+        runCurrent()
+        assertNull(controller.route)
+        assertNull(controller.coordinator)
+        if (overrides.freezeAt != null) {
+            controller.onActivityDestroyed()
+        } else {
+            controller.onExitFrame(5.seconds.inWholeNanoseconds)
+        }
+        val saved = if (recreated) Bundle().apply { putString(LaunchController.KEY_PROCESS_TOKEN, "same") } else null
+        assertEquals(
+            if (recreated) LaunchKind.Recreated else LaunchKind.Warm,
+            controller.onActivityCreated(saved, false),
+        )
+        runCurrent()
+        assertNull("diagnostic relaunch must keep its route empty", controller.route)
+        assertNull(controller.coordinator)
+        assertEquals(0, readinessStarts)
+        assertFalse(controller.overlayActive)
+        controller.onActivityDestroyed()
+    }
 }
 
 private class LifecycleReadiness(

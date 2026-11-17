@@ -278,7 +278,7 @@ class LaunchController(
             overrides = activityOverrides
             if (kind == LaunchKind.Warm) overlayShowing = false
         }
-        if (!overlayActive && route == null) startHeadless()
+        if (!overlayActive && route == null && overrides.mode == null && overrides.freezeAt == null) startHeadless()
         return kind
     }
 
