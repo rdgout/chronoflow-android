@@ -1084,11 +1084,11 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 
 **Tasks**
 - [ ] **Plan decoding.** `core/plan/…/PlanDecoder.kt` decodes plan-detail bytes into the 0d contracts, with tolerant enums. It keeps the raw bytes for `plan_versions.detail`. Test: S1–S6 decode.
-- [ ] **CopyCatalog.kt.**
+- [x] **CopyCatalog.kt.**
   - It loads `plan_copy.json` once, lazily and off the main thread.
   - It resolves keys with an explicit `Language`, including the `CopyArg` and `CaffeineCopyArg` arguments and the caffeine tables.
   - Test: the ported `CopyCatalogTests`.
-- [ ] **CopyLineFormatter.kt.** Fixed month and weekday tables (A17), the 12/24 h rule from the account `timeFormat`, the U+2212 minus, and durations. Test: the 44 cases of `intl-cases.json`, copied to `core/testing/…/fixtures/intl-cases.json` with its hash.
+- [x] **CopyLineFormatter.kt.** Fixed month and weekday tables (A17), the 12/24 h rule from the account `timeFormat`, the U+2212 minus, and durations. Test: the 44 cases of `intl-cases.json`, copied to `core/testing/…/fixtures/intl-cases.json` with its hash.
 - [ ] **CheckState, PlanLogic and PlanClock.**
   - `CheckState.kt`: check keys, and mark merging with pending marks.
   - `PlanLogic.kt`: optional and hidden steps; `show_optional_items` is never sent.

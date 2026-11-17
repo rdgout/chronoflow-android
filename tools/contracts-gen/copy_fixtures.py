@@ -16,7 +16,10 @@ ROOT = Path(__file__).resolve().parents[2]
 FIXTURES = "core/testing/src/main/resources/fixtures"
 MANIFEST = "fixtures.sha256"
 IOS = "Packages/ChronoFlowKit/Tests/DataAccessTests/Fixtures"
-SOURCES = [(IOS, ["account", "auth", "errors", "plans", "trips", "wizard"])]
+SOURCES = [
+    (IOS, ["account", "auth", "errors", "plans", "trips", "wizard"]),
+    ("Packages/ChronoFlowKit/Tests/PlanCoreTests/Fixtures", ["intl-cases.json"]),
+]
 
 
 def read(repo, pin, args):

@@ -62,7 +62,7 @@ internal fun dateText(
     return out.toString()
 }
 
-private fun StringBuilder.appendYear(year: Int): StringBuilder {
+internal fun StringBuilder.appendYear(year: Int): StringBuilder {
     val digits = year.toString()
     repeat(4 - digits.length) { append('0') }
     return append(digits)
