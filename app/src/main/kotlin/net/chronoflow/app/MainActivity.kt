@@ -21,11 +21,13 @@ import kotlinx.coroutines.CompletableDeferred
 import net.chronoflow.app.perf.PerfJank
 import net.chronoflow.app.perf.TripPageEntry
 import net.chronoflow.core.designsystem.theme.ReduceMotion
+import net.chronoflow.feature.launch.LaunchController
 import net.chronoflow.feature.launch.LaunchTrace
 
 class MainActivity : ComponentActivity() {
     private var reduceMotion by mutableStateOf(false)
     private val firstCommit = CompletableDeferred<Unit>()
+    private lateinit var launch: LaunchController
 
     override fun onResume() {
         super.onResume()
@@ -43,7 +45,7 @@ class MainActivity : ComponentActivity() {
         val splash = installSplashScreen()
         super.onCreate(savedInstanceState)
         val graph = (application as ChronoFlowApp).graph
-        val launch = graph.launch
+        launch = graph.launch
         launch.onActivityCreated(restored = savedInstanceState != null)
         val overrides = LaunchPlatform.overrides(intent)
         reduceMotion = ReduceMotion.resolve(ValueAnimator.areAnimatorsEnabled(), overrides.reduceMotion)
@@ -76,6 +78,7 @@ class MainActivity : ComponentActivity() {
         PerfJank.install(this)
         window.decorView.viewTreeObserver.registerFrameCommitCallback {
             firstCommit.complete(Unit)
+            launch.onFrameCommitted(claimed)
             (application as ChronoFlowApp).launchPath.end()
         }
         splash.setKeepOnScreenCondition { launch.holdsSystemSplash() }
@@ -92,6 +95,11 @@ class MainActivity : ComponentActivity() {
                 )
             provider.remove()
         }
+    }
+
+    override fun onDestroy() {
+        if (::launch.isInitialized) launch.onActivityDestroyed()
+        super.onDestroy()
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {

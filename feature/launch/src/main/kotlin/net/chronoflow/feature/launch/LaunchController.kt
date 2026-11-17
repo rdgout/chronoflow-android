@@ -18,6 +18,7 @@ class LaunchController(
     val nanoTime: () -> Long = System::nanoTime,
     val nextFrameNanos: suspend () -> Long = { withFrameNanos { it } },
     internal val compositionObserver: () -> Unit = {},
+    private val tracing: LaunchTracing = LaunchTrace,
 ) {
     private var capturedAppearance: LaunchAppearance? = null
     val appearance: LaunchAppearance get() = checkNotNull(capturedAppearance)
@@ -93,7 +94,7 @@ class LaunchController(
         t0Nanos = nanoTime()
         clock = MediaLaunchClock(t0Nanos, nanoTime)
         frameZeroMoonRectPx = moonRectPx
-        LaunchTrace.endFirstCommit()
+        tracing.endFirstCommit()
         firstDraw.complete(t0Nanos)
     }
 
@@ -108,10 +109,22 @@ class LaunchController(
         onElapsed: (Long) -> Unit,
     ) = runLaunchOpening(firstDraw, nanoTime, nextFrameNanos, settledNanos, onElapsed)
 
+    fun onFrameCommitted(overlayClaimed: Boolean) {
+        if (!overlayClaimed) {
+            tracing.endFirstCommit()
+            tracing.endLaunch()
+        }
+    }
+
+    fun onActivityDestroyed() {
+        tracing.endFirstCommit()
+        tracing.endLaunch()
+    }
+
     fun onOpeningSettled() {
         if (openingDone) return
         openingDone = true
-        LaunchTrace.endLaunch()
+        tracing.endLaunch()
     }
 
     companion object {
