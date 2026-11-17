@@ -1435,6 +1435,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   5. `setKeepOnScreenCondition { !launch.overlayPlaced }`, where `overlayPlaced` is set from `Modifier.onPlaced` and never from a draw;
   6. `setOnExitAnimationListener { it.remove() }`.
 - [x] **Bezier and clock** (3a Task 1): port the easing algorithm and injectable clocks; guard model imports.
+- [x] **Layout and flight path** (3a Task 2): port centred geometry, arc-length lookup and status spacing.
 - [ ] **Pure ports** (`feature/launch/…/model/`, JVM-tested):
   - `CubicBezier`;
   - `LaunchLayout`, for any w × h, with the composition `h − k → h/2 + (422 − k)`;
