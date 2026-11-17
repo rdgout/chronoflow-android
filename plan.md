@@ -1287,7 +1287,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 - [ ] **Baseline profile.**
   - `BaselineProfileGenerator`: a startup journey to the first frame, and `cf.trip-page=large60` with 15 flings.
   - Commit `app/src/main/generated/baselineProfiles/baseline-prof.txt` and `startup-prof.txt`; add `make baseline-profile`.
-- [ ] **Budgets.**
+- [x] **Budgets.**
   - Add the timeline rows of "Performance budget" to `benchmark/budgets.json`. The emulator gates are those of "Where gates apply": a first frame ≤ 800 ms, a peak RSS anon ≤ 150 MiB, builds on main = 0, at most 6 placeholders per iteration and the CPU band; the device rows carry hard and aim values.
   - `make perf-timeline` runs `Scripts/emulator.sh prep-perf`, then `:benchmark:connectedBenchmarkReleaseAndroidTest` filtered to `TimelineBenchmark`, then the checker.
 - [x] **JankStats** in the debug and perf variants only: `PerformanceMetricsState.putState("timeline", "day=$i;mode=$mode")`, and jank frames logged.

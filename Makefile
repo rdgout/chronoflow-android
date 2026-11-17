@@ -176,5 +176,8 @@ captures:
 	@n=$$(find build/captures -name '*.png' 2>/dev/null | wc -l | tr -d ' '); echo "captures: $$n PNGs in build/captures"; \
 	  if [ "$$n" = 0 ] && [ -z "$(ONLY)" ]; then echo "captures: no PNGs written" >&2; exit 1; fi
 
-perf-timeline baseline-profile:
-	@echo "make $@: lands in Phase 1e (feat/phase-1e-timeline-perf)" >&2; exit 1
+perf-timeline:
+	$(RUN_TIER) perf-timeline --device --results 'benchmark/build/outputs/androidTest-results/connected/**/*.xml' -- Scripts/perf-timeline.sh
+
+baseline-profile:
+	$(RUN_TIER) baseline-profile --device --results 'benchmark/build/outputs/androidTest-results/connected/**/*.xml' -- Scripts/baseline-profile.sh

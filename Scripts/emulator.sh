@@ -39,6 +39,8 @@ prep_functional() {
   "$ADB" -s "$s" shell settings put secure show_ime_with_hard_keyboard 1
   "$ADB" -s "$s" shell settings put secure autofill_service null
   "$ADB" -s "$s" shell cmd uimode night no
+  "$ADB" -s "$s" shell settings put system font_scale 1.0
+  "$ADB" -s "$s" shell svc power stayon false
   "$ADB" -s "$s" shell input keyevent 82
 }
 
@@ -47,6 +49,11 @@ prep_perf() {
   for scale in window_animation_scale transition_animation_scale animator_duration_scale; do
     "$ADB" -s "$s" shell settings put global "$scale" 1
   done
+  # THEME and FONT_SCALE are set by the perf scripts; the defaults are the light 1.0 baseline.
+  case "${THEME:-light}" in dark) night=yes ;; *) night=no ;; esac
+  "$ADB" -s "$s" shell cmd uimode night "$night"
+  "$ADB" -s "$s" shell settings put system font_scale "${FONT_SCALE:-1.0}"
+  "$ADB" -s "$s" shell svc power stayon true
 }
 
 boot() {
