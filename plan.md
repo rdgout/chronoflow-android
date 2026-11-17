@@ -1588,7 +1588,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 **Tasks**
 - [x] **Welcome ending and geometry** (3c Task 2): port the exit, fallback target and composition geometry with JVM coverage.
 - [x] **Intro and anchor models** (3c Task 1): port `LaunchIntro` and `MoonAnchorStore` with the Swift-named JVM tests.
-- [ ] **WelcomeScreen** (`feature/launch/…/welcome/`).
+- [x] **WelcomeScreen** (`feature/launch/…/welcome/`).
   - The plain sky, with the board composition for any w × h (OQ 11).
   - From 600 dp, the copy card is at most 560 dp wide and centred. Insets come from `LocalSafeInsets`.
   - Headings and button roles, using the iOS test ids (`welcome.signIn`, …).
