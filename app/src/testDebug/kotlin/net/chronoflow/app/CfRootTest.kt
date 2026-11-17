@@ -52,6 +52,7 @@ class CfRootTest {
                 Box(Modifier.fillMaxSize().testTag("root.fixture").clickable { clicks++ })
             }
         }
+        compose.mainClock.advanceTimeByFrame()
         compose.onNodeWithTag("launch.opening").assertExists()
         compose.onNodeWithTag("root.fixture").assertDoesNotExist()
         compose.mainClock.advanceTimeByFrame()
