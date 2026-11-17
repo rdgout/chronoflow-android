@@ -1,5 +1,6 @@
 package net.chronoflow.feature.trip.timeline
 
+import android.annotation.SuppressLint
 import android.os.Trace
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
@@ -26,6 +27,7 @@ import kotlin.math.roundToInt
  * own scope, so it recomposes once when the drawing arrives or changes. That is why it takes the `State` itself.
  */
 @Suppress("ktlint:compose:state-param-check")
+@SuppressLint("UnclosedTrace")
 @Composable
 fun TimelineTargets(
     drawing: State<DayDrawing?>,
