@@ -95,3 +95,21 @@ real 133.10
 ```
 
 Evidence: `build/phase3a-validation/device-compile-fix1.log`, `held-splash-logcat.log`, `held-splash-hang.png`, and `device-hang-results/`. Clock/root-order XML and scoped logs are retained in the same directory. The screenshot was viewed and is diagnostic only; it is not the required SplashScreen capture matrix or proof of frame-0 parity. Official captures, board comparison, screen recordings, startup/timeline benchmarks, baseline generation, standalone quick/check/lint and planted-failure proofs remain unrun after this new required stop; they have no new output or performance numbers. The prepared BaselineProfileGenerator journey remains uncommitted so it can be committed with regenerated profiles. No new OQ was added: the one-clock correction is a direct user decision, and the new held-splash stall needs diagnosis.
+
+## Phase 3a: held-splash diagnosis and icon-size blocker
+
+Worker, 2026-11-17. Reproduced exactly once with `ANDROID_HOME=/opt/homebrew/share/android-commandlinetools make targeted ONLY="app:LaunchFrameZeroTest#frameZeroMatchesSystemSplashDark"`. While PID 24446 was blocked, `adb -s emulator-5554 shell su 0 debuggerd -j 24446` captured `build/phase3a-validation/parity-thread-dump.txt`. The test thread was waiting in `Object.wait` → `Instrumentation.startActivitySync:625` → `ActivityScenario.launchInternal:367` → `ScreenTest.launch:47` → `LaunchFrameZeroTest.verify:29`. It had not reached the controller wait. The main thread was in `MessageQueue.nativePollOnce`, not an application frame loop. The observed synchronous launch block confirms the held-splash harness diagnosis; the dump does not literally show `waitForIdleSync` or Compose `waitUntil`. The app was force-stopped after the dump. The command ended in 53.97 s wall, reporting the interrupted test at 42.528 s (over its 10 s budget).
+
+The correction uses the same seed construction through a plain `startActivity` Intent with the existing NEW_TASK/CLEAR_TASK flags. A placement CompletableDeferred suspends the test without waiting for Compose or instrumentation idle; `runOnMainSync` verifies the hold and releases it. Idle-based waits resume only after release. A test lifecycle callback and bounded destruction latch explicitly finish the plain-launched activity in `@After`. No assertion tolerance, icon size, theme or painter geometry changed.
+
+`make format` passed (Gradle 7 s). The first scoped correction ran the same exact targeted command and completed in **9.40 s wall / 1.117 s test**, without a hang. It reached the existing icon-size assertion and failed:
+
+```text
+java.lang.AssertionError: system icon must be 288 dp; measured 192.0 dp expected:<288.0> but was:<192.0>
+BUILD FAILED in 9s
+make: *** [targeted] Error 1
+```
+
+This measures the exit listener's `provider.iconView` width on pixel / emulator-5554, API 36, dark appearance, functional animator scales 0. Task 9 explicitly requires stopping if that size is not 288 dp, without rescaling. No inference about drawable canvas versus framework view bounds was substituted for the measured result. The rectangle, circle-pixel and sky-band assertions follow this assertion, so their parity is still unproven. Logs: `build/phase3a-validation/parity-reproduce.log`, `parity-async-format.log`, `parity-async-fix1.log`; result XML: `app/build/outputs/androidTest-results/connected/debug/`.
+
+Stopped at this new, explicit brief condition. The other device tests, `make captures ONLY=SplashScreen`, `make captures DEVICE=1 ONLY=SplashScreen`, `make perf`, `make perf-timeline`, `make baseline-profile`, `make quick`, `make check`, standalone `make lint`, screen recordings, and planted generator/allocation proofs were not run in this continuation; there is no output for those unrun commands. No official capture paths, board review, startup/timeline numbers or regenerated profiles are claimed. BaselineProfileGenerator's prepared journey stays uncommitted until it can accompany regenerated profiles. The remaining Task 10/11 evidence is partial. No new OQ was added: this is a measured mismatch covered by Task 9's explicit stop rule, rather than a new product decision. Existing OQ-A69–A83 retain their defaults; OQ-A68 remains absent.

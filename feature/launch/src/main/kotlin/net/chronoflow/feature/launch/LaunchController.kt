@@ -32,6 +32,7 @@ class LaunchController(
     var overlayPlaced = false
         private set
     var splashHeld = false
+    private val placement = CompletableDeferred<Unit>()
     private val firstDraw = CompletableDeferred<Long>()
     var t0Nanos = UNSET
         private set
@@ -84,6 +85,7 @@ class LaunchController(
 
     fun markOverlayPlaced() {
         overlayPlaced = true
+        placement.complete(Unit)
     }
 
     fun onFirstDraw(moonRectPx: Rect) {
@@ -93,6 +95,10 @@ class LaunchController(
         frameZeroMoonRectPx = moonRectPx
         LaunchTrace.endFirstCommit()
         firstDraw.complete(t0Nanos)
+    }
+
+    suspend fun awaitOverlayPlaced() {
+        placement.await()
     }
 
     internal suspend fun awaitFirstDraw(): Long = firstDraw.await()

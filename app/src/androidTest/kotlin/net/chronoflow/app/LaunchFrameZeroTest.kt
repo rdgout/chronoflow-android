@@ -4,20 +4,54 @@ import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Rect
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.runner.lifecycle.ActivityLifecycleCallback
+import androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry
+import androidx.test.runner.lifecycle.Stage
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import net.chronoflow.app.testing.ScreenTest
 import net.chronoflow.core.testing.tiers.Smoke
 import net.chronoflow.feature.launch.LaunchController
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
 @Smoke
 class LaunchFrameZeroTest : ScreenTest() {
+    private var startedActivity: MainActivity? = null
+    private val destroyed = CountDownLatch(1)
+    private val activityLifecycle =
+        ActivityLifecycleCallback { activity, stage ->
+            if (activity is MainActivity) {
+                startedActivity = activity
+                if (stage == Stage.DESTROYED) destroyed.countDown()
+            }
+        }
+
+    @After fun finishPlainLaunch() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        var finish = false
+        instrumentation.runOnMainSync {
+            (instrumentation.targetContext.applicationContext as ChronoFlowApp).graph.launch.splashHeld = false
+            startedActivity?.let {
+                finish = true
+                it.finish()
+            }
+        }
+        if (finish) assertTrue("plain launch did not finish", destroyed.await(5, TimeUnit.SECONDS))
+        instrumentation.runOnMainSync {
+            ActivityLifecycleMonitorRegistry.getInstance().removeLifecycleCallback(activityLifecycle)
+        }
+    }
+
     @Test fun frameZeroMatchesSystemSplashLight() = verify(false)
 
     @Test fun frameZeroMatchesSystemSplashDark() = verify(true)
@@ -25,8 +59,11 @@ class LaunchFrameZeroTest : ScreenTest() {
     private fun verify(dark: Boolean) {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val graph = (instrumentation.targetContext.applicationContext as ChronoFlowApp).graph
-        instrumentation.runOnMainSync { graph.resetLaunchForTest() }
-        launch(
+        instrumentation.runOnMainSync {
+            graph.resetLaunchForTest()
+            ActivityLifecycleMonitorRegistry.getInstance().addLifecycleCallback(activityLifecycle)
+        }
+        launchWithoutIdle(
             mapOf(
                 "CF_UI_TEST_PROFILE" to "launch",
                 "cf.settings.theme" to if (dark) "dark" else "light",
@@ -35,7 +72,8 @@ class LaunchFrameZeroTest : ScreenTest() {
             ),
         )
         val controller = graph.launch
-        waitFor(5000) { controller.overlayPlaced && controller.holdsSystemSplash() }
+        runBlocking { withTimeout(5000) { controller.awaitOverlayPlaced() } }
+        instrumentation.runOnMainSync { assertTrue(controller.holdsSystemSplash()) }
         val system = checkNotNull(instrumentation.uiAutomation.takeScreenshot())
         instrumentation.runOnMainSync { controller.splashHeld = false }
         val device = UiDevice.getInstance(instrumentation)
