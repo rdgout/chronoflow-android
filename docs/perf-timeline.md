@@ -64,8 +64,15 @@ make baseline-profile                      # regenerates the committed profiles
 | 2026-11-17 | ce5cb8d | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | host | benchmarkRelease, Partial(Require), bounded-swipe-v2 | 123.9/135.8 | 6.3/7.8/10.6 | 3.5/9.6 | -3.5 | 0.2/0.5 | 0.5/1.5 | 0 | 0.7 | 103.0 | 1.1 | 9 | 1 | ok | ok | SUPERSEDED (too short: day 9) |
 | 2026-11-17 | 2164c68 | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | host | benchmarkRelease, Partial(Require), bounded-swipe-v3 | 99.4/108.8 | 4.3/7.2/10.2 | 4.3/9.3 | -3.8 | 0.3/0.6 | 0.9/1.4 | 0 | 0.8 | 101.8 | 44.5 | 56 | 3 | ok | ok | PASS |
 | 2026-11-17 | bfa817f-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | host | benchmarkRelease, Partial(Require), bounded-swipe-v3 | 88.8/97.5 | 3.3/6.5/8.8 | 3.7/7.5 | -5.6 | 0.1/0.2 | 0.1/0.2 | 0 | 2.9 | 103.2 | -1.6 | 56 | 3 | ok | ok | PASS |
+| 2026-11-17 | bf61469-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | host | benchmarkRelease, Partial(Require), bounded-swipe-v3 | 85.6/108.2 | 3.4/4.4/6.0 | 2.2/4.9 | -5.6 | 0.0/0.0 | 0.0/0.0 | 0 | 0.6 | 103.5 | -1.5 | 56 | 3 | ok | ok | PASS |
 
 `-dirty` marks a run made with uncommitted changes (here the regenerated baseline profile, committed right after).
+
+### Phase 2 review round 1: purpose-specific marker metric
+
+2026-11-17, `make perf-timeline`, one invocation, exit 0; **307.53 s wall**. pixel / emulator-5554, API 36, 60 Hz, host GPU, en/light/font 1.0; benchmarkRelease, Partial(Require), large60, bounded-swipe-v3. Measured source bf61469 with the pending gallery/documentation changes and untracked later briefs (`-dirty`). The marker remains exactly 1 dp; its metric now belongs to TimelinePresentedMarkerMetrics instead of AuthTokens. No timeline algorithm or workload changed.
+
+First-frame median/max **85.6/108.2 ms**; CPU P50/P90/P99 **3.4/4.4/6.0 ms**; main/render P99 **2.2/4.9 ms**; zero placeholders and builds on main; RSS peak **103.5 MiB**, growth **-1.5 MiB**; 44 worker builds/replays per scroll iteration; replay max **0.6 ms**; recomposition/GC maxima **56/3**; scroll and last-day gates passed. The CPU band passed. Report-only trend flags are improvements over the prior matching medians, not physical-device claims or causal attribution to this constant-name change. The appended run row and local archive retain JSON/XML/traces; exact console output is `build/phase2-r1-perf-timeline.log`.
 
 ### Phase 2 theme validation
 
