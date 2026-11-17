@@ -7,6 +7,10 @@ object TimelineTraceNames {
     const val BUILD = "cf.timeline.build"
     const val REPLAY = "cf.timeline.replay"
     const val PLACEHOLDER = "cf.timeline.placeholder"
+    const val DECODE = "cf.timeline.decode"
+    const val PREPARE = "cf.timeline.prepare"
+    const val TYPEFACE = "cf.timeline.typeface"
+    const val TARGETS = "cf.timeline.targets"
 }
 
 /** The seam to `android.os.Trace`, so build and clock logic run in plain JVM tests (the platform class is unmocked there). */
