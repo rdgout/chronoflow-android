@@ -1147,7 +1147,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - `LargeTimelineFixtureTests` asserts:
     - the `§12` invariants: total height 54,000 dp for 60 days, last label "Day 2 · Tue 8 Dec", ≥ 3 zones, ≥ count/6 zone changes, each lane ≥ count blocks, one overnight flight, contiguous days, every copy key resolves;
     - ids and hashes equal to the iOS values.
-- [ ] **Budget and geometry tests.**
+- [x] **Budget and geometry tests.**
   - `TimelinePreparationBudgetTest` (`@TimingGate`, run serially by `make timing`) times decode + layout + index + prepare. After three warm-ups, each of 10 samples must stay within S3 ≤ 40 ms, large30 ≤ 100 ms and large60 ≤ 200 ms.
   - `TimelineGeometryProfilesTest`: every target is ≥ 48 dp and inside bounds at content widths 288, 358 and 637 dp and at every profile width.
   - The ported iOS timeline invariants.

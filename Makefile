@@ -10,7 +10,7 @@ export IOS_REPO WEB_REPO
 GRADLE := ./gradlew --console=plain
 RUN_TIER := Scripts/run-tier.sh
 JVM_MODULES := core:model core:plan core:sync core:reminders core:wizard core:network core:data-mock core:testing core:testing-junit konsist tools:tokengen
-TIMING_MODULES :=
+TIMING_MODULES := core:plan
 RESULTS_DEBUG := --results '*/build/test-results/testDebugUnitTest/*.xml' --results '*/*/build/test-results/testDebugUnitTest/*.xml'
 TIMINGS_DEBUG := --timings '*/build/cf-timings/testDebugUnitTest/*.json' --timings '*/*/build/cf-timings/testDebugUnitTest/*.json'
 RESULTS_JVM := --results 'konsist/build/test-results/test/*.xml' --results 'core/*/build/test-results/test/*.xml' --results 'tools/*/build/test-results/test/*.xml'
