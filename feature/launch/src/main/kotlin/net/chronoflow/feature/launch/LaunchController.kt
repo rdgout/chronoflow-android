@@ -43,6 +43,7 @@ import net.chronoflow.feature.launch.model.MoonAnchorStore
 import net.chronoflow.feature.launch.model.MoonTarget
 import net.chronoflow.feature.launch.model.SplashExit
 import net.chronoflow.feature.launch.model.SplashExitPolicy
+import net.chronoflow.feature.launch.model.withWelcomeExit
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -89,7 +90,18 @@ class LaunchController(
     private var launchState = LaunchState(fallbackTarget = undrawnFallback)
     private var overlayGeometry: OverlayGeometry? = null
     private var geometryJob: Job? = null
-    val moonAnchorStore = MoonAnchorStore().apply { onChange = { coordinator?.send(LaunchEvent.MoonAnchor(it)) } }
+    val moonAnchorStore =
+        MoonAnchorStore().apply {
+            onChange = { frame ->
+                if (overrides.mode ==
+                    LaunchMode.Welcome
+                ) {
+                    rebuildHandOff()
+                } else {
+                    coordinator?.send(LaunchEvent.MoonAnchor(frame))
+                }
+            }
+        }
     var launchIntro: LaunchIntro? = null
         private set
     var fontsReady by mutableStateOf(false)
@@ -162,7 +174,16 @@ class LaunchController(
             if (overrides.mode !=
                 null
             ) {
-                overrides.timeline(opening)
+                if (overrides.mode == LaunchMode.Welcome && moonAnchorStore.frame != null) {
+                    opening.withWelcomeExit(1600.milliseconds, opening.size, checkNotNull(moonAnchorStore.frame))
+                } else {
+                    val geometry = overlayGeometry
+                    overrides.timeline(
+                        opening,
+                        geometry?.insets ?: MoonTarget.Insets(0.0, 0.0, 0.0, 0.0),
+                        geometry?.rowHeight ?: WelcomeTokens.moonSize.toDouble(),
+                    )
+                }
             } else {
                 LaunchHandOffTimeline.build(opening, launchState)
             }
@@ -180,7 +201,18 @@ class LaunchController(
         onReadinessStarted(t0Nanos, overrides)
         if (overrides.mode == LaunchMode.Slow) prepareStatus()
         if (overrides.mode != null) {
-            val start = if (overrides.mode == LaunchMode.Ready) 1500.milliseconds else overrides.readyAt
+            if (overrides.mode == LaunchMode.Welcome) {
+                if (overlayClaimedByCurrentActivity && !reduceMotion && launchIntro == null) {
+                    launchIntro = LaunchIntro(2300.milliseconds, clock, overrides.freezeAt)
+                }
+                route = LaunchRoute.Welcome
+            }
+            val start =
+                when (overrides.mode) {
+                    LaunchMode.Ready -> 1500.milliseconds
+                    LaunchMode.Welcome -> 1600.milliseconds
+                    else -> overrides.readyAt
+                }
             scheduleExitTrace(maxOf(if (reduceMotion) Duration.ZERO else 1500.milliseconds, start))
             return
         }

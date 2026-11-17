@@ -577,3 +577,5 @@ Task 3 measured correction: `Trim.None` retains natural-font boundary padding fo
 Task 4 harness correction: the landed Compose MainTestClock exposes no pending-frame query. Prove the frozen/live loops stop with a counting LaunchClock (no clock reads after landing, no frozen clock reads, and no pending clock sleeps), rather than adding a production frame hook.
 
 Task 4 frozen-position harness diagnosis (user, 2026-11-17): with autoAdvance=false, the single advanced frame did not compose the new intro (`hasPlayed` remained false at 2299 ms). This frozen-only test uses automatic advancement and `waitForIdle()` after the snapshot update, retaining the 0.5 px tolerance and tags inside the layers. No production animation fix is needed for that failure.
+
+Task 6 ownership: `DiagnosticWelcomeAnchorTest` lives beside its controller in `feature/launch/src/test`, using Robolectric @Logic for the Android Rect/first-draw boundary; parser and fallback-argument tests remain JVM cases in app/src/testDebug. The port retains Swift `testWelcomeFallbackUsesTheCurrentTextSizeAndAllSafeInsets`, including its test prefix.

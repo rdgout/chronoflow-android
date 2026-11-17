@@ -1,11 +1,14 @@
 package net.chronoflow.feature.launch
 
+import net.chronoflow.core.designsystem.generated.WelcomeTokens
 import net.chronoflow.core.model.launch.LaunchEnding
 import net.chronoflow.core.model.launch.LaunchReadiness
 import net.chronoflow.feature.launch.model.LaunchClock
 import net.chronoflow.feature.launch.model.LaunchHandOffTimeline
 import net.chronoflow.feature.launch.model.LaunchState
 import net.chronoflow.feature.launch.model.LaunchTimeline
+import net.chronoflow.feature.launch.model.MoonTarget
+import net.chronoflow.feature.launch.model.withWelcomeExit
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -20,10 +23,22 @@ data class LaunchOverrides(
     val mainThreadStall: Duration? = null,
     val readiness: ((LaunchClock) -> LaunchReadiness)? = null,
 ) {
-    fun timeline(opening: LaunchTimeline): LaunchTimeline =
+    fun timeline(
+        opening: LaunchTimeline,
+        safeAreaInsets: MoonTarget.Insets = MoonTarget.Insets(0.0, 0.0, 0.0, 0.0),
+        rowHeight: Double = WelcomeTokens.moonSize.toDouble(),
+    ): LaunchTimeline =
         when (mode) {
             null -> {
                 opening
+            }
+
+            LaunchMode.Welcome -> {
+                opening.withWelcomeExit(
+                    1600.milliseconds,
+                    opening.size,
+                    MoonTarget.fallback(opening.size, safeAreaInsets, rowHeight),
+                )
             }
 
             LaunchMode.Ready, LaunchMode.Slow -> {
@@ -44,4 +59,4 @@ data class LaunchOverrides(
     }
 }
 
-enum class LaunchMode { Ready, Slow }
+enum class LaunchMode { Ready, Slow, Welcome }
