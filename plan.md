@@ -1351,7 +1351,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - `CfPill`, `CfBadge`;
   - `CfBanner`: error, info and offline;
   - `CfSkeleton`, static with Reduce Motion.
-- [ ] **System-component wrappers:**
+- [x] **System-component wrappers:**
   - `CfLargeTopAppBar`, with `exitUntilCollapsedScrollBehavior` and the system font in bold;
   - `CfSwitch`;
   - `CfModalBottomSheet` (`sheetMaxWidth = 640.dp`);
