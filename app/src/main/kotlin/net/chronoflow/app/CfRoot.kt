@@ -1,5 +1,6 @@
 package net.chronoflow.app
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
@@ -25,6 +26,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import net.chronoflow.core.designsystem.layout.LocalSafeInsets
+import net.chronoflow.core.designsystem.theme.CfTheme
 import net.chronoflow.core.designsystem.theme.ChronoFlowTheme
 import net.chronoflow.core.designsystem.theme.warmFontsAfterFirstFrame
 import net.chronoflow.feature.launch.LaunchOverlay
@@ -61,7 +63,13 @@ internal fun CfRoot(
                 withFrameNanos { }
                 contentReady = true
             }
-            Box(Modifier.fillMaxSize().semantics { testTagsAsResourceId = true }.testTag("app.root")) {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(CfTheme.colors.background)
+                    .semantics { testTagsAsResourceId = true }
+                    .testTag("app.root"),
+            ) {
                 if (contentReady) {
                     Box(
                         if (overlayShowing) Modifier.semantics { hideFromAccessibility() } else Modifier,

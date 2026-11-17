@@ -6,8 +6,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -15,6 +18,8 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.core.view.WindowCompat
 import androidx.test.core.app.ApplicationProvider
 import kotlinx.coroutines.CompletableDeferred
+import net.chronoflow.core.designsystem.generated.CfDarkColors
+import net.chronoflow.core.designsystem.generated.CfLightColors
 import net.chronoflow.core.testing.tiers.Layout
 import net.chronoflow.feature.launch.LaunchOverrides
 import org.junit.Assert.assertEquals
@@ -84,6 +89,22 @@ class CfRootTest {
     @Test fun lightScreenUsesDarkSystemBarIcons() = verifySystemBarFlags(false)
 
     @Test fun darkScreenUsesLightSystemBarIcons() = verifySystemBarFlags(true)
+
+    @Test fun lightRootPaintsTheAppBackgroundWithoutAnOverlay() = verifyRootBackground(false)
+
+    @Test fun darkRootPaintsTheAppBackgroundWithoutAnOverlay() = verifyRootBackground(true)
+
+    private fun verifyRootBackground(night: Boolean) {
+        RuntimeEnvironment.setQualifiers(if (night) "+night" else "+notnight")
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        compose.setContent { CfRoot(AppGraph(app), false, true, CompletableDeferred(), null) {} }
+        compose.onNodeWithTag("launch.opening").assertDoesNotExist()
+        val pixels = compose.onNodeWithTag("app.root").captureToImage().toPixelMap()
+        val expected = (if (night) CfDarkColors else CfLightColors).background.toArgb()
+        assertEquals(expected, pixels[0, 0].toArgb())
+        assertEquals(expected, pixels[pixels.width / 2, pixels.height / 2].toArgb())
+        assertEquals(expected, pixels[pixels.width - 1, pixels.height - 1].toArgb())
+    }
 
     private fun verifySystemBarFlags(night: Boolean) {
         RuntimeEnvironment.setQualifiers(if (night) "+night" else "+notnight")
