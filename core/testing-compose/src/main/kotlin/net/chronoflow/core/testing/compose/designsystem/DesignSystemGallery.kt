@@ -354,9 +354,10 @@ fun GalleryPage(
 }
 
 @Composable fun ColumnScope.Sheet() {
+    val saved = stringResource(R.string.settings_saved)
     CfModalBottomSheet(onDismissRequest = {}, modifier = Modifier.testTag("gallery.sheet")) {
         Text(
-            stringResource(R.string.settings_saved),
+            saved,
             Modifier.padding(PlanUITokens.space5.dp).testTag("gallery.sheet.content"),
         )
     }
@@ -397,6 +398,6 @@ fun GalleryPage(
             R.string.settings_done,
         ),
         stringResource(R.string.settings_cancel),
-        stringResource(R.string.settings_change_password),
+        stringResource(R.string.settings_bedtime),
     )
 }
