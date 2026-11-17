@@ -71,19 +71,17 @@ fun noRawColorsOutsideDesignSystem(scope: KoScope) {
 
 fun featureDpLiteralsComeFromBoardMetrics(scope: KoScope) {
     val literal = Regex("""(?<![\w.])(\d+(?:\.\d+)?)\.(dp|sp)\b""")
-    val allowed =
-        scope.objects().filter {
-            it.name.endsWith("Metrics") &&
-                it.hasAnnotationWithName("BoardMetrics")
-        }
     val features =
         scope.designSources().filter {
             moduleOf(it.path)?.startsWith("feature/") == true || moduleOf(it.path) == "core/ui"
         }
     val bad =
-        features.flatMap { file ->
+        features.filter { literal.containsMatchIn(it.text) }.flatMap { file ->
             var text = file.text
-            allowed.filter { it.path == file.path }.forEach { text = text.replace(it.text, "") }
+            file
+                .objects()
+                .filter { it.name.endsWith("Metrics") && it.hasAnnotationWithName("BoardMetrics") }
+                .forEach { text = text.replace(it.text, "") }
             literal
                 .findAll(text)
                 .filter { it.groupValues[1].toDouble() != 0.0 }

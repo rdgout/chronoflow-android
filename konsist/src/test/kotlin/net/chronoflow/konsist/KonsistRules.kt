@@ -123,6 +123,9 @@ fun viewModelsEndWithViewModel(scope: KoScope) {
 }
 
 fun routesAreSerializable(scope: KoScope) {
+    // Skip the hierarchy walk when the scope has no NavKey root or reference.
+    if (scope.files.none { "NavKey" in it.text }) return
+
     class Candidate(
         val path: String,
         val name: String,
