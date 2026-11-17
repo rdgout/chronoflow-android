@@ -1,5 +1,6 @@
 package net.chronoflow.app
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -7,6 +8,7 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -36,6 +38,8 @@ internal fun CfRoot(
     reduceMotion: Boolean,
     firstCommit: Deferred<Unit>,
     jankTagger: TimelineJankTagger?,
+    onSky: Boolean = false,
+    onSystemBars: (Boolean, Boolean, Boolean) -> Unit = { _, _, _ -> },
     content: @Composable () -> Unit,
 ) {
     val resolver = LocalFontFamilyResolver.current
@@ -43,7 +47,10 @@ internal fun CfRoot(
         withFrameNanos { }
         warmFontsAfterFirstFrame(firstCommit, { graph.fontPreloader.preload(resolver, it) }, Dispatchers.IO)
     }
-    ChronoFlowTheme(reduceMotion = reduceMotion) {
+    val night = isSystemInDarkTheme()
+    val overlayShowing = claimed && graph.launch.overlayShowing
+    SideEffect { onSystemBars(night, overlayShowing, onSky) }
+    ChronoFlowTheme(darkTheme = night, reduceMotion = reduceMotion) {
         CompositionLocalProvider(
             LocalSafeInsets provides WindowInsets.safeDrawing,
             LocalLayoutDirection provides LayoutDirection.Ltr,
@@ -57,10 +64,10 @@ internal fun CfRoot(
             Box(Modifier.fillMaxSize().semantics { testTagsAsResourceId = true }.testTag("app.root")) {
                 if (contentReady) {
                     Box(
-                        if (claimed) Modifier.semantics { hideFromAccessibility() } else Modifier,
+                        if (overlayShowing) Modifier.semantics { hideFromAccessibility() } else Modifier,
                     ) { content() }
                 }
-                if (claimed) LaunchOverlay(graph.launch)
+                if (overlayShowing) LaunchOverlay(graph.launch)
             }
         }
     }

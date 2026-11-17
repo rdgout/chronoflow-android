@@ -2,6 +2,7 @@ package net.chronoflow.app
 
 import android.animation.ValueAnimator
 import android.content.Context
+import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.Rect
 import android.os.Build
@@ -47,18 +48,7 @@ class MainActivity : ComponentActivity() {
         reduceMotion = ReduceMotion.resolve(ValueAnimator.areAnimatorsEnabled(), overrides.reduceMotion)
         launch.captureReduceMotion(ValueAnimator.areAnimatorsEnabled(), overrides.reduceMotion)
         val claimed = launch.claimOverlay(overrides)
-        enableEdgeToEdge(
-            statusBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
-            navigationBarStyle =
-                if (launch.appearance.night) {
-                    SystemBarStyle.dark(
-                        Color.TRANSPARENT,
-                    )
-                } else {
-                    SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
-                },
-        )
-        window.isNavigationBarContrastEnforced = false
+        applySystemBars(isNight(resources.configuration), launch.overlayShowing, false)
         window.attributes =
             window.attributes.apply {
                 layoutInDisplayCutoutMode =
@@ -72,7 +62,16 @@ class MainActivity : ComponentActivity() {
             }
         val entry = TripPageEntry.content(intent, graph)
         val jankTagger = PerfJank.tagger(this)
-        setContent { CfRoot(graph, claimed, reduceMotion, firstCommit, jankTagger) { entry?.invoke() } }
+        setContent {
+            CfRoot(
+                graph,
+                claimed,
+                reduceMotion,
+                firstCommit,
+                jankTagger,
+                onSystemBars = ::applySystemBars,
+            ) { entry?.invoke() }
+        }
         PerfJank.install(this)
         window.decorView.viewTreeObserver.registerFrameCommitCallback {
             firstCommit.complete(Unit)
@@ -92,5 +91,31 @@ class MainActivity : ComponentActivity() {
                 )
             provider.remove()
         }
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        val launch = (application as ChronoFlowApp).graph.launch
+        applySystemBars(isNight(newConfig), launch.overlayShowing, false)
+    }
+
+    private fun isNight(configuration: Configuration): Boolean =
+        configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
+
+    private fun applySystemBars(
+        night: Boolean,
+        overlayShowing: Boolean,
+        onSky: Boolean,
+    ) {
+        fun style(appearance: IconAppearance): SystemBarStyle =
+            when (appearance) {
+                IconAppearance.LightIcons -> SystemBarStyle.dark(Color.TRANSPARENT)
+                IconAppearance.DarkIcons -> SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
+            }
+        enableEdgeToEdge(
+            statusBarStyle = style(SystemBarStyles.statusBar(night, overlayShowing, onSky)),
+            navigationBarStyle = style(SystemBarStyles.navigationBar(night)),
+        )
+        window.isNavigationBarContrastEnforced = false
     }
 }

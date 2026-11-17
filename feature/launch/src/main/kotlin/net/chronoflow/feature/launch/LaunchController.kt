@@ -3,6 +3,9 @@ package net.chronoflow.feature.launch
 import android.content.res.Configuration
 import android.content.res.Resources
 import android.graphics.Rect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.ImageBitmap
 import net.chronoflow.core.designsystem.theme.ReduceMotion
 import net.chronoflow.feature.launch.model.LaunchClock
@@ -22,6 +25,7 @@ class LaunchController(
     private var claimed = false
     var overlayClaimedByCurrentActivity = false
         private set
+    var overlayShowing by mutableStateOf(false)
     var overlayPlaced = false
         private set
     var splashHeld = false
@@ -62,6 +66,7 @@ class LaunchController(
     fun claimOverlay(overrides: LaunchOverrides): Boolean {
         this.overrides = overrides
         overlayClaimedByCurrentActivity = !overrides.skipOverlay && !claimed
+        overlayShowing = overlayClaimedByCurrentActivity
         if (overlayClaimedByCurrentActivity) {
             claimed = true
             splashHeld = overrides.holdSplash
