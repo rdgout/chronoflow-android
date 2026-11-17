@@ -17,7 +17,7 @@ import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.unit.LayoutDirection
 import net.chronoflow.app.perf.PerfJank
 import net.chronoflow.app.perf.TripPageEntry
-import net.chronoflow.core.ui.LocalSafeInsets
+import net.chronoflow.core.designsystem.layout.LocalSafeInsets
 import net.chronoflow.feature.trip.timeline.LocalTimelineJankTagger
 
 class MainActivity : ComponentActivity() {

@@ -7,6 +7,30 @@ import org.junit.Test
 import java.io.File
 
 class ModuleGraphTest {
+    private fun designSystemDependsOnNoProjectModule(root: File) {
+        val file = File(root, "core/designsystem/build.gradle.kts")
+        val bad =
+            file.readLines().filter {
+                it.contains("project(") &&
+                    it.trim() != "testImplementation(project(\":core:testing\"))"
+            }
+        check(bad.isEmpty()) { "designSystemDependsOnNoProjectModule: $bad" }
+    }
+
+    @Test fun designSystemDependsOnNoProjectModule() = designSystemDependsOnNoProjectModule(projectRoot())
+
+    @Test fun designSystemDependsOnNoProjectModuleRejectsPlantedViolation() {
+        for (kind in listOf("ui", "testingCompose")) {
+            assertFailure { designSystemDependsOnNoProjectModule(File(planted, "designsystem/$kind")) }
+                .messageContains("designSystemDependsOnNoProjectModule")
+        }
+    }
+
+    @Test fun designSystemDependsOnNoProjectModuleAllowsControl() =
+        designSystemDependsOnNoProjectModule(
+            File(projectRoot(), "konsist/src/test/resources/allowed/moduleGraph/designsystem"),
+        )
+
     private val featureDependency = Regex("""project\(\s*":feature:|projects\.feature\.""")
 
     private fun walk(

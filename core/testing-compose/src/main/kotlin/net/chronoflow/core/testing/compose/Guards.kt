@@ -15,8 +15,8 @@ import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import net.chronoflow.core.designsystem.semantics.Ellipsizable
 import net.chronoflow.core.testing.DeviceProfile
-import net.chronoflow.core.ui.semantics.Ellipsizable
 import kotlin.math.abs
 import kotlin.math.roundToInt
 

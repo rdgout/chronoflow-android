@@ -62,10 +62,10 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import net.chronoflow.core.designsystem.generated.CfColors
+import net.chronoflow.core.designsystem.layout.LocalSafeInsets
 import net.chronoflow.core.plan.generated.PlanMetrics
 import net.chronoflow.core.plan.generated.TimelinePalette
 import net.chronoflow.core.plan.trippage.TripPageLayout
-import net.chronoflow.core.ui.LocalSafeInsets
 import net.chronoflow.core.ui.R
 import net.chronoflow.feature.trip.timeline.host.TimelineHostModel
 import net.chronoflow.feature.trip.timeline.host.TimelineHostState

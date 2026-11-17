@@ -7,6 +7,7 @@ android {
 }
 
 dependencies {
+    api(project(":core:designsystem"))
     api(libs.compose.runtime)
     api(libs.compose.ui)
     api(libs.compose.foundation)

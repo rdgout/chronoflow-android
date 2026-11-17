@@ -1,6 +1,6 @@
 @file:Suppress("ktlint:compose:compositionlocal-allowlist")
 
-package net.chronoflow.core.ui
+package net.chronoflow.core.designsystem.layout
 
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.runtime.staticCompositionLocalOf
