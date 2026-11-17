@@ -61,14 +61,55 @@ make baseline-profile                      # regenerates the committed profiles
 | 2026-11-17 | ee26f55-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | host | benchmarkRelease, Partial(Require) | 92.4/96.9 | 3.1/3.9/5.2 | 2.0/4.5 | -7.2 | 0.0/0.0 | 0.0/0.0 | 0 | 0.7 | 103.5 | 0.4 | 1426 | 10 | ok | ok | PASS |
 | 2026-11-17 | ee26f55-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | dark | host | benchmarkRelease, Partial(Require) | 80.2/107.8 | 3.2/3.9/5.1 | 1.9/4.5 | -7.2 | 0.0/0.0 | 0.0/0.0 | 0 | 1.4 | 103.5 | -1.7 | 1405 | 7 | ok | ok | PASS |
 | 2026-11-17 | ee26f55-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.3 | light | host | benchmarkRelease, Partial(Require) | 84.3/102.5 | 3.2/4.0/5.1 | 1.9/4.6 | -7.4 | 0.0/0.0 | 0.0/0.0 | 0 | 0.4 | 103.5 | -0.2 | 1404 | 9 | ok | ok | PASS |
+| 2026-11-17 | ce5cb8d | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | host | benchmarkRelease, Partial(Require), bounded-swipe-v2 | 123.9/135.8 | 6.3/7.8/10.6 | 3.5/9.6 | -3.5 | 0.2/0.5 | 0.5/1.5 | 0 | 0.7 | 103.0 | 1.1 | 9 | 1 | ok | ok | PASS |
 
 `-dirty` marks a run made with uncommitted changes (here the regenerated baseline profile, committed right after).
 
+### Clean R1 after review fixes
+
+2026-11-17, clean measured HEAD `ce5cb8db46f8150bd0c6d996e20dc421236b8cbb` on `feat/phase-1e-timeline-perf`; tracked tree clean before launch, with only the unrelated untracked phase briefs excluded by the runner. Command: `export ANDROID_HOME=/opt/homebrew/share/android-commandlinetools; THEME=light FONT_SCALE=1.0 make perf-timeline`. One invocation, no retry, exit 0; tier wall time 153.71 s (Gradle 2m 30s). Device: `pixel` / `emulator-5554`, `sdk_gphone64_arm64`, Android 16 / API 36, 60 Hz, host GPU, English, light, font 1.0; `benchmarkRelease`, `Partial(Require)`, Page `host`, large60, workload **`bounded-swipe-v2`**. Emulator results are regression signals, not device claims.
+
+Archive: `build/perf/timeline/20261117T062016Z-ce5cb8d-light-1.0-bounded-swipe-v2.1PWiyl/`. It retains `row.md`, `run.log`, `timings.json`, JSON and all 14 traces under `connected_android_test_additional_output/benchmarkRelease/connected/pixel(AVD) - 16/`, plus XML and per-test logcat under `androidTest-results/`. `previous-output/` is older evidence and is excluded from this result.
+
+| Metric | Clean R1 | Emulator gate / interpretation |
+|---|---|---|
+| First frame median / max | 123.9 / 135.8 ms | PASS: all 10 <= 800 ms |
+| Peak RSS anon, max | 105,428 KiB = 103.0 MiB | PASS: each <= 153,600 KiB (150 MiB) |
+| Builds on main | 0 / 0 / 0 | PASS: each = 0 |
+| Worker builds / replays | 9 / 9 in each iteration | PASS: each >= 1 |
+| Placeholder draw episodes | 0 / 0 / 0 | PASS: each <= 6 |
+| Placeholder-to-replay max / unfinished | 0 ms / 0 in each iteration; no intervals | Report only; no placeholder wait was observed |
+| Replay max per iteration | 0.596417 / 0.536209 / 0.727208 ms | Report only; > 1 ms triggers B' review on low-end devices only |
+| Actual steady-scroll recompositions | 9 / 9 / 9 | Report only; `Compose:recompose` directly under `Recomposer:recompose`, not a per-frame pattern (section 7) |
+| Top-level GC | 1 / 1 / 1 | Report only; aim 0 |
+| Jank mean / max | 0.2 / 0.5 % | Report only |
+| Hitch mean / max | 0.5 / 1.5 ms/s | Report only; active-frame denominator |
+| CPU P50 / P90 / P99 | 6.3 / 7.8 / 10.6 ms | P50 report; P90/P99 start the new CPU band baseline |
+| Overrun P99 | -3.5 ms | Report only |
+| Main / RenderThread P99, max | 3.5 / 9.6 ms | Report only |
+| RSS growth | 1,112 KiB = 1.1 MiB | PASS: below 40,960 KiB warning |
+| Scroll progress after 15 gestures | `trip.day.day-29864460-tour-0` -> `trip.day.day-29868150-tour-1` (zero-based day 9), all three iterations | PASS: day advanced and `trip.plan.end` remained absent |
+| Separate last-day journey | `trip.day.day-29871120-tour-9` and `trip.plan.end` reached | PASS: within 12 menu scrolls / 6 page gestures |
+
+The CPU band baseline **restarts with `bounded-swipe-v2`**. This is the first matching PASS row, so no prior band applies; historical R1–R3 rows have different Build metadata and are excluded. This run establishes the light / 1.0 / host baseline only. Decode / prepare / typeface means: 11.9 / 15.2 / 2.7 ms; TTID mean / max: 146.9 / 168.6 ms; `timelineTargetsMaxMs` max: 0.4515 ms (lower bound); frame counts: 419 / 422 / 423; elapsed scroll windows: 13,250.0 / 13,317.1 / 13,317.3 ms; heap max: 58,465 KiB. These are all report-only.
+
 ## 7. Perfetto review
 
-Archive paths: historical R1–R3 evidence was overwritten before archiving was added. The corrected clean R1 archive path will be recorded here after the run. Every new attempt preserves both prior output and its own traces, including band retries.
+Clean R1 archive: section 6. Historical R1–R3 evidence was overwritten before archiving was added. Every new attempt preserves both prior output and its own traces, including band retries.
 
-R1-R3 run `TimelineTraceMetric`, a Perfetto SQL pass over each iteration's trace (numbers below, per iteration over the three scroll iterations of the R1 run; the historical trace files were overwritten by later runs; these rows have no retained trace evidence):
+**Clean R1 trace-processor review completed**, using `/Users/rickgout/.local/share/perfetto/prebuilts/trace_processor_shell-8488edbefadfc4be -q <file.sql> <trace>` on all three archived scroll traces. The archive's `review-r1.sql` combines `build/review-fixes/review-r1.sql` with build/replay, composition-descendant/source-name and placeholder-to-replay queries. Each trace has its own matching `*-sql.txt` output in the archive root. No graphical Perfetto UI session or additional benchmark run was used.
+
+| Trace (under the archive's current output directory) | Top-level main frames | Frames with one actual recomposition | Frames without a recomposition, input / no input | Top-level GC | Placeholder intervals / max ms / unfinished |
+|---|---|---|---|---|---|
+| `TimelineBenchmark_timelineScroll_iter000_2026-11-17-06-21-27.perfetto-trace` | 795 | 9, all input frames | 741 / 45 | 1 | 0 / 0 / 0 |
+| `TimelineBenchmark_timelineScroll_iter001_2026-11-17-06-21-47.perfetto-trace` | 800 | 9, all input frames | 742 / 49 | 1 | 0 / 0 / 0 |
+| `TimelineBenchmark_timelineScroll_iter002_2026-11-17-06-22-07.perfetto-trace` | 800 | 9, all input frames | 741 / 50 | 1 | 0 / 0 / 0 |
+
+Recomposition means a main-thread `Compose:recompose` whose direct parent is `Recomposer:recompose`. There are nine per complete steady-scroll trace, none on the frames without input-delivery slices, and no per-frame composition pattern. The nine compositions match the nine day advances; DayMenu's anchor updates are a plausible source from the source code and the existing invalidation guard (OQ-1e-15), **an inference, not trace-proven attribution**. These R1 traces contain no named `DayMenu`, `DayTimeline` or `TimelineTargets` slices and no source-named descendants of `Compose:recompose`; attributing individual compositions or excluding day-item sources requires full composition tracing (R4, not run here).
+
+Each trace contains exactly one depth-0 `Background concurrent mark compact GC` on `HeapTaskDaemon`. The old case-insensitive `LIKE '%GC%'` also matches `TrimSpaces` and `TrimIndirectReferenceTables`; both are excluded by `depth = 0 AND name GLOB '*GC*'`. SQL independently confirms nine synchronous builds on `DefaultDispatch`, zero builds on main and nine main-thread replays per iteration, with replay maxima matching section 6. Process-track queries find no `cf.timeline.placeholderToReplay` intervals: 0 ms and 0 unfinished denotes no placeholder episode, rather than a measured zero-duration wait.
+
+Historical R1–R3 ran `TimelineTraceMetric`, a Perfetto SQL pass over each iteration's trace (numbers below, per iteration over the three scroll iterations of the historical R1 run; the historical trace files were overwritten by later runs; these rows have no retained trace evidence):
 
 - `timelineBuildOnMainCount`: 0 in every iteration of R1, R2 and R3. `timelineBuildCount`: 57 per iteration (all on worker threads).
 - `timelineReplayCount` 59 and `timelineReplayMaxMs` 0.7 (R1), 1.4 (R2), 0.4 (R3), max over iterations. Emulator only; the B' trigger (> 1 ms on a low-end device, OQ-T27) is not evaluated here.
@@ -76,7 +117,7 @@ R1-R3 run `TimelineTraceMetric`, a Perfetto SQL pass over each iteration's trace
 - `timelineRecomposeCount`: 1,426 (R1), 1,405 (R2), 1,404 (R3) max per iteration, in a 73 s window with about 1,510 frames: roughly one `Recomposer:recompose` per rendered frame. These are Recomposer frame counts, not actual recompositions. The verified per-frame composition source was DayMenu's composition-read `derivedStateOf` over `layoutInfo`; the corrected observer and child-slice metric are described in OQ-1e-15. R4 was not run.
 - `timelineTargetsMaxMs` 0.5 (R1), 0.5 (R2), 1.5 (R3).
 
-Perfetto SQL review: the corrected GC predicate was checked against the retained Phase 1d trace (`build/review-fixes/gc-reference/phase-1d.pftrace`): the old case-insensitive filter returns 3 slices (one `Background concurrent mark compact GC`, `TrimSpaces`, `TrimIndirectReferenceTables`); `depth = 0 AND name GLOB '*GC*'` returns exactly 1 GC. Query and output: `build/review-fixes/gc-review.sql`, `gc-review-phase1d.txt`. The clean R1 trace and steady-scroll composition review still require a clean committed tree; this sandbox rejects `.git/index.lock` writes. Historical R1–R3 counts above use the old predicates and are not current validation.
+Historical GC cross-check: the corrected predicate was also checked against the retained Phase 1d trace (`build/review-fixes/gc-reference/phase-1d.pftrace`): the old case-insensitive filter returns 3 slices (one `Background concurrent mark compact GC`, `TrimSpaces`, `TrimIndirectReferenceTables`); `depth = 0 AND name GLOB '*GC*'` returns exactly 1 GC. Query and output: `build/review-fixes/gc-review.sql`, `gc-review-phase1d.txt`. Historical R1–R3 counts above use the old predicates and are not current validation; the archived clean R1 review above supersedes them for light / 1.0.
 
 ## 8. Compiler reports
 
@@ -210,22 +251,9 @@ Reference (Pixel 8 class) and low-end (Pixel 4a or Galaxy A15/A16 class) rows: o
 
 ## 12. Decision
 
-**Design B stands (emulator, 2026-11-17, `061f921`).** R1 (light, 1.0), R2 (dark, 1.0) and R3 (light, font scale 1.3) passed every emulator gate and functional row of plan.md "Where gates apply"; the compiler lines of section 8 are skippable. Device: `pixel` (`sdk_gphone64_arm64`, API 36, `-gpu host`, 60 Hz), `benchmarkRelease`, `Partial(Require)`, `make perf-timeline`. Numbers from the section 6 rows and the run logs (emulator numbers, not device claims):
+**Design B stands (emulator, 2026-11-17, clean `ce5cb8db46f8150bd0c6d996e20dc421236b8cbb`).** The corrected R1 (light, 1.0, `bounded-swipe-v2`) passes every applicable emulator gate and functional row of plan.md "Where gates apply": first frame median / max 123.9 / 135.8 ms <= 800; peak RSS 103.0 MiB <= 150; builds on main 0; placeholder episodes 0 <= 6; Scroll and Last day both ok. CPU P50 / P90 / P99 is 6.3 / 7.8 / 10.6 ms and starts a fresh workload baseline, with no prior band to compare. Replay max is 0.727208 ms, main / RenderThread P99 max 3.5 / 9.6 ms, and decode / prepare / typeface means 11.9 / 15.2 / 2.7 ms. Section 6 records every metric and the archive; section 7 records the SQL review. Emulator numbers are not device claims.
 
-| Value | R1 light 1.0 | R2 dark 1.0 | R3 light 1.3 | Gate |
-|---|---|---|---|---|
-| First frame median / max (ms) | 92.4 / 96.9 | 80.2 / 107.8 | 84.3 / 102.5 | each <= 800 |
-| Decode / prepare / typeface mean (ms) | 8.5 / 9.5 / 1.7 | 7.5 / 7.8 / 1.7 | 7.9 / 8.2 / 1.6 | report |
-| Peak RSS anon max (MiB) | 103.5 | 103.5 | 103.5 | <= 150 |
-| Builds on main | 0 | 0 | 0 | 0 |
-| Placeholder max per iteration | 0 | 0 | 0 | <= 6 |
-| Replay max (ms) | 0.7 | 1.4 | 0.4 | report (B' trigger > 1 ms on low-end only) |
-| Main P99 / RenderThread P99 max (ms) | 2.0 / 4.5 | 1.9 / 4.5 | 1.9 / 4.6 | report |
-| CPU P50 / P90 / P99 (ms) | 3.1 / 3.9 / 5.2 | 3.2 / 3.9 / 5.1 | 3.2 / 4.0 / 5.1 | P90, P99: band (these rows start the baseline) |
-| Jank % / hitch ms/s max | 0.0 / 0.0 | 0.0 / 0.0 | 0.0 / 0.0 | report |
-| Scroll, Last day | ok, ok | ok, ok | ok, ok | functional |
-
-Device rows open: device only (OQ-A22, OQ-A45); B' is re-evaluated on the first low-end run if `timelineReplayMaxMs` > 1 ms (OQ-T27). R2's replay max of 1.4 ms is an emulator number and is only recorded. GC per iteration (7 to 10) and the recomposition count (OQ-1e-15) are open review items, not gates. `make perf` (startup) still passes with `Require`: median TTID 95.0 ms, REPORT.
+R2 (dark, 1.0) and R3 (light, 1.3) passed before the review fixes and remain historical evidence in section 6; they were not rerun with the corrected workload. The compiler lines in section 8 remain skippable. Nine actual compositions and one GC per scroll iteration are report-only; individual composition source attribution remains limited as described in section 7. Device rows open: device only (OQ-A22, OQ-A45); B' is re-evaluated on the first low-end run if `timelineReplayMaxMs` > 1 ms (OQ-T27). The historical startup `make perf` result with `Require` is median TTID 95.0 ms, REPORT; startup was not rerun here.
 
 ## 13. Tooling notes
 
@@ -254,15 +282,15 @@ Placeholder counts are draw episodes, not frames (corrects OQ-1e-3). The cached 
 
 ## 14. Verified review fixes (2026-11-17)
 
-The working tree contains fixes A–L and N, with per-fix patches and commit subjects in `build/review-fixes/commits.tsv`. The sandbox makes `.git` read-only: the explicit-path staging and commit attempt failed with `fatal: Unable to create '/Users/rickgout/Sites/chronoflow-android/.git/index.lock': Operation not permitted`. No commits were created here. The reviewed source patches apply in sequence and reproduce the fixed working tree; the orchestrator can commit them with `bash build/review-fixes/apply-commits.sh`.
+Review fixes A–L and N, regenerated profiles and validation docs are committed through `ce5cb8db46f8150bd0c6d996e20dc421236b8cbb`. The earlier Git-write blocker is resolved. Per-fix patches and commit subjects remain in `build/review-fixes/commits.tsv` as local evidence; they must not be reapplied to this committed tree.
 
 Validation so far (host Mac arm64; emulator numbers are not device claims):
 
 - `make targeted ONLY='feature:trip:TimelineInvalidationTest feature:trip:TimelinePerfMarkersTest feature:trip:PlaceholderReplayTraceTest core:plan:DayDrawingBudgetTest'`: all 12 tests passed.
 - `make quick`: passed (832 tests in the quick tier, 178 script/generator tests, plus build-logic and the serial timing tier). `DayDrawingBudgetTest` per-width medians: 1.4 / 0.7 / 1.5 ms at 360 / 411 / 841 dp; largest per-day median 0.07 ms, within the 5 ms / 1 ms limits.
 - `make check`: passed, including lint, release readiness, manifest verification, R8 analysis, layout guards, generators and pixel smoke tests.
-- `make baseline-profile`: passed through make, 187.13 s wall time including preparation/restoration (Gradle: 3m 4s). Both generated profiles changed; prepared commit subject `perf(app): regenerate baseline profiles`.
+- `make baseline-profile`: passed through make, 187.13 s wall time including preparation/restoration (Gradle: 3m 4s). Both generated profiles were committed in `0f7c414` (`perf(app): regenerate baseline profiles`).
 
-The clean R1 rerun has not run: Git writes are denied, so the required clean tree at the new HEAD cannot be created. No new R1 row, CPU baseline or archive path is claimed. `bounded-swipe-v2` starts a fresh CPU band when the orchestrator commits and runs it. First frame, RSS, builds on main, placeholders and their replay wait, replay time, actual steady-scroll compositions, GC, jank, hitch, CPU percentiles and final day remain pending for that clean run. The historical architecture decision in section 12 is not fresh evidence for the corrected workload.
+Fix M is completed by the clean R1 run at `ce5cb8db46f8150bd0c6d996e20dc421236b8cbb`: one `make perf-timeline`, exit 0, no retry; all three benchmark tests passed, with archived JSON, traces, XML, logcat and the trace-processor queries/results. Section 6 records every metric, the final scroll day and the archive path; section 7 records the recomposition, GC and placeholder-to-replay checks; section 12 cites this clean SHA. The light / 1.0 CPU band restarts with `bounded-swipe-v2`.
 
-Deviation: `make check` ran after profile generation with the clean-R1 step blocked. No failing test was retried; Kotlin daemon marker writes outside the sandbox failed but Gradle's in-process fallback completed successfully. New open question OQ-1e-19 records the placeholder episode/duration distinction and its default.
+The earlier `make check` ran after profile generation while clean R1 was blocked; it was not repeated for this documentation-only recording. No failing test was retried. Kotlin daemon marker writes outside the sandbox again reported `Operation not permitted` during R1, but compilation and the benchmark completed successfully; the archive's `run.log` retains the exact diagnostics. OQ-1e-19 records the placeholder episode/duration distinction and its default.
