@@ -2,7 +2,7 @@
 
 - **Branch:** `feat/phase-3c-welcome`, from the stack top once Phase **3b** is in it (3b brings 3a, 2, 0b, 0c, 0e). If 3b is missing, stop and report it. 4e may run in parallel in its own worktree; keep `:app` edits small (Tasks 5 and 7) because the orchestrator rebases one onto the other.
 - **Plan entry:** `plan.md` "Phase 3c: Welcome" (l.1563–1608). Also: Decisions **A8**, **A11**, **A19**, **A21**; inherited **D6** (l.122), **D14** (l.129), "Plain sky, composition (2026-11-06)" (l.141), **OQ 10** (l.146), **OQ 11** (l.147); iOS **OQ 12** (the stale `GuestFlight` link; it has no row in plan.md); "Android spec: process, activity and launch sequence" step 6 (l.345); "Android spec: configuration and appearance" (Reduce Motion, l.355); "Android spec: window policy" (l.357–371); "Android spec: seeds and test hooks" (l.465); "Performance budget" rows tagged 3c (l.524–525); `AGENTS.md` "Performance", "Tests" and "Traps".
-- **Revision 2026-11-17:** re-checked against the landed 0e, 2, 3a and 3b code. The names used here (`LaunchHandOffTimeline`, `withWelcomeHandOff`, `HandOffPlan`, `onExitFrame`, `handOffComplete`, `RoutePlaceholder`, `LaunchDiagnostics`, `CfTheme.type.welcomeWordmark`, `CfButton(contentPadding)`, `Guards.assertAll`) exist in the current tree. `HandOffPlan` is declared in `LaunchController.kt`; `withWelcomeHandOff` is internal. `startReadiness` and `onLaunchChange` are private. See the landed source paths below rather than earlier brief prototypes.
+- **Revision 2026-11-17:** re-checked against the landed 0e, 2, 3a and 3b code. The names used here (`LaunchHandOffTimeline`, `withWelcomeHandOff`, `HandOffPlan`, `onExitFrame`, `handOffComplete`, `RoutePlaceholder`, `LaunchDiagnostics`, `CfTheme.type.welcomeWordmark`, `CfButton(contentPadding)`, `Guards.assertAll`) existed at the Phase 3b base audited in Step 0; Task 5 subsequently replaces `withWelcomeHandOff`. `HandOffPlan` is declared in `LaunchController.kt`; `withWelcomeHandOff` is internal. `startReadiness` and `onLaunchChange` are private. See the landed source paths below rather than earlier brief prototypes.
 - **Checked 2026-11-16 (adversarial pass):** facts re-verified against iOS `f391a1fa`, the boards, plan.md, AGENTS.md and the 0b/0c/0e/2/3a/3b briefs. Changes: plan/iOS line numbers, `app_debug_route_x`, `LaunchRect.midX/midY`, the non-linear font-scale row height, the headless fallback, the size-change rebuild (`setFallbackTarget`), the interim-ending swap moved from Task 2 to Task 5 (commit atomicity), Task 5 no-op callbacks until Task 7, 3b's real `ReportDrawnWhen` predicate, `LaunchMode`/parser locations, the journey's `resetLaunchForTest()` and overlay wait, and the contrast record.
 - **Tests:** every test follows `AGENTS.md` "Tests": cheapest tier, budgets, exact queries, no `Thread.sleep`/`SystemClock.sleep`, hang caps. Read that section before writing a test.
 - **Tags:** **[F]** = fact verified in source (path given). **[R]** = rule this brief sets for Android. `I/` = `/Users/rickgout/Sites/chronoflow-ios`, read at `f391a1fa` (`git -C /Users/rickgout/Sites/chronoflow-ios show f391a1fa:<path>`; never write there). `Kit/` = `I/Packages/ChronoFlowKit/Sources`. `KitT/` = `I/Packages/ChronoFlowKit/Tests`. `DC/` = `_design/canvas/`.
@@ -69,7 +69,7 @@ Done means:
 | The sign-out landing (it goes straight to Sign in, never to Welcome, with no intro) | 4e / 5a |
 | Real session readiness and the `session` trace (cookie 5) | 4a–4e |
 | A wide Welcome layout. **No board exists**; only the 560 dp copy-card cap from the window policy applies | — |
-| Baseline/startup profile regeneration, if `make baseline-profile` is not in the stack yet | 1e / 13 (write "pending" in `docs/perf-startup.md`) |
+| Quiet-host baseline/startup profile regeneration and performance runs | orchestrator (user, 2026-11-17; leave rows pending in `docs/perf-startup.md`) |
 | Contrast fixes for the five Welcome pairs (there is no corrective design) | design question, OQ-3c-8 |
 
 Add no copy: every visible string already exists (§5.6). Add no state without a board (loading, error) to Welcome.
@@ -484,7 +484,7 @@ Each task is one Conventional Commit with no trailers. Tick the matching `plan.m
 - `LaunchJankBenchmark` (signed-out cold start, perf variant): after `device.wait(Until.gone(By.res("launch.opening")), 3_500)`, wait for the intro to end with `device.wait(Until.gone(By.res("welcome.signIn")), 900)`. That is a bounded wait that times out by design; comment why. `FrameTimingMetric` then covers 0 to about 3.45 s.
 - `WelcomeMomentMetric` (a `TraceMetric` subclass, `@OptIn(ExperimentalMetricApi::class)`): query the app process's async slices `first-commit`, `exit` and `intro`. Report `welcomeInteractiveMs = exit.end − first-commit.end` and `introLastItemMs = intro.end − first-commit.end`. Add it to the cold signed-out `StartupBenchmark`.
 - `benchmark/budgets.json` (a functional gate on the emulator; tolerance one frame at the measured refresh rate, which you record): `welcomeInteractiveMs` min 2549, max 2550 + frame + 1; `introLastItemMs` min 3199, max 3200 + frame + 1. A missing value fails (`check-benchmarks.py`). The `LaunchJankBenchmark` frame-overrun budget rows from 3a/3b must still pass over the longer capture.
-- The orchestrator runs `make perf` and `make baseline-profile` on a quiet host (user, 2026-11-17); do not run them in this phase session. Leave the measurement rows pending. Append rows to `docs/perf-startup.md`: date, commit, `pixel` AVD API 36, refresh rate, build type, cold TTID, TTFD, both moments, `frameOverrunMs` P50/P90/P99. Flag a cold-TTID change of more than ±25 % against the last row. Regenerate the profiles if `make baseline-profile` exists; otherwise write "pending".
+- The orchestrator runs `make perf` and `make baseline-profile` on a quiet host (user, 2026-11-17); do not run them in this phase session. Leave the measurement rows pending. Append rows to `docs/perf-startup.md`: date, commit, `pixel` AVD API 36, refresh rate, build type, cold TTID, TTFD, both moments, `frameOverrunMs` P50/P90/P99. Flag a cold-TTID change of more than ±25 % against the last row. Profile regeneration remains pending for the orchestrator through `make baseline-profile`.
 
 ### Task 10: Docs (`docs(launch): record phase 3c decisions`)
 
@@ -500,7 +500,7 @@ Each task is one Conventional Commit with no trailers. Tick the matching `plan.m
 - `make check` passes with `pixel` booted. That includes `WelcomeLayoutTest`, `WelcomeAccessibilityTest`, all 20 `WelcomeGuardsTest` cases, `WelcomeIntroRenderTest`, `WelcomeRecompositionTest`, `WelcomeHandOffTest`, `WelcomeSeamTest` (each < 5 s in `timings.json`), `testReleaseUnitTest` with `ReleaseReadinessTest`/`WelcomeDestinationsReleaseTest`, and `WelcomeJourneyTest` in `@Smoke` (< 10 s).
 - `make perf`: `welcomeInteractiveMs` = 2550 ms and `introLastItemMs` = 3200 ms, each within + 1 frame (functional gate); `check-benchmarks.py` passes; the rows are in `docs/perf-startup.md`. Device gates stay "open: device only" (OQ-A22).
 - `make captures ONLY=Main,SplashWelcome` produced the Task 8 PNGs. The composition matches `Main` and `SplashWelcome` at `pixel8` and `foldInner`, apart from §5.1. Any other difference is either fixed or recorded with its board name.
-- Debug runs are StrictMode-clean through the intro: the journey survives `penaltyDeath`.
+- Debug runs are StrictMode-clean through Welcome: the journey asserts zero in the all-time debug disk/network counter after `route.signIn`. The existing launch-path crash guard still ends at first frame commit.
 - `git grep -n "withWelcomeHandOff\|LaunchTimelineWelcomeInterim" -- '*.kt' '*.kts'` returns nothing (the docs still name them).
 - Every plan.md 3c checkbox is ticked in its commit, and `git log` shows atomic Conventional Commits without trailers.
 
@@ -533,7 +533,7 @@ Accessibility and copy
 - [ ] The status-bar icons are light; the navigation-bar icons are dark in light and light in dark, through 3b's mechanism. No haptics.
 
 Performance and process
-- [ ] While the overlay is active, Welcome composes only after the font gate (fonts warm or 1500 ms); without an overlay it composes at once. There is no disk read on the main thread (the journey runs under `penaltyDeath`).
+- [ ] While the overlay is active, Welcome composes only after the font gate (fonts warm or 1500 ms); without an overlay it composes at once. There is no disk/network work on the main thread (the journey checks the debug violation counter through `route.signIn`; the launch-path crash guard retains its first-commit scope).
 - [ ] Tests are at the cheapest tier; the only emulator test is the journey; no `Thread.sleep`; tag queries are exact; every Robolectric case is < 5 s.
 - [ ] The seams are debug only (`ReleaseReadinessTest`); release buttons do nothing; `cf.mode=welcome` is absent from release (`LaunchDiagnostics.None`).
 - [ ] Ported tests keep the Swift names, and the Swift type names are kept (`LaunchIntro`, `MoonAnchorStore`, `MoonTarget`, `WelcomeGeometry`, `withWelcomeExit`).
@@ -551,7 +551,7 @@ Typical mistakes:
 - `uppercase()` without the app locale;
 - leaving the old `RoutePlaceholder` Welcome case alive under the new screen.
 
-TalkBack check (manual, once, recorded in Task 10): on the emulator with TalkBack on, cold launch signed out with `cf.reduceMotion=false`. After the dissolve, the first focused item must be "ChronoFlow" (the wordmark).
+**Open manual check — OQ-A103 / OQ-3c-3 (owner: user):** TalkBack focus is pending by explicit user instruction (2026-11-18). Check once and record the result in `docs/phase-3c-validation.md`: on the emulator with TalkBack on, cold launch signed out with `cf.reduceMotion=false`. After the dissolve, the first focused item must be "ChronoFlow" (the wordmark).
 
 ## 10. Open questions (proceed on the default; Task 10 adds them to plan.md)
 
@@ -583,3 +583,7 @@ Task 6 ownership: `DiagnosticWelcomeAnchorTest` lives beside its controller in `
 Task 8 fixture correction: LaunchOverlay now consumes LocalSafeInsets, so pre-Welcome standalone overlay tests/captures must provide ProfileHost too. The test-only ProfiledLaunchOverlay wraps the real overlay with the fixture profile (pixel8 by default, explicit profile in parameterized hosts). No production fallback or implicit inset source is added. All 42 Welcome captures passed on the first capture run; only the older missing-provider fixtures are rerun after this correction.
 
 Task 9 wait correction: first wait for `welcome.signIn` to exist before the bounded 900 ms `Until.gone` wait. Otherwise that wait can finish immediately while the staggered control is still invisible. Apply it in cold startup, launch jank and startup-profile collection; preserve the warm preparation hand-off wait. The capture may extend to about 3.65 s rather than 3.45 s, and always includes the 3200 ms item. Emulator bounds use the observed 60.000004 Hz configuration.
+
+Task 10 reconciliation: keep the Step 0 API inventory explicitly historical after Task 5 removes the interim name; align the remaining acceptance/checklist StrictMode wording with Task 7's resolved all-time debug counter, and make the quiet-host profile owner explicit throughout. The plan's former interim Welcome, deferred mode, placeholder background and process-death relaunch rows now describe the landed replacements. No earlier-phase runtime behavior changes for these documentation corrections. Manual OQ-A103 TalkBack focus remains pending; see `docs/phase-3c-validation.md`.
+
+Task 10 smoke-test correction (user, 2026-11-18): the slow readiness stub wakes at or after 3500 ms, so its actual exitStart, rather than a fixed 3500 ms, determines removal. LaunchHandOffTest separately bounds exitStart in [3500, 3500 + frame + 2] and removal in [exitStart + 400, exitStart + 400 + frame + 2]. Test-only reflection reads private launch state on the main thread through read {}; no app/reducer changes or production hooks. The ready fixture asserts exitStart == 1500 ms and retains its fixed 1900 ms removal bound. Both cases passed in one class run; see the validation record.
