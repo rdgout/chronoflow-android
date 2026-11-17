@@ -696,6 +696,7 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-1d-17 | The brief says the `release` source set is not seen by `benchmarkRelease` and `nonMinifiedRelease`; it is (a duplicate `TripPageEntry` failed to compile) | The release stub lives in `app/src/releaseNoPerf/kotlin`, wired to the `release` variant only through `onVariants` | 1d |
 | OQ-1d-18 | The brief wants the repository, ViewModel and clock logic in plain JVM tests, but `android.os.Trace` is unmocked there | `TimelineTracer` (Android, None) is the seam; the draw lambdas call `android.os.Trace` directly (no allocation), and `androidx.tracing` is not added | 1d |
 | OQ-1d-19 | The brief prewarms drawings at a 411.0 dp window, but the page reads the whole pixel width (`pixel8`: 1078 px / 2.625 = 410.67 dp), so keys differ by 1 px | `TimelineTestHost.prewarm` takes the window width the page sees | 1d |
+| OQ-1d-20 | `ReleaseReadinessTest` cannot assert `LargeTimelineFixtures` is absent because `testImplementation(:core:testing)` puts it on the release unit-test classpath | Acceptance #4 (`./gradlew :app:dependencies --configuration releaseRuntimeClasspath \| grep -c core:testing` = 0) proves the absence | 1d |
 
 ## Tasks
 
