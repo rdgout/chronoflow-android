@@ -66,6 +66,20 @@ class KonsistRulesTest {
         assertFailure { noGlobalScope(violations("noGlobalScope")) }.messageContains("noGlobalScope violated")
     }
 
+    @Test fun noMultiProcessDataStore() = noMultiProcessDataStore(projectScope)
+
+    @Test fun noMultiProcessDataStoreRejectsPlantedViolations() {
+        assertFailure { noMultiProcessDataStore(violations("noMultiProcessDataStore")) }.all {
+            messageContains("noMultiProcessDataStore violated")
+            messageContains("ImportedFactory.kt")
+            messageContains("AliasedFactory.kt")
+            messageContains("QualifiedFactory.kt")
+        }
+    }
+
+    @Test fun noMultiProcessDataStoreAllowsSingleProcessFactory() =
+        noMultiProcessDataStore(allowed("noMultiProcessDataStore"))
+
     @Test fun noRunBlockingOutsideTests() = noRunBlockingOutsideTests(projectScope)
 
     @Test fun noRunBlockingOutsideTestsRejectsPlantedViolation() {

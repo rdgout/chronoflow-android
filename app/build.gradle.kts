@@ -37,6 +37,13 @@ android {
         generateLocaleConfig = true
     }
 
+    packaging {
+        jniLibs {
+            // Single-process DataStore does not use the native shared counter (OQ-A131).
+            excludes += "**/libdatastore_shared_counter.so"
+        }
+    }
+
     lint {
         checkDependencies = true
     }

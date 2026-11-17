@@ -93,3 +93,14 @@ The main-thread disk policy survived every store call. SQLite reported **3.44.3*
 - Optional `git log -11 --format='%h %G? %s'` signature-status lookup produced no output and was interrupted (exit 130). Detached verification using `gpg --no-options --no-auto-check-trustdb --no-auto-key-retrieve --lock-never --trust-model always --verify <signature> <payload>` succeeds for every new commit. Signing itself succeeded on every commit; none was committed unsigned.
 
 See [porting/local-store.md](porting/local-store.md) for the hand-off map and [tooling.md](tooling.md#phase-4a) for SQLite and timing notes.
+
+
+## DataStore native-counter packaging follow-up
+
+The user reported `make check` passing on `0256a32`, followed by `make size` rejecting DataStore 1.3.0's `libdatastore_shared_counter.so`. Source search confirmed that the production store and test stores use only `PreferenceDataStoreFactory.create`, with no multi-process DataStore references. The app now excludes the shared-counter library from JNI packaging. OQ-A131 records that this exclusion depends on keeping stores single-process; OQ-0a-22 and its native-library allow-list are unchanged.
+
+Konsist's `noMultiProcessDataStore` checks app/core/feature/tool source files and rejects `MultiProcessDataStoreFactory`, including imported, aliased and fully qualified references. Three targeted guard tests passed in 2.25 s, covering the current project, all three planted violations and a single-process control.
+
+`make size` ran once and passed in **2.69 s**: **1,462,463 bytes (1.46 MB)** for arm64-v8a/xxhdpi/en. Direct inspection of the release AAB found only `libandroidx.graphics.path.so` under arm64-v8a, armeabi-v7a, x86 and x86_64; the DataStore counter is absent.
+
+The subsequent single `make quick` run passed in **21.21 s** overall: 1,246 quick-tier cases, 26 build-logic cases, 190 Python cases and 6 serial timing cases, with zero budget overruns. Exact logs and JSON snapshots are in `build/phase4a/shared-counter-*`.
