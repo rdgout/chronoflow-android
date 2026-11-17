@@ -61,3 +61,32 @@ Worker, 2026-11-17. No performance claim is made here; 1e measures. Numbers are 
 - Control 1: a state read in `drawWithCache { onDrawBehind { } }` redraws exactly once per write.
 - Control 2: a child with `graphicsLayer()` keeps its draw count when its parent's `drawBehind` state changes; the same child without a layer is redrawn (negative control).
 - Control 3: moving a layer with `Modifier.offset { }` from state does not redraw it.
+
+### Perf entry runs (Task 8)
+
+Worker, 2026-11-17, emulator `pixel` (API 36), debug build, animator scales 0, `--es cf.trip-page <name> --es cf.freezeAt 2026-11-15T08:00:00Z`. Emulator numbers are regression signals, not device claims.
+
+| Fixture | `trip.timeline.ready` nodes (uiautomator dump) | `grep -c StrictMode` | crashes |
+|---|---|---|---|
+| S1, S2, S3, S4, S5, S6, large30, large60 | 1 each | 0 each | 0 |
+
+Screenshots: `build/captures/phase-1d/<name>.png` (evidence that each fixture renders, not board captures).
+
+Perfetto (`adb shell perfetto -t 15s -a net.chronoflow.app.native.debug gfx view sched dalvik`, large60, 15 swipes; trace `build/phase-1d.pftrace`, queried with the Python trace processor):
+
+- `cf.timeline.build`: 17 slices, all on `DefaultDispatch*` threads, none on the main thread.
+- `cf.timeline.replay`: 13 slices, all on the main thread. `cf.timeline.placeholder`: 1 slice.
+- `cf.timeline.firstFrame`: one async slice, 818 ms (debug build on the emulator; it covers fixture read, decode, layout, prepare, typeface load and the first build). Pending 1e for any budget.
+
+### Compose stability (`./gradlew :feature:trip:compileReleaseKotlin -PcomposeReports=true`)
+
+```
+restartable skippable ... fun ...timeline.DayTimeline(  stable day, layout, key, dayIndex, availableWidthDp, repository, resources, clock, onBlock, onFirstReplay, prefetch, modifier)
+restartable skippable ... fun ...timeline.NowLine(  stable clock, dayId, widthDp, modifier)
+restartable skippable ... fun ...timeline.DayHeaderLine(  stable day, colors, minHeight)
+restartable skippable ... fun ...timeline.TimelineTargets(  stable drawing, dayId, onBlock, modifier)
+```
+
+### Invalidation guard
+
+`TimelineInvalidationTest` (Robolectric, `@Logic`, in `make quick`): scrolling 120 deltas plus a current-day boundary 0 static compositions and draws; minute tick 1 clock composition (day 0 only); day boundary 2; check-off redraws only its day. Removing `graphicsLayer()` from the static layer fails the minute-tick and day-boundary tests (static draws of an untouched day 0 vs 1).

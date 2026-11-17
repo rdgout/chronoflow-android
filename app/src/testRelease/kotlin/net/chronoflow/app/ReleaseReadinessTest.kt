@@ -22,6 +22,7 @@ class ReleaseReadinessTest {
     @Test
     fun releaseShipsNoPerfCode() {
         missing("net.chronoflow.app.perf.PerfEntry")
+        missing("net.chronoflow.app.perf.FixtureTimelineSource")
         assertThat(BuildConfig.PERF_ENTRY).isFalse()
     }
 

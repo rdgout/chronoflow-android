@@ -1238,14 +1238,14 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - One `pointerInput` resolves taps through `HitIndex`; for now it only invokes a callback, and the sheet comes in 6d.
   - `TimelineTargets` become invisible semantics nodes with labels, `traversalIndex` and `onClick`.
 - [x] **NowLine.** It is the only clock reader. It is placed with `Modifier.offset { }` from the minute state, so a tick invalidates only the NowLine.
-- [ ] **SystemPlanClock** (`core/data/…/clock/`).
+- [x] **SystemPlanClock** (`core/data/…/clock/`).
   - Minute ticks aligned to the wall minute.
   - `ACTION_TIME_TICK`, `ACTION_TIME_CHANGED`, `ACTION_TIMEZONE_CHANGED` and `ACTION_DATE_CHANGED` receivers, registered only while the app is started.
   - `cf.freezeAt` freezes it in debug and perf builds.
 - [x] **TimelineProbe.**
   - A `staticCompositionLocalOf<TimelineProbe?> { null }`. The debug implementation counts compositions and static draws per day key.
   - `TimelineInvalidationTest` (Robolectric, in `make quick`, OQ-A30) asserts the `04 §10.2` table over all 60 days of large60.
-- [ ] **Perf entry**, in `app/src/perf/` and `app/src/debug/`.
+- [x] **Perf entry**, in `app/src/perf/` and `app/src/debug/`.
   - `cf.trip-page=S1…S6|large30|large60` opens `TimelinePage` from fixtures through `FixtureTimelineSource`. `:core:testing` is a perf and debug dependency only.
   - Traces: `cf.timeline.firstFrame` (async, from ViewModel start to two frames after the first non-placeholder draw), `cf.timeline.build`, `cf.timeline.replay`, and the counter `cf.timeline.placeholder`.
   - Test tags `trip.page` and `trip.timeline.ready`.

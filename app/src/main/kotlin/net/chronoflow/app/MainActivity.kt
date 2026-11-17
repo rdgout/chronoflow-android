@@ -15,6 +15,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.unit.LayoutDirection
+import net.chronoflow.app.perf.TripPageEntry
 import net.chronoflow.core.ui.LocalSafeInsets
 
 class MainActivity : ComponentActivity() {
@@ -25,12 +26,15 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val entry = TripPageEntry.content(intent, (application as ChronoFlowApp).graph)
         setContent {
             CompositionLocalProvider(
                 LocalSafeInsets provides WindowInsets.safeDrawing,
                 LocalLayoutDirection provides LayoutDirection.Ltr,
             ) {
-                Box(Modifier.fillMaxSize().semantics { testTagsAsResourceId = true }.testTag("app.root"))
+                Box(Modifier.fillMaxSize().semantics { testTagsAsResourceId = true }.testTag("app.root")) {
+                    entry?.invoke()
+                }
             }
         }
         window.decorView.viewTreeObserver.registerFrameCommitCallback {
