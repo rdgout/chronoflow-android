@@ -43,7 +43,7 @@ trap '"$EMULATOR_SH" prep-functional' EXIT
 # Each collect runs up to 15 launches, far over the 60 s default; raise the cap rather than lower maxIterations.
 step "$GRADLEW" --console=plain :app:generateBaselineProfile \
   -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.enabledRules=BaselineProfile \
-  -Pandroid.testInstrumentationRunnerArguments.timeout_msec=300000
+  -Pandroid.testInstrumentationRunnerArguments.timeout_msec=900000
 status=$?
 if [ "$status" != 0 ]; then exit "$status"; fi
 if [ -n "${BASELINE_PROFILE_DRY_RUN:-}" ]; then exit 0; fi

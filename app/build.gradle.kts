@@ -20,6 +20,11 @@ androidComponents {
     onVariants(selector().withBuildType("nonMinifiedRelease")) { addPerfSources(it) }
 }
 
+baselineProfile {
+    mergeIntoMain = true
+    saveInSrc = true
+}
+
 android {
     namespace = "net.chronoflow.app"
 
@@ -69,6 +74,7 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.profileinstaller)
+    baselineProfile(project(":benchmark"))
     implementation(libs.kotlinx.coroutines.android)
 
     testImplementation(libs.junit4)

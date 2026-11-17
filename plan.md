@@ -1284,7 +1284,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - `timelineFirstFrame`: cold start, 10 iterations, extra `cf.trip-page=large60`, with `TraceSectionMetric("cf.timeline.firstFrame")` and `StartupTimingMetric`.
   - `timelineScroll`: the setup launches and waits for `trip.timeline.ready`. The measured part is exactly 15 flings on `trip.page` with a width/5 gesture margin, using `FrameTimingMetric`, `MemoryUsageMetric(Mode.Max)` and the placeholder count. It runs 3 iterations, each from a fresh launch, then asserts that the day label advanced.
   - `timelineLastDay`: the menu, then `trip.dayMenu.day.59`, must reach `trip.plan.end` within 6 flings.
-- [ ] **Baseline profile.**
+- [x] **Baseline profile.**
   - `BaselineProfileGenerator`: a startup journey to the first frame, and `cf.trip-page=large60` with 15 flings.
   - Commit `app/src/main/generated/baselineProfiles/baseline-prof.txt` and `startup-prof.txt`; add `make baseline-profile`.
 - [x] **Budgets.**

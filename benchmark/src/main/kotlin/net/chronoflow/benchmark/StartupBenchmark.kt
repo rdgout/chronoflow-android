@@ -26,8 +26,7 @@ class StartupBenchmark {
             packageName = packageName,
             metrics = listOf(StartupTimingMetric()),
             iterations = 10,
-            // UseIfAvailable until 1e commits the profiles; Partial() alone defaults to Require.
-            compilationMode = CompilationMode.Partial(BaselineProfileMode.UseIfAvailable),
+            compilationMode = CompilationMode.Partial(BaselineProfileMode.Require),
             startupMode = StartupMode.COLD,
             setupBlock = { pressHome() },
         ) {

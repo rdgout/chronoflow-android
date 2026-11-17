@@ -1,0 +1,3 @@
+# A baseline profile must record real class names, and AGP 9 ignores the profile plugin's legacy keep-all rules.
+-dontobfuscate
+-dontoptimize
