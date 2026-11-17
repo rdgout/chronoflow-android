@@ -186,6 +186,7 @@ class LargeTimelineFixtureTests {
                 listOf("day-29864460-tour-0", "2026-10-13T05:00:00Z", "2026-10-14T05:00:00Z", "2026-10-13"),
             )
             check("first phase", first.phase.raw, "pre")
+            check("first label phase", first.labelPhase.raw, "pre_departure")
             val last = plan.days.last()
             check(
                 "last day",
@@ -193,6 +194,7 @@ class LargeTimelineFixtureTests {
                 listOf(g.lastDay, g.lastDayRange.first, g.lastDayRange.second, g.lastLabelDate, 2),
             )
             check("last phase", last.phase.raw, "post")
+            check("last label phase", last.labelPhase.raw, "day")
             check("trip end", detail.trip.endUtc, g.tripEnd)
             check("last block", plan.blocks.last().id, g.lastBlock)
             check(
