@@ -51,4 +51,102 @@ class LaunchFrameLoopTests {
             runCurrent()
             assertEquals(2, requests)
         }
+
+    @Test fun exitUsesWallTimeAfterAStallWithDifferentFrameClockBases() =
+        runTest(timeout = 60.seconds) {
+            val origin = 9_000_000_000_000L
+            var wall = origin
+            val frames = Channel<Unit>(Channel.UNLIMITED)
+            var elapsed = -1L
+            var exit = -1L
+            val sampler =
+                net.chronoflow.feature.launch.model.LaunchFrameSampler(
+                    net.chronoflow.feature.launch.model.LaunchTimeline.opening(
+                        net.chronoflow.feature.launch.model
+                            .LaunchSize(390.0, 844.0),
+                        false,
+                    ),
+                )
+            val job =
+                backgroundScope.launch {
+                    runLaunchOpening(
+                        CompletableDeferred(origin),
+                        { wall },
+                        {
+                            frames.receive()
+                            7L
+                        },
+                        0L,
+                        planProvider = { HandOffPlan(sampler, 1.9, 1) },
+                        onExit = { exit = it },
+                        onElapsed = { elapsed = it },
+                    )
+                }
+            runCurrent()
+            wall += 800_000_000
+            frames.send(Unit)
+            runCurrent()
+            assertEquals(800_000_000, elapsed)
+            assertEquals(-1L, exit)
+            wall = origin + 1_900_000_000
+            frames.send(Unit)
+            runCurrent()
+            assertEquals(1_900_000_000, exit)
+            assertTrue(job.isCompleted)
+        }
+
+    @Test fun settledOpeningWaitsForRevisionThenPlaysTheLateExit() =
+        runTest(timeout = 60.seconds) {
+            val origin = 9_000_000_000_000L
+            var wall = origin
+            val frames = Channel<Unit>(Channel.UNLIMITED)
+            val revisions = Channel<Long>(Channel.UNLIMITED)
+            var requests = 0
+            var exit = -1L
+            val sampler =
+                net.chronoflow.feature.launch.model.LaunchFrameSampler(
+                    net.chronoflow.feature.launch.model.LaunchTimeline.opening(
+                        net.chronoflow.feature.launch.model
+                            .LaunchSize(390.0, 844.0),
+                        false,
+                    ),
+                )
+            var plan = HandOffPlan(sampler, null, 0)
+            val job =
+                backgroundScope.launch {
+                    runLaunchOpening(
+                        CompletableDeferred(origin),
+                        { wall },
+                        {
+                            requests++
+                            frames.receive()
+                            7L
+                        },
+                        0L,
+                        planProvider = { plan },
+                        awaitRevision = { revisions.receive() },
+                        onExit = { exit = it },
+                        onElapsed = {},
+                    )
+                }
+            runCurrent()
+            wall += 1_500_000_000
+            frames.send(Unit)
+            runCurrent()
+            assertEquals(1, requests)
+            assertFalse(job.isCompleted)
+            plan = plan.copy(exitEndSeconds = 3.9, revision = 1)
+            wall = origin + 3_500_000_000
+            revisions.send(1)
+            runCurrent()
+            assertEquals(2, requests)
+            frames.send(Unit)
+            runCurrent()
+            assertEquals(-1L, exit)
+            wall = origin + 3_900_000_000
+            frames.send(Unit)
+            runCurrent()
+            assertEquals(3_900_000_000, exit)
+            assertTrue(job.isCompleted)
+        }
 }

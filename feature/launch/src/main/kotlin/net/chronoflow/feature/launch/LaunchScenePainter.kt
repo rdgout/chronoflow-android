@@ -35,7 +35,7 @@ internal class LaunchScenePainter(
 ) {
     private val sceneSize = LaunchSize((sizePx.width / density).toDouble(), (sizePx.height / density).toDouble())
     private val layout = LaunchLayout(sceneSize)
-    val sampler = LaunchFrameSampler(LaunchTimeline.opening(sceneSize, reduceMotion))
+    var sampler = LaunchFrameSampler(LaunchTimeline.opening(sceneSize, reduceMotion))
     private val frame = LaunchFrame()
     private val colors = appearance.colors
     private val sky = CfSky.brush(appearance.night)
