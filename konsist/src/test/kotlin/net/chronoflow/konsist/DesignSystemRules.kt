@@ -1,5 +1,6 @@
 package net.chronoflow.konsist
 
+import com.lemonappdev.konsist.api.Konsist
 import com.lemonappdev.konsist.api.container.KoScope
 import org.jetbrains.kotlin.lexer.KotlinLexer
 import org.jetbrains.kotlin.lexer.KtTokens
@@ -137,10 +138,33 @@ fun designSystemPrimitivesHaveGuards(
 ) {
     val coverage =
         if (guards.exists()) {
-            guards.walkTopDown().filter { it.name.endsWith("GuardsTest.kt") }.joinToString("\n") { it.readText() }
+            guards
+                .walkTopDown()
+                .filter {
+                    it.name.endsWith(
+                        "GuardsTest.kt",
+                    )
+                }.joinToString("\n") { codeOnly(it.readText()) }
         } else {
             ""
         }
+    val sections = Regex("""GallerySection\.(\w+)""").findAll(coverage).map { it.groupValues[1] }.toSet()
+    val gallery =
+        File(
+            projectRoot(),
+            "core/testing-compose/src/main/kotlin/net/chronoflow/core/testing/compose/designsystem/DesignSystemGallery.kt",
+        )
+    val rendered =
+        if (gallery.exists() && sections.isNotEmpty()) {
+            Konsist
+                .scopeFromFile(gallery.path)
+                .functions()
+                .filter { it.name in sections }
+                .joinToString("\n") { codeOnly(it.text) }
+        } else {
+            ""
+        }
+    val calls = coverage + "\n" + rendered
     val bad =
         scope
             .functions()
@@ -153,7 +177,7 @@ fun designSystemPrimitivesHaveGuards(
                     function.name.startsWith("Cf") &&
                     !function.hasPrivateModifier &&
                     !function.hasInternalModifier
-            }.filter { !coverage.contains(it.name) }
+            }.filter { !Regex("""\b${it.name}\s*\(""").containsMatchIn(calls) }
             .map { "${it.path}: ${it.name}" }
     checkDesignRule("designSystemPrimitivesHaveGuards", bad)
 }

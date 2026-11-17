@@ -225,4 +225,13 @@ class KonsistRulesTest {
             )
         }.messageContains("designSystemPrimitivesHaveGuards violated")
     }
+
+    @Test fun designSystemPrimitivesHaveGuardsRejectsCommentOnlyCoverage() {
+        assertFailure {
+            designSystemPrimitivesHaveGuards(
+                violations("designSystemPrimitivesHaveGuards"),
+                java.io.File("konsist/src/test/resources/violations/designSystemPrimitivesHaveGuards/guards"),
+            )
+        }.messageContains("CfOrphan")
+    }
 }
