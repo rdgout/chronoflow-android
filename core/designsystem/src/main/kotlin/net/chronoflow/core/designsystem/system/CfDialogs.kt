@@ -24,8 +24,14 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
-import net.chronoflow.core.designsystem.generated.PlanUITokens
+import net.chronoflow.core.designsystem.layout.BoardMetrics
 import net.chronoflow.core.designsystem.theme.CfTheme
+
+@BoardMetrics("ItemDetail", "SheetStates")
+private object SheetMetrics {
+    // Native counterparts of these sheet panels use plan.md's 640 dp window-policy cap.
+    val maxWidth = 640.dp
+}
 
 @Composable
 fun CfModalBottomSheet(
@@ -38,7 +44,7 @@ fun CfModalBottomSheet(
         onDismissRequest,
         modifier,
         sheetState = sheetState,
-        sheetMaxWidth = PlanUITokens.walkthroughCompactWidth.dp,
+        sheetMaxWidth = SheetMetrics.maxWidth,
         shape = CfTheme.shapes.sheetTop,
         containerColor = CfTheme.colors.card,
         contentColor = CfTheme.colors.cardForeground,

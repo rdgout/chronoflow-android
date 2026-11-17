@@ -7,20 +7,27 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.addPathNodes
 import androidx.compose.ui.unit.dp
-import net.chronoflow.core.designsystem.generated.WelcomeTokens
+import net.chronoflow.core.designsystem.layout.BoardMetrics
+
+@BoardMetrics("Main", "AuthStates", "SetStates", "SetHome", "Set2FA")
+private object LucideMetrics {
+    // Inline board SVGs and the bundle lucide glyphs share this canvas and default stroke.
+    const val VIEWPORT = 24f
+    const val STROKE_WIDTH = 2f
+}
 
 private val vectors = mutableMapOf<Pair<LucideGlyph, Float>, ImageVector>()
 
-fun LucideGlyph.imageVector(strokeWidth: Float = WelcomeTokens.moonStroke): ImageVector =
+fun LucideGlyph.imageVector(strokeWidth: Float = LucideMetrics.STROKE_WIDTH): ImageVector =
     synchronized(vectors) {
         vectors.getOrPut(this to strokeWidth) {
             ImageVector
                 .Builder(
                     name,
-                    WelcomeTokens.moonViewBox.dp,
-                    WelcomeTokens.moonViewBox.dp,
-                    WelcomeTokens.moonViewBox,
-                    WelcomeTokens.moonViewBox,
+                    LucideMetrics.VIEWPORT.dp,
+                    LucideMetrics.VIEWPORT.dp,
+                    LucideMetrics.VIEWPORT,
+                    LucideMetrics.VIEWPORT,
                 ).apply {
                     paths.forEach { path ->
                         addPath(

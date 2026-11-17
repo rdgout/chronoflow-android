@@ -40,15 +40,19 @@ private enum class CfButtonMetrics(
     val height: Float,
     val horizontal: Float,
 ) {
-    Sm(PlanUITokens.space8, PlanUITokens.space3),
+    Sm(ButtonMetrics.SM_HEIGHT, PlanUITokens.space3),
     Default(ButtonMetrics.DEFAULT_HEIGHT, PlanUITokens.space4),
-    Lg(PlanUITokens.walkthroughDoneHeight, PlanUITokens.space6),
+    Lg(ButtonMetrics.LG_HEIGHT, PlanUITokens.space6),
     Icon(ButtonMetrics.DEFAULT_HEIGHT, 0f),
-    Touch(AuthTokens.touch, AuthTokens.spacer),
+    Touch(ButtonMetrics.TOUCH_HEIGHT, AuthTokens.spacer),
 }
 
 @net.chronoflow.core.designsystem.layout.BoardMetrics("ItemDetail", "SheetStates")
 private object ButtonMetrics {
+    // ItemDetail/SheetStates use bundle Button h-8, h-9, h-10 and size-11 variants.
+    const val SM_HEIGHT = 32f
+    const val LG_HEIGHT = 40f
+    const val TOUCH_HEIGHT = 44f
     const val DEFAULT_HEIGHT = 36f
 }
 
@@ -78,7 +82,7 @@ fun CfButton(
     val metrics = CfButtonMetrics.entries[size.ordinal]
     val verticalPadding =
         if (size == CfButtonSize.Sm) {
-            (PlanUITokens.space8 - requireNotNull(CfTypeScale.authLabel.lineHeight)) / 2
+            (ButtonMetrics.SM_HEIGHT - requireNotNull(CfTypeScale.authLabel.lineHeight)) / 2
         } else {
             AuthTokens.fieldGap
         }
