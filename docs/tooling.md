@@ -206,3 +206,15 @@ zsh:1: operation not permitted: ps
 Device logcat showed the profile iterations progressing; no required Gradle, adb or emulator command was blocked. Kotlin daemon marker creation under `~/Library/Application Support/kotlin/daemon/` also logs `Operation not permitted`; Kotlin's fallback compilation succeeds. No permission escalation or sibling-repo write was used.
 
 Phase 2 gate close-out: the standalone quick run failed two rule budgets (1193/1436 ms); the rules were narrowed without changing limits and their six affected methods passed (267/2 ms for the project checks). The quick prerequisite in `make check` passed 876 budget checks with zero over budget. That single check invocation stopped on a modifier-factory lint issue, which was fixed directly; its remaining Makefile steps resumed once and passed (27 release tests, 197 layout tests, generators, 10 smoke tests). Exact logs are `build/phase2-{quick,rule-budget-fix1,check,check-resumed}.log`. A final log review found a pre-existing `filesDir` read in ScreenTestHarnessTest's onActivity callback; the test now reads on its worker, and its scoped rerun passed with clean fresh StrictMode output.
+
+## Phase 3b process-death proof
+
+`make perf` includes `net.chronoflow.benchmark.ProcessDeathLaunchTest` in the separate benchmark APK against the perf variant. The single-class command (under the device lock) is:
+
+```sh
+python3 -I Scripts/device_lock.py -- ./gradlew --console=plain :benchmark:connectedBenchmarkReleaseAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=net.chronoflow.benchmark.ProcessDeathLaunchTest -Pandroid.testInstrumentationRunnerArguments.timeout_msec=60000
+```
+
+The test launches through `monkey`, kills the background process with `am kill`, waits for its PID to disappear, then proves the relaunch has a different PID and shows `launch.opening`. Phase 3b leaves this perf-variant execution to the quiet-host orchestrator.
+
+The functional hand-off/stall proofs use the debug `LaunchController.frameLog` ring buffer. The existing `compositionObserver` remains a composition counter. Read `CfLaunchProof` in logcat for ready/slow/stall hand-off end times and the sampled stall gap.

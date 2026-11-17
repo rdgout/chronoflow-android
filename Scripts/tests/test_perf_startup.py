@@ -101,6 +101,7 @@ class PerfStartupTest(unittest.TestCase):
         result = self.perf(PERF_STARTUP_DRY_RUN="1")
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("connectedBenchmarkReleaseAndroidTest", result.stdout)
+        self.assertIn("net.chronoflow.benchmark.ProcessDeathLaunchTest", result.stdout)
         self.assertFalse(any(c.startswith(("gradlew", "checker")) for c in self.calls()))
 
 

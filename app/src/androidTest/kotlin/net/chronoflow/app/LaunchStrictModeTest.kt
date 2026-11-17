@@ -8,12 +8,23 @@ import org.junit.Test
 
 @Smoke
 class LaunchStrictModeTest : ScreenTest() {
-    @Test fun seededLaunchSurvivesStrictModeThroughTheOpening() {
+    @Test fun seededLaunchSurvivesStrictModeThroughTheSlowHandOff() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val graph = (instrumentation.targetContext.applicationContext as ChronoFlowApp).graph
         instrumentation.runOnMainSync { graph.resetLaunchForTest() }
-        launch(mapOf("CF_UI_TEST_PROFILE" to "launch"))
-        waitFor(5000) { graph.launch.openingDone }
-        compose.onNodeWithTag("launch.opening").assertExists()
+        launch(
+            mapOf(
+                "CF_UI_TEST_PROFILE" to "launch",
+                "cf.session" to "in",
+                "cf.stored" to "no",
+                "cf.readyDelay" to "3.5",
+                "cf.reduceMotion" to "false",
+            ),
+        )
+        waitFor(5000) { graph.launch.handOffComplete }
+        org.junit.Assert.assertNotNull(graph.launch.statusRaster)
+        org.junit.Assert.assertEquals(1, graph.launch.statusAnnouncementCount)
+        compose.onNodeWithTag("route.today").assertExists()
+        compose.onNodeWithTag("launch.opening").assertDoesNotExist()
     }
 }

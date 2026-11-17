@@ -153,3 +153,18 @@ Finding 2 is corrected by pairing skipped-overlay spans at MainActivity's first 
 Finding 3 removes the always-true positive-PID assertion from LaunchStrictModeTest. The seeded test still waits for openingDone and asserts the launch.opening node, so a failed launch or missing overlay can fail it for a real reason. `make targeted ONLY="app:LaunchStrictModeTest#seededLaunchSurvivesStrictModeThroughTheOpening"` passed in **5.25 s wall**. Log: `build/phase3a-review-r1/strict-mode-targeted.log`.
 
 Review round 1 final validation: the single `make quick` invocation passed in **22.92 s wall**, including Spotless/Konsist, JVM/logic tests, build-logic and script tests, and the serial timing tier. Evidence: `build/phase3a-review-r1/quick.log`. All requested targeted checks and the two system-bar captures ran successfully; no sandbox block or test retry was needed. Performance/profile reruns remain deferred to the orchestrator's quiet-host schedule.
+
+## Phase 3b: functional emulator validation
+
+2026-11-17, Phase 3b Task 9 on `pixel` / API 36 / 60 Hz, debug build, functional animator scales 0 with `cf.reduceMotion=false`. These are functional emulator measurements, not physical-device performance claims.
+
+| Run / command | Hand-off end from t0 (ms) | Stall sample gap / sampled-vs-wall error (ms) | Result |
+|---|---|---|---|
+| `make targeted ONLY="app:LaunchHandOffTest app:LaunchStallTest app:LaunchWarmStartTest app:LaunchStrictModeTest app:LaunchFrameZeroTest"` (23.52 s wall) | ready 1903.234460; slow 3920.192752; stall 1905.408792 | 530.886125 / 1.879708 | Six passed; slow missed its 3918.666666 ms upper bound by 1.526086 ms |
+| Orchestrator: `make targeted ONLY="app:LaunchHandOffTest"` (10.63 s wall) | ready 1911.187626; slow 3916.087794 | — | Both passed; `BUILD SUCCESSFUL` |
+
+The user classified the one-off 3920.19 ms slow result as one dropped emulator frame on a busy host (load average 3.5), not a timing bug. The passing orchestrator rerun is recorded without changing the one-frame timing bound, the clock, the readiness rules or the implementation. The initial ready/stall results were 3–5 ms after their 1900 ms targets. Every instrumented method stayed below 10 s. Warm start, slow-status StrictMode and both light/dark frame-zero proofs passed in the initial run.
+
+The stall proof reads the debug `LaunchController.frameLog` ring buffers; `compositionObserver` remains the composition counter. The separate-process `ProcessDeathLaunchTest` compiles and is wired into `make perf`; execution is pending with the quiet-host orchestrator. No perf/profile tier was run by this phase worker. Warm TTID, cold TTFD, ready/exit durations, benchmark gates and regenerated profiles remain pending.
+
+Evidence: `build/phase3b-validation/task9-emulator/`, `task9-timings.json`, and `task9-orchestrator-rerun/`. The preserved initial failure remains evidence; it was not overwritten by a worker retry.
