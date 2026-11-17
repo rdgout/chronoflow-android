@@ -20,6 +20,7 @@
         tools:targetApi="33">
         <activity
             android:name=".MainActivity"
+            android:theme="@style/Theme.ChronoFlow.Starting"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|density|keyboard|keyboardHidden|navigation|uiMode"
             android:exported="true"
             android:launchMode="singleTask"

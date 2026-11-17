@@ -1420,7 +1420,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 **Delivers.** Implements the Android 12+ system splash (sky color, 288 dp launch_moon) and the Compose launch overlay whose frame 0 equals the system splash pixel for pixel. It ports CubicBezier, LaunchLayout, FlightPath and the LaunchTimeline opening as pure Kotlin with the iOS reference values, and draws the scene in one Canvas on a wall clock with no per-frame allocation, radial gradients instead of blur and a vector wordmark. It wires the activity order (installSplashScreen, the keep condition released on layout, edge-to-edge), Reduce Motion, accessibility, the launch and first-commit traces, and the cold-start and launch-jank benchmarks.
 
 **Tasks**
-- [ ] **Splash theme** (`app/src/main/res/values{,-night}/themes.xml`). `Theme.App.Starting` sets:
+- [x] **Splash theme** (`app/src/main/res/values{,-night}/themes.xml`). `Theme.App.Starting` sets:
   - `windowSplashScreenBackground` = `@color/launch_sky_top` (`#1F285A`, night `#06091C`);
   - `windowSplashScreenAnimatedIcon` = `@drawable/launch_moon`;
   - `windowSplashScreenBehavior` = `icon_preferred`;

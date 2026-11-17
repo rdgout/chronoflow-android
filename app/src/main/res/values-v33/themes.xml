@@ -1,0 +1,8 @@
+<resources>
+    <style name="Theme.ChronoFlow.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/launch_sky_top</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/launch_moon</item>
+        <item name="postSplashScreenTheme">@style/Theme.ChronoFlow</item>
+        <item name="android:windowSplashScreenBehavior">icon_preferred</item>
+    </style>
+</resources>
