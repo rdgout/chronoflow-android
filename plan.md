@@ -1343,7 +1343,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - `Modifier.cfPress()`: a `Modifier.Node` with scale 0.97, alpha 0.85, 120 ms and cubic-bezier(0.25, 0.1, 0.25, 1); alpha only with Reduce Motion.
   - `softShadow1` and `softShadow2` through `Modifier.dropShadow`, from the tokens.
   - `Brush.sky()` from `CfSky`. No blur.
-- [ ] **Designed primitives** (`core/designsystem/…/component/`):
+- [x] **Designed primitives** (`core/designsystem/…/component/`):
   - `CfButton`: 5 sizes; primary, secondary, destructive and quiet styles; a loading state; a ≥ 48 dp target;
   - `CfTextFieldDecoration`, for `BasicTextField(TextFieldState)` and `BasicSecureTextField`;
   - `CfCard`;
