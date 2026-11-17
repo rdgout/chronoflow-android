@@ -36,9 +36,10 @@ class TimelineResources(
             style = Paint.Style.STROKE
             strokeCap = Paint.Cap.ROUND
         }
-    internal val dashShort = dashed(3f * density, 3f * density, Paint.Cap.BUTT)
-    internal val dashLong = dashed(6f * density, 6f * density, Paint.Cap.BUTT)
-    internal val dashZone = dashed(2f * density, 4f * density, Paint.Cap.ROUND)
+    internal val dashShort = dashed(dash(PlanMetrics.border * 3), dash(PlanMetrics.border * 3), Paint.Cap.BUTT)
+    internal val dashLong =
+        dashed(dash(PlanMetrics.emphasisBorder * 3), dash(PlanMetrics.emphasisBorder * 3), Paint.Cap.BUTT)
+    internal val dashZone = dashed(dash(PlanMetrics.emphasisBorder), dash(PlanMetrics.smallGap), Paint.Cap.ROUND)
     internal val glyphStroke =
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.STROKE
@@ -77,6 +78,8 @@ class TimelineResources(
         }
         return paint
     }
+
+    private fun dash(dp: Double): Float = (dp * density).toFloat()
 
     private fun dashed(
         on: Float,
