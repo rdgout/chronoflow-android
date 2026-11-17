@@ -31,7 +31,7 @@ Enforced by `Scripts/check-benchmarks.py --suite timeline` from `benchmark/budge
 | `jankPercent`, `hitchRatioMsPerS` (each) | scroll | 3 / 1 %, 5 / 1 ms/s | 5 / 3 %, 5 / 2 ms/s | report |
 | `timelinePlaceholderCount` (each) | scroll | 2 / 0 | 6 / 2 | **6 gate** |
 | `timelineMainFrameMsP50` / `P99`, `timelineRenderThreadMsP99` | scroll | aim 2 / 4, 4 | same | report |
-| `timelineTargetsMaxMs` | scroll | report | aim 1 | report |
+| `timelineTargetsMaxMs` (lower bound) | scroll | report | aim 1 | report |
 | `memoryRssAnonMaxKb` (each) | scroll | 153,600 / 81,920 | 153,600 / 102,400 | **153,600 gate** |
 | `memoryRssAnonGrowthKb` | scroll | warn > 40,960 | same | warn |
 | `timelineBuildOnMainCount` (each) | scroll | **0** | **0** | **0 gate** (OQ-1e-13) |
@@ -237,3 +237,5 @@ Device rows open: device only (OQ-A22, OQ-A45); B' is re-evaluated on the first 
 - Baseline profile on AGP 9: the profile plugin's `nonMinifiedRelease` stayed minified (AGP 9 ignores its legacy keep-all rules), so the first profiles held R8-renamed classes and no timeline classes. `app/src/nonMinifiedRelease/keepRules/profile.keep` (`-dontobfuscate`, `-dontoptimize`) fixes it; adding `-dontshrink` crashed the app at start with `Resources$NotFoundException` (resource shrinking without code shrinking) and was dropped. The committed profile holds `TimelinePageKt` (22 lines), `DayDrawingBuilder` (5) and `DayDrawingReplayKt` (5).
 - `make baseline-profile` ran 592 s, just under `run-tier`'s 600 s idle cap, which stopped an earlier attempt at 605 s; `Scripts/baseline-profile.sh` was run directly for the committed profile. `timelineLarge60` needed more than the 300 s test cap, so the script passes `timeout_msec=900000` (the perf script keeps 300,000: each `TimelineBenchmark` test stayed under it).
 - R4 (full tracing for the recomposition source) was not run; see OQ-1e-15.
+
+`cf.timeline.targets` encloses the call to `TimelineTargets`. Pausable prefetch composition can execute its bodies after that section ends, so `timelineTargetsMaxMs` is a lower bound, not a complete composition cost. A value below 1 ms cannot establish the low-end aim; inspect full composition traces before changing accessibility behavior (OQ-A46).

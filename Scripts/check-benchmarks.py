@@ -281,7 +281,7 @@ def check_timeline(args, budgets):
         print(
             "%s metric: %s %s %s=%s%s%s %s%s"
             % (label, test, metric, stat, _fmt(value), " " + unit if unit else "", _suffix(gate), outcome,
-               " (%s)" % why if why else "")
+               " (%s)" % why if why else " (lower bound: pausable prefetch bodies excluded)" if metric == "timelineTargetsMaxMs" else "")
         )
 
     for entry in budgets["timeline"]:
