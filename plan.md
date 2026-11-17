@@ -1083,7 +1083,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 **Delivers.** Ports the non-geometry half of iOS PlanCore into the JVM module :core:plan. It covers plan-detail decoding from raw bytes, CopyCatalog over plan_copy.json with an explicit Language, CopyLineFormatter with fixed month and weekday tables and the 12/24-hour rules, check keys and mark merging, optional and hidden-step logic, and the plan clock. All dates use java.time with cached zone rules and formatters. The iOS test cases (44 intl goldens, caffeine tables, key resolution) are ported and pass on the JVM. It adds no UI.
 
 **Tasks**
-- [ ] **Plan decoding.** `core/plan/…/PlanDecoder.kt` decodes plan-detail bytes into the 0d contracts, with tolerant enums. It keeps the raw bytes for `plan_versions.detail`. Test: S1–S6 decode.
+- [x] **Plan decoding.** `core/plan/…/PlanDecoder.kt` decodes plan-detail bytes into the 0d contracts, with tolerant enums. It keeps the raw bytes for `plan_versions.detail`. Test: S1–S6 decode.
 - [x] **CopyCatalog.kt.**
   - It loads `plan_copy.json` once, lazily and off the main thread.
   - It resolves keys with an explicit `Language`, including the `CopyArg` and `CaffeineCopyArg` arguments and the caffeine tables.

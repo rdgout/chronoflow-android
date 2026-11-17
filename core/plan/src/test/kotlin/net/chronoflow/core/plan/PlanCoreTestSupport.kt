@@ -16,6 +16,8 @@ import net.chronoflow.core.model.contracts.Language
 import net.chronoflow.core.model.contracts.PlanNoticesView
 import net.chronoflow.core.model.contracts.PlanView
 import net.chronoflow.core.model.contracts.TimelinePresentationView
+import net.chronoflow.core.model.contracts.TripDetail
+import net.chronoflow.core.model.store.PlanVersionRecord
 import net.chronoflow.core.testing.Fixtures
 import java.time.Instant
 import java.time.ZoneOffset
@@ -108,3 +110,15 @@ fun unresolvedCopyLines(
         else -> {}
     }
 }
+
+fun tripDetail(): TripDetail =
+    ApiJson.response.decodeFromString(TripDetail.serializer(), Fixtures.text("trips/detail.json"))
+
+fun recordOf(value: TripDetail): PlanVersionRecord =
+    PlanVersionRecord(
+        value.trip.id,
+        value.plan.meta.inputHash,
+        ApiJson.response.encodeToString(TripDetail.serializer(), value).encodeToByteArray(),
+        "now",
+        value.detailVersion,
+    )
