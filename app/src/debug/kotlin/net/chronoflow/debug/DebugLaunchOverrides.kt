@@ -10,6 +10,7 @@ object DebugLaunchOverrides {
     fun fromSeed(seed: TestSeed): LaunchOverrides =
         LaunchOverrides(
             reduceMotion = seed.reduceMotion,
+            holdSplash = seed.holdSplash == true,
             freezeAt = seed.freezeAtMs?.milliseconds,
             skipOverlay = seed.profile == UiTestProfile.Screen,
         )

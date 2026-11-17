@@ -466,7 +466,7 @@ Every screen scrolls when height-constrained. The minimum width is 280 dp; below
 ### Android spec: seeds and test hooks (debug only)
 
 - **Seed names** are identical to iOS (`12 §2`): `CF_AUTH_TEST_ID`, `CF_UI_TEST_PROFILE=screen|launch`, `CF_AUTH_TEST_SIGNED_IN=demo|twofactor`, `CF_AUTH_TEST_WALKTHROUGH_SEEN`, `CF_AUTH_TEST_AUDIT_SCREEN`/`STATE`, `CF_PLAN_TEST_ROUTE=trips|trip:<id>[:list]`, `CF_PLAN_TEST_POSITION=summary`, `CF_PLAN_TEST_SHEET=step:<id>|legend`, `CF_SETTINGS_ROUTE`, `CF_WIZARD_AUTO_OPEN`, `CF_WIZARD_BOARD_CAPTURE`, `CF_MOCK_DELAY` (default 0).
-- **Intent extras:** `cf.trip-page=S1…S6|large30|large60|<uuid>`, `cf.timeline-fixtures`, `cf.settings.theme`, `cf.settings.language`, `cf.reduceMotion`, `cf.freezeAt`, `cf.readyAt`, `cf.mainThreadStall`.
+- **Intent extras:** `cf.trip-page=S1…S6|large30|large60|<uuid>`, `cf.timeline-fixtures`, `cf.settings.theme`, `cf.settings.language`, `cf.reduceMotion`, `cf.freezeAt`, `cf.readyAt`, `cf.mainThreadStall`, `cf.holdSplash`.
 - **Entry point:** `net.chronoflow.debug.SeedReceiverActivity` (debug-exported, in `app/src/debug`) applies `TestSeeds.apply` (`13 §5`), then starts `MainActivity`.
 - **Mock accounts:** `demo@example.com` / `password`; `twofactor@example.com` / `password`, code `123456`, recovery `AbCdEf1234-GhIjKl5678`. Account ids `0199a3c0-0000-7000-8000-000000000000` / `…0001`; trips `…0001` (AMS→HND, active), `…0002` (AMS→JFK, upcoming).
 - **Release readiness:** `testReleaseUnitTest` asserts that `Class.forName("net.chronoflow.debug.SeedReceiverActivity")` throws and that the mock never seeds.
@@ -1453,7 +1453,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - Semantics: a single node, "ChronoFlow is opening", with `paneTitle`. App content is hidden with `hideFromAccessibility()` until the hand-off ends.
 - [x] **Konsist numeric dp/sp constants** (3a Task 8b): reject unapproved numeric constants; keep the timeline marker at one physical pixel.
 - [x] **System-bar icons (OQ-A67).** Apply themed icon styles on theme and overlay changes; retain light status icons on sky.
-- [ ] **Frame-0 parity.** `LaunchFrameZeroTest` (`@Smoke`, emulator): in light and dark, the overlay moon's rect equals the system `iconView` bounds within 1 px, and the centre pixel matches.
+- [x] **Frame-0 parity.** `LaunchFrameZeroTest` (`@Smoke`, emulator): in light and dark, the overlay moon's rect equals the system `iconView` bounds within 1 px, and the centre pixel matches.
 - [ ] **Traces and benchmarks.**
   - Traces `launch` (async, from process start) and `first-commit` (the first overlay draw).
   - The signed-out cold `StartupBenchmark` now measures the overlay.

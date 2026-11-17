@@ -21,6 +21,7 @@ data class TestSeed(
     val theme: ThemeChoice?,
     val language: LanguageChoice?,
     val reduceMotion: Boolean?,
+    val holdSplash: Boolean?,
     val freezeAtMs: Double?,
     /** Verbatim, because the plan clock (1d) reads an ISO-8601 instant from the same key. */
     val freezeAtRaw: String?,
@@ -60,6 +61,12 @@ data class TestSeed(
                 language = LanguageChoice.fromRaw(accepted["cf.settings.language"]),
                 reduceMotion =
                     when (accepted["cf.reduceMotion"]) {
+                        "1", "true" -> true
+                        "0", "false" -> false
+                        else -> null
+                    },
+                holdSplash =
+                    when (accepted["cf.holdSplash"]) {
                         "1", "true" -> true
                         "0", "false" -> false
                         else -> null
