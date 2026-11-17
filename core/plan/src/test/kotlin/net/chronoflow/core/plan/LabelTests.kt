@@ -201,6 +201,10 @@ class LabelTests {
             ),
         ).isEmpty()
         assertThat(dayZoneLabel(day)).isEqualTo("Amsterdam \u2192 Tokyo")
+        val layout = layoutDay(day, emptyList(), emptyIndex())
+        assertThat(
+            CopyLineFormatter(testCatalog).nowLabel(layout, planDate("2026-10-15T01:00Z")!!, CopyFormat(Language.En)),
+        ).isEqualTo("10:00")
     }
 
     @Test fun noticesStatusAndLabelCatalog() {

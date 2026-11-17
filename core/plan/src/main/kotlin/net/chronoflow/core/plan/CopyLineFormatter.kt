@@ -12,6 +12,7 @@ import net.chronoflow.core.model.contracts.DrinkAmountView
 import net.chronoflow.core.model.contracts.Language
 import net.chronoflow.core.model.contracts.TimeFormat
 import net.chronoflow.core.model.contracts.TripDetailView
+import java.time.Instant
 import kotlin.math.abs
 import kotlin.math.floor
 
@@ -141,6 +142,14 @@ class CopyLineFormatter(
         zone: String? = null,
     ): String {
         val instant = planDate(value) ?: return ""
+        return formatInstant(instant, options, zone)
+    }
+
+    internal fun formatInstant(
+        instant: Instant,
+        options: CopyFormat,
+        zone: String?,
+    ): String {
         val fields = localFields(instant, planZoneRules.rules(zone ?: options.displayZone ?: "UTC"))
         val out = StringBuilder(8)
         if (options.timeFormat != TimeFormat.Value12) {

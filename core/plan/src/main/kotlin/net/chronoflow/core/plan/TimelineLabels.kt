@@ -3,6 +3,7 @@ package net.chronoflow.core.plan
 import net.chronoflow.core.model.contracts.BlockView
 import net.chronoflow.core.model.contracts.DayView
 import net.chronoflow.core.model.contracts.Language
+import java.time.Instant
 
 fun CopyLineFormatter.dayDateLabel(
     day: DayView,
@@ -12,6 +13,21 @@ fun CopyLineFormatter.dayDateLabel(
     if (range == null || range == day.labelDate) return formatWeekdayDate(day.labelDate, language)
     val first = formatWeekdayDate(day.labelDate, language, month = day.labelDate.take(7) != range.take(7))
     return first + " – " + formatWeekdayDate(range, language)
+}
+
+fun CopyLineFormatter.nowLabel(
+    layout: DayLayout,
+    now: Instant,
+    options: CopyFormat,
+): String {
+    val zones = layout.day.zones
+    val current =
+        zones.firstOrNull {
+            val start = planDate(it.startUtc)
+            val end = planDate(it.endUtc)
+            start != null && end != null && start <= now && now < end
+        }
+    return formatInstant(now, options, (current ?: zones.lastOrNull())?.tz)
 }
 
 fun CopyLineFormatter.blockInterval(
