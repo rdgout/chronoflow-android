@@ -558,7 +558,7 @@ Reproduce each finding before you send it back.
 |---|---|---|
 | OQ-1e-1 | `timelineFirstFrame` iterations: plan 10; iOS and `04 §10.3` 3 | **10** (plan wins) |
 | OQ-1e-2 | AGENTS caps instrumented tests at 60 s; 10 cold starts plus profile install exceed it | **`timeout_msec=300000` for `:benchmark` only** (iOS `executionTimeAllowance = 300`), as 0e did for startup, in `perf-timeline.sh` and `baseline-profile.sh`. The run-tier caps still apply |
-| OQ-1e-3 | "Placeholder frames" cannot be measured directly | **Count placeholder draw sections.** There are at least as many as placeholder frames, so the gate is conservative |
+| OQ-1e-3 | "Placeholder frames" cannot be measured directly | **Count placeholder draw episodes, not frames.** A cached layer can show one placeholder for many frames. Also report first-placeholder-to-first-replay async duration and unfinished intervals; the count alone is not a conservative frame bound |
 | OQ-1e-4 | Plan: "re-set 1c's provisional limits from three `make timing` runs". 1b's limits are budget rows | **Only 1c's limits, tighten only.** 1c gates medians over five passes in the serial `make timing` tier (review 2026-11-16), so per day = 2 × the largest measured `dayMedianMax` and per width = 2 × the largest measured `totalMedian`. 1b stays at 40/100/200 |
 | OQ-1e-5 | Hitch-ratio denominator | **The main-thread `Choreographer#doFrame` window** of the measure block. Fallback (0e): frame count × 1000 / Hz |
 | OQ-1e-6 | Baseline for the ±25 % trend and the CPU band | **The median of the last three `PASS` rows** of the same Class, Theme, Font and Page (fewer: their median; none: no trend and no band). Placeholders and GC, whose baseline is often 0, are flagged on rises of +2 and +1 (review 2026-11-16) |

@@ -253,6 +253,26 @@
       0.0,
       0.0
      ]
+    },
+    "timelinePlaceholderToReplayMaxMs": {
+     "minimum": 0.0,
+     "maximum": 0.0,
+     "median": 0.0,
+     "runs": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "timelinePlaceholderUnreplayedCount": {
+     "minimum": 0.0,
+     "maximum": 0.0,
+     "median": 0.0,
+     "runs": [
+      0.0,
+      0.0,
+      0.0
+     ]
     }
    },
    "sampledMetrics": {

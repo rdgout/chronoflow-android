@@ -269,7 +269,9 @@
       "timelineReplayMaxMs",
       "timelineReplayCount",
       "frameCount",
-      "memoryHeapSizeMaxKb"
+      "memoryHeapSizeMaxKb",
+      "timelinePlaceholderToReplayMaxMs",
+      "timelinePlaceholderUnreplayedCount"
     ],
     "timelineFirstFrame": [
       "timeToInitialDisplayMs",

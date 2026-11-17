@@ -95,6 +95,19 @@ class TimelineTraceMetric(
                 "timelineGcCount",
                 count(session, pkg, "thread.name = 'HeapTaskDaemon' AND slice.depth = 0 AND slice.name GLOB '*GC*'"),
             )
+        val placeholder =
+            session
+                .query(
+                    """
+                    SELECT COALESCE(MAX(CASE WHEN slice.dur >= 0 THEN slice.dur END), 0) AS max_dur,
+                        COUNT(CASE WHEN slice.dur < 0 THEN 1 END) AS unfinished
+                    FROM slice JOIN process_track ON slice.track_id = process_track.id
+                    JOIN process USING(upid)
+                    WHERE process.name = '$pkg' AND slice.name = 'cf.timeline.placeholderToReplay'
+                    """.trimIndent(),
+                ).first()
+        out += Metric.Measurement("timelinePlaceholderToReplayMaxMs", placeholder.long("max_dur") / NS_PER_MS)
+        out += Metric.Measurement("timelinePlaceholderUnreplayedCount", placeholder.long("unfinished").toDouble())
         return out
     }
 

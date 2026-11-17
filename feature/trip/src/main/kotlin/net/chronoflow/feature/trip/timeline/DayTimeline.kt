@@ -77,6 +77,7 @@ fun DayTimeline(
     val currentOnBlock by rememberUpdatedState(onBlock)
     val currentOnFirstReplay by rememberUpdatedState(onFirstReplay)
     val dayId = day.id
+    val placeholderTrace = remember(dayId) { PlaceholderReplayTrace() }
     val staticLayer =
         remember(drawing, resources, placeholder, probe, dayId) {
             Modifier.graphicsLayer().drawWithCache {
@@ -84,6 +85,7 @@ fun DayTimeline(
                     probe?.drew(TimelineProbe.Kind.STATIC, dayId)
                     val d = drawing.value
                     if (d == null) {
+                        placeholderTrace.onPlaceholder()
                         Trace.beginSection(TimelineTraceNames.PLACEHOLDER)
                         drawIntoCanvas { placeholder.draw(it.nativeCanvas) }
                         Trace.endSection()
@@ -91,6 +93,7 @@ fun DayTimeline(
                         Trace.beginSection(TimelineTraceNames.REPLAY)
                         replay(d, resources)
                         Trace.endSection()
+                        placeholderTrace.onReplay()
                         currentOnFirstReplay()
                     }
                 }
