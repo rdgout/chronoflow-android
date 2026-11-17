@@ -1227,7 +1227,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 **Delivers.** Hosts the timeline in Compose without UI polish. A LazyColumn holds one keyed item per day; drawings are built off the main thread behind a placeholder and replayed in drawWithCache inside their own graphics layer, with one pointerInput per day, the isolated NowLine and the invisible semantics overlay. The phase adds the system plan clock (a minute ticker plus time, zone and date broadcasts) and a debug TimelineProbe whose Robolectric tests prove the invalidation gates (scroll 0/0, minute 0/1, day boundary 0/2, a check-off redraws one day). A perf entry opens S1–S6, large30 and large60 from fixtures through the cf.trip-page extra and emits the cf.timeline.firstFrame trace.
 
 **Tasks**
-- [ ] **TimelinePage** (`feature/trip/…/timeline/TimelinePage.kt`).
+- [x] **TimelinePage** (`feature/trip/…/timeline/TimelinePage.kt`).
   - A `LazyColumn` with one item per day (`key = dayId`, `contentType = "day"`).
   - A plain sticky day header from the generated type and color tokens; the designed header comes in 6b.
   - A minimal M3 day menu (`trip.dayMenu.day.<n>`) and a plain end item (`trip.plan.end`).
