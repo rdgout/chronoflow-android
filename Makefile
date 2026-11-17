@@ -177,7 +177,7 @@ captures:
 	  if [ "$$n" = 0 ] && [ -z "$(ONLY)" ]; then echo "captures: no PNGs written" >&2; exit 1; fi
 
 perf-timeline:
-	$(RUN_TIER) perf-timeline --device --results 'benchmark/build/outputs/androidTest-results/connected/**/*.xml' -- Scripts/perf-timeline.sh
+	$(RUN_TIER) perf-timeline --device --results 'benchmark/build/outputs/androidTest-results/connected/benchmarkRelease/**/*.xml' -- Scripts/perf-timeline.sh
 
 baseline-profile:
 	$(RUN_TIER) baseline-profile --device --results 'benchmark/build/outputs/androidTest-results/connected/**/*.xml' -- Scripts/baseline-profile.sh
