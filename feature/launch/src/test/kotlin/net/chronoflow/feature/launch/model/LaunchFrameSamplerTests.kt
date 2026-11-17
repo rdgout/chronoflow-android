@@ -1,11 +1,11 @@
 package net.chronoflow.feature.launch.model
 
+import com.sun.management.ThreadMXBean
 import net.chronoflow.core.testing.DeviceProfiles
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.io.File
-import java.util.concurrent.TimeUnit
+import java.lang.management.ManagementFactory
 
 class LaunchFrameSamplerTests {
     @Test fun sampleIntoAgreesWithSampleEvery10Milliseconds() {
@@ -92,29 +92,38 @@ class LaunchFrameSamplerTests {
     }
 
     @Test fun sampleIntoAllocatesNothing() {
-        val classpath =
-            listOf(LaunchFrameAllocationProbe::class.java, LaunchFrameSampler::class.java, Unit::class.java)
-                .map {
-                    File(
-                        requireNotNull(it.protectionDomain?.codeSource?.location).toURI(),
-                    ).absolutePath
-                }.distinct()
-                .joinToString(File.pathSeparator)
-        // HotSpot's tier transitions materialize strings inside Kotlin helpers after the fixed warmup.
-        val process =
-            ProcessBuilder(
-                File(System.getProperty("java.home"), "bin/java").absolutePath,
-                "-XX:TieredStopAtLevel=1",
-                "-cp",
-                classpath,
-                LaunchFrameAllocationProbe::class.java.name,
-            ).redirectErrorStream(true).start()
-        try {
-            assertTrue("allocation probe did not exit", process.waitFor(5, TimeUnit.SECONDS))
-            val output = process.inputStream.bufferedReader().use { it.readText() }
-            assertEquals(output, 0, process.exitValue())
-        } finally {
-            if (process.isAlive) process.destroyForcibly()
+        val sampler = LaunchFrameSampler(LaunchTimeline.opening(LaunchSize(390.0, 844.0), false))
+        val out = LaunchFrame()
+        val bean = ManagementFactory.getThreadMXBean() as ThreadMXBean
+        bean.isThreadAllocatedMemoryEnabled = true
+        val id = Thread.currentThread().threadId()
+        sampleFrames(sampler, out, 20_000)
+        val extraBytes = LongArray(5)
+        // A one-time VM cost can affect one round; a per-call allocation affects every round.
+        for (round in extraBytes.indices) {
+            val baselineStart = bean.getThreadAllocatedBytes(id)
+            val baselineEnd = bean.getThreadAllocatedBytes(id)
+            val start = bean.getThreadAllocatedBytes(id)
+            sampleFrames(sampler, out, 10_000)
+            val end = bean.getThreadAllocatedBytes(id)
+            extraBytes[round] = end - start - (baselineEnd - baselineStart)
+        }
+        assertTrue(
+            "allocated ${extraBytes.contentToString()} bytes beyond empty baseline",
+            extraBytes.min() <= 0L,
+        )
+        assertTrue(out.moonY < 422)
+    }
+
+    private fun sampleFrames(
+        sampler: LaunchFrameSampler,
+        out: LaunchFrame,
+        count: Int,
+    ) {
+        var i = 0
+        while (i < count) {
+            sampler.sampleInto(i.toDouble() / count * 1.6, out)
+            i++
         }
     }
 }
