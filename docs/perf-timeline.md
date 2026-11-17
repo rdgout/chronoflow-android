@@ -48,3 +48,16 @@ Reviewed against the `Plan` and `PlanDark` boards. iOS at `f391a1fa` wins over t
 - **Continuation chevrons.** Drawn as the iOS 8 x 4 dp line pair (`TimelineRenderer.swift`, two 1 dp lines of `smallGap` reach), not the boards' Lucide chevron-up and chevron-down at 12 px.
 - **Zone line.** Drawn as the iOS dash pattern (2 on, 4 off, round caps, `emphasisBorder` wide), not the boards' 2 px dotted border.
 - **Top hour label.** A day's first hour label at y = 0 is drawn cut off at the top, as iOS draws it. The boards hide it.
+
+## Phase 1d: timeline host
+
+Worker, 2026-11-17. No performance claim is made here; 1e measures. Numbers are `pending` until then.
+
+### Harness outcome (Task 3, OQ-1d-3)
+
+`TimelineProbeHarnessTest` (Robolectric, `@GraphicsMode(NATIVE)`, SDK 36), `make targeted ONLY="feature:trip:TimelineProbeHarnessTest"`: all three controls pass, so draw counts are asserted in Robolectric and OQ-1d-3's instrumented fallback is not needed.
+
+- Draws only run when the test forces one: a Compose draw lambda does not run on `waitForIdle()` alone under Robolectric. Every test settles with `waitForIdle()` followed by `onRoot().captureToImage()`, which draws the window.
+- Control 1: a state read in `drawWithCache { onDrawBehind { } }` redraws exactly once per write.
+- Control 2: a child with `graphicsLayer()` keeps its draw count when its parent's `drawBehind` state changes; the same child without a layer is redrawn (negative control).
+- Control 3: moving a layer with `Modifier.offset { }` from state does not redraw it.
