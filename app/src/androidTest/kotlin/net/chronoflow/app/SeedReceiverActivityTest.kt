@@ -24,6 +24,16 @@ class SeedReceiverActivityTest {
 
     private fun activities(stage: Stage) = ActivityLifecycleMonitorRegistry.getInstance().getActivitiesInStage(stage)
 
+    private fun receiverAlive(): Boolean {
+        var alive = true
+        instrumentation.runOnMainSync {
+            alive =
+                listOf(Stage.CREATED, Stage.STARTED, Stage.RESUMED, Stage.PAUSED, Stage.STOPPED)
+                    .any { stage -> activities(stage).any { it is SeedReceiverActivity } }
+        }
+        return alive
+    }
+
     @Test
     fun receiverSeedsThenHandsOverToMainActivity() {
         val context = instrumentation.targetContext
@@ -36,15 +46,10 @@ class SeedReceiverActivityTest {
         context.startActivity(intent)
         compose.waitUntilExactlyOneExists(hasTestTag("app.root"), 5_000)
         var mainResumed = false
-        var receiverAlive = true
-        instrumentation.runOnMainSync {
-            mainResumed = activities(Stage.RESUMED).any { it is MainActivity }
-            receiverAlive =
-                listOf(Stage.CREATED, Stage.STARTED, Stage.RESUMED, Stage.PAUSED, Stage.STOPPED)
-                    .any { stage -> activities(stage).any { it is SeedReceiverActivity } }
-        }
+        instrumentation.runOnMainSync { mainResumed = activities(Stage.RESUMED).any { it is MainActivity } }
+        // finish() is asynchronous: the receiver is destroyed shortly after MainActivity appears.
+        compose.waitUntil(5_000) { !receiverAlive() }
         assertTrue(mainResumed)
-        assertTrue(!receiverAlive)
     }
 
     @After
