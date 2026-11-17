@@ -167,7 +167,7 @@ fun GalleryPage(
     CfButton(stringResource(R.string.screens_undo), {}, size = CfButtonSize.Touch, enabled = false)
     CfButton(stringResource(R.string.auth_sign_in), {
     }, loading = true, loadingDescription = stringResource(R.string.settings_saved))
-    CfSpinner()
+    CfSpinner(color = CfTheme.colors.foreground)
     CfIconButton(LucideGlyphs.Ellipsis.imageVector(), stringResource(R.string.auth_back), {})
     CfButton(
         stringResource(R.string.welcome_plan_my_trip),
