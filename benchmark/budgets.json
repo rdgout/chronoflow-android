@@ -240,7 +240,8 @@
       "derived": true,
       "all": {
         "warn": 40960
-      }
+      },
+      "signed": true
     },
     {
       "test": "timelineScroll",

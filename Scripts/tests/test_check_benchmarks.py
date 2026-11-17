@@ -222,6 +222,14 @@ class TimelineCheckTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout)
         self.assertIn("memoryRssAnonGrowthKb single=41000.0 KiB [warn=40960] WARN", result.stdout)
 
+    def test_timeline_negative_growth_is_allowed(self):
+        def shrink(b, _):
+            b["timelineScroll"]["metrics"]["memoryRssAnonMaxKb"]["runs"] = [71000.0, 70500.0, 70000.0]
+
+        result = timeline_check(self.variant(shrink), row_dir=temp_dir(self))
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertIn("memoryRssAnonGrowthKb single=-1000.0 KiB", result.stdout)
+
     def test_timeline_trend_and_append(self):
         history = self.history([history_row(ff="%s/450.0" % m) for m in ("380.0", "400.0", "420.0")])
         before = history.read_text().splitlines()
