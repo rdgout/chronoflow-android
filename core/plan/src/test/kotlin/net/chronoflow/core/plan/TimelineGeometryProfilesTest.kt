@@ -5,6 +5,7 @@ import assertk.assertions.isEqualTo
 import net.chronoflow.core.model.contracts.Language
 import net.chronoflow.core.model.contracts.TripDetail
 import net.chronoflow.core.plan.generated.PlanMetrics
+import net.chronoflow.core.plan.trippage.TripPageLayout
 import net.chronoflow.core.testing.DeviceProfiles
 import net.chronoflow.core.testing.MockTripTemplates
 import org.junit.Test
@@ -60,12 +61,7 @@ class TimelineGeometryProfilesTest(
             for (profile in DeviceProfiles.all) {
                 widths += "${profile.name} content" to contentWidth(profile)
                 if (profile.widthDp >= PlanMetrics.wideBreakpoint) {
-                    val list =
-                        if (profile.widthDp >= PlanMetrics.wideLargeBreakpoint) {
-                            PlanMetrics.wideLargeListWidth
-                        } else {
-                            PlanMetrics.wideListWidth
-                        }
+                    val list = checkNotNull(TripPageLayout.resolve(profile.widthDp.toDouble()).listWidth)
                     val window = profile.widthDp - profile.insets.left.toDouble() - profile.insets.right
                     widths +=
                         "${profile.name} wide" to window - 2 * PlanMetrics.wideGutter - PlanMetrics.wideColumnGap - list

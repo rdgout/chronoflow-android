@@ -1140,7 +1140,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - `revision = inputHash|detailVersion`, cached per input, with stable day ids.
   - Blocks ordered by `startUtc`, then id.
   - Progress, notices, the zone instruction and the comparison copy.
-- [ ] **Trip-page state** (`core/plan/…/trippage/`): `TripPageState.resolve`, `openingDay`, `replacementAnchor`, and `TripPageLayout` (list column 280 dp from 600 dp, 320 dp from 900 dp).
+- [x] **Trip-page state** (`core/plan/…/trippage/`): `TripPageState.resolve`, `openingDay`, `replacementAnchor`, and `TripPageLayout` (list column 280 dp from 600 dp, 320 dp from 900 dp).
 - [ ] **Large fixtures:** `core/testing/…/LargeTimelineFixtures.kt`, per `04 §12`.
   - The S3 six-day cycle with the `-tour-<i>` suffix, plus the S1 caffeine overlay with `-caffeine-day-<i>`.
   - Trip id `0199a3c0-0000-7000-8000-0000000000<count>`; hash = SHA-256 of `timeline-<count>-S3-prefix6-S1-caffeine-v2`.
