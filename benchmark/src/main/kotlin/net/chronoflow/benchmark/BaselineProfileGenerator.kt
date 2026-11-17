@@ -4,6 +4,7 @@ import androidx.benchmark.macro.junit4.BaselineProfileRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
+import androidx.test.uiautomator.Until
 import net.chronoflow.core.testing.tiers.Perf
 import org.junit.Rule
 import org.junit.Test
@@ -23,6 +24,8 @@ class BaselineProfileGenerator {
         rule.collect(packageName, includeInStartupProfile = true) {
             pressHome()
             startActivityAndWait()
+            check(device.wait(Until.hasObject(By.res("launch.opening")), 5000))
+            device.wait(Until.gone(By.res("launch.opening")), 1600)
         }
 
     @Test

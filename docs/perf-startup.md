@@ -27,6 +27,7 @@ The reference and low-end gates stay open until a device exists (OQ-A22).
 | 2026-11-17 | adeeb8e-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | benchmarkRelease, Partial(UseIfAvailable) | 88.7/79.9/97.1 | REPORT |
 | 2026-11-17 | 0342ec9-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | benchmarkRelease, Partial(Require) | 95.0/87.5/108.5 | REPORT |
 | 2026-11-17 | bfa817f-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | benchmarkRelease, Partial(Require) | 95.8/91.5/108.2 | REPORT |
+| 2026-11-17 | 8b5db6a-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | benchmarkRelease, Partial(Require) | 121.2/113.7/165.2 | REPORT |
 
 Device rows: open: device only (OQ-A22).
 
@@ -141,3 +142,20 @@ Orchestrator brief e2ce2ba replaces the unmeasured all-pixel tolerance with the 
 The requested local, uncommitted **1 px shift proof failed**, as required: sampling the overlay one pixel to the left shifts its comparison ink right. The x centroid changed from **−10.0656132263 to −9.0884692390 px** relative to the display centre, a **0.977144 px** error against the 0.5 px limit. Command `make targeted ONLY="app:LaunchFrameZeroTest#frameZeroMatchesSystemSplashDark"`, **20.82 s wall / 1.408 s test**, expected failure `AssertionError: moon ink centroid x`. Log/XML: `build/phase3a-validation/parity-shift-proof.{log,xml}`. The offset was restored before the passing run and is absent from the committed test.
 
 `make targeted ONLY="app:LaunchFrameZeroTest app:LaunchStrictModeTest app:AppLaunchSmokeTest app:ConfigurationPolicyDeviceTest"` then **passed all eight tests in 12.52 s wall**: dark parity **1.360 s**, light parity **0.992 s**, StrictMode **0.362 s**, seedless native launch **0.232 s**, and all four configuration tests. Every method was below 10 s. Log: `build/phase3a-validation/device-final.log`. The earlier icon-size/rim stop reports above are historical and resolved by the orchestrator's corrected measurements and this passing result. Task 9 is now ticked.
+
+## Launch metrics
+
+| Date | Commit | Class | Device | Hz | Build | First commit median ms | Overrun P99 ms | Frame count min | Jank % mean/max | Result |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 2026-11-17 | 337b0e1-dirty | emulator | unknown | 60 | benchmarkRelease, Partial(Require) | missing | missing | missing | missing | FAIL |
+| 2026-11-17 | 8b5db6a-dirty | emulator | sdk_gphone64_arm64 | 60 | benchmarkRelease, Partial(Require) | 49.6 | 26.1 | 89.0 | 67.8/96.8 | PASS |
+
+## Phase 3a: startup measurements
+
+The first `make perf` stopped before tests at `StartupBenchmark.kt:28`, `This Metric API is experimental.` (11.26 s wall); the opt-in is fixed in 8b5db6a. The missing-metrics FAIL row records that build failure, not a measured run. The scoped correction ran `make perf` once and **passed in 104.55 s wall** (Gradle 1m41s), pixel / emulator-5554, API 36, host GPU, 60 Hz, font 1.0, English/light, benchmarkRelease, Partial(Require), scales 1 with functional settings restored afterwards. Archive: `build/perf/startup/20261117T103220Z-8b5db6a-dirty-light-1.0.R1FUmi/`; raw JSON, XML and all 20 traces are retained. `-dirty` includes the prepared profile generator and documentation/untracked phase briefs.
+
+Cold TTID median/min/max **121.2 / 113.7 / 165.2 ms**, **+27.6% against OQ-A66's 95.0 ms** reference (+26.5% against Phase 2's 95.8 ms). This expected overlay cost is reported, not a 5% gate. `first-commitFirstMs` median **49.6 ms**, from TraceSectionMetric directly; no fallback query metric was needed. Launch frame overrun P99 **26.1 ms**; frame counts **92,89,92,93,93,91,91,91,91,92**, every iteration above 75. Jank mean/max **67.8% / 96.8%**, report-only on the emulator. These are emulator regression signals and do not establish physical-device smoothness; the device budgets remain open under OQ-A22.
+
+The first startupCold trace (iteration 000, selected by index) contains App Startup total **1.8073 ms**, `ProcessLifecycleInitializer` **0.4700 ms**, `ProfileInstallerInitializer` **1.0727 ms**, async `first-commit` **79.7297 ms**, and `cf.launch.moonDecode` **15.8166 ms**. Query evidence is `build/phase3a-validation/startup-slices.txt`. Moon decoding in this trace is below the brief's 16 ms IO-switch threshold. The merged manifest guard separately restricts the initializer allowlist to those two classes.
+
+`make baseline-profile` passed once in **410.53 s wall** (Gradle 6m44s), regenerating both profiles with the startup opening journey and large60 timeline journey. The startup collection took **57.281 s**, and large60 **327.456 s**. The committed outputs contain **19,784 baseline lines** and **9,590 startup lines**; each contains 113 entries matching CfRoot/LaunchOverlay/LaunchScenePainter. The generator waits for launch.opening, then captures another bounded 1.6 s, covering the complete opening. Log: `build/phase3a-validation/baseline-profile.log`.

@@ -1469,7 +1469,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 - [x] **Konsist numeric dp/sp constants** (3a Task 8b): reject unapproved numeric constants; keep the timeline marker at one physical pixel.
 - [x] **System-bar icons (OQ-A67).** Apply themed icon styles on theme and overlay changes; retain light status icons on sky.
 - [x] **Frame-0 parity.** `LaunchFrameZeroTest` (`@Smoke`, emulator): in light and dark, the 192 dp system `iconView` and 288 dp frame-0 moon canvas are concentric within 1 px and centred on the display; the centre and visible-circle pixels match.
-- [ ] **Traces and benchmarks.**
+- [x] **Traces and benchmarks.**
   - Traces `launch` (async, from process start) and `first-commit` (the first overlay draw).
   - The signed-out cold `StartupBenchmark` now measures the overlay.
   - `LaunchJankBenchmark`: cold start, a 3.5 s capture, `FrameTimingMetric`.
