@@ -44,13 +44,18 @@ class DayTimelineRig(
     val key: DayDrawingKey
     val reference: DayDrawing
 
-    /** The first S3 day whose first block target lies in the top of the day, so a test click lands inside the window. */
+    // The first S3 day whose first block target lies in the top of the day, so a test click lands inside the window.
     init {
         var found: Triple<PreparedDay, DayLayout, DayDrawing>? = null
         for (candidate in fixture.plan.days) {
             val candidateKey = TimelineTestPlans.key(candidate, fixture.plan.revision, window, language = language)
             val built =
-                TimelineTestPlans.build(candidate, fixture.layouts.getValue(candidate.id), candidateKey, FakeTextMetrics())
+                TimelineTestPlans.build(
+                    candidate,
+                    fixture.layouts.getValue(candidate.id),
+                    candidateKey,
+                    FakeTextMetrics(),
+                )
             val first = built.targets.firstOrNull { it.kind == TimelineTarget.Kind.BLOCK }
             if (first != null && first.bottom < 420 * TimelineTestPlans.DENSITY) {
                 found = Triple(candidate, fixture.layouts.getValue(candidate.id), built)

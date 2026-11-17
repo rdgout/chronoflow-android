@@ -72,6 +72,7 @@ internal fun DayHeaderLine(
  * l.317-324, and an M3 menu of every day. It is the only reader of the anchor day and of the "scrolled" boundary, so
  * scrolling recomposes it at most once per boundary.
  */
+@Suppress("ktlint:compose:vm-forwarding-check")
 @Composable
 internal fun DayMenu(
     viewModel: TimelineHostViewModel,

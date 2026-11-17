@@ -13,8 +13,8 @@ import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.paddingFromBaseline
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
@@ -60,8 +60,9 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import net.chronoflow.core.designsystem.generated.CfColors
-import net.chronoflow.core.plan.generated.TimelinePalette
 import net.chronoflow.core.plan.generated.PlanMetrics
+import net.chronoflow.core.plan.generated.TimelinePalette
+import net.chronoflow.core.plan.trippage.TripPageLayout
 import net.chronoflow.core.ui.LocalSafeInsets
 import net.chronoflow.core.ui.R
 import net.chronoflow.feature.trip.timeline.host.TimelineHostModel
@@ -70,12 +71,12 @@ import net.chronoflow.feature.trip.timeline.host.TimelineHostViewModel
 import net.chronoflow.feature.trip.timeline.host.TimelineListIndex
 import net.chronoflow.feature.trip.timeline.host.timelineAvailableWidthDp
 import net.chronoflow.feature.trip.timeline.host.timelineDrawingKey
-import net.chronoflow.core.plan.trippage.TripPageLayout
 
 /**
  * The 1d host: a lazy list of keyed days with a plain sticky header, a minimal day menu and a plain end item, without
  * polish. Phase 6b replaces the chrome and the data source and keeps `DayTimeline`, `NowLine`, the clock and the probe.
  */
+@Suppress("ktlint:compose:vm-forwarding-check")
 @Composable
 fun TimelinePage(
     viewModel: TimelineHostViewModel,
@@ -100,10 +101,13 @@ fun TimelinePage(
             )
         }
 
-        is TimelineHostState.Ready -> ReadyPage(viewModel, current.model, colors, onBlock, modifier, onListState)
+        is TimelineHostState.Ready -> {
+            ReadyPage(viewModel, current.model, colors, onBlock, onListState, modifier)
+        }
     }
 }
 
+@Suppress("ktlint:compose:vm-forwarding-check")
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 private fun ReadyPage(
@@ -111,8 +115,8 @@ private fun ReadyPage(
     model: TimelineHostModel,
     colors: CfColors,
     onBlock: (String) -> Unit,
-    modifier: Modifier,
     onListState: ((LazyListState) -> Unit)?,
+    modifier: Modifier = Modifier,
 ) {
     val density = LocalDensity.current
     val safe = LocalSafeInsets.current

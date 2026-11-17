@@ -22,8 +22,9 @@ import kotlin.math.roundToInt
 /**
  * The invisible semantics overlay of one day: one node per target at its frame, with only semantics (no `clickable`, no
  * indication, no pointer input; sighted taps go through the day's single `pointerInput`). It reads the drawing in its
- * own scope, so it recomposes once when the drawing arrives or changes.
+ * own scope, so it recomposes once when the drawing arrives or changes. That is why it takes the `State` itself.
  */
+@Suppress("ktlint:compose:state-param-check")
 @Composable
 fun TimelineTargets(
     drawing: State<DayDrawing?>,
