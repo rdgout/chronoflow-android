@@ -46,6 +46,7 @@ dependencies {
     implementation(libs.compose.ui)
     implementation(libs.compose.foundation)
     implementation(libs.androidx.core.ktx)
+    implementation(libs.kotlinx.coroutines.android)
 
     testImplementation(libs.junit4)
     testImplementation(libs.assertk)
@@ -55,6 +56,7 @@ dependencies {
     androidTestImplementation(libs.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.uiautomator)
     androidTestImplementation(libs.assertk)
     androidTestImplementation(project(":core:testing"))
 }

@@ -1,5 +1,6 @@
 package net.chronoflow.app
 
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -17,6 +18,11 @@ import androidx.compose.ui.unit.LayoutDirection
 import net.chronoflow.core.ui.LocalSafeInsets
 
 class MainActivity : ComponentActivity() {
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(newBase)
+        applyOverrideConfiguration(ConfigurationPolicy.overrideConfiguration(newBase))
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
