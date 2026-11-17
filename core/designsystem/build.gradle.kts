@@ -7,6 +7,7 @@ android {
 }
 
 dependencies {
+    debugImplementation(libs.compose.ui.test.manifest)
     api(libs.compose.foundation)
     api(libs.compose.material3)
     implementation(libs.kotlinx.coroutines.core)
