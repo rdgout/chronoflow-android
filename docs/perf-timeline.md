@@ -1,5 +1,93 @@
 # Timeline performance
 
+## 1. Architecture under test
+
+Design B (plan.md A12): a `LazyColumn` with one item per day. Each day's `DayDrawing` op list is built off the main thread (`cf.timeline.build`), then replayed from `drawWithCache` inside its own graphics layer (`cf.timeline.replay`); a placeholder draws until it arrives (`cf.timeline.placeholder`). `NowLine` is the only clock reader. Phase 1e measures it on the `pixel` emulator; emulator numbers are regression signals, never device claims (AGENTS.md "Performance").
+
+## 2. Fixtures and direct launch
+
+`cf.trip-page=S1...S6|large30|large60` opens the timeline page from a fixture (debug and the perf variants only). `cf.freezeAt=<ISO instant>` freezes the plan clock; every benchmark uses `2026-10-13T08:00:00Z`, so large60 opens on day 0 as the iOS perf page does (OQ-1e-7).
+
+```
+adb shell am start -n net.chronoflow.app.native.debug/net.chronoflow.app.MainActivity --es cf.trip-page large60 --es cf.freezeAt 2026-10-13T08:00:00Z
+```
+
+## 3. Four guarantee layers
+
+1. JVM budgets (1b, 1c): `TimelinePreparationBudgetTest`, `DayDrawingBudgetTest`, run by `make timing` and in quick (section 9).
+2. Invalidation (1d): `TimelineInvalidationTest` and `TimelineJankTaggerTest`, in quick (section 10).
+3. Macrobenchmarks: `make perf-timeline` (`TimelineBenchmark`), required for every timeline change.
+4. The device review (`04 section 10.4`), before release: open (section 11).
+
+## 4. Budgets
+
+Enforced by `Scripts/check-benchmarks.py --suite timeline` from `benchmark/budgets.json`. On the emulator only the gates fail; every other value prints `REPORT`.
+
+| Metric | Test | Reference hard / aim | Low-end hard / aim | Emulator |
+|---|---|---|---|---|
+| `timelineFirstFrameMs` (each of 10) | firstFrame | 800 / 450 | 1500 / 800 | **800 gate** |
+| `frameDurationCpuMs` P50 / P90 / P99 | scroll | aim 3 / 5 / 8 | aim 6 / 10 / 16 | P50 report; P90, P99 CPU band (max(1.25 x baseline, baseline + 1 ms); exit 4, one re-run) |
+| `frameOverrunMs` P99 | scroll | 2 / 0 | 4 / 0 | report |
+| `jankPercent`, `hitchRatioMsPerS` (each) | scroll | 3 / 1 %, 5 / 1 ms/s | 5 / 3 %, 5 / 2 ms/s | report |
+| `timelinePlaceholderCount` (each) | scroll | 2 / 0 | 6 / 2 | **6 gate** |
+| `timelineMainFrameMsP50` / `P99`, `timelineRenderThreadMsP99` | scroll | aim 2 / 4, 4 | same | report |
+| `timelineTargetsMaxMs` | scroll | report | aim 1 | report |
+| `memoryRssAnonMaxKb` (each) | scroll | 153,600 / 81,920 | 153,600 / 102,400 | **153,600 gate** |
+| `memoryRssAnonGrowthKb` | scroll | warn > 40,960 | same | warn |
+| `timelineBuildOnMainCount` (each) | scroll | **0** | **0** | **0 gate** (OQ-1e-13) |
+| Scroll and Last day present | scroll, lastDay | functional | functional | functional |
+
+Report-only, each required: `timelineScrollWindowMs`, `timelineBuildCount`, `timelineRecomposeCount`, `timelineGcCount`, `timelineReplayMaxMs`, `timelineReplayCount`, `frameCount`, `memoryHeapSizeMaxKb`, `timeToInitialDisplayMs`, `timelineDecodeMs`, `timelinePrepareMs`, `timelineTypefaceMs`.
+
+## 5. How to run and read
+
+```
+make emu                                   # the pixel AVD, -gpu host
+make perf-timeline                         # light, font scale 1.0 (R1)
+THEME=dark make perf-timeline              # R2
+FONT_SCALE=1.3 make perf-timeline          # R3
+DEVICE_CLASS=reference make perf-timeline  # physical device only
+make baseline-profile                      # regenerates the committed profiles
+```
+
+`perf-timeline` runs `TimelineBenchmark` on the `benchmarkRelease` variant with `Partial(BaselineProfileMode.Require)`, then the checker, which prints `Timeline metric:` lines, `Timeline trend:` (+-25 % against the median of the last three PASS rows with the same Class, Theme, Font and Page) and `Timeline band:` lines, and appends one row to section 6. Results JSON and Perfetto traces land in `benchmark/build/outputs/connected_android_test_additional_output/benchmarkRelease/connected/<device>/` and are not committed. `PERF_NO_APPEND=1` keeps a run out of the table; `PERF_GRADLE_ARGS` adds Gradle arguments.
+
+## 6. Runs
+
+| Date | Commit | Class | Device | API | Hz | GPU | Font | Theme | Page | Build | First frame ms med/max | CPU P50/P90/P99 ms | Main/Render P99 ms | Overrun P99 ms | Jank % mean/max | Hitch ms/s mean/max | Placeholder max | Replay max ms | RSS anon MiB max | RSS growth MiB | Recompose max | GC max | Scroll | Last day | Result |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 2026-11-17 | ee26f55-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | host | benchmarkRelease, Partial(Require) | 92.4/96.9 | 3.1/3.9/5.2 | 2.0/4.5 | -7.2 | 0.0/0.0 | 0.0/0.0 | 0 | 0.7 | 103.5 | 0.4 | 1426 | 10 | ok | ok | PASS |
+| 2026-11-17 | ee26f55-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | dark | host | benchmarkRelease, Partial(Require) | 80.2/107.8 | 3.2/3.9/5.1 | 1.9/4.5 | -7.2 | 0.0/0.0 | 0.0/0.0 | 0 | 1.4 | 103.5 | -1.7 | 1405 | 7 | ok | ok | PASS |
+| 2026-11-17 | ee26f55-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.3 | light | host | benchmarkRelease, Partial(Require) | 84.3/102.5 | 3.2/4.0/5.1 | 1.9/4.6 | -7.4 | 0.0/0.0 | 0.0/0.0 | 0 | 0.4 | 103.5 | -0.2 | 1404 | 9 | ok | ok | PASS |
+
+`-dirty` marks a run made with uncommitted changes (here the regenerated baseline profile, committed right after).
+
+## 7. Perfetto review
+
+R1-R3 run `TimelineTraceMetric`, a Perfetto SQL pass over each iteration's trace (numbers below, per iteration over the three scroll iterations of the R1 run; the trace files stay under `build/`):
+
+- `timelineBuildOnMainCount`: 0 in every iteration of R1, R2 and R3. `timelineBuildCount`: 57 per iteration (all on worker threads).
+- `timelineReplayCount` 59 and `timelineReplayMaxMs` 0.7 (R1), 1.4 (R2), 0.4 (R3), max over iterations. Emulator only; the B' trigger (> 1 ms on a low-end device, OQ-T27) is not evaluated here.
+- `timelineGcCount`: 10 (R1), 7 (R2), 9 (R3) max per iteration; the aim is 0. The slice filter is `HeapTaskDaemon` with `LIKE '%GC%'`, which was not checked against one trace by eye.
+- `timelineRecomposeCount`: 1,426 (R1), 1,405 (R2), 1,404 (R3) max per iteration, in a 73 s window with about 1,510 frames: roughly one `Recomposer:recompose` per rendered frame. Its source is not named: R4 (`runtime-tracing`, full tracing) was not run, so no recomposition is attributed to a day item or to the anchor change. See OQ-1e-15.
+- `timelineTargetsMaxMs` 0.5 (R1), 0.5 (R2), 1.5 (R3).
+
+Perfetto UI review: pending (reviewer)
+
+## 8. Compiler reports
+
+`./gradlew :feature:trip:compileReleaseKotlin -PcomposeReports=true --rerun-tasks`, 2026-11-17 (`feature/trip/build/compose_compiler/*-composables.txt`):
+
+```
+restartable skippable fun ...timeline.DayTimeline(  stable day, layout, key, dayIndex, availableWidthDp, repository, resources, clock, onBlock, onFirstReplay, prefetch, modifier)
+restartable skippable fun ...timeline.NowLine(  stable clock, dayId, widthDp, modifier)
+restartable skippable fun ...timeline.DayHeaderLine(  stable day, colors, minHeight)
+restartable skippable fun ...timeline.TimelineTargets(  stable drawing: State<DayDrawing?>, dayId, onBlock, modifier)
+restartable skippable fun ...timeline.TimelinePresentedMarker(  stable presented: State<Boolean>, modifier)
+```
+
+Every parameter is `stable`; no finding.
+
 ## JVM budgets (1b, 1c), in quick
 
 Decode + `layoutPlan` + `preparePlan`, cold (no cache), after three warm-ups; the limit applies to every one of 10 samples. Command: `make timing` (`./gradlew :core:plan:timingTest --max-workers=1`), test class `TimelinePreparationBudgetTest` (`@TimingGate`). Host process on a Mac, not a device claim. Same limits for every build type.
@@ -91,3 +179,26 @@ restartable skippable ... fun ...timeline.TimelineTargets(  stable drawing, dayI
 ### Invalidation guard
 
 `TimelineInvalidationTest` (Robolectric, `@Logic`, in `make quick`): scrolling 120 deltas plus a current-day boundary 0 static compositions and draws; minute tick 1 clock composition (day 0 only); day boundary 2; check-off redraws only its day. Removing `graphicsLayer()` from the static layer fails the minute-tick and day-boundary tests (static draws of an untouched day 0 vs 1).
+
+## 11. Device rows
+
+Reference (Pixel 8 class) and low-end (Pixel 4a or Galaxy A15/A16 class) rows: open: device only (OQ-A22). The first production upload needs one reference and one low-end run, or the user's waiver (OQ-A45). R5 did not run: no physical device was attached.
+
+## 12. Decision
+
+pending (Task 9).
+
+## 13. Tooling notes
+
+- `TraceMetric` in benchmark 1.5.0: `getMeasurements(captureInfo: Metric.CaptureInfo, traceSession: TraceProcessor.Session): List<Metric.Measurement>`; `Session.query(sql): Sequence<Row>`. The subclass worked and no fallback was needed.
+- Raw keys: every key matched its metric id (`timelineFirstFrameFirstMs`, `timelinePlaceholderCount`, `timelineReplayMaxMs`, `timelineReplayCount`, `timelineTargetsMaxMs`, the `TimelineTraceMetric` names); `frameDurationCpuMs` and `frameOverrunMs` are in `sampledMetrics` with per-iteration `runs`.
+- Async slice: `TraceSectionMetric("cf.timeline.firstFrame", Mode.First)` read the async slice on its process track (values 66-156 ms, never 0), so the `TimelineTraceMetric` fallback was not needed. `cf.timeline.decode`, `prepare` and `typeface` are read from process tracks by SQL.
+- Presented marker: `By.res("trip.timeline.presented")` was found after launch in all 30 first-frame iterations, so the 1 dp node is visible to UiAutomator (the `opening` state was not queried on its own).
+- Robolectric: `TimelinePerfMarkersTest` drives two main-looper frames with `shadowOf(Looper.getMainLooper()).idleFor(16, MILLISECONDS)` after `mainClock.advanceTimeByFrame()`; `advanceTimeByFrame()` alone was not tried.
+- Day menu: the `DropdownMenu` popup is its own window, so its `trip.dayMenu.day.<n>` entries had no resource ids until the menu got its own `testTagsAsResourceId` (the first `timelineLastDay` run failed with "the day menu did not open"). After the fix `timelineLastDay` passed within the 12-scroll and 6-fling bounds; which of the scroll or swipe branch ran, and whether off-screen entries are reported, was not recorded.
+- Scroll window: a fling takes about 4.8 s of UiAutomator wait for an accessibility event that Compose never sends, so the 15-fling measure block lasts about 73 s (`timelineScrollWindowMs`) and holds about 1,510 frames. Hitch ratio and jank are computed per frame, so the idle waits do not inflate them; the CPU percentiles cover frames the app produced.
+- `-gpu host` held headless: `build/emulator/gpu-mode` read `host` for every run; the script refuses anything else.
+- Hz: 60 on the emulator (`hw.lcd.vsync`). The device parse (`dumpsys display`, `renderFrameRate`) was not exercised.
+- Baseline profile on AGP 9: the profile plugin's `nonMinifiedRelease` stayed minified (AGP 9 ignores its legacy keep-all rules), so the first profiles held R8-renamed classes and no timeline classes. `app/src/nonMinifiedRelease/keepRules/profile.keep` (`-dontobfuscate`, `-dontoptimize`) fixes it; adding `-dontshrink` crashed the app at start with `Resources$NotFoundException` (resource shrinking without code shrinking) and was dropped. The committed profile holds `TimelinePageKt` (22 lines), `DayDrawingBuilder` (5) and `DayDrawingReplayKt` (5).
+- `make baseline-profile` ran 592 s, just under `run-tier`'s 600 s idle cap, which stopped an earlier attempt at 605 s; `Scripts/baseline-profile.sh` was run directly for the committed profile. `timelineLarge60` needed more than the 300 s test cap, so the script passes `timeout_msec=900000` (the perf script keeps 300,000: each `TimelineBenchmark` test stayed under it).
+- R4 (full tracing for the recomposition source) was not run; see OQ-1e-15.
