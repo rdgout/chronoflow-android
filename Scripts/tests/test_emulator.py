@@ -43,6 +43,7 @@ class EmulatorTest(unittest.TestCase):
             "CF_DEVICE_LOCK": str(self.tmp / "lock"),
             "CF_DEVICE_LOCK_HELD": "",
             "FAKE_DEVICES": "",
+            "CF_EMULATOR_POLL": "0.1",
             "CF_EMULATOR_STATE_DIR": str(self.tmp / "state"),
         }
 

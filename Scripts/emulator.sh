@@ -69,7 +69,7 @@ boot() {
       tail -20 "$log" >&2
       return 1
     fi
-    sleep 2
+    sleep "${CF_EMULATOR_POLL:-2}"
   done
   echo "emulator.sh: $avd did not boot within 180 s; last log lines:" >&2
   tail -20 "$log" >&2

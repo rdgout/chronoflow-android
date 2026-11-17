@@ -22,7 +22,7 @@ class RunTierTest(unittest.TestCase):
         self.env = {
             "RUN_TIER_ROOT": str(self.root),
             "TIER_STOP_CMD": "true",
-            "TIER_KILL_GRACE": "1",
+            "TIER_KILL_GRACE": "0.2",
             "CF_DEVICE_LOCK": str(self.root / "lock"),
             "CF_DEVICE_LOCK_HELD": "",
         }
@@ -36,10 +36,10 @@ class RunTierTest(unittest.TestCase):
 
     def test_idle_cap_stops_a_silent_command(self):
         result = self.tier(
-            "t", "--results", "none", "--", "sh", "-c", 'trap "" TERM; sleep 30', env={"TIER_IDLE_TIMEOUT": "1"}
+            "t", "--results", "none", "--", "sh", "-c", 'trap "" TERM; sleep 30', env={"TIER_IDLE_TIMEOUT": "0.3"}
         )
         self.assertEqual(result.returncode, 124)
-        self.assertLess(result.elapsed, 4)
+        self.assertLess(result.elapsed, 2)
         self.assertIn("idle cap", self.log("t"))
 
     def test_total_cap_stops_a_chatty_command(self):
@@ -51,16 +51,16 @@ class RunTierTest(unittest.TestCase):
             "sh",
             "-c",
             "while true; do echo tick; sleep 0.2; done",
-            env={"TIER_TOTAL_TIMEOUT": "2", "TIER_IDLE_TIMEOUT": "10"},
+            env={"TIER_TOTAL_TIMEOUT": "0.4", "TIER_IDLE_TIMEOUT": "10"},
         )
         self.assertEqual(result.returncode, 124)
-        self.assertLess(result.elapsed, 5)
+        self.assertLess(result.elapsed, 2)
         self.assertIn("total cap", self.log("t"))
 
     def test_kills_the_whole_process_group(self):
         pid_file = self.root / "child.pid"
         script = "sleep 300 & echo $! > %s; wait" % pid_file
-        result = self.tier("t", "--results", "none", "--", "sh", "-c", script, env={"TIER_IDLE_TIMEOUT": "1"})
+        result = self.tier("t", "--results", "none", "--", "sh", "-c", script, env={"TIER_IDLE_TIMEOUT": "0.3"})
         self.assertEqual(result.returncode, 124)
         pid = int(pid_file.read_text())
         with self.assertRaises(ProcessLookupError):
@@ -108,10 +108,10 @@ class RunTierTest(unittest.TestCase):
             "sh",
             "-c",
             "touch %s" % marker,
-            env={"TIER_LOCK_TIMEOUT": "1"},
+            env={"TIER_LOCK_TIMEOUT": "0.3"},
         )
         self.assertEqual(result.returncode, 75)
-        self.assertLess(result.elapsed, 3)
+        self.assertLess(result.elapsed, 2)
         self.assertFalse(marker.exists())
 
     def _xml(self, tier_dir="out", cases=(("a.B", "t1", "0.1"),)):
