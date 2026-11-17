@@ -1,5 +1,9 @@
 package net.chronoflow.feature.launch
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.channels.Channel
@@ -53,14 +57,16 @@ internal class LaunchEndingTestHost(
     val clock = ManualLaunchClock()
     val source = EndingReadiness(clock, readyMs, unresolvedSession, unresolvedData)
     var compositions = 0
+    var generation by mutableIntStateOf(0)
+    val frameLog = LaunchFrameLog()
     val controller =
         launchController(compose, ms = null, reduced = reduced, observer = {
             compositions++
-        }, clockFactory = { clock }, readiness = { source }, nextFrame = { frames.receive() })
+        }, clockFactory = { clock }, readiness = { source }, nextFrame = { frames.receive() }, frameLog = frameLog)
 
     init {
         compose.mainClock.autoAdvance = false
-        compose.setContent { if (controller.overlayActive) LaunchOverlay(controller) }
+        compose.setContent { if (controller.overlayActive) key(generation) { LaunchOverlay(controller) } }
         firstDraw(compose, controller)
     }
 

@@ -31,6 +31,7 @@ internal fun launchController(
         MediaLaunchClock(t0) { rule.mainClock.currentTime * 1_000_000 }
     },
     readiness: (LaunchClock) -> LaunchReadiness = { SignedOutReadiness },
+    frameLog: LaunchFrameLog? = null,
 ): LaunchController {
     val context = ApplicationProvider.getApplicationContext<Context>()
     return LaunchController(
@@ -57,6 +58,7 @@ internal fun launchController(
         nextFrameNanos = nextFrame,
         clockFactory = clockFactory,
         readinessFactory = readiness,
+        frameLog = frameLog,
     ).apply {
         captureAppearance(context.resources.configuration)
         captureReduceMotion(!reduced, null)

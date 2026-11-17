@@ -50,7 +50,16 @@ fun LaunchOverlay(
         remember(controller, density) {
             LaunchTrace.moonDecode { controller.moon(controller.appearance.resources(context)) }
         }
-    val elapsed = remember(controller) { mutableLongStateOf(controller.overrides.freezeAt?.inWholeNanoseconds ?: 0L) }
+    val elapsed =
+        remember(controller) {
+            mutableLongStateOf(
+                controller.overrides.freezeAt?.inWholeNanoseconds ?: if (controller.t0Nanos == LaunchController.UNSET) {
+                    0L
+                } else {
+                    (controller.nanoTime() - controller.t0Nanos).coerceAtLeast(0L)
+                },
+            )
+        }
     val description = stringResource(R.string.launch_chronoflow_is_opening)
     SideEffect { controller.compositionObserver() }
     val status = stringResource(R.string.launch_getting_your_plan_ready)

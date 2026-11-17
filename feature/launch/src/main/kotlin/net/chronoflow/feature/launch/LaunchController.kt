@@ -4,11 +4,14 @@ import android.content.Context
 import android.content.res.Configuration
 import android.content.res.Resources
 import android.graphics.Rect
+import android.os.Bundle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.core.splashscreen.SplashScreenViewProvider
+import androidx.core.view.animation.PathInterpolatorCompat
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -26,14 +29,19 @@ import net.chronoflow.feature.launch.model.LaunchEffect
 import net.chronoflow.feature.launch.model.LaunchEvent
 import net.chronoflow.feature.launch.model.LaunchFrameSampler
 import net.chronoflow.feature.launch.model.LaunchHandOffTimeline
+import net.chronoflow.feature.launch.model.LaunchKind
+import net.chronoflow.feature.launch.model.LaunchProcessPolicy
 import net.chronoflow.feature.launch.model.LaunchRoute
 import net.chronoflow.feature.launch.model.LaunchSize
 import net.chronoflow.feature.launch.model.LaunchState
 import net.chronoflow.feature.launch.model.LaunchTimeline
 import net.chronoflow.feature.launch.model.MediaLaunchClock
+import net.chronoflow.feature.launch.model.SplashExit
+import net.chronoflow.feature.launch.model.SplashExitPolicy
 
 class LaunchController(
     val moon: (Resources) -> ImageBitmap,
+    val processToken: String = "process",
     val nanoTime: () -> Long = System::nanoTime,
     val nextFrameNanos: suspend () -> Long = { withFrameNanos { it } },
     internal val compositionObserver: () -> Unit = {},
@@ -64,8 +72,6 @@ class LaunchController(
         private set
     var openingDone = false
         private set
-    var restored = false
-        private set
     var systemIconBoundsPx: Rect? = null
     var frameZeroMoonRectPx: Rect? = null
         private set
@@ -77,6 +83,12 @@ class LaunchController(
     internal var coordinator: LaunchCoordinator? = null
         private set
     private var readinessStarted = false
+    private var headless = false
+    private var activityCount = 0
+    var lastLaunchKind: LaunchKind? = null
+        private set
+    var warmFadeCount = 0
+        private set
     private var exitTraceJob: Job? = null
     private var statusJob: Job? = null
     private var statusRequest: StatusRequest? = null
@@ -125,7 +137,6 @@ class LaunchController(
         onReadinessStarted(t0Nanos, overrides)
         if (overrides.mode == LaunchMode.Slow) prepareStatus()
         if (overrides.mode != null || overrides.freezeAt != null) return
-        tracing.beginReady()
         coordinator =
             LaunchCoordinator(
                 (overrides.readiness ?: readinessFactory)(clock),
@@ -206,6 +217,8 @@ class LaunchController(
         coordinator?.send(LaunchEvent.ExitCompleted)
         coordinator?.stop()
         exitTraceJob?.cancel()
+        tracing.endFirstCommit()
+        tracing.endReady()
         tracing.endExit()
         tracing.endLaunch()
         handOffComplete = true
@@ -230,8 +243,79 @@ class LaunchController(
         if (capturedReduceMotion == null) capturedReduceMotion = ReduceMotion.resolve(system, override)
     }
 
-    fun onActivityCreated(restored: Boolean) {
-        this.restored = restored
+    fun onActivityCreated(
+        savedInstanceState: Bundle?,
+        skipOverlay: Boolean,
+        activityOverrides: LaunchOverrides = overrides,
+    ): LaunchKind {
+        val kind =
+            LaunchProcessPolicy.classify(
+                savedInstanceState != null,
+                savedInstanceState?.getString(KEY_PROCESS_TOKEN),
+                processToken,
+                activityCount == 0,
+            )
+        activityCount++
+        lastLaunchKind = kind
+        overlayClaimedByCurrentActivity = false
+        splashHeld = false
+        if (LaunchProcessPolicy.claimsOverlay(kind)) {
+            if (claimOverlay(activityOverrides.copy(skipOverlay = skipOverlay))) {
+                tracing.beginFirstCommit()
+                if (activityOverrides.mode == null && activityOverrides.freezeAt == null) tracing.beginReady()
+            }
+        } else {
+            overrides = activityOverrides
+            if (kind == LaunchKind.Warm) overlayShowing = false
+        }
+        if (!overlayActive && route == null) startHeadless()
+        return kind
+    }
+
+    private fun startHeadless() {
+        if (headless) return
+        coordinator?.stop()
+        headless = true
+        clock = clockFactory(nanoTime())
+        coordinator =
+            LaunchCoordinator(
+                (overrides.readiness ?: readinessFactory)(clock),
+                clock,
+                true,
+                scope = scope,
+                onChange = { state, _ ->
+                    launchState = state
+                    state.route?.let {
+                        route = it
+                        coordinator?.stop()
+                        headless = false
+                    }
+                },
+            )
+        coordinator?.start()
+    }
+
+    fun onSystemSplashExit(
+        provider: SplashScreenViewProvider,
+        kind: LaunchKind,
+    ) {
+        if (SplashExitPolicy.forActivity(kind, overlayClaimedByCurrentActivity) == SplashExit.Fade300) {
+            warmFadeCount++
+            provider.view
+                .animate()
+                .alpha(0f)
+                .setDuration(300)
+                .setInterpolator(PathInterpolatorCompat.create(0f, 0f, 0.58f, 1f))
+                .withEndAction { provider.remove() }
+        } else {
+            if (overlayClaimedByCurrentActivity) {
+                val icon = provider.iconView
+                val location = IntArray(2)
+                icon.getLocationOnScreen(location)
+                systemIconBoundsPx = Rect(location[0], location[1], location[0] + icon.width, location[1] + icon.height)
+            }
+            provider.remove()
+        }
     }
 
     fun claimOverlay(overrides: LaunchOverrides): Boolean {
@@ -281,17 +365,25 @@ class LaunchController(
     ) = runLaunchOpening(firstDraw, nanoTime, nextFrameNanos, settledNanos, onElapsed = onElapsed)
 
     fun onFrameCommitted(overlayClaimed: Boolean) {
-        if (!overlayClaimed) {
+        if (!overlayClaimed && !overlayActive) {
             tracing.endFirstCommit()
             tracing.endLaunch()
         }
     }
 
-    fun onActivityDestroyed() {
+    fun onActivityDestroyed(
+        isFinishing: Boolean = true,
+        isChangingConfigurations: Boolean = false,
+    ) {
+        if (!isFinishing || isChangingConfigurations) return
+        if (!handOffComplete) onExitFrame(if (t0Nanos == UNSET) 0L else (nanoTime() - t0Nanos).coerceAtLeast(0L))
         coordinator?.stop()
+        headless = false
         exitTraceJob?.cancel()
         statusJob?.cancel()
         tracing.endFirstCommit()
+        tracing.endReady()
+        tracing.endExit()
         tracing.endLaunch()
     }
 
@@ -302,6 +394,7 @@ class LaunchController(
 
     companion object {
         const val UNSET = Long.MIN_VALUE
+        const val KEY_PROCESS_TOKEN = "cf.launch.processToken"
     }
 }
 

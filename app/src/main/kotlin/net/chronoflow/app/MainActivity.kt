@@ -3,7 +3,6 @@ package net.chronoflow.app
 import android.animation.ValueAnimator
 import android.content.Context
 import android.content.res.Configuration
-import android.graphics.Rect
 import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
@@ -22,7 +21,7 @@ import net.chronoflow.app.perf.PerfJank
 import net.chronoflow.app.perf.TripPageEntry
 import net.chronoflow.core.designsystem.theme.ReduceMotion
 import net.chronoflow.feature.launch.LaunchController
-import net.chronoflow.feature.launch.LaunchTrace
+import net.chronoflow.feature.launch.model.LaunchKind
 
 class MainActivity : ComponentActivity() {
     private var reduceMotion by mutableStateOf(false)
@@ -41,16 +40,15 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        LaunchTrace.beginFirstCommit()
-        val splash = installSplashScreen()
-        super.onCreate(savedInstanceState)
         val graph = (application as ChronoFlowApp).graph
         launch = graph.launch
-        launch.onActivityCreated(restored = savedInstanceState != null)
         val overrides = LaunchPlatform.overrides(intent)
+        val kind = launch.onActivityCreated(savedInstanceState, overrides.skipOverlay, overrides)
+        val splash = installSplashScreen()
+        super.onCreate(if (kind == LaunchKind.ProcessDeathRestore) null else savedInstanceState)
         reduceMotion = ReduceMotion.resolve(ValueAnimator.areAnimatorsEnabled(), overrides.reduceMotion)
         launch.captureReduceMotion(ValueAnimator.areAnimatorsEnabled(), overrides.reduceMotion)
-        val claimed = launch.claimOverlay(overrides)
+        val claimed = launch.overlayClaimedByCurrentActivity
         applySystemBars(isNight(resources.configuration), launch.overlayShowing, false)
         window.attributes =
             window.attributes.apply {
@@ -82,23 +80,16 @@ class MainActivity : ComponentActivity() {
             (application as ChronoFlowApp).launchPath.end()
         }
         splash.setKeepOnScreenCondition { launch.holdsSystemSplash() }
-        splash.setOnExitAnimationListener { provider ->
-            val icon = provider.iconView
-            val location = IntArray(2)
-            icon.getLocationOnScreen(location)
-            launch.systemIconBoundsPx =
-                Rect(
-                    location[0],
-                    location[1],
-                    location[0] + icon.width,
-                    location[1] + icon.height,
-                )
-            provider.remove()
-        }
+        splash.setOnExitAnimationListener { provider -> launch.onSystemSplashExit(provider, kind) }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString(LaunchController.KEY_PROCESS_TOKEN, launch.processToken)
     }
 
     override fun onDestroy() {
-        if (::launch.isInitialized) launch.onActivityDestroyed()
+        if (::launch.isInitialized) launch.onActivityDestroyed(isFinishing, isChangingConfigurations)
         super.onDestroy()
     }
 

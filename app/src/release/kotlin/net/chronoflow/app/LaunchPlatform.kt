@@ -5,7 +5,10 @@ import net.chronoflow.app.perf.LaunchDiagnosticsParser
 import net.chronoflow.feature.launch.LaunchOverrides
 
 internal object LaunchPlatform {
-    val controller by lazy { newLaunchController() }
+    private var current: net.chronoflow.feature.launch.LaunchController? = null
+
+    fun controller(graph: AppGraph): net.chronoflow.feature.launch.LaunchController =
+        current ?: newLaunchController(graph).also { current = it }
 
     fun overrides(intent: Intent?): LaunchOverrides =
         if (BuildConfig.PERF_ENTRY &&

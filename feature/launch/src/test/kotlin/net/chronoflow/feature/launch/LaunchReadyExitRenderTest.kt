@@ -1,5 +1,6 @@
 package net.chronoflow.feature.launch
 
+import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import net.chronoflow.core.testing.DeviceProfiles
@@ -38,5 +39,18 @@ class LaunchReadyExitRenderTest {
         compose.mainClock.advanceTimeByFrame()
         compose.onNodeWithTag("launch.opening").assertDoesNotExist()
         assertTrue(host.compositions <= 2)
+    }
+
+    @Test fun recreatedOverlayFirstDrawSamplesTheExistingEpoch() {
+        val host = LaunchEndingTestHost(compose)
+        host.advanceTo(1000)
+        val atRecreation = compose.mainClock.currentTime * 1_000_000 - host.controller.t0Nanos
+        host.generation++
+        compose.mainClock.advanceTimeByFrame()
+        compose.onNodeWithTag("launch.opening").captureToImage()
+        val log = host.frameLog
+        val index = ((log.count - 1) % log.sampledNanos.size).toInt()
+        assertTrue(log.wallNanos[index] >= 1_000_000_000L)
+        assertTrue(log.sampledNanos[index] in atRecreation..log.wallNanos[index])
     }
 }
