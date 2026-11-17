@@ -464,7 +464,7 @@ Each task is one Conventional Commit with no trailers. Tick the matching `plan.m
     - then `compose.waitUntilExactlyOneExists(hasTestTag("welcome.signIn") and hasClickAction(), 3_000)`;
     - click, then `waitUntilExactlyOneExists(hasTestTag("route.signIn"), 3_000)`.
 
-    The debug StrictMode `penaltyDeath` launch policy is active, so a disk read in Welcome kills the test. Must take < 10 s.
+    **Main-thread I/O check [R, orchestrator 2026-11-17]:** as landed (0e/3a), the debug StrictMode crash guard (`DebugStrictMode` + `LaunchPathViolationPolicy`) is active only until the first frame commit (`MainActivity`), so it cannot catch Welcome's work. Keep that guard's scope unchanged. Instead, the debug StrictMode listener also counts every disk/network violation whose stack contains a `net.chronoflow.` frame, at any time, into a debug-only counter (AGENTS Tests 8: a Debug-only counter, not a race). The counter and its reset live in debug-only code (`src/debug`, reached through the existing debug `LaunchPlatform`/graph seam); `src/main` gains at most a sink parameter with a no-op release default — no test hook in `src/main`. The journey resets the counter before `launch(...)` and asserts it is still 0 after `route.signIn` appears. Add a JVM test for the counting predicate (reuse `LaunchPathViolationPolicy`'s frame filter). Must take < 10 s.
 
 ### Task 8: Board captures (`test(launch): capture the welcome boards`)
 
