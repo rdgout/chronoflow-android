@@ -232,3 +232,14 @@ Scripts/emulator.sh prep-perf emulator-5554
 Macrobenchmark calls the WARM measure block once cold with `iteration == null` before iteration 0. That unmeasured preparation waits for the normal cold hand-off; each measured warm iteration still requires no overlay and a route within the original 2 s bound. The diagnostic command uses scales 1 so it exercises the complete cold preparation, and restores functional settings under the same lock. Use `make perf` on a quiet host for recorded performance results.
 
 The functional hand-off/stall proofs use the debug `LaunchController.frameLog` ring buffer. The existing `compositionObserver` remains a composition counter. Read `CfLaunchProof` in logcat for ready/slow/stall hand-off end times and the sampled stall gap.
+
+
+## Phase 4a
+
+SQLite reports **3.44.3** in Robolectric's native framework driver (`AccountStorageLifecycleTests.frameworkSqliteIsAtLeastTheApi29Floor`) and **3.44.3** on the API 36 `pixel` emulator (`StoreThreadingSmokeTest`, `StoreThreadingSmoke` logcat tag). These checks identify the harness engines; no API 29 emulator was requested. SQLDelight retains its sqlite-3-18 dialect and the SQL safety scanner rejects newer syntax.
+
+The single warm `make quick` invocation took **30.97 s** overall (log creation to final output). Its quick tier took 14.60 s: 1,243 cases, zero failures and zero budget overruns; database contributed 42 cases and datastore 32. Build-logic took 1.06 s (26 cases), the four Python suites passed 190 cases, and the final serial timing tier took 1.93 s (6 cases, zero overruns).
+
+Device tests ran once per class through `make targeted`, under the device lock. `KeystoreSessionStoreTest` passed five cases in 0.122 s of reported case time (10.43 s including Gradle/build/install); `StoreThreadingSmokeTest` passed its one case in 0.103 s (5.52 s including Gradle/build/install). Both used isolated roots and `test.<uuid>` key aliases; their combined case time was 0.225 s. The strict main-thread disk policy survived every store operation. These are functional emulator timings, not device performance claims.
+
+Commands, fix history, brief-refresh patches and remaining broad gates are recorded in [phase-4a-validation.md](phase-4a-validation.md). Exact local run logs and tier JSON snapshots are under `build/phase4a/`.

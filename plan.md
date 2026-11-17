@@ -696,6 +696,7 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A112 | (3c-12) Is the diagnostic `cf.mode=welcome` needed on Android? | Yes, in debug and perf: the board captures and the frozen-frame checks use it, as iOS does. Release keeps `LaunchDiagnostics.None`. | 3c |
 | OQ-A113 | (4a-1) The plan writes `transaction { epoch.whileValid { permit?.whileValid { body() } } }`, which releases the locks before COMMIT. iOS holds them through COMMIT (`AccountDatabase.swift:124–137`, `SyncEpoch.swift:33`). | Follow iOS: `epoch.whileValid { permit?.whileValid { transaction { body() } } }`; fix A5 and the 4a bullet (Task 5). | 4a |
 | OQ-A114 | (4a-2) iOS DDL says `DEFAULT true/false`; on API 29 (SQLite 3.22) these become the strings `'true'`/`'false'`. | `DEFAULT 1`/`DEFAULT 0`; the parity test normalizes. | 4a |
+| OQ-A115 | (4a-3) The plan says the ported tests run on "in-memory JDBC"; WAL, sidecars, reopen and the corrupt-file cases need a file. | File-backed `JdbcSqliteDriver` in a temporary directory, plus Robolectric native-SQLite tests for the Android factory; fix the wording (Task 10). | 4a |
 | OQ-A116 | (4a-4) The plan says reads are `asFlow().mapToList(io).conflate()`, which cannot end streams on `close()`, count observers or fetch across tables. | `AccountDatabase.observe(tables…)` with SQLDelight listeners, conflated, fetched on io; fix the wording (Task 5). | 4a |
 | OQ-A117 | (4a-5) Plain `read`s are not transacted; a multi-statement read may see two commits. | Keep them untransacted, like iOS `pool.read` for single queries; a later phase wraps a multi-query snapshot in `transactionWithResult`. | 4a |
 | OQ-A118 | (4a-6) Reminder storage: iOS keeps the ledger as settings section `reminderLedger` with `sendAtMs: Double`; A5 asks for local tables. | The tables in Task 3 (`send_at`/`send_at_ms` INTEGER ms, `account_id` nullable, `request_code UNIQUE`); 12b may edit them in place before the first release. | 4a |
@@ -703,7 +704,14 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A120 | (4a-8) Port `NoHealthDataMigration` (iOS v2)? | No: Android starts at v1 with no health data stored; `user_version` stays 1. | 4a |
 | OQ-A121 | (4a-9) Keystore key with `setUnlockedDeviceRequired(true)`? It blocks session reads while the device is locked (reminder taps, background sync). | No. iOS uses `WhenUnlockedThisDeviceOnly`; Android keeps background access and relies on device-bound, non-exportable keys. Revisit before release. | 4a |
 | OQ-A122 | (4a-10) A corrupt `device_prefs` file: reset or fail? A reset loses `api.deviceId`, so the device gets a new id once. | `ReplaceFileCorruptionHandler { emptyPreferences() }`. A corrupt **value** still throws (D22). | 4a |
+| OQ-A123 | (4a-11) The plan's 4a "Ported tests" covers all of `LocalStoreTests`, but the plan and the 1a/4d/4e/9b briefs put records, repositories, `AccountModel`, the wiper and the session database elsewhere. | 4a ports the cases for what it ships. Repository and `AccountModel` cases → 4d; draft halves → 9b; wiper, session-database and readiness cases → 4e (already in its brief). Recorded in the plan (Task 10). | 4a |
+| OQ-A124 | (4a-12) iOS types JSON columns as `JSONDocument` and validates on read and write. 4d and 9b expect `String` columns. | `String` columns; `JSONDocument.requireValid` on every save; no re-validation on fetch (the app is the only writer, and plan JSON is decoded by its reader anyway). | 4a |
+| OQ-A125 | (4a-13) `JdbcAccountDriverFactory` sits in `:core:database/src/test`, so 4d/4e tests in `:core:data` cannot use it. | 4d moves it to a `testFixtures` source set or a small `:core:database-testing` module, whichever AGP 9 supports without disabling built-in Kotlin. | 4a |
+| OQ-A126 | (4a-14) iOS OQ 26: excluding everything from backup loses unsent outbox rows on device restore. | Keep excluding everything (A5); revisit before shipping. | 4a |
+| OQ-A127 | (4a-15) `SessionMutationPermit.invalidate()` is public (iOS: internal to AppCore), because 4e's issuer lives in `:core:sync`. | Public, with KDoc; the 4e reviewer checks that only `SessionController` calls it. | 4a |
+| OQ-A128 | (4a-16) `plan_versions`/`check_marks` mapping needs 1a's `PlanVersionRecord` (`detail: ByteArray`) and `CheckMarkRecord`, and those 1a records are already landed. | 4a maps only the four records; 4d adds the plan and check-mark mapping, storing `detail` as strict UTF-8 text. | 4a |
 | OQ-A129 | (4a-17) iOS `DeviceIdentityStore` shares one in-flight task, so concurrent callers see the same error; a `Mutex` makes each waiting caller retry in turn. | `Mutex`; the observable contract (one write, no caching of a failure) is the same. | 4a |
+| OQ-A130 | (4a-18) Should `:core:model` stay free of `kotlinx.coroutines`? 4d needs `SyncEpoch.check()` to see coroutine cancellation. | Keep the existing `api(libs.kotlinx.coroutines.core)` in `:core:model`; Konsist rule 2 forbids only `android.*` and Compose there. | 4a |
 | OQ-0a-22 | Native libraries in the bundle? | Allow only `libandroidx.graphics.path.so` (Compose graphics-path; excluding it breaks Path conversion below API 34); fail on any other `.so` | 0a, 13 |
 | OQ-0b-1 | Where does `PlanMetrics` live? `08 §3.1` lists it inside `CfDimens`, but its consumer `:core:plan` is a JVM module that cannot depend on `:core:designsystem` | `core/plan/…/generated/PlanMetrics.generated.kt` (Double, dp), as iOS keeps it in `PlanCore` | 0b, 1b, 1c |
 | OQ-0b-2 | Port all iOS TokenGen outputs now (Auth, Settings, Terms, Welcome, PlanUI, Press, LaunchPaint, TypeMetrics), or only colors, sky and type? | All of them now (the iOS files are exact goldens and Phases 2, 3a, 3c, 5a, 9 and 10 need them) | 0b |
@@ -1683,7 +1691,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - `DeviceConfigFile`: ≤ 64 B, written on language and theme changes.
   - `WipeMarker`: `pending-wipe.json`.
 - [x] **Backup exclusion.** Verify `allowBackup=false` and the exclude-everything `data_extraction_rules.xml`; `BackupRulesTest` parses the merged manifest and the rules.
-- [ ] **Ported tests.** Port iOS `Tests/LocalStoreTests` as JVM tests on SQLDelight's in-memory JDBC driver, with the same names.
+- [x] **Ported tests.** Port the iOS `Tests/LocalStoreTests` cases for the database, schema and four-record mapping as JVM tests; retain their Swift test names. Repository and `AccountModel` cases move to 4d, draft halves to 9b, and wiper, session-database and readiness cases to 4e (OQ-A123). Run database tests on SQLDelight's file-backed JDBC driver (WAL, sidecars and the corrupt-file cases need a file), with the same names.
 
 **Acceptance**
 - The schema matches iOS.
@@ -1805,7 +1813,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - Unsupported kinds are parked (OQ 31).
   - A 401 signals a forced wipe, except that a walkthrough POST 401 keeps its row.
   - A 403 `email_unverified` goes to the verify gate and never wipes.
-- [ ] **Repositories** (`core/data/…/repository/`): trips, plans, marks, settings and walkthrough. Every mutation writes its domain row and its outbox row in one transaction. Plans have retention leases and eviction.
+- [ ] **Repositories** (`core/data/…/repository/`): trips, plans, marks, settings and walkthrough. Every mutation writes its domain row and its outbox row in one transaction. Plans have retention leases and eviction. Also port `AccountModel` and the LocalStore cases moved from 4a: `RecordsTests.allRecordsRoundTripUnknownJSONNullsAndCompositeKeys` and `repositoriesBindKeysAndOrderOutboxByTimestampThenID` (without their draft halves), and all six `RepositoryObservationTests`. Build on 4a's `RecordMapping` and `AccountDatabase.observe`.
 - [ ] **Preserving login upsert** (OQ-A40), a port of iOS `SessionAccountDatabase.upsert` (`SessionAccountDatabase.swift:29–48`). Server data never overwrites a field that has a pending outbox change. Tests cover the RN `store-account.ts:10–23,46–64` scenario and its reverse.
 - [ ] **Ported tests.** Port iOS `Tests/SyncTests` (35+ cases) to the JVM with `FakeDataSource`, a fake clock and the JDBC driver, keeping the names.
 
@@ -2363,7 +2371,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - Requests are spaced at least 1.02 s apart, with a wait after a 429.
   - An in-memory LRU cache.
   - The search states as a sealed type.
-- [ ] **Recovery**, porting `MemberWizardStore`: one fixed-id `drafts` row (OQ 40), written through a conflated writer and deleted on close, save or expiry (30 min).
+- [ ] **Recovery**, porting `MemberWizardStore`: one fixed-id `drafts` row (OQ 40), written through a conflated writer and deleted on close, save or expiry (30 min). Add the draft halves of iOS `RecordsTests` (the `DraftRecord` round trip and the draft upsert/remove).
 - [ ] **TripWizardViewModel scaffold** (`feature/wizard/…`). The state holder, plus the cancellable jobs `checkJob`, `reviewJob`, `saveJob`, `choiceJob` (250 ms) and `retryCountdownJob`.
 - [ ] **Tests** against `MockDataSource` scenarios and the `wizard/*.json` fixtures: throttled, capacity, expired, needs-answers and unknown-field.
 
