@@ -34,6 +34,26 @@ private fun unitTestClasses(scope: KoScope): List<KoClassDeclaration> =
             !cls.hasModifier(KoModifier.ABSTRACT)
     }
 
+private val inheritableTestAnnotations = allTiers + setOf("TimingGate", "RunWith", "Config", "GraphicsMode")
+
+fun abstractTestClassesCarryNoTier(scope: KoScope) {
+    val violations =
+        scope
+            .classes()
+            .filter { cls ->
+                moduleOf(cls.path) != null &&
+                    sourceSetOf(cls.path)?.let(::isTestSourceSet) == true &&
+                    cls.hasModifier(KoModifier.ABSTRACT)
+            }.filter { it.annotationNames().intersect(inheritableTestAnnotations).isNotEmpty() }
+            .map {
+                "${it.path}: abstract ${it.name} carries ${it.annotationNames().intersect(
+                    inheritableTestAnnotations,
+                )}; " +
+                    "annotate each concrete class instead"
+            }
+    fail("abstractTestClassesCarryNoTier", violations)
+}
+
 fun robolectricClassesHaveOneTier(scope: KoScope) {
     val violations =
         unitTestClasses(scope).filter { it.isRobolectric() }.mapNotNull { cls ->

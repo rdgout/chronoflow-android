@@ -7,8 +7,23 @@ import com.lemonappdev.konsist.api.container.KoScope
 import org.junit.Test
 
 class TierRegistryTest {
+    private fun allowed(path: String): KoScope = Konsist.scopeFromFile("konsist/src/test/resources/allowed/tier/$path")
+
     private fun planted(path: String): KoScope =
         Konsist.scopeFromFile("konsist/src/test/resources/violations/tier/$path")
+
+    @Test fun abstractTestClassesCarryNoTier() = abstractTestClassesCarryNoTier(projectScope)
+
+    @Test fun tieredAbstractBaseIsRejected() {
+        assertFailure {
+            abstractTestClassesCarryNoTier(
+                planted("app/src/test/kotlin/net/chronoflow/app/TieredAbstractBaseTest.kt"),
+            )
+        }.messageContains("TieredAbstractBaseTest")
+    }
+
+    @Test fun plainAbstractBaseIsAllowed() =
+        abstractTestClassesCarryNoTier(allowed("app/src/test/kotlin/net/chronoflow/app/PlainAbstractBaseTest.kt"))
 
     @Test fun robolectricClassesHaveOneTier() = robolectricClassesHaveOneTier(projectScope)
 
