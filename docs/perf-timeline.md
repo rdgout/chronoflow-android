@@ -52,7 +52,7 @@ DEVICE_CLASS=reference make perf-timeline  # physical device only
 make baseline-profile                      # regenerates the committed profiles
 ```
 
-`perf-timeline` runs `TimelineBenchmark` on the `benchmarkRelease` variant with `Partial(BaselineProfileMode.Require)`, then the checker, which prints `Timeline metric:` lines, `Timeline trend:` (+-25 % against the median of the last three PASS rows with the same Class, Theme, Font, Page and workload) and `Timeline band:` lines, and appends one row to section 6. Each attempt archives JSON, Perfetto traces and XML results under `build/perf/timeline/<UTC-date>-<sha>-<theme>-<font>-bounded-swipe-v2.<unique>/`; prior Gradle output is preserved under `previous-output/`. These files are not committed. Startup runs use `build/perf/startup/<UTC-date>-<sha>-<config>.<unique>/`. `PERF_NO_APPEND=1` keeps a run out of the table; `PERF_GRADLE_ARGS` adds Gradle arguments.
+`perf-timeline` runs `TimelineBenchmark` on the `benchmarkRelease` variant with `Partial(BaselineProfileMode.Require)`, then the checker, which prints `Timeline metric:` lines, `Timeline trend:` (+-25 % against the median of the last three PASS rows with the same Class, Theme, Font, Page and workload) and `Timeline band:` lines, and appends one row to section 6. Each attempt archives JSON, Perfetto traces and XML results under `build/perf/timeline/<UTC-date>-<sha>-<theme>-<font>-bounded-swipe-v3.<unique>/`; prior Gradle output is preserved under `previous-output/`. These files are not committed. Startup runs use `build/perf/startup/<UTC-date>-<sha>-<config>.<unique>/`. `PERF_NO_APPEND=1` keeps a run out of the table; `PERF_GRADLE_ARGS` adds Gradle arguments.
 
 ## 6. Runs
 
@@ -61,11 +61,53 @@ make baseline-profile                      # regenerates the committed profiles
 | 2026-11-17 | ee26f55-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | host | benchmarkRelease, Partial(Require) | 92.4/96.9 | 3.1/3.9/5.2 | 2.0/4.5 | -7.2 | 0.0/0.0 | 0.0/0.0 | 0 | 0.7 | 103.5 | 0.4 | 1426 | 10 | ok | ok | PASS |
 | 2026-11-17 | ee26f55-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | dark | host | benchmarkRelease, Partial(Require) | 80.2/107.8 | 3.2/3.9/5.1 | 1.9/4.5 | -7.2 | 0.0/0.0 | 0.0/0.0 | 0 | 1.4 | 103.5 | -1.7 | 1405 | 7 | ok | ok | PASS |
 | 2026-11-17 | ee26f55-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.3 | light | host | benchmarkRelease, Partial(Require) | 84.3/102.5 | 3.2/4.0/5.1 | 1.9/4.6 | -7.4 | 0.0/0.0 | 0.0/0.0 | 0 | 0.4 | 103.5 | -0.2 | 1404 | 9 | ok | ok | PASS |
-| 2026-11-17 | ce5cb8d | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | host | benchmarkRelease, Partial(Require), bounded-swipe-v2 | 123.9/135.8 | 6.3/7.8/10.6 | 3.5/9.6 | -3.5 | 0.2/0.5 | 0.5/1.5 | 0 | 0.7 | 103.0 | 1.1 | 9 | 1 | ok | ok | PASS |
+| 2026-11-17 | ce5cb8d | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | host | benchmarkRelease, Partial(Require), bounded-swipe-v2 | 123.9/135.8 | 6.3/7.8/10.6 | 3.5/9.6 | -3.5 | 0.2/0.5 | 0.5/1.5 | 0 | 0.7 | 103.0 | 1.1 | 9 | 1 | ok | ok | SUPERSEDED (too short: day 9) |
+| 2026-11-17 | 2164c68 | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | host | benchmarkRelease, Partial(Require), bounded-swipe-v3 | 99.4/108.8 | 4.3/7.2/10.2 | 4.3/9.3 | -3.8 | 0.3/0.6 | 0.9/1.4 | 0 | 0.8 | 101.8 | 44.5 | 56 | 3 | ok | ok | PASS |
 
 `-dirty` marks a run made with uncommitted changes (here the regenerated baseline profile, committed right after).
 
-### Clean R1 after review fixes
+### Clean R1, forty-day workload (v3)
+
+2026-11-17, clean measured HEAD `2164c68b7ccd35c9abd6c80fff298b459aaa6532` on `feat/phase-1e-timeline-perf`. The tracked tree was clean before launch; only the unrelated untracked phase briefs were excluded by the runner. Command: `export ANDROID_HOME=/opt/homebrew/share/android-commandlinetools; THEME=light FONT_SCALE=1.0 make perf-timeline`. One invocation, no retry, exit 0; tier wall time 306.58 s (Gradle 5m 3s). All three benchmark tests passed. Device: `pixel` / `emulator-5554`, `sdk_gphone64_arm64`, Android 16 / API 36, 60 Hz, host GPU, English, light, font 1.0; `benchmarkRelease`, `Partial(Require)`, Page `host`, large60, workload **`bounded-swipe-v3`**. Emulator results are regression signals, not device claims.
+
+Archive: `build/perf/timeline/20261117T063816Z-2164c68-light-1.0-bounded-swipe-v3.ZMy7gw/`. It retains `row.md`, `run.log`, `timings.json`, benchmark JSON and all 14 traces under `connected_android_test_additional_output/benchmarkRelease/connected/pixel(AVD) - 16/`, XML and per-test logcat under `androidTest-results/`, the SQL review and outputs, profile-generation evidence, and `swipe-diagnosis/`. `previous-output/` is older evidence and is excluded from this result.
+
+The temporary probe measured **550.5 dp for one v2 swipe**, which remains on day index 0. The page is 2,100 px high at density 2.625; the 85% -> 15% path is only 1,470 px = 560 dp. Day 0's grid bottom moved from its unscrolled y=2,915 to y=1,470: 1,445 px / 2.625 = 550.476 dp. UiAutomator 2.4.1's cached `InteractionController` bytecode shows VSync pacing after touch-down and each move, so 26 steps take about 433 ms at 60 Hz; the old 2,800 dp claim assumed an inertial tail that the measurement does not show. v3 groups **five fixed 26-step swipes**, each with `waitForIdle`, into one gesture, with no scroll-end-event wait or UI query inside the workload. The probe travelled **41,343.6 dp over 15 gestures = 2,756.2 dp per gesture on average**, ending at day index 43 with the plan end absent. This exact total uses the final unclipped grid bottom and fixture heights, 95 px headers and 32 px section gaps; clipped bounds in earlier samples are not exact offsets. Both temporary probes were removed before `2f0da30`.
+
+| Metric | Clean R1 (v3) | Emulator gate / interpretation |
+|---|---|---|
+| First frame median / max | 99.4 / 108.8 ms | PASS: all 10 <= 800 ms |
+| Peak RSS anon per iteration | 58,644 / 104,284 / 104,256 KiB; max 101.8 MiB | PASS: each <= 153,600 KiB (150 MiB) |
+| RSS growth, first -> last iteration | 45,612 KiB = 44.5 MiB | **WARN: > 40,960 KiB (40 MiB)**; not an emulator failure |
+| Builds on main | 0 / 0 / 0 | PASS: each = 0 |
+| Worker builds / replays | 44 / 44 in each iteration | PASS: each >= 1; SQL independently confirms worker-only builds |
+| Placeholder draw episodes | 0 / 0 / 0 | PASS: each <= 6 |
+| Placeholder-to-replay max / unfinished | 0 ms / 0 in each iteration; no intervals | Report only; no placeholder wait was observed |
+| Replay max per iteration | 0.542459 / 0.781083 / 0.721209 ms | Report only; > 1 ms triggers B' review on low-end devices only |
+| Actual steady-scroll recompositions under Recomposer | 56 / 55 / 54 | Report only; no per-frame pattern; individual sources unattributed (section 7) |
+| Top-level GC | 2 / 3 / 3 | Report only; aim 0 |
+| Jank mean / max | 0.3 / 0.6 % | Report only |
+| Hitch mean / max | 0.9 / 1.4 ms/s | Report only; active-frame denominator |
+| CPU P50 / P90 / P99 | 4.3 / 7.2 / 10.2 ms | P50 report; P90/P99 establish the new v3 CPU band baseline; no prior matching row |
+| Overrun P99 | -3.8 ms | Report only |
+| Main-thread frame P50 per iteration | 0.566375 / 0.615625 / 0.802375 ms | Report only |
+| Main / RenderThread P99, max | 4.254375 / 9.258791 ms | Report only |
+| Targets max per iteration | 0.4695 / 0.212333 / 0.3015 ms | Report only; lower bound, pausable prefetch bodies excluded |
+| Frame counts | 2,125 / 2,067 / 2,086 | Report only; every overrun iteration is nonempty |
+| Elapsed scroll windows | 67,618.5 / 66,316.6 / 66,468.5 ms | Report only; not the hitch denominator |
+| Heap max per iteration | 19,267 / 58,461 / 58,465 KiB | Report only |
+| TTID mean / max | 109.7 / 120.5 ms | Report only |
+| Decode / prepare / typeface means | 8.0 / 11.4 / 2.0 ms | Report only; respective maxima 15.0 / 14.9 / 3.1 ms |
+| Scroll progress after 15 gestures | Day index 0 -> **43 / 43 / 43** | PASS: each in 35..50 (including >= 35), and `trip.plan.end` absent |
+| Separate last-day journey | `trip.day.day-29871120-tour-9` and `trip.plan.end` reached; 537 frames | PASS: within 12 menu scrolls / 6 page gestures |
+
+The CPU band **restarts with `bounded-swipe-v3`**; v2 and earlier rows are excluded by their Build metadata. The old v2 R1 below is superseded because day index 9 after 15 gestures did not exercise the intended forty-day workload, despite passing its former progress assertion. R2/R3, startup perf, full composition tracing and physical-device runs were not rerun. The RSS-growth warning is retained without a causal claim; the peak gate passes.
+
+Profiles were regenerated once through `make baseline-profile` (379.09 s wall, exit 0; startup 47.351 s, timeline 322.988 s) and both changed outputs committed as `2164c68`. The generator uses the same gesture and asserts day 0 -> 35..50 with no plan end. The 48 targeted checker/perf-script tests passed, including exclusion of v2 history from the v3 CPU band.
+
+### Superseded R1 after review fixes (v2: too short)
+
+**Superseded: too short.** This run reached day index 9 rather than the intended 35..50. Its former gate results and archived trace review are retained as historical evidence only.
 
 2026-11-17, clean measured HEAD `ce5cb8db46f8150bd0c6d996e20dc421236b8cbb` on `feat/phase-1e-timeline-perf`; tracked tree clean before launch, with only the unrelated untracked phase briefs excluded by the runner. Command: `export ANDROID_HOME=/opt/homebrew/share/android-commandlinetools; THEME=light FONT_SCALE=1.0 make perf-timeline`. One invocation, no retry, exit 0; tier wall time 153.71 s (Gradle 2m 30s). Device: `pixel` / `emulator-5554`, `sdk_gphone64_arm64`, Android 16 / API 36, 60 Hz, host GPU, English, light, font 1.0; `benchmarkRelease`, `Partial(Require)`, Page `host`, large60, workload **`bounded-swipe-v2`**. Emulator results are regression signals, not device claims.
 
@@ -97,7 +139,21 @@ The CPU band baseline **restarts with `bounded-swipe-v2`**. This is the first ma
 
 Clean R1 archive: section 6. Historical R1–R3 evidence was overwritten before archiving was added. Every new attempt preserves both prior output and its own traces, including band retries.
 
-**Clean R1 trace-processor review completed**, using `/Users/rickgout/.local/share/perfetto/prebuilts/trace_processor_shell-8488edbefadfc4be -q <file.sql> <trace>` on all three archived scroll traces. The archive's `review-r1.sql` combines `build/review-fixes/review-r1.sql` with build/replay, composition-descendant/source-name and placeholder-to-replay queries. Each trace has its own matching `*-sql.txt` output in the archive root. No graphical Perfetto UI session or additional benchmark run was used.
+**Forty-day R1 (`bounded-swipe-v3`) trace-processor review completed** on all three scroll traces in `build/perf/timeline/20261117T063816Z-2164c68-light-1.0-bounded-swipe-v3.ZMy7gw/` with `/Users/rickgout/.local/share/perfetto/prebuilts/trace_processor_shell-8488edbefadfc4be -q <file.sql> <trace>`. The archived `review-r1.sql` is the same query set used for v2. Each trace has a matching `*-sql.txt` output and `*-sql.stderr` in the archive root; all three commands exited 0. No graphical Perfetto UI session or extra benchmark run was used.
+
+| Trace filename | Top-level main frames | Frames with one / six actual recompositions | Frames without recomposition, input / no input | Compositions in no-input frames | Top-level GC | Placeholder intervals / max ms / unfinished |
+|---|---|---|---|---|---|---|
+| `TimelineBenchmark_timelineScroll_iter000_2026-11-17-06-40-03.perfetto-trace` | 4,044 | 44 / 2 | 3,709 / 289 | 1 | 2 | 0 / 0 / 0 |
+| `TimelineBenchmark_timelineScroll_iter001_2026-11-17-06-41-22.perfetto-trace` | 3,976 | 43 / 2 | 3,709 / 222 | 1 | 3 | 0 / 0 / 0 |
+| `TimelineBenchmark_timelineScroll_iter002_2026-11-17-06-42-38.perfetto-trace` | 3,984 | 42 / 2 | 3,711 / 229 | 2 | 3 | 0 / 0 / 0 |
+
+A recomposition is a main-thread `Compose:recompose` directly under `Recomposer:recompose`: **56 / 55 / 54** over the measured steady-scroll traces. There is no per-frame composition pattern. Unlike v2, these counts exceed the 43 day advances, and 1 / 1 / 2 compositions fall in frames without input-delivery slices. Every iteration also has two input frames with six compositions each. These traces contain no named DayMenu, DayTimeline or TimelineTargets slices, and no source-named composition descendants, so the individual sources remain unattributed; anchor changes cannot explain the complete counts without further evidence. R4 full composition tracing was not run.
+
+SQL confirms **44 builds on DefaultDispatch, zero builds on main and 44 main-thread replays per iteration**, with replay maxima matching section 6. The depth-0, case-sensitive `name GLOB '*GC*'` predicate finds **2 / 3 / 3** `Background concurrent mark compact GC` slices on HeapTaskDaemon and excludes the TrimSpaces / TrimIndirectReferenceTables slices. Process-track queries find **no** `cf.timeline.placeholderToReplay` intervals: zero duration and unfinished count mean no placeholder episode, not a measured zero-duration wait.
+
+### Historical v2 review (superseded: too short)
+
+**Historical v2 R1 trace-processor review completed**, using `/Users/rickgout/.local/share/perfetto/prebuilts/trace_processor_shell-8488edbefadfc4be -q <file.sql> <trace>` on all three archived scroll traces. The archive's `review-r1.sql` combines `build/review-fixes/review-r1.sql` with build/replay, composition-descendant/source-name and placeholder-to-replay queries. Each trace has its own matching `*-sql.txt` output in the archive root. No graphical Perfetto UI session or additional benchmark run was used.
 
 | Trace (under the archive's current output directory) | Top-level main frames | Frames with one actual recomposition | Frames without a recomposition, input / no input | Top-level GC | Placeholder intervals / max ms / unfinished |
 |---|---|---|---|---|---|
@@ -251,9 +307,9 @@ Reference (Pixel 8 class) and low-end (Pixel 4a or Galaxy A15/A16 class) rows: o
 
 ## 12. Decision
 
-**Design B stands (emulator, 2026-11-17, clean `ce5cb8db46f8150bd0c6d996e20dc421236b8cbb`).** The corrected R1 (light, 1.0, `bounded-swipe-v2`) passes every applicable emulator gate and functional row of plan.md "Where gates apply": first frame median / max 123.9 / 135.8 ms <= 800; peak RSS 103.0 MiB <= 150; builds on main 0; placeholder episodes 0 <= 6; Scroll and Last day both ok. CPU P50 / P90 / P99 is 6.3 / 7.8 / 10.6 ms and starts a fresh workload baseline, with no prior band to compare. Replay max is 0.727208 ms, main / RenderThread P99 max 3.5 / 9.6 ms, and decode / prepare / typeface means 11.9 / 15.2 / 2.7 ms. Section 6 records every metric and the archive; section 7 records the SQL review. Emulator numbers are not device claims.
+**Design B stands (emulator, 2026-11-17, clean `2164c68b7ccd35c9abd6c80fff298b459aaa6532`).** The forty-day R1 (light, 1.0, `bounded-swipe-v3`) passes every applicable emulator gate and functional row: first frame median / max 99.4 / 108.8 ms <= 800; peak RSS 101.8 MiB <= 150; builds on main 0; placeholder episodes 0 <= 6; day index 43 in all three iterations, with the plan end absent; Scroll and Last day both ok. **RSS growth is 44.5 MiB, above the 40 MiB warning threshold**, while all peak samples pass. CPU P50 / P90 / P99 is 4.3 / 7.2 / 10.2 ms and starts a fresh v3 workload baseline, with no prior matching CPU band. Replay max is 0.781083 ms; every iteration builds and replays 44 days. Section 6 records every metric and the archive; section 7 records the SQL review. Emulator numbers are not device claims.
 
-R2 (dark, 1.0) and R3 (light, 1.3) passed before the review fixes and remain historical evidence in section 6; they were not rerun with the corrected workload. The compiler lines in section 8 remain skippable. Nine actual compositions and one GC per scroll iteration are report-only; individual composition source attribution remains limited as described in section 7. Device rows open: device only (OQ-A22, OQ-A45); B' is re-evaluated on the first low-end run if `timelineReplayMaxMs` > 1 ms (OQ-T27). The historical startup `make perf` result with `Require` is median TTID 95.0 ms, REPORT; startup was not rerun here.
+R2 (dark, 1.0) and R3 (light, 1.3) remain historical evidence and were not rerun with v3. The v2 R1 is superseded: 15 gestures reached only day index 9. The compiler lines in section 8 remain skippable. The v3 run's 56 / 55 / 54 actual compositions and 2 / 3 / 3 top-level GCs are report-only; composition-source attribution remains limited as described in section 7. Device rows remain open: device only (OQ-A22, OQ-A45); B' is re-evaluated on the first low-end run if replay max > 1 ms (OQ-T27). The historical startup `make perf` result with `Require` is median TTID 95.0 ms, REPORT; startup was not rerun here.
 
 ## 13. Tooling notes
 
@@ -263,7 +319,7 @@ R2 (dark, 1.0) and R3 (light, 1.3) passed before the review fixes and remain his
 - Presented marker: `By.res("trip.timeline.presented")` was found after launch in all 30 first-frame iterations, so the 1 dp node is visible to UiAutomator (the `opening` state was not queried on its own).
 - Robolectric: `TimelinePerfMarkersTest` drives two main-looper frames with `shadowOf(Looper.getMainLooper()).idleFor(16, MILLISECONDS)` after `mainClock.advanceTimeByFrame()`; `advanceTimeByFrame()` alone was not tried.
 - Day menu: the `DropdownMenu` popup is its own window, so its `trip.dayMenu.day.<n>` entries had no resource ids until the menu got its own `testTagsAsResourceId` (the first `timelineLastDay` run failed with "the day menu did not open"). After the fix `timelineLastDay` passed within the 12-scroll and 6-fling bounds; which of the scroll or swipe branch ran, and whether off-screen entries are reported, was not recorded.
-- Scroll window: historical `fling` calls added about 5 s of idle accessibility-event wait each. The old hitch denominator included those waits and understated hitches (about 2.9×). `bounded-swipe-v2` uses explicit steps and `waitForIdle`; hitch now divides summed positive overrun by active frame time (overrun frame sample count × 1000 / Hz). `timelineScrollWindowMs` remains elapsed-time evidence only. Jank uses nonempty per-iteration samples; CPU percentiles cover produced frames.
+- Scroll window: historical `fling` calls added about 5 s of idle accessibility-event wait each. The old hitch denominator included those waits and understated hitches (about 2.9×). The bounded workloads use explicit steps and `waitForIdle`; hitch now divides summed positive overrun by active frame time (overrun frame sample count × 1000 / Hz). `timelineScrollWindowMs` remains elapsed-time evidence only. Jank uses nonempty per-iteration samples; CPU percentiles cover produced frames.
 - `-gpu host` held headless: `build/emulator/gpu-mode` read `host` for every run; the script refuses anything else.
 - Hz: 60 on the emulator (`hw.lcd.vsync`). The device parse (`dumpsys display`, `renderFrameRate`) was not exercised.
 - Baseline profile on AGP 9: the profile plugin's `nonMinifiedRelease` stayed minified (AGP 9 ignores its legacy keep-all rules), so the first profiles held R8-renamed classes and no timeline classes. `app/src/nonMinifiedRelease/keepRules/profile.keep` (`-dontobfuscate`, `-dontoptimize`) fixes it; adding `-dontshrink` crashed the app at start with `Resources$NotFoundException` (resource shrinking without code shrinking) and was dropped. The committed profile holds `TimelinePageKt` (22 lines), `DayDrawingBuilder` (5) and `DayDrawingReplayKt` (5).
@@ -274,13 +330,13 @@ R2 (dark, 1.0) and R3 (light, 1.3) passed before the review fixes and remain his
 
 The baseline-profile Makefile target now sets `TIER_IDLE_TIMEOUT=1200` for that tier only. Its generator uses the bounded scroll workload and runs through `make baseline-profile`; other tiers retain the 600 s idle cap.
 
-Workload `bounded-swipe-v2` uses 15 explicit 26-step swipes (85% to 15% of the page height, x=8%) with `waitForIdle`. Target travel is roughly 2,800 dp per gesture on pixel; the final day is logged and `trip.plan.end` must remain absent. The CPU band restarts for this workload; old rows are excluded by the Build metadata. The baseline generator uses the same gestures.
+Workload `bounded-swipe-v3` uses 15 gestures, each containing five fixed 26-step swipes (85% to 15% of the page height, x=8%) with `waitForIdle`. Measured travel averages 2,756.2 dp per gesture on pixel (section 6), versus 550.5 dp for one v2 swipe. The benchmark logs the final zero-based day index and asserts 35..50, including >= 35, with `trip.plan.end` absent. No UI query or scroll-end-event wait occurs inside the loop. The CPU band restarts for v3; old rows are excluded by the Build metadata. The baseline generator uses the same gestures and bounds.
 
 Review correction: `timelineRecomposeCount` now counts actual `Compose:recompose` children of `Recomposer:recompose`. The old rows counted Recomposer frames. A real per-frame source was DayMenu's composition-read `derivedStateOf` over never-equal `layoutInfo`; its threshold boolean now comes from `TimelinePage`'s `snapshotFlow`. The probe guard asserts zero DayMenu recompositions while scrolling within the threshold; anchor changes remain expected (OQ-1e-15).
 
 Placeholder counts are draw episodes, not frames (corrects OQ-1e-3). The cached layer need not redraw while it scrolls. `cf.timeline.placeholderToReplay` is an async slice from a day lifetime's first placeholder through its first replay; `timelinePlaceholderToReplayMaxMs` reports the maximum completed interval and `timelinePlaceholderUnreplayedCount` reports intervals without a replay. No placeholders gives 0 ms and 0 unfinished; the duration is report-only and the existing count gate remains an episode gate.
 
-## 14. Verified review fixes (2026-11-17)
+## 14. Historical verified review fixes (2026-11-17)
 
 Review fixes A–L and N, regenerated profiles and validation docs are committed through `ce5cb8db46f8150bd0c6d996e20dc421236b8cbb`. The earlier Git-write blocker is resolved. Per-fix patches and commit subjects remain in `build/review-fixes/commits.tsv` as local evidence; they must not be reapplied to this committed tree.
 
@@ -291,6 +347,6 @@ Validation so far (host Mac arm64; emulator numbers are not device claims):
 - `make check`: passed, including lint, release readiness, manifest verification, R8 analysis, layout guards, generators and pixel smoke tests.
 - `make baseline-profile`: passed through make, 187.13 s wall time including preparation/restoration (Gradle: 3m 4s). Both generated profiles were committed in `0f7c414` (`perf(app): regenerate baseline profiles`).
 
-Fix M is completed by the clean R1 run at `ce5cb8db46f8150bd0c6d996e20dc421236b8cbb`: one `make perf-timeline`, exit 0, no retry; all three benchmark tests passed, with archived JSON, traces, XML, logcat and the trace-processor queries/results. Section 6 records every metric, the final scroll day and the archive path; section 7 records the recomposition, GC and placeholder-to-replay checks; section 12 cites this clean SHA. The light / 1.0 CPU band restarts with `bounded-swipe-v2`.
+Historical v2 validation of fix M at `ce5cb8db46f8150bd0c6d996e20dc421236b8cbb` (superseded: workload too short): one `make perf-timeline`, exit 0, no retry; all three benchmark tests passed, with archived JSON, traces, XML, logcat and the trace-processor queries/results. Section 6 records every metric, the final scroll day and the archive path; section 7 records the recomposition, GC and placeholder-to-replay checks; section 12 now cites the replacement forty-day v3 run. The historical v2 CPU band is superseded by `bounded-swipe-v3`.
 
 The earlier `make check` ran after profile generation while clean R1 was blocked; it was not repeated for this documentation-only recording. No failing test was retried. Kotlin daemon marker writes outside the sandbox again reported `Operation not permitted` during R1, but compilation and the benchmark completed successfully; the archive's `run.log` retains the exact diagnostics. OQ-1e-19 records the placeholder episode/duration distinction and its default.
