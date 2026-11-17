@@ -102,6 +102,11 @@ fun renderPlanMetrics(plan: PlanTokens): String {
     )
     out.append("package net.chronoflow.core.plan.generated\n\nobject PlanMetrics {\n")
     for (metric in plan.metrics) out.append("    const val ${metric.name}: Double = ${doubleLiteral(metric.value)}\n")
-    out.append("    const val pointsPerMinute: Double = pointsPerHour / 60\n}\n")
+    out.append("    const val pointsPerMinute: Double = pointsPerHour / 60\n")
+    for (entry in plan.overlay) {
+        out.append("    // Android overlay: replaces ${entry.replaces}\n")
+        out.append("    const val ${entry.name}: Double = ${doubleLiteral(entry.value)}\n")
+    }
+    out.append("}\n")
     return out.toString()
 }

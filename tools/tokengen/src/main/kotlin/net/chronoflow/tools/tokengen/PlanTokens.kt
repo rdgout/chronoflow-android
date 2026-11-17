@@ -1,5 +1,6 @@
 package net.chronoflow.tools.tokengen
 
+import java.nio.file.Files
 import java.nio.file.Path
 
 class PlanTokens(
@@ -7,6 +8,14 @@ class PlanTokens(
     val metrics: List<Metric>,
     /** `PlanTypeMetrics`: size, line height, and the weight as the face. */
     val types: List<TypeEntry>,
+    /** Android-only metrics from `tools/tokengen/android-overlay.json`, emitted after the iOS values. */
+    val overlay: List<OverlayMetric> = emptyList(),
+)
+
+class OverlayMetric(
+    val name: String,
+    val value: Double,
+    val replaces: String,
 )
 
 fun planTokens(root: Path): PlanTokens {
@@ -57,5 +66,19 @@ fun planTokens(root: Path): PlanTokens {
                 0.0,
             )
     }
-    return PlanTokens(metrics, types)
+    val overlayFile = root.resolve("tools/tokengen/android-overlay.json")
+    val overlay =
+        if (Files.exists(overlayFile)) {
+            parseJson(overlayFile.readText())
+                .obj()
+                .member("planMetrics")
+                .obj()
+                .entries
+                .map { (name, entry) ->
+                    OverlayMetric(name, entry.obj().member("value").double(), entry.obj().member("replaces").string())
+                }
+        } else {
+            emptyList()
+        }
+    return PlanTokens(metrics, types, overlay)
 }

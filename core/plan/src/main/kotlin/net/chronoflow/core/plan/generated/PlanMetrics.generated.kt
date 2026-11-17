@@ -102,4 +102,6 @@ object PlanMetrics {
     const val planTitleSize: Double = 17.0
     const val planTitleLineHeight: Double = 22.0
     const val pointsPerMinute: Double = pointsPerHour / 60
+    // Android overlay: replaces PlanMetrics.touch (44 pt) as the minimum hit target, 04 OQ-T5, plan A10
+    const val minTouchTarget: Double = 48.0
 }
