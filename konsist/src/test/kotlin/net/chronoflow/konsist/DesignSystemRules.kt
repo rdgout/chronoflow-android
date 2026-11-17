@@ -157,7 +157,7 @@ fun designSystemPrimitivesHaveGuards(
     val rendered =
         if (gallery.exists() && sections.isNotEmpty()) {
             Konsist
-                .scopeFromFile(gallery.path)
+                .scopeFromFile(gallery.relativeTo(projectRoot()).invariantSeparatorsPath)
                 .functions()
                 .filter { it.name in sections }
                 .joinToString("\n") { codeOnly(it.text) }
