@@ -84,6 +84,17 @@ class PlanDecoderTests {
             assertThat(worker.dispatches).isGreaterThan(before)
         }
 
+    @Test fun mutatingTheCallersBytesInPlaceDecodesAgain() =
+        runTest(timeout = 60.seconds) {
+            val decoder = decoder()
+            val bytes = recordOf(tripDetail()).detail + ' '.code.toByte()
+            val record = PlanVersionRecord("t", "h", bytes, "now", "v1")
+            decoder.detail(record)
+            bytes[bytes.lastIndex] = '\n'.code.toByte()
+            decoder.detail(record)
+            assertThat(decoder.decodeCount).isEqualTo(2)
+        }
+
     @Test fun evictForcesTheNextCallToDecodeAgain() =
         runTest(timeout = 60.seconds) {
             val decoder = decoder()

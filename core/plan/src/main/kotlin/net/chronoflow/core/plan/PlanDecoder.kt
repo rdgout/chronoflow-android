@@ -41,7 +41,7 @@ class PlanDecoder(
                 val detail = json.decodeFromString(TripDetail.serializer(), record.detail.decodeToString())
                 decodeCount++
                 cache.keys.removeAll { it.trip == record.tripId }
-                cache[key] = Cached(record.detail, detail)
+                cache[key] = Cached(record.detail.copyOf(), detail)
                 detail
             }
         }
