@@ -26,7 +26,7 @@ TIMELINE_HEADER = (
     "Placeholder max | Replay max ms | RSS anon MiB max | RSS growth MiB | Recompose max | GC max | Scroll | Last day | Result |"
 )
 BUILD = "benchmarkRelease, Partial(Require)"
-TIMELINE_BUILD = "benchmarkRelease, Partial(Require)"
+TIMELINE_BUILD = "benchmarkRelease, Partial(Require), bounded-swipe-v2"
 BAND_RATIO = 1.25
 BAND_FLOOR_MS = 1.0
 ABSOLUTE_RISES = {"placeholder": 2, "gc": 1}
@@ -246,7 +246,7 @@ def timeline_baseline(path, args, page):
         if not line.startswith("|"):
             break
         c = cells(line)
-        if len(c) != 26 or c[25] != "PASS":
+        if len(c) != 26 or c[25] != "PASS" or c[10] != TIMELINE_BUILD:
             continue
         if (c[2], c[8], c[7], c[9]) != (args.device_class, args.theme, args.font_scale, page):
             continue

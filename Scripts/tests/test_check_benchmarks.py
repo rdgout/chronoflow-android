@@ -115,10 +115,10 @@ def timeline_check(results, *extra, device_class="emulator", history=None, row_d
     return check(*args, *extra)
 
 
-def history_row(page="host", result="PASS", ff="400.0/410.0", cpu="3.0/5.0/9.0", placeholder="0", gc="0", theme="light"):
+def history_row(page="host", result="PASS", ff="400.0/410.0", cpu="3.0/5.0/9.0", placeholder="0", gc="0", theme="light", workload="bounded-swipe-v2"):
     cells = [
         "2026-11-01", "abc1234", "emulator", "sdk_gphone64_arm64", "36", "60", "host", "1.0", theme, page,
-        "benchmarkRelease, Partial(Require)", ff, cpu, "3.0/3.5", "-1.2", "1.0/2.0", "0.6/1.0", placeholder, "0.5",
+        "benchmarkRelease, Partial(Require)" + (", " + workload if workload else ""), ff, cpu, "3.0/3.5", "-1.2", "1.0/2.0", "0.6/1.0", placeholder, "0.5",
         "68.0", "1.0", "5", gc, "ok", "ok", result,
     ]
     return "| " + " | ".join(cells) + " |"
@@ -282,6 +282,12 @@ class TimelineCheckTest(unittest.TestCase):
         rows = [history_row(page="trip", cpu="3.0/5.0/%s" % p) for p in ("8.0", "9.0", "10.0")]
         result = timeline_check(self.band_fixture(11.3), history=self.history(rows), row_dir=temp_dir(self))
         self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertNotIn("BAND", result.stdout)
+
+    def test_timeline_band_ignores_the_old_workload(self):
+        rows = [history_row(cpu="1.0/1.0/1.0", workload="")]
+        result = timeline_check(self.band_fixture(11.3), history=self.history(rows), row_dir=temp_dir(self))
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertNotIn("BAND", result.stdout)
 
     def test_timeline_placeholder_gate_emulator(self):

@@ -1,8 +1,10 @@
 package net.chronoflow.benchmark
 
 import android.content.Intent
+import android.graphics.Rect
 import androidx.benchmark.macro.MacrobenchmarkScope
 import androidx.test.uiautomator.By
+import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
 import java.util.regex.Pattern
 
@@ -42,3 +44,10 @@ fun MacrobenchmarkScope.topDay(): String? =
         .findObjects(By.res(Pattern.compile("trip\\.day\\..+")))
         .minByOrNull { it.visibleBounds.top }
         ?.resourceName
+
+/** Bounded swipe, about 2,800 dp including inertia on pixel; no accessibility scroll-end event wait. */
+fun UiDevice.swipeTimeline(bounds: Rect) {
+    val x = bounds.left + bounds.width() * 8 / 100
+    check(swipe(x, bounds.top + bounds.height() * 85 / 100, x, bounds.top + bounds.height() * 15 / 100, 26))
+    waitForIdle()
+}

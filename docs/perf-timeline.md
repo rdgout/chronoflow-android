@@ -50,7 +50,7 @@ DEVICE_CLASS=reference make perf-timeline  # physical device only
 make baseline-profile                      # regenerates the committed profiles
 ```
 
-`perf-timeline` runs `TimelineBenchmark` on the `benchmarkRelease` variant with `Partial(BaselineProfileMode.Require)`, then the checker, which prints `Timeline metric:` lines, `Timeline trend:` (+-25 % against the median of the last three PASS rows with the same Class, Theme, Font and Page) and `Timeline band:` lines, and appends one row to section 6. Results JSON and Perfetto traces land in `benchmark/build/outputs/connected_android_test_additional_output/benchmarkRelease/connected/<device>/` and are not committed. `PERF_NO_APPEND=1` keeps a run out of the table; `PERF_GRADLE_ARGS` adds Gradle arguments.
+`perf-timeline` runs `TimelineBenchmark` on the `benchmarkRelease` variant with `Partial(BaselineProfileMode.Require)`, then the checker, which prints `Timeline metric:` lines, `Timeline trend:` (+-25 % against the median of the last three PASS rows with the same Class, Theme, Font, Page and workload) and `Timeline band:` lines, and appends one row to section 6. Results JSON and Perfetto traces land in `benchmark/build/outputs/connected_android_test_additional_output/benchmarkRelease/connected/<device>/` and are not committed. `PERF_NO_APPEND=1` keeps a run out of the table; `PERF_GRADLE_ARGS` adds Gradle arguments.
 
 ## 6. Runs
 
@@ -241,3 +241,5 @@ Device rows open: device only (OQ-A22, OQ-A45); B' is re-evaluated on the first 
 `cf.timeline.targets` encloses the call to `TimelineTargets`. Pausable prefetch composition can execute its bodies after that section ends, so `timelineTargetsMaxMs` is a lower bound, not a complete composition cost. A value below 1 ms cannot establish the low-end aim; inspect full composition traces before changing accessibility behavior (OQ-A46).
 
 The baseline-profile Makefile target now sets `TIER_IDLE_TIMEOUT=1200` for that tier only. Its generator uses the bounded scroll workload and runs through `make baseline-profile`; other tiers retain the 600 s idle cap.
+
+Workload `bounded-swipe-v2` uses 15 explicit 26-step swipes (85% to 15% of the page height, x=8%) with `waitForIdle`. Target travel is roughly 2,800 dp per gesture on pixel; the final day is logged and `trip.plan.end` must remain absent. The CPU band restarts for this workload; old rows are excluded by the Build metadata. The baseline generator uses the same gestures.

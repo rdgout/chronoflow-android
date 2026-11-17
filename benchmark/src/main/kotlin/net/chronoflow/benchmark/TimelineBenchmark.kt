@@ -1,5 +1,6 @@
 package net.chronoflow.benchmark
 
+import android.graphics.Rect
 import android.util.Log
 import androidx.benchmark.macro.BaselineProfileMode
 import androidx.benchmark.macro.CompilationMode
@@ -14,7 +15,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.Direction
-import androidx.test.uiautomator.UiObject2
 import androidx.test.uiautomator.Until
 import net.chronoflow.core.testing.tiers.Perf
 import org.junit.Rule
@@ -35,7 +35,7 @@ class TimelineBenchmark {
     private val compilation = CompilationMode.Partial(BaselineProfileMode.Require)
     private val dayMenuEntry = Pattern.compile("trip\\.dayMenu\\.day\\.\\d+")
 
-    private lateinit var page: UiObject2
+    private lateinit var pageBounds: Rect
     private var startDay: String? = null
 
     @Test
@@ -91,14 +91,15 @@ class TimelineBenchmark {
                 pressHome()
                 startActivityAndWait(large60Intent(packageName))
                 awaitPresented()
-                page = device.findObject(By.res("trip.page")).also { it.setGestureMargin(device.displayWidth / 5) }
+                pageBounds = checkNotNull(device.findObject(By.res("trip.page"))).visibleBounds
                 startDay = checkNotNull(topDay())
             },
         ) {
-            repeat(FLINGS) { page.fling(Direction.DOWN) }
+            repeat(FLINGS) { device.swipeTimeline(pageBounds) }
             val endDay = topDay()
-            Log.i("CfBench", "Timeline scroll progress after $FLINGS flings: $startDay -> $endDay")
-            check(endDay != null && endDay != startDay) { "15 flings did not advance the day: $startDay -> $endDay" }
+            Log.i("CfBench", "Timeline scroll progress after $FLINGS bounded-swipe-v2 gestures: $startDay -> $endDay")
+            check(!device.hasObject(By.res("trip.plan.end"))) { "bounded-swipe-v2 reached the plan end" }
+            check(endDay != null && endDay != startDay) { "15 gestures did not advance the day: $startDay -> $endDay" }
         }
 
     @Test
@@ -140,7 +141,7 @@ class TimelineBenchmark {
             list.setGestureMargin(device.displayWidth / 5)
             var flings = 0
             while (!device.hasObject(By.res("trip.plan.end")) && flings < END_FLINGS) {
-                list.fling(Direction.DOWN)
+                device.swipeTimeline(list.visibleBounds)
                 flings++
             }
             check(device.hasObject(By.res("trip.plan.end"))) { "trip.plan.end not reached in $END_FLINGS flings" }

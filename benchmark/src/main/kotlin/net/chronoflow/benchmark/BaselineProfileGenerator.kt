@@ -4,7 +4,6 @@ import androidx.benchmark.macro.junit4.BaselineProfileRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
-import androidx.test.uiautomator.Direction
 import net.chronoflow.core.testing.tiers.Perf
 import org.junit.Rule
 import org.junit.Test
@@ -32,8 +31,8 @@ class BaselineProfileGenerator {
             pressHome()
             startActivityAndWait(large60Intent(packageName))
             awaitPresented()
-            val page = device.findObject(By.res("trip.page"))
-            page.setGestureMargin(device.displayWidth / 5)
-            repeat(15) { page.fling(Direction.DOWN) }
+            val bounds = checkNotNull(device.findObject(By.res("trip.page"))).visibleBounds
+            repeat(15) { device.swipeTimeline(bounds) }
+            check(!device.hasObject(By.res("trip.plan.end"))) { "bounded-swipe-v2 reached the plan end" }
         }
 }
