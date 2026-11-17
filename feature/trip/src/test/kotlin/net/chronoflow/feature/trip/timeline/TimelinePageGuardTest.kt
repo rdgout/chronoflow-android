@@ -20,8 +20,8 @@ import org.robolectric.annotation.GraphicsMode
 
 /**
  * The page has no wide layout before 6e, so it runs the phone matrix. Timeline targets overlap by design (hit frames
- * of at least 48 dp around small tiles), and a long sleep tile's frame is taller than the safe window, so the overlap
- * and safe-area guards exempt them (OQ-1d-16); the touch-target guard does not. Headings get their designed check in
+ * of at least 48 dp around small tiles), so the overlap guard exempts them (OQ-1d-16); the touch-target and
+ * safe-area guards do not. Headings get their designed check in
  * 6b, which is why `assertAll` is not used here.
  */
 @OptIn(ExperimentalTestApi::class)
@@ -48,7 +48,7 @@ class TimelinePageGuardTest(
         composeRule.waitUntilExactlyOneExists(hasTestTag("trip.timeline.ready"), 10_000)
         Guards.assertTextFits(composeRule, case.profile)
         Guards.assertTouchTargets(composeRule, case.profile)
-        Guards.assertInteractiveInSafeArea(composeRule, case.profile, exemptTags = blockTags)
+        Guards.assertInteractiveInSafeArea(composeRule, case.profile)
         Guards.assertNoInteractiveOverlap(composeRule, exemptTags = blockTags)
         Guards.assertInk(composeRule, case.profile)
     }
