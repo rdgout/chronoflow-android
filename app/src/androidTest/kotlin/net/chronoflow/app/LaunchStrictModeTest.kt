@@ -4,7 +4,6 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.test.platform.app.InstrumentationRegistry
 import net.chronoflow.app.testing.ScreenTest
 import net.chronoflow.core.testing.tiers.Smoke
-import org.junit.Assert.assertTrue
 import org.junit.Test
 
 @Smoke
@@ -16,6 +15,5 @@ class LaunchStrictModeTest : ScreenTest() {
         launch(mapOf("CF_UI_TEST_PROFILE" to "launch"))
         waitFor(5000) { graph.launch.openingDone }
         compose.onNodeWithTag("launch.opening").assertExists()
-        assertTrue(android.os.Process.myPid() > 0)
     }
 }
