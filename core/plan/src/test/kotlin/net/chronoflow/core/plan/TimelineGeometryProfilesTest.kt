@@ -2,6 +2,7 @@ package net.chronoflow.core.plan
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import net.chronoflow.core.model.contracts.Language
 import net.chronoflow.core.model.contracts.TripDetail
 import net.chronoflow.core.plan.generated.PlanMetrics
 import net.chronoflow.core.testing.DeviceProfiles
@@ -18,16 +19,12 @@ class TimelineGeometryProfilesTest(
     private val width: Double,
 ) {
     @Test fun accessibilityTargetsFollowTilesAndGutterMarkers() {
-        val layouts = layouts.getValue(fixtureName)
+        val (layouts, prepared) = fixtures.getValue(fixtureName)
         val problems = mutableListOf<String>()
-        for (layout in layouts) {
+        for (day in prepared.days) {
+            val layout = layouts.getValue(day.id)
             val geometry = TimelineGeometry(layout, width)
-            val blocks =
-                layout.placed.values
-                    .flatten()
-                    .map { it.block.id } +
-                    layout.markers.map { it.block.id } + layout.changes.map { it.block.id }
-            for (id in blocks) {
+            for (id in day.blocks.map { it.id }) {
                 val frame = timelineBlockFrame(id, geometry, layout)
                 if (frame == null) {
                     problems += "$id: no frame"
@@ -49,9 +46,10 @@ class TimelineGeometryProfilesTest(
     }
 
     companion object {
-        private val layouts: Map<String, List<DayLayout>> by lazy {
+        private val fixtures: Map<String, Pair<Map<String, DayLayout>, PreparedPlan>> by lazy {
             val s3: TripDetail = MockTripTemplates.templates()[2].detail
-            mapOf("S3" to layoutPlan(s3.plan, s3.timeline).values.toList())
+            val layouts = layoutPlan(s3.plan, s3.timeline)
+            mapOf("S3" to (layouts to prepare(s3, Language.Nl, layouts = layouts)))
         }
 
         @JvmStatic

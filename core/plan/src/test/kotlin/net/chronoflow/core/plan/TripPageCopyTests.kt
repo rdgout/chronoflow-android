@@ -3,6 +3,8 @@ package net.chronoflow.core.plan
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import net.chronoflow.core.model.contracts.Language
+import net.chronoflow.core.model.contracts.TripDetailLegView
+import net.chronoflow.core.testing.MockTripTemplates
 import org.junit.Test
 
 class TripPageCopyTests {
@@ -41,5 +43,47 @@ class TripPageCopyTests {
         assertThat(tripDatesText("2026-10-12", null, Language.Nl)).isEqualTo("12 okt")
         assertThat(tripMetaText("2026-10-12", "2026-10-18", listOf(" KL 861 ", "", "JL 1"), Language.En))
             .isEqualTo("12–18 Oct · KL 861 · JL 1")
+    }
+
+    @Test fun outboundFlightNumbersFillTheSubtitle() {
+        val detail = MockTripTemplates.templates()[2].detail
+        val from = detail.trip.from
+        val to = detail.trip.to
+        val legs =
+            listOf(
+                TripDetailLegView(0, " KL 861 ", from, to, returnLeg = false),
+                TripDetailLegView(1, "", from, to, returnLeg = false),
+                TripDetailLegView(2, "JL 1", from, to, returnLeg = false),
+                TripDetailLegView(3, "RETURN", to, from, returnLeg = true),
+            )
+        val prepared = prepare(detail.copy(trip = detail.trip.copy(legs = legs)))
+        assertThat(prepared.subtitle.endsWith(" · KL 861 · JL 1")).isEqualTo(true)
+        assertThat(prepared.subtitle.contains("RETURN")).isEqualTo(false)
+    }
+
+    @Test fun preparationPreservesNoticeTones() {
+        val detail = MockTripTemplates.templates()[2].detail
+        val layouts = layoutPlan(detail.plan, detail.timeline)
+        val problems = mutableListOf<String>()
+        for (language in listOf(Language.En, Language.Nl)) {
+            for (day in prepare(detail, language, layouts = layouts).days) {
+                val notices = noticeItems(detail.plan, detail.notices, day.day)
+                if (day.notices.map { it.warning } != notices.map { it.warning }) problems += "${day.id}: tones"
+                if (day.warningCount != day.notices.count { it.warning }) problems += "${day.id}: warning count"
+                if (!day.notices.all { it.text.isNotEmpty() }) problems += "${day.id}: empty text"
+                if (day.shownNotices(expanded = false, notesOpen = true).isNotEmpty()) {
+                    problems +=
+                        "${day.id}: collapsed"
+                }
+                if (day.shownNotices(expanded = true, notesOpen = true) != day.notices) problems += "${day.id}: open"
+                val warningsOnly = if (day.warningCount > 0) day.notices else emptyList()
+                if (day.shownNotices(expanded = true, notesOpen = false) !=
+                    warningsOnly
+                ) {
+                    problems += "${day.id}: warnings"
+                }
+            }
+        }
+        assertThat(problems).isEqualTo(emptyList<String>())
     }
 }
