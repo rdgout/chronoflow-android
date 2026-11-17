@@ -21,3 +21,20 @@ internal val welcomeTags =
 
 internal fun ComposeContentTestRule.bounds(tag: String): DpRect =
     onNodeWithTag(tag, useUnmergedTree = true).getUnclippedBoundsInRoot()
+
+internal class CountingWelcomeClock : net.chronoflow.feature.launch.model.LaunchClock {
+    private val manual =
+        net.chronoflow.feature.launch.model
+            .ManualLaunchClock()
+    var reads = 0
+        private set
+    val pendingSleeps get() = manual.pendingSleeps
+    override val now: kotlin.time.Duration get() {
+        reads++
+        return manual.now
+    }
+
+    override suspend fun sleepUntil(deadline: kotlin.time.Duration) = manual.sleepUntil(deadline)
+
+    fun advance(to: kotlin.time.Duration) = manual.advance(to)
+}

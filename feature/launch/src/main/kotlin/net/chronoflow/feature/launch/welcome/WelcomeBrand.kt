@@ -22,7 +22,11 @@ import net.chronoflow.core.ui.R
 import net.chronoflow.feature.launch.model.MoonAnchorStore
 
 @Composable
-internal fun WelcomeBrand(moonAnchorStore: MoonAnchorStore?) {
+@Suppress("ktlint:compose:modifier-naming")
+internal fun WelcomeBrand(
+    moonAnchorStore: MoonAnchorStore?,
+    wordmarkModifier: Modifier = Modifier,
+) {
     val density = LocalDensity.current.density
     Row(
         horizontalArrangement = Arrangement.spacedBy(WelcomeTokens.brandGap.dp),
@@ -36,7 +40,7 @@ internal fun WelcomeBrand(moonAnchorStore: MoonAnchorStore?) {
         )
         Text(
             stringResource(R.string.welcome_chronoflow),
-            Modifier.testTag(WelcomeTags.WORDMARK).introItem(),
+            wordmarkModifier.testTag(WelcomeTags.WORDMARK),
             color = CfTheme.colors.skyTitle,
             style = CfTheme.type.welcomeWordmark,
         )

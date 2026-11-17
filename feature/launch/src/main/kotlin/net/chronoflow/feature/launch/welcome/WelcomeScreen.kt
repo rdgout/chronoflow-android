@@ -14,6 +14,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
@@ -27,12 +32,13 @@ import net.chronoflow.core.designsystem.component.CfButtonStyle
 import net.chronoflow.core.designsystem.effect.CfSky
 import net.chronoflow.core.designsystem.generated.WelcomeTokens
 import net.chronoflow.core.designsystem.theme.CfTheme
+import net.chronoflow.core.designsystem.theme.LocalReduceMotion
 import net.chronoflow.core.ui.R
 import net.chronoflow.feature.launch.model.LaunchIntro
 import net.chronoflow.feature.launch.model.MoonAnchorStore
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
-@Suppress("UNUSED_PARAMETER")
 fun WelcomeScreen(
     intro: LaunchIntro?,
     moonAnchorStore: MoonAnchorStore?,
@@ -40,6 +46,30 @@ fun WelcomeScreen(
     onSignIn: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val reduceMotion = LocalReduceMotion.current
+    val presented = remember(intro) { intro?.takeIf { !it.hasPlayed && !reduceMotion } }
+    val onComposition = welcomeCompositionObserver()
+    SideEffect {
+        presented?.claim()
+        onComposition()
+    }
+    val now =
+        remember(presented) {
+            mutableLongStateOf((presented?.frozenTime ?: presented?.clock?.now)?.inWholeNanoseconds ?: 0L)
+        }
+    LaunchedEffect(presented) {
+        val active = presented ?: return@LaunchedEffect
+        if (active.frozenTime != null) return@LaunchedEffect
+        active.clock.sleepUntil(active.start)
+        while (true) {
+            var elapsed = active.clock.now
+            withFrameNanos {
+                elapsed = active.clock.now
+                now.longValue = elapsed.inWholeNanoseconds
+            }
+            if (elapsed >= active.start + 900.milliseconds) break
+        }
+    }
     val sky = CfSky.brush(CfTheme.colors.isDark)
     val locale = LocalConfiguration.current.locales[0]
     Box(modifier.fillMaxSize().background(sky)) {
@@ -47,11 +77,11 @@ fun WelcomeScreen(
             modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
             heading = {
                 Column(verticalArrangement = Arrangement.spacedBy(WelcomeTokens.groupGap.dp)) {
-                    WelcomeBrand(moonAnchorStore)
+                    WelcomeBrand(moonAnchorStore, Modifier.introItem(0, presented, now))
                     Box(Modifier.padding(top = WelcomeTokens.eyebrowMargin.dp)) {
                         Text(
                             stringResource(R.string.welcome_jet_lag_planner).uppercase(locale),
-                            Modifier.testTag(WelcomeTags.EYEBROW).introItem(),
+                            Modifier.introItem(1, presented, now).testTag(WelcomeTags.EYEBROW),
                             color = CfTheme.colors.dawn,
                             style = CfTheme.type.eyebrow,
                         )
@@ -61,11 +91,11 @@ fun WelcomeScreen(
                             R.string.welcome_plan_your_clock_shift_for_your_next_trip,
                         ),
                         Modifier
+                            .introItem(2, presented, now)
                             .testTag(WelcomeTags.HEADLINE)
                             .semantics {
                                 heading()
-                            }.introItem()
-                            .welcomeLineHeight(CfTheme.type.headline.lineHeight),
+                            }.welcomeLineHeight(CfTheme.type.headline.lineHeight),
                         color = CfTheme.colors.skyTitle,
                         style = CfTheme.type.headline,
                     )
@@ -86,9 +116,8 @@ fun WelcomeScreen(
                                 .widthIn(
                                     max = WelcomeWindowPolicy.COPY_CARD_MAX_DP.dp,
                                 ).fillMaxWidth()
-                                .testTag(
-                                    WelcomeTags.COPY,
-                                ).introItem()
+                                .introItem(3, presented, now)
+                                .testTag(WelcomeTags.COPY)
                                 .background(
                                     CfTheme.colors.skyCopyBackground,
                                     RoundedCornerShape(WelcomeTokens.cardRadius.dp),
@@ -103,7 +132,7 @@ fun WelcomeScreen(
                     CfButton(
                         text = stringResource(R.string.welcome_plan_my_trip),
                         onClick = onPlanMyTrip,
-                        modifier = Modifier.testTag(WelcomeTags.PLAN).introItem(),
+                        modifier = Modifier.introItem(4, presented, now).testTag(WelcomeTags.PLAN),
                         style = CfButtonStyle.Dawn,
                         fillWidth = true,
                         minHeight = WelcomeTokens.buttonHeight.dp,
@@ -117,7 +146,7 @@ fun WelcomeScreen(
                     CfButton(
                         text = stringResource(R.string.welcome_sign_in),
                         onClick = onSignIn,
-                        modifier = Modifier.testTag(WelcomeTags.SIGN_IN).introItem(),
+                        modifier = Modifier.introItem(5, presented, now).testTag(WelcomeTags.SIGN_IN),
                         style = CfButtonStyle.OnSky,
                         fillWidth = true,
                         minHeight = WelcomeTokens.buttonHeight.dp,
