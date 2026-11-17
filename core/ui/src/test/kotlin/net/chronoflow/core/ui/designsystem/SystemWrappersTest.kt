@@ -5,6 +5,7 @@ package net.chronoflow.core.ui.designsystem
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -115,7 +116,7 @@ class SystemWrappersTest : PrimitiveTestFixture() {
             val behavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
             Column(Modifier.fillMaxSize().nestedScroll(behavior.nestedScrollConnection)) {
                 CfLargeTopAppBar(stringResource(R.string.settings_change_password), behavior, Modifier.testTag("bar"))
-                LazyColumn(Modifier.testTag("list")) {
+                LazyColumn(Modifier.fillMaxWidth().testTag("list")) {
                     items(30, key = { it }, contentType = { "spacer" }) { Box(Modifier.height(100.dp)) }
                 }
             }
@@ -127,11 +128,11 @@ class SystemWrappersTest : PrimitiveTestFixture() {
                 .boundsInRoot.height
         compose.onNodeWithTag("list").performTouchInput { swipeUp() }
         compose.waitForIdle()
-        assertTrue(
+        val collapsed =
             compose
                 .onNodeWithTag("bar")
                 .fetchSemanticsNode()
-                .boundsInRoot.height < expanded,
-        )
+                .boundsInRoot.height
+        assertTrue("App bar height must shrink after scrolling: $expanded -> $collapsed", collapsed < expanded)
     }
 }
