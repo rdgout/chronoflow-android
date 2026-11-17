@@ -1586,6 +1586,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 **Delivers.** Builds Welcome on the plain sky with the board composition at every window size, the 560 dp copy card on wide windows, and the first-launch intro whose stagger comes from the shared LaunchClock. The overlay moon lands on Welcome's measured moon anchor, and Reduce Motion skips the intro. Plan my trip and Sign in route to debug seams until their destinations exist. Tests cover the composition formula across profiles, the 2550 ms interactive and 3200 ms last-item timing, accessibility order, and reference-free guards in both languages and themes.
 
 **Tasks**
+- [x] **Welcome timing instrumentation** (3c Task 9): trace-based moments, per-iteration emulator gates and full-intro benchmark/profile waits; quiet-host measurements and regenerated profiles remain with the orchestrator.
 - [x] **Welcome board captures** (3c Task 8): 42 final, intro and measured hand-off PNGs in build/captures; standalone overlay fixtures supply profile insets.
 - [x] **Diagnostic Welcome mode** (3c Task 6): enable fixed/frozen Welcome in debug and perf, including measured anchors.
 - [x] **Intro rendering** (3c Task 4): layer-only sampling of the shared clock, first-appearance claim, frozen frames and a debug-only composition probe.
