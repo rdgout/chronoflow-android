@@ -32,6 +32,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -139,6 +140,8 @@ internal fun DayMenu(
             onDismissRequest = { expanded = false },
             containerColor = colors.popover,
             scrollState = menuScroll,
+            // The popup is its own window, so it needs its own opt-in for the perf journeys to find the entries by tag.
+            modifier = Modifier.semantics { testTagsAsResourceId = true },
         ) {
             Text(
                 text = goTo,
