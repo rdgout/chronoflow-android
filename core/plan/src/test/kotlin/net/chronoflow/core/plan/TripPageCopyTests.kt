@@ -49,6 +49,8 @@ class TripPageCopyTests {
             tripDatesText("2026-03-01", "2026-03-02", Language.Nl, long = true, pageCopy = nl),
         ).isEqualTo("1 tot 2 maart")
         assertThat(tripDatesText("2026-10-12", null, Language.Nl, pageCopy = nl)).isEqualTo("12 okt")
+        assertThat(tripDatesText("", null, Language.En, pageCopy = en)).isEqualTo("")
+        assertThat(tripDatesText("2026-10", "2026-1", Language.En, pageCopy = en)).isEqualTo("2026-10–2026-1")
         assertThat(tripMetaText("2026-10-12", "2026-10-18", listOf(" KL 861 ", "", "JL 1"), Language.En, en))
             .isEqualTo("12–18 Oct · KL 861 · JL 1")
     }

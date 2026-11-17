@@ -18,6 +18,7 @@ fun tripDatesText(
         value: String,
         leading: Boolean = false,
     ): String {
+        if (value.length < 10) return value
         val month = value.substring(5, 7).toIntOrNull()?.takeIf { it in 1..12 } ?: return value
         val day = value.substring(8, 10).toIntOrNull() ?: return value
         val out = StringBuilder(14).append(day)
