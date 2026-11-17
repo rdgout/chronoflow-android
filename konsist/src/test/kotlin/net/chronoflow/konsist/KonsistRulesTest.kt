@@ -5,6 +5,7 @@ import assertk.assertFailure
 import assertk.assertions.messageContains
 import com.lemonappdev.konsist.api.Konsist
 import com.lemonappdev.konsist.api.container.KoScope
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class KonsistRulesTest {
@@ -227,11 +228,26 @@ class KonsistRulesTest {
     }
 
     @Test fun designSystemPrimitivesHaveGuardsRejectsCommentOnlyCoverage() {
-        assertFailure {
-            designSystemPrimitivesHaveGuards(
-                violations("designSystemPrimitivesHaveGuards"),
-                java.io.File("konsist/src/test/resources/violations/designSystemPrimitivesHaveGuards/guards"),
+        val guards =
+            java.io.File(
+                projectRoot(),
+                "konsist/src/test/resources/violations/designSystemPrimitivesHaveGuards/guards",
             )
+        val fixture = java.io.File(guards, "CommentOnlyGuardsTest.kt")
+        assertTrue("Missing comment-only guard fixture: $fixture", fixture.isFile)
+        assertTrue("Missing planted call mention", fixture.readText().contains("CfOrphan()"))
+        assertFailure {
+            designSystemPrimitivesHaveGuards(violations("designSystemPrimitivesHaveGuards"), guards)
         }.messageContains("CfOrphan")
+    }
+
+    @Test fun designSystemPrimitivesHaveGuardsAllowsExecutableCoverage() {
+        val guards =
+            java.io.File(
+                projectRoot(),
+                "konsist/src/test/resources/allowed/designSystemPrimitivesHaveGuards/guards",
+            )
+        assertTrue("Missing executable guard fixture", java.io.File(guards, "ExecutableGuardsTest.kt").isFile)
+        designSystemPrimitivesHaveGuards(allowed("designSystemPrimitivesHaveGuards"), guards)
     }
 }

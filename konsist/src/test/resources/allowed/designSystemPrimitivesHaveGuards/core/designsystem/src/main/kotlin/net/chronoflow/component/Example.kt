@@ -1,3 +1,4 @@
 package net.chronoflow
 
-internal fun notAPrimitive() {}
+@Composable
+fun CfOrphan() {}
