@@ -520,7 +520,7 @@ Every screen scrolls when height-constrained. The minimum width is 280 dp; below
 | Last intro item | 3200 ms ± 1 frame | same | functional | `intro` trace | 3c |
 | TTFD | Hand-off end + ≤ 2 frames | same | report | `StartupTimingMetric.timeToFullDisplayMs` via `reportFullyDrawn()` | 3b, 7 |
 | Plan preparation (decode + layout + prepare), JVM | S3 ≤ 40 ms, large30 ≤ 100, large60 ≤ 200, every one of 10 samples after 3 warm-ups | — | — | `TimelinePreparationBudgetTest` (`@TimingGate`, the serial `make timing` tier), `System.nanoTime`, same limits for every build type | 1b |
-| `DayDrawing` build | median of 5 passes ≤ 5 ms per day and ≤ 150 ms per width for large60, ≤ 512 KiB per drawing at 360/411/841 dp | — | — | JVM `@TimingGate` test with the fake `TextMetrics` (serial `make timing`, 3 warm-up passes; the max is reported, never gated); Robolectric test with real `TextPaint` | 1c |
+| `DayDrawing` build | median of 5 passes ≤ 1 ms per day and ≤ 5 ms per width for large60, ≤ 512 KiB per drawing at 360/411/841 dp | — | — | JVM `@TimingGate` test with the fake `TextMetrics` (serial `make timing`, 3 warm-up passes; the max is reported, never gated); Robolectric test with real `TextPaint` | 1c |
 | Drawing cache | ≤ 4 MiB, ≤ 8 entries | — | — | Unit test | 1c |
 | Invalidation (static/clock draws) | Scroll 0/0; minute 0/1; day boundary 0/2; check-off redraws day k only | — | — | Robolectric `TimelineProbe` test | 1d |
 | First large60 timeline frame | ≤ 800 / ≤ 450 ms | ≤ 1500 / ≤ 800 ms | ≤ 800 ms (gate) | `timelineFirstFrame`: `TraceSectionMetric("cf.timeline.firstFrame")`, start into `cf.trip-page=large60`, 10 iterations | 1e |
@@ -1190,7 +1190,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - `Packages/ChronoFlowKit/Sources/PlanUI/TripPage/PlanAppearance.swift`
   - `Packages/ChronoFlowKit/Sources/PlanCore/PlanMetrics.generated.swift`
 
-**Delivers.** Implements the per-day static drawing as an immutable struct-of-arrays op list (DayDrawing), built by a pure JVM builder in :core:plan behind a TextMetrics interface. The builder follows the iOS renderer's draw order, category styles and tile content rules. The phase adds the Android TextPaint metrics, the hit index, the accessibility target list, the replay onto a native Canvas with shared resources (hatch and dot shaders, parsed lucide paths) and the bounded DayDrawingCache. JVM and Robolectric tests hold the build budgets (5 ms per day, 150 ms per width, 512 KiB per drawing) and reference-free render guards in light and dark.
+**Delivers.** Implements the per-day static drawing as an immutable struct-of-arrays op list (DayDrawing), built by a pure JVM builder in :core:plan behind a TextMetrics interface. The builder follows the iOS renderer's draw order, category styles and tile content rules. The phase adds the Android TextPaint metrics, the hit index, the accessibility target list, the replay onto a native Canvas with shared resources (hatch and dot shaders, parsed lucide paths) and the bounded DayDrawingCache. JVM and Robolectric tests hold the build budgets (1 ms per day, 5 ms per width, 512 KiB per drawing) and reference-free render guards in light and dark.
 
 **Tasks**
 - [x] **DayDrawing.kt** (`:core:plan`): op codes in a `ByteArray`, coordinates in a `FloatArray`, colors in an `IntArray`, plus text runs and path ids. It is immutable and reports `estimatedBytes`.
@@ -1207,7 +1207,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - `DrawScope.replay(drawing, resources)` draws on `drawContext.canvas.nativeCanvas` and never measures.
 - [x] **DayDrawingCache.kt.** An LRU keyed by (dayId, revision, widthPx, dark, fontScale, language). Limits: ≤ 4 MiB, ≤ 512 KiB per drawing, ≤ 8 entries; it evicts by bytes, then by count.
 - [x] **Tests.**
-  - `DayDrawingBudgetTest` (`@TimingGate`, run serially by `make timing`, fake metrics): after 3 warm-up passes, the median of 5 measured passes stays ≤ 5 ms per day and ≤ 150 ms per width for large60 at 360, 411 and 841 dp (the max is reported, never gated); ≤ 512 KiB per drawing.
+  - `DayDrawingBudgetTest` (`@TimingGate`, run serially by `make timing`, fake metrics): after 3 warm-up passes, the median of 5 measured passes stays ≤ 1 ms per day and ≤ 5 ms per width for large60 at 360, 411 and 841 dp (the max is reported, never gated); ≤ 512 KiB per drawing.
   - `DayDrawingCacheTest`: equal keys reuse the entry; dark, width and font scale miss; the caps hold.
   - `DrawOrderGoldenTest`: the S3 day-1 op list against a reviewed golden.
   - `ReplayGuardTest` (Robolectric, real `TextPaint`): S3 days at 360, 411, 639, 640 and 841 dp, in en and nl, light and dark, at font scale 1.0 and 1.3. No text leaves its tile, no tile leaves its lane, and the palette equals the tokens.

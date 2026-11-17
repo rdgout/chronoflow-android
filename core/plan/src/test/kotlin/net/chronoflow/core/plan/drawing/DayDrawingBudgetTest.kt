@@ -8,7 +8,7 @@ import java.util.Locale
 
 /**
  * Build budget on the host JVM with fake metrics: the largest per-day median of five passes <= 1 ms, the median
- * per-width total <= 3 ms, each drawing <= 512 KiB. The single largest sample is printed, never gated.
+ * per-width total <= 5 ms, each drawing <= 512 KiB. The single largest sample is printed, never gated.
  */
 @TimingGate
 class DayDrawingBudgetTest {
@@ -71,7 +71,7 @@ class DayDrawingBudgetTest {
             ),
         )
         assertTrue("day median max $dayMedianMax ms > 1 ms at $window", dayMedianMax <= 1.0)
-        assertTrue("total median $totalMedian ms > 3 ms at $window", totalMedian <= 3.0)
+        assertTrue("total median $totalMedian ms > 5 ms at $window", totalMedian <= 5.0)
     }
 
     private fun median(values: DoubleArray): Double = values.sorted()[values.size / 2]

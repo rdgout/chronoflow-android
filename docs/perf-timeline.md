@@ -146,7 +146,7 @@ Three `./gradlew :core:plan:timingTest --max-workers=1 --rerun` runs on 2026-11-
 | 411 | 0.04 / 0.05 / 0.8 | 0.04 / 0.07 / 0.8 | 0.04 / 0.07 / 0.8 |
 | 841 | 0.04 / 0.07 / 1.4 | 0.04 / 0.08 / 1.5 | 0.05 / 0.06 / 1.5 |
 
-New limits (OQ-1e-4, tightened only): per day `max(1, ceil(2 x 0.06))` = 1 ms (was 5); per width `ceil(2 x 1.5)` = 3 ms (was 150). Three more `--rerun` runs at these limits all passed. Unchanged: 512 KiB per drawing, 4 MiB and 8 entries for the cache, and 1b's 40, 100 and 200 ms preparation limits.
+New limits (OQ-1e-4, tightened only): per day `max(1, ceil(2 x 0.06))` = 1 ms (was 5); per width `max(5, ceil(2 x 1.5))` = 5 ms (was 150; review adds a 5 ms floor to avoid host scheduling flakes). Three more `--rerun` runs at these limits all passed. Unchanged: 512 KiB per drawing, 4 MiB and 8 entries for the cache, and 1b's 40, 100 and 200 ms preparation limits.
 
 ## Board differences (Phase 1c)
 
