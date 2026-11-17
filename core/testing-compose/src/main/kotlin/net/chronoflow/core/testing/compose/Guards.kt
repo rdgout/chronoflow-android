@@ -46,18 +46,21 @@ object Guards {
 
     private fun ancestors(node: SemanticsNode): Sequence<SemanticsNode> = generateSequence(node.parent) { it.parent }
 
-    private fun hasVerticalScrollAncestor(node: SemanticsNode) =
-        ancestors(node).any { SemanticsProperties.VerticalScrollAxisRange in it.config }
+    private fun hasScrollAncestor(node: SemanticsNode) =
+        ancestors(node).any {
+            SemanticsProperties.VerticalScrollAxisRange in it.config ||
+                SemanticsProperties.HorizontalScrollAxisRange in it.config
+        }
 
     private fun byId(id: Int) = SemanticsMatcher("id=$id") { it.id == id }
 
-    /** Scrolls a node into view when a vertical scroll container holds it, then returns its fresh bounds. */
+    /** Scrolls a node into view when a scroll container holds it, then returns its fresh bounds. */
     private fun settledBounds(
         rule: SemanticsNodeInteractionsProvider,
         node: SemanticsNode,
         useUnmergedTree: Boolean,
     ): Rect {
-        if (!hasVerticalScrollAncestor(node)) return node.boundsInRoot
+        if (!hasScrollAncestor(node)) return node.boundsInRoot
         val interaction = rule.onNode(byId(node.id), useUnmergedTree)
         interaction.performScrollTo()
         return interaction.fetchSemanticsNode().boundsInRoot
@@ -81,8 +84,7 @@ object Guards {
         for (node in rule.onAllNodes(hasText, useUnmergedTree = true).fetchSemanticsNodes()) {
             val bounds = settledBounds(rule, node, useUnmergedTree = true)
             val horizontal = bounds.left >= -TOLERANCE && bounds.right <= width + TOLERANCE
-            val vertical =
-                hasVerticalScrollAncestor(node) || (bounds.top >= -TOLERANCE && bounds.bottom <= height + TOLERANCE)
+            val vertical = bounds.top >= -TOLERANCE && bounds.bottom <= height + TOLERANCE
             if (!horizontal || !vertical) {
                 throw AssertionError("${describe(node)} leaves the window: ${rect(bounds)} vs [0, 0, $width, $height]")
             }

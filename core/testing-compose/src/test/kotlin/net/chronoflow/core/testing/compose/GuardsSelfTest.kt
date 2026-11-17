@@ -2,15 +2,19 @@ package net.chronoflow.core.testing.compose
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Text
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
@@ -115,6 +119,35 @@ class GuardsSelfTest {
     @Test
     fun textWiderThanTheWindowFailsOnlyTextFits() {
         composeRule.setContent { GoodLayout(inside = { Text("Wide", modifier = Modifier.requiredWidth(600.dp)) }) }
+        assertOnlyFails(Guard.TextFits)
+    }
+
+    @Test
+    fun horizontallyScrollingChipRowPasses() {
+        composeRule.setContent {
+            GoodLayout(
+                inside = {
+                    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
+                        repeat(8) { Box(Modifier.minimumInteractiveComponentSize().clickable {}) { Text("Chip $it") } }
+                    }
+                },
+            )
+        }
+        Guards.assertTextFits(composeRule, profile)
+        Guards.assertInteractiveInSafeArea(composeRule, profile)
+    }
+
+    @Test
+    fun scrollingContainerWiderThanTheWindowStillFails() {
+        composeRule.setContent {
+            GoodLayout(
+                inside = {
+                    Box(Modifier.requiredWidth(900.dp)) {
+                        Row(Modifier.width(900.dp).horizontalScroll(rememberScrollState())) { Text("Far chip") }
+                    }
+                },
+            )
+        }
         assertOnlyFails(Guard.TextFits)
     }
 
