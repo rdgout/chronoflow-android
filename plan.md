@@ -1096,7 +1096,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 - [x] **Time hygiene.**
   - A `ZoneRules` cache and cached `DateTimeFormatter`s.
   - A Konsist rule forbids `Locale.getDefault`, `TimeZone.getDefault`, `ZoneId.systemDefault` and `System.currentTimeMillis` in `:core:plan`, `:core:sync`, `:core:reminders` and `:core:wizard`.
-- [ ] **Ported tests.** Port every non-geometry case of iOS `Tests/PlanCoreTests`, with the Swift names; geometry follows in 1b.
+- [x] **Ported tests.** Port every non-geometry case of iOS `Tests/PlanCoreTests`, with the Swift names; geometry follows in 1b.
 
 **Acceptance**
 - Every ported case passes in `make quick`.

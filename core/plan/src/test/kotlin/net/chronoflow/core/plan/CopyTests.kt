@@ -192,9 +192,12 @@ class CopyTests {
 
     @Test fun reviewFixturesResolve() {
         val failures = mutableListOf<String>()
+        var lines = 0
         for (name in listOf("wizard/review", "wizard/needs-answers")) {
-            unresolvedCopyLines(ApiJson.response.parseToJsonElement(Fixtures.text("$name.json")), name, failures)
+            lines +=
+                unresolvedCopyLines(ApiJson.response.parseToJsonElement(Fixtures.text("$name.json")), name, failures)
         }
         assertThat(failures).isEqualTo(emptyList<String>())
+        assertThat(lines).isEqualTo(3)
     }
 }

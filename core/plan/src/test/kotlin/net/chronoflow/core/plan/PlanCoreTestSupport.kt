@@ -77,7 +77,8 @@ fun unresolvedCopyLines(
     element: JsonElement,
     label: String,
     out: MutableList<String>,
-) {
+): Int {
+    var lines = 0
     when (element) {
         is JsonObject -> {
             val key = (element["key"] as? JsonPrimitive)?.takeIf { it.isString }?.content
@@ -91,6 +92,7 @@ fun unresolvedCopyLines(
                         null
                     }
                 if (line != null) {
+                    lines++
                     if (!testCatalog.contains(key)) out += "$label: $key"
                     for (language in listOf(Language.En, Language.Nl)) {
                         if (CopyLineFormatter(testCatalog).format(line, CopyFormat(language)).isEmpty()) {
@@ -100,15 +102,16 @@ fun unresolvedCopyLines(
                     }
                 }
             }
-            element.values.forEach { unresolvedCopyLines(it, label, out) }
+            lines += element.values.sumOf { unresolvedCopyLines(it, label, out) }
         }
 
         is JsonArray -> {
-            element.forEach { unresolvedCopyLines(it, label, out) }
+            lines += element.sumOf { unresolvedCopyLines(it, label, out) }
         }
 
         else -> {}
     }
+    return lines
 }
 
 fun tripDetail(): TripDetail =
