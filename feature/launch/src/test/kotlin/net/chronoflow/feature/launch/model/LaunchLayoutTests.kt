@@ -1,11 +1,9 @@
 package net.chronoflow.feature.launch.model
 
 import net.chronoflow.core.testing.DeviceProfiles
-import net.chronoflow.core.testing.tiers.Logic
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-@Logic
 class LaunchLayoutTests {
     @Test fun everyD1cSizeKeepsTheBoardOffsetsAndStretchesTheBand() {
         val sizes =

@@ -1427,7 +1427,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - `postSplashScreenTheme`, whose `windowBackground` is the sky top.
 
   API 29–30 go through core-splashscreen (OQ-A23).
-- [ ] **Activity order** (`MainActivity.kt`):
+- [x] **Activity order** (`MainActivity.kt`):
   1. `installSplashScreen()`, then `super.onCreate()`;
   2. the process-death check (a stub until 3b);
   3. `enableEdgeToEdge(SystemBarStyle.dark(TRANSPARENT))` and `isNavigationBarContrastEnforced = false`;
@@ -1460,7 +1460,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - Budget rows in `budgets.json`.
   - App Startup: keep `ProcessLifecycleInitializer` and `ProfileInstallerInitializer` (A21), record each one's cost from a cold-start trace in `docs/perf-startup.md`, remove every other merged initializer (for example `EmojiCompatInitializer`) with `tools:node="remove"`, and add the `STARTUP_INITIALIZER` rule to `verifyReleaseManifest` (OQ-A47).
 - [ ] **Guards.** `LaunchTimeline.sample(t)` frames at 0, 0.3, 1.0 and 1.5 s at every profile, in light and dark: the moon stays inside the window, and the status line inside `safeDrawing`.
-- [ ] **StrictMode.** `penaltyDeath` for disk reads on the launch path; `LaunchStrictModeTest` (emulator) survives a cold launch.
+- [x] **StrictMode.** `penaltyDeath` for disk reads on the launch path; `LaunchStrictModeTest` (emulator) survives a cold launch.
 
 **Acceptance**
 - Frame 0 matches the system splash in light and dark.

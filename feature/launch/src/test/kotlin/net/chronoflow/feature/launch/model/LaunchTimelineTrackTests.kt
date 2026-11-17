@@ -1,13 +1,11 @@
 package net.chronoflow.feature.launch.model
 
-import net.chronoflow.core.testing.tiers.Logic
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Test
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
-@Logic
 class LaunchTimelineTrackTests {
     @Test fun appendKeepsTheOpeningAndWithoutExitDropsIt() {
         val t = LaunchTimeline.opening(LaunchSize(390.0, 844.0), false)

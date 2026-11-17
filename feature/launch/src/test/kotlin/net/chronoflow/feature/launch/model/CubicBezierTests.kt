@@ -1,6 +1,5 @@
 package net.chronoflow.feature.launch.model
 
-import net.chronoflow.core.testing.tiers.Logic
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
@@ -8,7 +7,6 @@ import org.junit.Test
 import kotlin.math.cbrt
 import kotlin.math.pow
 
-@Logic
 class CubicBezierTests {
     private val presets = listOf(CubicBezier.linear, CubicBezier.easeOut, CubicBezier.easeInOut, CubicBezier.intro)
 

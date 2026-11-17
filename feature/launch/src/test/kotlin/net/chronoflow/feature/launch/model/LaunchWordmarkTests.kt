@@ -1,6 +1,5 @@
 package net.chronoflow.feature.launch.model
 
-import net.chronoflow.core.testing.tiers.Logic
 import net.chronoflow.feature.launch.generated.LaunchWordmark
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -8,7 +7,6 @@ import org.junit.Test
 import kotlin.math.ceil
 import kotlin.math.max
 
-@Logic
 class LaunchWordmarkTests {
     @Test fun wordmarkUsesCoreTextAdvanceBaselineAndOverhang() {
         with(LaunchWordmark) {

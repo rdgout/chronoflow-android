@@ -1,13 +1,11 @@
 package net.chronoflow.feature.launch.model
 
-import net.chronoflow.core.testing.tiers.Logic
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import kotlin.math.abs
 import kotlin.math.hypot
 
-@Logic
 class FlightPathTests {
     @Test fun boardGeometryAndArcLength() {
         val p = FlightPath(LaunchSize(390.0, 844.0))

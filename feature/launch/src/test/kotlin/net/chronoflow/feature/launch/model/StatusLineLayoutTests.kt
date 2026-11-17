@@ -1,10 +1,8 @@
 package net.chronoflow.feature.launch.model
 
-import net.chronoflow.core.testing.tiers.Logic
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-@Logic
 class StatusLineLayoutTests {
     @Test fun statusTextAndDotsKeepTheirBoardSpacingAndPixelAlignedWidth() {
         val l = StatusLineLayout(390.0, 150.1, 12.0, 3.0, 20.0, 2.0)

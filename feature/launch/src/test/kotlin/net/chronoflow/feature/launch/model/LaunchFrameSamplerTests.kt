@@ -2,13 +2,11 @@ package net.chronoflow.feature.launch.model
 
 import com.sun.management.ThreadMXBean
 import net.chronoflow.core.testing.DeviceProfiles
-import net.chronoflow.core.testing.tiers.Logic
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.lang.management.ManagementFactory
 
-@Logic
 class LaunchFrameSamplerTests {
     @Test fun sampleIntoAgreesWithSampleEvery10Milliseconds() {
         val small = DeviceProfiles.small

@@ -3,7 +3,6 @@ package net.chronoflow.feature.launch.model
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
-import net.chronoflow.core.testing.tiers.Logic
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -23,7 +22,6 @@ internal fun LaunchTimeline.point(
     seconds: Double,
 ): LaunchPoint = (sample(seconds.seconds).getValue(layer)[KeyPath.POSITION] as TrackValue.Point).point
 
-@Logic
 class LaunchTimelineTests {
     private val size = LaunchSize(390.0, 844.0)
 
