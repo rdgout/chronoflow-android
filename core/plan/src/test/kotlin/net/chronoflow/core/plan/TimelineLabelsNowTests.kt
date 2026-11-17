@@ -11,29 +11,51 @@ class TimelineLabelsNowTests {
     private val formatter = CopyLineFormatter(testCatalog)
     private val options = CopyFormat(Language.En)
 
+    private val start = "2026-10-24T22:00:00.000Z"
+    private val changeOver = "2026-10-25T10:00:00.000Z"
+    private val end = "2026-10-25T23:00:00.000Z"
+
     private fun layout(zones: List<DayZoneView>): DayLayout {
-        val day = sampleDay(25.0).copy(zones = zones)
+        val day = sampleDay(25.0).copy(startUtc = start, endUtc = end, zones = zones)
         return layoutDay(day, emptyList(), emptyIndex())
     }
 
+    // Amsterdam falls back from CEST to CET at 2026-10-25T01:00Z, so this 25 h day has one clock hour twice.
     private val twoZones =
         listOf(
-            DayZoneView("Europe/Amsterdam", at(0.0), at(600.0)),
-            DayZoneView("Asia/Tokyo", at(600.0), at(1500.0)),
+            DayZoneView("Europe/Amsterdam", start, changeOver),
+            DayZoneView("Asia/Tokyo", changeOver, end),
         )
 
+    @Test fun nowBeforeAndAfterTheFallBackReadsTheSameAmsterdamClock() {
+        assertThat(
+            formatter.nowLabel(layout(twoZones), planDate("2026-10-25T00:30:00.000Z")!!, options),
+        ).isEqualTo("02:30")
+        assertThat(
+            formatter.nowLabel(layout(twoZones), planDate("2026-10-25T01:30:00.000Z")!!, options),
+        ).isEqualTo("02:30")
+    }
+
     @Test fun nowInsideTheSecondZoneUsesThatZone() {
-        // 2026-01-01T12:00Z is 21:00 in Tokyo, 13:00 in Amsterdam.
-        assertThat(formatter.nowLabel(layout(twoZones), planDate(at(720.0))!!, options)).isEqualTo("21:00")
+        assertThat(
+            formatter.nowLabel(layout(twoZones), planDate("2026-10-25T12:00:00.000Z")!!, options),
+        ).isEqualTo("21:00")
     }
 
     @Test fun nowAfterTheLastZoneUsesTheLastZone() {
         val shortened =
-            listOf(DayZoneView("Europe/Amsterdam", at(0.0), at(60.0)), DayZoneView("Asia/Tokyo", at(60.0), at(120.0)))
-        assertThat(formatter.nowLabel(layout(shortened), planDate(at(720.0))!!, options)).isEqualTo("21:00")
+            listOf(
+                DayZoneView("Europe/Amsterdam", start, "2026-10-25T01:00:00.000Z"),
+                DayZoneView("Asia/Tokyo", "2026-10-25T01:00:00.000Z", "2026-10-25T02:00:00.000Z"),
+            )
+        assertThat(
+            formatter.nowLabel(layout(shortened), planDate("2026-10-25T12:00:00.000Z")!!, options),
+        ).isEqualTo("21:00")
     }
 
     @Test fun aDayWithoutZonesFormatsInUtc() {
-        assertThat(formatter.nowLabel(layout(emptyList()), planDate(at(720.0))!!, options)).isEqualTo("12:00")
+        assertThat(
+            formatter.nowLabel(layout(emptyList()), planDate("2026-10-25T12:00:00.000Z")!!, options),
+        ).isEqualTo("12:00")
     }
 }
