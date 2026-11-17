@@ -1336,7 +1336,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - `CfType`: one `FontFamily` per Fraunces optical size, chosen by text size: ≥ 40 → opsz 48, ≥ 26 → opsz 32, else opsz 20.
   - `LocalCfShapes`, `LocalCfSpacing`, `LocalReduceMotion`, and the ripple and text-selection colors.
   - `warmFonts()` runs off the main thread after the first frame.
-- [ ] **Material mapping.**
+- [x] **Material mapping.**
   - `toM3()` per "Android spec: Material mapping"; `ToM3Test` pins every role.
   - `ContrastTest` checks the text and background pairs used on the boards, in light and dark, against WCAG AA (4.5:1 for body text, 3:1 for large text and UI). A board pair that fails becomes a design question; it is not changed.
 - [ ] **Effects.**
