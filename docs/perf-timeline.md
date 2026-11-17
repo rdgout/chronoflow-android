@@ -39,3 +39,12 @@ DayDrawing metric: robolectric W=841 dayMax=0.26 total=5.5 bytesMax=14155
 Wide windows draw the title, interval, tag and reason runs that the icon-only 411 tiles skip, so the 841 build costs about 4x more, still far under the 5 ms and 150 ms gates.
 
 Pre-composite versus a `saveLayerAlpha` reference (`PrecompositedAlphaTest`, 17 types x marked/optional): without text the largest channel difference is 3/255; with text, 16/255 on glyph edges (OQ-A52). 1e re-sets the limits to about twice the measured means.
+
+## Board differences (Phase 1c)
+
+Reviewed against the `Plan` and `PlanDark` boards. iOS at `f391a1fa` wins over the boards for behaviour (plan.md "How conflicts between sources are settled"), so the timeline draws these as iOS does:
+
+- **Tile shadow.** The boards' `shadow-sm` is not drawn. A12 forbids blur, and iOS draws no shadow.
+- **Continuation chevrons.** Drawn as the iOS 8 x 4 dp line pair (`TimelineRenderer.swift`, two 1 dp lines of `smallGap` reach), not the boards' Lucide chevron-up and chevron-down at 12 px.
+- **Zone line.** Drawn as the iOS dash pattern (2 on, 4 off, round caps, `emphasisBorder` wide), not the boards' 2 px dotted border.
+- **Top hour label.** A day's first hour label at y = 0 is drawn cut off at the top, as iOS draws it. The boards hide it.
