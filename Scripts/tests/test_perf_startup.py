@@ -45,6 +45,8 @@ class PerfStartupTest(unittest.TestCase):
             "CHECK_BENCHMARKS": str(self.tmp / "checker"),
             "CF_EMULATOR_STATE_DIR": str(self.state),
             "FAKE_LOG": str(self.log),
+            "PERF_OUTPUT_DIR": str(self.tmp / "output"),
+            "PERF_ARCHIVE_ROOT": str(self.tmp / "archives"),
         }
         env.update(extra)
         return run([PERF], env, timeout=30)
@@ -61,6 +63,16 @@ class PerfStartupTest(unittest.TestCase):
         gradle = [c for c in self.calls() if c.startswith("gradlew")]
         self.assertNotIn("suppressErrors", gradle[0])
         self.assertIn("--device-class reference", [c for c in self.calls() if c.startswith("checker")][0])
+
+    def test_preserves_evidence_from_the_previous_run(self):
+        output = self.tmp / "output"
+        output.mkdir()
+        (output / "old.trace").write_text("previous evidence")
+        result = self.perf()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        archives = list((self.tmp / "archives").iterdir())
+        self.assertEqual(len(archives), 1)
+        self.assertTrue((archives[0] / "previous-output/old.trace").exists())
 
     def test_checker_runs_after_a_gradle_failure(self):
         result = self.perf(FAKE_GRADLE_EXIT="3")

@@ -50,7 +50,7 @@ DEVICE_CLASS=reference make perf-timeline  # physical device only
 make baseline-profile                      # regenerates the committed profiles
 ```
 
-`perf-timeline` runs `TimelineBenchmark` on the `benchmarkRelease` variant with `Partial(BaselineProfileMode.Require)`, then the checker, which prints `Timeline metric:` lines, `Timeline trend:` (+-25 % against the median of the last three PASS rows with the same Class, Theme, Font, Page and workload) and `Timeline band:` lines, and appends one row to section 6. Results JSON and Perfetto traces land in `benchmark/build/outputs/connected_android_test_additional_output/benchmarkRelease/connected/<device>/` and are not committed. `PERF_NO_APPEND=1` keeps a run out of the table; `PERF_GRADLE_ARGS` adds Gradle arguments.
+`perf-timeline` runs `TimelineBenchmark` on the `benchmarkRelease` variant with `Partial(BaselineProfileMode.Require)`, then the checker, which prints `Timeline metric:` lines, `Timeline trend:` (+-25 % against the median of the last three PASS rows with the same Class, Theme, Font, Page and workload) and `Timeline band:` lines, and appends one row to section 6. Each attempt archives JSON, Perfetto traces and XML results under `build/perf/timeline/<UTC-date>-<sha>-<theme>-<font>-bounded-swipe-v2.<unique>/`; prior Gradle output is preserved under `previous-output/`. These files are not committed. Startup runs use `build/perf/startup/<UTC-date>-<sha>-<config>.<unique>/`. `PERF_NO_APPEND=1` keeps a run out of the table; `PERF_GRADLE_ARGS` adds Gradle arguments.
 
 ## 6. Runs
 
@@ -64,7 +64,9 @@ make baseline-profile                      # regenerates the committed profiles
 
 ## 7. Perfetto review
 
-R1-R3 run `TimelineTraceMetric`, a Perfetto SQL pass over each iteration's trace (numbers below, per iteration over the three scroll iterations of the R1 run; the trace files stay under `build/`):
+Archive paths: historical R1–R3 evidence was overwritten before archiving was added. The corrected clean R1 archive path will be recorded here after the run. Every new attempt preserves both prior output and its own traces, including band retries.
+
+R1-R3 run `TimelineTraceMetric`, a Perfetto SQL pass over each iteration's trace (numbers below, per iteration over the three scroll iterations of the R1 run; the historical trace files were overwritten by later runs; these rows have no retained trace evidence):
 
 - `timelineBuildOnMainCount`: 0 in every iteration of R1, R2 and R3. `timelineBuildCount`: 57 per iteration (all on worker threads).
 - `timelineReplayCount` 59 and `timelineReplayMaxMs` 0.7 (R1), 1.4 (R2), 0.4 (R3), max over iterations. Emulator only; the B' trigger (> 1 ms on a low-end device, OQ-T27) is not evaluated here.

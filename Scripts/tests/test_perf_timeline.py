@@ -59,6 +59,8 @@ class PerfTimelineTest(unittest.TestCase):
             "CHECK_BENCHMARKS": str(self.tmp / "checker"),
             "CF_EMULATOR_STATE_DIR": str(self.state),
             "FAKE_LOG": str(self.log),
+            "PERF_OUTPUT_DIR": str(self.tmp / "output"),
+            "PERF_ARCHIVE_ROOT": str(self.tmp / "archives"),
         }
         env.update(extra)
         return run([PERF], env, timeout=30)
@@ -88,6 +90,20 @@ class PerfTimelineTest(unittest.TestCase):
         result = self.perf(FAKE_DEVICE_COUNT="2")
         self.assertEqual(result.returncode, 1)
         self.assertIn("exactly one device must be attached, found 2", result.stderr)
+
+    def test_archives_old_and_new_evidence_on_every_attempt(self):
+        output = self.tmp / "output"
+        output.mkdir()
+        (output / "old.trace").write_text("previous evidence")
+        gradle = self.tmp / "gradlew"
+        gradle.write_text('#!/bin/bash\nmkdir -p "$PERF_OUTPUT_DIR/benchmarkRelease"\necho trace > "$PERF_OUTPUT_DIR/benchmarkRelease/new.trace"\n')
+        result = self.perf(FAKE_CHECK_EXITS="4 0")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        archives = list((self.tmp / "archives").iterdir())
+        self.assertEqual(len(archives), 2)
+        self.assertEqual(sum((a / "previous-output/old.trace").exists() for a in archives), 1)
+        self.assertTrue(all((a / "connected_android_test_additional_output/benchmarkRelease/new.trace").exists() for a in archives))
+        self.assertTrue(all("archives/" in c for c in self.calls("checker")))
 
     def test_suppress_errors_only_on_an_emulator(self):
         self.assertEqual(self.perf(FAKE_QEMU="1").returncode, 0)

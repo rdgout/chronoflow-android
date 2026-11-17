@@ -14,7 +14,8 @@ GRADLEW="${GRADLEW:-./gradlew}"
 EMULATOR_SH="${EMULATOR_SH:-Scripts/emulator.sh}"
 CHECKER="${CHECK_BENCHMARKS:-python3 -I Scripts/check-benchmarks.py}"
 STATE_DIR="${CF_EMULATOR_STATE_DIR:-$ROOT/build/emulator}"
-RESULTS_DIR="benchmark/build/outputs/connected_android_test_additional_output"
+PERF_OUTPUT_DIR="${PERF_OUTPUT_DIR:-benchmark/build/outputs/connected_android_test_additional_output}"
+source Scripts/perf-archive.sh
 HISTORY="docs/perf-timeline.md"
 THEME="${THEME:-light}"
 FONT_SCALE="${FONT_SCALE:-1.0}"
@@ -87,16 +88,17 @@ fi
 
 commit="$(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
 if [ -n "$(git status --porcelain 2>/dev/null | grep -v " $HISTORY\$" | grep -v '^?? docs/phases/' || true)" ]; then commit="$commit-dirty"; fi
-checker_args=(--suite timeline --device-class "$CLASS" --results-dir "$RESULTS_DIR" --history "$HISTORY"
+checker_args=(--suite timeline --device-class "$CLASS" --history "$HISTORY"
   --theme "$THEME" --font-scale "$FONT_SCALE" --refresh-hz "$HZ" --gpu "$GPU" --commit "$commit")
 if [ -z "${PERF_NO_APPEND:-}" ]; then checker_args+=(--append); fi
 
 run_once() {
-  rm -rf "$RESULTS_DIR"
+  begin_perf_archive timeline "$THEME-$FONT_SCALE-bounded-swipe-v2" "$commit" || exit 1
   step "$GRADLEW" --console=plain "${args[@]}"
   gradle_status=$?
+  finish_perf_archive || exit 1
   # shellcheck disable=SC2086
-  step $CHECKER "${checker_args[@]}"
+  step $CHECKER "${checker_args[@]}" --results-dir "$RESULTS_DIR" --row-file "$PERF_ARCHIVE/row.md"
   check_status=$?
 }
 

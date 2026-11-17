@@ -12,7 +12,8 @@ GRADLEW="${GRADLEW:-./gradlew}"
 EMULATOR_SH="${EMULATOR_SH:-Scripts/emulator.sh}"
 CHECKER="${CHECK_BENCHMARKS:-python3 -I Scripts/check-benchmarks.py}"
 STATE_DIR="${CF_EMULATOR_STATE_DIR:-$ROOT/build/emulator}"
-RESULTS_DIR="benchmark/build/outputs/connected_android_test_additional_output"
+PERF_OUTPUT_DIR="${PERF_OUTPUT_DIR:-benchmark/build/outputs/connected_android_test_additional_output}"
+source Scripts/perf-archive.sh
 HISTORY="docs/perf-startup.md"
 
 dev() { "$ADB" -s "$SERIAL" "$@"; }
@@ -44,7 +45,7 @@ else
   REFRESH_HZ=unknown
 fi
 
-rm -rf "$RESULTS_DIR"
+
 trap '"$EMULATOR_SH" prep-functional "$SERIAL"' EXIT
 "$EMULATOR_SH" prep-perf "$SERIAL"
 prep_status=$?
@@ -67,11 +68,13 @@ args=(
 if [ "$IS_EMU" = 1 ]; then
   args+=("-Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.suppressErrors=EMULATOR")
 fi
-step "$GRADLEW" --console=plain "${args[@]}"
-gradle_status=$?
-
 commit="$(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
 if [ -n "$(git status --porcelain 2>/dev/null | grep -v " $HISTORY\$" || true)" ]; then commit="$commit-dirty"; fi
+begin_perf_archive startup "light-${FONT_SCALE:-1.0}" "$commit" || exit 1
+step "$GRADLEW" --console=plain "${args[@]}"
+gradle_status=$?
+finish_perf_archive || exit 1
+
 font="$(dev shell settings get system font_scale | tr -d '\r')"
 case "$font" in null | "") font=1.0 ;; esac
 # shellcheck disable=SC2086
