@@ -9,6 +9,8 @@ import androidx.benchmark.macro.TraceSectionMetric
 import androidx.benchmark.macro.junit4.MacrobenchmarkRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.uiautomator.By
+import androidx.test.uiautomator.Until
 import net.chronoflow.core.testing.tiers.Perf
 import org.junit.Rule
 import org.junit.Test
@@ -27,12 +29,34 @@ class StartupBenchmark {
     fun startupCold() =
         rule.measureRepeated(
             packageName = packageName,
-            metrics = listOf(StartupTimingMetric(), TraceSectionMetric("first-commit", TraceSectionMetric.Mode.First)),
+            metrics =
+                listOf(
+                    StartupTimingMetric(),
+                    TraceSectionMetric("first-commit", TraceSectionMetric.Mode.First),
+                    TraceSectionMetric("ready", TraceSectionMetric.Mode.First),
+                    TraceSectionMetric("exit", TraceSectionMetric.Mode.First),
+                ),
             iterations = 10,
             compilationMode = CompilationMode.Partial(BaselineProfileMode.Require),
             startupMode = StartupMode.COLD,
             setupBlock = { pressHome() },
         ) {
             startActivityAndWait()
+            check(device.wait(Until.gone(By.res("launch.opening")), 5000))
+            check(device.wait(Until.hasObject(By.res("route.welcome")), 2000))
+            device.waitForIdle(1000)
+        }
+
+    @Test fun startupWarm() =
+        rule.measureRepeated(
+            packageName = packageName,
+            metrics = listOf(StartupTimingMetric()),
+            iterations = 10,
+            compilationMode = CompilationMode.Partial(BaselineProfileMode.Require),
+            startupMode = StartupMode.WARM,
+            setupBlock = { pressHome() },
+        ) {
+            startActivityAndWait()
+            check(device.wait(Until.hasObject(By.res("route.welcome")), 2000))
         }
 }

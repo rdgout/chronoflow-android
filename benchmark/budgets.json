@@ -35,6 +35,66 @@
       "emulator": {
         "report": true
       }
+    },
+    {
+      "test": "startupWarm",
+      "metric": "timeToInitialDisplayMs",
+      "stat": "median",
+      "unit": "ms",
+      "reference": {
+        "hard": 200
+      },
+      "lowEnd": {
+        "hard": 400
+      },
+      "emulator": {
+        "report": true
+      }
+    },
+    {
+      "test": "startupCold",
+      "metric": "timeToFullDisplayMs",
+      "stat": "median",
+      "unit": "ms",
+      "reference": {
+        "report": true
+      },
+      "lowEnd": {
+        "report": true
+      },
+      "emulator": {
+        "report": true
+      }
+    },
+    {
+      "test": "startupCold",
+      "metric": "readyFirstMs",
+      "stat": "median",
+      "unit": "ms",
+      "reference": {
+        "report": true
+      },
+      "lowEnd": {
+        "report": true
+      },
+      "emulator": {
+        "report": true
+      }
+    },
+    {
+      "test": "startupCold",
+      "metric": "exitFirstMs",
+      "stat": "median",
+      "unit": "ms",
+      "reference": {
+        "report": true
+      },
+      "lowEnd": {
+        "report": true
+      },
+      "emulator": {
+        "report": true
+      }
     }
   ],
   "timeline": [

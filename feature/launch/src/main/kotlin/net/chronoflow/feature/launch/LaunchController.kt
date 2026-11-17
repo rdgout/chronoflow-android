@@ -38,6 +38,8 @@ import net.chronoflow.feature.launch.model.LaunchTimeline
 import net.chronoflow.feature.launch.model.MediaLaunchClock
 import net.chronoflow.feature.launch.model.SplashExit
 import net.chronoflow.feature.launch.model.SplashExitPolicy
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 
 class LaunchController(
     val moon: (Resources) -> ImageBitmap,
@@ -136,7 +138,12 @@ class LaunchController(
         readinessStarted = true
         onReadinessStarted(t0Nanos, overrides)
         if (overrides.mode == LaunchMode.Slow) prepareStatus()
-        if (overrides.mode != null || overrides.freezeAt != null) return
+        if (overrides.mode != null) {
+            val start = if (overrides.mode == LaunchMode.Ready) 1500.milliseconds else overrides.readyAt
+            scheduleExitTrace(maxOf(if (reduceMotion) Duration.ZERO else 1500.milliseconds, start))
+            return
+        }
+        if (overrides.freezeAt != null) return
         coordinator =
             LaunchCoordinator(
                 (overrides.readiness ?: readinessFactory)(clock),
@@ -166,13 +173,16 @@ class LaunchController(
         }
         if (effects.any { it is LaunchEffect.CommitStatus }) prepareStatus()
         val start = state.exitStart
-        if (state.didCommitExit && start != null && exitTraceJob == null) {
-            exitTraceJob =
-                scope.launch {
-                    clock.sleepUntil(start)
-                    tracing.beginExit()
-                }
-        }
+        if (state.didCommitExit && start != null) scheduleExitTrace(start)
+    }
+
+    private fun scheduleExitTrace(start: Duration) {
+        if (exitTraceJob != null) return
+        exitTraceJob =
+            scope.launch {
+                clock.sleepUntil(start)
+                tracing.beginExit()
+            }
     }
 
     internal fun configureStatus(
