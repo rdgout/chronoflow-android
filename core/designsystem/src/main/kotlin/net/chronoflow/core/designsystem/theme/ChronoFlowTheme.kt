@@ -7,6 +7,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.text.selection.LocalTextSelectionColors
 import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.material3.LocalRippleConfiguration
+import androidx.compose.material3.LocalTonalElevationEnabled
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RippleConfiguration
 import androidx.compose.runtime.Composable
@@ -43,6 +44,7 @@ fun ChronoFlowTheme(
     val colors = if (darkTheme) CfDarkColors else CfLightColors
     CompositionLocalProvider(
         LocalHaptics provides haptics,
+        LocalTonalElevationEnabled provides false,
         LocalCfColors provides colors,
         LocalCfType provides type,
         LocalCfShapes provides shapes,

@@ -79,6 +79,7 @@ fun CfTimePickerDialog(
             state,
             colors =
                 TimePickerDefaults.colors(
+                    containerColor = c.popover,
                     clockDialColor = c.muted,
                     selectorColor = c.dawn,
                     clockDialSelectedContentColor = c.dawnForeground,
