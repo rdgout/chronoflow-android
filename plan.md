@@ -1512,7 +1512,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 **Delivers.** Ports the launch readiness reducer with its 1500/2000/8000 ms and never-cut-short rules on an injectable clock, and the endings: the ready exit, the slow status with dots, and the forced signed-out exit at 8 s. It adds a stub readiness seam, driven by debug and perf extras until the real session lands in 4e, the process-level LaunchController (overlay once per process), the 300 ms warm-start fade and the process-death cold-launch policy. It adds the ready and exit traces, the reportFullyDrawn placement and a main-thread-stall test that proves the overlay follows the wall clock.
 
 **Tasks**
-- [ ] **LaunchReadiness.kt** (pure).
+- [x] **LaunchReadiness.kt** (pure).
   - [x] **Seams and reducer** (3b Task 1): core readiness interfaces and the pure reducer with the ported JVM cases.
   - Events: session known (signed in or signed out), data ready, failure.
   - The 1500/2000/8000 ms rules; an ending is never cut short.
