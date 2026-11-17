@@ -29,6 +29,7 @@ The reference and low-end gates stay open until a device exists (OQ-A22).
 | 2026-11-17 | bfa817f-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | benchmarkRelease, Partial(Require) | 95.8/91.5/108.2 | REPORT |
 | 2026-11-17 | 8b5db6a-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | benchmarkRelease, Partial(Require) | 121.2/113.7/165.2 | REPORT |
 | 2026-11-17 | 072aff0-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | benchmarkRelease, Partial(Require) | 96.4/90.9/116.3 | REPORT |
+| 2026-11-17 | d47ae14-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | benchmarkRelease, Partial(Require) | 100.5/93.5/107.3 | PASS |
 
 Device rows: open: device only (OQ-A22).
 
@@ -89,6 +90,7 @@ Every mandated validation command was executed; there is no unrun tier to substi
 | 2026-11-17 | 337b0e1-dirty | emulator | unknown | 60 | benchmarkRelease, Partial(Require) | missing | missing | missing | missing | FAIL |
 | 2026-11-17 | 8b5db6a-dirty | emulator | sdk_gphone64_arm64 | 60 | benchmarkRelease, Partial(Require) | 49.6 | 26.1 | 89.0 | 67.8/96.8 | PASS |
 | 2026-11-17 | 072aff0-dirty | emulator | sdk_gphone64_arm64 | 60 | benchmarkRelease, Partial(Require) | 37.6 | 13.4 | 127.0 | 60.0/72.4 | PASS |
+| 2026-11-17 | d47ae14-dirty | emulator | sdk_gphone64_arm64 | 60 | benchmarkRelease, Partial(Require) | 38.5 | 9.3 | 191.0 | 93.5/100.0 | PASS |
 
 ## Phase 3a: startup measurements
 
