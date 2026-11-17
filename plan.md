@@ -1682,7 +1682,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - `DevicePreferences`: DataStore `device_prefs`, with `api.deviceId`, `cf.settings.language`, `cf.settings.theme` and `notificationPermissionRequested`.
   - `DeviceConfigFile`: ≤ 64 B, written on language and theme changes.
   - `WipeMarker`: `pending-wipe.json`.
-- [ ] **Backup exclusion.** Verify `allowBackup=false` and the exclude-everything `data_extraction_rules.xml`; `BackupRulesTest` parses the merged manifest and the rules.
+- [x] **Backup exclusion.** Verify `allowBackup=false` and the exclude-everything `data_extraction_rules.xml`; `BackupRulesTest` parses the merged manifest and the rules.
 - [ ] **Ported tests.** Port iOS `Tests/LocalStoreTests` as JVM tests on SQLDelight's in-memory JDBC driver, with the same names.
 
 **Acceptance**
