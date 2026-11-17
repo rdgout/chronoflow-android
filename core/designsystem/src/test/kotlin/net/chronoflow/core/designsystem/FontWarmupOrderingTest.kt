@@ -11,7 +11,7 @@ import org.junit.Test
 import kotlin.time.Duration.Companion.seconds
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-class RootThemeTest {
+class FontWarmupOrderingTest {
     @Test fun noFontPreloadsBeforeTheFirstFrameCommits() =
         runTest(timeout = 60.seconds) {
             val firstFrame = CompletableDeferred<Unit>()
