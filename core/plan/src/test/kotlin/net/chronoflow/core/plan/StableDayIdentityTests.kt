@@ -10,13 +10,13 @@ import net.chronoflow.core.model.contracts.CheckStatus
 import net.chronoflow.core.model.contracts.Language
 import net.chronoflow.core.model.contracts.TimeFormat
 import net.chronoflow.core.model.contracts.TripDetail
-import net.chronoflow.core.testing.MockTripTemplates
+import net.chronoflow.core.testing.LargeTimelineFixtures
 import org.junit.Test
 import kotlin.time.Duration.Companion.seconds
 
 /** (new) Unchanged days keep their instance across revisions (04 §9.3, OQ-1b-4). */
 class StableDayIdentityTests {
-    private val detail: TripDetail get() = MockTripTemplates.templates()[2].detail
+    private val detail: TripDetail get() = LargeTimelineFixtures.large60.detail
 
     private suspend fun PlanPreparer.run(
         value: TripDetail,

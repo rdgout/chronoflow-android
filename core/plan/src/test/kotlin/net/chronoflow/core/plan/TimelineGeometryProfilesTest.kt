@@ -7,7 +7,7 @@ import net.chronoflow.core.model.contracts.TripDetail
 import net.chronoflow.core.plan.generated.PlanMetrics
 import net.chronoflow.core.plan.trippage.TripPageLayout
 import net.chronoflow.core.testing.DeviceProfiles
-import net.chronoflow.core.testing.MockTripTemplates
+import net.chronoflow.core.testing.LargeTimelineFixtures
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
@@ -48,9 +48,11 @@ class TimelineGeometryProfilesTest(
 
     companion object {
         private val fixtures: Map<String, Pair<Map<String, DayLayout>, PreparedPlan>> by lazy {
-            val s3: TripDetail = MockTripTemplates.templates()[2].detail
-            val layouts = layoutPlan(s3.plan, s3.timeline)
-            mapOf("S3" to (layouts to prepare(s3, Language.Nl, layouts = layouts)))
+            mapOf("S3" to Language.Nl, "large60" to Language.En).mapValues { (name, language) ->
+                val detail: TripDetail = LargeTimelineFixtures.fixture(name).detail
+                val layouts = layoutPlan(detail.plan, detail.timeline)
+                layouts to prepare(detail, language, layouts = layouts)
+            }
         }
 
         @JvmStatic
@@ -67,7 +69,9 @@ class TimelineGeometryProfilesTest(
                         "${profile.name} wide" to window - 2 * PlanMetrics.wideGutter - PlanMetrics.wideColumnGap - list
                 }
             }
-            return listOf("S3").flatMap { name -> widths.map { (label, width) -> arrayOf(name, label, width) } }
+            return listOf("S3", "large60").flatMap { name ->
+                widths.map { (label, width) -> arrayOf(name, label, width) }
+            }
         }
     }
 }
