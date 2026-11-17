@@ -1460,7 +1460,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - `LaunchJankBenchmark`: cold start, a 3.5 s capture, `FrameTimingMetric`.
   - `TraceSectionMetric("first-commit")`.
   - Budget rows in `budgets.json`.
-  - App Startup: keep `ProcessLifecycleInitializer` and `ProfileInstallerInitializer` (A21), record each one's cost from a cold-start trace in `docs/perf-startup.md`, remove every other merged initializer (for example `EmojiCompatInitializer`) with `tools:node="remove"`, and add the `STARTUP_INITIALIZER` rule to `verifyReleaseManifest` (OQ-A47).
+  - [x] App Startup: keep `ProcessLifecycleInitializer` and `ProfileInstallerInitializer` (A21), record each one's cost from a cold-start trace in `docs/perf-startup.md`, remove every other merged initializer (for example `EmojiCompatInitializer`) with `tools:node="remove"`, and add the `STARTUP_INITIALIZER` rule to `verifyReleaseManifest` (OQ-A47).
 - [x] **Guards.** `LaunchTimeline.sample(t)` frames at 0, 0.3, 1.0 and 1.5 s at every profile, in light and dark: the moon stays inside the window, and the status line inside `safeDrawing`.
 - [x] **StrictMode.** `penaltyDeath` for disk reads on the launch path; `LaunchStrictModeTest` (emulator) survives a cold launch.
 

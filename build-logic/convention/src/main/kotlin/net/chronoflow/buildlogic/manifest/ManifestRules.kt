@@ -14,6 +14,7 @@ enum class Rule {
     MISSING_LOCALE_CONFIG,
     BACKUP,
     DIRECT_BOOT,
+    STARTUP_INITIALIZER,
 }
 
 data class ManifestViolation(
@@ -28,6 +29,11 @@ object ManifestRules {
     private const val APP_NAMESPACE = "net.chronoflow.app"
     private const val MAIN_ACTIVITY = "net.chronoflow.app.MainActivity"
     private const val DUMP = "android.permission.DUMP"
+    private val startupInitializers =
+        setOf(
+            "androidx.lifecycle.ProcessLifecycleInitializer",
+            "androidx.profileinstaller.ProfileInstallerInitializer",
+        )
     private val componentTags = setOf("activity", "activity-alias", "service", "receiver", "provider")
     private val basePermissions =
         setOf(
@@ -75,6 +81,12 @@ object ManifestRules {
             if (application.android("allowBackup") != "false") {
                 violations += ManifestViolation(Rule.BACKUP, "android:allowBackup is not \"false\"")
             }
+            application
+                .childElements("provider")
+                .filter { it.android("name") == "androidx.startup.InitializationProvider" }
+                .flatMap { it.childElements("meta-data") }
+                .filter { it.android("value") == "androidx.startup" && it.android("name") !in startupInitializers }
+                .forEach { violations += ManifestViolation(Rule.STARTUP_INITIALIZER, it.android("name")) }
             application.childElements().filter { it.tagName in componentTags }.forEach { component ->
                 val name = qualify(component.android("name"))
                 val exported = component.android("exported") == "true"
