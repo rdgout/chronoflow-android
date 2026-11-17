@@ -72,7 +72,10 @@ class TimelineTestHost(
             ),
         )
 
-    /** Puts every day's drawing into the cache under the key the page computes for [density] at a phone window of [windowDp]. */
+    /**
+     * Puts every day's drawing into the cache under the key the page computes for [density] at a phone window of
+     * [windowDp]. The page reads its width from layout, which is the whole pixel width over the density.
+     */
     fun prewarm(
         density: Density,
         windowDp: Double = 411.0,

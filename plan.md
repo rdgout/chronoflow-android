@@ -1242,7 +1242,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - Minute ticks aligned to the wall minute.
   - `ACTION_TIME_TICK`, `ACTION_TIME_CHANGED`, `ACTION_TIMEZONE_CHANGED` and `ACTION_DATE_CHANGED` receivers, registered only while the app is started.
   - `cf.freezeAt` freezes it in debug and perf builds.
-- [ ] **TimelineProbe.**
+- [x] **TimelineProbe.**
   - A `staticCompositionLocalOf<TimelineProbe?> { null }`. The debug implementation counts compositions and static draws per day key.
   - `TimelineInvalidationTest` (Robolectric, in `make quick`, OQ-A30) asserts the `04 §10.2` table over all 60 days of large60.
 - [ ] **Perf entry**, in `app/src/perf/` and `app/src/debug/`.
