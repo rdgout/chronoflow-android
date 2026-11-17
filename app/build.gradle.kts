@@ -51,6 +51,7 @@ dependencies {
     testImplementation(libs.junit4)
     testImplementation(libs.assertk)
     testImplementation(libs.robolectric)
+    testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(project(":core:testing"))
 
     androidTestImplementation(libs.compose.ui.test.junit4)
