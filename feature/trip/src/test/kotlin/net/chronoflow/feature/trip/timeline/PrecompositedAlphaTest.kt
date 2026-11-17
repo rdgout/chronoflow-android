@@ -10,6 +10,7 @@ import net.chronoflow.core.model.contracts.CheckStatus
 import net.chronoflow.core.model.contracts.Priority
 import net.chronoflow.core.plan.drawing.DrawOp
 import net.chronoflow.core.plan.drawing.TimelineColors
+import net.chronoflow.core.plan.drawing.TimelineTextStyle
 import net.chronoflow.core.plan.generated.TimelinePalette
 import net.chronoflow.core.testing.decode
 import net.chronoflow.core.testing.slice
@@ -39,25 +40,21 @@ class PrecompositedAlphaTest(
     private val context: Context = ApplicationProvider.getApplicationContext()
 
     /** Shapes, patterns, glyphs and outlines: no text, so only double 8-bit rounding may differ (OQ-1c-9). */
-    @Test fun shapesMatchTheSaveLayerReference() = compare(compact = true, maxDiff = SHAPE_TOLERANCE, maxShare = 1.0)
+    @Test fun shapesMatchTheSaveLayerReference() = compare(compact = true)
 
     /**
      * With text, Skia's glyph contrast pre-blend depends on the text colour, so glyph edge pixels differ more
-     * between a pre-composited colour and a layer; the gate bounds the size and the share of those pixels.
+     * between a pre-composited colour and a layer. That looser tolerance holds only inside the TEXT line boxes, and
+     * the share of pixels beyond the shape tolerance is measured against the tile area.
      */
-    @Test fun textEdgesStayWithinTheGlyphContrastTolerance() =
-        compare(compact = false, maxDiff = TEXT_TOLERANCE, maxShare = 0.05)
+    @Test fun textEdgesStayWithinTheGlyphContrastTolerance() = compare(compact = false)
 
-    private fun compare(
-        compact: Boolean,
-        maxDiff: Int,
-        maxShare: Double,
-    ) {
+    private fun compare(compact: Boolean) {
         val typefaces = TimelineTestFonts.typefaces(context)
         val tile =
             TimelineTestPlans.singleTile(
                 type = type,
-                priority = if (marked) Priority.Recommended else Priority.Optional,
+                priority = if (marked) Priority.Core else Priority.Optional,
                 status = if (marked) CheckStatus.Done else null,
                 top = 10.0,
                 height = 120.0,
@@ -80,7 +77,7 @@ class PrecompositedAlphaTest(
         val alpha =
             TimelineColors.groupAlpha(
                 if (marked) CheckStatus.Done else null,
-                if (marked) Priority.Recommended else Priority.Optional,
+                if (marked) Priority.Core else Priority.Optional,
             )
         val b = Bitmap.createBitmap(pre.widthPx, pre.heightPx, Bitmap.Config.ARGB_8888)
         b.eraseColor(palette.background)
@@ -91,9 +88,21 @@ class PrecompositedAlphaTest(
         replayDayDrawing(canvas, raw.slice(begin, end + 1), resources)
         canvas.restore()
 
+        val textBoxes =
+            ops.filter { it.code == DrawOp.TEXT }.map {
+                val size = it.coords[2]
+                val width = metrics.measure(TimelineTextStyle.entries[it.style], it.text.orEmpty(), size)
+                RectF(
+                    it.coords[0] - 2,
+                    it.coords[1] - size - 2,
+                    it.coords[0] + width + 2,
+                    it.coords[1] + size * 0.5f + 2,
+                )
+            }
         var worst = 0
+        var worstOutsideText = 0
         var off = 0
-        var over3 = 0
+        var textOver3 = 0
         val pa = IntArray(a.width * a.height)
         val pb = IntArray(pa.size)
         a.getPixels(pa, 0, a.width, 0, 0, a.width, a.height)
@@ -107,18 +116,30 @@ class PrecompositedAlphaTest(
             }
             worst = maxOf(worst, diff)
             if (diff > 1) off++
-            if (diff > SHAPE_TOLERANCE) over3++
+            val x = (i % a.width).toFloat() + 0.5f
+            val y = (i / a.width).toFloat() + 0.5f
+            if (textBoxes.any { it.contains(x, y) }) {
+                if (diff > SHAPE_TOLERANCE) textOver3++
+            } else {
+                worstOutsideText = maxOf(worstOutsideText, diff)
+            }
         }
         println(
             "PrecompositedAlpha metric: $label compact=$compact maxChannelDiff=$worst pixelsOver1=$off of ${pa.size}",
         )
-        assertTrue("$label differs by $worst/255", worst <= maxDiff)
-        assertTrue("$label: $over3 pixels differ by more than $SHAPE_TOLERANCE/255", over3 <= maxShare * pa.size)
+        val tileArea = frame[2] * frame[3]
+        assertTrue("$label differs by $worst/255", worst <= TEXT_TOLERANCE)
+        assertTrue("$label differs by $worstOutsideText/255 outside text", worstOutsideText <= SHAPE_TOLERANCE)
+        assertTrue(
+            "$label: $textOver3 text pixels differ by more than $SHAPE_TOLERANCE/255 (tile area ${tileArea.roundToInt()})",
+            textOver3 <= TEXT_SHARE * tileArea,
+        )
     }
 
     companion object {
         private const val SHAPE_TOLERANCE = 3
         private const val TEXT_TOLERANCE = 20
+        private const val TEXT_SHARE = 0.05
 
         @JvmStatic
         @ParameterizedRobolectricTestRunner.Parameters(name = "{2}")
