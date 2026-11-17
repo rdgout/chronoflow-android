@@ -58,6 +58,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import net.chronoflow.core.designsystem.generated.CfColors
@@ -141,6 +142,20 @@ private fun ReadyPage(
     val prefetch = remember(viewModel) { viewModel::prefetchAround }
     val scope = rememberCoroutineScope()
     LaunchedEffect(listState) { onListState?.invoke(listState) }
+    val tagger = LocalTimelineJankTagger.current
+    if (tagger != null) {
+        val dayPositions =
+            remember(model.prepared) {
+                days.withIndex().associate { (position, day) ->
+                    day.id to position
+                }
+            }
+        LaunchedEffect(viewModel, tagger, dayPositions) {
+            viewModel.anchorDayId.filterNotNull().collect { id ->
+                dayPositions[id]?.let { tagger.onVisibleDay(it, "timeline") }
+            }
+        }
+    }
     LaunchedEffect(listState, index, thresholdPx) {
         snapshotFlow { index.currentDayIndex(listState.layoutInfo.visibleItemsInfo, thresholdPx) }
             .distinctUntilChanged()

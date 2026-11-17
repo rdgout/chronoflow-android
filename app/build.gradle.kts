@@ -61,6 +61,7 @@ dependencies {
     implementation(project(":core:ui"))
     debugImplementation(project(":core:data-mock"))
     debugImplementation(project(":core:testing"))
+    debugImplementation(libs.androidx.metrics.performance)
 
     implementation(libs.androidx.activity.compose)
     implementation(libs.compose.ui)
@@ -91,3 +92,6 @@ configurations
 configurations
     .matching { it.name == "benchmarkReleaseImplementation" || it.name == "nonMinifiedReleaseImplementation" }
     .configureEach { project.dependencies.add(name, project(":core:testing")) }
+configurations
+    .matching { it.name == "benchmarkReleaseImplementation" || it.name == "nonMinifiedReleaseImplementation" }
+    .configureEach { project.dependencies.addProvider(name, libs.androidx.metrics.performance) }
