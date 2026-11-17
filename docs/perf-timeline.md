@@ -29,10 +29,13 @@ DayDrawing metric: largest 11795 bytes   (content 358)
 DayDrawing metric: largest 13995 bytes   (content 637)
 ```
 
-Real `TextPaint` on Robolectric (`TextPaintDayDrawingBudgetTest`, large60, window 411; bytes gated, times reported only):
+Real `TextPaint` on Robolectric (`TextPaintDayDrawingBudgetTest`, large60; bytes gated at 411, times reported only, window 841 report-only; 2026-11-17, `make targeted ONLY="feature:trip:TextPaintDayDrawingBudgetTest"`, host Mac, not a device claim):
 
 ```
-DayDrawing metric: robolectric W=411 dayMax=0.02 total=1.1 bytesMax=11795
+DayDrawing metric: robolectric W=411 dayMax=0.07 total=1.2 bytesMax=11795
+DayDrawing metric: robolectric W=841 dayMax=0.26 total=5.5 bytesMax=14155
 ```
+
+Wide windows draw the title, interval, tag and reason runs that the icon-only 411 tiles skip, so the 841 build costs about 4x more, still far under the 5 ms and 150 ms gates.
 
 Pre-composite versus a `saveLayerAlpha` reference (`PrecompositedAlphaTest`, 17 types x marked/optional): without text the largest channel difference is 3/255; with text, 16/255 on glyph edges (OQ-A52). 1e re-sets the limits to about twice the measured means.
