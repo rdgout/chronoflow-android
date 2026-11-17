@@ -1601,7 +1601,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - It emits the `intro` trace. With Reduce Motion, the final state shows at once.
 - [x] **Moon hand-over.** Welcome reports its moon anchor (`onGloballyPositioned`) into a non-snapshot `MoonAnchorStore`, which the overlay reads at draw time. A measured size never feeds back into composition (`01 §8`).
 - [x] **Teardown.** After the overlay is removed, TalkBack focus moves to Welcome's first node, and `reportFullyDrawn()` fires once Welcome is interactive.
-- [ ] **Tests.**
+- [x] **Tests.**
   - `WelcomeCompositionTest` (JVM): every profile, and heights from 568 to 1,400 dp.
   - `WelcomeIntroTimingTest`, on a fake clock.
   - Guards in en and nl, light and dark, at every profile.

@@ -15,7 +15,14 @@ internal fun RoutePlaceholder(
     route: LaunchRoute,
     label: (@Composable (String) -> Unit)?,
 ) {
-    val rawName = route.name.lowercase()
+    RoutePlaceholder(route.name.lowercase(), label)
+}
+
+@Composable
+internal fun RoutePlaceholder(
+    rawName: String,
+    label: (@Composable (String) -> Unit)?,
+) {
     val background = Modifier.background(CfTheme.colors.background)
     Box(Modifier.fillMaxSize().then(background).testTag("route.$rawName"), contentAlignment = Alignment.Center) {
         label?.invoke(rawName)

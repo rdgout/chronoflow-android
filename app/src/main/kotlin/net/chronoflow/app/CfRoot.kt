@@ -1,5 +1,6 @@
 package net.chronoflow.app
 
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.ReportDrawnWhen
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -43,10 +44,13 @@ internal fun CfRoot(
     reduceMotion: Boolean,
     firstCommit: Deferred<Unit>,
     jankTagger: TimelineJankTagger?,
+    destinations: WelcomeDestinations = LaunchPlatform.welcomeDestinations,
     onSky: Boolean = false,
     onSystemBars: (Boolean, Boolean, Boolean) -> Unit = { _, _, _ -> },
     content: (@Composable () -> Unit)? = null,
 ) {
+    val seam = destinations.seam
+    BackHandler(enabled = seam != null) { destinations.closeSeam() }
     val resolver = LocalFontFamilyResolver.current
     LaunchedEffect(resolver) {
         withFrameNanos { }
@@ -90,8 +94,15 @@ internal fun CfRoot(
                         } else {
                             when (val route = graph.launch.route) {
                                 LaunchRoute.Welcome -> {
-                                    if (!overlayShowing || graph.launch.fontsReady) {
-                                        WelcomeScreen(graph.launch.launchIntro, graph.launch.moonAnchorStore, {}, {})
+                                    if (seam != null) {
+                                        RoutePlaceholder(seam, LaunchPlatform.routeLabel)
+                                    } else if (!overlayShowing || graph.launch.fontsReady) {
+                                        WelcomeScreen(
+                                            graph.launch.launchIntro,
+                                            graph.launch.moonAnchorStore,
+                                            destinations::planMyTrip,
+                                            destinations::signIn,
+                                        )
                                     }
                                 }
 

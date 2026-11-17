@@ -15,6 +15,7 @@ internal object DebugStrictMode {
     fun install(
         app: Application,
         launchPath: LaunchPath,
+        onViolation: (Boolean, List<String>) -> Unit = { _, _ -> },
     ) {
         StrictMode.setThreadPolicy(
             StrictMode.ThreadPolicy
@@ -27,6 +28,7 @@ internal object DebugStrictMode {
                             violation is DiskWriteViolation ||
                             violation is NetworkViolation
                     val frames = violation.stackTrace.map { it.className }
+                    onViolation(isDiskOrNetwork, frames)
                     if (LaunchPathViolationPolicy.shouldCrash(launchPath.isActive, isDiskOrNetwork, frames)) {
                         throw LaunchPathViolation(violation)
                     }
