@@ -15,7 +15,7 @@
         "timeToInitialDisplayMs": {
           "minimum": 498.0,
           "maximum": 530.4,
-          "median": NaN,
+          "median": 512.3,
           "runs": [
             498.0,
             NaN,

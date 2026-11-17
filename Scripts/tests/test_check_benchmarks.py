@@ -36,6 +36,7 @@ class CheckBenchmarksTest(unittest.TestCase):
     def test_nan_fails(self):
         result = check("--suite", "startup", "--device-class", "emulator", "--results-dir", str(FIXTURES / "startup/nan"))
         self.assertEqual(result.returncode, 1)
+        self.assertIn("invalid runs", result.stderr)
 
     def test_median_over_the_reference_hard_budget_fails(self):
         result = check(

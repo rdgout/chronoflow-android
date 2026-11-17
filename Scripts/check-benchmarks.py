@@ -62,6 +62,23 @@ def stat_values(bench, raw_key, stat):
     return None if value is None else [value]
 
 
+def _flatten(runs):
+    for run in runs or []:
+        if isinstance(run, list):
+            yield from _flatten(run)
+        else:
+            yield run
+
+
+def invalid_runs(bench, raw_key):
+    """Every run value of the metric (and its sampled twin) that is not a finite, non-negative number."""
+    runs = list(_flatten((bench.get("metrics", {}).get(raw_key) or {}).get("runs")))
+    runs += list(_flatten((bench.get("sampledMetrics", {}).get(raw_key) or {}).get("runs")))
+    return [
+        v for v in runs if not isinstance(v, (int, float)) or isinstance(v, bool) or not math.isfinite(v) or v < 0
+    ]
+
+
 def judge(value, gate):
     if not isinstance(value, (int, float)) or isinstance(value, bool) or not math.isfinite(value):
         return "FAIL", "non-finite"
@@ -96,6 +113,15 @@ def check(args, budgets):
         if vals is None:
             print(
                 "%s metric: %s %s is missing (%s)" % (label, entry["test"], entry["metric"], raw_key), file=sys.stderr
+            )
+            failed = True
+            continue
+        bad = invalid_runs(bench, raw_key)
+        if bad:
+            print(
+                "%s metric: %s %s has invalid runs %s FAIL (non-finite or negative)"
+                % (label, entry["test"], entry["metric"], bad),
+                file=sys.stderr,
             )
             failed = True
             continue
