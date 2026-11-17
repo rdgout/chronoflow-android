@@ -5,3 +5,14 @@ plugins {
 android {
     namespace = "net.chronoflow.feature.launch"
 }
+
+dependencies {
+    implementation(libs.kotlinx.coroutines.core)
+    testImplementation(project(":core:testing"))
+    testImplementation(project(":core:testing-compose"))
+    testImplementation(libs.junit4)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.androidx.test.ext.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
+}

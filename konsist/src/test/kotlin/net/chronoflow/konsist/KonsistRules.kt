@@ -67,6 +67,18 @@ fun jvmCoreModulesImportNoAndroidOrCompose(scope: KoScope) {
     fail("jvmCoreModulesImportNoAndroidOrCompose", violations)
 }
 
+fun launchModelImportsNoAndroid(scope: KoScope) {
+    val violations =
+        scope.files
+            .filter { it.packagee?.name == "net.chronoflow.feature.launch.model" }
+            .flatMap { file ->
+                file.imports
+                    .filter { it.name.startsWith("android.") || it.name.startsWith("androidx.") }
+                    .map { "${file.path}: ${it.name}" }
+            }
+    fail("launchModelImportsNoAndroid", violations)
+}
+
 fun onlyAppImportsFeatures(scope: KoScope) {
     val violations =
         scope

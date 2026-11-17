@@ -36,6 +36,18 @@ class KonsistRulesTest {
         }
     }
 
+    @Test fun launchModelImportsNoAndroid() = launchModelImportsNoAndroid(projectScope)
+
+    @Test fun launchModelImportsNoAndroidRejectsPlantedViolation() {
+        assertFailure { launchModelImportsNoAndroid(violations("launchModelImportsNoAndroid")) }
+            .messageContains("launchModelImportsNoAndroid violated")
+    }
+
+    @Test fun launchModelImportsNoAndroidAllowsControl() =
+        launchModelImportsNoAndroid(
+            allowed("launchModelImportsNoAndroid"),
+        )
+
     @Test fun onlyAppImportsFeatures() = onlyAppImportsFeatures(projectScope)
 
     @Test fun onlyAppImportsFeaturesRejectsPlantedViolation() {
