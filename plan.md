@@ -1446,7 +1446,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - `LaunchClock`.
 
   Port the iOS `Tests/LaunchTests` cases with the same reference values.
-- [ ] **LaunchOverlay** (`feature/launch/…/LaunchOverlay.kt`).
+- [x] **LaunchOverlay** (`feature/launch/…/LaunchOverlay.kt`).
   - One `Canvas`, driven through `withFrameNanos` by a wall clock that starts at `t0` (`System.nanoTime` at the first draw).
   - Paths, brushes and paints are built once per size. Radial gradients replace blur, the wordmark is a vector path, and the sky comes from `CfSky`.
   - Reduce Motion follows "### Reduce Motion".
