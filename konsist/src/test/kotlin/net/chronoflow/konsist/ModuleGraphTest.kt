@@ -77,4 +77,53 @@ class ModuleGraphTest {
             messageContains("feature/today/build.gradle.kts".replace('/', File.separatorChar))
         }
     }
+
+    private val dataMockLine = Regex("""project\(\s*":core:data-mock"\s*\)""")
+    private val dataMockAllowed =
+        listOf(
+            Regex("""^debugImplementation\("""),
+            Regex("""^"benchmarkReleaseImplementation"\("""),
+            Regex("""^"nonMinifiedReleaseImplementation"\("""),
+            Regex("""^"benchmarkImplementation"\("""),
+            Regex("""^\.configureEach \{ project\.dependencies\.add\(name, project\(":core:data-mock"\)\) }$"""),
+            Regex("""^(testImplementation|androidTestImplementation)\("""),
+        )
+
+    private fun dataMockOnlyInDebugAndPerf(
+        root: File,
+        skipResources: Boolean,
+    ) {
+        val bad =
+            walk(root, skipResources)
+                .filter { it.name == "build.gradle.kts" }
+                .filter { !it.relativeTo(root).invariantSeparatorsPath.startsWith("core/data-mock/") }
+                .flatMap { file ->
+                    val lines = file.readLines()
+                    lines.indices
+                        .filter { dataMockLine.containsMatchIn(lines[it]) }
+                        .filterNot { index ->
+                            val line = lines[index].trim()
+                            val inApp = file.relativeTo(root).invariantSeparatorsPath == "app/build.gradle.kts"
+                            val fallback =
+                                line.startsWith(".configureEach") &&
+                                    lines.getOrNull(index - 1)?.trim()?.let {
+                                        it.startsWith(".matching") &&
+                                            it.contains("benchmarkReleaseImplementation") &&
+                                            it.contains("nonMinifiedReleaseImplementation")
+                                    } == true
+                            dataMockAllowed.any { it.containsMatchIn(line) } && (inApp || !line.startsWith("debug")) &&
+                                (!line.startsWith(".configureEach") || fallback)
+                        }.map { "${file.relativeTo(root).path}:${it + 1}" }
+                }.toList()
+        check(bad.isEmpty()) { "core:data-mock is used outside debug and the perf variants: $bad" }
+    }
+
+    @Test
+    fun dataMockOnlyInDebugAndPerf() = dataMockOnlyInDebugAndPerf(projectRoot(), skipResources = true)
+
+    @Test
+    fun dataMockOnlyInDebugAndPerfRejectsPlantedViolation() {
+        assertFailure { dataMockOnlyInDebugAndPerf(File(planted, "dataMock"), skipResources = false) }
+            .messageContains("core:data-mock is used outside debug and the perf variants")
+    }
 }

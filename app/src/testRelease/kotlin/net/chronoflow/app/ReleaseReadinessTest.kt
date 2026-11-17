@@ -20,6 +20,12 @@ class ReleaseReadinessTest {
     }
 
     @Test
+    fun releaseShipsNoPerfCode() {
+        missing("net.chronoflow.app.perf.PerfEntry")
+        assertThat(BuildConfig.PERF_ENTRY).isFalse()
+    }
+
+    @Test
     fun releaseIsNotDebuggable() {
         assertThat(BuildConfig.DEBUG).isFalse()
     }

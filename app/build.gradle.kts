@@ -1,5 +1,18 @@
+import com.android.build.api.variant.BuildConfigField
+import com.android.build.api.variant.Variant
+
 plugins {
     id("chronoflow.android.application.compose")
+}
+
+fun addPerfSources(variant: Variant) {
+    variant.sources.kotlin?.addStaticSourceDirectory("src/perf/kotlin")
+    variant.buildConfigFields?.put("PERF_ENTRY", BuildConfigField("boolean", "true", null))
+}
+
+androidComponents {
+    onVariants(selector().withBuildType("benchmarkRelease")) { addPerfSources(it) }
+    onVariants(selector().withBuildType("nonMinifiedRelease")) { addPerfSources(it) }
 }
 
 android {
@@ -7,6 +20,7 @@ android {
 
     defaultConfig {
         applicationId = "net.chronoflow.app.native"
+        buildConfigField("boolean", "PERF_ENTRY", "false")
     }
 
     androidResources {
@@ -61,3 +75,8 @@ dependencies {
     androidTestImplementation(libs.assertk)
     androidTestImplementation(project(":core:testing"))
 }
+
+// The baseline profile plugin adds these build types after this script runs, so their configurations appear late.
+configurations
+    .matching { it.name == "benchmarkReleaseImplementation" || it.name == "nonMinifiedReleaseImplementation" }
+    .configureEach { project.dependencies.add(name, project(":core:data-mock")) }
