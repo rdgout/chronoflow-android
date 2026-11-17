@@ -37,7 +37,9 @@ Enforced by `Scripts/check-benchmarks.py --suite timeline` from `benchmark/budge
 | `timelineBuildOnMainCount` (each) | scroll | **0** | **0** | **0 gate** (OQ-1e-13) |
 | Scroll and Last day present | scroll, lastDay | functional | functional | functional |
 
-Report-only, each required: `timelineScrollWindowMs`, `timelineBuildCount`, `timelineRecomposeCount`, `timelineGcCount`, `timelineReplayMaxMs`, `timelineReplayCount`, `frameCount`, `memoryHeapSizeMaxKb`, `timeToInitialDisplayMs`, `timelineDecodeMs`, `timelinePrepareMs`, `timelineTypefaceMs`.
+Required activity: `timelineBuildCount` and `timelineReplayCount` must each be ≥ 1 in all three scroll iterations. Empty frame-overrun iterations fail.
+
+Report-only, each required: `timelineScrollWindowMs`, `timelinePlaceholderToReplayMaxMs`, `timelinePlaceholderUnreplayedCount`, `timelineRecomposeCount`, `timelineGcCount`, `timelineReplayMaxMs`, `frameCount`, `memoryHeapSizeMaxKb`, `timeToInitialDisplayMs`, `timelineDecodeMs`, `timelinePrepareMs`, `timelineTypefaceMs`.
 
 ## 5. How to run and read
 
@@ -71,10 +73,10 @@ R1-R3 run `TimelineTraceMetric`, a Perfetto SQL pass over each iteration's trace
 - `timelineBuildOnMainCount`: 0 in every iteration of R1, R2 and R3. `timelineBuildCount`: 57 per iteration (all on worker threads).
 - `timelineReplayCount` 59 and `timelineReplayMaxMs` 0.7 (R1), 1.4 (R2), 0.4 (R3), max over iterations. Emulator only; the B' trigger (> 1 ms on a low-end device, OQ-T27) is not evaluated here.
 - `timelineGcCount`: 10 (R1), 7 (R2), 9 (R3) max per iteration; the aim is 0. The slice filter is `HeapTaskDaemon` with `LIKE '%GC%'`, which was not checked against one trace by eye.
-- `timelineRecomposeCount`: 1,426 (R1), 1,405 (R2), 1,404 (R3) max per iteration, in a 73 s window with about 1,510 frames: roughly one `Recomposer:recompose` per rendered frame. Its source is not named: R4 (`runtime-tracing`, full tracing) was not run, so no recomposition is attributed to a day item or to the anchor change. See OQ-1e-15.
+- `timelineRecomposeCount`: 1,426 (R1), 1,405 (R2), 1,404 (R3) max per iteration, in a 73 s window with about 1,510 frames: roughly one `Recomposer:recompose` per rendered frame. These are Recomposer frame counts, not actual recompositions. The verified per-frame composition source was DayMenu's composition-read `derivedStateOf` over `layoutInfo`; the corrected observer and child-slice metric are described in OQ-1e-15. R4 was not run.
 - `timelineTargetsMaxMs` 0.5 (R1), 0.5 (R2), 1.5 (R3).
 
-Perfetto UI review: pending (reviewer)
+Perfetto SQL review: the corrected GC predicate was checked against the retained Phase 1d trace (`build/review-fixes/gc-reference/phase-1d.pftrace`): the old case-insensitive filter returns 3 slices (one `Background concurrent mark compact GC`, `TrimSpaces`, `TrimIndirectReferenceTables`); `depth = 0 AND name GLOB '*GC*'` returns exactly 1 GC. Query and output: `build/review-fixes/gc-review.sql`, `gc-review-phase1d.txt`. The clean R1 trace and steady-scroll composition review still require a clean committed tree; this sandbox rejects `.git/index.lock` writes. Historical R1–R3 counts above use the old predicates and are not current validation.
 
 ## 8. Compiler reports
 
@@ -249,3 +251,18 @@ Workload `bounded-swipe-v2` uses 15 explicit 26-step swipes (85% to 15% of the p
 Review correction: `timelineRecomposeCount` now counts actual `Compose:recompose` children of `Recomposer:recompose`. The old rows counted Recomposer frames. A real per-frame source was DayMenu's composition-read `derivedStateOf` over never-equal `layoutInfo`; its threshold boolean now comes from `TimelinePage`'s `snapshotFlow`. The probe guard asserts zero DayMenu recompositions while scrolling within the threshold; anchor changes remain expected (OQ-1e-15).
 
 Placeholder counts are draw episodes, not frames (corrects OQ-1e-3). The cached layer need not redraw while it scrolls. `cf.timeline.placeholderToReplay` is an async slice from a day lifetime's first placeholder through its first replay; `timelinePlaceholderToReplayMaxMs` reports the maximum completed interval and `timelinePlaceholderUnreplayedCount` reports intervals without a replay. No placeholders gives 0 ms and 0 unfinished; the duration is report-only and the existing count gate remains an episode gate.
+
+## 14. Verified review fixes (2026-11-17)
+
+The working tree contains fixes A–L and N, with per-fix patches and commit subjects in `build/review-fixes/commits.tsv`. The sandbox makes `.git` read-only: the explicit-path staging and commit attempt failed with `fatal: Unable to create '/Users/rickgout/Sites/chronoflow-android/.git/index.lock': Operation not permitted`. No commits were created here. The reviewed source patches apply in sequence and reproduce the fixed working tree; the orchestrator can commit them with `bash build/review-fixes/apply-commits.sh`.
+
+Validation so far (host Mac arm64; emulator numbers are not device claims):
+
+- `make targeted ONLY='feature:trip:TimelineInvalidationTest feature:trip:TimelinePerfMarkersTest feature:trip:PlaceholderReplayTraceTest core:plan:DayDrawingBudgetTest'`: all 12 tests passed.
+- `make quick`: passed (832 tests in the quick tier, 178 script/generator tests, plus build-logic and the serial timing tier). `DayDrawingBudgetTest` per-width medians: 1.4 / 0.7 / 1.5 ms at 360 / 411 / 841 dp; largest per-day median 0.07 ms, within the 5 ms / 1 ms limits.
+- `make check`: passed, including lint, release readiness, manifest verification, R8 analysis, layout guards, generators and pixel smoke tests.
+- `make baseline-profile`: passed through make, 187.13 s wall time including preparation/restoration (Gradle: 3m 4s). Both generated profiles changed; prepared commit subject `perf(app): regenerate baseline profiles`.
+
+The clean R1 rerun has not run: Git writes are denied, so the required clean tree at the new HEAD cannot be created. No new R1 row, CPU baseline or archive path is claimed. `bounded-swipe-v2` starts a fresh CPU band when the orchestrator commits and runs it. First frame, RSS, builds on main, placeholders and their replay wait, replay time, actual steady-scroll compositions, GC, jank, hitch, CPU percentiles and final day remain pending for that clean run. The historical architecture decision in section 12 is not fresh evidence for the corrected workload.
+
+Deviation: `make check` ran after profile generation with the clean-R1 step blocked. No failing test was retried; Kotlin daemon marker writes outside the sandbox failed but Gradle's in-process fallback completed successfully. New open question OQ-1e-19 records the placeholder episode/duration distinction and its default.
