@@ -7,7 +7,7 @@ fun tripDatesText(
     end: String?,
     language: Language,
     long: Boolean = false,
-    pageCopy: PageCopy = PageCopy(language, DefaultPageCopy.table),
+    pageCopy: PageCopy,
 ): String {
     val first = start.take(10)
     val last = (end ?: start).take(10)
@@ -34,14 +34,9 @@ fun tripMetaText(
     end: String?,
     flights: List<String>,
     language: Language,
-    pageCopy: PageCopy = PageCopy(language, DefaultPageCopy.table),
+    pageCopy: PageCopy,
 ): String =
     (
         listOf(tripDatesText(start, end, language, pageCopy = pageCopy)) +
             flights.map { it.trim() }.filter { it.isNotEmpty() }
     ).joinToString(" · ")
-
-/** The JVM table, loaded once on first use; callers on the main thread must not touch it. */
-internal object DefaultPageCopy {
-    val table: PageCopyTable by lazy { PageCopyTable.load() }
-}

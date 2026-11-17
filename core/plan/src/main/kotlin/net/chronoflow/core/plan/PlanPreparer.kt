@@ -22,7 +22,7 @@ class PlanPreparer(
     private val decoder: PlanDecoder,
     private val catalogs: CopyCatalogProvider,
     private val worker: CoroutineDispatcher,
-    private val pageCopy: () -> PageCopyTable = { PageCopyTable.load() },
+    private val loadPageCopy: () -> PageCopyTable = { PageCopyTable.load() },
 ) {
     private data class Key(
         val trip: String,
@@ -124,12 +124,16 @@ class PlanPreparer(
         decoder.evict(tripID)
     }
 
+    /** The page copy for [language], built from the table this preparer loads on [worker]. */
+    suspend fun pageCopy(language: Language): PageCopy =
+        withContext(worker) { mutex.withLock { PageCopy(language, tableLocked()) } }
+
     private fun keyOf(detail: TripDetail) = Key(detail.trip.id, detail.plan.meta.inputHash, detail.detailVersion)
 
     private suspend fun formatterLocked(): CopyLineFormatter =
         formatter ?: CopyLineFormatter(catalogs.catalog()).also { formatter = it }
 
-    private fun tableLocked(): PageCopyTable = table ?: pageCopy().also { table = it }
+    private fun tableLocked(): PageCopyTable = table ?: loadPageCopy().also { table = it }
 
     private fun layoutsLocked(
         detail: TripDetail,
