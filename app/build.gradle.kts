@@ -93,6 +93,7 @@ dependencies {
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.uiautomator)
     androidTestImplementation(libs.assertk)
+    androidTestImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(project(":core:testing"))
     androidTestImplementation(project(":core:testing-compose")) {
         exclude(group = "org.robolectric")
