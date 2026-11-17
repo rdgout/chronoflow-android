@@ -105,7 +105,7 @@ object Guards {
                             layout.getLineRight(it) - layout.getLineLeft(it) >
                                 layout.size.width + TOLERANCE
                         } ||
-                        layout.getLineBottom(lastLine) > node.size.height + TOLERANCE
+                        layout.getLineBottom(lastLine) > layout.size.height + TOLERANCE
                 if (ellipsized || clipped) {
                     throw AssertionError("${describe(node)} is truncated: ${rect(bounds)}, ellipsized=$ellipsized")
                 }

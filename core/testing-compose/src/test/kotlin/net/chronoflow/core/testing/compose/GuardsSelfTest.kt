@@ -152,6 +152,36 @@ class GuardsSelfTest {
     }
 
     @Test
+    fun unwrappedTextWiderThanItsParentFailsOnlyTextFits() {
+        composeRule.setContent {
+            GoodLayout(
+                inside = {
+                    Box(Modifier.width(100.dp)) { Text("Unwrapped ".repeat(12), softWrap = false) }
+                },
+            )
+        }
+        assertOnlyFails(Guard.TextFits)
+    }
+
+    @Test
+    fun clippedTextOverMaxLinesFailsOnlyTextFits() {
+        composeRule.setContent {
+            GoodLayout(inside = { Text("Long text ".repeat(40), maxLines = 2, overflow = TextOverflow.Clip) })
+        }
+        assertOnlyFails(Guard.TextFits)
+    }
+
+    @Test
+    fun textInsideTooShortBoxFailsOnlyTextFits() {
+        composeRule.setContent {
+            GoodLayout(
+                inside = { Box(Modifier.height(10.dp)) { Text("Tall text", fontSize = 32.sp) } },
+            )
+        }
+        assertOnlyFails(Guard.TextFits)
+    }
+
+    @Test
     fun ellipsisFailsUnlessMarkedEllipsizable() {
         composeRule.setContent {
             GoodLayout(
