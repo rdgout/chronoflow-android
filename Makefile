@@ -169,11 +169,14 @@ snapshots:
 	$(RUN_TIER) snapshots $(RESULTS_DEBUG) $(TIMINGS_DEBUG) -- $(GRADLE) $(if $(SNAPSHOT_RECORD),recordRoborazziDebug,verifyRoborazziDebug) -Pcf.tier=snapshot
 
 captures:
-	@if [ -n "$(DEVICE)" ]; then echo "make captures DEVICE=1 arrives in Phase 2 (feat/phase-2-design-system)" >&2; exit 1; fi
+ifeq ($(DEVICE),1)
+	python3 -I Scripts/device_lock.py -- python3 -I Scripts/capture-device.py "$(ONLY)"
+else
 	rm -rf build/captures
 	$(RUN_TIER) captures $(RESULTS_DEBUG) $(TIMINGS_DEBUG) -- $(GRADLE) testDebugUnitTest --rerun -Pcf.tier=capture -Pcf.captureOnly=$(ONLY)
 	@n=$$(find build/captures -name '*.png' 2>/dev/null | wc -l | tr -d ' '); echo "captures: $$n PNGs in build/captures"; \
 	  if [ "$$n" = 0 ] && [ -z "$(ONLY)" ]; then echo "captures: no PNGs written" >&2; exit 1; fi
+endif
 
 perf-timeline:
 	$(RUN_TIER) perf-timeline --device --results 'benchmark/build/outputs/androidTest-results/connected/benchmarkRelease/**/*.xml' -- Scripts/perf-timeline.sh
