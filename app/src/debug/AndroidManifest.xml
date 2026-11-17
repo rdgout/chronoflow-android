@@ -4,6 +4,7 @@
     <application android:networkSecurityConfig="@xml/network_security_config">
         <activity
             android:name="net.chronoflow.debug.SeedReceiverActivity"
+            android:configChanges="locale|layoutDirection|uiMode|fontScale"
             android:excludeFromRecents="true"
             android:exported="true"
             android:noHistory="true"
