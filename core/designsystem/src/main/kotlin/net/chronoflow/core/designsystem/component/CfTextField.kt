@@ -67,7 +67,7 @@ fun CfTextField(
     val focused by source.collectIsFocusedAsState()
     BasicTextField(
         state,
-        fieldSemantics(modifier.fillMaxWidth(), label, error, contentType, testTag),
+        modifier.fillMaxWidth().fieldSemantics(label, error, contentType, testTag),
         enabled = enabled,
         textStyle = CfTheme.type.authBody.copy(color = CfTheme.colors.cardForeground),
         keyboardOptions = keyboardOptions,
@@ -106,7 +106,7 @@ fun CfSecureTextField(
     val focused by source.collectIsFocusedAsState()
     BasicSecureTextField(
         state,
-        fieldSemantics(modifier.fillMaxWidth(), label, error, contentType, testTag),
+        modifier.fillMaxWidth().fieldSemantics(label, error, contentType, testTag),
         enabled = enabled,
         textStyle = CfTheme.type.authBody.copy(color = CfTheme.colors.cardForeground),
         keyboardOptions = keyboardOptions,
@@ -118,14 +118,13 @@ fun CfSecureTextField(
     )
 }
 
-private fun fieldSemantics(
-    modifier: Modifier,
+private fun Modifier.fieldSemantics(
     label: String,
     problem: String?,
     type: ContentType?,
     tag: String?,
 ): Modifier =
-    modifier.then(if (tag == null) Modifier else Modifier.testTag(tag)).semantics {
+    then(if (tag == null) Modifier else Modifier.testTag(tag)).semantics {
         contentDescription = label
         if (problem != null) error(problem)
         if (type != null) contentType = type
