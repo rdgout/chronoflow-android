@@ -13,7 +13,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import java.util.Locale
 
-/** large60 at window 411 with the real `TextPaint`: bytes are gated, times are reported (OQ-1c-7). */
+/** large60 with the real `TextPaint`: bytes are gated at window 411, times are reported; window 841 is report-only (OQ-1c-7). */
 @Layout
 @PerfBudget
 @RunWith(AndroidJUnit4::class)
@@ -22,7 +22,14 @@ import java.util.Locale
 class TextPaintDayDrawingBudgetTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
 
-    @Test fun large60BuildsWithinTheByteBudget() {
+    @Test fun large60BuildsWithinTheByteBudget() = measure(411, gated = true)
+
+    @Test fun large60AtTheWideWindowIsReportedOnly() = measure(841, gated = false)
+
+    private fun measure(
+        window: Int,
+        gated: Boolean,
+    ) {
         val fixture = TimelineTestPlans.prepared("large60")
         val metrics = TextPaintMetrics(TimelineTestFonts.typefaces(context))
         val cache = DayDrawingCache()
@@ -32,13 +39,14 @@ class TextPaintDayDrawingBudgetTest {
         repeat(2) { pass ->
             var passTotal = 0.0
             for (day in fixture.plan.days) {
-                val key = TimelineTestPlans.key(day, fixture.plan.revision, 411)
+                val key = TimelineTestPlans.key(day, fixture.plan.revision, window)
                 val start = System.nanoTime()
                 val drawing = TimelineTestPlans.build(day, fixture.layouts.getValue(day.id), key, metrics)
                 val elapsed = (System.nanoTime() - start) / 1e6
                 passTotal += elapsed
                 if (pass == 1) worst = maxOf(worst, elapsed)
                 bytesMax = maxOf(bytesMax, drawing.estimatedBytes)
+                if (!gated) continue
                 assertTrue("${day.id} is ${drawing.estimatedBytes} B", drawing.estimatedBytes <= 512 * 1024)
                 cache.put(key, day, drawing)
                 assertTrue(cache.totalBytes <= 4L * 1024 * 1024 && cache.size <= 8)
@@ -48,7 +56,8 @@ class TextPaintDayDrawingBudgetTest {
         println(
             String.format(
                 Locale.ROOT,
-                "DayDrawing metric: robolectric W=411 dayMax=%.2f total=%.1f bytesMax=%d",
+                "DayDrawing metric: robolectric W=%d dayMax=%.2f total=%.1f bytesMax=%d",
+                window,
                 worst,
                 total,
                 bytesMax,

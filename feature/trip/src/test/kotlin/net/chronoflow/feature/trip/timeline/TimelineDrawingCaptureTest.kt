@@ -12,7 +12,7 @@ import org.robolectric.ParameterizedRobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
-/** S3 days 1 and 2 at the board width (390) and 411, light and dark, for review beside `Plan` and `PlanDark`. */
+/** S3 days 1 and 2 at the board width (390) and 411, and day 3 (divider, continued flight, hatch, core tile) at 841, light and dark, for review beside `Plan` and `PlanDark`. */
 @Capture
 @RunWith(ParameterizedRobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -42,11 +42,9 @@ class TimelineDrawingCaptureTest(
         @JvmStatic
         @ParameterizedRobolectricTestRunner.Parameters(name = "{3}")
         fun cases(): List<Array<Any>> =
-            listOf(0, 1).flatMap { day ->
-                listOf(390, 411).flatMap { window ->
-                    listOf(false, true).map { dark ->
-                        arrayOf<Any>(day, window, dark, "day${day + 1} W$window ${if (dark) "dark" else "light"}")
-                    }
+            (listOf(0, 1).flatMap { day -> listOf(390, 411).map { day to it } } + (2 to 841)).flatMap { (day, window) ->
+                listOf(false, true).map { dark ->
+                    arrayOf<Any>(day, window, dark, "day${day + 1} W$window ${if (dark) "dark" else "light"}")
                 }
             }
     }

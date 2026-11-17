@@ -88,16 +88,14 @@ class PrecompositedAlphaTest(
         replayDayDrawing(canvas, raw.slice(begin, end + 1), resources)
         canvas.restore()
 
+        // TEXT coordinates are tile-local; the replay translates the canvas to the tile origin.
         val textBoxes =
             ops.filter { it.code == DrawOp.TEXT }.map {
                 val size = it.coords[2]
                 val width = metrics.measure(TimelineTextStyle.entries[it.style], it.text.orEmpty(), size)
-                RectF(
-                    it.coords[0] - 2,
-                    it.coords[1] - size - 2,
-                    it.coords[0] + width + 2,
-                    it.coords[1] + size * 0.5f + 2,
-                )
+                val x = frame[0] + it.coords[0]
+                val baseline = frame[1] + it.coords[1]
+                RectF(x - 2, baseline - size - 2, x + width + 2, baseline + size * 0.5f + 2)
             }
         var worst = 0
         var worstOutsideText = 0
