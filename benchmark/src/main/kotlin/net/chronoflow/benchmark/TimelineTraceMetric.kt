@@ -52,7 +52,8 @@ class TimelineTraceMetric(
         session: TraceProcessor.Session,
     ): List<Metric.Measurement> {
         val out = ArrayList<Metric.Measurement>()
-        val frames = frameSlices(session, pkg, "($MAIN) AND slice.name LIKE 'Choreographer#doFrame%'")
+        val frames =
+            frameSlices(session, pkg, "($MAIN) AND slice.depth = 0 AND slice.name LIKE 'Choreographer#doFrame%'")
         if (frames.isNotEmpty()) {
             val start = frames.minOf { it.ts }
             val end = frames.maxOf { it.ts + it.dur }
