@@ -47,7 +47,7 @@ class LaunchFrameZeroTest : ScreenTest() {
         val overlay = checkNotNull(instrumentation.uiAutomation.takeScreenshot())
         val icon = checkNotNull(controller.systemIconBoundsPx)
         val moon = checkNotNull(controller.frameZeroMoonRectPx)
-        val density = device.displayDensity / 160f
+        val density = instrumentation.targetContext.resources.displayMetrics.density
         val measuredDp = icon.width() / density.toDouble()
         assertEquals("system icon must be 288 dp; measured $measuredDp dp", 288.0, measuredDp, 1.0 / density)
         assertRectsAgree(icon, moon)

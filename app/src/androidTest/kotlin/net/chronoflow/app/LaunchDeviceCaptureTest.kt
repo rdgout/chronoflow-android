@@ -40,7 +40,7 @@ class LaunchDeviceCaptureTest(
         if (!bars) assertTrue(device.wait(Until.hasObject(By.res("launch.opening")), 5000))
         val screenshot = checkNotNull(instrumentation.uiAutomation.takeScreenshot())
         if (bars) {
-            val height = (device.displayDensity / 160f * 48).toInt()
+            val height = (instrumentation.targetContext.resources.displayMetrics.density * 48).toInt()
             BoardCapture.capture(
                 Bitmap.createBitmap(screenshot, 0, 0, screenshot.width, height),
                 "SplashScreen_system-bars_pixel_en_$theme",
