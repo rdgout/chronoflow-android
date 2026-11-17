@@ -147,7 +147,7 @@ contracts-check:
 	python3 -I tools/contracts-gen/generate_kotlin.py --web-repo "$(WEB_REPO)" --check
 
 perf:
-	@echo "make $@: lands in Phase 0e (feat/phase-0e-test-harness)" >&2; exit 1
+	$(RUN_TIER) perf --device --results 'benchmark/build/outputs/androidTest-results/connected/**/*.xml' -- Scripts/perf-startup.sh
 
 snapshots:
 	$(RUN_TIER) snapshots $(RESULTS_DEBUG) $(TIMINGS_DEBUG) -- $(GRADLE) $(if $(SNAPSHOT_RECORD),recordRoborazziDebug,verifyRoborazziDebug) -Pcf.tier=snapshot

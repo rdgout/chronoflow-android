@@ -8,6 +8,7 @@ AVDMANAGER="${AVDMANAGER:-$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager}"
 SDKMANAGER="${SDKMANAGER:-$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager}"
 PGREP="${PGREP:-pgrep}"
 LOCK="python3 -I $ROOT/Scripts/device_lock.py"
+STATE_DIR="${CF_EMULATOR_STATE_DIR:-$ROOT/build/emulator}"
 
 port_of() {
   case "$1" in
@@ -50,8 +51,8 @@ prep_perf() {
 
 boot() {
   local avd="$1" port="$2" serial="emulator-$2" extra="${3:-}"
-  mkdir -p "$ROOT/build/emulator"
-  local log="$ROOT/build/emulator/$avd.log"
+  mkdir -p "$STATE_DIR"
+  local log="$STATE_DIR/$avd.log"
   # shellcheck disable=SC2086
   nohup "$EMULATOR" -avd "$avd" -port "$port" -no-window -no-audio -no-boot-anim -gpu host $extra >"$log" 2>&1 &
   local pid=$!
@@ -60,6 +61,7 @@ boot() {
   for i in $(seq 1 90); do
     if [ "$("$ADB" -s "$serial" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = 1 ]; then
       grep -iE "renderer|gpu" "$log" | head -3 || true
+      echo host >"$STATE_DIR/gpu-mode"
       return 0
     fi
     if ! kill -0 "$pid" 2>/dev/null; then

@@ -1011,7 +1011,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - Below API 33 it reads `device-config` under a scoped StrictMode allowance.
   - Robolectric tests at API 29, 32, 33 and 36: `ar-EG` → en and LTR; `de-DE` → en; `nl-BE` → nl; font scale 2.0 → 1.3, so `largeFont` equals the cap.
   - Record whether `LocaleManager` plus this wrapper holds; if it does not, apply the OQ-A24 fallback and record that.
-- [ ] **Benchmark module** `:benchmark` (`com.android.test` with `androidx.baselineprofile` 1.5.0).
+- [x] **Benchmark module** `:benchmark` (`com.android.test` with `androidx.baselineprofile` 1.5.0).
   - Perf variants `benchmarkRelease` and `nonMinifiedRelease` take extra sources from `app/src/perf/`. Verify this works; otherwise use the OQ-A28 fallback and record it.
   - `StartupBenchmark`: cold start, 10 iterations, `CompilationMode.Partial`, `StartupTimingMetric`.
   - `make perf` appends rows to `docs/perf-startup.md`.
