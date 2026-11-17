@@ -194,6 +194,18 @@ class KonsistRulesTest {
         }.messageContains("featureDpLiteralsComeFromBoardMetrics violated")
     }
 
+    @Test fun featureNumericDpConstantsRejectPlantedViolation() {
+        val path =
+            "konsist/src/test/resources/violations/featureDpLiteralsComeFromBoardMetrics/" +
+                "feature/trip/src/main/kotlin/net/chronoflow/Constants.kt"
+        assertFailure { featureDpLiteralsComeFromBoardMetrics(Konsist.scopeFromFile(path)) }.all {
+            messageContains("SIZE.dp")
+            messageContains("COMPANION.sp")
+            messageContains("DOUBLE.toFloat().dp")
+            messageContains("INT.toInt().sp")
+        }
+    }
+
     @Test fun featureDpLiteralsComeFromBoardMetricsAllowsControl() =
         featureDpLiteralsComeFromBoardMetrics(allowed("featureDpLiteralsComeFromBoardMetrics"))
 

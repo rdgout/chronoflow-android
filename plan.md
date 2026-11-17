@@ -1451,6 +1451,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - Paths, brushes and paints are built once per size. Radial gradients replace blur, the wordmark is a vector path, and the sky comes from `CfSky`.
   - Reduce Motion follows "### Reduce Motion".
   - Semantics: a single node, "ChronoFlow is opening", with `paneTitle`. App content is hidden with `hideFromAccessibility()` until the hand-off ends.
+- [x] **Konsist numeric dp/sp constants** (3a Task 8b): reject unapproved numeric constants; keep the timeline marker at one physical pixel.
 - [x] **System-bar icons (OQ-A67).** Apply themed icon styles on theme and overlay changes; retain light status icons on sky.
 - [ ] **Frame-0 parity.** `LaunchFrameZeroTest` (`@Smoke`, emulator): in light and dark, the overlay moon's rect equals the system `iconView` bounds within 1 px, and the centre pixel matches.
 - [ ] **Traces and benchmarks.**
