@@ -1485,6 +1485,11 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 - A 60 fps `adb shell screenrecord`, reviewed frame by frame, shows no flash.
 - `first-commit` and the cold TTID are recorded in `docs/perf-startup.md`.
 
+**Validation (2026-11-17):** The pre-pause `make check` passed; resumed allocation validation is blocked as recorded below. The required `make perf-timeline` found the 1 px marker and completed its functional cases, but the orchestrator declared its timings **INVALID for judgement** because the host was busy with other builds and simulators. Its CPU band check failed both measurements; no timeline-performance conclusion is drawn from them.
+
+- [ ] **Allocation guard after probe removal.** The resumed in-process `sampleIntoAllocatesNothing` still reports 72 bytes against baseline 0 after two measurement fixes. The planted per-call allocation is detected, but the restored guard has not passed; worker stopped under the two-fix rule. Current guard edits and probe deletion remain uncommitted.
+- [ ] **Quiet-host timeline validation (orchestrator).** Re-run the 3a timing comparison on a quiet host; the worker must not repeat performance/profile commands while the host is busy.
+
 ### Phase 3b: Readiness reducer, endings and process policy (`feat/phase-3b-launch-readiness`)
 
 - **Brief:** [`docs/phases/phase-3b-launch-readiness.md`](docs/phases/phase-3b-launch-readiness.md), written by the orchestrator before the phase starts.
