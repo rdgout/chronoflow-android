@@ -57,9 +57,9 @@ class TimePickerTintTest(
         val pixels = compose.onNode(isDialog()).captureToImage().toPixelMap()
         val actual = pixels[pixels.width - 4, pixels.height / 2]
         val expected = (if (dark) CfDarkColors else CfLightColors).popover
-        assertTrue(abs(actual.red - expected.red) <= 2f / 255)
-        assertTrue(abs(actual.green - expected.green) <= 2f / 255)
-        assertTrue(abs(actual.blue - expected.blue) <= 2f / 255)
+        assertTrue("$actual != $expected", abs(actual.red - expected.red) <= 2f / 255)
+        assertTrue("$actual != $expected", abs(actual.green - expected.green) <= 2f / 255)
+        assertTrue("$actual != $expected", abs(actual.blue - expected.blue) <= 2f / 255)
     }
 
     companion object {
