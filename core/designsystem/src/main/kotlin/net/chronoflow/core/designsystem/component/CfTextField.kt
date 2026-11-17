@@ -65,26 +65,25 @@ fun CfTextField(
 ) {
     val source = remember { MutableInteractionSource() }
     val focused by source.collectIsFocusedAsState()
-    BasicTextField(
-        state,
-        modifier.fillMaxWidth().fieldSemantics(label, error, contentType, testTag),
-        enabled = enabled,
-        textStyle = CfTheme.type.authBody.copy(color = CfTheme.colors.cardForeground),
-        keyboardOptions = keyboardOptions,
-        onKeyboardAction = onKeyboardAction,
-        lineLimits = TextFieldLineLimits.SingleLine,
-        interactionSource = source,
-        cursorBrush = SolidColor(CfTheme.colors.ring),
-        decorator =
-            cfFieldDecorator(
-                label,
-                hint,
-                error,
-                enabled,
-                focused,
-                if (state.text.isEmpty()) placeholder else null,
-            ),
-    )
+    FieldLayout(label, hint, error, testTag, modifier) {
+        BasicTextField(
+            state,
+            Modifier.fillMaxWidth().fieldSemantics(label, error, contentType, testTag),
+            enabled = enabled,
+            textStyle = CfTheme.type.authBody.copy(color = CfTheme.colors.cardForeground),
+            keyboardOptions = keyboardOptions,
+            onKeyboardAction = onKeyboardAction,
+            lineLimits = TextFieldLineLimits.SingleLine,
+            interactionSource = source,
+            cursorBrush = SolidColor(CfTheme.colors.ring),
+            decorator =
+                cfFieldDecorator(
+                    focused,
+                    error != null,
+                    enabled,
+                ) { FieldPlaceholder(state, placeholder, testTag) },
+        )
+    }
 }
 
 /** Caller owns state. Secret states use remember { TextFieldState() } or a ViewModel, never saveable state or a log. */
@@ -104,18 +103,20 @@ fun CfSecureTextField(
 ) {
     val source = remember { MutableInteractionSource() }
     val focused by source.collectIsFocusedAsState()
-    BasicSecureTextField(
-        state,
-        modifier.fillMaxWidth().fieldSemantics(label, error, contentType, testTag),
-        enabled = enabled,
-        textStyle = CfTheme.type.authBody.copy(color = CfTheme.colors.cardForeground),
-        keyboardOptions = keyboardOptions,
-        onKeyboardAction = onKeyboardAction,
-        interactionSource = source,
-        cursorBrush = SolidColor(CfTheme.colors.ring),
-        textObfuscationMode = if (revealed) TextObfuscationMode.Visible else TextObfuscationMode.RevealLastTyped,
-        decorator = cfFieldDecorator(label, hint, error, enabled, focused, null),
-    )
+    FieldLayout(label, hint, error, testTag, modifier) {
+        BasicSecureTextField(
+            state,
+            Modifier.fillMaxWidth().fieldSemantics(label, error, contentType, testTag),
+            enabled = enabled,
+            textStyle = CfTheme.type.authBody.copy(color = CfTheme.colors.cardForeground),
+            keyboardOptions = keyboardOptions,
+            onKeyboardAction = onKeyboardAction,
+            interactionSource = source,
+            cursorBrush = SolidColor(CfTheme.colors.ring),
+            textObfuscationMode = if (revealed) TextObfuscationMode.Visible else TextObfuscationMode.RevealLastTyped,
+            decorator = cfFieldDecorator(focused, error != null, enabled),
+        )
+    }
 }
 
 private fun Modifier.fieldSemantics(
@@ -131,82 +132,102 @@ private fun Modifier.fieldSemantics(
     }
 
 @Composable
-internal fun cfFieldDecorator(
+private fun FieldLayout(
     label: String,
     hint: String?,
     error: String?,
-    enabled: Boolean,
-    focused: Boolean,
+    tag: String?,
+    modifier: Modifier = Modifier,
+    field: @Composable () -> Unit,
+) {
+    val c = CfTheme.colors
+    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(AuthTokens.fieldGap.dp)) {
+        Text(label, Modifier.clearAndSetSemantics { }, color = c.cardForeground, style = CfTheme.type.authLabel)
+        field()
+        if (error != null) {
+            Row(
+                Modifier.clearAndSetSemantics { },
+                horizontalArrangement = Arrangement.spacedBy(AuthTokens.brandGap.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    LucideGlyphs.CircleAlert.imageVector(),
+                    null,
+                    Modifier.size(AuthTokens.icon.dp),
+                    tint = c.destructive,
+                )
+                Text(error, color = c.destructive, style = CfTheme.type.authHint)
+            }
+        } else if (hint != null) {
+            Text(
+                hint,
+                if (tag == null) Modifier else Modifier.testTag("$tag.hint"),
+                color = c.mutedForeground,
+                style = CfTheme.type.authHint,
+            )
+        }
+    }
+}
+
+@Composable
+private fun FieldPlaceholder(
+    state: TextFieldState,
     placeholder: String?,
+    tag: String?,
+) {
+    if (placeholder != null && state.text.isEmpty()) {
+        Text(
+            placeholder,
+            if (tag == null) Modifier else Modifier.testTag("$tag.placeholder"),
+            color = CfTheme.colors.mutedForeground,
+            style = CfTheme.type.authBody,
+        )
+    }
+}
+
+@Composable
+internal fun cfFieldDecorator(
+    focused: Boolean,
+    error: Boolean,
+    enabled: Boolean,
+    placeholder: @Composable () -> Unit = {},
 ): TextFieldDecorator {
     val c = CfTheme.colors
-    val type = CfTheme.type
     val shape = CfTheme.shapes.md
     return TextFieldDecorator { inner ->
-        Column(verticalArrangement = Arrangement.spacedBy(AuthTokens.fieldGap.dp)) {
-            Text(label, Modifier.clearAndSetSemantics { }, color = c.cardForeground, style = type.authLabel)
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = PlanUITokens.actionMinHeight.dp)
-                    .alpha(if (enabled) 1f else AuthTokens.disabledOpacity)
-                    .border(
-                        AuthTokens.borderWidth.dp,
-                        if (error !=
-                            null
-                        ) {
-                            c.destructive
-                        } else if (focused) {
-                            c.ring
-                        } else {
-                            c.input
-                        },
-                        shape,
-                    ).drawWithCache {
-                        val width = AuthTokens.focusWidth.dp.toPx()
-                        val outline =
-                            shape.createOutline(
-                                Size(size.width + width, size.height + width),
-                                layoutDirection,
-                                this,
-                            )
-                        val stroke = Stroke(width)
-                        onDrawWithContent {
-                            drawContent()
-                            if (focused) {
-                                translate(
-                                    -width / 2,
-                                    -width / 2,
-                                ) { drawOutline(outline, c.ring, style = stroke) }
-                            }
-                        }
-                    }.padding(horizontal = AuthTokens.inset.dp, vertical = AuthTokens.fieldGap.dp),
-                contentAlignment = Alignment.CenterStart,
-            ) {
-                if (placeholder != null) Text(placeholder, color = c.mutedForeground, style = type.authBody)
-                inner()
-            }
-            if (error != null) {
-                Row(
-                    Modifier.clearAndSetSemantics {
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .heightIn(min = PlanUITokens.actionMinHeight.dp)
+                .alpha(if (enabled) 1f else AuthTokens.disabledOpacity)
+                .border(
+                    AuthTokens.borderWidth.dp,
+                    if (error) {
+                        c.destructive
+                    } else if (focused) {
+                        c.ring
+                    } else {
+                        c.input
                     },
-                    horizontalArrangement =
-                        Arrangement.spacedBy(
-                            AuthTokens.brandGap.dp,
-                        ),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(
-                        LucideGlyphs.CircleAlert.imageVector(),
-                        null,
-                        Modifier.size(AuthTokens.icon.dp),
-                        tint = c.destructive,
-                    )
-                    Text(error, color = c.destructive, style = type.authHint)
-                }
-            } else if (hint != null) {
-                Text(hint, color = c.mutedForeground, style = type.authHint)
-            }
+                    shape,
+                ).drawWithCache {
+                    val width = AuthTokens.focusWidth.dp.toPx()
+                    val outline =
+                        shape.createOutline(
+                            Size(size.width + width, size.height + width),
+                            layoutDirection,
+                            this,
+                        )
+                    val stroke = Stroke(width)
+                    onDrawWithContent {
+                        drawContent()
+                        if (focused) translate(-width / 2, -width / 2) { drawOutline(outline, c.ring, style = stroke) }
+                    }
+                }.padding(horizontal = AuthTokens.inset.dp, vertical = AuthTokens.fieldGap.dp),
+            contentAlignment = Alignment.CenterStart,
+        ) {
+            placeholder()
+            inner()
         }
     }
 }
