@@ -699,8 +699,11 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A116 | (4a-4) The plan says reads are `asFlow().mapToList(io).conflate()`, which cannot end streams on `close()`, count observers or fetch across tables. | `AccountDatabase.observe(tables…)` with SQLDelight listeners, conflated, fetched on io; fix the wording (Task 5). | 4a |
 | OQ-A117 | (4a-5) Plain `read`s are not transacted; a multi-statement read may see two commits. | Keep them untransacted, like iOS `pool.read` for single queries; a later phase wraps a multi-query snapshot in `transactionWithResult`. | 4a |
 | OQ-A118 | (4a-6) Reminder storage: iOS keeps the ledger as settings section `reminderLedger` with `sendAtMs: Double`; A5 asks for local tables. | The tables in Task 3 (`send_at`/`send_at_ms` INTEGER ms, `account_id` nullable, `request_code UNIQUE`); 12b may edit them in place before the first release. | 4a |
+| OQ-A119 | (4a-7) The plan calls the epoch `SessionEpoch`; iOS calls it `SyncEpoch`. | `SyncEpoch`; fix the bullet (Task 8). | 4a |
 | OQ-A120 | (4a-8) Port `NoHealthDataMigration` (iOS v2)? | No: Android starts at v1 with no health data stored; `user_version` stays 1. | 4a |
 | OQ-A121 | (4a-9) Keystore key with `setUnlockedDeviceRequired(true)`? It blocks session reads while the device is locked (reminder taps, background sync). | No. iOS uses `WhenUnlockedThisDeviceOnly`; Android keeps background access and relies on device-bound, non-exportable keys. Revisit before release. | 4a |
+| OQ-A122 | (4a-10) A corrupt `device_prefs` file: reset or fail? A reset loses `api.deviceId`, so the device gets a new id once. | `ReplaceFileCorruptionHandler { emptyPreferences() }`. A corrupt **value** still throws (D22). | 4a |
+| OQ-A129 | (4a-17) iOS `DeviceIdentityStore` shares one in-flight task, so concurrent callers see the same error; a `Mutex` makes each waiting caller retry in turn. | `Mutex`; the observable contract (one write, no caching of a failure) is the same. | 4a |
 | OQ-0a-22 | Native libraries in the bundle? | Allow only `libandroidx.graphics.path.so` (Compose graphics-path; excluding it breaks Path conversion below API 34); fail on any other `.so` | 0a, 13 |
 | OQ-0b-1 | Where does `PlanMetrics` live? `08 §3.1` lists it inside `CfDimens`, but its consumer `:core:plan` is a JVM module that cannot depend on `:core:designsystem` | `core/plan/…/generated/PlanMetrics.generated.kt` (Double, dp), as iOS keeps it in `PlanCore` | 0b, 1b, 1c |
 | OQ-0b-2 | Port all iOS TokenGen outputs now (Auth, Settings, Terms, Welcome, PlanUI, Press, LaunchPaint, TypeMetrics), or only colors, sky and type? | All of them now (the iOS files are exact goldens and Phases 2, 3a, 3c, 5a, 9 and 10 need them) | 0b |
@@ -1670,12 +1673,12 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - `AndroidSqliteDriver` with WAL and `foreign_keys = ON`.
   - One writer on `Dispatchers.IO.limitedParallelism(1)`, writing as `epoch.whileValid { permit?.whileValid { transaction { body() } } }`.
   - Reads go through `AccountDatabase.observe` (SQLDelight table listeners, conflated, fetched on io; completes on close).
-- [ ] **Ports:** `StorageNamespace` (Api, Mock), `SessionEpoch`, `SessionMutationPermit`, and `DeviceIdentityStore` (UUIDv7 and the device-name rule).
+- [x] **Ports:** `StorageNamespace` (Api, Mock), `SyncEpoch`, `SessionMutationPermit`, and `DeviceIdentityStore` (UUIDv7 and the device-name rule).
 - [x] **KeystoreSessionStore** (`core/datastore/…`).
   - AES-256-GCM under alias `<ns>.session`, written through `AtomicFile` to `noBackupFilesDir/<ns>/session.bin`.
   - An invalidated key or a failed decrypt deletes the session and signs out; an `IOException` retries.
   - Test: the instrumented `KeystoreSessionStoreTest`, at most 6 tests.
-- [ ] **Device files.**
+- [x] **Device files.**
   - `DevicePreferences`: DataStore `device_prefs`, with `api.deviceId`, `cf.settings.language`, `cf.settings.theme` and `notificationPermissionRequested`.
   - `DeviceConfigFile`: ≤ 64 B, written on language and theme changes.
   - `WipeMarker`: `pending-wipe.json`.

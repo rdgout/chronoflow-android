@@ -4,7 +4,7 @@ import android.content.Context
 import android.content.res.Configuration
 import android.os.Build
 import android.os.LocaleList
-import net.chronoflow.app.config.DeviceConfigFile
+import net.chronoflow.core.datastore.DeviceConfigFile
 import net.chronoflow.core.model.config.ConfigurationRules
 import net.chronoflow.core.model.config.LanguageChoice
 import java.util.Locale
