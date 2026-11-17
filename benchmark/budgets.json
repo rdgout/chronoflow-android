@@ -2,7 +2,8 @@
   "schema": 1,
   "labels": {
     "startup": "Startup",
-    "timeline": "Timeline"
+    "timeline": "Timeline",
+    "launch": "Launch"
   },
   "startup": [
     {
@@ -15,6 +16,21 @@
       },
       "lowEnd": {
         "hard": 800
+      },
+      "emulator": {
+        "report": true
+      }
+    },
+    {
+      "test": "startupCold",
+      "metric": "first-commitFirstMs",
+      "stat": "median",
+      "unit": "ms",
+      "reference": {
+        "hard": 50
+      },
+      "lowEnd": {
+        "hard": 100
       },
       "emulator": {
         "report": true
@@ -295,5 +311,54 @@
       "timelinePrepareMs",
       "timelineTypefaceMs"
     ]
-  }
+  },
+  "launch": [
+    {
+      "test": "launchCold",
+      "metric": "frameOverrunMs",
+      "stat": "P99",
+      "unit": "ms",
+      "signed": true,
+      "reference": {
+        "hard": 0
+      },
+      "lowEnd": {
+        "hard": 4
+      },
+      "emulator": {
+        "report": true
+      }
+    },
+    {
+      "test": "launchCold",
+      "metric": "frameCount",
+      "stat": "each",
+      "unit": "count",
+      "emulator": {
+        "min": 75
+      },
+      "reference": {
+        "report": true
+      },
+      "lowEnd": {
+        "report": true
+      }
+    },
+    {
+      "test": "launchCold",
+      "metric": "jankPercent",
+      "stat": "each",
+      "unit": "%",
+      "derived": true,
+      "reference": {
+        "hard": 5
+      },
+      "lowEnd": {
+        "hard": 5
+      },
+      "emulator": {
+        "report": true
+      }
+    }
+  ]
 }

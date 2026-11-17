@@ -97,6 +97,14 @@ class CheckBenchmarksTest(unittest.TestCase):
         self.assertEqual(len(added[0].strip("|").split("|")), 12)
         self.assertEqual(after.index(added[0]), 7)
 
+    def test_launch_requires_every_iteration_to_animate_at_least_75_frames(self):
+        result = check("--suite", "launch", "--device-class", "emulator", "--results-dir", str(FIXTURES / "launch/frame-count-74"))
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertIn("frameCount each=74.0 count [min=75] FAIL", result.stdout)
+        passed = check("--suite", "launch", "--device-class", "emulator", "--results-dir", str(FIXTURES / "launch/pass"))
+        self.assertEqual(passed.returncode, 0, passed.stderr)
+
+
 
 TIMELINE = FIXTURES / "timeline"
 TIMELINE_HEADER = (

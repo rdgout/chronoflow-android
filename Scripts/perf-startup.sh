@@ -61,7 +61,7 @@ fi
 
 args=(
   ":benchmark:connectedBenchmarkReleaseAndroidTest"
-  "-Pandroid.testInstrumentationRunnerArguments.class=net.chronoflow.benchmark.StartupBenchmark"
+  "-Pandroid.testInstrumentationRunnerArguments.class=net.chronoflow.benchmark.StartupBenchmark,net.chronoflow.benchmark.LaunchJankBenchmark"
   "-Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.enabledRules=Macrobenchmark"
   "-Pandroid.testInstrumentationRunnerArguments.timeout_msec=300000"
 )
@@ -81,6 +81,11 @@ case "$font" in null | "") font=1.0 ;; esac
 step $CHECKER --suite startup --device-class "$CLASS" --results-dir "$RESULTS_DIR" --history "$HISTORY" \
   --theme light --font-scale "$font" --refresh-hz "$REFRESH_HZ" --gpu "$GPU" --commit "$commit" --append
 check_status=$?
+# shellcheck disable=SC2086
+step $CHECKER --suite launch --device-class "$CLASS" --results-dir "$RESULTS_DIR" --history "$HISTORY" \
+  --theme light --font-scale "$font" --refresh-hz "$REFRESH_HZ" --gpu "$GPU" --commit "$commit" --append
+launch_status=$?
+if [ "$launch_status" != 0 ]; then check_status="$launch_status"; fi
 
 if [ "$gradle_status" != 0 ]; then exit "$gradle_status"; fi
 exit "$check_status"
