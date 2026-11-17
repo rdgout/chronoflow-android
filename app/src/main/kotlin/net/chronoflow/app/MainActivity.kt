@@ -29,7 +29,7 @@ import net.chronoflow.app.perf.TripPageEntry
 import net.chronoflow.core.designsystem.layout.LocalSafeInsets
 import net.chronoflow.core.designsystem.theme.ChronoFlowTheme
 import net.chronoflow.core.designsystem.theme.ReduceMotion
-import net.chronoflow.core.designsystem.theme.warmFonts
+import net.chronoflow.core.designsystem.theme.warmFontsAfterFirstFrame
 import net.chronoflow.feature.trip.timeline.LocalTimelineJankTagger
 
 class MainActivity : ComponentActivity() {
@@ -55,8 +55,7 @@ class MainActivity : ComponentActivity() {
             val resolver = LocalFontFamilyResolver.current
             LaunchedEffect(resolver) {
                 withFrameNanos { }
-                firstCommit.await()
-                warmFonts(resolver::preload, Dispatchers.IO)
+                warmFontsAfterFirstFrame(firstCommit, resolver::preload, Dispatchers.IO)
             }
             ChronoFlowTheme(reduceMotion = reduceMotion) {
                 CompositionLocalProvider(
