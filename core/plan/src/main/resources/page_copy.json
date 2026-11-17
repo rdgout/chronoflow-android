@@ -1,0 +1,434 @@
+{
+ "entries": {
+  "%@ hours": {
+   "en": "%@ hours",
+   "nl": "%@ uur"
+  },
+  "%@ of %@ steps done": {
+   "en": "%@ of %@ steps done",
+   "nl": "%@ van %@ stappen gedaan"
+  },
+  "%@ time from here": {
+   "en": "%@ time from here",
+   "nl": "Vanaf hier %@-tijd"
+  },
+  "%@ to %@": {
+   "en": "%@ to %@",
+   "nl": "%@ tot %@"
+  },
+  "%@ to %@, %@, %@. Go to a day": {
+   "en": "%@ to %@, %@, %@. Go to a day",
+   "nl": "%@ naar %@, %@, %@. Ga naar een dag"
+  },
+  "%@ to %@, %@. Go to a day": {
+   "en": "%@ to %@, %@. Go to a day",
+   "nl": "%@ naar %@, %@. Ga naar een dag"
+  },
+  "%@ · now": {
+   "en": "%@ · now",
+   "nl": "%@ · nu"
+  },
+  "%@ → %@": {
+   "en": "%@ → %@",
+   "nl": "%@ → %@"
+  },
+  "%@–%@": {
+   "en": "%@–%@",
+   "nl": "%@–%@"
+  },
+  "%lld notes": {
+   "en": {
+    "one": "%lld note",
+    "other": "%lld notes"
+   },
+   "nl": {
+    "one": "%lld notitie",
+    "other": "%lld notities"
+   }
+  },
+  "%lld warnings": {
+   "en": {
+    "one": "%lld warning",
+    "other": "%lld warnings"
+   },
+   "nl": {
+    "one": "%lld waarschuwing",
+    "other": "%lld waarschuwingen"
+   }
+  },
+  "Assumed trip end": {
+   "en": "Assumed trip end",
+   "nl": "Aangenomen einde van de reis"
+  },
+  "Based on %@ nights": {
+   "en": "Based on %@ nights",
+   "nl": "Op basis van %@ nachten"
+  },
+  "Based on your check-out date": {
+   "en": "Based on your check-out date",
+   "nl": "Op basis van je uitcheckdatum"
+  },
+  "Caffeine": {
+   "en": "Caffeine",
+   "nl": "Cafeïne"
+  },
+  "Cancel": {
+   "en": "Cancel",
+   "nl": "Annuleren"
+  },
+  "Check answers and make plan": {
+   "en": "Check answers and make plan",
+   "nl": "Antwoorden controleren en plan maken"
+  },
+  "Continues from the previous plan day": {
+   "en": "Continues from the previous plan day",
+   "nl": "Loopt door vanaf de vorige plandag"
+  },
+  "Continues into the next plan day": {
+   "en": "Continues into the next plan day",
+   "nl": "Loopt door in de volgende plandag"
+  },
+  "Destination time · %@": {
+   "en": "Destination time · %@",
+   "nl": "Tijd op bestemming · %@"
+  },
+  "Done": {
+   "en": "Done",
+   "nl": "Klaar"
+  },
+  "Downloading this trip’s plan…": {
+   "en": "Downloading this trip’s plan…",
+   "nl": "Het plan van deze reis wordt gedownload…"
+  },
+  "Duplicate trip": {
+   "en": "Duplicate trip",
+   "nl": "Reis dupliceren"
+  },
+  "Edit trip": {
+   "en": "Edit trip",
+   "nl": "Reis bewerken"
+  },
+  "End of this plan": {
+   "en": "End of this plan",
+   "nl": "Einde van dit plan"
+  },
+  "Expected adapted": {
+   "en": "Expected adapted",
+   "nl": "Naar verwachting aangepast"
+  },
+  "Extra support if you want it.": {
+   "en": "Extra support if you want it.",
+   "nl": "Extra ondersteuning als je dat wilt."
+  },
+  "From here on all times are %@ time. Set your watch to %@.": {
+   "en": "From here on all times are %@ time. Set your watch to %@.",
+   "nl": "Vanaf hier zijn alle tijden in de tijdzone van %@. Zet je horloge op %@."
+  },
+  "From here, times are in %@.": {
+   "en": "From here, times are in %@.",
+   "nl": "Vanaf hier zijn de tijden in de tijdzone van %@."
+  },
+  "Go to a day": {
+   "en": "Go to a day",
+   "nl": "Ga naar een dag"
+  },
+  "Go to day": {
+   "en": "Go to day",
+   "nl": "Ga naar dag"
+  },
+  "Go to my trips": {
+   "en": "Go to my trips",
+   "nl": "Ga naar mijn reizen"
+  },
+  "Helpful when they fit your day.": {
+   "en": "Helpful when they fit your day.",
+   "nl": "Helpt als het in je dag past."
+  },
+  "Hidden steps": {
+   "en": "Hidden steps",
+   "nl": "Verborgen stappen"
+  },
+  "Holding this shift": {
+   "en": "Holding this shift",
+   "nl": "Deze verschuiving vasthouden"
+  },
+  "Holding to home time": {
+   "en": "Holding to home time",
+   "nl": "Thuistijd aanhouden"
+  },
+  "Home time · %@": {
+   "en": "Home time · %@",
+   "nl": "Thuistijd · %@"
+  },
+  "Home · %@": {
+   "en": "Home · %@",
+   "nl": "Thuis · %@"
+  },
+  "Important": {
+   "en": "Important",
+   "nl": "Belangrijk"
+  },
+  "Information": {
+   "en": "Information",
+   "nl": "Informatie"
+  },
+  "It’s on our side, not yours, and your plans are safe. Try again in a few minutes.": {
+   "en": "It’s on our side, not yours, and your plans are safe. Try again in a few minutes.",
+   "nl": "Het ligt aan ons en je plannen zijn veilig. Probeer het over een paar minuten opnieuw."
+  },
+  "Keep your usual rhythm": {
+   "en": "Keep your usual rhythm",
+   "nl": "Behoud je gebruikelijke ritme"
+  },
+  "Legend": {
+   "en": "Legend",
+   "nl": "Legenda"
+  },
+  "Legend: what the colours and patterns mean": {
+   "en": "Legend: what the colours and patterns mean",
+   "nl": "Legenda: wat de kleuren en patronen betekenen"
+  },
+  "Light": {
+   "en": "Light",
+   "nl": "Licht"
+  },
+  "Likely adapted": {
+   "en": "Likely adapted",
+   "nl": "Waarschijnlijk aangepast"
+  },
+  "Loading your plan": {
+   "en": "Loading your plan",
+   "nl": "Je plan laden"
+  },
+  "Making the plan needs a connection.": {
+   "en": "Making the plan needs a connection.",
+   "nl": "Om het plan te maken heb je verbinding nodig."
+  },
+  "Marked done": {
+   "en": "Marked done",
+   "nl": "Als gedaan gemarkeerd"
+  },
+  "Needs a connection.": {
+   "en": "Needs a connection.",
+   "nl": "Verbinding nodig."
+  },
+  "New trip": {
+   "en": "New trip",
+   "nl": "Nieuwe reis"
+  },
+  "Next day": {
+   "en": "Next day",
+   "nl": "Volgende dag"
+  },
+  "No clock shift planned": {
+   "en": "No clock shift planned",
+   "nl": "Geen klokverschuiving gepland"
+  },
+  "No plan yet": {
+   "en": "No plan yet",
+   "nl": "Nog geen plan"
+  },
+  "Not found": {
+   "en": "Not found",
+   "nl": "Niet gevonden"
+  },
+  "Now, %@": {
+   "en": "Now, %@",
+   "nl": "Nu, %@"
+  },
+  "Open Today": {
+   "en": "Open Today",
+   "nl": "Open Vandaag"
+  },
+  "Open my plan for today": {
+   "en": "Open my plan for today",
+   "nl": "Open mijn plan voor vandaag"
+  },
+  "Optional": {
+   "en": "Optional",
+   "nl": "Optioneel"
+  },
+  "Partial shift": {
+   "en": "Partial shift",
+   "nl": "Gedeeltelijke verschuiving"
+  },
+  "Partly shifted": {
+   "en": "Partly shifted",
+   "nl": "Gedeeltelijk verschoven"
+  },
+  "Plan a trip": {
+   "en": "Plan a trip",
+   "nl": "Plan een reis"
+  },
+  "Plan days": {
+   "en": "Plan days",
+   "nl": "Plandagen"
+  },
+  "Plan summary": {
+   "en": "Plan summary",
+   "nl": "Plansamenvatting"
+  },
+  "Plan timeline": {
+   "en": "Plan timeline",
+   "nl": "Tijdlijn van het plan"
+  },
+  "Plans for active trips and trips in the next 7 days are always on your phone. This one is further away, so its plan opens once you’re connected.": {
+   "en": "Plans for active trips and trips in the next 7 days are always on your phone. This one is further away, so its plan opens once you’re connected.",
+   "nl": "Plannen van actieve reizen en reizen in de komende 7 dagen staan altijd op je telefoon. Deze reis ligt verder weg, dus het plan opent zodra je verbinding hebt."
+  },
+  "Previous day": {
+   "en": "Previous day",
+   "nl": "Vorige dag"
+  },
+  "Priorities": {
+   "en": "Priorities",
+   "nl": "Prioriteiten"
+  },
+  "Recommended": {
+   "en": "Recommended",
+   "nl": "Aanbevolen"
+  },
+  "Return plan starts": {
+   "en": "Return plan starts",
+   "nl": "Terugreisplan begint"
+  },
+  "Same flights and answers, new dates": {
+   "en": "Same flights and answers, new dates",
+   "nl": "Dezelfde vluchten en antwoorden, nieuwe datums"
+  },
+  "See your return plan": {
+   "en": "See your return plan",
+   "nl": "Bekijk je terugreisplan"
+  },
+  "Show as list": {
+   "en": "Show as list",
+   "nl": "Als lijst tonen"
+  },
+  "Show as timeline": {
+   "en": "Show as timeline",
+   "nl": "Als tijdlijn tonen"
+  },
+  "Show less": {
+   "en": "Show less",
+   "nl": "Minder tonen"
+  },
+  "Show more": {
+   "en": "Show more",
+   "nl": "Meer tonen"
+  },
+  "Skipped": {
+   "en": "Skipped",
+   "nl": "Overgeslagen"
+  },
+  "Sleep": {
+   "en": "Sleep",
+   "nl": "Slapen"
+  },
+  "Some steps are hidden in your preferences.": {
+   "en": "Some steps are hidden in your preferences.",
+   "nl": "Sommige stappen zijn verborgen in je voorkeuren."
+  },
+  "Something went wrong": {
+   "en": "Something went wrong",
+   "nl": "Er ging iets mis"
+  },
+  "Something went wrong on our side. Try again in a moment.": {
+   "en": "Something went wrong on our side. Try again in a moment.",
+   "nl": "Er ging iets mis bij ons. Probeer het zo opnieuw."
+  },
+  "Stay closer to home time": {
+   "en": "Stay closer to home time",
+   "nl": "Blijf dichter bij je thuistijd"
+  },
+  "Steps": {
+   "en": "Steps",
+   "nl": "Stappen"
+  },
+  "Still adjusting": {
+   "en": "Still adjusting",
+   "nl": "Nog aan het verschuiven"
+  },
+  "The link may be old, or the trip was deleted.": {
+   "en": "The link may be old, or the trip was deleted.",
+   "nl": "De link is misschien verouderd, of de reis is verwijderd."
+  },
+  "The steps that matter most for shifting your clock.": {
+   "en": "The steps that matter most for shifting your clock.",
+   "nl": "De belangrijkste stappen om je klok te verschuiven."
+  },
+  "There are no more steps in this plan.": {
+   "en": "There are no more steps in this plan.",
+   "nl": "Er zijn geen stappen meer in dit plan."
+  },
+  "There · %@": {
+   "en": "There · %@",
+   "nl": "Daar · %@"
+  },
+  "This plan downloads when you’re online": {
+   "en": "This plan downloads when you’re online",
+   "nl": "Dit plan wordt gedownload zodra je online bent"
+  },
+  "Travel": {
+   "en": "Travel",
+   "nl": "Reizen"
+  },
+  "Trip actions": {
+   "en": "Trip actions",
+   "nl": "Reisacties"
+  },
+  "Try again": {
+   "en": "Try again",
+   "nl": "Opnieuw proberen"
+  },
+  "Useful context, not a task.": {
+   "en": "Useful context, not a task.",
+   "nl": "Nuttige informatie, geen taak."
+  },
+  "We advance your clock %@": {
+   "en": "We advance your clock %@",
+   "nl": "We zetten je klok %@ vooruit"
+  },
+  "We can’t find that": {
+   "en": "We can’t find that",
+   "nl": "We kunnen dit niet vinden"
+  },
+  "We could not duplicate this trip. Try again.": {
+   "en": "We could not duplicate this trip. Try again.",
+   "nl": "We konden deze reis niet dupliceren. Probeer het opnieuw."
+  },
+  "We delay your clock %@": {
+   "en": "We delay your clock %@",
+   "nl": "We zetten je klok %@ terug"
+  },
+  "We’re having trouble": {
+   "en": "We’re having trouble",
+   "nl": "Er is een probleem"
+  },
+  "Your flights are saved. Check your answers to make the plan. Once it’s made, it’s stored on this phone and works offline.": {
+   "en": "Your flights are saved. Check your answers to make the plan. Once it’s made, it’s stored on this phone and works offline.",
+   "nl": "Je vluchten zijn opgeslagen. Controleer je antwoorden om het plan te maken. Daarna staat het op deze telefoon en werkt het offline."
+  },
+  "Your other trips keep working offline.": {
+   "en": "Your other trips keep working offline.",
+   "nl": "Je andere reizen werken gewoon offline."
+  },
+  "Your plan": {
+   "en": "Your plan",
+   "nl": "Je plan"
+  },
+  "You’re here · %@": {
+   "en": "You’re here · %@",
+   "nl": "Je bent hier · %@"
+  },
+  "via %@": {
+   "en": "via %@",
+   "nl": "via %@"
+  },
+  "with return": {
+   "en": "with return",
+   "nl": "met terugreis"
+  }
+ },
+ "pin": "f391a1fa",
+ "source": "Packages/ChronoFlowKit/Sources/PlanUI/Resources/Localizable.xcstrings"
+}
