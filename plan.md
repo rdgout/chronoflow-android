@@ -1136,7 +1136,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - Hit frames are at least 48 × 48 dp (iOS uses 44 pt), centred and clamped. Marker and zone-change targets follow `§2.12` and `§5` with the same minimum.
   - When `minWidth > available`, the day scrolls horizontally.
 - [x] **Labels and accessibility geometry.** `TimelineLabels.kt` and `TimelineAccessibilityGeometry.kt`: labels, traversal order, and accessibility labels joined as in `§2.13`.
-- [ ] **PlanPreparer.kt and PreparedPlan.kt.**
+- [x] **PlanPreparer.kt and PreparedPlan.kt.**
   - `revision = inputHash|detailVersion`, cached per input, with stable day ids.
   - Blocks ordered by `startUtc`, then id.
   - Progress, notices, the zone instruction and the comparison copy.
