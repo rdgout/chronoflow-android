@@ -374,7 +374,13 @@ object DayDrawingBuilder {
                 shown = metrics.ellipsize(style, value, size, width)
                 if (shown.isEmpty()) return
                 measured = metrics.measure(style, shown, size)
-                if (measured > width) return
+                if (measured > width) {
+                    // Kerning around the cut can make "prefix…" wider than the sum the ellipsizer budgeted for.
+                    shown = metrics.ellipsize(style, value, size, width - (measured - width))
+                    if (shown.isEmpty()) return
+                    measured = metrics.measure(style, shown, size)
+                    if (measured > width) return
+                }
             }
             val x = left + max(0f, width - measured) * alignment
             val right = x + min(width, measured)

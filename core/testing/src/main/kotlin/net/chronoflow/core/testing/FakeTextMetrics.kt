@@ -18,10 +18,9 @@ class FakeTextMetrics : TextMetrics {
         maxWidthPx: Float,
     ): String {
         if (measure(style, text, sizePx) <= maxWidthPx) return text
-        if (measure(style, ELLIPSIS, sizePx) > maxWidthPx) return ""
         var length = text.length
         while (length > 0 && measure(style, text.substring(0, length) + ELLIPSIS, sizePx) > maxWidthPx) length--
-        return text.substring(0, length) + ELLIPSIS
+        return if (length == 0) "" else text.substring(0, length) + ELLIPSIS
     }
 
     override fun ascent(
