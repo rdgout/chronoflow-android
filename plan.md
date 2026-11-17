@@ -1359,7 +1359,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - `CfSnackbarHost`: inverse tokens, at the bottom (OQ-A5);
   - `CfSegmentedButtons`, `CfPullToRefreshBox`, `CfLinearProgress`;
   - theming for `CfDatePickerDialog` and `CfTimePickerDialog`.
-- [ ] **Icons.**
+- [x] **Icons.**
   - `tools/icons/generate_icons.py` emits `ImageVector`s for the lucide glyphs in use, from a pinned release; record the version and the ISC license in `docs/third-party.md`.
   - It also emits the Material Symbols Rounded glyphs the boards and the mapping need: `space_dashboard`, `flight`, `settings`, `more_vert`, and so on.
   - No icon font and no `material-icons-extended`.

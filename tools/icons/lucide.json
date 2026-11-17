@@ -1,21 +1,105 @@
 {
   "version": "0.511.0",
   "glyphs": {
-    "armchair": {"source": "bundle"},
-    "arrow-left-right": {"source": "bundle"},
-    "bed": {"source": "bundle"},
-    "check": {"source": "bundle"},
-    "cloud-sun": {"source": "bundle"},
-    "coffee": {"source": "bundle"},
-    "footprints": {"source": "bundle"},
-    "glasses": {"source": "bundle"},
-    "globe": {"source": "bundle"},
-    "info": {"source": "bundle"},
-    "lamp": {"source": "bundle"},
-    "moon": {"source": "bundle"},
-    "plane": {"source": "bundle"},
-    "skip-forward": {"source": "bundle"},
-    "sun": {"source": "bundle"},
-    "timer": {"source": "bundle"}
+    "armchair": {
+      "source": "bundle"
+    },
+    "arrow-left-right": {
+      "source": "bundle"
+    },
+    "bed": {
+      "source": "bundle"
+    },
+    "check": {
+      "source": "bundle"
+    },
+    "cloud-sun": {
+      "source": "bundle"
+    },
+    "coffee": {
+      "source": "bundle"
+    },
+    "footprints": {
+      "source": "bundle"
+    },
+    "glasses": {
+      "source": "bundle"
+    },
+    "globe": {
+      "source": "bundle"
+    },
+    "info": {
+      "source": "bundle"
+    },
+    "lamp": {
+      "source": "bundle"
+    },
+    "moon": {
+      "source": "bundle"
+    },
+    "plane": {
+      "source": "bundle"
+    },
+    "skip-forward": {
+      "source": "bundle"
+    },
+    "sun": {
+      "source": "bundle"
+    },
+    "timer": {
+      "source": "bundle"
+    },
+    "calendar-check": {
+      "source": "bundle"
+    },
+    "chevron-down": {
+      "source": "bundle"
+    },
+    "chevron-up": {
+      "source": "bundle"
+    },
+    "circle-alert": {
+      "source": "bundle"
+    },
+    "circle-check": {
+      "source": "bundle"
+    },
+    "ellipsis": {
+      "source": "bundle"
+    },
+    "house": {
+      "source": "bundle"
+    },
+    "loader-circle": {
+      "source": "bundle"
+    },
+    "map-pin": {
+      "source": "bundle"
+    },
+    "settings": {
+      "source": "bundle"
+    },
+    "shield-check": {
+      "source": "bundle"
+    },
+    "sparkles": {
+      "source": "bundle"
+    },
+    "ticket": {
+      "source": "bundle"
+    },
+    "triangle-alert": {
+      "source": "bundle"
+    },
+    "chevron-right": {
+      "source": "board",
+      "board": "SetHome",
+      "first": "m9 18 6-6-6-6"
+    },
+    "lock": {
+      "source": "board",
+      "board": "Set2FA",
+      "first": "<rect width=\"18\" height=\"11\" x=\"3\" y=\"11\" rx=\"2\" ry=\"2\">"
+    }
   }
 }

@@ -45,11 +45,66 @@ object LucideGlyphs {
             ),
         )
 
+    val CalendarCheck =
+        LucideGlyph(
+            "calendar-check",
+            listOf(
+                LucidePath("M8 2v4", false),
+                LucidePath("M16 2v4", false),
+                LucidePath("M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-14a2 2 0 0 1-2-2v-14a2 2 0 0 1 2-2Z", false),
+                LucidePath("M3 10h18", false),
+                LucidePath("m9 16 2 2 4-4", false),
+            ),
+        )
+
     val Check =
         LucideGlyph(
             "check",
             listOf(
                 LucidePath("M20 6 9 17l-5-5", false),
+            ),
+        )
+
+    val ChevronDown =
+        LucideGlyph(
+            "chevron-down",
+            listOf(
+                LucidePath("m6 9 6 6 6-6", false),
+            ),
+        )
+
+    val ChevronRight =
+        LucideGlyph(
+            "chevron-right",
+            listOf(
+                LucidePath("m9 18 6-6-6-6", false),
+            ),
+        )
+
+    val ChevronUp =
+        LucideGlyph(
+            "chevron-up",
+            listOf(
+                LucidePath("m18 15-6-6-6 6", false),
+            ),
+        )
+
+    val CircleAlert =
+        LucideGlyph(
+            "circle-alert",
+            listOf(
+                LucidePath("M2 12a10 10 0 1 0 20 0a10 10 0 1 0-20 0Z", false),
+                LucidePath("M12 8L12 12", false),
+                LucidePath("M12 16L12.01 16", false),
+            ),
+        )
+
+    val CircleCheck =
+        LucideGlyph(
+            "circle-check",
+            listOf(
+                LucidePath("M2 12a10 10 0 1 0 20 0a10 10 0 1 0-20 0Z", false),
+                LucidePath("m9 12 2 2 4-4", false),
             ),
         )
 
@@ -74,6 +129,16 @@ object LucideGlyphs {
                 LucidePath("M14 2v2", false),
                 LucidePath("M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1", false),
                 LucidePath("M6 2v2", false),
+            ),
+        )
+
+    val Ellipsis =
+        LucideGlyph(
+            "ellipsis",
+            listOf(
+                LucidePath("M11 12a1 1 0 1 0 2 0a1 1 0 1 0-2 0Z", false),
+                LucidePath("M18 12a1 1 0 1 0 2 0a1 1 0 1 0-2 0Z", false),
+                LucidePath("M4 12a1 1 0 1 0 2 0a1 1 0 1 0-2 0Z", false),
             ),
         )
 
@@ -110,6 +175,15 @@ object LucideGlyphs {
             ),
         )
 
+    val House =
+        LucideGlyph(
+            "house",
+            listOf(
+                LucidePath("M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8", false),
+                LucidePath("M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z", false),
+            ),
+        )
+
     val Info =
         LucideGlyph(
             "info",
@@ -130,6 +204,32 @@ object LucideGlyphs {
             ),
         )
 
+    val LoaderCircle =
+        LucideGlyph(
+            "loader-circle",
+            listOf(
+                LucidePath("M21 12a9 9 0 1 1-6.219-8.56", false),
+            ),
+        )
+
+    val Lock =
+        LucideGlyph(
+            "lock",
+            listOf(
+                LucidePath("M5 11h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-14a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Z", false),
+                LucidePath("M7 11V7a5 5 0 0 1 10 0v4", false),
+            ),
+        )
+
+    val MapPin =
+        LucideGlyph(
+            "map-pin",
+            listOf(
+                LucidePath("M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0", false),
+                LucidePath("M9 10a3 3 0 1 0 6 0a3 3 0 1 0-6 0Z", false),
+            ),
+        )
+
     val Moon =
         LucideGlyph(
             "moon",
@@ -146,12 +246,42 @@ object LucideGlyphs {
             ),
         )
 
+    val Settings =
+        LucideGlyph(
+            "settings",
+            listOf(
+                LucidePath("M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z", false),
+                LucidePath("M9 12a3 3 0 1 0 6 0a3 3 0 1 0-6 0Z", false),
+            ),
+        )
+
+    val ShieldCheck =
+        LucideGlyph(
+            "shield-check",
+            listOf(
+                LucidePath("M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z", false),
+                LucidePath("m9 12 2 2 4-4", false),
+            ),
+        )
+
     val SkipForward =
         LucideGlyph(
             "skip-forward",
             listOf(
                 LucidePath("M5 4 L15 12 L5 20 L5 4Z", false),
                 LucidePath("M19 5L19 19", false),
+            ),
+        )
+
+    val Sparkles =
+        LucideGlyph(
+            "sparkles",
+            listOf(
+                LucidePath("M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z", false),
+                LucidePath("M20 3v4", false),
+                LucidePath("M22 5h-4", false),
+                LucidePath("M4 17v2", false),
+                LucidePath("M5 18H3", false),
             ),
         )
 
@@ -171,6 +301,17 @@ object LucideGlyphs {
             ),
         )
 
+    val Ticket =
+        LucideGlyph(
+            "ticket",
+            listOf(
+                LucidePath("M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z", false),
+                LucidePath("M13 5v2", false),
+                LucidePath("M13 17v2", false),
+                LucidePath("M13 11v2", false),
+            ),
+        )
+
     val Timer =
         LucideGlyph(
             "timer",
@@ -178,6 +319,16 @@ object LucideGlyphs {
                 LucidePath("M10 2L14 2", false),
                 LucidePath("M12 14L15 11", false),
                 LucidePath("M4 14a8 8 0 1 0 16 0a8 8 0 1 0-16 0Z", false),
+            ),
+        )
+
+    val TriangleAlert =
+        LucideGlyph(
+            "triangle-alert",
+            listOf(
+                LucidePath("m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3", false),
+                LucidePath("M12 9v4", false),
+                LucidePath("M12 17h.01", false),
             ),
         )
 }
