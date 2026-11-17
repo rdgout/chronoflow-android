@@ -1000,7 +1000,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 - [x] **Tier registry.**
   - Annotations `@Smoke`, `@Layout`, `@Snapshot`, `@Capture` and `@Perf`. `TierRegistryTest` checks that every Robolectric and emulator test class has exactly one.
   - A Gradle test listener writes per-test durations to `build/test-results/<tier>/timings.json`. It fails a JVM test over 1 s or a Robolectric test over 5 s, unless the test is annotated `@PerfBudget`. Wall-clock budget tests are annotated `@TimingGate` instead: they run only in the serial `timingTest` task (`make timing`, the last step of `make quick` and `make test`), in one test JVM on one Gradle worker, after every other test task.
-- [ ] **Seed harness**, debug only, in `app/src/debug/kotlin/net/chronoflow/debug/`.
+- [x] **Seed harness**, debug only, in `app/src/debug/kotlin/net/chronoflow/debug/`.
   - An exported `SeedReceiverActivity`.
   - `TestSeeds.apply` handles `CF_AUTH_TEST_ID`, `CF_UI_TEST_PROFILE`, `cf.settings.theme`, `cf.settings.language`, `cf.reduceMotion` and `cf.freezeAt`. Account and route seeds arrive in 4e.
   - A `ScreenTest` base class in `app/src/androidTest` launches through the receiver.
