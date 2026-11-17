@@ -11,6 +11,7 @@ import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -27,6 +28,7 @@ import kotlin.math.roundToInt
  */
 object Guards {
     private const val TOLERANCE = 0.5f
+    private const val MIN_OVERLAP_DP = 48f
 
     private val interactive =
         SemanticsMatcher("interactive") {
@@ -54,16 +56,50 @@ object Guards {
 
     private fun byId(id: Int) = SemanticsMatcher("id=$id") { it.id == id }
 
-    /** Scrolls a node into view when a scroll container holds it, then returns its fresh bounds. */
+    /**
+     * Scrolls a node into view when a scroll container holds it, then returns its fresh bounds. `performScrollTo`
+     * aligns the node's bottom with the container's bottom, which a full-window scroller leaves under the system
+     * bars, so with a [safe] area the scroll continues until the node lies inside the viewport and the safe area.
+     * A node taller than that region is returned clipped to it when at least [minOverlap] px of it stay visible.
+     */
     private fun settledBounds(
         rule: SemanticsNodeInteractionsProvider,
         node: SemanticsNode,
         useUnmergedTree: Boolean,
+        safe: Rect? = null,
+        minOverlap: Float = 0f,
     ): Rect {
         if (!hasScrollAncestor(node)) return node.boundsInRoot
         val interaction = rule.onNode(byId(node.id), useUnmergedTree)
         interaction.performScrollTo()
-        return interaction.fetchSemanticsNode().boundsInRoot
+        var bounds = interaction.fetchSemanticsNode().boundsInRoot
+        val scroller =
+            ancestors(node).firstOrNull { SemanticsProperties.VerticalScrollAxisRange in it.config }
+        if (safe == null || scroller == null) return bounds
+        val region = scroller.boundsInRoot.intersect(safe)
+        val fits = bounds.height <= region.height + TOLERANCE
+        val dy =
+            when {
+                !fits -> bounds.top - region.top
+                bounds.bottom > region.bottom + TOLERANCE -> bounds.bottom - region.bottom
+                bounds.top < region.top - TOLERANCE -> bounds.top - region.top
+                else -> 0f
+            }
+        if (abs(dy) > TOLERANCE) {
+            rule
+                .onNode(byId(scroller.id), useUnmergedTree = true)
+                .performSemanticsAction(SemanticsActions.ScrollBy) { it(0f, dy) }
+            bounds = rule.onNode(byId(node.id), useUnmergedTree).fetchSemanticsNode().boundsInRoot
+        }
+        if (fits) return bounds
+        val visible = minOf(bounds.bottom, region.bottom) - maxOf(bounds.top, region.top)
+        return if (visible >=
+            minOverlap
+        ) {
+            Rect(bounds.left, maxOf(bounds.top, region.top), bounds.right, minOf(bounds.bottom, region.bottom))
+        } else {
+            bounds
+        }
     }
 
     private fun windowPx(profile: DeviceProfile) =
@@ -148,7 +184,8 @@ object Guards {
             )
         for (node in rule.onAllNodes(interactive).fetchSemanticsNodes()) {
             if (isExempt(node, exemptTags)) continue
-            val bounds = settledBounds(rule, node, useUnmergedTree = false)
+            val bounds =
+                settledBounds(rule, node, useUnmergedTree = false, safe = safe, minOverlap = MIN_OVERLAP_DP * d)
             val inside =
                 bounds.left >= safe.left - TOLERANCE && bounds.top >= safe.top - TOLERANCE &&
                     bounds.right <= safe.right + TOLERANCE && bounds.bottom <= safe.bottom + TOLERANCE
