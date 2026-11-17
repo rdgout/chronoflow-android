@@ -988,7 +988,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - Measure the `pixel` AVD's status-bar and gesture insets once with `adb shell dumpsys window | grep -i inset`, cross-check them against a debug log of `WindowInsets.safeDrawing`, and commit them.
   - Add a `DeviceProfiles.kt` loader.
   - `LocalSafeInsets` in `:core:ui` is fed from `WindowInsets.safeDrawing` at the root in production and from the profile in tests.
-- [ ] **Robolectric and Roborazzi** through `chronoflow.roborazzi`.
+- [x] **Robolectric and Roborazzi** through `chronoflow.roborazzi`.
   - A JDK 21 test launcher through foojay (fallback: OQ-A27), with `@GraphicsMode(NATIVE)` and `@Config(sdk = [36])`.
   - `ProfileRule` applies size, density, font scale, locale and night mode.
   - Stored references are off by default; `SNAPSHOT_RECORD=1 make snapshots` records them.

@@ -146,8 +146,18 @@ contracts-check:
 	python3 -I tools/contracts-gen/copy_fixtures.py --ios-repo "$(IOS_REPO)" --check
 	python3 -I tools/contracts-gen/generate_kotlin.py --web-repo "$(WEB_REPO)" --check
 
-snapshots captures perf:
+perf:
 	@echo "make $@: lands in Phase 0e (feat/phase-0e-test-harness)" >&2; exit 1
+
+snapshots:
+	$(RUN_TIER) snapshots $(RESULTS_DEBUG) $(TIMINGS_DEBUG) -- $(GRADLE) $(if $(SNAPSHOT_RECORD),recordRoborazziDebug,verifyRoborazziDebug) -Pcf.tier=snapshot
+
+captures:
+	@if [ -n "$(DEVICE)" ]; then echo "make captures DEVICE=1 arrives in Phase 2 (feat/phase-2-design-system)" >&2; exit 1; fi
+	rm -rf build/captures
+	$(RUN_TIER) captures $(RESULTS_DEBUG) $(TIMINGS_DEBUG) -- $(GRADLE) testDebugUnitTest --rerun -Pcf.tier=capture -Pcf.captureOnly=$(ONLY)
+	@n=$$(find build/captures -name '*.png' 2>/dev/null | wc -l | tr -d ' '); echo "captures: $$n PNGs in build/captures"; \
+	  if [ "$$n" = 0 ] && [ -z "$(ONLY)" ]; then echo "captures: no PNGs written" >&2; exit 1; fi
 
 perf-timeline baseline-profile:
 	@echo "make $@: lands in Phase 1e (feat/phase-1e-timeline-perf)" >&2; exit 1
