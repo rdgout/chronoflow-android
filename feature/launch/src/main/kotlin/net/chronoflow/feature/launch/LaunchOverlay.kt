@@ -52,25 +52,14 @@ fun LaunchOverlay(
     val description = stringResource(R.string.launch_chronoflow_is_opening)
     SideEffect { controller.compositionObserver() }
     LaunchedEffect(controller) {
-        if (controller.reduceMotion || controller.overrides.freezeAt != null) {
-            controller.onOpeningSettled()
-        } else {
+        controller.awaitFirstDraw()
+        if (!controller.reduceMotion && controller.overrides.freezeAt == null) {
             val settled = (opening.settledAfterSeconds * 1e9).toLong()
-            while (elapsed.longValue < settled) {
-                val nanos = controller.nextFrameNanos()
-                elapsed.longValue =
-                    if (controller.t0Nanos == LaunchController.UNSET) {
-                        0L
-                    } else {
-                        (nanos - controller.t0Nanos)
-                            .coerceAtLeast(
-                                0L,
-                            )
-                    }
-            }
-            controller.onOpeningSettled()
+            controller.playOpening(settled) { elapsed.longValue = it }
         }
+        controller.onOpeningSettled()
     }
+
     Box(
         modifier
             .fillMaxSize()

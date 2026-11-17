@@ -8,6 +8,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.graphics.ImageBitmap
+import kotlinx.coroutines.CompletableDeferred
 import net.chronoflow.core.designsystem.theme.ReduceMotion
 import net.chronoflow.feature.launch.model.LaunchClock
 import net.chronoflow.feature.launch.model.MediaLaunchClock
@@ -31,6 +32,7 @@ class LaunchController(
     var overlayPlaced = false
         private set
     var splashHeld = false
+    private val firstDraw = CompletableDeferred<Long>()
     var t0Nanos = UNSET
         private set
     var openingDone = false
@@ -90,7 +92,15 @@ class LaunchController(
         clock = MediaLaunchClock(t0Nanos, nanoTime)
         frameZeroMoonRectPx = moonRectPx
         LaunchTrace.endFirstCommit()
+        firstDraw.complete(t0Nanos)
     }
+
+    internal suspend fun awaitFirstDraw(): Long = firstDraw.await()
+
+    internal suspend fun playOpening(
+        settledNanos: Long,
+        onElapsed: (Long) -> Unit,
+    ) = runLaunchOpening(firstDraw, nanoTime, nextFrameNanos, settledNanos, onElapsed)
 
     fun onOpeningSettled() {
         if (openingDone) return
