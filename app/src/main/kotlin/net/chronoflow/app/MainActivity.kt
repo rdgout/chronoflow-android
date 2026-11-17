@@ -3,7 +3,6 @@ package net.chronoflow.app
 import android.animation.ValueAnimator
 import android.content.Context
 import android.content.res.Configuration
-import android.graphics.Color
 import android.graphics.Rect
 import android.os.Build
 import android.os.Bundle
@@ -15,6 +14,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import kotlinx.coroutines.CompletableDeferred
 import net.chronoflow.app.perf.PerfJank
@@ -109,8 +110,8 @@ class MainActivity : ComponentActivity() {
     ) {
         fun style(appearance: IconAppearance): SystemBarStyle =
             when (appearance) {
-                IconAppearance.LightIcons -> SystemBarStyle.dark(Color.TRANSPARENT)
-                IconAppearance.DarkIcons -> SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
+                IconAppearance.LightIcons -> SystemBarStyle.dark(Color.Transparent.toArgb())
+                IconAppearance.DarkIcons -> SystemBarStyle.light(Color.Transparent.toArgb(), Color.Transparent.toArgb())
             }
         enableEdgeToEdge(
             statusBarStyle = style(SystemBarStyles.statusBar(night, overlayShowing, onSky)),

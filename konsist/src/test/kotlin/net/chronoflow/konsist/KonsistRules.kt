@@ -239,6 +239,7 @@ private val insetsImportRegex =
 private fun mayReadWindowInsets(path: String): Boolean {
     val normalized = path.replace('\\', '/')
     return normalized.endsWith("app/src/main/kotlin/net/chronoflow/app/MainActivity.kt") ||
+        normalized.endsWith("app/src/main/kotlin/net/chronoflow/app/CfRoot.kt") ||
         normalized.contains("/core/testing-compose/") ||
         normalized.contains("/src/androidTest")
 }

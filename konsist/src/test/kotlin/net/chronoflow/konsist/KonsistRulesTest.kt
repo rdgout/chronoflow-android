@@ -120,6 +120,8 @@ class KonsistRulesTest {
         assertFailure { insetsOnlyAtRoot(violations("insetsOnlyAtRoot")) }.messageContains("insetsOnlyAtRoot violated")
     }
 
+    @Test fun insetsOnlyAtRootAllowsRootContent() = insetsOnlyAtRoot(allowed("insetsOnlyAtRoot"))
+
     @Test fun testingNotInMain() = testingNotInMain(projectScope)
 
     @Test fun testingNotInMainRejectsPlantedViolation() {
