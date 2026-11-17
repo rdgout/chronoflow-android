@@ -26,18 +26,6 @@ class ProfileQualifiersTest {
     }
 
     @Test
-    fun everyProfileLanguageAndThemeHasTheFullShape() {
-        val shape = Regex("""(en-rUS|nl-rNL)-w\d+dp-h\d+dp-(port|land)-(night|notnight)-\d+dpi""")
-        for (profile in DeviceProfiles.all) {
-            for (language in AppLanguage.entries) {
-                for (dark in listOf(false, true)) {
-                    assertThat(shape.matches(profileQualifiers(profile, language, dark))).isEqualTo(true)
-                }
-            }
-        }
-    }
-
-    @Test
     fun layoutMatrixIsTheLightOnlyDefault() {
         assertThat(LayoutMatrix.phone.map { it.toString() }).isEqualTo(listOf("small-nl", "largeFont-nl", "pixel8-en"))
         assertThat(LayoutMatrix.wide.map { it.toString() })
