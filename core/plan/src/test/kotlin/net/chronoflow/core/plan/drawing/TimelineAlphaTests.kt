@@ -8,6 +8,7 @@ import net.chronoflow.core.plan.generated.PlanMetrics
 import net.chronoflow.core.testing.FakeTextMetrics
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotSame
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -100,6 +101,19 @@ class TimelineAlphaTests(
         val changedDay = changed(pair.day)
         val other = DrawingFixtures.build(changedDay, pair.layout, key.copy(dayId = changedDay.id))
         assertTrue(opListEquals(original, other))
+    }
+
+    @Test fun theCacheReturnsTheSameInstanceAndACompactToggleBuildsAnotherOne() {
+        val pair = forced(tiny = false)
+        val day = changed(pair.day)
+        val cache = DayDrawingCache()
+        val key = DrawingFixtures.key(day, "r", 669, density = 3f, dark = dark)
+        val first = cache.getOrBuild(key, day) { DrawingFixtures.build(day, pair.layout, key) }
+        assertSame(first, cache.getOrBuild(key, day) { DrawingFixtures.build(day, pair.layout, key) })
+        val compactKey = key.copy(compact = true)
+        val compact = cache.getOrBuild(compactKey, day) { DrawingFixtures.build(day, pair.layout, compactKey) }
+        assertNotSame(first, compact)
+        assertFalse(opListEquals(first, compact))
     }
 
     @Test fun accessibilityLabelNamesTitleAndInterval() {

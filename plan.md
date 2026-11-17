@@ -1189,7 +1189,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - `TextPaintMetrics`: one `TextPaint` per build job, the 0b fonts, font scale ≤ 1.3.
   - `TimelineResources`: the hatch as a `LinearGradient` with `Shader.TileMode.REPEAT`, an 8 × 8 dot-cell `BitmapShader`, and lucide paths parsed once.
   - `DrawScope.replay(drawing, resources)` draws on `drawContext.canvas.nativeCanvas` and never measures.
-- [ ] **DayDrawingCache.kt.** An LRU keyed by (dayId, revision, widthPx, dark, fontScale, language). Limits: ≤ 4 MiB, ≤ 512 KiB per drawing, ≤ 8 entries; it evicts by bytes, then by count.
+- [x] **DayDrawingCache.kt.** An LRU keyed by (dayId, revision, widthPx, dark, fontScale, language). Limits: ≤ 4 MiB, ≤ 512 KiB per drawing, ≤ 8 entries; it evicts by bytes, then by count.
 - [ ] **Tests.**
   - `DayDrawingBudgetTest` (`@TimingGate`, run serially by `make timing`, fake metrics): after 3 warm-up passes, the median of 5 measured passes stays ≤ 5 ms per day and ≤ 150 ms per width for large60 at 360, 411 and 841 dp (the max is reported, never gated); ≤ 512 KiB per drawing.
   - `DayDrawingCacheTest`: equal keys reuse the entry; dark, width and font scale miss; the caps hold.
