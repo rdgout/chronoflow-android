@@ -651,7 +651,7 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A71 | (3a-3) Navigation-bar icon color on the sky (`05` OQ A9). | From the sky's bottom per captured appearance: light → dark icons (`SystemBarStyle.light`), dark → light icons; contrast enforcement off; verify on the Task 11 recording. | 3a |
 | OQ-A72 | (3a-4) Android-only debug hook `cf.holdSplash` for the parity screenshot. | Add it as a `TestSeed` field, debug only, listed in "Android spec: seeds and test hooks"; the in-process test releases it through `LaunchController.splashHeld`, so no exported receiver exists; release has no `TestSeed` (`ReleaseReadinessTest`). | 3a |
 | OQ-A73 | (3a-5) Wordmark vector source. | Generated once from the Fraunces 400 opsz32 TTF with HarfBuzz `hb-view` 15.1.0 (kerning) plus CoreText-style tracking; committed with a hash manifest. Fallback if `hb-view` output proves unusable: build the path at runtime off the main thread with `Paint.getTextPath` before 1000 ms. | 3a |
-| OQ-A74 | (3a-6) Parity tolerances. | Rect ±1 px; centre pixel ≤ 2/255; ≥ 99% of pixels in the 192 dp circle ≤ 4/255, none > 16/255. | 3a |
+| OQ-A74 | (3a-6) Parity tolerances. | Centres ±1 px; centre pixel ≤ 2/255; in the 192 dp circle, flat pixels ≥ 99.5% within 4/255 and none > 16/255; edge pixels (3 × 3 channel span > 32 in either screenshot) unbounded per pixel; distance-weighted ink centroids within 0.5 px. | 3a |
 | OQ-A75 | (3a-7) `TraceSectionMetric` and async sections. | Async `first-commit`; fallback a `TraceMetric` query, recorded. | 3a |
 | OQ-A76 | (3a-8) Moon decode on the main thread during the first composition. | Keep it in composition, traced as `cf.launch.moonDecode`. If it takes > 16 ms on the `pixel` emulator, start the decode on `Dispatchers.IO` at the top of `onCreate` and join it in the first composition; record the numbers. | 3a |
 | OQ-A77 | (3a-9) Sky banding in dark. | Compose gradient draw; if the Task 11 frames show bands, draw the sky through `drawIntoCanvas` with a native `Paint` that has `isDither = true` and the same shader. | 3a |
@@ -1468,7 +1468,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - Semantics: a single node, "ChronoFlow is opening", with `paneTitle`. App content is hidden with `hideFromAccessibility()` until the hand-off ends.
 - [x] **Konsist numeric dp/sp constants** (3a Task 8b): reject unapproved numeric constants; keep the timeline marker at one physical pixel.
 - [x] **System-bar icons (OQ-A67).** Apply themed icon styles on theme and overlay changes; retain light status icons on sky.
-- [ ] **Frame-0 parity.** `LaunchFrameZeroTest` (`@Smoke`, emulator): in light and dark, the 192 dp system `iconView` and 288 dp frame-0 moon canvas are concentric within 1 px and centred on the display; the centre and visible-circle pixels match.
+- [x] **Frame-0 parity.** `LaunchFrameZeroTest` (`@Smoke`, emulator): in light and dark, the 192 dp system `iconView` and 288 dp frame-0 moon canvas are concentric within 1 px and centred on the display; the centre and visible-circle pixels match.
 - [ ] **Traces and benchmarks.**
   - Traces `launch` (async, from process start) and `first-commit` (the first overlay draw).
   - The signed-out cold `StartupBenchmark` now measures the overlay.

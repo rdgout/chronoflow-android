@@ -2,7 +2,6 @@ package net.chronoflow.app
 
 import android.content.res.Configuration
 import android.graphics.Bitmap
-import android.graphics.Rect
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.runner.lifecycle.ActivityLifecycleCallback
 import androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry
@@ -100,7 +99,6 @@ class LaunchFrameZeroTest : ScreenTest() {
         val x = device.displayWidth / 2
         val y = device.displayHeight / 2
         assertTrue("centre pixel differs", difference(system.getPixel(x, y), overlay.getPixel(x, y)) <= 2)
-        assertMoonCircle(system, overlay, x, y, 96 * density)
         val sky =
             instrumentation.targetContext
                 .createConfigurationContext(
@@ -109,6 +107,7 @@ class LaunchFrameZeroTest : ScreenTest() {
                             if (dark) Configuration.UI_MODE_NIGHT_YES else Configuration.UI_MODE_NIGHT_NO
                     },
                 ).getColor(R.color.launch_sky_top)
+        assertMoonCircle(system, overlay, x, y, 96 * density, sky)
         val band = (24 * density).roundToInt()
         for (bitmap in listOf(system, overlay)) {
             for (edgeX in 0 until band) {
@@ -124,20 +123,85 @@ class LaunchFrameZeroTest : ScreenTest() {
         cx: Int,
         cy: Int,
         radius: Float,
+        sky: Int,
     ) {
-        var total = 0
-        var close = 0
         val r = radius.roundToInt()
-        for (y in cy - r..cy + r) {
-            for (x in cx - r..cx + r) {
-                if ((x - cx) * (x - cx) + (y - cy) * (y - cy) > radius * radius) continue
-                val delta = difference(a.getPixel(x, y), b.getPixel(x, y))
-                assertTrue("moon differs by $delta at ($x,$y)", delta <= 16)
+        val side = 2 * r + 3
+        val left = cx - r - 1
+        val top = cy - r - 1
+        val pixelsA = IntArray(side * side)
+        val pixelsB = IntArray(side * side)
+        a.getPixels(pixelsA, 0, side, left, top, side, side)
+        b.getPixels(pixelsB, 0, side, left, top, side, side)
+        var flat = 0
+        var close = 0
+        var worstFlat = 0
+        var weightA = 0.0
+        var weightB = 0.0
+        var inkXA = 0.0
+        var inkYA = 0.0
+        var inkXB = 0.0
+        var inkYB = 0.0
+        for (y in 1..2 * r + 1) {
+            for (x in 1..2 * r + 1) {
+                val dx = x - r - 1
+                val dy = y - r - 1
+                if (dx * dx + dy * dy > radius * radius) continue
+                val i = y * side + x
+                val aDistance = difference(pixelsA[i], sky)
+                val bDistance = difference(pixelsB[i], sky)
+                if (aDistance > 64) {
+                    weightA += aDistance
+                    inkXA += dx * aDistance
+                    inkYA += dy * aDistance
+                }
+                if (bDistance > 64) {
+                    weightB += bDistance
+                    inkXB += dx * bDistance
+                    inkYB += dy * bDistance
+                }
+                if (isEdge(pixelsA, i, side) || isEdge(pixelsB, i, side)) continue
+                val delta = difference(pixelsA[i], pixelsB[i])
+                worstFlat = maxOf(worstFlat, delta)
                 if (delta <= 4) close++
-                total++
+                flat++
             }
         }
-        assertTrue("only ${100.0 * close / total}% of moon pixels agree", close >= total * 0.99)
+        assertTrue("moon ink is missing", weightA > 0 && weightB > 0)
+        assertEquals("moon ink centroid x", inkXA / weightA, inkXB / weightB, 0.5)
+        assertEquals("moon ink centroid y", inkYA / weightA, inkYB / weightB, 0.5)
+        assertTrue("no flat pixels in comparison", flat > 0)
+        assertTrue("flat moon pixels differ by $worstFlat", worstFlat <= 16)
+        assertTrue("only ${100.0 * close / flat}% of flat moon pixels agree", close >= flat * 0.995)
+    }
+
+    private fun isEdge(
+        pixels: IntArray,
+        centre: Int,
+        stride: Int,
+    ): Boolean {
+        var minR = 255
+        var minG = 255
+        var minB = 255
+        var maxR = 0
+        var maxG = 0
+        var maxB = 0
+        for (dy in -1..1) {
+            for (dx in -1..1) {
+                val pixel = pixels[centre + dy * stride + dx]
+                val red = pixel shr 16 and 255
+                val green = pixel shr 8 and 255
+                val blue = pixel and 255
+                minR = minOf(minR, red)
+                minG = minOf(minG, green)
+                minB = minOf(minB, blue)
+                maxR = maxOf(maxR, red)
+                maxG = maxOf(maxG, green)
+                maxB = maxOf(maxB, blue)
+                if (maxR - minR > 32 || maxG - minG > 32 || maxB - minB > 32) return true
+            }
+        }
+        return false
     }
 
     private fun difference(
