@@ -92,7 +92,7 @@ class TimelineTraceMetric(
         out +=
             Metric.Measurement(
                 "timelineGcCount",
-                count(session, pkg, "thread.name = 'HeapTaskDaemon' AND slice.name LIKE '%GC%'"),
+                count(session, pkg, "thread.name = 'HeapTaskDaemon' AND slice.depth = 0 AND slice.name GLOB '*GC*'"),
             )
         return out
     }
