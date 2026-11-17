@@ -1187,7 +1187,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - It measures through a `TextMetrics` interface (`measure`, `ellipsize`, `lineHeight`) and emits `HitIndex` and `TimelineTargets`.
 - [ ] **Android side** (`feature/trip/…/timeline/`).
   - `TextPaintMetrics`: one `TextPaint` per build job, the 0b fonts, font scale ≤ 1.3.
-  - `TimelineResources`: the hatch as a `LinearGradient` with `Shader.TileMode.REPEAT`, an 8 × 8 dot-cell `BitmapShader`, and lucide paths parsed once.
+  - `TimelineResources`: the hatch as a `LinearGradient` with `Shader.TileMode.REPEAT`, a 7 dp dot-cell `BitmapShader` (iOS `dotStep`, OQ-1c-1), and lucide paths parsed once.
   - `DrawScope.replay(drawing, resources)` draws on `drawContext.canvas.nativeCanvas` and never measures.
 - [x] **DayDrawingCache.kt.** An LRU keyed by (dayId, revision, widthPx, dark, fontScale, language). Limits: ≤ 4 MiB, ≤ 512 KiB per drawing, ≤ 8 entries; it evicts by bytes, then by count.
 - [ ] **Tests.**
