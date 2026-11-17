@@ -243,3 +243,5 @@ Device rows open: device only (OQ-A22, OQ-A45); B' is re-evaluated on the first 
 The baseline-profile Makefile target now sets `TIER_IDLE_TIMEOUT=1200` for that tier only. Its generator uses the bounded scroll workload and runs through `make baseline-profile`; other tiers retain the 600 s idle cap.
 
 Workload `bounded-swipe-v2` uses 15 explicit 26-step swipes (85% to 15% of the page height, x=8%) with `waitForIdle`. Target travel is roughly 2,800 dp per gesture on pixel; the final day is logged and `trip.plan.end` must remain absent. The CPU band restarts for this workload; old rows are excluded by the Build metadata. The baseline generator uses the same gestures.
+
+Review correction: `timelineRecomposeCount` now counts actual `Compose:recompose` children of `Recomposer:recompose`. The old rows counted Recomposer frames. A real per-frame source was DayMenu's composition-read `derivedStateOf` over never-equal `layoutInfo`; its threshold boolean now comes from `TimelinePage`'s `snapshotFlow`. The probe guard asserts zero DayMenu recompositions while scrolling within the threshold; anchor changes remain expected (OQ-1e-15).

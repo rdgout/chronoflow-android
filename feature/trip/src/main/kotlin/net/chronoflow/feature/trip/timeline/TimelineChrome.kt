@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -16,7 +15,6 @@ import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -78,8 +76,7 @@ internal fun DayHeaderLine(
 internal fun DayMenu(
     viewModel: TimelineHostViewModel,
     model: TimelineHostModel,
-    listState: LazyListState,
-    thresholdPx: Int,
+    scrolled: () -> Boolean,
     colors: CfColors,
     onPick: (Int) -> Unit,
 ) {
@@ -91,21 +88,10 @@ internal fun DayMenu(
     val trip = model.detail.trip
     val anchorPosition = anchorId?.let { index.position(it) }
     val anchor = anchorPosition?.let { days[it] }
-    val scrolled by remember(listState, index, anchorId, thresholdPx) {
-        derivedStateOf {
-            val id = anchorId
-            if (id == null) {
-                false
-            } else {
-                val dayItem = index.dayIndex(id)
-                listState.layoutInfo.visibleItemsInfo.any { it.index == dayItem && it.offset < thresholdPx }
-            }
-        }
-    }
     val from = trip.from.city ?: trip.from.iata
     val to = trip.to.city ?: trip.to.iata
     val description =
-        if (scrolled && anchor != null) {
+        if (scrolled() && anchor != null) {
             stringResource(R.string.plan_x_to_x_x_x_go_to_a_day, from, to, anchor.title, anchor.date)
         } else {
             stringResource(R.string.plan_x_to_x_x_go_to_a_day, from, to, model.prepared.spokenDates)

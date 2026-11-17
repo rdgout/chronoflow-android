@@ -156,10 +156,20 @@ private fun ReadyPage(
             }
         }
     }
+    val scrolled = remember(listState, index) { mutableStateOf(false) }
+    val isScrolled = remember(scrolled) { { scrolled.value } }
     LaunchedEffect(listState, index, thresholdPx) {
-        snapshotFlow { index.currentDayIndex(listState.layoutInfo.visibleItemsInfo, thresholdPx) }
-            .distinctUntilChanged()
-            .collect { position -> if (position != null) viewModel.select(days[position].id) }
+        snapshotFlow {
+            val visible = listState.layoutInfo.visibleItemsInfo
+            val position = index.currentDayIndex(visible, thresholdPx)
+            val id = position?.let { days[it].id } ?: viewModel.anchorDayId.value
+            val pastThreshold = id != null && visible.any { it.index == index.dayIndex(id) && it.offset < thresholdPx }
+            position to pastThreshold
+        }.distinctUntilChanged()
+            .collect { (position, pastThreshold) ->
+                scrolled.value = pastThreshold
+                if (position != null) viewModel.select(days[position].id)
+            }
     }
 
     BoxWithConstraints(modifier.fillMaxSize()) {
@@ -202,7 +212,7 @@ private fun ReadyPage(
             contentWindowInsets = WindowInsets(0, 0, 0, 0),
             topBar = {
                 TopAppBar(
-                    title = { DayMenu(viewModel, model, listState, thresholdPx, colors, jump) },
+                    title = { DayMenu(viewModel, model, isScrolled, colors, jump) },
                     colors =
                         TopAppBarDefaults.topAppBarColors(
                             containerColor = colors.background,

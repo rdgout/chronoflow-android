@@ -78,7 +78,16 @@ class TimelineTraceMetric(
         out +=
             Metric.Measurement(
                 "timelineRecomposeCount",
-                count(session, pkg, "($MAIN) AND slice.name = 'Recomposer:recompose'"),
+                count(
+                    session,
+                    pkg,
+                    """
+                    ($MAIN) AND slice.name = 'Compose:recompose' AND EXISTS (
+                        SELECT 1 FROM slice parent WHERE parent.id = slice.parent_id
+                        AND parent.name = 'Recomposer:recompose'
+                    )
+                    """.trimIndent(),
+                ),
             )
         out +=
             Metric.Measurement(
