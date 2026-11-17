@@ -33,3 +33,7 @@ Substitution (OQ-0b-3): the iOS SVGs paint the stroke as `color(display-p3 r g b
 - [Launcher icon](assets/launcher-icon.png): the app drawer. Both ChronoFlow entries show the moon icon; the other one is the React Native app (`net.chronoflow.app`), installed side by side.
 - [System splash, default](assets/system-splash-default.png): a cold start through `am start`. Until 3a sets `Theme.App.Starting`, the system splash shows the adaptive icon, not `launch_moon` (OQ-0b-4).
 - Themed icon: not captured. The Pixel launcher applies themed icons only on the home screen, not in the app drawer, and placing the icon on the home screen needs a drag the emulator scripts don't do. The monochrome layer is covered by Lint `MonochromeLauncherIcon` and `AdaptiveIconTest`. Capture it on a device in Phase 13.
+
+## Launch wordmark (Phase 3a)
+
+`make assets` shapes ChronoFlow with HarfBuzz hb-view 15.1.0 from the hash-checked Fraunces 400 opsz32 TTF. `wordmark.py` parses absolute M/L/C/Z outlines, applies 32/upem scaling, −0.32 dp tracking after each of ten glyphs, the iOS overhang rule and a 31.568 dp baseline. It commits one box-relative path (three decimal places). The board's 32/40/−0.01em declaration is guarded. `assets-check` only verifies the input/output hash manifest; it never calls hb-view or a rasterizer. The tooling unit test additionally proves a fresh shaping run is byte-identical.
