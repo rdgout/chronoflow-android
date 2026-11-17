@@ -1126,7 +1126,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 **Delivers.** Ports the timeline geometry exactly: day bucketing, layoutDay, packLane, ticks, zones, the now position, accessibility geometry with traversal order, and hit frames of at least 48 dp. It adds PlanPreparer and PreparedPlan with per-input caching and stable day identity, and the trip-page state math (resolve, openingDay, replacementAnchor, wide list widths). The large30/large60 generator in :core:testing reproduces the iOS ids, hashes and labels. JVM budget tests hold plan preparation to 40, 100 and 200 ms for S3, large30 and large60 on every sample.
 
 **Tasks**
-- [ ] **Timeline.kt.**
+- [x] **Timeline.kt.**
   - Bucketing (`04 §2.5`).
   - `layoutDay` (`§2.6`): the skip rules; a marker's top is exactTop + 12, de-overlapped by 24 dp; tile height is `min(dayHeight, max(24, …))`; a tile is tiny at ≤ 56; `continuesBefore` and `continuesAfter`.
   - `packLane` (`§2.7`).

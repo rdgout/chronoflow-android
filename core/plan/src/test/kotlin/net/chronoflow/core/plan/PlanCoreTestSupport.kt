@@ -125,3 +125,8 @@ fun recordOf(value: TripDetail): PlanVersionRecord =
         "now",
         value.detailVersion,
     )
+
+fun emptyIndex(): TimelineIndex =
+    indexTimeline(
+        TimelinePresentationView(days = emptyList(), blockReasons = emptyList(), transferWarnings = emptyList()),
+    )
