@@ -150,4 +150,79 @@ class KonsistRulesTest {
 
     @Test fun noDefaultLocaleZoneOrClockInLogicAllowsControl() =
         noDefaultLocaleZoneOrClockInLogic(allowed("noDefaultLocaleZoneOrClockInLogic"))
+
+    @Test fun noMaterialColorSchemeOutsideDesignSystem() = noMaterialColorSchemeOutsideDesignSystem(projectScope)
+
+    @Test fun noMaterialColorSchemeOutsideDesignSystemRejectsPlantedViolation() {
+        assertFailure {
+            noMaterialColorSchemeOutsideDesignSystem(violations("noMaterialColorSchemeOutsideDesignSystem"))
+        }.messageContains("noMaterialColorSchemeOutsideDesignSystem violated")
+    }
+
+    @Test fun noMaterialColorSchemeOutsideDesignSystemAllowsControl() =
+        noMaterialColorSchemeOutsideDesignSystem(allowed("noMaterialColorSchemeOutsideDesignSystem"))
+
+    @Test fun noRawColorsOutsideDesignSystem() = noRawColorsOutsideDesignSystem(projectScope)
+
+    @Test fun noRawColorsOutsideDesignSystemRejectsPlantedViolation() {
+        assertFailure {
+            noRawColorsOutsideDesignSystem(violations("noRawColorsOutsideDesignSystem"))
+        }.messageContains("noRawColorsOutsideDesignSystem violated")
+    }
+
+    @Test fun noRawColorsOutsideDesignSystemAllowsControl() =
+        noRawColorsOutsideDesignSystem(allowed("noRawColorsOutsideDesignSystem"))
+
+    @Test fun featureDpLiteralsComeFromBoardMetrics() = featureDpLiteralsComeFromBoardMetrics(projectScope)
+
+    @Test fun featureDpLiteralsComeFromBoardMetricsRejectsPlantedViolation() {
+        assertFailure {
+            featureDpLiteralsComeFromBoardMetrics(violations("featureDpLiteralsComeFromBoardMetrics"))
+        }.messageContains("featureDpLiteralsComeFromBoardMetrics violated")
+    }
+
+    @Test fun featureDpLiteralsComeFromBoardMetricsAllowsControl() =
+        featureDpLiteralsComeFromBoardMetrics(allowed("featureDpLiteralsComeFromBoardMetrics"))
+
+    @Test fun boardMetricsNamesExist() = boardMetricsNamesExist(projectScope)
+
+    @Test fun boardMetricsNamesExistRejectsPlantedViolation() {
+        assertFailure {
+            boardMetricsNamesExist(violations("boardMetricsNamesExist"))
+        }.messageContains("boardMetricsNamesExist violated")
+    }
+
+    @Test fun boardMetricsNamesExistAllowsControl() = boardMetricsNamesExist(allowed("boardMetricsNamesExist"))
+
+    @Test fun noMaterialIconsLibrary() = noMaterialIconsLibrary(projectScope)
+
+    @Test fun noMaterialIconsLibraryRejectsPlantedViolation() {
+        assertFailure {
+            noMaterialIconsLibrary(violations("noMaterialIconsLibrary"))
+        }.messageContains("noMaterialIconsLibrary violated")
+    }
+
+    @Test fun noMaterialIconsLibraryAllowsControl() = noMaterialIconsLibrary(allowed("noMaterialIconsLibrary"))
+
+    @Test fun secureFieldStateIsNeverSaved() = secureFieldStateIsNeverSaved(projectScope)
+
+    @Test fun secureFieldStateIsNeverSavedRejectsPlantedViolation() {
+        assertFailure {
+            secureFieldStateIsNeverSaved(violations("secureFieldStateIsNeverSaved"))
+        }.messageContains("secureFieldStateIsNeverSaved violated")
+    }
+
+    @Test fun secureFieldStateIsNeverSavedAllowsControl() =
+        secureFieldStateIsNeverSaved(allowed("secureFieldStateIsNeverSaved"))
+
+    @Test fun designSystemPrimitivesHaveGuards() = designSystemPrimitivesHaveGuards(projectScope)
+
+    @Test fun designSystemPrimitivesHaveGuardsRejectsPlantedViolation() {
+        assertFailure {
+            designSystemPrimitivesHaveGuards(
+                violations("designSystemPrimitivesHaveGuards"),
+                java.io.File("build/no-guards"),
+            )
+        }.messageContains("designSystemPrimitivesHaveGuards violated")
+    }
 }

@@ -7,6 +7,7 @@ import androidx.compose.runtime.State
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import net.chronoflow.core.designsystem.generated.AuthTokens
 
 /**
  * Test hook of the perf benchmarks, not UI: iOS `trip.timeline.opening` until the first timeline frame is presented,
@@ -19,7 +20,7 @@ internal fun TimelinePresentedMarker(
     presented: State<Boolean>,
     modifier: Modifier = Modifier,
 ) {
-    Box(modifier.size(1.dp).testTag(if (presented.value) PRESENTED_TAG else OPENING_TAG))
+    Box(modifier.size(AuthTokens.borderWidth.dp).testTag(if (presented.value) PRESENTED_TAG else OPENING_TAG))
 }
 
 internal const val OPENING_TAG = "trip.timeline.opening"

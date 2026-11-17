@@ -1366,7 +1366,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 - [x] **Haptics.**
   - A `Haptics` interface, with `AndroidHaptics` (the constants table) and `NoHaptics`.
   - A Konsist rule forbids haptic calls in `:feature:launch`, so splash and Welcome stay silent.
-- [ ] **Konsist.**
+- [x] **Konsist.**
   - `MaterialTheme.colorScheme`, `Color(0x…)` and named `Color.*` constants are forbidden outside `:core:designsystem`.
   - Feature dp values come from `CfDimens`, `CfSpacing`, or a screen `*Metrics` object that names its board.
 - [ ] **Shadow fidelity** (Risk 19). Render `CfCard` with `softShadow1` in light and dark and compare it with the `Main` and `SetStates` board renders. Record the result and any adjustment in `docs/design-system.md` before more cards are built.
