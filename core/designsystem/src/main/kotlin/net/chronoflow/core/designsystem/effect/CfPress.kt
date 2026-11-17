@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.layer.GraphicsLayer
 import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.node.CompositionLocalConsumerModifierNode
@@ -60,6 +61,8 @@ private class CfPressNode(
     private val progress = Animatable(0f)
     private var layer: GraphicsLayer? = null
     private var reduceMotion = false
+    private var contentScope: ContentDrawScope? = null
+    private val recordContent: DrawScope.() -> Unit = { contentScope?.drawContent() }
 
     override fun onAttach() {
         layer = requireGraphicsContext().createGraphicsLayer()
@@ -91,7 +94,9 @@ private class CfPressNode(
     override fun ContentDrawScope.draw() {
         val ink = layer ?: return
         val p = progress.value
-        ink.record { this@draw.drawContent() }
+        contentScope = this
+        ink.record(block = recordContent)
+        contentScope = null
         val scale = if (reduceMotion) 1f else 1f + (PressTokens.scale - 1f) * p
         ink.scaleX = scale
         ink.scaleY = scale
