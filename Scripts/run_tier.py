@@ -265,6 +265,9 @@ def main(argv):
     if exit_code == 0 and timing_patterns and files and not timing_files:
         print("run-tier: %s wrote no timing files" % tier, file=sys.stderr)
         return 2
+    if exit_code == 0 and timing_patterns and unbudgeted:
+        print("run-tier: %s ran tests without a timing entry: %s" % (tier, ", ".join(unbudgeted)), file=sys.stderr)
+        return 2
     if exit_code == 0 and over:
         return 3
     return exit_code

@@ -169,14 +169,15 @@ class RunTierTest(unittest.TestCase):
         self._xml(cases=(("a.B", "t1", "0.1"), ("c.D", "other", "0.1")))
         self._timings([self._entry()])
         result = self.tier("t", "--results", "out/*.xml", "--timings", "tm/*.json", "--", "true")
-        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("without a timing entry: c.D#other", result.stderr)
         report = self._report()
         self.assertEqual(len(report["budgetChecks"]), 1)
         self.assertEqual(report["unbudgeted"], ["c.D#other"])
 
     def test_slowest_lists_top_ten(self):
         self._xml()
-        self._timings([self._entry(ms=i, method="m%d" % i) for i in range(1, 16)])
+        self._timings([self._entry(ms=i, method="m%d" % i) for i in range(1, 16)] + [self._entry(ms=0)])
         result = self.tier("t", "--results", "out/*.xml", "--timings", "tm/*.json", "--", "true")
         self.assertEqual(result.returncode, 0, result.stderr)
         slowest = self._report()["slowest"]
