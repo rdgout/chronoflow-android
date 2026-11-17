@@ -142,3 +142,28 @@ fun noTimeoutRuleOutsideEmulatorTests(scope: KoScope) {
             .map { "${it.path}: imports org.junit.rules.Timeout" }
     fail("noTimeoutRuleOutsideEmulatorTests", violations)
 }
+
+/** A `@TimingGate` class in a module the Makefile's TIMING_MODULES omits would never run. */
+fun timingGateModulesAreListed(
+    scope: KoScope,
+    listed: Set<String>,
+) {
+    val violations =
+        unitTestClasses(scope)
+            .filter { "TimingGate" in it.annotationNames() }
+            .filter { moduleOf(it.path)?.replace('/', ':') !in listed }
+            .map { "${it.path}: ${it.name} is @TimingGate but its module is not in TIMING_MODULES" }
+    fail("timingGateModulesAreListed", violations)
+}
+
+fun timingModulesInMakefile(): Set<String> =
+    java.io
+        .File(projectRoot(), "Makefile")
+        .readLines()
+        .firstOrNull { it.startsWith("TIMING_MODULES") }
+        ?.substringAfter(":=")
+        ?.trim()
+        ?.split(Regex("\\s+"))
+        ?.filter { it.isNotEmpty() }
+        ?.toSet()
+        .orEmpty()

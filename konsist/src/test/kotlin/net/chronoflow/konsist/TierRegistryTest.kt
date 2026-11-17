@@ -25,6 +25,23 @@ class TierRegistryTest {
     @Test fun plainAbstractBaseIsAllowed() =
         abstractTestClassesCarryNoTier(allowed("app/src/test/kotlin/net/chronoflow/app/PlainAbstractBaseTest.kt"))
 
+    @Test fun timingGateModulesAreListed() = timingGateModulesAreListed(projectScope, timingModulesInMakefile())
+
+    @Test fun timingGateInUnlistedModuleIsRejected() {
+        assertFailure {
+            timingGateModulesAreListed(
+                planted("core/plan/src/test/kotlin/net/chronoflow/core/plan/UnlistedTimingGateTest.kt"),
+                emptySet(),
+            )
+        }.messageContains("UnlistedTimingGateTest")
+    }
+
+    @Test fun timingGateInListedModuleIsAllowed() =
+        timingGateModulesAreListed(
+            allowed("core/plan/src/test/kotlin/net/chronoflow/core/plan/ListedTimingGateTest.kt"),
+            setOf("core:plan"),
+        )
+
     @Test fun robolectricClassesHaveOneTier() = robolectricClassesHaveOneTier(projectScope)
 
     @Test fun untaggedRobolectricClassIsRejected() {
