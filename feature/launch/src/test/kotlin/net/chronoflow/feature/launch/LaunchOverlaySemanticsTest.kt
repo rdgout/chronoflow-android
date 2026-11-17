@@ -34,7 +34,7 @@ class LaunchOverlaySemanticsTest(
 
     @Test fun overlayExposesOneNamedImagePaneWithoutChildren() {
         val controller = launchController(compose)
-        compose.setContent { LaunchOverlay(controller) }
+        compose.setContent { ProfiledLaunchOverlay(controller) }
         compose.onAllNodesWithTag("launch.opening").assertCountEquals(1)
         val node = compose.onNodeWithTag("launch.opening").fetchSemanticsNode()
         assertEquals(Role.Image, node.config[SemanticsProperties.Role])
