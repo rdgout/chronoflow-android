@@ -182,7 +182,7 @@ Plane opacity at 530 ms and 1450 ms = 0.5 (± 1e-12). `sample(−10 ms) == sampl
 ### 5.8 Clock [R, plan A11 and spec step 4]
 
 - `t0` = `nanoTime()` at the overlay's **first draw** (also the end of `first-commit`). `nanoTime` is injected (`System::nanoTime` in production).
-- A frame loop `while (!settled) withFrameNanos { frameNanos -> elapsed.longValue = if (t0 == UNSET) 0 else max(0, frameNanos − t0) }` drives a `mutableLongStateOf`. The `UNSET` check is required: the first frame callback runs before the first draw, and `frameNanos − Long.MIN_VALUE` overflows. Choreographer frame times share `System.nanoTime`'s base. A stalled main thread therefore skips frames and never stretches the timeline.
+- Await a first-draw signal completed by `onFirstDraw` before requesting any frames. Then await each frame only as pacing and write `elapsed.longValue = max(0, controller.nanoTime() − t0)`. Both wall-clock reads use the same injected clock; a Compose virtual frame timestamp may have another base and must never be subtracted from `t0` (user, 2026-11-17). A never-drawn overlay remains suspended without requesting frames.
 - The draw lambda and the container `graphicsLayer` block are the **only** readers of `elapsed`. Composition never reads it.
 - The loop stops when `elapsed ≥ settledAfter` (the largest last key time of the non-repeating tracks; infinite if a repeating track exists). With `cf.freezeAt` (debug), `elapsed` is fixed and no loop runs.
 
@@ -412,7 +412,7 @@ Ordering and deadlocks
 - [ ] `overlayPlaced` is written only from `Modifier.onPlaced`; nothing in a draw lambda feeds the keep condition.
 - [ ] `holdsSystemSplash()` is false when this activity did not claim the overlay (second activity, profile `screen`, Reduce Motion is irrelevant here). Try: rotate, change font size (recreates), relaunch from recents — the app never sticks on the splash.
 - [ ] `setOnExitAnimationListener` always calls `remove()`.
-- [ ] The frame loop treats an unset `t0` as elapsed 0 (no `frameNanos − Long.MIN_VALUE`).
+- [ ] The frame loop suspends until first draw, then uses injected nanoTime minus t0 after each pacing frame; the regression uses frame and wall clocks with different bases.
 - [ ] Launch-profile `@Smoke` tests call `resetLaunchForTest()` first; it is `check(BuildConfig.DEBUG)`-guarded; no exported debug receiver was added.
 
 Frame 0 and fidelity

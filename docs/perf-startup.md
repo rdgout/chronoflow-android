@@ -67,3 +67,31 @@ No hang retry was attempted. CfRootTest's two system-bar flag cases passed (ligh
 Remaining targeted groups, `make captures ONLY=SplashScreen`, `make captures DEVICE=1 ONLY=SplashScreen`, `make perf`, `make perf-timeline`, `make baseline-profile`, `make quick`, `make check` and `make lint` were not run after the required hang stop (no output exists for these commands). Neither the generator stale-output proof nor the planted-allocation proof ran. There are no official phase capture PNGs, screen recordings, reviewed hand-over frames, board-difference results or new performance numbers. Diagnostic images are in `build/phase3a-validation/render-*.png`; they are not board captures or reference snapshots. BaselineProfileGenerator's prepared 1.6 s opening journey remains uncommitted until its generated profiles can be included with it.
 
 Implementation choices: moon decoding is constructor-supplied because the asset belongs to the app module. Reset support is a debug-source AppGraph extension. Cutout mode is set in MainActivity (ALWAYS on API 30+, SHORT_EDGES on 29). Layout guards use the light-only LayoutMatrix; render/capture cases cover both themes. The scene retains the specified no-stars, centred moon, shifted wordmark/band and arc-length path differences from the older boards; a board comparison remains required. OQ-A69–A82 carry the brief's defaults, A83 records the user-approved short-window rule, and A68 stays absent.
+
+## Phase 3a: one-clock correction and held-splash stop
+
+Worker, 2026-11-17. User diagnosis resolved the RootThemeTest hang: frame timestamps and t0 could have different bases. Commit 90d9ea7 paces on frame callbacks but computes elapsed from the injected wall clock, and suspends on a first-draw CompletableDeferred before requesting frames. A plain JVM regression supplies a near-zero frame clock and a 9,000,000,000,000 ns wall-clock base; it proves no pre-draw frame requests, no settlement at 1499 ms, settlement at 1500 ms, and no later requests. It and the existing overlay recomposition test passed. RootThemeTest now uses the seeded screen profile and passed. All six SplashThemeTest cases (API 29/31/36 × light/dark) passed with the newly writable Maven cache. That combined invocation took 29.57 s (feature group succeeded, then app group had only the independent CfRootTest ordering failure).
+
+CfRootTest now observes two explicit clock frames; its exact failing method passed on the first correction, 6.10 s wall / 2.504 s test. The configuration device tests also receive the screen profile. Four scoped design-boundary checks passed in 2.81 s after recognizing CfRoot as an inset-reading root and using Compose's allowed transparent value for system bars. The initial boundary group was 74 tests, 72 passed (13.63 s including the preceding passing release group). Build-logic's manifest guard and LaunchPaintGoldenTest passed; the targeted harness now matches the documented included-build XML-only result protocol, with seven script tests passing in 0.176 s. The two remaining emulator compilation errors used nonexistent UiDevice.displayDensity; both tests now read resource displayMetrics.density.
+
+The next emulator invocation hung on its first test. Exact command:
+
+```sh
+ANDROID_HOME=/opt/homebrew/share/android-commandlinetools make targeted ONLY="app:LaunchFrameZeroTest app:LaunchStrictModeTest app:AppLaunchSmokeTest app:ConfigurationPolicyDeviceTest"
+```
+
+```text
+11-17 11:12:38.431 24113 24129 I TestRunner: run started: 8 tests
+11-17 11:12:38.432 24113 24129 I TestRunner: started: frameZeroMatchesSystemSplashDark(net.chronoflow.app.LaunchFrameZeroTest)
+```
+
+There was no test result after more than 90 s. MainActivity was the resumed activity; a diagnostic screenshot showed the dark sky and centred moon still held on screen. This does not establish where ScreenTest.launch or the test method was blocked. Per the user/brief hang stop rule, no retry or assertion change was made. The debug application process was force-stopped to release the run; the emulator stayed running. Final command output:
+
+```text
+BUILD FAILED in 2m 12s
+run-tier: over budget: emulator net.chronoflow.app.LaunchFrameZeroTest#frameZeroMatchesSystemSplashDark 127449 ms > 10000 ms
+make: *** [targeted] Error 1
+real 133.10
+```
+
+Evidence: `build/phase3a-validation/device-compile-fix1.log`, `held-splash-logcat.log`, `held-splash-hang.png`, and `device-hang-results/`. Clock/root-order XML and scoped logs are retained in the same directory. The screenshot was viewed and is diagnostic only; it is not the required SplashScreen capture matrix or proof of frame-0 parity. Official captures, board comparison, screen recordings, startup/timeline benchmarks, baseline generation, standalone quick/check/lint and planted-failure proofs remain unrun after this new required stop; they have no new output or performance numbers. The prepared BaselineProfileGenerator journey remains uncommitted so it can be committed with regenerated profiles. No new OQ was added: the one-clock correction is a direct user decision, and the new held-splash stall needs diagnosis.
