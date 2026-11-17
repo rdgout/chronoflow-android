@@ -71,7 +71,8 @@ class MainActivity : ComponentActivity() {
                 firstCommit,
                 jankTagger,
                 onSystemBars = ::applySystemBars,
-            ) { entry?.invoke() }
+                content = entry,
+            )
         }
         PerfJank.install(this)
         window.decorView.viewTreeObserver.registerFrameCommitCallback {

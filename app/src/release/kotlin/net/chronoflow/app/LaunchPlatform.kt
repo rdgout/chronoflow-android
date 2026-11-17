@@ -1,10 +1,12 @@
 package net.chronoflow.app
 
 import android.content.Intent
+import androidx.compose.runtime.Composable
 import net.chronoflow.app.perf.LaunchDiagnosticsParser
 import net.chronoflow.feature.launch.LaunchOverrides
 
 internal object LaunchPlatform {
+    val routeLabel: (@Composable (String) -> Unit)? = null
     private var current: net.chronoflow.feature.launch.LaunchController? = null
 
     fun controller(graph: AppGraph): net.chronoflow.feature.launch.LaunchController =

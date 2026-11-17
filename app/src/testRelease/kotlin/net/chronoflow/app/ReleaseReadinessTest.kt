@@ -34,6 +34,7 @@ class ReleaseReadinessTest {
 
     @Test fun releaseShipsNoLaunchDiagnosticsOrStub() {
         missing("net.chronoflow.app.perf.StubReadiness")
+        missing("net.chronoflow.debug.DebugRouteLabel")
         org.junit.Assert.assertEquals(
             LaunchDiagnostics.None,
             net.chronoflow.app.perf.LaunchDiagnosticsParser.parse(

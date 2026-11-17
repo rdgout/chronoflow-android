@@ -1531,7 +1531,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - It owns `overlayPlaced`.
 - [ ] **Traces** `ready` and `exit`. Place `reportFullyDrawn()` per spec step 6; while signed in, it follows the first app frame until Today lands in 7. Add `StartupBenchmark` in WARM mode.
 - [ ] **Stall test.** `LaunchStallTest` (emulator): with `cf.mainThreadStall=500`, the overlay position after the stall equals the wall-clock position, read through a debug `LaunchProbe`. The animation is never stretched (OQ-A19).
-- [ ] **Hand-off targets.** Signed in goes to the app root placeholder; signed out goes to the Welcome placeholder until 3c.
+- [x] **Hand-off targets.** Signed in goes to the app root placeholder; signed out goes to the Welcome placeholder until 3c.
 
 **Acceptance**
 - When readiness arrives before 1500 ms, the hand-off ends at 1900 ms ± 1 frame from `t0` (trace), and the forced exit comes at 8 s.

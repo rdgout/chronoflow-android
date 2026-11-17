@@ -118,7 +118,7 @@ class CfRootTest {
         try {
             val window = controller.get().window
             val bars = WindowCompat.getInsetsController(window, window.decorView)
-            assertEquals(!night, bars.isAppearanceLightStatusBars)
+            assertFalse(bars.isAppearanceLightStatusBars)
             assertEquals(!night, bars.isAppearanceLightNavigationBars)
         } finally {
             controller.close()
