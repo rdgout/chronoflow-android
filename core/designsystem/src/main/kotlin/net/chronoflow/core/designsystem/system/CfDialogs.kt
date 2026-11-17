@@ -24,12 +24,10 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
-import net.chronoflow.core.designsystem.layout.BoardMetrics
 import net.chronoflow.core.designsystem.theme.CfTheme
 
-@BoardMetrics("ItemDetail", "SheetStates")
 private object SheetMetrics {
-    // Native counterparts of these sheet panels use plan.md's 640 dp window-policy cap.
+    // plan.md's window policy and OQ-A57 cap native sheets independently of board dimensions.
     val maxWidth = 640.dp
 }
 
