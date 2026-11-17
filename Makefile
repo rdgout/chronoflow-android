@@ -179,5 +179,6 @@ captures:
 perf-timeline:
 	$(RUN_TIER) perf-timeline --device --results 'benchmark/build/outputs/androidTest-results/connected/benchmarkRelease/**/*.xml' -- Scripts/perf-timeline.sh
 
+baseline-profile: export TIER_IDLE_TIMEOUT := 1200
 baseline-profile:
 	$(RUN_TIER) baseline-profile --device --results 'benchmark/build/outputs/androidTest-results/connected/**/*.xml' -- Scripts/baseline-profile.sh
