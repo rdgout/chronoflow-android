@@ -23,4 +23,26 @@ class TimelineGeometryTests {
         }
         assertThat(mismatches).isEqualTo(emptyList<String>())
     }
+
+    /** (new) The day scrolls horizontally when the lane minimum exceeds the available width. */
+    @Test fun overflowWhenMinWidthExceedsAvailable() {
+        val layout =
+            layoutDay(
+                sampleDay(),
+                listOf(block("a", 0.0, 100.0), block("b", 10.0, 60.0), block("c", 20.0, 50.0)),
+                emptyIndex(),
+            )
+        assertThat(layout.minWidth).isEqualTo(282.0)
+        val narrow = TimelineGeometry(layout, 248.0)
+        assertThat(narrow.width).isEqualTo(282.0)
+        assertThat(narrow.laneWidth).isEqualTo(55.5)
+        val wide = TimelineGeometry(layout, 400.0)
+        assertThat(wide.width).isEqualTo(400.0)
+        assertThat(wide.laneWidth).isEqualTo(85.0)
+        for (tile in narrow.tiles) {
+            assertThat(tile.hitFrame.width >= 48 && tile.hitFrame.height >= 48).isEqualTo(true)
+            assertThat(tile.hitFrame.minX >= 0 && tile.hitFrame.maxX <= narrow.width).isEqualTo(true)
+            assertThat(tile.hitFrame.minY >= 0 && tile.hitFrame.maxY <= narrow.height).isEqualTo(true)
+        }
+    }
 }

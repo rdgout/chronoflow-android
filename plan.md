@@ -1131,7 +1131,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - `layoutDay` (`§2.6`): the skip rules; a marker's top is exactTop + 12, de-overlapped by 24 dp; tile height is `min(dayHeight, max(24, …))`; a tile is tiny at ≤ 56; `continuesBefore` and `continuesAfter`.
   - `packLane` (`§2.7`).
   - Zones, ticks, now, overnight flights, multi-timezone days and DST (`§2.8–§2.11`).
-- [ ] **TimelineGeometry.kt** (`§2.12`).
+- [x] **TimelineGeometry.kt** (`§2.12`).
   - `width = max(minWidth, available)` and `laneWidth = (width − 44)/4 − 4`; columns; tile x and width.
   - Hit frames are at least 48 × 48 dp (iOS uses 44 pt), centred and clamped. Marker and zone-change targets follow `§2.12` and `§5` with the same minimum.
   - When `minWidth > available`, the day scrolls horizontally.
