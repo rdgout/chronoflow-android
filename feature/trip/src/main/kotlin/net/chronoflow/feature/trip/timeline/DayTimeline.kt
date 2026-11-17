@@ -61,18 +61,10 @@ fun DayTimeline(
     val drawing = remember(day.id) { mutableStateOf(repository.peek(key, day)) }
     val currentPrefetch by rememberUpdatedState(prefetch)
     LaunchedEffect(key, day) {
-        try {
+        recoverDrawingFailure({ Log.w(LOG_TAG, "drawing failed for ${day.id}", it) }) {
             val built = repository.drawing(key, day, layout)
             drawing.value = built
             currentPrefetch(dayIndex, key)
-        } catch (e: IllegalStateException) {
-            Log.w(LOG_TAG, "drawing failed for ${day.id}", e)
-        } catch (e: IllegalArgumentException) {
-            Log.w(LOG_TAG, "drawing failed for ${day.id}", e)
-        } catch (e: IndexOutOfBoundsException) {
-            Log.w(LOG_TAG, "drawing failed for ${day.id}", e)
-        } catch (e: NoSuchElementException) {
-            Log.w(LOG_TAG, "drawing failed for ${day.id}", e)
         }
     }
 

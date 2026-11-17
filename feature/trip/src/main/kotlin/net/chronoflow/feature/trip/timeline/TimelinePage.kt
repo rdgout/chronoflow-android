@@ -170,12 +170,10 @@ private fun ReadyPage(
                                 compact,
                                 viewModel.language,
                             )
-                        try {
+                        recoverDrawingFailure({ Log.w(LOG_TAG, "drawing failed for ${day.id}", it) }) {
                             withTimeoutOrNull(JUMP_DRAWING_WAIT_MS) {
                                 viewModel.repository.drawing(key, day, model.layouts.getValue(day.id))
                             }
-                        } catch (e: IllegalStateException) {
-                            Log.w(LOG_TAG, "drawing failed for ${day.id}", e)
                         }
                         val target = index.headerIndex(day.id)
                         if (reduceMotion) listState.scrollToItem(target) else listState.animateScrollToItem(target)
