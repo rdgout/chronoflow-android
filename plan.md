@@ -1586,6 +1586,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 **Delivers.** Builds Welcome on the plain sky with the board composition at every window size, the 560 dp copy card on wide windows, and the first-launch intro whose stagger comes from the shared LaunchClock. The overlay moon lands on Welcome's measured moon anchor, and Reduce Motion skips the intro. Plan my trip and Sign in route to debug seams until their destinations exist. Tests cover the composition formula across profiles, the 2550 ms interactive and 3200 ms last-item timing, accessibility order, and reference-free guards in both languages and themes.
 
 **Tasks**
+- [x] **Welcome ending and geometry** (3c Task 2): port the exit, fallback target and composition geometry with JVM coverage.
 - [x] **Intro and anchor models** (3c Task 1): port `LaunchIntro` and `MoonAnchorStore` with the Swift-named JVM tests.
 - [ ] **WelcomeScreen** (`feature/launch/…/welcome/`).
   - The plain sky, with the board composition for any w × h (OQ 11).

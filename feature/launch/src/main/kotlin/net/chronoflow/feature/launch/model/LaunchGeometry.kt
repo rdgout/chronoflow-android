@@ -19,6 +19,8 @@ data class LaunchRect(
     val width: Double,
     val height: Double,
 ) {
+    val midX: Double get() = x + width / 2
+    val midY: Double get() = y + height / 2
     val minX: Double get() = x
     val minY: Double get() = y
     val maxX: Double get() = x + width
