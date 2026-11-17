@@ -1,6 +1,8 @@
 package net.chronoflow.konsist
 
 import com.lemonappdev.konsist.api.container.KoScope
+import org.jetbrains.kotlin.lexer.KotlinLexer
+import org.jetbrains.kotlin.lexer.KtTokens
 import java.io.File
 
 private fun checkDesignRule(
@@ -8,6 +10,24 @@ private fun checkDesignRule(
     violations: List<String>,
 ) {
     if (violations.isNotEmpty()) throw AssertionError("$name violated:\n${violations.joinToString("\n")}")
+}
+
+private fun codeOnly(text: String): String {
+    val lexer = KotlinLexer()
+    lexer.start(text)
+    return buildString {
+        while (lexer.tokenType != null) {
+            val type = lexer.tokenType
+            if (!KtTokens.COMMENTS.contains(type) && type != KtTokens.REGULAR_STRING_PART &&
+                type != KtTokens.ESCAPE_SEQUENCE
+            ) {
+                append(lexer.tokenText)
+            } else {
+                append(' ')
+            }
+            lexer.advance()
+        }
+    }
 }
 
 private fun KoScope.designSources() =
@@ -40,8 +60,9 @@ fun noRawColorsOutsideDesignSystem(scope: KoScope) {
             .designSources()
             .filter { moduleOf(it.path) != "core/designsystem" }
             .filter { file ->
-                constructor.containsMatchIn(file.text) ||
-                    named.findAll(file.text).any {
+                val code = codeOnly(file.text)
+                constructor.containsMatchIn(code) ||
+                    named.findAll(code).any {
                         it.groupValues[1] !in setOf("Transparent", "Unspecified")
                     }
             }.map { it.path }

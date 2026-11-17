@@ -4,6 +4,7 @@ plugins {
 
 dependencies {
     testImplementation(libs.konsist)
+    testImplementation(libs.kotlin.compiler.embeddable)
     testImplementation(project(":core:testing"))
 }
 
