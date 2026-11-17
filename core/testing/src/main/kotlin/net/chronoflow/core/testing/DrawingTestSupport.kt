@@ -1,5 +1,10 @@
-package net.chronoflow.core.plan.drawing
+package net.chronoflow.core.testing
 
+import net.chronoflow.core.plan.drawing.DayDrawing
+import net.chronoflow.core.plan.drawing.DrawOp
+import net.chronoflow.core.plan.drawing.HitIndex
+import net.chronoflow.core.plan.drawing.TimelineGlyph
+import net.chronoflow.core.plan.drawing.TimelineTextStyle
 import java.util.Locale
 
 class DecodedOp(
@@ -108,3 +113,54 @@ fun opListEquals(
     a.ops.contentEquals(b.ops) && a.coords.contentEquals(b.coords) && a.colors.contentEquals(b.colors) &&
         a.args.contentEquals(b.args) && a.texts.contentEquals(b.texts) && a.textStyles.contentEquals(b.textStyles) &&
         a.glyphs.contentEquals(b.glyphs) && a.dividerFrames.contentEquals(b.dividerFrames)
+
+/** The ops from [from] up to (excluding) [to] as a drawing of their own, for reference renders that wrap a tile. */
+fun DayDrawing.slice(
+    from: Int,
+    to: Int,
+): DayDrawing {
+    var ci = 0
+    var coli = 0
+    var ai = 0
+    var ti = 0
+    var gi = 0
+    val start = IntArray(5)
+    for ((index, code) in ops.withIndex()) {
+        if (index == from) {
+            start[0] = ci
+            start[1] = coli
+            start[2] = ai
+            start[3] = ti
+            start[4] = gi
+        }
+        if (index == to) break
+        val n = if (code == DrawOp.LINES) args[ai] else 0
+        ci += coordCount(code, n)
+        coli += colorCount(code)
+        ai += argCount(code)
+        if (code == DrawOp.TEXT) ti++
+        if (code == DrawOp.GLYPH) gi++
+    }
+    if (to >= ops.size) {
+        ci = coords.size
+        coli = colors.size
+        ai = args.size
+        ti = texts.size
+        gi = glyphs.size
+    }
+    return DayDrawing(
+        key,
+        widthPx,
+        heightPx,
+        ops.copyOfRange(from, minOf(to, ops.size)),
+        coords.copyOfRange(start[0], ci),
+        colors.copyOfRange(start[1], coli),
+        args.copyOfRange(start[2], ai),
+        texts.copyOfRange(start[3], ti),
+        textStyles.copyOfRange(start[3], ti),
+        glyphs.copyOfRange(start[4], gi),
+        FloatArray(0),
+        emptyList(),
+        HitIndex.Empty,
+    )
+}

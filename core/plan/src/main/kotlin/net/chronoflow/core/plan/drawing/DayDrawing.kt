@@ -4,7 +4,7 @@ package net.chronoflow.core.plan.drawing
  * One timeline day's static content as a struct-of-arrays op list. Immutable by contract: only
  * [DayDrawingBuilder] writes the arrays and nothing exposes a mutator. See [DrawOp] for the operands.
  */
-class DayDrawing internal constructor(
+class DayDrawing(
     @JvmField val key: DayDrawingKey,
     @JvmField val widthPx: Int,
     @JvmField val heightPx: Int,

@@ -5,6 +5,8 @@ import net.chronoflow.core.model.contracts.CheckStatus
 import net.chronoflow.core.model.contracts.Priority
 import net.chronoflow.core.plan.generated.PlanMetrics
 import net.chronoflow.core.plan.generated.TimelinePalette
+import net.chronoflow.core.testing.DecodedOp
+import net.chronoflow.core.testing.decode
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

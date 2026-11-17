@@ -1,5 +1,6 @@
 package net.chronoflow.core.plan.drawing
 
+import net.chronoflow.core.testing.serialize
 import org.junit.Assert.fail
 import org.junit.Test
 import java.io.File

@@ -1185,12 +1185,12 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - Group alpha is pre-composited.
   - It draws markers, zone bands, ticks, and hatch and dot fills.
   - It measures through a `TextMetrics` interface (`measure`, `ellipsize`, `lineHeight`) and emits `HitIndex` and `TimelineTargets`.
-- [ ] **Android side** (`feature/trip/…/timeline/`).
+- [x] **Android side** (`feature/trip/…/timeline/`).
   - `TextPaintMetrics`: one `TextPaint` per build job, the 0b fonts, font scale ≤ 1.3.
   - `TimelineResources`: the hatch as a `LinearGradient` with `Shader.TileMode.REPEAT`, a 7 dp dot-cell `BitmapShader` (iOS `dotStep`, OQ-1c-1), and lucide paths parsed once.
   - `DrawScope.replay(drawing, resources)` draws on `drawContext.canvas.nativeCanvas` and never measures.
 - [x] **DayDrawingCache.kt.** An LRU keyed by (dayId, revision, widthPx, dark, fontScale, language). Limits: ≤ 4 MiB, ≤ 512 KiB per drawing, ≤ 8 entries; it evicts by bytes, then by count.
-- [ ] **Tests.**
+- [x] **Tests.**
   - `DayDrawingBudgetTest` (`@TimingGate`, run serially by `make timing`, fake metrics): after 3 warm-up passes, the median of 5 measured passes stays ≤ 5 ms per day and ≤ 150 ms per width for large60 at 360, 411 and 841 dp (the max is reported, never gated); ≤ 512 KiB per drawing.
   - `DayDrawingCacheTest`: equal keys reuse the entry; dark, width and font scale miss; the caps hold.
   - `DrawOrderGoldenTest`: the S3 day-1 op list against a reviewed golden.

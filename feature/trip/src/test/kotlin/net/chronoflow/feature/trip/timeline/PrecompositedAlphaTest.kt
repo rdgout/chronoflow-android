@@ -1,0 +1,132 @@
+package net.chronoflow.feature.trip.timeline
+
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.RectF
+import androidx.test.core.app.ApplicationProvider
+import net.chronoflow.core.model.contracts.BlockType
+import net.chronoflow.core.model.contracts.CheckStatus
+import net.chronoflow.core.model.contracts.Priority
+import net.chronoflow.core.plan.drawing.DrawOp
+import net.chronoflow.core.plan.drawing.TimelineColors
+import net.chronoflow.core.plan.generated.TimelinePalette
+import net.chronoflow.core.testing.decode
+import net.chronoflow.core.testing.slice
+import net.chronoflow.core.testing.tiers.Layout
+import org.junit.Assert.assertTrue
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.ParameterizedRobolectricTestRunner
+import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
+import kotlin.math.abs
+import kotlin.math.roundToInt
+
+/**
+ * The pre-composited build against the same tile drawn raw inside a real `saveLayerAlpha`. This is the only
+ * `saveLayer` in the codebase; it exists to prove the pre-composite rule, never in `src/main` (A12).
+ */
+@Layout
+@RunWith(ParameterizedRobolectricTestRunner::class)
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
+@Config(sdk = [36])
+class PrecompositedAlphaTest(
+    private val type: BlockType,
+    private val marked: Boolean,
+    @Suppress("unused") private val label: String,
+) {
+    private val context: Context = ApplicationProvider.getApplicationContext()
+
+    /** Shapes, patterns, glyphs and outlines: no text, so only double 8-bit rounding may differ (OQ-1c-9). */
+    @Test fun shapesMatchTheSaveLayerReference() = compare(compact = true, maxDiff = SHAPE_TOLERANCE, maxShare = 1.0)
+
+    /**
+     * With text, Skia's glyph contrast pre-blend depends on the text colour, so glyph edge pixels differ more
+     * between a pre-composited colour and a layer; the gate bounds the size and the share of those pixels.
+     */
+    @Test fun textEdgesStayWithinTheGlyphContrastTolerance() =
+        compare(compact = false, maxDiff = TEXT_TOLERANCE, maxShare = 0.05)
+
+    private fun compare(
+        compact: Boolean,
+        maxDiff: Int,
+        maxShare: Double,
+    ) {
+        val typefaces = TimelineTestFonts.typefaces(context)
+        val tile =
+            TimelineTestPlans.singleTile(
+                type = type,
+                priority = if (marked) Priority.Recommended else Priority.Optional,
+                status = if (marked) CheckStatus.Done else null,
+                top = 10.0,
+                height = 120.0,
+                cols = 1,
+                window = 640,
+                compact = compact,
+            )
+        val palette = TimelinePalette.Light
+        val resources = TimelineResources(TimelineTestPlans.DENSITY, false, palette, typefaces)
+        val metrics = TextPaintMetrics(typefaces)
+        val pre = TimelineTestPlans.build(tile.day, tile.layout, tile.key, metrics, precomposite = true)
+        val raw = TimelineTestPlans.build(tile.day, tile.layout, tile.key, metrics, precomposite = false)
+        val a = Bitmap.createBitmap(pre.widthPx, pre.heightPx, Bitmap.Config.ARGB_8888)
+        TimelineTestPlans.render(pre, resources, a, palette.background)
+
+        val ops = raw.decode()
+        val begin = ops.indexOfFirst { it.code == DrawOp.TILE_BEGIN }
+        val end = ops.indexOfFirst { it.code == DrawOp.TILE_END }
+        val frame = ops[begin].coords
+        val alpha =
+            TimelineColors.groupAlpha(
+                if (marked) CheckStatus.Done else null,
+                if (marked) Priority.Recommended else Priority.Optional,
+            )
+        val b = Bitmap.createBitmap(pre.widthPx, pre.heightPx, Bitmap.Config.ARGB_8888)
+        b.eraseColor(palette.background)
+        val canvas = Canvas(b)
+        replayDayDrawing(canvas, raw.slice(0, begin), resources)
+        val bounds = RectF(frame[0] - 2, frame[1] - 2, frame[0] + frame[2] + 2, frame[1] + frame[3] + 2)
+        canvas.saveLayerAlpha(bounds, (alpha * 255).roundToInt())
+        replayDayDrawing(canvas, raw.slice(begin, end + 1), resources)
+        canvas.restore()
+
+        var worst = 0
+        var off = 0
+        var over3 = 0
+        val pa = IntArray(a.width * a.height)
+        val pb = IntArray(pa.size)
+        a.getPixels(pa, 0, a.width, 0, 0, a.width, a.height)
+        b.getPixels(pb, 0, b.width, 0, 0, b.width, b.height)
+        for (i in pa.indices) {
+            if (pa[i] == pb[i]) continue
+            var diff = 0
+            for (shift in intArrayOf(0, 8, 16, 24)) {
+                diff =
+                    maxOf(diff, abs(((pa[i] shr shift) and 0xFF) - ((pb[i] shr shift) and 0xFF)))
+            }
+            worst = maxOf(worst, diff)
+            if (diff > 1) off++
+            if (diff > SHAPE_TOLERANCE) over3++
+        }
+        println(
+            "PrecompositedAlpha metric: $label compact=$compact maxChannelDiff=$worst pixelsOver1=$off of ${pa.size}",
+        )
+        assertTrue("$label differs by $worst/255", worst <= maxDiff)
+        assertTrue("$label: $over3 pixels differ by more than $SHAPE_TOLERANCE/255", over3 <= maxShare * pa.size)
+    }
+
+    companion object {
+        private const val SHAPE_TOLERANCE = 3
+        private const val TEXT_TOLERANCE = 20
+
+        @JvmStatic
+        @ParameterizedRobolectricTestRunner.Parameters(name = "{2}")
+        fun cases(): List<Array<Any>> =
+            BlockType.known.flatMap { type ->
+                listOf(true, false).map { marked ->
+                    arrayOf<Any>(type, marked, "${type.raw} ${if (marked) "marked" else "optional"}")
+                }
+            }
+    }
+}

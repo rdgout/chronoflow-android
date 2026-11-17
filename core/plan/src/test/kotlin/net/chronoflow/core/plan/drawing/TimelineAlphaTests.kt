@@ -6,6 +6,7 @@ import net.chronoflow.core.plan.DayLayout
 import net.chronoflow.core.plan.PreparedDay
 import net.chronoflow.core.plan.generated.PlanMetrics
 import net.chronoflow.core.testing.FakeTextMetrics
+import net.chronoflow.core.testing.opListEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotSame
