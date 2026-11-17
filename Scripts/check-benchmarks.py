@@ -185,7 +185,7 @@ def timeline_gate(entry, device_class):
     return entry.get("all") or entry.get(device_class)
 
 
-def derived_values(entry, bench):
+def derived_values(entry, bench, refresh_hz="60"):
     """Per-iteration derived metrics, or (None, reason) when an input is missing."""
     metrics = bench.get("metrics", {})
     sampled = bench.get("sampledMetrics", {})
@@ -196,10 +196,13 @@ def derived_values(entry, bench):
             return None, "frameOverrunMs is missing (needs API 31+)"
         if metric == "jankPercent":
             return [jank_percent(list(_flatten(r))) for r in overrun if list(_flatten(r))], ""
-        window = (metrics.get("timelineScrollWindowMs") or {}).get("runs")
-        if not window or len(window) != len(overrun):
-            return None, "timelineScrollWindowMs is missing"
-        return [hitch_ms_per_s(list(_flatten(r)), w) for r, w in zip(overrun, window)], ""
+        try:
+            hz = float(refresh_hz)
+        except (TypeError, ValueError):
+            return None, "refresh Hz is missing for active frame time"
+        if not math.isfinite(hz) or hz <= 0:
+            return None, "refresh Hz must be finite and positive"
+        return [hitch_ms_per_s(list(_flatten(r)), refresh_hz=hz) for r in overrun], ""
     if metric == "memoryRssAnonGrowthKb":
         runs = (metrics.get("memoryRssAnonMaxKb") or {}).get("runs")
         if not runs:
@@ -291,7 +294,7 @@ def check_timeline(args, budgets):
         test, metric, stat, unit = entry["test"], entry["metric"], entry["stat"], entry.get("unit", "")
         raw_key = RAW_KEYS.get(metric, metric)
         if entry.get("derived"):
-            vals, why = derived_values(entry, bench)
+            vals, why = derived_values(entry, bench, args.refresh_hz)
             if vals is None:
                 print("%s metric: %s %s %s" % (label, test, metric, why), file=sys.stderr)
                 failed = True

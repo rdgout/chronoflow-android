@@ -107,7 +107,7 @@ TIMELINE_HEADER = (
 
 
 def timeline_check(results, *extra, device_class="emulator", history=None, row_dir=None):
-    args = ["--suite", "timeline", "--device-class", device_class, "--results-dir", str(results)]
+    args = ["--suite", "timeline", "--device-class", device_class, "--results-dir", str(results), "--refresh-hz", "60"]
     if history:
         args += ["--history", str(history)]
     if row_dir:
@@ -156,8 +156,16 @@ class TimelineCheckTest(unittest.TestCase):
     def test_timeline_derived_values_are_computed_per_iteration(self):
         result = timeline_check(TIMELINE / "pass", row_dir=temp_dir(self))
         self.assertIn("jankPercent each=2.0 %", result.stdout)
-        self.assertIn("hitchRatioMsPerS each=0.6 ms/s", result.stdout)
+        self.assertIn("hitchRatioMsPerS each=0.7 ms/s", result.stdout)
         self.assertIn("memoryRssAnonGrowthKb single=1000.0 KiB", result.stdout)
+
+    def test_hitch_uses_active_frames_despite_idle_waits(self):
+        module = load_checker()
+        bench = {"metrics": {"timelineScrollWindowMs": {"runs": [73000]}},
+                 "sampledMetrics": {"frameOverrunMs": {"runs": [[-1, 2, 0, 5]]}}}
+        values, reason = module.derived_values({"metric": "hitchRatioMsPerS"}, bench, "60")
+        self.assertEqual(reason, "")
+        self.assertAlmostEqual(values[0], 105.0)
 
     def test_timeline_rss_over_fails(self):
         result = timeline_check(TIMELINE / "rss-153601", row_dir=temp_dir(self))
