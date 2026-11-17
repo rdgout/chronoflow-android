@@ -1294,7 +1294,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 - [x] **Run and review** on `pixel` with `-gpu host` and animator scale 1.
   - Perfetto, per `04 §11`: no `Recomposer:recompose` and no GC during steady flings, and builds on worker threads only.
   - The compiler reports show `DayTimeline`, `NowLine` and the day header as skippable, with stable parameters.
-- [ ] **Record** in `docs/perf-timeline.md`:
+- [x] **Record** in `docs/perf-timeline.md`:
   - date, commit, device, OS, refresh rate, font scale, theme and build type;
   - the raw P50/P90/P99, jank %, hitch ratio, placeholder count and peak RSS, plus trace links.
 

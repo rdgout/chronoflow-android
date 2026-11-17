@@ -126,7 +126,27 @@ DayDrawing metric: robolectric W=841 dayMax=0.26 total=5.5 bytesMax=14155
 
 Wide windows draw the title, interval, tag and reason runs that the icon-only 411 tiles skip, so the 841 build costs about 4x more, still far under the 5 ms and 150 ms gates.
 
-Pre-composite versus a `saveLayerAlpha` reference (`PrecompositedAlphaTest`, 17 types x marked/optional): without text the largest channel difference is 3/255; with text, 16/255 on glyph edges (OQ-A52). 1e re-sets the limits to about twice the measured means.
+Pre-composite versus a `saveLayerAlpha` reference (`PrecompositedAlphaTest`, 17 types x marked/optional): without text the largest channel difference is 3/255; with text, 16/255 on glyph edges (OQ-A52). 1e re-set the limits to about twice the measured numbers (below).
+
+### Re-set limits (1e)
+
+Three `./gradlew :core:plan:timingTest --max-workers=1 --rerun` runs on 2026-11-17 (`make timing` reuses a cached result, so `--rerun` forces a fresh measurement), Gradle launcher `openjdk version "17.0.21.0.3"`, `uname -m` = `arm64`, test JVM Eclipse Adoptium 21 from the JDK 21 toolchain. Host process, not a device claim.
+
+| Fixture | Budget (every sample) | Run 1 mean / max (ms) | Run 2 mean / max (ms) | Run 3 mean / max (ms) | iOS mean (ms) |
+|---|---|---|---|---|---|
+| S3 | 40 | 2.8 / 4.0 | 3.1 / 4.4 | 2.9 / 4.3 | 19 |
+| large30 | 100 | 5.1 / 6.1 | 5.1 / 6.5 | 5.1 / 5.9 | 50 |
+| large60 | 200 | 8.1 / 9.6 | 8.5 / 9.9 | 8.1 / 9.8 | 92 |
+
+`DayDrawingBudgetTest` (`FakeTextMetrics`, density 2.625, five measured passes):
+
+| Width | Run 1 dayMedianMax / dayMax / totalMedian (ms) | Run 2 | Run 3 |
+|---|---|---|---|
+| 360 | 0.06 / 0.13 / 1.5 | 0.05 / 0.11 / 1.4 | 0.06 / 0.15 / 1.5 |
+| 411 | 0.04 / 0.05 / 0.8 | 0.04 / 0.07 / 0.8 | 0.04 / 0.07 / 0.8 |
+| 841 | 0.04 / 0.07 / 1.4 | 0.04 / 0.08 / 1.5 | 0.05 / 0.06 / 1.5 |
+
+New limits (OQ-1e-4, tightened only): per day `max(1, ceil(2 x 0.06))` = 1 ms (was 5); per width `ceil(2 x 1.5)` = 3 ms (was 150). Three more `--rerun` runs at these limits all passed. Unchanged: 512 KiB per drawing, 4 MiB and 8 entries for the cache, and 1b's 40, 100 and 200 ms preparation limits.
 
 ## Board differences (Phase 1c)
 
