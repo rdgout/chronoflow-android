@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.SnackbarDuration
@@ -36,6 +37,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -198,6 +201,28 @@ fun GalleryPage(
 }
 
 @Composable fun ColumnScope.Fields() {
+    val focus = remember { FocusRequester() }
+    CfTextField(remember { TextFieldState() }, stringResource(R.string.auth_email), testTag = "gallery.email.default")
+    CfTextField(
+        remember { TextFieldState() },
+        stringResource(R.string.auth_email),
+        Modifier.focusRequester(focus),
+        testTag = "gallery.email.focused",
+        keyboardOptions = KeyboardOptions(showKeyboardOnFocus = false),
+    )
+    CfTextField(
+        remember { TextFieldState() },
+        stringResource(R.string.auth_email),
+        testTag = "gallery.email.placeholder",
+        placeholder = stringResource(R.string.auth_email),
+    )
+    CfTextField(
+        remember { TextFieldState() },
+        stringResource(R.string.auth_email),
+        testTag = "gallery.email.hint",
+        hint = stringResource(R.string.auth_enter_your_email_and_we_ll_send_you_bf365b),
+    )
+    LaunchedEffect(focus) { focus.requestFocus() }
     CfTextField(
         remember { TextFieldState() },
         stringResource(R.string.auth_email),
