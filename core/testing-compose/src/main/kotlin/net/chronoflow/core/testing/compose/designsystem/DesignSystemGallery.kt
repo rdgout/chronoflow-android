@@ -354,8 +354,7 @@ fun GalleryPage(
 }
 
 @Composable fun ColumnScope.Sheet() {
-    CfModalBottomSheet({
-    }) {
+    CfModalBottomSheet(onDismissRequest = {}, modifier = Modifier.testTag("gallery.sheet")) {
         Text(
             stringResource(R.string.settings_saved),
             Modifier.padding(PlanUITokens.space5.dp).testTag("gallery.sheet.content"),

@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import net.chronoflow.core.designsystem.effect.cfClickable
 import net.chronoflow.core.designsystem.generated.AuthTokens
+import net.chronoflow.core.designsystem.generated.CfTypeScale
 import net.chronoflow.core.designsystem.generated.PlanUITokens
 import net.chronoflow.core.designsystem.theme.CfTheme
 
@@ -75,6 +76,12 @@ fun CfButton(
     val c = CfTheme.colors
     val shape = CfTheme.shapes.full
     val metrics = CfButtonMetrics.entries[size.ordinal]
+    val verticalPadding =
+        if (size == CfButtonSize.Sm) {
+            (PlanUITokens.space8 - requireNotNull(CfTypeScale.authLabel.lineHeight)) / 2
+        } else {
+            AuthTokens.fieldGap
+        }
     val container =
         when (style) {
             CfButtonStyle.Primary -> c.primary
@@ -117,7 +124,7 @@ fun CfButton(
                     },
                 ).padding(
                     contentPadding
-                        ?: PaddingValues(horizontal = metrics.horizontal.dp, vertical = AuthTokens.fieldGap.dp),
+                        ?: PaddingValues(horizontal = metrics.horizontal.dp, vertical = verticalPadding.dp),
                 ),
             horizontalArrangement = Arrangement.spacedBy(AuthTokens.fieldGap.dp, Alignment.CenterHorizontally),
             verticalAlignment = Alignment.CenterVertically,
