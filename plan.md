@@ -694,6 +694,9 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A110 | (3c-10) The plan's task text says the overlay "reads `MoonAnchorStore` at draw time". iOS instead sends the anchor to the reducer, which rebuilds the timeline before W. | Follow iOS: store → `LaunchEvent.MoonAnchor` → `CommitExit` → a rebuilt `handOff` sampler, which the overlay reads at draw time. This keeps the W − 50 fallback deadline and the "no changes after W" rule. | 3c |
 | OQ-A111 | (3c-11) The overlay uses the captured system appearance, and Welcome uses `cf.settings.theme`. If they differ, the dissolve crosses themes. | Accept it (it only happens when the app theme overrides the system); add no extra transition. | 3c |
 | OQ-A112 | (3c-12) Is the diagnostic `cf.mode=welcome` needed on Android? | Yes, in debug and perf: the board captures and the frozen-frame checks use it, as iOS does. Release keeps `LaunchDiagnostics.None`. | 3c |
+| OQ-A114 | (4a-2) iOS DDL says `DEFAULT true/false`; on API 29 (SQLite 3.22) these become the strings `'true'`/`'false'`. | `DEFAULT 1`/`DEFAULT 0`; the parity test normalizes. | 4a |
+| OQ-A118 | (4a-6) Reminder storage: iOS keeps the ledger as settings section `reminderLedger` with `sendAtMs: Double`; A5 asks for local tables. | The tables in Task 3 (`send_at`/`send_at_ms` INTEGER ms, `account_id` nullable, `request_code UNIQUE`); 12b may edit them in place before the first release. | 4a |
+| OQ-A120 | (4a-8) Port `NoHealthDataMigration` (iOS v2)? | No: Android starts at v1 with no health data stored; `user_version` stays 1. | 4a |
 | OQ-0a-22 | Native libraries in the bundle? | Allow only `libandroidx.graphics.path.so` (Compose graphics-path; excluding it breaks Path conversion below API 34); fail on any other `.so` | 0a, 13 |
 | OQ-0b-1 | Where does `PlanMetrics` live? `08 §3.1` lists it inside `CfDimens`, but its consumer `:core:plan` is a JVM module that cannot depend on `:core:designsystem` | `core/plan/…/generated/PlanMetrics.generated.kt` (Double, dp), as iOS keeps it in `PlanCore` | 0b, 1b, 1c |
 | OQ-0b-2 | Port all iOS TokenGen outputs now (Auth, Settings, Terms, Welcome, PlanUI, Press, LaunchPaint, TypeMetrics), or only colors, sky and type? | All of them now (the iOS files are exact goldens and Phases 2, 3a, 3c, 5a, 9 and 10 need them) | 0b |
@@ -1653,11 +1656,11 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 **Delivers.** Adds the per-account SQLDelight database with the iOS schema v1 verbatim plus two local reminder tables, the validated-UUID path layout under noBackupFilesDir, WAL and foreign keys, one writer dispatcher, and transactions guarded by the session epoch and mutation permit. It adds the AndroidKeyStore AES-GCM session store, the UUIDv7 device identity with the device-name rule, DataStore device preferences, the device-config file, the wipe marker and the backup exclusion. The iOS LocalStore cases are ported as JVM tests, and the Keystore cases run as one small instrumented suite.
 
 **Tasks**
-- [ ] **Schema** (`core/database/src/main/sqldelight/net/chronoflow/core/database/`).
+- [x] **Schema** (`core/database/src/main/sqldelight/net/chronoflow/core/database/`).
   - The DDL of iOS "### Account schema v1 and observation", verbatim, in `.sq` files.
   - Indexes `outbox(created_at, id)` and `trips(deleted_at)`.
   - The local `scheduled_reminder` and `reminder_ledger` tables.
-  - `SchemaParityTest` compares the normalized DDL with `core/database/src/test/resources/ios-schema-v1.sql`, which is copied from the iOS plan at the pin with its hash recorded.
+  - `SchemaParityTest` compares the normalized DDL with `core/database/src/test/resources/ios-schema-v1.sql`, which is extracted from iOS `Packages/ChronoFlowKit/Sources/LocalStore/SchemaV1.swift` at the pin with its hash recorded.
 - [ ] **Account database factory.**
   - Path: `noBackupFilesDir/<ns>/Accounts/<uuid>/account-<uuid>.db`. Only a validated UUID becomes a path component.
   - `AndroidSqliteDriver` with WAL and `foreign_keys = ON`.

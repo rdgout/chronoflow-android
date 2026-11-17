@@ -1,0 +1,16 @@
+CREATE TABLE settings (section TEXT PRIMARY KEY NOT NULL, value TEXT NOT NULL);
+
+selectSetting:
+SELECT * FROM settings WHERE section = ?;
+
+selectSettings:
+SELECT * FROM settings ORDER BY section;
+
+updateSetting:
+UPDATE settings SET value = ? WHERE section = ?;
+
+insertSetting:
+INSERT INTO settings (section, value) VALUES (?, ?);
+
+deleteSetting:
+DELETE FROM settings WHERE section = ?;

@@ -1,0 +1,6 @@
+CREATE TABLE drafts (
+    id TEXT PRIMARY KEY NOT NULL, trip_id TEXT, form TEXT NOT NULL, base_form TEXT,
+    dirty INTEGER NOT NULL DEFAULT 1, review TEXT, token TEXT, input_revision INTEGER NOT NULL DEFAULT 0,
+    review_revision INTEGER, wizard_source_revision TEXT, wizard_review TEXT, furthest_step TEXT,
+    wizard_state TEXT, source_revision TEXT, save_failure TEXT, field_errors TEXT, updated_at TEXT NOT NULL
+);

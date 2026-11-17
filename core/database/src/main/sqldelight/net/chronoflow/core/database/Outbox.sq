@@ -1,0 +1,21 @@
+CREATE TABLE outbox (
+    id TEXT PRIMARY KEY NOT NULL, kind TEXT NOT NULL, payload TEXT NOT NULL, created_at TEXT NOT NULL,
+    attempts INTEGER NOT NULL DEFAULT 0, last_error TEXT
+);
+
+CREATE INDEX outbox_created_at_id ON outbox(created_at, id);
+
+selectOutboxRow:
+SELECT * FROM outbox WHERE id = ?;
+
+selectPendingOutbox:
+SELECT * FROM outbox ORDER BY created_at, id;
+
+updateOutboxRow:
+UPDATE outbox SET kind = ?, payload = ?, created_at = ?, attempts = ?, last_error = ? WHERE id = ?;
+
+insertOutboxRow:
+INSERT INTO outbox (id, kind, payload, created_at, attempts, last_error) VALUES (?, ?, ?, ?, ?, ?);
+
+deleteOutboxRow:
+DELETE FROM outbox WHERE id = ?;

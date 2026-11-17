@@ -1,0 +1,23 @@
+CREATE TABLE trips (
+    id TEXT PRIMARY KEY NOT NULL, card TEXT NOT NULL, adaptation TEXT, form TEXT, revision TEXT,
+    current_input_hash TEXT, keep_offline INTEGER NOT NULL DEFAULT 0, departure_utc TEXT NOT NULL,
+    plan_start_utc TEXT, plan_start_zone TEXT, preparation_days INTEGER, plan_end_utc TEXT,
+    plan_end_date TEXT, deleted_at TEXT, deleted_locally INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE INDEX trips_deleted_at ON trips(deleted_at);
+
+selectTrip:
+SELECT * FROM trips WHERE id = ?;
+
+selectTrips:
+SELECT * FROM trips ORDER BY departure_utc, id;
+
+updateTrip:
+UPDATE trips SET card = ?, adaptation = ?, form = ?, revision = ?, current_input_hash = ?, keep_offline = ?, departure_utc = ?, plan_start_utc = ?, plan_start_zone = ?, preparation_days = ?, plan_end_utc = ?, plan_end_date = ?, deleted_at = ?, deleted_locally = ? WHERE id = ?;
+
+insertTrip:
+INSERT INTO trips (id, card, adaptation, form, revision, current_input_hash, keep_offline, departure_utc, plan_start_utc, plan_start_zone, preparation_days, plan_end_utc, plan_end_date, deleted_at, deleted_locally) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+deleteTrip:
+DELETE FROM trips WHERE id = ?;
