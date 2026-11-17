@@ -79,9 +79,23 @@ class PlanDecoderTests {
             val decoder = PlanDecoder(worker)
             val record = recordOf(tripDetail())
             decoder.detail(record)
-            val before = worker.dispatches
-            decoder.detail(TripPlanSnapshot(record))
-            assertThat(worker.dispatches).isGreaterThan(before)
+            val readsOnWorker = mutableListOf<Boolean>()
+            val checks =
+                object : AbstractList<CheckMarkRecord>() {
+                    override val size: Int
+                        get() {
+                            readsOnWorker += worker.running
+                            return 0
+                        }
+
+                    override fun get(index: Int): CheckMarkRecord {
+                        readsOnWorker += worker.running
+                        throw IndexOutOfBoundsException()
+                    }
+                }
+            decoder.detail(TripPlanSnapshot(record, checks))
+            assertThat(readsOnWorker.isNotEmpty()).isEqualTo(true)
+            assertThat(readsOnWorker.all { it }).isEqualTo(true)
         }
 
     @Test fun mutatingTheCallersBytesInPlaceDecodesAgain() =
