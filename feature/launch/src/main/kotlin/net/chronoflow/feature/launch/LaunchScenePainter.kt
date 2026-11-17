@@ -33,9 +33,9 @@ internal class LaunchScenePainter(
     reduceMotion: Boolean,
     private val moon: ImageBitmap,
 ) {
-    private val size = LaunchSize((sizePx.width / density).toDouble(), (sizePx.height / density).toDouble())
-    private val layout = LaunchLayout(size)
-    val sampler = LaunchFrameSampler(LaunchTimeline.opening(size, reduceMotion))
+    private val sceneSize = LaunchSize((sizePx.width / density).toDouble(), (sizePx.height / density).toDouble())
+    private val layout = LaunchLayout(sceneSize)
+    val sampler = LaunchFrameSampler(LaunchTimeline.opening(sceneSize, reduceMotion))
     private val frame = LaunchFrame()
     private val colors = appearance.colors
     private val sky = CfSky.brush(appearance.night)
@@ -68,7 +68,7 @@ internal class LaunchScenePainter(
             startY = bandTop,
             endY = sizePx.height,
         )
-    private val flight = FlightPath(size)
+    private val flight = FlightPath(sceneSize)
     private val path = flightPath(flight, density)
     private val measure = PathMeasure().apply { setPath(path, false) }
     private val segment = Path()
@@ -78,7 +78,7 @@ internal class LaunchScenePainter(
         PathParser().parsePathString(LaunchWordmark.PATH_DATA).toPath().apply {
             transform(Matrix().apply { scale(density, density) })
         }
-    private val wordmarkLeft = ((size.width - LaunchWordmark.WIDTH_DP) / 2 * density).toFloat()
+    private val wordmarkLeft = ((sceneSize.width - LaunchWordmark.WIDTH_DP) / 2 * density).toFloat()
     private val wordmarkTop = ((layout.wordmarkCentre.y - LaunchWordmark.HEIGHT_DP / 2) * density).toFloat()
     private val sunX = (layout.sunCentre.x * density).toFloat()
     private val sunY = (layout.sunCentre.y * density).toFloat()
@@ -129,8 +129,8 @@ internal class LaunchScenePainter(
             }
         }
         if (frame.moonOpacity > 0) {
-            val dx = ((frame.moonX - size.width / 2) * density).toFloat()
-            val dy = ((frame.moonY - size.height / 2) * density).toFloat()
+            val dx = ((frame.moonX - sceneSize.width / 2) * density).toFloat()
+            val dy = ((frame.moonY - sceneSize.height / 2) * density).toFloat()
             translate(dx, dy) {
                 scale(frame.moonScale.toFloat(), pivot = moonCentre) {
                     drawImage(moon, Offset(moonLeft.toFloat(), moonTop.toFloat()), alpha = frame.moonOpacity.toFloat())

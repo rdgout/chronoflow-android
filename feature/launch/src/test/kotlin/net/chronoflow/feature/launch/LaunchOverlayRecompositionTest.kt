@@ -7,7 +7,6 @@ import net.chronoflow.core.testing.DeviceProfiles
 import net.chronoflow.core.testing.compose.ProfileRule
 import net.chronoflow.core.testing.tiers.Layout
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -29,13 +28,22 @@ class LaunchOverlayRecompositionTest {
     @Test fun wallClockAnimationComposesOnlyOnceAndStopsAt1500Milliseconds() {
         compose.mainClock.autoAdvance = false
         var compositions = 0
-        val controller = launchController(compose, ms = null, observer = { compositions++ })
+        var pendingFrames = 0
+        val controller =
+            launchController(compose, ms = null, observer = { compositions++ }, nextFrame = {
+                pendingFrames++
+                try {
+                    androidx.compose.runtime.withFrameNanos { it }
+                } finally {
+                    pendingFrames--
+                }
+            })
         compose.setContent { LaunchOverlay(controller) }
         firstDraw(compose, controller)
         repeat(200) { compose.mainClock.advanceTimeBy(8, ignoreFrameDuration = true) }
         compose.onNodeWithTag("launch.opening").captureToImage()
         assertEquals(1, compositions)
         assertTrue(controller.openingDone)
-        assertFalse(compose.mainClock.hasAwaiters)
+        compose.runOnIdle { assertEquals(0, pendingFrames) }
     }
 }

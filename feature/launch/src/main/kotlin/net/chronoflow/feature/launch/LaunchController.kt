@@ -6,6 +6,7 @@ import android.graphics.Rect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.graphics.ImageBitmap
 import net.chronoflow.core.designsystem.theme.ReduceMotion
 import net.chronoflow.feature.launch.model.LaunchClock
@@ -14,6 +15,7 @@ import net.chronoflow.feature.launch.model.MediaLaunchClock
 class LaunchController(
     val moon: (Resources) -> ImageBitmap,
     val nanoTime: () -> Long = System::nanoTime,
+    val nextFrameNanos: suspend () -> Long = { withFrameNanos { it } },
     internal val compositionObserver: () -> Unit = {},
 ) {
     private var capturedAppearance: LaunchAppearance? = null

@@ -27,10 +27,12 @@ class LaunchWordmarkShapeTest {
             Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 typeface = context.resources.getFont(net.chronoflow.core.designsystem.R.font.fraunces_400_opsz32)
                 textSize = 32f
+                isSubpixelText = true
+                isLinearText = true
             }
         val word = "ChronoFlow"
         val advances = FloatArray(word.length)
-        paint.getTextRunAdvances(word, 0, word.length, 0, word.length, false, advances, 0)
+        paint.getTextRunAdvances(word.toCharArray(), 0, word.length, 0, word.length, false, advances, 0)
         val path = Path()
         var x = (LaunchWordmark.WIDTH_DP - LaunchWordmark.ADVANCE_DP) / 2
         for (i in word.indices) {

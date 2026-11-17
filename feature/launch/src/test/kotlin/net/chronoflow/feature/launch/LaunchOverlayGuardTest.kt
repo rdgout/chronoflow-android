@@ -21,8 +21,8 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.RuleChain
 import org.junit.runner.RunWith
-import org.junit.runners.Parameterized
 import org.robolectric.ParameterizedRobolectricTestRunner
+import org.robolectric.ParameterizedRobolectricTestRunner.Parameters
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
@@ -65,7 +65,7 @@ class LaunchOverlayGuardTest(
 
     companion object {
         @JvmStatic
-        @Parameterized.Parameters(name = "{0},ms={1}")
+        @Parameters(name = "{0},ms={1}")
         fun parameters(): Collection<Array<Any>> =
             LayoutMatrix.wide.flatMap { case -> listOf(0, 300, 1000, 1500).map { arrayOf<Any>(case, it) } }
     }

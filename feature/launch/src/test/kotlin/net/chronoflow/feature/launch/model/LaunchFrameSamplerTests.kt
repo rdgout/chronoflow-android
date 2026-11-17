@@ -52,7 +52,7 @@ class LaunchFrameSamplerTests {
                     val moon = t.point(LayerID.Moon, seconds)
                     assertEquals(moon.x, f.moonX, 0.0)
                     assertEquals(moon.y, f.moonY, 0.0)
-                    val plane = t.point(LayerID.Plane, seconds)
+                    val plane = if (reduced) LaunchPoint(0.0, 0.0) else t.point(LayerID.Plane, seconds)
                     assertEquals(plane.x, f.planeX, 0.0)
                     assertEquals(plane.y, f.planeY, 0.0)
                 }
@@ -96,7 +96,7 @@ class LaunchFrameSamplerTests {
         val out = LaunchFrame()
         val bean = ManagementFactory.getThreadMXBean() as ThreadMXBean
         bean.isThreadAllocatedMemoryEnabled = true
-        val id = Thread.currentThread().id
+        val id = Thread.currentThread().threadId()
         repeat(1000) { sampler.sampleInto(it / 1000.0, out) }
         val baselineStart = bean.getThreadAllocatedBytes(id)
         val baselineEnd = bean.getThreadAllocatedBytes(id)

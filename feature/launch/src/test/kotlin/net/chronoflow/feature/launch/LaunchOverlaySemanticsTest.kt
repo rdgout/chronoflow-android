@@ -16,8 +16,8 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.RuleChain
 import org.junit.runner.RunWith
-import org.junit.runners.Parameterized
 import org.robolectric.ParameterizedRobolectricTestRunner
+import org.robolectric.ParameterizedRobolectricTestRunner.Parameters
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
@@ -47,7 +47,7 @@ class LaunchOverlaySemanticsTest(
     }
 
     companion object {
-        @JvmStatic @Parameterized.Parameters
+        @JvmStatic @Parameters
         fun parameters(): Collection<Array<Any>> = AppLanguage.entries.map { arrayOf<Any>(it) }
     }
 }

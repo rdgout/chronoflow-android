@@ -7,7 +7,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawWithCache
@@ -58,16 +57,16 @@ fun LaunchOverlay(
         } else {
             val settled = (opening.settledAfterSeconds * 1e9).toLong()
             while (elapsed.longValue < settled) {
-                withFrameNanos { nanos ->
-                    elapsed.longValue =
-                        if (controller.t0Nanos ==
-                            LaunchController.UNSET
-                        ) {
-                            0L
-                        } else {
-                            (nanos - controller.t0Nanos).coerceAtLeast(0L)
-                        }
-                }
+                val nanos = controller.nextFrameNanos()
+                elapsed.longValue =
+                    if (controller.t0Nanos == LaunchController.UNSET) {
+                        0L
+                    } else {
+                        (nanos - controller.t0Nanos)
+                            .coerceAtLeast(
+                                0L,
+                            )
+                    }
             }
             controller.onOpeningSettled()
         }

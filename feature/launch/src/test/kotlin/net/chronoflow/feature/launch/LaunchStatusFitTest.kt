@@ -17,8 +17,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.junit.runners.Parameterized
 import org.robolectric.ParameterizedRobolectricTestRunner
+import org.robolectric.ParameterizedRobolectricTestRunner.Parameters
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
@@ -77,7 +77,7 @@ class LaunchStatusFitTest(
 
     companion object {
         @JvmStatic
-        @Parameterized.Parameters(name = "{0}")
+        @Parameters(name = "{0}")
         fun parameters() = LayoutMatrix.parameters(LayoutMatrix.wide)
     }
 }

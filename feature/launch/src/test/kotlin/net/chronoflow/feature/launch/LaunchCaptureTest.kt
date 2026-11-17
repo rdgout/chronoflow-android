@@ -11,8 +11,8 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.RuleChain
 import org.junit.runner.RunWith
-import org.junit.runners.Parameterized
 import org.robolectric.ParameterizedRobolectricTestRunner
+import org.robolectric.ParameterizedRobolectricTestRunner.Parameters
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
@@ -43,7 +43,7 @@ class LaunchCaptureTest(
 
     companion object {
         @JvmStatic
-        @Parameterized.Parameters(name = "{0},dark={1},ms={2},reduce={3},{4}")
+        @Parameters(name = "{0},dark={1},ms={2},reduce={3},{4}")
         fun parameters(): Collection<Array<Any>> =
             listOf(DeviceProfiles.pixel8, DeviceProfiles.small).flatMap { p ->
                 listOf(false, true).flatMap { dark ->
