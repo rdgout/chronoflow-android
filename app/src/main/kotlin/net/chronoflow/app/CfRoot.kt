@@ -32,6 +32,7 @@ import net.chronoflow.core.designsystem.theme.ChronoFlowTheme
 import net.chronoflow.core.designsystem.theme.warmFontsAfterFirstFrame
 import net.chronoflow.feature.launch.LaunchOverlay
 import net.chronoflow.feature.launch.model.LaunchRoute
+import net.chronoflow.feature.launch.welcome.WelcomeScreen
 import net.chronoflow.feature.trip.timeline.LocalTimelineJankTagger
 import net.chronoflow.feature.trip.timeline.TimelineJankTagger
 
@@ -49,7 +50,11 @@ internal fun CfRoot(
     val resolver = LocalFontFamilyResolver.current
     LaunchedEffect(resolver) {
         withFrameNanos { }
-        warmFontsAfterFirstFrame(firstCommit, { graph.fontPreloader.preload(resolver, it) }, Dispatchers.IO)
+        try {
+            warmFontsAfterFirstFrame(firstCommit, { graph.fontPreloader.preload(resolver, it) }, Dispatchers.IO)
+        } finally {
+            graph.launch.markFontsReady()
+        }
     }
     val night = isSystemInDarkTheme()
     val overlayShowing = graph.launch.overlayActive
@@ -83,7 +88,19 @@ internal fun CfRoot(
                         ) {
                             content()
                         } else {
-                            graph.launch.route?.let { RoutePlaceholder(it, LaunchPlatform.routeLabel) }
+                            when (val route = graph.launch.route) {
+                                LaunchRoute.Welcome -> {
+                                    if (!overlayShowing || graph.launch.fontsReady) {
+                                        WelcomeScreen(graph.launch.launchIntro, graph.launch.moonAnchorStore, {}, {})
+                                    }
+                                }
+
+                                null -> {}
+
+                                else -> {
+                                    RoutePlaceholder(route, LaunchPlatform.routeLabel)
+                                }
+                            }
                         }
                     }
                 }

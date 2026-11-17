@@ -1594,12 +1594,12 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - From 600 dp, the copy card is at most 560 dp wide and centred. Insets come from `LocalSafeInsets`.
   - Headings and button roles, using the iOS test ids (`welcome.signIn`, …).
   - Plan my trip and Sign in call back into `:app`, which routes to debug seams until 11a and 5a.
-- [ ] **Intro.**
+- [x] **Intro.**
   - It plays on the first Welcome of the process only.
   - The stagger is 2300/2400/2450/2600/2700/2750 ms, from the shared `LaunchClock`. Welcome is interactive at 2550 ms, and the last item lands at 3200 ms.
   - It emits the `intro` trace. With Reduce Motion, the final state shows at once.
-- [ ] **Moon hand-over.** Welcome reports its moon anchor (`onGloballyPositioned`) into a non-snapshot `MoonAnchorStore`, which the overlay reads at draw time. A measured size never feeds back into composition (`01 §8`).
-- [ ] **Teardown.** After the overlay is removed, TalkBack focus moves to Welcome's first node, and `reportFullyDrawn()` fires once Welcome is interactive.
+- [x] **Moon hand-over.** Welcome reports its moon anchor (`onGloballyPositioned`) into a non-snapshot `MoonAnchorStore`, which the overlay reads at draw time. A measured size never feeds back into composition (`01 §8`).
+- [x] **Teardown.** After the overlay is removed, TalkBack focus moves to Welcome's first node, and `reportFullyDrawn()` fires once Welcome is interactive.
 - [ ] **Tests.**
   - `WelcomeCompositionTest` (JVM): every profile, and heights from 568 to 1,400 dp.
   - `WelcomeIntroTimingTest`, on a fake clock.

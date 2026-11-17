@@ -68,6 +68,11 @@ class LaunchCoordinator(
         }
     }
 
+    fun setFallbackTarget(rect: LaunchRect) {
+        if (stopped) return
+        state = state.copy(fallbackTarget = rect)
+    }
+
     fun stop() {
         if (stopped) return
         stopped = true

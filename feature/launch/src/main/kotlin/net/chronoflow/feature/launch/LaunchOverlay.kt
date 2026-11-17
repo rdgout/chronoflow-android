@@ -20,6 +20,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
@@ -31,12 +32,15 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.testTag
 import kotlinx.coroutines.flow.first
+import net.chronoflow.core.designsystem.layout.LocalSafeInsets
 import net.chronoflow.core.ui.R
 import net.chronoflow.feature.launch.model.LaunchFrame
 import net.chronoflow.feature.launch.model.LaunchLayout
 import net.chronoflow.feature.launch.model.LaunchMetrics
 import net.chronoflow.feature.launch.model.LaunchSize
+import net.chronoflow.feature.launch.model.MoonTarget
 import net.chronoflow.feature.launch.model.StatusLineLayout
+import net.chronoflow.feature.launch.welcome.WelcomeMetrics
 
 @Composable
 fun LaunchOverlay(
@@ -44,7 +48,18 @@ fun LaunchOverlay(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    val density = LocalDensity.current.density
+    val localDensity = LocalDensity.current
+    val safeInsets = LocalSafeInsets.current
+    val layoutDirection = LocalLayoutDirection.current
+    val density = localDensity.density
+    val rowHeight = WelcomeMetrics.fallbackRowHeight(localDensity)
+    val insets =
+        MoonTarget.Insets(
+            safeInsets.getTop(localDensity) / density.toDouble(),
+            safeInsets.getLeft(localDensity, layoutDirection) / density.toDouble(),
+            safeInsets.getBottom(localDensity) / density.toDouble(),
+            safeInsets.getRight(localDensity, layoutDirection) / density.toDouble(),
+        )
     val fontScale = LocalDensity.current.fontScale
     val moon =
         remember(controller, density) {
@@ -96,8 +111,17 @@ fun LaunchOverlay(
     Box(
         modifier
             .fillMaxSize()
-            .onPlaced { controller.markOverlayPlaced() }
-            .clearAndSetSemantics {
+            .onPlaced {
+                controller.onOverlayGeometry(
+                    LaunchSize(
+                        it.size.width / density.toDouble(),
+                        it.size.height / density.toDouble(),
+                    ),
+                    insets,
+                    rowHeight,
+                )
+                controller.markOverlayPlaced()
+            }.clearAndSetSemantics {
                 contentDescription = description
                 paneTitle = description
                 role = Role.Image

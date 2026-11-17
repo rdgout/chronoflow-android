@@ -13,9 +13,21 @@ object LaunchHandOffTimeline {
         if (state.didCommitExit && exit != null) {
             timeline =
                 when (state.ending) {
-                    LaunchEnding.App -> timeline.withReadyExit(exit)
-                    LaunchEnding.Welcome -> timeline.withWelcomeHandOff(exit)
-                    null -> timeline
+                    LaunchEnding.App -> {
+                        timeline.withReadyExit(exit)
+                    }
+
+                    LaunchEnding.Welcome -> {
+                        timeline.withWelcomeExit(
+                            exit,
+                            opening.size,
+                            state.moonTarget ?: state.fallbackTarget,
+                        )
+                    }
+
+                    null -> {
+                        timeline
+                    }
                 }
         }
         return timeline

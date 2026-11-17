@@ -20,6 +20,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
+import net.chronoflow.core.designsystem.generated.WelcomeTokens
 import net.chronoflow.core.designsystem.theme.ReduceMotion
 import net.chronoflow.core.model.launch.LaunchReadiness
 import net.chronoflow.core.model.launch.SignedOutReadiness
@@ -29,13 +30,17 @@ import net.chronoflow.feature.launch.model.LaunchEffect
 import net.chronoflow.feature.launch.model.LaunchEvent
 import net.chronoflow.feature.launch.model.LaunchFrameSampler
 import net.chronoflow.feature.launch.model.LaunchHandOffTimeline
+import net.chronoflow.feature.launch.model.LaunchIntro
 import net.chronoflow.feature.launch.model.LaunchKind
 import net.chronoflow.feature.launch.model.LaunchProcessPolicy
+import net.chronoflow.feature.launch.model.LaunchRect
 import net.chronoflow.feature.launch.model.LaunchRoute
 import net.chronoflow.feature.launch.model.LaunchSize
 import net.chronoflow.feature.launch.model.LaunchState
 import net.chronoflow.feature.launch.model.LaunchTimeline
 import net.chronoflow.feature.launch.model.MediaLaunchClock
+import net.chronoflow.feature.launch.model.MoonAnchorStore
+import net.chronoflow.feature.launch.model.MoonTarget
 import net.chronoflow.feature.launch.model.SplashExit
 import net.chronoflow.feature.launch.model.SplashExitPolicy
 import kotlin.time.Duration
@@ -81,7 +86,42 @@ class LaunchController(
         private set
 
     private var opening = LaunchTimeline.opening(LaunchSize(1.0, 1.0), false)
-    private var launchState = LaunchState()
+    private var launchState = LaunchState(fallbackTarget = undrawnFallback)
+    private var overlayGeometry: OverlayGeometry? = null
+    private var geometryJob: Job? = null
+    val moonAnchorStore = MoonAnchorStore().apply { onChange = { coordinator?.send(LaunchEvent.MoonAnchor(it)) } }
+    var launchIntro: LaunchIntro? = null
+        private set
+    var fontsReady by mutableStateOf(false)
+        private set
+    private var fontGateJob: Job? = null
+    private var introTraceJob: Job? = null
+
+    fun markFontsReady() {
+        fontsReady = true
+    }
+
+    fun onOverlayGeometry(
+        size: LaunchSize,
+        insets: MoonTarget.Insets,
+        rowHeight: Double,
+    ) {
+        val next = OverlayGeometry(size, insets, rowHeight)
+        val previous = overlayGeometry
+        overlayGeometry = next
+        if (previous == null || previous == next || coordinator == null || handOffComplete) return
+        geometryJob?.cancel()
+        geometryJob =
+            scope.launch {
+                val current = checkNotNull(overlayGeometry)
+                val active = coordinator ?: return@launch
+                active.setFallbackTarget(MoonTarget.fallback(current.size, current.insets, current.rowHeight))
+                launchState = active.state
+                opening = LaunchTimeline.opening(current.size, reduceMotion)
+                rebuildHandOff()
+            }
+    }
+
     internal var coordinator: LaunchCoordinator? = null
         private set
     private var readinessStarted = false
@@ -112,6 +152,7 @@ class LaunchController(
 
     internal fun setOpening(size: LaunchSize) {
         if (opening.size == size && opening.reduceMotion == reduceMotion) return
+        if (coordinator != null && overlayGeometry?.size == size && t0Nanos != UNSET) return
         opening = LaunchTimeline.opening(size, reduceMotion)
         rebuildHandOff()
     }
@@ -149,6 +190,13 @@ class LaunchController(
                 (overrides.readiness ?: readinessFactory)(clock),
                 clock,
                 reduceMotion,
+                initialState =
+                    LaunchState(
+                        fallbackTarget =
+                            checkNotNull(overlayGeometry).let {
+                                MoonTarget.fallback(it.size, it.insets, it.rowHeight)
+                            },
+                    ),
                 scope = scope,
                 onChange = ::onLaunchChange,
             )
@@ -161,6 +209,15 @@ class LaunchController(
     ) {
         launchState = state
         if (state.isReady) tracing.endReady()
+        if (state.route == LaunchRoute.Welcome && overlayClaimedByCurrentActivity && !reduceMotion &&
+            launchIntro == null
+        ) {
+            state.exitStart?.let { start ->
+                val intro = LaunchIntro(start + 700.milliseconds, clock)
+                launchIntro = intro
+                scheduleIntroTrace(intro)
+            }
+        }
         state.route?.let { route = it }
         if (state.showsStatus && !showsStatus) statusAnnouncementCount++
         showsStatus = state.showsStatus
@@ -174,6 +231,20 @@ class LaunchController(
         if (effects.any { it is LaunchEffect.CommitStatus }) prepareStatus()
         val start = state.exitStart
         if (state.didCommitExit && start != null) scheduleExitTrace(start)
+    }
+
+    private fun scheduleIntroTrace(intro: LaunchIntro) {
+        if (introTraceJob != null) return
+        introTraceJob =
+            scope.launch {
+                try {
+                    intro.clock.sleepUntil(intro.start)
+                    tracing.beginIntro()
+                    intro.clock.sleepUntil(intro.start + 900.milliseconds)
+                } finally {
+                    tracing.endIntro()
+                }
+            }
     }
 
     private fun scheduleExitTrace(start: Duration) {
@@ -286,12 +357,14 @@ class LaunchController(
         if (headless) return
         coordinator?.stop()
         headless = true
+        fontGateJob?.cancel()
         clock = clockFactory(nanoTime())
         coordinator =
             LaunchCoordinator(
                 (overrides.readiness ?: readinessFactory)(clock),
                 clock,
                 true,
+                initialState = LaunchState(fallbackTarget = undrawnFallback),
                 scope = scope,
                 onChange = { state, _ ->
                     launchState = state
@@ -352,6 +425,11 @@ class LaunchController(
         if (t0Nanos != UNSET) return
         t0Nanos = nanoTime()
         clock = clockFactory(t0Nanos)
+        fontGateJob =
+            scope.launch {
+                clock.sleepUntil(1500.milliseconds)
+                markFontsReady()
+            }
         frameZeroMoonRectPx = moonRectPx
         tracing.endFirstCommit()
         firstDraw.complete(t0Nanos)
@@ -391,6 +469,8 @@ class LaunchController(
         headless = false
         exitTraceJob?.cancel()
         statusJob?.cancel()
+        geometryJob?.cancel()
+        fontGateJob?.cancel()
         tracing.endFirstCommit()
         tracing.endReady()
         tracing.endExit()
@@ -403,6 +483,9 @@ class LaunchController(
     }
 
     companion object {
+        /** Nothing draws this headless seed; retain the never-zero invariant without building an exit headlessly. */
+        private val undrawnFallback =
+            LaunchRect(0.0, 0.0, WelcomeTokens.moonSize.toDouble(), WelcomeTokens.moonSize.toDouble())
         const val UNSET = Long.MIN_VALUE
         const val KEY_PROCESS_TOKEN = "cf.launch.processToken"
     }
@@ -420,4 +503,10 @@ private data class StatusRequest(
     val density: Float,
     val fontScale: Float,
     val color: Int,
+)
+
+private data class OverlayGeometry(
+    val size: LaunchSize,
+    val insets: MoonTarget.Insets,
+    val rowHeight: Double,
 )

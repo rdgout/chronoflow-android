@@ -51,7 +51,7 @@ class CfRootHandOffTest {
         val launch = mount(SessionPresence.SignedOut)
         advanceTo(launch, 2558)
         compose.mainClock.advanceTimeByFrame()
-        compose.onNodeWithTag("route.welcome").assertExists()
+        compose.onNodeWithTag("welcome.wordmark").assertExists()
         compose.onNodeWithTag("launch.opening").assertDoesNotExist()
     }
 
@@ -64,8 +64,8 @@ class CfRootHandOffTest {
 
     @Test fun screenProfileShowsAccessibleWelcomeImmediately() {
         mount(SessionPresence.SignedOut, screen = true)
-        compose.onNodeWithTag("route.welcome").assertExists()
-        assertFalse(hidden(compose.onNodeWithTag("route.welcome", useUnmergedTree = true).fetchSemanticsNode()))
+        compose.onNodeWithTag("welcome.wordmark").assertExists()
+        assertFalse(hidden(compose.onNodeWithTag("welcome.wordmark", useUnmergedTree = true).fetchSemanticsNode()))
         compose.onNodeWithTag("launch.opening").assertDoesNotExist()
     }
 
