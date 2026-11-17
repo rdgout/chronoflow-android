@@ -6,6 +6,7 @@ import androidx.benchmark.macro.MacrobenchmarkScope
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
+import net.chronoflow.core.testing.LargeTimelineFixtures
 import java.util.regex.Pattern
 
 /** Day 0 of large60 opens as on iOS, whatever the date is (OQ-1e-7). The now line sits 3 h below the day's grid top. */
@@ -15,6 +16,11 @@ const val FREEZE_AT = "2026-10-13T08:00:00Z"
 const val LAST_DAY_TAG = "trip.day.day-29871120-tour-9"
 
 private const val READY_WAIT_MS = 10_000L
+
+private val large60DayTags by lazy {
+    LargeTimelineFixtures.large60.detail.plan.days
+        .map { "trip.day.${it.id}" }
+}
 
 fun large60Intent(pkg: String): Intent =
     Intent()
@@ -45,9 +51,14 @@ fun MacrobenchmarkScope.topDay(): String? =
         .minByOrNull { it.visibleBounds.top }
         ?.resourceName
 
-/** Bounded swipe, about 2,800 dp including inertia on pixel; no accessibility scroll-end event wait. */
+/** Zero-based fixture index, resolved from the topmost visible day with one accessibility query. */
+fun MacrobenchmarkScope.topDayIndex(): Int = large60DayTags.indexOf(topDay())
+
+/** Five fixed drags travel about 2,750 dp on pixel; no accessibility scroll-end event wait. */
 fun UiDevice.swipeTimeline(bounds: Rect) {
     val x = bounds.left + bounds.width() * 8 / 100
-    check(swipe(x, bounds.top + bounds.height() * 85 / 100, x, bounds.top + bounds.height() * 15 / 100, 26))
-    waitForIdle()
+    repeat(5) {
+        check(swipe(x, bounds.top + bounds.height() * 85 / 100, x, bounds.top + bounds.height() * 15 / 100, 26))
+        waitForIdle()
+    }
 }

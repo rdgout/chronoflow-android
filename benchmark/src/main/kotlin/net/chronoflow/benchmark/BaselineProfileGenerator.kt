@@ -32,7 +32,9 @@ class BaselineProfileGenerator {
             startActivityAndWait(large60Intent(packageName))
             awaitPresented()
             val bounds = checkNotNull(device.findObject(By.res("trip.page"))).visibleBounds
+            check(topDayIndex() == 0) { "large60 did not open on day 0" }
             repeat(15) { device.swipeTimeline(bounds) }
-            check(!device.hasObject(By.res("trip.plan.end"))) { "bounded-swipe-v2 reached the plan end" }
+            check(topDayIndex() in 35..50) { "15 gestures must end on day index 35..50" }
+            check(!device.hasObject(By.res("trip.plan.end"))) { "bounded-swipe-v3 reached the plan end" }
         }
 }

@@ -37,7 +37,7 @@ class TimelineBenchmark {
     private val dayMenuEntry = Pattern.compile("trip\\.dayMenu\\.day\\.\\d+")
 
     private lateinit var pageBounds: Rect
-    private var startDay: String? = null
+    private var startDayIndex = -1
 
     @Test
     fun timelineFirstFrame() =
@@ -105,14 +105,18 @@ class TimelineBenchmark {
                 startActivityAndWait(large60Intent(packageName))
                 awaitPresented()
                 pageBounds = checkNotNull(device.findObject(By.res("trip.page"))).visibleBounds
-                startDay = checkNotNull(topDay())
+                startDayIndex = topDayIndex()
+                check(startDayIndex == 0) { "large60 did not open on day 0: $startDayIndex" }
             },
         ) {
             repeat(FLINGS) { device.swipeTimeline(pageBounds) }
-            val endDay = topDay()
-            Log.i("CfBench", "Timeline scroll progress after $FLINGS bounded-swipe-v2 gestures: $startDay -> $endDay")
-            check(!device.hasObject(By.res("trip.plan.end"))) { "bounded-swipe-v2 reached the plan end" }
-            check(endDay != null && endDay != startDay) { "15 gestures did not advance the day: $startDay -> $endDay" }
+            val endDayIndex = topDayIndex()
+            Log.i(
+                "CfBench",
+                "Timeline scroll progress after $FLINGS bounded-swipe-v3 gestures: day index $startDayIndex -> $endDayIndex",
+            )
+            check(endDayIndex in 35..50) { "15 gestures must end on day index 35..50: $startDayIndex -> $endDayIndex" }
+            check(!device.hasObject(By.res("trip.plan.end"))) { "bounded-swipe-v3 reached the plan end" }
         }
 
     @Test

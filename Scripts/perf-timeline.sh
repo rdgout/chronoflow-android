@@ -93,7 +93,7 @@ checker_args=(--suite timeline --device-class "$CLASS" --history "$HISTORY"
 if [ -z "${PERF_NO_APPEND:-}" ]; then checker_args+=(--append); fi
 
 run_once() {
-  begin_perf_archive timeline "$THEME-$FONT_SCALE-bounded-swipe-v2" "$commit" || exit 1
+  begin_perf_archive timeline "$THEME-$FONT_SCALE-bounded-swipe-v3" "$commit" || exit 1
   step "$GRADLEW" --console=plain "${args[@]}"
   gradle_status=$?
   finish_perf_archive || exit 1

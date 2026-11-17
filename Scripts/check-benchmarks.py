@@ -26,7 +26,7 @@ TIMELINE_HEADER = (
     "Placeholder max | Replay max ms | RSS anon MiB max | RSS growth MiB | Recompose max | GC max | Scroll | Last day | Result |"
 )
 BUILD = "benchmarkRelease, Partial(Require)"
-TIMELINE_BUILD = "benchmarkRelease, Partial(Require), bounded-swipe-v2"
+TIMELINE_BUILD = "benchmarkRelease, Partial(Require), bounded-swipe-v3"
 BAND_RATIO = 1.25
 BAND_FLOOR_MS = 1.0
 ABSOLUTE_RISES = {"placeholder": 2, "gc": 1}
