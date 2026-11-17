@@ -1517,6 +1517,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - Events: session known (signed in or signed out), data ready, failure.
   - The 1500/2000/8000 ms rules; an ending is never cut short.
   - Port the iOS readiness cases on a fake clock.
+- [x] **Ending timelines** (3b Task 3): ready exit, slow status and interim welcome container fade.
 - [ ] **Endings**, ported from `LaunchTimeline+Ready`:
   - the ready exit, ending at 1900 ms when readiness arrives before 1500 ms;
   - the slow status with dots (`StatusLineLayout`);

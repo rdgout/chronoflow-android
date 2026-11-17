@@ -143,6 +143,11 @@ class LaunchTimeline private constructor(
         if (index >= 0) mutableTracks[index] = track else mutableTracks.add(track)
     }
 
+    internal fun copyTracks(): LaunchTimeline =
+        LaunchTimeline(size, reduceMotion).also { copy ->
+            mutableTracks.forEach(copy::replace)
+        }
+
     internal fun withoutExit(): LaunchTimeline =
         opening(size, reduceMotion).also { timeline ->
             mutableTracks.filter { it.layer == LayerID.Status || it.layer == LayerID.StatusDot }.forEach(
