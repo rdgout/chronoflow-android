@@ -20,20 +20,24 @@ class ProcessDeathLaunchTest {
         val pkg = InstrumentationRegistry.getArguments().getString("targetAppId") ?: "net.chronoflow.app.native"
 
         fun start() {
-            device.executeShellCommand("monkey -p $pkg -c android.intent.category.LAUNCHER 1")
+            val result =
+                device.executeShellCommand(
+                    "am start -W -n $pkg/net.chronoflow.app.MainActivity " +
+                        "-a android.intent.action.MAIN -c android.intent.category.LAUNCHER --es cf.reduceMotion false",
+                )
+            assertTrue(result, "Status: ok" in result)
         }
         start()
-        assertTrue(device.wait(Until.hasObject(By.res("app.root")), 3000))
+        assertTrue("missing app.root in $pkg", device.wait(Until.hasObject(By.res("app.root")), 3000))
         val before = device.executeShellCommand("pidof $pkg").trim()
         assertTrue(before.isNotEmpty())
         device.pressHome()
+        assertTrue("app stayed in foreground", device.wait(Until.gone(By.pkg(pkg)), 3000))
         device.executeShellCommand("am kill $pkg")
-        val killed =
-            device
-                .executeShellCommand(
-                    "sh -c 'for i in $(seq 20); do pidof $pkg >/dev/null || { echo killed; exit 0; }; sleep 0.25; done; exit 1'",
-                ).trim()
-        assertTrue("process stayed alive: $before", killed == "killed")
+        assertTrue(
+            "process stayed alive: $before",
+            device.wait({ it.executeShellCommand("pidof $pkg").isBlank() }, 5000),
+        )
         start()
         assertTrue(device.wait(Until.hasObject(By.res("launch.opening")), 3000))
         val after = device.executeShellCommand("pidof $pkg").trim()
