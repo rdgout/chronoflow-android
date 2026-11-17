@@ -6,6 +6,7 @@ import android.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.core.graphics.withSave
 import net.chronoflow.core.plan.drawing.DayDrawing
 import net.chronoflow.core.plan.drawing.DrawOp
 
@@ -108,15 +109,15 @@ fun replayDayDrawing(
                 val paths = res.glyphPaths[ordinal]
                 val filled = res.glyphFilled[ordinal]
                 val color = colors[k++]
-                canvas.save()
-                canvas.translate(coords[c], coords[c + 1])
-                canvas.scale(size / GLYPH_UNITS, size / GLYPH_UNITS)
-                for (p in paths.indices) {
-                    val paint = if (filled[p]) res.glyphFill else res.glyphStroke
-                    paint.color = color
-                    canvas.drawPath(paths[p], paint)
+                canvas.withSave {
+                    canvas.translate(coords[c], coords[c + 1])
+                    canvas.scale(size / GLYPH_UNITS, size / GLYPH_UNITS)
+                    for (p in paths.indices) {
+                        val paint = if (filled[p]) res.glyphFill else res.glyphStroke
+                        paint.color = color
+                        canvas.drawPath(paths[p], paint)
+                    }
                 }
-                canvas.restore()
                 c += 3
             }
 

@@ -10,6 +10,7 @@ import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.Shader
 import androidx.compose.runtime.Stable
+import androidx.core.graphics.createBitmap
 import net.chronoflow.core.plan.drawing.TimelineColors
 import net.chronoflow.core.plan.drawing.TimelineTextStyle
 import net.chronoflow.core.plan.generated.PlanMetrics
@@ -110,7 +111,7 @@ class TimelineResources(
         fun dotShader(density: Float): Shader {
             val period = PlanMetrics.dotStep.toFloat()
             val cell = ceil(period * density).toInt()
-            val bitmap = Bitmap.createBitmap(cell, cell, Bitmap.Config.ALPHA_8)
+            val bitmap = createBitmap(cell, cell, Bitmap.Config.ALPHA_8)
             val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = OPAQUE }
             Canvas(bitmap).drawCircle(cell / 2f, cell / 2f, cell / period * PlanMetrics.dotRadius.toFloat(), paint)
             return BitmapShader(bitmap, Shader.TileMode.REPEAT, Shader.TileMode.REPEAT).apply {
