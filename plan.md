@@ -1980,7 +1980,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 Implementation commits (brief §7):
 - [x] T1 — LockoutWait and AuthenticationMethod.
 - [x] T2 — Form model and failure mapping.
-- [ ] T3 — Navigation and layout math.
+- [x] T3 — Navigation and layout math.
 - [ ] T4 — Sign-in glyphs and field input hook.
 - [ ] T5 — SignInModel.
 - [ ] T6 — Auth shell.
