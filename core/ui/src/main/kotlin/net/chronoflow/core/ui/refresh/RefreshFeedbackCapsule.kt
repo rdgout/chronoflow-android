@@ -16,7 +16,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -47,6 +51,8 @@ fun RefreshFeedbackCapsule(
 ) {
     val currentDismiss = rememberUpdatedState(onDismiss)
     val text = refreshFeedbackText(state.feedback)
+    var lastText by remember { mutableStateOf(text) }
+    if (text.isNotEmpty()) lastText = text
     val visible = state.feedback.isNotEmpty()
     if (visible) {
         LaunchedEffect(state.presentationId) {
@@ -78,10 +84,10 @@ fun RefreshFeedbackCapsule(
             },
     ) {
         Text(
-            text,
+            lastText,
             Modifier
                 .clearAndSetSemantics {
-                    contentDescription = text
+                    contentDescription = lastText
                     liveRegion = LiveRegionMode.Polite
                     testTag = "refresh.feedback"
                 }.background(

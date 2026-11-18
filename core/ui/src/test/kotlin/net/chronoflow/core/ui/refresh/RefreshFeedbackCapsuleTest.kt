@@ -86,6 +86,28 @@ class RefreshFeedbackCapsuleTest {
         compose.runOnIdle { assertEquals(listOf(1L), dismissed) }
     }
 
+    @Test fun keepsTheLastDescriptionDuringExit() {
+        content()
+        compose.mainClock.advanceTimeBy(400)
+        val before =
+            compose
+                .onNodeWithTag("refresh.feedback")
+                .fetchSemanticsNode()
+                .config[SemanticsProperties.ContentDescription]
+        assertTrue(before.single().isNotEmpty())
+        compose.runOnIdle { state.value = state.value.copy(feedback = emptyList()) }
+        compose.waitForIdle()
+        compose.mainClock.advanceTimeByFrame()
+        compose.waitForIdle()
+        compose.mainClock.advanceTimeBy(150)
+        val duringExit =
+            compose
+                .onNodeWithTag("refresh.feedback")
+                .fetchSemanticsNode()
+                .config[SemanticsProperties.ContentDescription]
+        assertEquals(before, duringExit)
+    }
+
     @Test fun aNewPresentationRestartsTheTimer() {
         content()
         compose.mainClock.advanceTimeBy(1000, ignoreFrameDuration = true)
