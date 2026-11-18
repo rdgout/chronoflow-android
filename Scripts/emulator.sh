@@ -37,6 +37,8 @@ prep_functional() {
     "$ADB" -s "$s" shell settings put global "$scale" 0
   done
   "$ADB" -s "$s" shell settings put secure show_ime_with_hard_keyboard 1
+  # Gboard's stylus accessory mode otherwise replaces the full keyboard on the functional AVD.
+  "$ADB" -s "$s" shell settings put secure stylus_handwriting_enabled 0
   "$ADB" -s "$s" shell settings put secure autofill_service null
   "$ADB" -s "$s" shell cmd uimode night no
   "$ADB" -s "$s" shell settings put system font_scale 1.0

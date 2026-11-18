@@ -2,7 +2,7 @@
 
 Phase 5a, 2026-11-18. The implementation follows the pinned iOS auth models and the AuthSignIn/AuthStates boards. Auth routes replace the root without transitions. Two-factor, Forgot, Sign up and the accepted-session destinations retain their existing route placeholders until their phases.
 
-Implementation and the focused JVM/Robolectric checks are complete. Acceptance remains **open**: the single `make quick` invocation failed; its failures pass focused checks after correction, but a full rerun is pending under the user's once-only limit. The native keyboard check rejected a minimized keyboard, the sandbox cannot launch a browser for board comparison, and manual autofill/TalkBack checks need configured services. No performance benchmark, baseline-profile, `make check` or other emulator tier ran.
+Implementation and the focused JVM/Robolectric checks are complete. The orchestrator-authorized keyboard follow-up passes with the full keyboard after correcting functional device prep. Acceptance remains **open**: the original `make quick` invocation failed; its failures pass focused checks after correction, and the authorized full rerun is next. The sandbox cannot launch a browser for board comparison, and manual autofill/TalkBack checks need configured services. No performance benchmark, baseline-profile, `make check` or other emulator tier ran.
 
 ## Shell and tokens
 
@@ -104,7 +104,7 @@ A cheap negative control replaced `isBlank()` with `isEmpty()` temporarily: `Aut
 
 ## Verification record
 
-Targeted times below include Gradle/harness overhead unless identified as test duration. Failing methods alone were rerun after fixes. No test hung. `make quick` ran once after T10, during final verification; it was not rerun. Its remaining substeps ran separately in the same order, with serial timing last.
+Targeted times below include Gradle/harness overhead unless identified as test duration. Failing methods alone were rerun after fixes. No test hung. In the original phase run, `make quick` ran once after T10, during final verification. Its remaining substeps ran separately in the same order, with serial timing last. The orchestrator subsequently authorized the keyboard investigation below and one full quick rerun.
 
 | Command / selection | Result | Wall time |
 |---|---|---|
@@ -143,7 +143,9 @@ The first standalone `Scripts/test_scripts.sh` invocation omitted Make's exporte
 
 The debug APK contains only the existing allow-listed `libandroidx.graphics.path.so` for its packaged ABIs. No Credential Manager or other new native dependency was added. Release readiness passes; `make size` was not run. There is no Sign in performance-budget metric to claim. Startup/timeline benchmarks and profile regeneration remain unmeasured under the user's run limits.
 
-### Native keyboard failure (exact command and result)
+### Native keyboard diagnosis and follow-up
+
+The original run failed with:
 
 ```sh
 make targeted ONLY="app:SignInKeyboardTest"
@@ -155,7 +157,16 @@ java.lang.AssertionError: software keyboard not visible — check show_ime_with_
     at net.chronoflow.app.auth.SignInKeyboardTest.fieldAndSubmitStayAboveTheSoftwareKeyboard(SignInKeyboardTest.kt:31)
 ```
 
-The failure is at the first email focus. `show_ime_with_hard_keyboard` returned `1`; Gboard logged `keyboardType=accessory` with no keyboard body. Expand/disable minimization of the software keyboard before the external rerun. The ≥100 dp visibility guard remains intact. Both emulator classes ran once; neither was rerun.
+The original failure was at the first email focus. `show_ime_with_hard_keyboard` returned `1`; Gboard logged `keyboardType=accessory` with no keyboard body. Both emulator classes ran once in that initial phase run.
+
+The orchestrator authorized at most two harness fix attempts. The follow-up used `pixel`/API 36, debug, under the device lock:
+
+1. Read-only settings probe: `settings get secure stylus_handwriting_enabled` → `null`; `settings get secure show_ime_with_hard_keyboard` → `1`. Neither `getprop` nor the global/secure settings lists contained a stylus simulation override. Android's [setting definition](https://android.googlesource.com/platform/frameworks/base/+/refs/tags/android-16.0.0_r2/core/java/android/provider/Settings.java) defaults handwriting to enabled.
+2. First fix attempt: replace Compose's view-dispatched tap with a system-injected `MotionEvent` explicitly using `TOOL_TYPE_FINGER` / `SOURCE_TOUCHSCREEN`. An activity window callback confirmed `focus tap: source=4098 toolType=1`. `make targeted ONLY="app:SignInKeyboardTest"` still failed with the same real-keyboard visibility assertion: test 4.216 s, tier 8.58 s (process 8.66 s). The prototype was reverted completely.
+3. Manual seeded debug probe: `adb shell input touchscreen tap 540 1437`; `dumpsys input_method` showed `initialToolType=1` for the current Android editor and `mInputShown=true`, but Gboard's `AccessoryInputModeNotification` reported `Current active accessory input mode: STYLUS`. Its own editor dump showed `initialToolType=2`. A screenshot confirmed the narrow handwriting toolbar. Thus a finger reached Android correctly; the remaining obstruction was Gboard's stylus accessory mode. The first launch probe found the debug app had been uninstalled; reinstalling the existing debug APK made that probe runnable.
+4. Second fix attempt: add `settings put secure stylus_handwriting_enabled 0` to `Scripts/emulator.sh` `prep_functional`, alongside `show_ime_with_hard_keyboard 1`. Run `Scripts/emulator.sh prep-functional emulator-5554`, then `make targeted ONLY="app:SignInKeyboardTest"`. **Passed**: test 1.441 s, tier 5.49 s, prep plus test process 6.74 s. Gboard logged `keyboardType=prime`, a full `BODY` view of `1080 × 641` px, for both focused fields. No Gboard force-stop was used.
+
+The final change touches device prep and its existing script guard only. App code and `SignInKeyboardTest` are unchanged. The ≥100 dp IME precondition, both fields/submit above the real keyboard top, below the status bar, and settled-bounds checks remain intact. `test_emulator.EmulatorTest.test_ensure_skips_boot_when_booted` passes with the added prep expectation (0.307 s test / 0.359 s process). No AVD hardware configuration changed.
 
 Read-only device observations through `Scripts/device_lock.py`: `settings get secure autofill_service` → `null`; `settings get secure enabled_accessibility_services` → an empty line. Thus no provider autofill or spoken TalkBack result is claimed. Autofill-bypassed edit feedback remains on the default (clear on the next keystroke); TalkBack's persistent announcement stop and identical-repeat speech remain manual checks.
 
