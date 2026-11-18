@@ -73,8 +73,9 @@ internal fun CfRoot(
     }
     val night = isSystemInDarkTheme()
     val overlayShowing = graph.launch.overlayActive
-    val welcome = content == null && displayedRoute == Route.Welcome
-    SideEffect { onSystemBars(night, overlayShowing, onSky || welcome) }
+    // Skipped overlays wait for first commit before readiness can select a route.
+    val launchSky = content == null && (displayedRoute == null || displayedRoute == Route.Welcome)
+    SideEffect { onSystemBars(night, overlayShowing, onSky || launchSky) }
     ReportDrawnWhen { !graph.launch.overlayActive && displayedRoute != null }
     ChronoFlowTheme(darkTheme = night, reduceMotion = reduceMotion) {
         CompositionLocalProvider(
