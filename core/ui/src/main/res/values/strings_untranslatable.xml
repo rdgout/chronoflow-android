@@ -2,4 +2,5 @@
 <resources>
     <string name="app_name" translatable="false">ChronoFlow</string>
     <string name="plan_day_title_date" translatable="false">%1$s · %2$s</string>
+    <string name="ui_refresh_feedback_separator" translatable="false">" · "</string>
 </resources>
