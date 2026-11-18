@@ -719,6 +719,12 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A135 | (4b-9) `DataSourceFactory.testing` (iOS forces mock under tests). | Port the parameter; 4e passes `false` in the app (instrumented tests run the debug build, which defaults to mock). | 4b |
 | OQ-A136 | (4b-7) A 401 or 403 without a decodable envelope maps to `Server(status)` on iOS, so it never wipes or gates. | Keep iOS parity; 4d decides retry/refusal from the status. | 4b |
 | OQ-A137 | (4b-11) `Retry-After` header grammar: Swift `Double()` also accepts exponents. | Digits with an optional fraction, then RFC 1123 date, then 60 s. | 4b |
+| OQ-A138 | (4b-3) OkHttp retries some failed connections silently; iOS makes exactly one attempt ("no automatic retry"). | `retryOnConnectionFailure(false)`. | 4b |
+| OQ-A139 | (4b-4) A bearer token with characters OkHttp rejects in a header. | `Unauthorized(401)` without sending. | 4b |
+| OQ-A140 | (4b-10) A 204 that carries a body: iOS gives `Server(204)`; OkHttp may raise a protocol error first. OkHttp also uses `ProtocolException` for a body cut short by a dropped connection. | A `ProtocolException` raised before a `Response` exists → `Server(null)`; any `IOException` while reading the body, `ProtocolException` included → `Offline` (iOS: transport failure → offline). The 204 test accepts any `Server`. | 4b |
+| OQ-A141 | (4b-12) User-Agent: OkHttp sends `okhttp/5.5.1`. | Keep the default; it carries no personal data. | 4b |
+| OQ-A142 | (4b-14) Plan A6 says per-call `withTimeout`; iOS races the request against an injectable `sleep`. | Race against an injectable `ApiDeadline` (default `delay`): same semantics (the deadline cancels the OkHttp call and yields `Offline`; the caller's cancellation stays cancellation), and tests never wait on wall time. | 4b |
+| OQ-A143 | (4b-15) plan.md 4b "ApiClient" lists "the device id" among the request headers, but `03 §2`, iOS `APIClient.swift:68-76` and the web API (no controller reads such a header at `e36368ec`) have no device-id header; `device_id` is a body key of login, passkey login and register. | No device-id header (iOS parity); `device_id` only in those bodies. `headersAreExact` asserts no header name contains `device`. | 4b |
 | OQ-0a-22 | Native libraries in the bundle? | Allow only `libandroidx.graphics.path.so` (Compose graphics-path; excluding it breaks Path conversion below API 34); fail on any other `.so` | 0a, 13 |
 | OQ-0b-1 | Where does `PlanMetrics` live? `08 §3.1` lists it inside `CfDimens`, but its consumer `:core:plan` is a JVM module that cannot depend on `:core:designsystem` | `core/plan/…/generated/PlanMetrics.generated.kt` (Double, dp), as iOS keeps it in `PlanCore` | 0b, 1b, 1c |
 | OQ-0b-2 | Port all iOS TokenGen outputs now (Auth, Settings, Terms, Welcome, PlanUI, Press, LaunchPaint, TypeMetrics), or only colors, sky and type? | All of them now (the iOS files are exact goldens and Phases 2, 3a, 3c, 5a, 9 and 10 need them) | 0b |
@@ -1727,11 +1733,11 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 
 **Tasks**
 - [x] **DataSource interface** (`core/model/…/DataSource.kt`): the 25 iOS methods as suspend functions. An expected failure surfaces as `DataFailure`, never as a raw `IOException`.
-- [ ] **ApiClient** (`core/network/…`).
+- [x] **ApiClient** (`core/network/…`).
   - OkHttp per A6: no redirects, no cookies, no cache.
   - The base URL and the HTTPS rule come from `:app`.
-  - Headers per `03 §2`: the bearer token, `Accept: application/json` and the device id; no `Accept-Language`.
-  - Per-call `withTimeout`:
+  - Headers per `03 §2`: the bearer token, `Accept: application/json` no device-id header and no `Accept-Language` (OQ-4b-15).
+  - Per-call cancellable `ApiDeadline` race (OQ-4b-14):
     - 15 s by default;
     - 90 s for `POST trips`, `POST trips/review`, `POST trips/{id}/review`, `PUT trips/{id}`, `POST guest/trips/review` and `POST auth/register`;
     - 3 s for logout.

@@ -1,0 +1,346 @@
+@file:Suppress("ktlint:standard:max-line-length")
+
+package net.chronoflow.core.network
+
+import assertk.assertThat
+import assertk.assertions.isEqualTo
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.JsonPrimitive
+import mockwebserver3.MockResponse
+import mockwebserver3.SocketEffect
+import net.chronoflow.core.model.DataFailure
+import net.chronoflow.core.model.FieldMessage
+import net.chronoflow.core.model.api.ApiJson
+import net.chronoflow.core.model.api.SessionAccount
+import net.chronoflow.core.network.support.EventRecorder
+import net.chronoflow.core.network.support.MockApi
+import net.chronoflow.core.network.support.RecordingDeadline
+import net.chronoflow.core.network.support.failure
+import net.chronoflow.core.network.support.json
+import net.chronoflow.core.network.support.requestJson
+import net.chronoflow.core.network.support.response
+import okhttp3.Cache
+import okhttp3.Cookie
+import okhttp3.CookieJar
+import okhttp3.HttpUrl
+import okhttp3.OkHttpClient
+import org.junit.Rule
+import org.junit.Test
+import org.junit.rules.TemporaryFolder
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
+
+class ApiClientTests {
+    @get:Rule val api = MockApi()
+
+    @get:Rule val folder = TemporaryFolder()
+    private val endpoint = ApiEndpoint(path = listOf("users", "me"))
+
+    private suspend fun read(client: ApiClient = api.client()) = client.request(endpoint, SessionAccount.serializer())
+
+    @Test fun fieldArguments() =
+        runTest(timeout = 60.seconds) {
+            api.reply("GET", "/v1/users/me", 422, json("errors/validation_failed.json"))
+            assertThat(failure { read() }).isEqualTo(
+                DataFailure.Validation(
+                    mapOf(
+                        "password" to
+                            FieldMessage("Use no more than :max characters.", mapOf("max" to JsonPrimitive(255))),
+                    ),
+                    422,
+                ),
+            )
+        }
+
+    @Test fun malformedErrorsEndToEnd() =
+        runTest(timeout = 60.seconds) {
+            api.reply("GET", "/v1/users/me", 422, "<html>Error</html>")
+            assertThat(failure { read() }).isEqualTo(DataFailure.Server(422))
+        }
+
+    @Test fun retryAfterEndToEnd() =
+        runTest(timeout = 60.seconds) {
+            api.route("GET", "/v1/users/me") {
+                MockResponse
+                    .Builder()
+                    .code(429)
+                    .body("""{"code":"throttled","message":"fake"}""")
+                    .addHeader("Retry-After", "12")
+                    .build()
+            }
+            assertThat(failure { read() }).isEqualTo(DataFailure.Throttled(12.0, 429))
+        }
+
+    @Test fun explicitCancellationIsNotAnOfflineFailure() =
+        runTest(timeout = 60.seconds) {
+            val started = CompletableDeferred<Unit>()
+            val events = EventRecorder()
+            api.route("GET", "/v1/users/me") {
+                started.complete(Unit)
+                MockResponse.Builder().onResponseStart(SocketEffect.Stall).build()
+            }
+            val task = async { read(api.client(base = { OkHttpClient.Builder().eventListener(events).build() })) }
+            started.await()
+            task.cancel()
+            val canceled =
+                try {
+                    task.await()
+                    false
+                } catch (_: CancellationException) {
+                    true
+                }
+            assertThat(canceled).isEqualTo(true)
+            assertThat(events.canceled.get()).isEqualTo(1)
+        }
+
+    @Test fun deadlinesCancelUnderlyingTask3s() = deadline(3.seconds)
+
+    @Test fun deadlinesCancelUnderlyingTask15s() = deadline(15.seconds)
+
+    @Test fun deadlinesCancelUnderlyingTask90s() = deadline(90.seconds)
+
+    private fun deadline(timeout: Duration) =
+        runTest(timeout = 60.seconds) {
+            val started = CompletableDeferred<Unit>()
+            val events = EventRecorder()
+            api.route("GET", "/v1/users/me") {
+                started.complete(Unit)
+                MockResponse.Builder().onResponseStart(SocketEffect.Stall).build()
+            }
+            val client =
+                api.client(
+                    base = { OkHttpClient.Builder().eventListener(events).build() },
+                    deadline =
+                        ApiDeadline {
+                            assertThat(it).isEqualTo(timeout)
+                            started.await()
+                        },
+                )
+            assertThat(
+                failure {
+                    client.request(
+                        ApiEndpoint(path = listOf("users", "me"), timeout = timeout),
+                        SessionAccount.serializer(),
+                    )
+                },
+            ).isEqualTo(DataFailure.Offline)
+            assertThat(events.canceled.get()).isEqualTo(1)
+            assertThat(api.server.requestCount).isEqualTo(1)
+        }
+
+    @Test fun noContentRequiresExactShape200() = noContent(200, "{}")
+
+    @Test fun noContentRequiresExactShape201() = noContent(201, "{}")
+
+    @Test fun noContentRequiresExactShape204WithBody() = noContent(204, "{}")
+
+    @Test fun noContentRequiresExactShape204Empty() =
+        runTest(timeout = 60.seconds) {
+            api.reply("POST", "/v1/auth/logout", 204)
+            api.client().requestNoContent(ApiEndpoint("POST", listOf("auth", "logout")))
+        }
+
+    private fun noContent(
+        status: Int,
+        body: String,
+    ) = runTest(timeout = 60.seconds) {
+        api.reply("POST", "/v1/auth/logout", status, body)
+        assertThat(
+            failure {
+                api.client().requestNoContent(ApiEndpoint("POST", listOf("auth", "logout")))
+            } is DataFailure.Server,
+        ).isEqualTo(true)
+    }
+
+    @Test fun noCookieOrCacheReuseAndMissingBearer() =
+        runTest(timeout = 60.seconds) {
+            api.route("GET", "/v1/users/me") {
+                MockResponse
+                    .Builder()
+                    .body(json("account/identity.json"))
+                    .addHeader("Set-Cookie", "secret=fake")
+                    .addHeader("Cache-Control", "max-age=3600")
+                    .build()
+            }
+            val client = api.client()
+            read(client)
+            read(client)
+            assertThat(api.server.requestCount).isEqualTo(2)
+            assertThat(api.requests[1].headers["Cookie"]).isEqualTo(null)
+            sanitized(client.effectiveClient())
+            assertThat(failure { read(api.client(bearer = { null })) }).isEqualTo(DataFailure.Unauthorized(401))
+            assertThat(failure { read(api.client(bearer = { "" })) }).isEqualTo(DataFailure.Unauthorized(401))
+            assertThat(failure { read(api.client(bearer = { "bad\nvalue" })) }).isEqualTo(DataFailure.Unauthorized(401))
+            assertThat(api.server.requestCount).isEqualTo(2)
+        }
+
+    @Test fun sanitizesInjectedConfiguration() =
+        runTest(timeout = 60.seconds) {
+            val cookies =
+                object : CookieJar {
+                    override fun saveFromResponse(
+                        url: HttpUrl,
+                        cookies: List<Cookie>,
+                    ) = Unit
+
+                    override fun loadForRequest(url: HttpUrl) =
+                        listOf(
+                            Cookie
+                                .Builder()
+                                .name("secret")
+                                .value("fake")
+                                .domain(url.host)
+                                .build(),
+                        )
+                }
+            Cache(folder.newFolder(), 4096).use { cache ->
+                val base =
+                    withContext(Dispatchers.IO) {
+                        OkHttpClient
+                            .Builder()
+                            .cookieJar(cookies)
+                            .cache(cache)
+                            .addInterceptor {
+                                it.proceed(
+                                    it
+                                        .request()
+                                        .newBuilder()
+                                        .header(
+                                            "Authorization",
+                                            "Bearer stale",
+                                        ).header("Cookie", "secret=fake")
+                                        .build(),
+                                )
+                            }.addNetworkInterceptor { it.proceed(it.request()) }
+                            .build()
+                    }
+                val client = api.client(base = { base })
+                sanitized(client.effectiveClient())
+                assertThat(base.followRedirects).isEqualTo(true)
+                assertThat(base.retryOnConnectionFailure).isEqualTo(true)
+                assertThat(base.cookieJar === cookies).isEqualTo(true)
+                assertThat(base.cache === cache).isEqualTo(true)
+                assertThat(base.interceptors.size).isEqualTo(1)
+                assertThat(base.networkInterceptors.size).isEqualTo(1)
+                assertThat(base.readTimeoutMillis).isEqualTo(10000)
+                api.reply("GET", "/v1/users/me", 200, json("account/identity.json"))
+                client.request(
+                    ApiEndpoint(path = listOf("users", "me"), access = ApiEndpoint.Access.PublicRoute),
+                    SessionAccount.serializer(),
+                )
+                assertThat(api.requests.single().headers["Authorization"]).isEqualTo(null)
+                assertThat(api.requests.single().headers["Cookie"]).isEqualTo(null)
+            }
+        }
+
+    @Test fun headersAreExact() =
+        runTest(timeout = 60.seconds) {
+            api.reply("POST", "/v1/body", 200, "{}")
+            api.reply("POST", "/v1/empty", 200, "{}")
+            api.route("GET", "/v1/users/me") {
+                MockResponse
+                    .Builder()
+                    .body("{}")
+                    .addHeader("ETag", "x")
+                    .build()
+            }
+            val client = api.client()
+            client.request(ApiEndpoint("POST", listOf("body"), body = "{}".encodeToByteArray())) { Unit }
+            client.request(ApiEndpoint("POST", listOf("empty"))) { Unit }
+            client.request(endpoint) { Unit }
+            client.request(endpoint) { Unit }
+            assertThat(api.requests[0].headers.values("Accept")).isEqualTo(listOf("application/json"))
+            assertThat(api.requests[0].headers["Content-Type"]).isEqualTo("application/json")
+            assertThat(api.requests[0].headers["Authorization"]).isEqualTo("Bearer artificial-old-token")
+            assertThat(api.requests[1].headers["Content-Type"]).isEqualTo(null)
+            assertThat(api.requests[1].headers["Content-Length"]).isEqualTo("0")
+            assertThat(api.requests[2].bodySize).isEqualTo(0L)
+            assertThat(
+                api.requests.any { r ->
+                    r.headers.names().any {
+                        it.contains("device", true) ||
+                            it in setOf("Cookie", "Accept-Language", "If-None-Match")
+                    }
+                },
+            ).isEqualTo(false)
+        }
+
+    @Test fun decodingFailureIsServerWithTheStatus() =
+        runTest(timeout = 60.seconds) {
+            api.reply("GET", "/v1/users/me", 200, """{"id":1}""")
+            assertThat(failure { read() }).isEqualTo(DataFailure.Server(200))
+        }
+
+    @Test fun requestStatusMustMatchExpected() =
+        runTest(timeout = 60.seconds) {
+            api.reply("GET", "/v1/users/me", 201, "{}")
+            assertThat(failure { read() }).isEqualTo(DataFailure.Server(201))
+        }
+
+    @Test fun decodingAndClientConstructionUseTheIoDispatcher() =
+        runTest(timeout = 60.seconds) {
+            val caller = Thread.currentThread()
+            val client =
+                api.client(base = {
+                    assertThat(Thread.currentThread() === caller).isEqualTo(false)
+                    OkHttpClient()
+                })
+            api.reply("GET", "/v1/users/me", 200, "{}")
+            client.request(endpoint) { assertThat(Thread.currentThread() === caller).isEqualTo(false) }
+        }
+
+    @Test fun explicitCancellationInterruptsTheBodyRead() =
+        runTest(timeout = 60.seconds) {
+            val reading = CompletableDeferred<Unit>()
+            val events = EventRecorder()
+            val listener =
+                object : okhttp3.EventListener() {
+                    override fun canceled(call: okhttp3.Call) = events.canceled(call)
+
+                    override fun responseBodyStart(call: okhttp3.Call) {
+                        reading.complete(Unit)
+                    }
+                }
+            api.route("GET", "/v1/users/me") {
+                MockResponse
+                    .Builder()
+                    .body("partial body")
+                    .onResponseBody(SocketEffect.Stall)
+                    .build()
+            }
+            val task = async { read(api.client(base = { OkHttpClient.Builder().eventListener(listener).build() })) }
+            reading.await()
+            task.cancel()
+            val canceled =
+                try {
+                    task.await()
+                    false
+                } catch (_: CancellationException) {
+                    true
+                }
+            assertThat(canceled).isEqualTo(true)
+            assertThat(events.canceled.get()).isEqualTo(1)
+        }
+
+    private fun sanitized(client: OkHttpClient) {
+        assertThat(client.followRedirects).isEqualTo(false)
+        assertThat(client.followSslRedirects).isEqualTo(false)
+        assertThat(client.cookieJar === CookieJar.NO_COOKIES).isEqualTo(true)
+        assertThat(client.cache).isEqualTo(null)
+        assertThat(client.retryOnConnectionFailure).isEqualTo(false)
+        assertThat(client.interceptors.isEmpty()).isEqualTo(true)
+        assertThat(client.networkInterceptors.isEmpty()).isEqualTo(true)
+        assertThat(client.connectTimeoutMillis).isEqualTo(0)
+        assertThat(client.readTimeoutMillis).isEqualTo(0)
+        assertThat(client.writeTimeoutMillis).isEqualTo(0)
+        assertThat(client.callTimeoutMillis).isEqualTo(0)
+    }
+}
