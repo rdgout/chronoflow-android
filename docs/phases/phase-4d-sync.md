@@ -375,7 +375,6 @@ class SyncEngine(
     suspend fun deleteAccount(password: String)
     suspend fun accountSecurity(change: AccountSecurityChange): AccountSecurityResult
     suspend fun cancelAndWait()
-    internal val waitingRefreshCount: Int   // test hook, as Swift `waitingRefreshCount`
 }
 ```
 
@@ -557,3 +556,5 @@ Use the Task 5 naming rule throughout Tasks 1–10: up to five rows become indep
 ## Refresh against landed 4c (2026-11-18)
 
 Checked the current tree: epochs/guarded writes, schema/query labels and RecordMapping match §4; StoreFailure and the four JDBC helpers still need Task 0's moves. `checkConfiguration` needed public visibility for the moved factory; its SQL and failure behavior are unchanged. `HandDrainedDispatcher` remains local to database tests. All 25 DataSource methods, outbox values, ApiDataSource.send, MockDataSource.send, remoteTripUpdate and replaceRemoteTrips are present: skip Task 1b. MockScenarios/MockClock are internal test helpers in data-mock/src/test; do not copy or import them. MockApi is also test-local. Existing Konsist helpers are `moduleOf`, `sourceSetOf`, `isTestSourceSet`, `projectScope`, `projectRoot`; keep planted controls under the rule-specific resource paths. JvmLibraryConventionPlugin supplies JUnit4/assertk only; add coroutines/serialization dependencies where used. Android libraries supply no test dependencies automatically. `make quick` already selects untagged local JVM tests through testDebugUnitTest; verify its result files in Task 10. Highest question is OQ-A166; new rows start at OQ-A167 (A68 stays unused).
+
+Task 6 follows the user instruction against src/main test hooks: no waitingRefreshCount is exposed. Shared-waiter tests drain the injected test scheduler before cancelling a caller and prove that the other caller completes. TestGate uses a non-cancellable continuation, matching Swift, so late responses reach the epoch guards.
