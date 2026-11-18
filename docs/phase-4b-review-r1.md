@@ -43,7 +43,7 @@ Round 2 supersedes the four-second decision. The pinned web deployment sources (
 
 The effective client owns a dedicated **`ConnectionPool(5, 300, TimeUnit.SECONDS)`**: five idle connections and OkHttp's default 300-second keep-alive, below that edge limit. An injected base client's pool remains unchanged. Retries stay disabled under OQ-A138/A149.
 
-The cached OkHttp 5.5.1 `RealConnectionPool.kt` measures idle time with `System.nanoTime()`, which tracks awake time on Android. A short pool cap cannot cover deep sleep. `ApiClient.evictIdleConnections()` evicts only idle connections from the already-built client, using a volatile reference without building a client or acquiring its initialization Mutex. Phase 4e calls it as ON_START step 0, covering sleep and network changes. OQ-A150 records option B and that the user may revisit it; the untracked 4e brief remains uncommitted.
+The cached OkHttp 5.5.1 `RealConnectionPool.kt` measures idle time with `System.nanoTime()`, which tracks awake time on Android. A short pool cap cannot cover deep sleep. `ApiClient.evictIdleConnections()` is suspending and closes idle sockets on the injected `io` dispatcher, because TLS close can send `close_notify`. It reads the volatile already-built client reference, without building a client or acquiring its initialization Mutex, and does nothing if unbuilt. Phase 4e awaits it as ON_START step 0, covering sleep and network changes while backgrounded. OQ-A150 records this decision and that the user may revisit it; the untracked 4e brief remains uncommitted.
 
 The renamed pool-policy test checks 300 seconds below the 400-second edge limit, five idle connections, disabled retries and an unchanged injected pool. A MockWebServer regression proves that two requests reuse one connection before eviction and a subsequent request opens a new connection after eviction. A separate test proves eviction before client construction is a no-op. Round 2 results follow below; the round 1 timing table records the superseded policy's historical run.
 
@@ -69,9 +69,21 @@ Logs, JUnit XML, per-run timings and history-tree evidence are archived under `b
 
 The targeted selectors were `core:network:ApiClientTests#dedicatedPoolUsesTheDefaultKeepAliveBelowTheCloudflareEdgeLimitWithoutRetries core:network:ApiClientTests#evictIdleConnectionsIsANoOpBeforeTheClientIsBuilt core:network:ApiClientTests#evictIdleConnectionsPreventsReuseOfAnIdleConnection`.
 
-Written first, the tests ran red against the four-second pool and an eviction no-op: three cases ran, with the expected failures for 300 s versus 4 s and one idle connection remaining after eviction (2.32 s command wall time). The implementation then passed all three cases on its first green run (1.25 s). MockWebServer observed reuse before eviction and a new connection afterwards, with exchange indices `[0, 1, 0]`; no sleeps or wall-clock expiry waits are used. The already-built client reference is volatile, and eviction never enters the construction Mutex. Logs and JUnit/timing evidence are in `build/test-results/phase-4b-review-r2/`.
+Written first, the tests ran red against the four-second pool and an eviction no-op: three cases ran, with the expected failures for 300 s versus 4 s and one idle connection remaining after eviction (2.32 s command wall time). The implementation then passed all three cases on its first green run (1.25 s). MockWebServer observed reuse before eviction and a new connection afterwards, with exchange indices `[0, 1, 0]`; no sleeps or wall-clock expiry waits are used. The already-built client reference remains volatile, and eviction never enters the construction Mutex; round 3 makes eviction suspend and moves socket closure to the injected IO dispatcher. Logs and JUnit/timing evidence are in `build/test-results/phase-4b-review-r2/`.
 
-## Phase commit list after round 1
+## Round 3 H1/L2 evidence
+
+Closing an idle TLS socket can send `close_notify`. The round-2 synchronous eviction therefore allowed network work on the foreground caller's main thread and could crash release builds. `ApiClient.evictIdleConnections()` now snapshots the volatile built-client reference, returns immediately if absent, and otherwise suspends in `withContext(io)` while calling `connectionPool.evictAll()`. It never builds a client or acquires the construction Mutex. ON_START eviction covers sleep and network changes while backgrounded.
+
+The new `ApiClientTests.evictIdleConnectionsClosesSocketsOnTheInjectedIoDispatcher` injects a `SocketFactory` whose sockets record `Thread.currentThread()` in `close()`, and a dedicated single-thread IO dispatcher distinct from the caller. It creates a real idle MockWebServer connection, evicts it from the caller, and requires exactly one close on that injected IO thread, with an empty pool afterwards.
+
+The first harness run stopped at `Unauthorized` because the test omitted its artificial bearer (2.14 s command wall time); that setup was corrected before collecting the regression evidence. `make targeted ONLY='core:network:ApiClientTests#evictIdleConnectionsClosesSocketsOnTheInjectedIoDispatcher'` then failed against the unchanged production implementation with `Socket close must not run on the caller thread expected not same` (1.46 s). After the production fix, `make targeted ONLY='core:network:ApiClientTests'` passed all 28 cases on the first green run (3.05 s); the new regression took 0.007 s. The existing reuse and unbuilt-client tests also passed. No sleeps, emulator runs or TLS-specific test dependencies were needed.
+
+OQ-A150 and the 4b brief now require suspending IO eviction and qualify the foreground guarantee to changes while backgrounded. The user-maintained, untracked 4e brief is unchanged. Logs, JUnit XML and per-run timing JSON are archived in `build/test-results/phase-4b-review-r3/`.
+
+`make quick` ran once and passed in **23.71 s total** (`/usr/bin/time -p`): 1,480 main-tier cases in 9.03 s, 26 build-logic cases in 0.65 s, all tooling suites and six serial timing cases in 0.53 s. There were no budget violations; the new close-thread regression took 0.012 s. No required command was blocked, and no performance/profile commands were run.
+
+## Phase commit list through the round-3 network fix
 
 All commits below are GPG-signed Conventional Commits without trailers. Commits through `4c87ac8` are unchanged.
 
@@ -95,5 +107,10 @@ d9d7b84 test(konsist): keep okhttp inside core network
 21e573b fix(network): prevent silent retries after service unavailable
 8929407 test(network): assert literal auth bodies and restore throttle fixtures
 8d08963 fix(network): retire idle connections before common server timeouts
-(this commit) docs(phases): record the first api client review fixes
+cc5c324 docs(phases): record the first api client review fixes
+18fb46a fix(network): keep pooled connections under the edge idle limit and evict on foreground
+3d08bf3 docs(phases): match the 4b verification record to the rewritten history
+7e2779b fix(network): evict pooled connections on io
 ```
+
+The separate round-3 record commit is titled `docs(phases): record the 4b round-3 fixes`.
