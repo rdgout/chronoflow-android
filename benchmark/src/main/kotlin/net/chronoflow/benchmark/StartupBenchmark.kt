@@ -34,6 +34,7 @@ class StartupBenchmark {
                     StartupTimingMetric(),
                     WelcomeMomentMetric(),
                     TraceSectionMetric("first-commit", TraceSectionMetric.Mode.First),
+                    TraceSectionMetric("session", TraceSectionMetric.Mode.First),
                     TraceSectionMetric("ready", TraceSectionMetric.Mode.First),
                     TraceSectionMetric("exit", TraceSectionMetric.Mode.First),
                 ),

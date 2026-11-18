@@ -152,41 +152,14 @@ fun routesAreSerializable(scope: KoScope) {
     // Skip the hierarchy walk when the scope has no NavKey root or reference.
     if (scope.files.none { "NavKey" in it.text }) return
 
-    class Candidate(
-        val path: String,
-        val name: String,
-        val isRoute: Boolean,
-        val serializable: Boolean,
-    )
-
-    val candidates =
-        scope.classes().map {
-            Candidate(
-                it.path,
-                it.name,
-                it.hasParentWithName("NavKey", indirectParents = true),
-                it.hasAnnotationWithName("Serializable"),
-            )
-        } +
-            scope.interfaces().map {
-                Candidate(
-                    it.path,
-                    it.name,
-                    it.hasParentWithName("NavKey", indirectParents = true),
-                    it.hasAnnotationWithName("Serializable"),
-                )
-            } +
-            scope.objects().map {
-                Candidate(
-                    it.path,
-                    it.name,
-                    it.hasParentWithName("NavKey", indirectParents = true),
-                    it.hasAnnotationWithName("Serializable"),
-                )
-            }
+    val declarations: List<com.lemonappdev.konsist.api.declaration.combined.KoClassAndInterfaceAndObjectDeclaration> =
+        scope.classes() + scope.interfaces() + scope.objects()
     val violations =
-        candidates
-            .filter { moduleOf(it.path) != null && it.isRoute && !it.serializable }
+        declarations
+            .filter { moduleOf(it.path) != null }
+            // Serializable declarations cannot violate the rule; avoid resolving their ancestry.
+            .filterNot { it.hasAnnotationWithName("Serializable") }
+            .filter { it.hasParentWithName("NavKey", indirectParents = true) }
             .map { "${it.path}: ${it.name}" }
     fail("routesAreSerializable", violations)
 }

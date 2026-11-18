@@ -329,3 +329,24 @@ JAVA_HOME=/Library/Java/JavaVirtualMachines/zulu-17.jdk/Contents/Home \
 ```
 
 Output: `0` (grep exits 1 for no matches). The APK's only native library basename is the existing OQ-0a-22 allow-list entry `libandroidx.graphics.path.so`, across arm64-v8a, armeabi-v7a, x86 and x86_64. No new `.so` was introduced. No device or performance tier was run for this inspection.
+
+
+## Phase 4e signed-in seed and validation
+
+Start a fresh process-isolated debug seed with the iOS account and gate keys:
+
+```sh
+adb shell am start -n net.chronoflow.app.native.debug/net.chronoflow.debug.SeedReceiverActivity \
+  --es CF_AUTH_TEST_ID "$(uuidgen | tr A-Z a-z)" --es CF_AUTH_TEST_SIGNED_IN demo --es CF_AUTH_TEST_WALKTHROUGH_SEEN 1
+```
+
+Seeded roots are selected for the current process only. Reseed after process death. Add `--es CF_UI_TEST_PROFILE launch` for the real splash/readiness path; `screen` is the default seeded profile. Unverified and pending-terms gates use `CF_AUTH_TEST_UNVERIFIED=1` and `CF_AUTH_TEST_TERMS_PENDING=1`.
+
+The only Phase 4e device test is run through the targeted runner's device lock:
+
+```sh
+Scripts/emulator.sh prep-functional emulator-5554
+make targeted ONLY="app:SignedInColdLaunchSmokeTest"
+```
+
+Both were attempted once in the sandbox. Preparation returned `adb: device 'emulator-5554' not found`; adb listed no attached devices. The smoke APK compiled, then Gradle failed with `com.android.builder.testing.api.DeviceException: No connected devices!` (7.42 s wall). The user must run these commands on the visible pixel emulator. No device test result or passing smoke is claimed. Full validation, diagnostic history and pending measurements are recorded in [Phase 4e results](phase-4e-results.md).

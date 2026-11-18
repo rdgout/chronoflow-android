@@ -209,3 +209,14 @@ Quiet-host measurements and profile regeneration are **pending with the orchestr
 The display configuration was read with `python3 -I Scripts/device_lock.py -- /opt/homebrew/share/android-commandlinetools/platform-tools/adb -s emulator-5554 shell dumpsys display`: active/default mode 1, supported/current refresh **60.000004 Hz**. One frame is 16.66666556 ms. The emulator functional gates check every iteration: interactive **2549…2567.66666556 ms**; last item **3199…3217.66666556 ms**. Missing and non-finite measurements fail. These are configured timing bounds, not benchmark results.
 
 `WelcomeMomentMetric` joins the app process's async `first-commit`, `exit` and `intro` slices. Interactive is `exit.end − first-commit.end`; the last item is `intro.end − first-commit.end`. Cold startup, launch jank and startup profile collection wait through removal and the intro. Waiting for Sign in to exist first prevents the following bounded 900 ms `Until.gone` wait from returning early while its intro alpha is zero; the control then persists, so the wait expires by design. The capture covers at least the final 3200 ms item (roughly 3.45–3.65 s from t0 depending on visibility timing). The existing launch frame-overrun/frame-count gates are unchanged.
+
+
+## Phase 4e: session restore measurement (2026-11-18)
+
+`StartupBenchmark.startupCold` now collects `TraceSectionMetric("session", TraceSectionMetric.Mode.First)`. The async session slice begins when `first-commit` ends and resolves at the first known session. Every variant defaults to production `StoredDataReadiness`; explicit diagnostic extras alone select the stub. Restore, disk and Keystore work run on the injected IO dispatcher after first commit.
+
+| Measurement | Device / build / setup | Command | Reference budget | Low-end budget | Result |
+|---|---|---|---|---|---|
+| Session known, signed out | Reference and low-end devices; pixel emulator separately as a regression signal; benchmarkRelease, Partial(Require), fresh install, no seed or stub extras | `make perf` | ≤50 ms after first-commit | ≤100 ms after first-commit | Pending with user; report only |
+
+No startup, timeline or profile measurement was run during Phase 4e implementation, as requested. Record the signed-out cold median, build commit, device/API/refresh rate and trace evidence when running the command. Baseline/startup profile regeneration is also delegated (`make baseline-profile`); the changed startup path has not yet been reprofiled. No performance number or device claim is inferred from unit tests. See [Phase 4e results](phase-4e-results.md) for functional validation and the unavailable emulator output.
