@@ -154,6 +154,15 @@ class KonsistRulesTest {
         assertFailure { testingNotInMain(violations("testingNotInMain")) }.messageContains("UsesFixtures.kt")
     }
 
+    @Test fun testingNotInMainAllowsMockFixtures() = testingNotInMain(allowed("testingNotInMain"))
+
+    @Test fun testingNotInMainRejectsUnrelatedMockMainImports() {
+        assertFailure { testingNotInMain(violations("testingNotInMainMock")) }.all {
+            messageContains("Unrelated.kt")
+            messageContains("MockAppSeed.kt: net.chronoflow.core.testing.DeviceProfiles")
+        }
+    }
+
     private companion object {
         val projectScope: KoScope by lazy { projectScope() }
     }

@@ -270,17 +270,28 @@ fun insetsOnlyAtRoot(scope: KoScope) {
     fail("insetsOnlyAtRoot", violations)
 }
 
+private val mockFixtureImports =
+    mapOf(
+        "MockAppSeed.kt" to setOf("Fixtures", "Template", "LargeTimelineFixtures"),
+        "MockTripFixtures.kt" to setOf("Template"),
+        "MockTripGeneration.kt" to setOf("MockTripTemplates", "Template"),
+    )
+
 fun testingNotInMain(scope: KoScope) {
+    val prefix = "net.chronoflow.core.testing"
     val violations =
         scope
             .moduleFiles()
             .filter { it.sourceSet == "main" && !it.module.startsWith("core/testing") }
-            .filter { file ->
-                file.imports.any {
-                    it == "net.chronoflow.core.testing" ||
-                        it.startsWith("net.chronoflow.core.testing.")
-                }
-            }.map { it.path }
+            .flatMap { file ->
+                file.imports
+                    .filter { it == prefix || it.startsWith("$prefix.") }
+                    .filterNot { imported ->
+                        file.module == "core/data-mock" &&
+                            imported.removePrefix("$prefix.") in
+                            mockFixtureImports[file.path.substringAfterLast('/')].orEmpty()
+                    }.map { "${file.path}: $it" }
+            }
     fail("testingNotInMain", violations)
 }
 
