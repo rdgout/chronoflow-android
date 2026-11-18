@@ -437,7 +437,7 @@ data class StoredAccountReadiness(val accountId: String, val gate: Gate?, val ha
   - A new epoch cancels the old graph's `scope` and drops it. A signed-out presence leaves `current = null`. `drop()` (the `SessionAccountDatabase` detach closure) cancels the scope, publishes null and calls `accountModel.detach()`.
   - Exposed as `val current: StateFlow<SessionGraph?>`.
 - **`AppGraphKey : CreationExtras.Key<AppGraph>`** (`…/app/AppGraphKey.kt`). `MainActivity` overrides `defaultViewModelCreationExtras` as in §4.
-  - A ViewModel factory reads `this[AppGraphKey]!!` and captures `graph.sessionGraphs.current.value` at creation. A screen in `key(revision)` never outlives its epoch.
+  - A ViewModel factory reads `this[AppGraphKey]!!` and captures `graph.sessionGraphs.current.value` at creation. The per-epoch graph owns its scope; root revision identity follows only the iOS-keyed flows in §5.8.
 
 ### 5.7 Routes and navigator (`:core:navigation`) [R from plan l.400–405, A8; F `Route.swift`, `RootView.swift`]
 ```kotlin
@@ -462,10 +462,10 @@ fun Route.debugName(): String   // "welcome", "signIn", "twoFactor", …, "tripP
 
 ### 5.8 Root content, placeholder, probe, pending intents (`:app`) [R; F D17, `RootView.swift`, `PendingLaunchIntent.swift`]
 - **`RootContent`** (`…/app/RootContent.kt`), placed by 3b's `CfRoot` where it now draws `RoutePlaceholder(route, label)` (inside the `app.root` box, after the hand-off rules 3b set up):
-  - It collects `rootNavigator.state`.
-  - It keeps `val stack = remember { mutableStateListOf<NavKey>() }` and replaces its content with `[route]` whenever `revision` changes.
-  - It calls `NavDisplay(backStack = stack, onBack = { /* root: system back finishes the activity */ }, entryProvider = …)`.
-  - Each entry's content is wrapped in `key(revision)`.
+  - `CfRoot` collects `rootNavigator.state` and passes the current snapshot to `RootContent`.
+  - Derive the current entries during composition, without a later `LaunchedEffect` stack update. Each entry captures its own identity so an outgoing screen cannot observe the incoming revision (review M2).
+  - Call `NavDisplay(entries = entries, onBack = { /* root: system back finishes the activity */ })`; the prebuilt entries use no saved-state decorators.
+  - Only GuestWizard, Terms and Walkthrough include `revision` in entry identity, matching `RootView.swift:93/97/101`. Today/AppTabs, Welcome and auth stay unkeyed by revision. In particular the gate router's initial same-route Today navigation must not rebuild Today.
   - The stack is **never** a `rememberNavBackStack` and never saved. It is derived from the process-level `RootNavigator`, so an activity recreation in the same process (locale, font scale, layout direction; A8) shows the same route at once, and a size or uiMode change does not recreate at all. Process death is a cold launch (A8, iOS OQ 16).
 - **Entries:**
   - routes with a screen keep it (the 3c Welcome, if merged);
@@ -674,7 +674,8 @@ T5/T6 test dependency: the source-startup suspension case first exercises `contr
 - **Tests:**
   - `app/src/test/…/LaunchConnectionTests.kt` (JVM): `testLaunchDoesNotOverwriteSessionNavigation` → `launchDoesNotOverwriteSessionNavigation`. A sign-out navigation during the launch makes the launch hand-off a no-op.
   - `LaunchSessionBridgeTest` (JVM): signed out → `Welcome`; signed in with `Terms` → `Terms`; signed in, gate null, forced → `Today`; gate null, not forced → no navigation; a launch route that changes from `Terms` to `Today` with no other navigation in between navigates twice; the five `LaunchRoute.toRoute()` mappings.
-  - `RootContentTest` (`@Layout`, Robolectric, `app/src/testDebug`): `navigate(Terms)` shows exactly one `route.terms` (structure only; no copy assertion, per AGENTS); navigating to the same route again recomposes under a new revision (an inner `remember` counter resets); `scenario.recreate()` keeps `route.terms` without a new `navigate`.
+  - `RootContentTest` (`@Layout`, Robolectric, `app/src/testDebug`): `navigate(Terms)` shows exactly one `route.terms` (structure only; no copy assertion, per AGENTS); repeating Terms resets its remembered subtree; `scenario.recreate()` keeps `route.terms` without a new `navigate`.
+  - `RootContentConstructionTest` (`@Layout`): Terms → Today constructs `[Terms, Today]` without rebuilding the outgoing Terms; the signed-in launch bridge followed by the gate router's initial App gate constructs Today once despite the repeated navigation (review M2).
   - 3b's `CfRootHandOffTest` and `RoutePlaceholderGuardTest` still pass (the tags `route.welcome`, `route.today`, `route.terms` are unchanged).
   - `PendingLaunchIntentsTest` (`@Logic`, Robolectric): an `ACTION_VIEW https://app.chronoflow.net/x` intent plus a `cf.reminder.tripId` extra are captured; `consume` happens only after `finishLaunch`.
   - `RootContentTest` and any other Robolectric test here that builds a real `AppGraph` passes `GraphOverrides(sessionCipher = SoftwareSessionCipher())` (T9).
