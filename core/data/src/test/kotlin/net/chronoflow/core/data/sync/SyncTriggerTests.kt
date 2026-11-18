@@ -2,6 +2,8 @@ package net.chronoflow.core.data.sync
 
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -13,6 +15,8 @@ import net.chronoflow.core.model.OutboxChange
 import net.chronoflow.core.model.session.StoredSession
 import net.chronoflow.core.sync.ActiveSyncDatabase
 import net.chronoflow.core.sync.SessionSync
+import net.chronoflow.core.sync.SyncLifecycle
+import net.chronoflow.core.sync.SyncPathMonitoring
 import net.chronoflow.core.sync.SyncState
 import net.chronoflow.core.testing.sync.identity
 import net.chronoflow.core.testing.sync.syncAccount
@@ -373,6 +377,38 @@ class SyncTriggerTests {
             f.lifecycle.refreshNow()
             assertEquals(before, f.source.calls)
             assertEquals(registrations, f.clock.requestedDelays.size)
+        }
+
+    // (new) Android callback registration can fail without disabling explicit sync or escaping the scope.
+    @Test fun throwingPathMonitorDoesNotEscapeTheLifecycle() =
+        triggerTest { f ->
+            var pathStopped = false
+            val path =
+                object : SyncPathMonitoring {
+                    override fun updates(): Flow<Boolean> = flow { throw IllegalStateException("too many callbacks") }
+
+                    override suspend fun stop() {
+                        pathStopped = true
+                    }
+                }
+            val lifecycle =
+                SyncLifecycle(
+                    f.store.sync,
+                    f.source,
+                    f.store.epoch,
+                    f.scheduler,
+                    path = path,
+                    dispatcher = f.dispatcher,
+                )
+            try {
+                lifecycle.start()
+                runCurrent()
+                assertEquals(SyncState.Idle, lifecycle.refreshNow().state)
+            } finally {
+                lifecycle.stop()
+            }
+            assertTrue(pathStopped)
+            assertEquals(0, f.clock.pendingCount)
         }
 
     @Test fun reconnectAloneStartsOneDebouncedCycle() =

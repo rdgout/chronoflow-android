@@ -97,14 +97,19 @@ class SyncLifecycle(
                 listeners +=
                     scope.launch {
                         var wasOffline = false
-                        updates.collect { online ->
-                            currentCoroutineContext().ensureActive()
-                            if (!online) {
-                                wasOffline = true
-                            } else if (wasOffline) {
-                                wasOffline = false
-                                requestSync()
+                        try {
+                            updates.collect { online ->
+                                currentCoroutineContext().ensureActive()
+                                if (!online) {
+                                    wasOffline = true
+                                } else if (wasOffline) {
+                                    wasOffline = false
+                                    requestSync()
+                                }
                             }
+                        } catch (failure: CancellationException) {
+                            throw failure
+                        } catch (_: Exception) {
                         }
                     }
             }
