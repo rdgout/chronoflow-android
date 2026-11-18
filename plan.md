@@ -1840,7 +1840,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 - [x] **Task 0: shared store failure and JDBC test driver.** Move StoreFailure to :core:model and the JDBC helpers to test-only :core:database-testing; guard imports with Konsist.
 - [x] **Task 1: stored outbox payloads.**
 - [x] **Task 2: sync values, failure policy and plan retention.**
-- [ ] **Task 3b: repository observation and AccountModel.**
+- [x] **Task 3b: repository observation and AccountModel.**
 - [ ] **Task 4: full pull.**
 - [ ] **Task 6: sync engine flights.**
 - [ ] **Task 9: network path monitor.**
