@@ -5,7 +5,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -45,7 +45,7 @@ class AuthAnnouncerTest {
             ProfileHost(DeviceProfiles.pixel8) {
                 ChronoFlowTheme(darkTheme = false) {
                     val state by form.state.collectAsState()
-                    val resources = LocalContext.current.resources
+                    val resources = LocalResources.current
                     Column {
                         AuthAnnouncer(
                             state.announcementRevision,

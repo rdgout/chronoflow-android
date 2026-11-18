@@ -26,7 +26,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.LocalAutofillManager
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -69,7 +69,7 @@ fun SignInScreen(
     val password = remember { TextFieldState() }
     val secret = remember(password) { TextFieldSecret(password) }
     val autofill = LocalAutofillManager.current
-    val resources = LocalContext.current.resources
+    val resources = LocalResources.current
     DisposableEffect(vm, secret) {
         onDispose {
             vm.leave()
@@ -127,7 +127,7 @@ fun SignInContent(
             )
         },
     ) {
-        val resources = LocalContext.current.resources
+        val resources = LocalResources.current
         val emailFocus = remember { FocusRequester() }
         val passwordFocus = remember { FocusRequester() }
         val banner = remember { BringIntoViewRequester() }
