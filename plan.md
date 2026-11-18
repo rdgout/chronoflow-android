@@ -737,6 +737,11 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A153 | (4c-5) Does MockMethod have 26 cases as research 02 says? | No: iOS at the pin and landed DataSource each have 25 methods. ApiClient’s lifecycle eviction hook adds no mock case. | 4c |
 | OQ-A154 | (4c-12) How are API 29 JDK calls enforced in the JVM mock module? | Review the ART API surface and grep for newer JDK calls; no desugaring or Animal Sniffer dependency. Keep the existing standalone lint plugin; it has no Android minSdk model. | 4c |
 | OQ-A155 | (4c-6) Must the mock state JSON be byte-compatible with iOS? | No. Keep the Swift property names and schema 2 with required non-optional fields; allow nullable optional additions. Android reseeds incompatible state in debug. Claims accept legacy plaintext only on decode and always write a hash. | 4c |
+| OQ-A156 | (4c-2) Does mock seeding also depend on 1b? | Yes, already landed: reuse top-level Template, memoized MockTripTemplates, mock-seed.json and LargeTimelineFixtures; do not duplicate the fixture generator. | 4c |
+| OQ-A157 | (4c-4) How do perf variants select demo seeding? | MockDataSource takes debugAppSeed, default true; 4e passes false in perf. Like iOS Perf without DEBUG, that path restores state or starts empty unless given an explicit seed. | 4c, 4e |
+| OQ-A158 | (4c-9) Can fixture decoding exceed the JVM case budget? | Memoize decoded fixtures per JVM and warm them in BeforeClass. Keep every test below 1 s with no PerfBudget exemption; report any miss. | 4c |
+| OQ-A159 | (4c-10) Which zone defines the daily seed anchor? | Inject ZoneId, defaulting to the device zone at production entry signatures only. Tests pin Europe/Amsterdam. Rebase calendar days in each card’s origin zone. | 4c |
+| OQ-A160 | (4c-11) Rename demo passkeys for Android? | Keep iPhone 16 and MacBook Pro for pinned iOS parity; the mock never ships in release. Revisit if the designer changes capture data. | 4c |
 | OQ-0a-22 | Native libraries in the bundle? | Allow only `libandroidx.graphics.path.so` (Compose graphics-path; excluding it breaks Path conversion below API 34); fail on any other `.so` | 0a, 13 |
 | OQ-0b-1 | Where does `PlanMetrics` live? `08 §3.1` lists it inside `CfDimens`, but its consumer `:core:plan` is a JVM module that cannot depend on `:core:designsystem` | `core/plan/…/generated/PlanMetrics.generated.kt` (Double, dp), as iOS keeps it in `PlanCore` | 0b, 1b, 1c |
 | OQ-0b-2 | Port all iOS TokenGen outputs now (Auth, Settings, Terms, Welcome, PlanUI, Press, LaunchPaint, TypeMetrics), or only colors, sky and type? | All of them now (the iOS files are exact goldens and Phases 2, 3a, 3c, 5a, 9 and 10 need them) | 0b |
@@ -1793,7 +1798,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - rate windows for forgot, resend and verify on the injected clock;
   - a link inbox for reset and verify links.
 - [ ] **MockServerState**, schema 2, at `noBackupFilesDir/ChronoFlowMock/Server/state.json`: atomic writes, a tolerant read, and a reset on a schema mismatch.
-- [ ] **MockAppSeed.**
+- [x] **MockAppSeed.**
   - Accounts: `demo@example.com` / `password`, and `twofactor@example.com` / `password` with code `123456` and recovery code `AbCdEf1234-GhIjKl5678`.
   - Account ids `0199a3c0-0000-7000-8000-000000000000` and `…0001`.
   - Seven trips rebased to the seed clock: S1–S6 and S6-RETURN-10N.
