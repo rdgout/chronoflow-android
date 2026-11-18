@@ -50,7 +50,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         val graph = (application as ChronoFlowApp).graph
         launch = graph.launch
-        graph.pendingLaunchIntents.capture(intent)
+        if (savedInstanceState == null && (intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) == 0) {
+            graph.pendingLaunchIntents.capture(intent)
+        }
         val overrides = LaunchPlatform.overrides(intent, graph)
         val kind = launch.onActivityCreated(savedInstanceState, overrides.skipOverlay, overrides)
         val splash = installSplashScreen()

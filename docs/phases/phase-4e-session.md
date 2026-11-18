@@ -478,6 +478,7 @@ fun Route.debugName(): String   // "welcome", "signIn", "twoFactor", …, "tripP
 - **No new string.** The label stays 3b's `DebugRouteLabel` with `app_debug_route_x` from `core/ui/src/debug/res` (0c OQ-0c-4). Do not add `app_debug_route` or any other resource.
 - **Route probe** (debug, `…/debug/RouteProbe.kt`): `object RouteProbe { @Volatile var state: RootState }`, updated by a debug-only collector. UI tests assert on it or on the `route.*` tag.
 - **`PendingLaunchIntent`** (`:core:navigation`, JVM data, no Android types):
+  - Capture the initial activity intent only when the original `savedInstanceState` is null and `FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY` is absent. Recreation, process-death restoration and Recents must not replay a handled link; fresh `onNewIntent` values are still captured (round-2 L3).
   ```kotlin
   data class PendingLaunchIntent(val links: Set<String>, val reminder: ReminderTapExtras?) // toString() redacts links
   data class ReminderTapExtras(val tripId: String, val blockId: String?, val accountId: String?, val inputHash: String?)
