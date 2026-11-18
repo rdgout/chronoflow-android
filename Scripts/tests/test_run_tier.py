@@ -1,12 +1,25 @@
+import importlib.util
+import io
+import json
 import os
 import signal
 import sys
 import time
 import unittest
+from contextlib import redirect_stderr
+from pathlib import Path
+from unittest.mock import Mock, patch
 
 from helpers import SCRIPTS, LockHolder, run, temp_dir
 
 RUN_TIER = str(SCRIPTS / "run_tier.py")
+
+
+def runner_module():
+    spec = importlib.util.spec_from_file_location("run_tier", RUN_TIER)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 JUNIT = """<?xml version="1.0" encoding="UTF-8"?>
 <testsuite name="s" tests="2">
@@ -119,16 +132,26 @@ class RunTierTest(unittest.TestCase):
         body = "".join('<testcase classname="%s" name="%s" time="%s"/>' % c for c in cases)
         (self.root / tier_dir / "TEST-a.xml").write_text("<testsuite>%s</testsuite>" % body)
 
-    def _timings(self, entries, name="1.json", tier_dir="tm"):
+    def _timings(self, entries, name="1.json", tier_dir="tm", passed=False):
         import json
 
         (self.root / tier_dir).mkdir(parents=True, exist_ok=True)
         (self.root / tier_dir / name).write_text(json.dumps({"tier": "t", "tests": entries}))
+        if passed:
+            module = runner_module()
+            directory = self.root / tier_dir
+            module.gate_marker(directory, module.PASSED_GATE_SUFFIX).write_text(json.dumps({
+                "fingerprint": module.timing_fingerprint(directory),
+            }))
 
-    @staticmethod
-    def _write_during_run(*paths):
-        return [sys.executable, "-I", "-c", "from pathlib import Path; import sys; "
-                "[Path(p).touch() for p in sys.argv[1:]]", *paths]
+    def _write_during_run(self, *paths, coarse=False):
+        contents = {p: (self.root / p).read_text() if (self.root / p).exists() else "" for p in paths}
+        script = "from pathlib import Path; import json, os, sys\n" \
+                 "for name, contents in json.loads(sys.argv[1]).items():\n" \
+                 " p=Path(name); p.parent.mkdir(parents=True, exist_ok=True); p.write_text(contents)\n"
+        if coarse:
+            script += " ns=p.stat().st_mtime_ns//1000000000*1000000000; os.utime(p,ns=(ns,ns))\n"
+        return [sys.executable, "-I", "-c", script, json.dumps(contents)]
 
     @staticmethod
     def _entry(kind="jvm", ms=10, budget=1000, status="ok", method="t1"):
@@ -176,7 +199,7 @@ class RunTierTest(unittest.TestCase):
 
     def test_failed_budget_requires_fresh_task_outputs_before_a_retry_can_pass(self):
         self._xml("b/build/test-results/test")
-        self._timings([self._entry()], tier_dir="b/build/cf-timings/test")
+        self._timings([self._entry()], tier_dir="b/build/cf-timings/test", passed=True)
         first = self._task_tier(self._task_outputs([self._entry(ms=1200, status="over")]))
         self.assertEqual(first.returncode, 3, first.stderr)
         self._assert_task_outputs_invalidated()
@@ -202,7 +225,7 @@ class RunTierTest(unittest.TestCase):
 
     def test_another_command_failure_does_not_preserve_failed_timing_outputs(self):
         command = self._task_outputs([self._entry(ms=1200, status="over")])
-        command[3] += "; sys.exit(1)"
+        command[3] += "\nsys.exit(1)\n"
         first = self._task_tier(command)
         self.assertEqual(first.returncode, 1, first.stderr)
         self._assert_task_outputs_invalidated()
@@ -244,12 +267,9 @@ def coarse_touch(path, *args, **kwargs):
 Path.touch = coarse_touch
 sys.exit(module.main(sys.argv[2:]))
 """
-        write = "from pathlib import Path; import os, sys\n" \
-                "for name in sys.argv[1:]:\n" \
-                " p=Path(name); p.touch(); ns=p.stat().st_mtime_ns//1000000000*1000000000; os.utime(p,ns=(ns,ns))"
         result = run([sys.executable, "-I", "-c", wrapper, RUN_TIER, "t", "--results", "out/*.xml",
-                      "--timings", "tm/*.json", "--", sys.executable, "-I", "-c", write,
-                      "out/TEST-a.xml", "tm/1.json"], self.env)
+                      "--timings", "tm/*.json", "--",
+                      *self._write_during_run("out/TEST-a.xml", "tm/1.json", coarse=True)], self.env)
         self.assertEqual(result.returncode, 3, result.stderr)
         self.assertEqual(self._report()["overBudget"], 1)
         reference = self.root / "build/test-results/t/invocation.started"
@@ -265,12 +285,12 @@ sys.exit(module.main(sys.argv[2:]))
 
     def test_only_current_tests_need_current_timing_entries(self):
         self._xml()
-        self._timings([self._entry()])
+        self._timings([self._entry()], tier_dir="tm/old", passed=True)
         self._xml("new", cases=(("c.D", "other", "0.1"),))
-        self._timings([{**self._entry(method="other"), "class": "c.D"}], name="2.json")
+        self._timings([{**self._entry(method="other"), "class": "c.D"}], tier_dir="tm/new")
         result = self.tier("t", "--results", "out/*.xml", "--results", "new/*.xml",
-                           "--timings", "tm/*.json", "--",
-                           *self._write_during_run("new/TEST-a.xml", "tm/2.json"))
+                           "--timings", "tm/*/*.json", "--",
+                           *self._write_during_run("new/TEST-a.xml", "tm/new/1.json"))
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(self._report()["measuredTests"], 1)
         self.assertEqual(len(self._report()["tests"]), 2)
@@ -357,6 +377,154 @@ sys.exit(module.main(sys.argv[2:]))
         self.assertEqual(result.returncode, 0, result.stderr)
         slowest = self._report()["slowest"]
         self.assertEqual([c["ms"] for c in slowest], list(range(15, 5, -1)))
+
+
+class PassedStampTest(unittest.TestCase):
+    def setUp(self):
+        self.root = temp_dir(self).resolve()
+        self.runner = runner_module()
+        self.started = time.monotonic()
+
+    def tearDown(self):
+        self.assertLess(time.monotonic() - self.started, 1)
+
+    def _outputs(self, module="a", entries=None):
+        if entries is None:
+            entries = [RunTierTest._entry()]
+        timings = self.root / module / "build/cf-timings/test"
+        timings.mkdir(parents=True, exist_ok=True)
+        (timings / "execution.started").write_text("")
+        (timings / "1.json").write_text(json.dumps({"tests": entries}))
+        if entries:
+            results = self.root / module / "build/test-results/test"
+            results.mkdir(parents=True, exist_ok=True)
+            (results / "TEST-a.xml").write_text('<testsuite><testcase classname="a.B" name="t1" time="0.1"/></testsuite>')
+        return timings
+
+    def _invoke(self, produce=None, flags=(), device=False):
+        lock = Mock()
+        lock.acquire.return_value = 17
+        lock.lock_path.return_value = self.root / "lock"
+        errors = io.StringIO()
+
+        def execute(*_):
+            if produce is not None:
+                produce()
+            return 0
+
+        args = ["t", *(["--device"] if device else []),
+                "--results", "*/build/test-results/test/*.xml", "--timings", "*/build/cf-timings/test/*.json",
+                "--", "fake-gradle", *flags]
+        with patch.dict(os.environ, {"RUN_TIER_ROOT": str(self.root), "CF_DEVICE_LOCK_HELD": ""}), \
+                patch.object(self.runner, "run_command", side_effect=execute), \
+                patch.object(self.runner, "load_device_lock", return_value=lock), redirect_stderr(errors):
+            code = self.runner.main(args)
+        report = json.loads((self.root / "build/test-results/t/timings.json").read_text())
+        self.assertEqual(report["exitCode"], code)
+        if device:
+            lock.release.assert_called_once_with(17)
+        return code, report, errors.getvalue()
+
+    def test_invalidation_error_still_marks_other_tasks_reports_and_unlocks(self):
+        a = self.root / "a/build/cf-timings/test"
+        b = self.root / "b/build/cf-timings/test"
+        original = self.runner.shutil.rmtree
+
+        def remove(path, *args, **kwargs):
+            if Path(path) == a:
+                self.assertTrue(self.runner.gate_marker(a).is_file())
+                self.assertTrue(self.runner.gate_marker(b).is_file())
+                raise PermissionError("simulated undeletable timing directory")
+            return original(path, *args, **kwargs)
+
+        def produce():
+            self._outputs("a", [RunTierTest._entry(ms=1200, status="over")])
+            self._outputs("b", [RunTierTest._entry(ms=1200, status="over")])
+
+        with patch.object(self.runner.shutil, "rmtree", side_effect=remove):
+            code, report, errors = self._invoke(produce, device=True)
+        self.assertEqual(code, 2)
+        self.assertIn("simulated undeletable", errors)
+        self.assertTrue(report["errors"])
+        self.assertTrue(self.runner.gate_marker(b).is_file())
+        self.assertFalse(b.exists())
+
+    def test_path_validation_error_does_not_prevent_marking_other_tasks(self):
+        a = self.root / "a/build/cf-timings/test"
+        b = self.root / "b/build/cf-timings/test"
+        original = Path.resolve
+
+        def resolve(path, *args, **kwargs):
+            if path == a:
+                raise ValueError("simulated path validation error")
+            return original(path, *args, **kwargs)
+
+        def produce():
+            self._outputs("a", [RunTierTest._entry(ms=1200, status="over")])
+            self._outputs("b", [RunTierTest._entry(ms=1200, status="over")])
+
+        with patch.object(Path, "resolve", resolve):
+            code, _, errors = self._invoke(produce, device=True)
+        self.assertEqual(code, 2)
+        self.assertIn("simulated path validation error", errors)
+        self.assertTrue(self.runner.gate_marker(b).is_file())
+
+    def test_up_to_date_outputs_from_outside_the_runner_need_a_passed_stamp(self):
+        directory = self._outputs()
+        code, _, errors = self._invoke()
+        self.assertEqual(code, 2)
+        self.assertIn("rerun", errors)
+        self.assertFalse(directory.exists())
+
+    def test_matching_passed_stamp_allows_reuse(self):
+        first, _, _ = self._invoke(self._outputs)
+        self.assertEqual(first, 0)
+        directory = self.root / "a/build/cf-timings/test"
+        self.assertTrue(self.runner.gate_marker(directory, self.runner.PASSED_GATE_SUFFIX).is_file())
+        second, report, _ = self._invoke()
+        self.assertEqual(second, 0)
+        self.assertEqual(report["budgetChecks"], [])
+
+    def test_changed_fingerprint_rejects_a_previously_passed_stamp(self):
+        self.assertEqual(self._invoke(self._outputs)[0], 0)
+        directory = self.root / "a/build/cf-timings/test"
+        with (directory / "1.json").open("a") as output:
+            output.write("\n")
+        code, _, errors = self._invoke()
+        self.assertEqual(code, 2)
+        self.assertIn("matching passed stamp", errors)
+        self.assertFalse(directory.exists())
+
+    def test_filtered_run_cannot_create_a_passed_stamp(self):
+        code, _, _ = self._invoke(self._outputs, flags=("--tests", "a.B"))
+        self.assertEqual(code, 0)
+        directory = self.root / "a/build/cf-timings/test"
+        self.assertFalse(self.runner.gate_marker(directory, self.runner.PASSED_GATE_SUFFIX).exists())
+
+    def test_filtered_run_revokes_an_old_stamp_even_when_contents_match(self):
+        self.assertEqual(self._invoke(self._outputs)[0], 0)
+        self.assertEqual(self._invoke(self._outputs, flags=("--tests=a.B",))[0], 0)
+        directory = self.root / "a/build/cf-timings/test"
+        self.assertFalse(self.runner.gate_marker(directory, self.runner.PASSED_GATE_SUFFIX).exists())
+
+    def test_zero_test_run_cannot_create_a_passed_stamp(self):
+        def produce():
+            self._outputs("a", [])
+            self._outputs("b")
+
+        code, _, _ = self._invoke(produce)
+        self.assertEqual(code, 0)
+        directory = self.root / "a/build/cf-timings/test"
+        self.assertFalse(self.runner.gate_marker(directory, self.runner.PASSED_GATE_SUFFIX).exists())
+
+    def test_unexpected_validation_error_still_writes_report_and_unlocks(self):
+        def fail():
+            raise ValueError("simulated validator error")
+
+        code, report, errors = self._invoke(fail, device=True)
+        self.assertEqual(code, 2)
+        self.assertIn("simulated validator error", errors)
+        self.assertTrue(report["errors"])
 
 
 if __name__ == "__main__":
