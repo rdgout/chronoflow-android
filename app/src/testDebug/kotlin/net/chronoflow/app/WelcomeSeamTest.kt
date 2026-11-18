@@ -15,7 +15,6 @@ import kotlinx.coroutines.CompletableDeferred
 import net.chronoflow.core.testing.DeviceProfiles
 import net.chronoflow.core.testing.compose.ProfileRule
 import net.chronoflow.core.testing.tiers.Layout
-import net.chronoflow.debug.DebugWelcomeDestinations
 import net.chronoflow.feature.launch.LaunchController
 import net.chronoflow.feature.launch.LaunchMode
 import net.chronoflow.feature.launch.LaunchOverrides
@@ -47,13 +46,12 @@ class WelcomeSeamTest {
         launch.captureAppearance(app.resources.configuration)
         launch.captureReduceMotion(true, false)
         launch.onActivityCreated(null, false, LaunchOverrides(mode = LaunchMode.Welcome, freezeAt = 2300.milliseconds))
-        val destinations = DebugWelcomeDestinations()
         val graph = AppGraph(app, fontPreloader = FontPreloader { _, _ -> }, launchProvider = { launch })
         lateinit var back: OnBackPressedDispatcher
         compose.setContent {
             val dispatcher = requireNotNull(LocalOnBackPressedDispatcherOwner.current).onBackPressedDispatcher
             SideEffect { back = dispatcher }
-            CfRoot(graph, true, false, CompletableDeferred(Unit), null, destinations)
+            CfRoot(graph, true, false, CompletableDeferred(Unit), null)
         }
         compose.onNodeWithTag("launch.opening").captureToImage()
         compose.waitForIdle()
@@ -68,5 +66,6 @@ class WelcomeSeamTest {
         assertEquals(initial.top - 14 * DeviceProfiles.pixel8.density, returned.top, 0.5f)
         compose.onNodeWithTag("welcome.plan").performClick()
         compose.onNodeWithTag("route.guestWizard").assertExists()
+        compose.runOnIdle { LaunchPlatform.welcomeDestinations.closeSeam() }
     }
 }

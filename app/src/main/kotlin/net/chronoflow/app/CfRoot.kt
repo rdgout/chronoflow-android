@@ -50,7 +50,7 @@ internal fun CfRoot(
     reduceMotion: Boolean,
     firstCommit: Deferred<Unit>,
     jankTagger: TimelineJankTagger?,
-    destinations: WelcomeDestinations = graph.welcomeDestinations,
+    destinations: WelcomeDestinations = LaunchPlatform.welcomeDestinations,
     onSky: Boolean = false,
     onSystemBars: (Boolean, Boolean, Boolean) -> Unit = { _, _, _ -> },
     content: (@Composable () -> Unit)? = null,

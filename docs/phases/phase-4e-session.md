@@ -469,6 +469,7 @@ fun Route.debugName(): String   // "welcome", "signIn", "twoFactor", …, "tripP
   - The stack is **never** a `rememberNavBackStack` and never saved. It is derived from the process-level `RootNavigator`, so an activity recreation in the same process (locale, font scale, layout direction; A8) shows the same route at once, and a size or uiMode change does not recreate at all. Process death is a cold launch (A8, iOS OQ 16).
 - **Entries:**
   - routes with a screen keep it (the 3c Welcome, if merged);
+  - `CfRoot` keeps `LaunchPlatform.welcomeDestinations` as its default: debug seams return to final Welcome on Back; release and perf remain inert until their auth/guest flows land (3c, OQ-A102; review H2). Do not replace this with AppGraph root navigation.
   - every other route renders 3b's `RoutePlaceholder`, generalised in T10 from `route: LaunchRoute` to `route: Route` with `rawName = route.debugName()`. Its surface stays `CfColors.background` with tag `route.<rawName>`, as in landed 3c; the real Welcome screen owns its sky, and its text still comes only from the variant `label` hook (`DebugRouteLabel` in debug, null in perf and release).
   - The 3b `LaunchRoute` placeholders are replaced by `Route` values through `LaunchRoute.toRoute()`.
 - **No new string.** The label stays 3b's `DebugRouteLabel` with `app_debug_route_x` from `core/ui/src/debug/res` (0c OQ-0c-4). Do not add `app_debug_route` or any other resource.

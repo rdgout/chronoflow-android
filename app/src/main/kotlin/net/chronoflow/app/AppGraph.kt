@@ -243,17 +243,6 @@ class AppGraph(
         )
     }
 
-    val welcomeDestinations: WelcomeDestinations by lazy {
-        object : WelcomeDestinations {
-            override fun planMyTrip() {
-                rootNavigator.navigate(Route.GuestWizard)
-            }
-
-            override fun signIn() {
-                rootNavigator.navigate(Route.SignIn)
-            }
-        }
-    }
     private val firstCommit by lazy { CompletableDeferred<Unit>() }
     internal val launchReadiness by lazy { FirstCommitReadiness(firstCommit, { readiness }, dispatchers.io) }
     val launchBridge by lazy { LaunchSessionBridge(rootNavigator) }
