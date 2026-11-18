@@ -1,5 +1,8 @@
 package net.chronoflow.app
 
+import net.chronoflow.core.navigation.RootNavigator
+import net.chronoflow.core.navigation.Route
+
 interface WelcomeDestinations {
     fun planMyTrip()
 
@@ -10,8 +13,12 @@ interface WelcomeDestinations {
     fun closeSeam() {}
 }
 
-object InertWelcomeDestinations : WelcomeDestinations {
+class RoutedWelcomeDestinations(
+    private val navigator: RootNavigator,
+) : WelcomeDestinations {
     override fun planMyTrip() {}
 
-    override fun signIn() {}
+    override fun signIn() {
+        navigator.navigate(Route.SignIn)
+    }
 }

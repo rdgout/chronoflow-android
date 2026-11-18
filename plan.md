@@ -469,7 +469,7 @@ Every screen scrolls when height-constrained. The minimum width is 280 dp; below
 - **Intent extras:** `cf.trip-page=S1…S6|large30|large60|<uuid>`, `cf.timeline-fixtures`, `cf.settings.theme`, `cf.settings.language`, `cf.reduceMotion`, `cf.freezeAt`, `cf.readyAt`, `cf.mainThreadStall`, `cf.holdSplash`, `cf.session`, `cf.gate`, `cf.stored`, `cf.readyDelay`, `cf.mode`.
 - **Launch diagnostics** (String extras, debug and perf only): `cf.session=in|signedIn|out|signedOut|never` (default native), `cf.gate=verify|terms|walkthrough|app` (default app), `cf.stored=yes|no|never` (default yes), `cf.readyDelay` in finite seconds `0…60` (default 0). Presence of any stub key injects `StubReadiness`; otherwise every variant uses `StoredDataReadiness` (OQ-A172). `cf.readyDelay` is an absolute time on the shared launch clock, not a second delay from collection.
 - **Fixed diagnostic endings:** `cf.mode=ready|slow|welcome` bypasses readiness. Ready/slow leave the route empty after removal; welcome publishes Welcome under the overlay, with a measured moon target and optional frozen intro. `cf.readyAt` is finite ms `0…60000`, default 4600, for slow mode. `cf.mainThreadStall` uses the same ms range and blocks from 300 ms after t0. Invalid values use the defaults. Release parsing and stalls are no-ops. `cf.freezeAt` still freezes a debug frame; `cf.holdSplash` remains debug only.
-- **Welcome seams:** `welcome.signIn` and `welcome.plan` open debug-only `route.signIn` / `route.guestWizard` placeholders using the existing debug route resource. Back returns to final Welcome without replaying its claimed intro. Release and perf use `InertWelcomeDestinations`.
+- **Welcome destinations:** `welcome.signIn` navigates to `Route.SignIn` in every build type through `RoutedWelcomeDestinations` (debug retains only the guest seam). `welcome.plan` opens the debug-only `route.guestWizard` seam until 11a. Back from Sign in returns to final Welcome without replaying its claimed intro.
 - **Welcome font gate:** while the overlay is active, compose Welcome when font warm-up completes or 1500 ms after the awaited first draw, whichever comes first. Without an overlay, compose immediately. The all-time debug StrictMode ChronoFlow disk/network counter covers the Welcome journey; the existing launch crash guard still ends at first commit.
 - **Entry point:** `net.chronoflow.debug.SeedReceiverActivity` (debug-exported, in `app/src/debug`) applies `TestSeeds.apply` (`13 §5`), then starts `MainActivity`.
 - **Mock accounts:** `demo@example.com` / `password`; `twofactor@example.com` / `password`, code `123456`, recovery `AbCdEf1234-GhIjKl5678`. Account ids `0199a3c0-0000-7000-8000-000000000000` / `…0001`; trips `…0001` (AMS→HND, active), `…0002` (AMS→JFK, upcoming).
@@ -1985,7 +1985,7 @@ Implementation commits (brief §7):
 - [x] T5 — SignInModel.
 - [x] T6 — Auth shell.
 - [x] T7 — Sign-in screen and ViewModel.
-- [ ] T8 — App wiring and accepted-session routing.
+- [x] T8 — App wiring and accepted-session routing.
 - [ ] T9 — Guards and board captures.
 - [ ] T10 — Emulator journey and keyboard check.
 - [ ] T11 — Docs.

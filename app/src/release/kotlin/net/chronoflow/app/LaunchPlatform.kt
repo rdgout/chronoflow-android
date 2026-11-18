@@ -3,12 +3,14 @@ package net.chronoflow.app
 import android.content.Intent
 import androidx.compose.runtime.Composable
 import net.chronoflow.app.perf.LaunchDiagnosticsParser
+import net.chronoflow.core.navigation.RootNavigator
 import net.chronoflow.feature.launch.LaunchOverrides
 
 internal object LaunchPlatform {
     fun mockSources(io: kotlinx.coroutines.CoroutineDispatcher): MockSources? = platformMockSources(io)
 
-    val welcomeDestinations: WelcomeDestinations = InertWelcomeDestinations
+    fun welcomeDestinations(navigator: RootNavigator): WelcomeDestinations = RoutedWelcomeDestinations(navigator)
+
     val ioViolationSink: (Boolean, List<String>) -> Unit = { _, _ -> }
     val routeLabel: (@Composable (String) -> Unit)? = null
     private var current: net.chronoflow.feature.launch.LaunchController? = null
