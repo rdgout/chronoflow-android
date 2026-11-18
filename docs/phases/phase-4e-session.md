@@ -671,6 +671,7 @@ T5/T6 test dependency: the source-startup suspension case first exercises `contr
   - `onSignedOut = { rootNavigator.navigate(Route.SignIn) }`;
   - `onGate = { rootNavigator.navigate(it.toRoute()) }`.
 - **`screen` profile** (`ScreenSessionFixture`, debug) [F `UITestSessionFixture.route`]. Skip the overlay as 3a/3b already do, then:
+  - Run this fixture only on a fresh activity creation (no saved state or history launch), after its first commit. Recreation mounts the process-owned route without applying the seed route again (round-2 L5).
   1. `presence = readiness.session()`;
   2. if signed in: `allowFirstLoad()`, then navigate `gate().toRoute()`; otherwise `Welcome`;
   3. `audit = sign-in` → `SignIn`, `forgot` → `Forgot`;

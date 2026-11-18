@@ -50,7 +50,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         val graph = (application as ChronoFlowApp).graph
         launch = graph.launch
-        if (savedInstanceState == null && (intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) == 0) {
+        val freshLaunch =
+            savedInstanceState == null && (intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) == 0
+        if (freshLaunch) {
             graph.pendingLaunchIntents.capture(intent)
         }
         val overrides = LaunchPlatform.overrides(intent, graph)
@@ -90,7 +92,7 @@ class MainActivity : ComponentActivity() {
             firstCommit.complete(Unit)
             launch.onFrameCommitted(claimed)
             (application as ChronoFlowApp).launchPath.end()
-            graph.appScope.launch { LaunchPlatform.routeScreen(graph, intent) }
+            if (freshLaunch) graph.appScope.launch { LaunchPlatform.routeScreen(graph, intent) }
         }
         splash.setKeepOnScreenCondition { launch.holdsSystemSplash() }
         splash.setOnExitAnimationListener { provider -> launch.onSystemSplashExit(provider, kind) }
