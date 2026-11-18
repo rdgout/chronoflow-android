@@ -14,6 +14,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import net.chronoflow.app.auth.AuthServices
 import net.chronoflow.app.auth.LazyPublicDataSource
+import net.chronoflow.app.auth.mockResetMail
 import net.chronoflow.core.data.clock.SystemPlanClock
 import net.chronoflow.core.data.passkey.CredentialManagerClient
 import net.chronoflow.core.data.passkey.PasskeyAnchor
@@ -158,6 +159,7 @@ class AppGraph(
                     verification = ::onVerify,
                 )
             },
+            mockMail = mockResetMail(selection.source, mockSources, { dataSources.public() }) { auth.openReset(it) },
             passkeyCapability = passkeyCapability,
             assertionProvider =
                 if (selection.source == DataSourceFactory.Source.Mock) {

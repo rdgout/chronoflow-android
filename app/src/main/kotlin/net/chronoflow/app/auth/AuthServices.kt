@@ -10,11 +10,13 @@ import net.chronoflow.app.AppDispatchers
 import net.chronoflow.core.model.DataSource
 import net.chronoflow.core.model.api.SessionResult
 import net.chronoflow.core.model.auth.AuthenticationMethod
+import net.chronoflow.core.model.auth.ResetPasswordLink
 import net.chronoflow.core.model.passkey.PasskeyCapability
 import net.chronoflow.core.model.passkey.PasskeyFailure
 import net.chronoflow.core.navigation.RootNavigator
 import net.chronoflow.core.navigation.Route
 import net.chronoflow.feature.auth.model.ForgotPasswordModel
+import net.chronoflow.feature.auth.model.ResetPasswordModel
 import net.chronoflow.feature.auth.model.SessionAcceptor
 import net.chronoflow.feature.auth.model.SignInModel
 import net.chronoflow.feature.auth.model.passkey.DeterministicAssertionProvider
@@ -101,6 +103,18 @@ class AuthServices(
             .also { forgotModel = it }
     }
 
+    var resetModel: ResetPasswordModel? = null
+        private set
+
+    fun openReset(link: ResetPasswordLink) {
+        signIn.prepareReset()
+        forgotModel?.cancel()
+        forgotModel = null
+        resetModel?.cancel()
+        resetModel = ResetPasswordModel(link, source, signIn.navigation, ::toSignIn, mockMail)
+        navigator.navigate(Route.Reset(link.email))
+    }
+
     private fun toSignIn() {
         navigator.navigate(Route.SignIn)
     }
@@ -112,6 +126,10 @@ class AuthServices(
                 if (navigator.state.value.route != Route.Forgot) {
                     forgotModel?.cancel()
                     forgotModel = null
+                }
+                if (navigator.state.value.route !is Route.Reset) {
+                    resetModel?.cancel()
+                    resetModel = null
                 }
                 if (previous.isAuth() && !state.route.isAuth()) signIn.clearSecrets()
                 previous = state.route
