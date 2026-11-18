@@ -42,6 +42,37 @@ class ApiClientTests {
     @get:Rule val api = MockApi()
 
     @get:Rule val folder = TemporaryFolder()
+
+    @Test fun serviceUnavailableWithZeroRetryAfterIsNotRetried() =
+        runTest(timeout = 60.seconds) {
+            val attempts =
+                java.util.concurrent.atomic
+                    .AtomicInteger()
+            api.route("POST", "/v1/terms/acceptance") {
+                if (attempts.getAndIncrement() == 0) {
+                    MockResponse
+                        .Builder()
+                        .code(503)
+                        .addHeader("Retry-After", "0")
+                        .build()
+                } else {
+                    response(204)
+                }
+            }
+            val result =
+                failure {
+                    api.client().request(
+                        ApiEndpoint(
+                            "POST",
+                            listOf("terms", "acceptance"),
+                            body = """{"accepted":true,"version":"1.0"}""".encodeToByteArray(),
+                        ),
+                    ) { Unit }
+                }
+            org.junit.Assert.assertEquals("Result: $result", 1, api.server.requestCount)
+            assertThat(result).isEqualTo(DataFailure.Server(503))
+        }
+
     private val endpoint = ApiEndpoint(path = listOf("users", "me"))
 
     private suspend fun read(client: ApiClient = api.client()) = client.request(endpoint, SessionAccount.serializer())
@@ -337,7 +368,7 @@ class ApiClientTests {
         assertThat(client.cache).isEqualTo(null)
         assertThat(client.retryOnConnectionFailure).isEqualTo(false)
         assertThat(client.interceptors.isEmpty()).isEqualTo(true)
-        assertThat(client.networkInterceptors.isEmpty()).isEqualTo(true)
+        assertThat(client.networkInterceptors).isEqualTo(listOf(ServiceUnavailableInterceptor))
         assertThat(client.connectTimeoutMillis).isEqualTo(0)
         assertThat(client.readTimeoutMillis).isEqualTo(0)
         assertThat(client.writeTimeoutMillis).isEqualTo(0)

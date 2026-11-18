@@ -22,6 +22,7 @@ import okhttp3.Authenticator
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.CookieJar
+import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -73,7 +74,8 @@ class ApiClient(
                     .apply {
                         interceptors().clear()
                         networkInterceptors().clear()
-                    }.build()
+                    }.addNetworkInterceptor(ServiceUnavailableInterceptor)
+                    .build()
                     .also { client = it }
             }
         }
@@ -197,6 +199,14 @@ class ApiClient(
                 timer.cancel()
             }
         }
+    }
+}
+
+internal object ServiceUnavailableInterceptor : Interceptor {
+    override fun intercept(chain: Interceptor.Chain): Response {
+        val response = chain.proceed(chain.request())
+        // OkHttp retries 503 + Retry-After: 0 even when connection retries are disabled.
+        return if (response.code == 503) response.newBuilder().removeHeader("Retry-After").build() else response
     }
 }
 
