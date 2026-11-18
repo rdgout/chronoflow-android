@@ -1,12 +1,10 @@
 package net.chronoflow.feature.auth.verify
 
 import net.chronoflow.core.model.DataFailure
-import net.chronoflow.core.testing.tiers.Logic
 import net.chronoflow.core.ui.R
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-@Logic
 class VerifyCopyTest {
     @Test fun countdownUsesAsciiMinutesAndSeconds() {
         assertEquals("0:42", countdownArgument(42))
