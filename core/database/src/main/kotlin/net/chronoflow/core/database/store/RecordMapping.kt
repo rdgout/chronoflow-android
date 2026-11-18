@@ -2,12 +2,16 @@ package net.chronoflow.core.database.store
 
 import net.chronoflow.core.database.Account
 import net.chronoflow.core.database.AccountSql
+import net.chronoflow.core.database.Check_marks
 import net.chronoflow.core.database.Outbox
+import net.chronoflow.core.database.Plan_versions
 import net.chronoflow.core.database.Settings
 import net.chronoflow.core.database.Trips
 import net.chronoflow.core.model.store.AccountRecord
+import net.chronoflow.core.model.store.CheckMarkRecord
 import net.chronoflow.core.model.store.JSONDocument
 import net.chronoflow.core.model.store.OutboxRecord
+import net.chronoflow.core.model.store.PlanVersionRecord
 import net.chronoflow.core.model.store.SettingsRecord
 import net.chronoflow.core.model.store.TripRecord
 
@@ -208,4 +212,98 @@ fun AccountSql.saveOutboxRow(record: OutboxRecord) {
 
 fun AccountSql.deleteOutboxRow(id: String) {
     queries.outboxQueries.deleteOutboxRow(id)
+}
+
+private fun Plan_versions.record() =
+    PlanVersionRecord(trip_id, input_hash, detail.encodeToByteArray(), received_at, detail_version)
+
+fun AccountSql.fetchPlanVersion(
+    tripId: String,
+    inputHash: String,
+): PlanVersionRecord? =
+    queries.planVersionsQueries
+        .selectPlanVersion(tripId, inputHash)
+        .executeAsOneOrNull()
+        ?.record()
+
+fun AccountSql.savePlanVersion(record: PlanVersionRecord) {
+    val detail = JSONDocument.requireValid(record.detail.decodeToString(throwOnInvalidSequence = true))
+    queries.planVersionsQueries.updatePlanVersion(
+        detail,
+        record.receivedAt,
+        record.detailVersion,
+        record.tripId,
+        record.inputHash,
+    )
+    if (queries.accountQueries.changes().executeAsOne() == 0L) {
+        queries.planVersionsQueries.insertPlanVersion(
+            record.tripId,
+            record.inputHash,
+            detail,
+            record.receivedAt,
+            record.detailVersion,
+        )
+    }
+}
+
+private fun Check_marks.record() =
+    CheckMarkRecord(trip_id, input_hash, type, local_date, ordinal.toInt(), status, marked_at)
+
+fun AccountSql.fetchCheckMarks(
+    tripId: String,
+    inputHash: String,
+): List<CheckMarkRecord> =
+    queries.checkMarksQueries
+        .selectCheckMarks(tripId, inputHash)
+        .executeAsList()
+        .map { it.record() }
+
+fun AccountSql.fetchCheckMark(
+    tripId: String,
+    inputHash: String,
+    type: String,
+    localDate: String,
+    ordinal: Int,
+): CheckMarkRecord? =
+    queries.checkMarksQueries
+        .selectCheckMark(
+            tripId,
+            inputHash,
+            type,
+            localDate,
+            ordinal.toLong(),
+        ).executeAsOneOrNull()
+        ?.record()
+
+fun AccountSql.saveCheckMark(record: CheckMarkRecord) {
+    queries.checkMarksQueries.updateCheckMark(
+        record.status,
+        record.markedAt,
+        record.tripId,
+        record.inputHash,
+        record.type,
+        record.localDate,
+        record.ordinal.toLong(),
+    )
+    if (queries.accountQueries.changes().executeAsOne() == 0L) {
+        queries.checkMarksQueries.insertCheckMark(
+            record.tripId,
+            record.inputHash,
+            record.type,
+            record.localDate,
+            record.ordinal.toLong(),
+            record.status,
+            record.markedAt,
+        )
+    }
+}
+
+fun AccountSql.deleteCheckMark(
+    tripId: String,
+    inputHash: String,
+    type: String,
+    localDate: String,
+    ordinal: Int,
+) {
+    queries.checkMarksQueries.deleteCheckMark(tripId, inputHash, type, localDate, ordinal.toLong())
 }

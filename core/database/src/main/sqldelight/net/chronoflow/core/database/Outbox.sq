@@ -19,3 +19,9 @@ INSERT INTO outbox (id, kind, payload, created_at, attempts, last_error) VALUES 
 
 deleteOutboxRow:
 DELETE FROM outbox WHERE id = ?;
+
+incrementOutboxAttempts:
+UPDATE outbox SET attempts = attempts + 1, last_error = ? WHERE id = ?;
+
+selectOutboxAttempts:
+SELECT attempts FROM outbox WHERE id = ?;

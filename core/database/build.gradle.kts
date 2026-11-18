@@ -15,6 +15,7 @@ sqldelight {
 dependencies {
     testImplementation(project(":core:database-testing"))
     api(project(":core:model"))
+    api(libs.sqldelight.runtime)
     implementation(libs.sqldelight.android.driver)
     implementation(libs.kotlinx.coroutines.core)
     testImplementation(libs.sqldelight.sqlite.driver)

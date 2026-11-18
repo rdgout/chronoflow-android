@@ -15,3 +15,12 @@ INSERT INTO account (id, name, email, has_verified_email, synced_at, walkthrough
 
 changes:
 SELECT changes();
+
+setSyncedAt:
+UPDATE account SET synced_at = ? WHERE id = ?;
+
+setEmailUnverified:
+UPDATE account SET has_verified_email = 0 WHERE id = ?;
+
+setAccountName:
+UPDATE account SET name = ? WHERE id = ?;
