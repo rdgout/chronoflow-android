@@ -228,10 +228,13 @@ data class StoredAccountReadiness(val accountId: String, val gate: Gate?, val ha
 - **Actor mapping: use 4d §5.3 exactly, never a `Mutex`.** State is touched only on `confined = io.limitedParallelism(1)`; every public method is `withContext(confined) { … }`. That keeps Swift actor **re-entrancy**: state may change at every suspension point, so re-check exactly where Swift re-checks. **Never hold a lock across a suspension**: `stopSync`, `requestSync` (→ `SessionSync.requestStart` → `activeSession()`) and `SessionSync.isCurrent` call back into the controller while a `tail` job is suspended, and the ported tests read state while an `accept` waits inside its credential write (§2.3).
 - **Long work** runs as a chained `tail` job in an owned `CoroutineScope(SupervisorJob() + confined)` (never a child of the caller):
   ```kotlin
-  val previous = tail; val job = ownScope.async { previous?.join(); work() }; tail = job
+  val previous = tail
+  val job = ownScope.async { previous?.join(); currentCoroutineContext().ensureActive(); work() }
+  tail = ownScope.launch { withContext(NonCancellable) { previous?.join(); job.join() } }
   ```
   - `restore` and `accept` await `job` and, if the **caller** is cancelled, cancel `job` (Swift `withTaskCancellationHandler { … } onCancel: { task.cancel() }`; 4d §5.3 form). `cancelingAnAcceptBeforeOpenCompletesPreventsPublication` depends on it.
   - Sign-out never cancels its job (below).
+  - The separate tail waits for both predecessor and operation, even when the operation is cancelled before it starts. A cancelled waiter must never let a later accept overtake an earlier wipe (review H1; Swift's non-cancellable task-value wait preserves this chain).
 - **Readable state.** `presence`, `epoch`, `storedSession`, `generation`, `pendingUnauthorizedEpoch` and `signOutFlight` are readable from outside (`suspend` getters through `confined`, or `@Volatile` fields written only on `confined`); the ported tests read them. Only `presence`, `epoch` and `pendingUnauthorizedEpoch` are public; the rest are `internal`.
 - **State:**
   - `presence: SessionPresence?` (null until the first restore or accept) and `epoch: Long` (starts at 0);

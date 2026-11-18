@@ -309,11 +309,21 @@ class SessionController(
 
     private fun <T> enqueue(work: suspend () -> T): Deferred<T> {
         val previous = tail
-        return scope
-            .async {
+        val job =
+            scope.async {
                 previous?.join()
+                currentCoroutineContext().ensureActive()
                 work()
-            }.also { tail = it }
+            }
+        // A cancelled operation can finish before its predecessor; the queue must still wait for both.
+        tail =
+            scope.launch {
+                withContext(NonCancellable) {
+                    previous?.join()
+                    job.join()
+                }
+            }
+        return job
     }
 
     private suspend fun <T> awaitCancellable(job: Deferred<T>): T =
