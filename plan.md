@@ -1982,7 +1982,7 @@ Implementation commits (brief §7):
 - [x] T2 — Form model and failure mapping.
 - [x] T3 — Navigation and layout math.
 - [x] T4 — Sign-in glyphs and field input hook.
-- [ ] T5 — SignInModel.
+- [x] T5 — SignInModel.
 - [ ] T6 — Auth shell.
 - [ ] T7 — Sign-in screen and ViewModel.
 - [ ] T8 — App wiring and accepted-session routing.
