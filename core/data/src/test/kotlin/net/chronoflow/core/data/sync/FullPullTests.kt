@@ -20,6 +20,7 @@ import net.chronoflow.core.model.api.ApiJson
 import net.chronoflow.core.model.store.OutboxPayload
 import net.chronoflow.core.model.store.OutboxRecord
 import net.chronoflow.core.model.store.SettingsRecord
+import net.chronoflow.core.sync.CheckOffReconciler
 import net.chronoflow.core.sync.FullPull
 import net.chronoflow.core.sync.PlanRetention
 import net.chronoflow.core.testing.sync.ScriptedSource
@@ -151,7 +152,8 @@ class FullPullTests {
                 val pull = FullPull(store.sync, source, now = { syncDate })
                 assert404Pull(store, pull, row)
                 assert404Pull(store, pull, row)
-                assertEquals(OutboxChange.CheckOff(check()), OutboxPayload.change(row))
+                val prepared = CheckOffReconciler(pull).prepare(row, store.epoch)
+                assertEquals(OutboxChange.CheckOff(check()), prepared?.let { OutboxPayload.change(it) })
                 assertEquals(listOf(row.id), OutboxRepository(store.database).pending().map { it.id })
                 assertTrue(SettingsRepository(store.database).settings().none { it.section == "syncFailure" })
                 store.enqueue(OutboxChange.CheckOff(check(status = null)), 1)

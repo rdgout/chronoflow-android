@@ -1850,7 +1850,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - One flight per epoch, with coalescing, a 1 s debounce, and `refreshNow`.
   - Backoff is `min(1 s × 2^n, 5 min)`, or a larger `retryAfterSeconds` from the server.
   - Every response is checked against the epoch.
-- [ ] **Outbox**, ported from `OutboxChange`.
+- [x] **Outbox**, ported from `OutboxChange`.
   - FIFO by `(created_at, id)`, with chains per `settings:<section>`, `trip:<tripId>` and kind.
   - Rekeying, and the stale-plan rule.
   - A final refusal is recorded in `settings.syncFailure`, and the change is undone (`StoreApplication.refuse`). Final means any 4xx except 401, 408, 425 and 429, and not email-unverified. Walkthrough rows are never refused. A stale check-off (409, or 422 on `plan_input_hash` or with the `form` sentence "This plan has changed. Refresh it before marking this step.") is kept for rekeying, never refused. A refused check-off with a notice sets its trip's `plan_versions.detail_version` to NULL (iOS `OutboxFlusher.swift:93–107`).
