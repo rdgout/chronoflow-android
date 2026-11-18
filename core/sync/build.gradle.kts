@@ -6,6 +6,7 @@ plugins {
 
 dependencies {
     testImplementation(project(":core:testing"))
+    testImplementation(libs.turbine)
     testFixturesApi(project(":core:model"))
     testFixturesImplementation(project(":core:testing"))
     testFixturesImplementation(libs.kotlinx.coroutines.core)

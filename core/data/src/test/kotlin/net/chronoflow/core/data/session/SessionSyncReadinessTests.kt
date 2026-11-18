@@ -4,6 +4,7 @@ package net.chronoflow.core.data.session
 
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import net.chronoflow.core.data.repository.TripRepository
@@ -11,6 +12,8 @@ import net.chronoflow.core.model.session.SessionPresence
 import net.chronoflow.core.model.session.StoredSession
 import net.chronoflow.core.sync.SessionSync
 import net.chronoflow.core.sync.SyncScheduler
+import net.chronoflow.core.sync.session.AccountReadinessSource
+import net.chronoflow.core.sync.session.StoredDataReadiness
 import net.chronoflow.core.testing.sync.ManualSyncScheduler
 import net.chronoflow.core.testing.sync.ScriptedSource
 import net.chronoflow.core.testing.sync.TestGate
@@ -100,9 +103,10 @@ class SessionSyncReadinessTests {
                 )
             store.controller.attach(stopSync = sync::stop, requestSync = { sync.requestStart(store.controller, it) })
             store.credentials.data = StoredSession("test", syncAccount).encode()
+            val readiness = StoredDataReadiness(store.controller, AccountReadinessSource { emptyFlow() }, io)
             var resolved: SessionPresence? = null
             try {
-                val session = backgroundScope.async { store.controller.restore().also { resolved = it } }
+                val session = backgroundScope.async { readiness.session().also { resolved = it } }
                 startup.waitUntilBlocked()
                 assertTrue(eventually { resolved != null })
                 assertEquals(SessionPresence.SignedIn(syncAccount), resolved)
@@ -110,6 +114,7 @@ class SessionSyncReadinessTests {
                 startup.release()
                 assertEquals(SessionPresence.SignedIn(syncAccount), session.await())
             } finally {
+                readiness.close()
                 sync.stop()
                 store.close()
             }
