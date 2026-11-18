@@ -403,9 +403,9 @@ Commit: `feat(database): guard writes by epoch and permit and observe commits`. 
   - Otherwise return a `callbackFlow<Unit>` with `.buffer(Channel.CONFLATED)`, mapped through a fetch:
     - On collection, register the producer channel in the observer set (`observationCount` counts it).
     - Send one initial `Unit`, then register `Query.Listener { trySend(Unit) }` with `driver.addListener(*tables, listener = it)`.
-    - `awaitClose { driver.removeListener(*tables, listener = it); unregister() }`.
+    - Cleanup (`driver.removeListener(*tables, listener = it)`, `unregister()`) runs in a `try/finally` that also covers the registration, then `awaitClose()` inside it. Never rely on `awaitClose { … }` alone: `withContext(io)`'s prompt cancellation can skip it after registration and leak the observer (4a review round 1, finding 2; `AccountDatabase.kt` as landed).
     - For each signal, fetch on `io`: `lifecycle.read { current?.let { Box(fetch(it)) } }`. Null (closed) emits nothing. Emit `box.value`. The private `Box` wrapper lets a legitimately null value (an absent account) through; never `mapNotNull` on `T` itself.
-  - `close()` calls `channel.close()` on every registered observer, so collectors **complete normally** (iOS `lifetime.cancel()` finishes the stream). A collector cancelled by its owner unregisters through `awaitClose`.
+  - `close()` calls `channel.close()` on every registered observer, so collectors **complete normally** (iOS `lifetime.cancel()` finishes the stream). A collector cancelled by its owner unregisters through that `finally`, even when cancelled during registration.
   - SQLDelight notifies listeners only after the outermost transaction commits, and never for a rollback: that is the "committed values only" property (iOS `ValueObservation`). Keys are table names (`"account"`, `"trips"`, `"settings"`, `"outbox"`, `"plan_versions"`, `"check_marks"`, `"drafts"`).
   - Fetch errors propagate to the collector (iOS `lifetime.fail`).
 
@@ -701,7 +701,7 @@ The identifiers `OQ-4a-1` through `OQ-4a-18` are local to this brief. Their plan
 - **4e:** builds `SessionController` on `SessionStore`, `SyncEpoch` and `SessionMutationPermit`; `AccountWiper` on `WipeMarker` (map `CorruptWipeMarkerException` to `DatabaseUnavailable`); `SessionAccountDatabase` on `AccountDatabase(root, namespace, driverFactory, io)`. It wires production instances in `AppGraph` (resolving `noBackupFilesDir` off the main thread, `AndroidAccountDriverFactory`, `AndroidKeystoreSessionCipher`, `KeystoreSessionStore.forNamespace`, `DevicePreferences.shared`).
 - **9b:** adds the `drafts` queries (`INSERT OR REPLACE` allowed there) and narrows `SqlSafetyTest`'s `OR REPLACE` pattern to exclude `Drafts.sq`.
 - **10a/10b:** read `DevicePreferences.language`/`theme`; call `reconcileDeviceConfig()` at start; mirror to `LocaleManager` (33+) / `UiModeManager` (31+).
-- **11a/11b:** a Keystore-backed guest secret store (alias `<keychainService>.guest`) and `guest-wizard.json`.
+- **11a/11b:** a Keystore-backed guest secret store (alias `<keychainService>.guest`) and `guest-wizard.json`. `AndroidKeystoreSessionCipher.encrypt` does not retry; any store that calls `SessionCipher.encrypt` directly must, on `PermanentSessionKeyFailure`, call `deleteKey(alias)` and retry once, exactly as `KeystoreSessionStore.write` does (4a review round 1, finding 5).
 - **12b/12c:** queries on `scheduled_reminder`/`reminder_ledger`; `notificationPermissionRequested`.
 
 ---
