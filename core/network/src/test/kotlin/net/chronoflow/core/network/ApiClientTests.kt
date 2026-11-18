@@ -7,6 +7,7 @@ import assertk.assertions.isEqualTo
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.test.runTest
@@ -35,6 +36,11 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
+import java.net.InetAddress
+import java.net.Socket
+import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.Executors
+import javax.net.SocketFactory
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -65,10 +71,81 @@ class ApiClientTests {
             assertThat(poolSettings(base.connectionPool)).isEqualTo(8 to 120.seconds.inWholeNanoseconds)
         }
 
-    @Test fun evictIdleConnectionsIsANoOpBeforeTheClientIsBuilt() {
-        val client = api.client(base = { error("eviction must not build the client") })
-        client.evictIdleConnections()
-    }
+    @Test fun evictIdleConnectionsIsANoOpBeforeTheClientIsBuilt() =
+        runTest(timeout = 60.seconds) {
+            val client = api.client(base = { error("eviction must not build the client") })
+            client.evictIdleConnections()
+        }
+
+    @Test fun evictIdleConnectionsClosesSocketsOnTheInjectedIoDispatcher() =
+        runTest(timeout = 60.seconds) {
+            val closeThreads = CopyOnWriteArrayList<Thread>()
+            val sockets =
+                object : SocketFactory() {
+                    override fun createSocket(): Socket =
+                        object : Socket() {
+                            override fun close() {
+                                closeThreads += Thread.currentThread()
+                                super.close()
+                            }
+                        }
+
+                    override fun createSocket(
+                        host: String?,
+                        port: Int,
+                    ): Socket = error("unexpected socket overload")
+
+                    override fun createSocket(
+                        host: String?,
+                        port: Int,
+                        localHost: InetAddress?,
+                        localPort: Int,
+                    ): Socket = error("unexpected socket overload")
+
+                    override fun createSocket(
+                        host: InetAddress?,
+                        port: Int,
+                    ): Socket = error("unexpected socket overload")
+
+                    override fun createSocket(
+                        address: InetAddress?,
+                        port: Int,
+                        localAddress: InetAddress?,
+                        localPort: Int,
+                    ): Socket = error("unexpected socket overload")
+                }
+            Executors.newSingleThreadExecutor { Thread(it, "api-client-test-io") }.asCoroutineDispatcher().use { io ->
+                val ioThread = withContext(io) { Thread.currentThread() }
+                val client =
+                    ApiClient(
+                        api.baseUrl,
+                        baseClient = { OkHttpClient.Builder().socketFactory(sockets).build() },
+                        bearer = { "artificial-token" },
+                        io = io,
+                    )
+                api.reply("GET", "/v1/users/me", body = "reply")
+                assertThat(client.request(endpoint) { it.decodeToString() }).isEqualTo("reply")
+                assertThat(client.effectiveClient().connectionPool.idleConnectionCount()).isEqualTo(1)
+                closeThreads.clear()
+                val caller = Thread.currentThread()
+                org.junit.Assert.assertNotSame("Caller must be distinct from the injected IO thread", caller, ioThread)
+
+                client.evictIdleConnections()
+
+                assertThat(closeThreads.size).isEqualTo(1)
+                org.junit.Assert.assertNotSame(
+                    "Socket close must not run on the caller thread",
+                    caller,
+                    closeThreads.single(),
+                )
+                org.junit.Assert.assertSame(
+                    "Socket close must run on the injected IO thread",
+                    ioThread,
+                    closeThreads.single(),
+                )
+                assertThat(client.effectiveClient().connectionPool.idleConnectionCount()).isEqualTo(0)
+            }
+        }
 
     @Test fun evictIdleConnectionsPreventsReuseOfAnIdleConnection() =
         runTest(timeout = 60.seconds) {

@@ -58,8 +58,10 @@ class ApiClient(
     @Volatile
     private var client: OkHttpClient? = null
 
-    fun evictIdleConnections() {
-        client?.connectionPool?.evictAll()
+    suspend fun evictIdleConnections() {
+        val built = client ?: return
+        // Closing a pooled TLS socket may send close_notify.
+        withContext(io) { built.connectionPool.evictAll() }
     }
 
     internal suspend fun effectiveClient(): OkHttpClient =
@@ -74,7 +76,8 @@ class ApiClient(
                     .proxyAuthenticator(Authenticator.NONE)
                     .cache(null)
                     // Cloudflare allows 400 s idle for HTTP/1.1 and HTTP/2 (the default), ahead of nginx.
-                    // Pool idle uses nanoTime (awake time); 4e evicts on ON_START after sleep or network changes.
+                    // Pool idle uses nanoTime (awake time); 4e's ON_START eviction covers sleep
+                    // and network changes while backgrounded.
                     .connectionPool(ConnectionPool(5, 300, TimeUnit.SECONDS))
                     .retryOnConnectionFailure(false)
                     .connectTimeout(0, TimeUnit.MILLISECONDS)
