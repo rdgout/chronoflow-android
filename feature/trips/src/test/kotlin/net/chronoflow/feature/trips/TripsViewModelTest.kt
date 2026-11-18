@@ -136,6 +136,63 @@ class TripsViewModelTest {
             }
         }
 
+    @Test fun stillActiveDetailSurvivesAnActiveIdsChange() =
+        runTest(timeout = 60.seconds) {
+            val deps =
+                FakeTripsDependencies(testScheduler).apply {
+                    records.value = listOf(tripRecord("kept"))
+                    installPlan("kept")
+                }
+            val fixture = ModelFixture(deps)
+            try {
+                val emissions = mutableListOf<TripsUiState>()
+                backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                    fixture.model.state.collect { emissions += it }
+                }
+                runCurrent()
+                val next =
+                    fixture.model
+                        .cards()
+                        .single()
+                        .next
+                assertNotNull(next)
+                val before = emissions.size
+                deps.installPlan("added")
+                deps.snapshotGates["added"] = CompletableDeferred()
+                deps.records.value = listOf(tripRecord("kept"), tripRecord("added"))
+                runCurrent()
+                assertEquals(2, fixture.model.cards().size)
+                val changed = emissions.drop(before).filterIsInstance<TripsUiState.Content>()
+                assertTrue(changed.isNotEmpty())
+                changed.forEach { state ->
+                    assertEquals(
+                        next,
+                        state.sections
+                            .flatMap { it.trips }
+                            .single { it.id == "kept" }
+                            .next,
+                    )
+                }
+                deps.snapshotGates.getValue("added").complete(Unit)
+                runCurrent()
+                assertEquals(
+                    next,
+                    fixture.model
+                        .cards()
+                        .single { it.id == "kept" }
+                        .next,
+                )
+                assertNotNull(
+                    fixture.model
+                        .cards()
+                        .single { it.id == "added" }
+                        .next,
+                )
+            } finally {
+                fixture.close()
+            }
+        }
+
     @Test fun nextLabelNowAndIn() =
         runTest(timeout = 60.seconds) {
             val deps = FakeTripsDependencies(testScheduler)

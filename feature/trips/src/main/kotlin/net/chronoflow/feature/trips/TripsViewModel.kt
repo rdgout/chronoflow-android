@@ -18,11 +18,13 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.serialization.SerializationException
 import net.chronoflow.core.model.contracts.Language
+import net.chronoflow.core.model.contracts.TripDetail
 import net.chronoflow.core.model.contracts.TripStatus
 import net.chronoflow.core.plan.TripListValue
 import net.chronoflow.core.plan.tripDisplayStatus
@@ -82,8 +84,10 @@ class TripsViewModel(
                         .map { trips ->
                             trips.filter { it.status == TripStatus.Active }.map { it.card.id }.distinct()
                         }.distinctUntilChanged()
+                var previousDetails = emptyMap<String, TripDetail?>()
                 val details =
                     activeIds.flatMapLatest { ids ->
+                        previousDetails = previousDetails.filterKeys { it in ids }
                         if (ids.isEmpty()) {
                             flowOf(emptyMap())
                         } else {
@@ -101,7 +105,9 @@ class TripsViewModel(
                                         id to detail
                                     }
                                 }
-                            combine(observations) { it.toMap() }.onStart { emit(emptyMap()) }
+                            combine(observations) { it.toMap() }
+                                .onStart { emit(previousDetails) }
+                                .onEach { previousDetails = it }
                         }
                     }
                 val inputs = combine(now, deps.synced(), deps.preferences(), language, ::Inputs)

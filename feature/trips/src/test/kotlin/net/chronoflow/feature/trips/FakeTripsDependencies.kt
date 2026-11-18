@@ -9,6 +9,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.coroutines.test.TestDispatcher
@@ -76,6 +77,7 @@ internal class FakeTripsDependencies(
     val syncState = MutableStateFlow(true)
     val prefs = MutableStateFlow(TripsPreferences())
     val snapshots = mutableMapOf<String, MutableStateFlow<TripPlanSnapshot>>()
+    val snapshotGates = mutableMapOf<String, CompletableDeferred<Unit>>()
     val fakeClock = FakePlanClock(tripsNow())
     override var clock: PlanClock = fakeClock
     override val decoder = PlanDecoder(worker)
@@ -92,9 +94,10 @@ internal class FakeTripsDependencies(
     override fun preferences() = prefs
 
     override fun planSnapshots(tripId: String) =
-        snapshots.getOrPut(tripId) {
-            MutableStateFlow(TripPlanSnapshot(plan = null))
-        }
+        snapshots
+            .getOrPut(tripId) {
+                MutableStateFlow(TripPlanSnapshot(plan = null))
+            }.onStart { snapshotGates[tripId]?.await() }
 
     override suspend fun formatter(): CopyLineFormatter {
         formatterOnWorker = worker.running
