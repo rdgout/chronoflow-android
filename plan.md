@@ -1900,6 +1900,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 - [x] **T1: session value types and unified session presence.**
 - [x] **T2: restore, accept, generation and shared session test fixtures.**
 - [x] **T4: account wiper, session account database and device preferences wipe guards.**
+- [x] **T5: current-epoch session sync start and wipe-drain integration.**
 - [x] **SessionController** (`core/sync/…`; its Android seams are implemented in `:core:data`).
   - Accept order: DB upsert → secure write → publish.
   - A generation counter.

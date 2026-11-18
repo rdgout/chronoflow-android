@@ -572,6 +572,8 @@ One commit per task, in order. Use Conventional Commits, lower-case and imperati
     - Android-only `activeSyncDatabaseFollowsTheOpenAccount`: null before `open`, non-null after, null after `close`.
   - `core/data/src/test/…/session/DevicePreferencesWipeTests.kt` (Robolectric `@Logic`, `@Config(sdk = [36])`, because 4a's `DevicePreferences` needs a `Context`; 4a tests DataStore the same way): `devicePreferencesSurviveDeletingAllAccountFiles` (Swift `SessionAccountDatabaseTests` l.196–213): set language `nl` and theme `dark` through `DevicePreferences.shared(context)`, read `DeviceIdentityStore(...).identity()`, open and close an account DB under `noBackupFilesDir`, delete its directory; identity, language and theme are unchanged.
 
+T5/T6 test dependency: the source-startup suspension case first exercises `controller.restore()` in T5; T6 upgrades it to the production `StoredDataReadiness.session()` once that type exists. No readiness stub is introduced.
+
 ### T5. Session sync start (`feat(sync): start session sync for the current epoch`)
 - Add `requestStart(controller, epoch)` to 4d's `SessionSync.kt` per §5.5. Change nothing else in 4d's sync files.
 - **Tests** (`core/data/src/test/…/session/`, because they need the real database and 4d's `SyncStore` support; JDBC, `ScriptedSource`, `ManualSyncScheduler`):
