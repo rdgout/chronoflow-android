@@ -16,7 +16,7 @@ class RouteDebugNameTest(
 
     companion object {
         @JvmStatic
-        @Parameterized.Parameters(name = "{0}")
+        @Parameterized.Parameters(name = "{index}: {0}")
         fun cases() = routeCases()
     }
 }
