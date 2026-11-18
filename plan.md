@@ -227,7 +227,7 @@ An Android-only deviation needs an open question with a default, recorded below,
 - **Copy promises a clock shift, never symptom relief.**
 - **No unneeded comments;** comment only the why. No static initialisers or eager singletons.
 - **Git:**
-  - `git init -b main`; the first commit holds only `plan.md`, `AGENTS.md`, `CLAUDE.md`, `docs/`, `_design/` and `.gitignore`.
+  - `git init -b main`; the first commit holds only `plan.md`, `AGENTS.md`, `CLAUDE.md`, `docs/research/`, `_design/` and `.gitignore`.
   - Then one branch per phase, `feat/phase-<id>-<slug>`, stacked: a phase starts from the stack top once its dependencies are in the stack, and parallel phases are rebased onto the stack top in completion order ("Tasks"). Never commit to `main` after the first docs commit.
   - Atomic Conventional Commits (`type(scope): subject`, lower-case imperative) that tick the task here in the same commit.
   - No `Co-Authored-By` or any other trailer (iOS OQ 1).
@@ -450,7 +450,7 @@ Every screen scrolls when height-constrained. The minimum width is 280 dp; below
 ### Android spec: manifest and permissions (`14 §6`)
 
 - **Permissions:**
-  - Release allows only: `INTERNET`, `ACCESS_NETWORK_STATE`, `POST_NOTIFICATIONS`, `RECEIVE_BOOT_COMPLETED`, `WAKE_LOCK` (merged by WorkManager).
+  - Release allows only: `INTERNET`, `ACCESS_NETWORK_STATE`, `POST_NOTIFICATIONS`, `RECEIVE_BOOT_COMPLETED`, `WAKE_LOCK` (merged by WorkManager), plus androidx.core's `<applicationId>.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` (OQ-0a-20).
   - Banned: `SCHEDULE_EXACT_ALARM`, `USE_EXACT_ALARM`, `FOREGROUND_SERVICE*`, calendar, `CAMERA`, `READ_PHONE_STATE`, `AD_ID` (`tools:node="remove"`), Firebase/c2dm, badges.
 - **Application attributes:** `allowBackup="false"`, `dataExtractionRules`, `usesCleartextTraffic="false"`, `enableOnBackInvokedCallback="true"`, `localeConfig`, `supportsRtl="false"`.
 - **MainActivity:** `singleTask`, exported, `configChanges` (A8), `screenOrientation="portrait"`, `windowSoftInputMode="adjustResize"`, App Link filters. No `directBootAware`.
@@ -475,7 +475,7 @@ Every screen scrolls when height-constrained. The minimum width is 280 dp; below
 
 - **Signing:** the upload key stays outside the repo; `CF_UPLOAD_*` live in `~/.gradle/gradle.properties`. The committed `app/debug.keystore` is never listed in production `assetlinks.json`.
 - **Bundle:** `bundle { language { enableSplit = false } }`, so in-app language switching works offline.
-- **Size:** download ≤ 8 MB, fail above 12 MB (`bundletool get-size total`); no `.so` files.
+- **Size:** download ≤ 8 MB, fail above 12 MB (`bundletool get-size total`); no `.so` except the OQ-0a-22 allow-list.
 - **Tracks:** internal, then closed (12 testers × 14 days for a personal account), then staged 10/50/100%.
 - **Play:** Data safety answers from `14 §9.2`; policy checklist P1–P11 (`14 §10`).
 
@@ -537,7 +537,7 @@ Every screen scrolls when height-constrained. The minimum width is 280 dp; below
 | Jump to the last day | ≤ 6 flings | same | functional | `timelineLastDay` | 1e |
 | Peak memory, large60 scroll | RSS anon ≤ 150 / ≤ 80 MiB | ≤ 150 / ≤ 100 MiB | ≤ 150 MiB | `MemoryUsageMetric(Mode.Max)` in `timelineScroll`; growth from first to last iteration is reported, > 40 MiB warns | 1e |
 | Peak memory to Welcome | below RN | — | report | `MemoryUsageMetric` in `StartupBenchmark` | 13 |
-| Download size | ≤ 8 MB; fail above 12 MB; no `.so` | — | — | `bundletool build-apks --device-spec` (arm64, xxhdpi, en) + `get-size total`; `make size` | 0a (gate), 13 |
+| Download size | ≤ 8 MB; fail above 12 MB; no `.so` except the OQ-0a-22 allow-list | — | — | `bundletool build-apks --device-spec` (arm64, xxhdpi, en) + `get-size total`; `make size` | 0a (gate), 13 |
 | `make quick` | < 60 s warm | — | — | `Scripts/measure-tiers.sh` → `build/tier-timings.json` | 0a |
 | `make check` | < 5 min warm, with the `pixel` emulator running | — | — | Same | 0a, 13 |
 
@@ -626,6 +626,7 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A45 | Release while the timeline scroll rows are still "open: device only"? | No: the pre-upload checklist in `docs/play.md` needs one passing `DEVICE_CLASS=reference make perf-timeline` (120 Hz) and one passing `DEVICE_CLASS=lowEnd make perf-timeline` before the first production upload, or the user's waiver recorded here. Phases 13 and 14 may still close with device rows open | 13, 14 |
 | OQ-A46 | Compose `TimelineTargets` (20–40 semantics nodes per day) always, or only while accessibility is on? (research `04` OQ-T25) | Always: UiAutomator, Macrobenchmark, Switch Access and Voice Access need them. If a low-end run shows `timelineTargetsMaxMs` above 1 ms, compose them only while `AccessibilityManager.isEnabled` (observed as state; UiAutomation counts as enabled) | 1d, 1e, 13 |
 | OQ-A47 | App Startup initializers other than ProcessLifecycle and ProfileInstaller (for example EmojiCompat, merged by Compose text) | Remove them (AGENTS "Performance"). Compose then draws emoji with the phone's own font, so emoji newer than that font show as boxes on old phones. 3a records the inventory and the measured saving | 3a, 13 |
+| OQ-0a-22 | Native libraries in the bundle? | Allow only `libandroidx.graphics.path.so` (Compose graphics-path; excluding it breaks Path conversion below API 34); fail on any other `.so` | 0a, 13 |
 
 ## Tasks
 
@@ -649,7 +650,7 @@ Each has a default; the plan proceeds on the default and records the answer here
 3. Tests follow AGENTS.md "Tests": the cheapest layer, the budgets (`build/test-results/*/timings.json`), and at most one emulator journey per feature.
 4. Every new visible string exists in en and nl, and no literal reaches `Text`. No raw color, `MaterialTheme.colorScheme` or device geometry appears outside `:core:designsystem` and generated files (Konsist, Lint).
 5. **UI phases:**
-   - Every board state has a Robolectric guard at `small`, `pixel8`, `foldInner`, `landscapeSideNav` and `largeFont`, in en and nl, and in light and dark where the board has the state.
+   - Every board state has a Robolectric guard in light only, because theme never changes geometry: at `small` and `largeFont` in nl (the longest copy), and once at `pixel8` in en. `foldInner` and `landscapeSideNav` run only for screens with a wide or side-navigation layout. Light and dark, and every other combination, are covered by the captures (user, 2026-11-16: test smart, not exhaustively; this overrides the wider matrix in briefs written earlier, and the orchestrator trims each brief when it refreshes it).
    - `make captures ONLY=<screens>` was compared with the boards by the Opus reviewer.
    - Each difference is fixed, or recorded with its board name.
 6. Debug runs are StrictMode-clean: no disk or network work on the main thread.
@@ -713,23 +714,23 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - `Docs/tooling.md`
   - `Docs/ui-test-tiers.md`
 
-**Delivers.** Creates the git repository; its first commit holds only plan.md, AGENTS.md, CLAUDE.md, docs/, _design/ and .gitignore. Adds the Gradle 9.9.1 wrapper, the version catalog and the build-logic convention plugins, and creates every module of the A3 graph as a skeleton so the Konsist rules guard module boundaries from day one. A minimal :app (Application, MainActivity, manifest allowlist, debug StrictMode, debug network config) installs and launches as net.chronoflow.app.native.debug. Spotless with ktlint, Lint as errors, Konsist, verifyReleaseManifest and the size gate are wired, together with the Makefile, Scripts/ci.sh, run-tier.sh, emulator.sh and measure-tiers.sh. The phase measures make quick and make check, records the numbers, and proves which tiers the worker sandbox can run. It adds no product code.
+**Delivers.** Creates the git repository; its first commit holds only plan.md, AGENTS.md, CLAUDE.md, docs/research/, _design/ and .gitignore. Adds the Gradle 9.9.1 wrapper, the version catalog and the build-logic convention plugins, and creates every module of the A3 graph as a skeleton so the Konsist rules guard module boundaries from day one. A minimal :app (Application, MainActivity, manifest allowlist, debug StrictMode, debug network config) installs and launches as net.chronoflow.app.native.debug. Spotless with ktlint, Lint as errors, Konsist, verifyReleaseManifest and the size gate are wired, together with the Makefile, Scripts/ci.sh, run-tier.sh, emulator.sh and measure-tiers.sh. The phase measures make quick and make check, records the numbers, and proves which tiers the worker sandbox can run. It adds no product code.
 
 **Tasks**
-- [ ] **Repository.**
+- [x] **Repository.**
   - Run `git init -b main` and add `.gitignore` (`build/`, `.gradle/`, `.kotlin/`, `local.properties`, `.idea/`, `*.iml`, `captures/`, `*.hprof`, `*.jks` except `app/debug.keystore`, `.claude/*.lock`, `.claude/settings.local.json`).
-  - The first commit, `docs: add android plan, agent rules, research and boards`, holds `plan.md`, `AGENTS.md`, `CLAUDE.md`, `docs/`, `_design/` and `.gitignore`. Then create `feat/phase-0a-scaffold`.
+  - The first commit, `docs: add android plan, agent rules, research and boards`, holds `plan.md`, `AGENTS.md`, `CLAUDE.md`, `docs/research/`, `_design/` and `.gitignore`. Then create `feat/phase-0a-scaffold`.
   - Add `tools/ios-pin.txt` (`f391a1fa`) and `tools/web-pin.txt` (`e36368ec82e6c44c0a5b1c624324e2a4fb5ddd19`).
-- [ ] **Wrapper.**
+- [x] **Wrapper.**
   - Bootstrap with the cached distribution: `~/.gradle/wrapper/dists/gradle-9.4.1-bin/arn2x92ynaizyzdaamcbpbhtj/gradle-9.4.1/bin/gradle wrapper --gradle-version 9.9.1 --distribution-type bin --gradle-distribution-sha256-sum d8a18a7a841dd5df825d35a685fad6f2d7f12ac0c280e57b67c27b4a520ba228`. After that, use only `./gradlew`.
   - If AGP 9.5.1 rejects 9.9.1, use 9.6.0 with its SHA-256 from A1 and record it (OQ-A35).
-- [ ] **Settings and catalog.**
+- [x] **Settings and catalog.**
   - `settings.gradle.kts`: `includeBuild("build-logic")`, the foojay resolver 1.0.0, `RepositoriesMode.FAIL_ON_PROJECT_REPOS`, and every module of A3.
   - `gradle/libs.versions.toml` holds every A1 version.
   - `gradle.properties`: the values from "Android spec: build", plus `android.onlyEnableUnitTestForTheTestedBuildType=false` so that `testReleaseUnitTest` exists. Verify the flag; if AGP rejects it, enable release unit tests in `:app` only.
   - Test: `./gradlew buildEnvironment | grep kotlin-gradle-plugin` prints 2.4.21, and a second `./gradlew help` reuses the configuration cache.
-- [ ] **Convention plugins.** Add the ten plugins of "Android spec: build" in `build-logic/convention`. Each module's `build.gradle.kts` applies exactly one of them and sets its A2 namespace. Test: `./gradlew assembleDebug` builds every module.
-- [ ] **Minimal app.**
+- [x] **Convention plugins.** Add the ten plugins of "Android spec: build" in `build-logic/convention`. Each module's `build.gradle.kts` applies exactly one of them and sets its A2 namespace. Test: `./gradlew assembleDebug` builds every module.
+- [x] **Minimal app.**
   - `ChronoFlowApp`: debug StrictMode per A21, and a lazy `AppGraph` placeholder that does no I/O.
   - `MainActivity` with an empty Compose root.
   - The manifest per "Android spec: manifest and permissions", with only `INTERNET` and `ACCESS_NETWORK_STATE` for now.
@@ -737,16 +738,16 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - In `app/src/debug/`, a `network_security_config.xml` that allows cleartext to `10.0.2.2` only.
   - `version.properties` with the A2 `versionCode` formula, and a committed `app/debug.keystore`.
   - Test: `AppLaunchSmokeTest` (`@Smoke`, emulator) launches under StrictMode `penaltyDeath`. `adb shell pm list packages` must show `net.chronoflow.app.native.debug`, which proves the `native` segment works (OQ-A1, Risk 14).
-- [ ] **Quality gates.**
+- [x] **Quality gates.**
   - Spotless with ktlint 1.8.0 and the Compose rules 0.6.8 (`.editorconfig`).
   - Lint with `abortOnError`, `warningsAsErrors` and `checkDependencies`, configured in `lint.xml`.
   - Kotlin `allWarningsAsErrors`, plus `stability_config.conf` and the compiler reports behind `-PcomposeReports=true`.
   - `:app:analyzeReleaseR8Config` in `check`, if AGP 9.5.1 provides it (`11` names it); otherwise record its absence.
   - The `:konsist` module enforces the A3 rules. Each rule has a planted violation under `konsist/src/test/resources/violations/` that `KonsistRulesTest` must reject.
-- [ ] **Release gates.**
+- [x] **Release gates.**
   - `verifyReleaseManifest` is a build-logic task wired into `check`. It fails on each of the six cases in "Android spec: manifest and permissions". `VerifyReleaseManifestTest` feeds it one planted manifest per case.
-  - `measureBundleSize` (`make size`) runs `bundletool build-apks --device-spec` (arm64, xxhdpi, en) and `get-size total`. It warns above 8 MB, fails above 12 MB, and fails on any `.so` file.
-- [ ] **Makefile and scripts.**
+  - `measureBundleSize` (`make size`) runs `bundletool build-apks --device-spec` (arm64, xxhdpi, en) and `get-size total`. It warns above 8 MB, fails above 12 MB, and fails on any `.so` file except the OQ-0a-22 allow-list.
+- [x] **Makefile and scripts.**
   - Every target in AGENTS.md "Commands". A target whose phase has not landed prints the phase that adds it and exits 1.
   - `Scripts/ci.sh`: `make generate check`, then `git diff --exit-code`.
   - `Scripts/run-tier.sh`:
@@ -761,7 +762,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
     - `create` makes a T2 AVD on request only: `fold` (`pixel_9_pro_fold`) and `small` (`small_phone`) on the installed API 36 image, and `api29` (`pixel_8`) on `system-images;android-29;google_apis;arm64-v8a`, which `sdkmanager` installs on first use.
   - `Scripts/measure-tiers.sh` writes `build/tier-timings.json`.
   - Test: `Scripts/test_scripts.sh` drives `run-tier.sh` with short caps and a hanging stand-in command.
-- [ ] **Measure and record.** In `docs/tooling.md`, record:
+- [x] **Measure and record.** In `docs/tooling.md`, record:
   - the warm `make quick` and `make check` times, three runs each;
   - what the worker sandbox can do: the Gradle daemon, `adb`, the emulator and `.git/index.lock`;
   - the commands the orchestrator must therefore run outside the sandbox.
@@ -870,7 +871,8 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 - [ ] **Plan copy.** Copy `PlanCopy.json` verbatim to `core/plan/src/main/resources/plan_copy.json`, with its hash in `tools/l10n/plan_copy.sha256`. Add `make plan-copy` and its check.
 - [ ] **CopyIndex.kt** (generated, `:core:ui`): maps an iOS key to its `R.string` or `R.plurals` id per table. It serves keys resolved at runtime: server error codes, reminder kinds and enum labels.
 - [ ] **Locale wiring.**
-  - `:app` sets `androidResources { generateLocaleConfig = true }` and adds `app/src/main/res/resources.properties` (`unqualifiedResLocale=en`).
+  - `app_name` already sits in `core/ui/src/main/res/values/strings_untranslatable.xml` (done in 0a, OQ-0a-4).
+  - `:app` sets `androidResources { generateLocaleConfig = true }` and adds `app/src/main/res/resources.properties` (`unqualifiedResLocale=en`). (done in 0a)
   - Lint errors: `MissingTranslation`, `ExtraTranslation`, `StringFormatInvalid`, `StringFormatCount` and `PluralsCandidate`.
   - A Konsist rule forbids a string literal as the first argument of `Text(` outside tests and previews.
 - [ ] **StringParityTest** (JVM, parses the XML): every en name has an nl twin with the same placeholders and plural quantities. Record the counts.
@@ -2776,7 +2778,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - Review the R8 keep rules in `src/main/keepRules/*.keep` (serialization, Nav3 keys), with `-assumenosideeffects` for `Log.v`, `Log.d` and `Log.i`.
   - `bundle { language { enableSplit = false } }` (OQ-A39).
   - The final `verifyReleaseManifest` allowlist.
-  - `make size`: at most 8 MB download, no `.so`.
+  - `make size`: at most 8 MB download, no `.so` except the OQ-0a-22 allow-list.
 - [ ] **Profiles.** Extend `BaselineProfileGenerator` with the startup journey (launch → Today), the trip journey (`04 §10.5`), and the wizard up to Ready. Regenerate and commit; `BaselineProfileMode.Require` must pass.
 - [ ] **Performance budget.**
   - Run every row of "Performance budget" on `pixel`, and on a reference and a low-end device when attached (OQ-A22).
