@@ -1986,7 +1986,7 @@ Implementation commits (brief §7):
 - [x] T6 — Auth shell.
 - [x] T7 — Sign-in screen and ViewModel.
 - [x] T8 — App wiring and accepted-session routing.
-- [ ] T9 — Guards and board captures.
+- [x] T9 — Guards and board captures.
 - [ ] T10 — Emulator journey and keyboard check.
 - [ ] T11 — Docs.
 
