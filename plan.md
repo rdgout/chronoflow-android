@@ -2049,7 +2049,7 @@ Implementation commits (brief §7):
 Implementation commits (brief §7):
 - [x] T1 — Move the passkey seam.
 - [x] T2 — Base64URL and passkey JSON.
-- [ ] T3 — Credential Manager client.
+- [x] T3 — Credential Manager client.
 - [ ] T4 — Two-factor model.
 - [ ] T5 — Two-factor screen.
 - [ ] T6 — Route and hand-over.

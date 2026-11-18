@@ -7,6 +7,8 @@ android {
 }
 
 dependencies {
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services.auth)
     implementation(project(":core:datastore"))
     testImplementation(testFixtures(project(":core:sync")))
     testImplementation(project(":core:database-testing"))
