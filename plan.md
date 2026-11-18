@@ -1918,7 +1918,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
     8. erase: the account directory, then the guest secrets, then `guest-wizard.json`;
     9. delete the session credentials;
     10. clear the wipe marker. If erase or delete fails, the marker stays and the next start retries.
-- [ ] **Graphs** (`app/…/AppGraph.kt`, `SessionGraph.kt`).
+- [x] **Graphs** (`app/…/AppGraph.kt`, `SessionGraph.kt`).
   - `AppGraph` is process-wide and lazy.
   - A `SessionGraph` per epoch holds the database, repositories and `SyncEngine`.
   - `ProcessLifecycleOwner`: ON_START syncs; ON_STOP only disables sync (no flush, no source call), as iOS `setActive(false)`.

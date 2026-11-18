@@ -28,6 +28,12 @@ class MainActivity : ComponentActivity() {
     private val firstCommit = CompletableDeferred<Unit>()
     private lateinit var launch: LaunchController
 
+    override val defaultViewModelCreationExtras: androidx.lifecycle.viewmodel.CreationExtras
+        get() =
+            androidx.lifecycle.viewmodel.MutableCreationExtras(super.defaultViewModelCreationExtras).apply {
+                set(AppGraphKey, (application as ChronoFlowApp).graph)
+            }
+
     override fun onResume() {
         super.onResume()
         reduceMotion = ReduceMotion.resolve(ValueAnimator.areAnimatorsEnabled(), RootOverrides.reduceMotion(intent))

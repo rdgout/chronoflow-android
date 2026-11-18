@@ -7,6 +7,8 @@ import net.chronoflow.debug.DebugRouteLabel
 import net.chronoflow.feature.launch.LaunchController
 
 internal object LaunchPlatform {
+    fun mockSources(io: kotlinx.coroutines.CoroutineDispatcher): MockSources? = platformMockSources(io)
+
     var welcomeDestinations: WelcomeDestinations = net.chronoflow.debug.DebugWelcomeDestinations()
         private set
     val ioViolationSink: (Boolean, List<String>) -> Unit = net.chronoflow.debug.StrictModeViolationCounter::record

@@ -12,8 +12,8 @@ import net.chronoflow.core.model.store.StoreFailure
 import java.io.File
 
 class AccountWiper(
-    storageRoot: File,
-    namespace: StorageNamespace,
+    private val storageRoot: suspend () -> File,
+    private val namespace: StorageNamespace,
     private val credentials: SessionStore,
     private val guestSecrets: GuestSecrets = NoGuestSecrets,
     private val io: CoroutineDispatcher,
@@ -25,16 +25,26 @@ class AccountWiper(
         }
     },
 ) {
-    private val root = File(storageRoot, namespace.directoryName)
-    private val marker = WipeMarker(root, io)
+    constructor(
+        storageRoot: File,
+        namespace: StorageNamespace,
+        credentials: SessionStore,
+        guestSecrets: GuestSecrets = NoGuestSecrets,
+        io: CoroutineDispatcher,
+        remove: (File) -> Unit = { if (it.exists() && !it.deleteRecursively()) throw StoreFailure.Unavailable() },
+    ) : this({ storageRoot }, namespace, credentials, guestSecrets, io, remove)
 
-    suspend fun begin(id: AccountID) = marker.write(id)
+    private suspend fun root() = File(storageRoot(), namespace.directoryName)
+
+    private suspend fun marker() = WipeMarker(root(), io)
+
+    suspend fun begin(id: AccountID) = withContext(io) { marker().write(id) }
 
     suspend fun recover() =
         withContext(io) {
             val id =
                 try {
-                    marker.read()
+                    marker().read()
                 } catch (
                     _: CorruptWipeMarkerException,
                 ) {
@@ -49,10 +59,10 @@ class AccountWiper(
 
     suspend fun erase(id: AccountID) =
         withContext(io) {
-            remove(File(root, "Accounts/${id.rawValue}"))
+            remove(File(root(), "Accounts/${id.rawValue}"))
             guestSecrets.deleteAll()
-            remove(File(root, "guest-wizard.json"))
+            remove(File(root(), "guest-wizard.json"))
         }
 
-    suspend fun finish() = marker.clear()
+    suspend fun finish() = withContext(io) { marker().clear() }
 }

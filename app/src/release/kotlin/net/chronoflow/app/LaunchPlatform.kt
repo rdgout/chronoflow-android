@@ -6,6 +6,8 @@ import net.chronoflow.app.perf.LaunchDiagnosticsParser
 import net.chronoflow.feature.launch.LaunchOverrides
 
 internal object LaunchPlatform {
+    fun mockSources(io: kotlinx.coroutines.CoroutineDispatcher): MockSources? = platformMockSources(io)
+
     val welcomeDestinations: WelcomeDestinations = InertWelcomeDestinations
     val ioViolationSink: (Boolean, List<String>) -> Unit = { _, _ -> }
     val routeLabel: (@Composable (String) -> Unit)? = null

@@ -88,6 +88,8 @@ android {
 }
 
 dependencies {
+    implementation(libs.androidx.lifecycle.process)
+    testImplementation(project(":core:database-testing"))
     testImplementation(testFixtures(project(":feature:launch")))
     testImplementation(testFixtures(project(":core:sync")))
     implementation(project(":feature:launch"))
