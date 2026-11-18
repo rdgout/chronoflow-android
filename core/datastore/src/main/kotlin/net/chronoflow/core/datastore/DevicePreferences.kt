@@ -26,13 +26,18 @@ import net.chronoflow.core.model.device.DeviceIdentityFailure
 import net.chronoflow.core.model.device.DeviceIdentityPersistence
 import java.io.File
 import java.io.IOException
+import java.lang.ref.WeakReference
 import java.util.WeakHashMap
 
 class DevicePreferences(
-    private val context: Context,
+    context: Context,
     private val dataStore: DataStore<Preferences>,
     private val io: CoroutineDispatcher,
 ) : DeviceIdentityPersistence {
+    private val application = WeakReference(context.applicationContext)
+
+    private fun applicationContext(): Context = checkNotNull(application.get())
+
     private val data = dataStore.data.catch { if (it is IOException) emit(emptyPreferences()) else throw it }
     val language: Flow<LanguageChoice> =
         data
@@ -51,7 +56,7 @@ class DevicePreferences(
         sdkInt: Int = Build.VERSION.SDK_INT,
     ) = withContext(io) {
         dataStore.edit { it[languageKey] = choice.raw }
-        if (sdkInt < 33) DeviceConfigFile.update(context, io) { it.copy(language = choice) }
+        if (sdkInt < 33) DeviceConfigFile.update(applicationContext(), io) { it.copy(language = choice) }
     }
 
     suspend fun setTheme(
@@ -59,7 +64,7 @@ class DevicePreferences(
         sdkInt: Int = Build.VERSION.SDK_INT,
     ) = withContext(io) {
         dataStore.edit { it[themeKey] = choice.raw }
-        if (sdkInt < 31) DeviceConfigFile.update(context, io) { it.copy(theme = choice) }
+        if (sdkInt < 31) DeviceConfigFile.update(applicationContext(), io) { it.copy(theme = choice) }
     }
 
     suspend fun setNotificationPermissionRequested(value: Boolean) =
@@ -72,7 +77,7 @@ class DevicePreferences(
         withContext(io) {
             if (sdkInt < 33) {
                 val prefs = data.first()
-                DeviceConfigFile.update(context, io) { old ->
+                DeviceConfigFile.update(applicationContext(), io) { old ->
                     old.copy(
                         language = LanguageChoice.fromRaw(prefs[languageKey]) ?: LanguageChoice.System,
                         theme =
@@ -123,11 +128,12 @@ class DevicePreferences(
             val app = context.applicationContext
             return synchronized(instances) {
                 instances.getOrPut(app) {
+                    val application = WeakReference(app)
                     val store =
                         PreferenceDataStoreFactory.create(
                             corruptionHandler = ReplaceFileCorruptionHandler { emptyPreferences() },
                             scope = CoroutineScope(Dispatchers.IO + SupervisorJob()),
-                            produceFile = { file(app.noBackupFilesDir) },
+                            produceFile = { file(checkNotNull(application.get()).noBackupFilesDir) },
                         )
                     DevicePreferences(app, store, Dispatchers.IO)
                 }

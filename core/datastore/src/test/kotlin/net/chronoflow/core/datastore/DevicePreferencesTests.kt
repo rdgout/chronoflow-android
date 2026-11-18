@@ -34,6 +34,10 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import java.io.File
+import java.lang.ref.Reference
+import java.lang.reflect.Modifier
+import java.util.Collections
+import java.util.IdentityHashMap
 import kotlin.time.Duration.Companion.seconds
 
 @Logic
@@ -131,6 +135,35 @@ class DevicePreferencesTests {
             preferences.setLanguage(LanguageChoice.Nl)
             assertEquals(LanguageChoice.Nl, preferences.language.first())
         }
+
+    @Test fun sharedValueDoesNotStronglyRetainTheApplication() {
+        val seen = Collections.newSetFromMap(IdentityHashMap<Any, Boolean>())
+
+        fun visit(
+            value: Any?,
+            path: String,
+        ) {
+            if (value == null) return
+            assertFalse("Strong application reference at $path", value === context)
+            if (value is Reference<*> || !seen.add(value)) return
+            val type = value.javaClass
+            if (!type.name.startsWith("net.chronoflow.core.datastore.") &&
+                !type.name.startsWith("androidx.datastore.") &&
+                !type.name.startsWith("kotlin.")
+            ) {
+                return
+            }
+            var owner: Class<*>? = type
+            while (owner != null && owner != Any::class.java) {
+                for (field in owner.declaredFields.filterNot { Modifier.isStatic(it.modifiers) }) {
+                    field.isAccessible = true
+                    visit(field.get(value), "$path.${field.name}")
+                }
+                owner = owner.superclass
+            }
+        }
+        visit(DevicePreferences.shared(context), "preferences")
+    }
 
     @Test fun sharedIsOnePerApplication() {
         assertSame(DevicePreferences.shared(context), DevicePreferences.shared(ContextWrapper(context)))
