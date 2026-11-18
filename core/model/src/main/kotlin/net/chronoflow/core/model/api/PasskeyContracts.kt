@@ -47,7 +47,9 @@ data class ApiPasskeyAssertion(
     val rawId: String,
     val type: CredentialType,
     val response: ApiPasskeyAssertionResponse,
-)
+) {
+    override fun toString(): String = "ApiPasskeyAssertion(***)"
+}
 
 @Serializable
 data class ApiPasskeyAssertionResponse(
@@ -55,7 +57,9 @@ data class ApiPasskeyAssertionResponse(
     val authenticatorData: String,
     val signature: String,
     val userHandle: String? = null,
-)
+) {
+    override fun toString(): String = "ApiPasskeyAssertionResponse(***)"
+}
 
 @Serializable
 enum class UserVerification {
