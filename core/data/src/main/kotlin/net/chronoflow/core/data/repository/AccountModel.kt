@@ -3,6 +3,7 @@ package net.chronoflow.core.data.repository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -78,7 +79,7 @@ class AccountModel(
     }
 
     suspend fun detach() {
-        withContext(context) { cancelSubscription()?.join() }
+        withContext(NonCancellable + context) { cancelSubscription()?.join() }
     }
 
     private suspend fun failed(attachedGeneration: Long) {

@@ -3,8 +3,11 @@ package net.chronoflow.core.data.sync
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -23,6 +26,7 @@ import net.chronoflow.core.testing.sync.identity
 import net.chronoflow.core.testing.sync.syncAccount
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import kotlin.coroutines.CoroutineContext
@@ -346,6 +350,41 @@ class SyncTriggerTests {
                 runCurrent()
                 assertEquals(1, f.clock.pendingCount)
                 assertEquals(1.0, f.clock.requestedDelays.last(), 0.0)
+            } finally {
+                sync.stop()
+            }
+        }
+
+    // (new) Android lifecycle owners can disable sync from a cancelled finally block.
+    @Test fun disablingFromCancelledOwnerDrainsAndKeepsSyncDisabled() =
+        triggerTest { f ->
+            f.source.configure(failMethod = "identity", methodFailure = DataFailure.Server(500))
+            val sync = sessionSync(f)
+            val session = StoredSession("test", syncAccount)
+            try {
+                sync.start(session, 5)
+                sync.refreshNow()
+                runCurrent()
+                assertTrue(f.clock.pendingCount > 0)
+                val owner =
+                    backgroundScope.launch {
+                        try {
+                            awaitCancellation()
+                        } finally {
+                            sync.setEnabled(false)
+                        }
+                    }
+                runCurrent()
+                owner.cancelAndJoin()
+                runCurrent()
+                assertEquals(0, f.clock.pendingCount)
+                assertNull(sync.refreshNow())
+                val calls = f.source.calls.toList()
+                sync.resume(session, 5)
+                runCurrent()
+                assertEquals(calls, f.source.calls)
+                assertEquals(0, f.clock.pendingCount)
+                assertNull(sync.refreshNow())
             } finally {
                 sync.stop()
             }

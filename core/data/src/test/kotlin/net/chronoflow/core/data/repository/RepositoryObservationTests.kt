@@ -2,6 +2,7 @@ package net.chronoflow.core.data.repository
 
 import app.cash.turbine.test
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -124,6 +125,40 @@ class RepositoryObservationTests {
                 assertEquals(AccountModel.LoadState.Unknown, model.state.value)
                 repository.upsert(account.copy(name = "late", email = "late"))
                 store.database.close()
+                runCurrent()
+                assertEquals(AccountModel.LoadState.Unknown, model.state.value)
+            } finally {
+                model.detach()
+                store.close()
+            }
+        }
+
+    // (new) Android owners detach from cancelled finally blocks without a deinit backstop.
+    @Test fun detachFromCancelledOwnerClearsTheModel() =
+        runTest(timeout = 60.seconds) {
+            val store = RepositoryStore(StandardTestDispatcher(testScheduler))
+            val model = AccountModel(backgroundScope)
+            try {
+                val repository = AccountRepository(store.database)
+                val account = AccountRecord(syncAccount, "A", "a")
+                repository.upsert(account)
+                model.attach(repository, 1)
+                runCurrent()
+                assertEquals(AccountModel.LoadState.Loaded(account), model.state.value)
+                val owner =
+                    backgroundScope.launch {
+                        try {
+                            awaitCancellation()
+                        } finally {
+                            model.detach()
+                        }
+                    }
+                runCurrent()
+                owner.cancelAndJoin()
+                runCurrent()
+                assertEquals(AccountModel.LoadState.Unknown, model.state.value)
+                assertEquals(0, store.database.observationCount)
+                repository.upsert(account.copy(name = "late"))
                 runCurrent()
                 assertEquals(AccountModel.LoadState.Unknown, model.state.value)
             } finally {

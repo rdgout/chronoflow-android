@@ -129,7 +129,7 @@ class SessionSync(
     }
 
     suspend fun setEnabled(enabled: Boolean) =
-        withContext(confined) {
+        withContext(if (enabled) confined else NonCancellable + confined) {
             this@SessionSync.enabled = enabled
             if (!enabled) detach(preservingRetry = true)
         }
