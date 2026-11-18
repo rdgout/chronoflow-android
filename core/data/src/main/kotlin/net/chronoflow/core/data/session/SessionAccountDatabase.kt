@@ -39,8 +39,11 @@ class SessionAccountDatabase(
             if (database?.accountID == id && !closing) return@withContext
             close()
             val candidate = AccountDatabase(storageRoot(), namespace, driverFactory, io)
-            candidate.open(id.rawValue)
-            database = candidate
+            // A driver opened on the writer must have an owner even if its caller was cancelled.
+            withContext(NonCancellable) {
+                candidate.open(id.rawValue)
+                database = candidate
+            }
         }
 
     override suspend fun upsert(account: SessionAccount) =

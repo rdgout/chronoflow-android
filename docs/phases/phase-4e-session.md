@@ -563,6 +563,7 @@ One commit per task, in order. Use Conventional Commits, lower-case and imperati
 - `…/data/session/AccountWiper.kt` and `GuestSecrets.kt` (`interface GuestSecrets { suspend fun deleteAll() }`, `object NoGuestSecrets`) per §5.3, built on 4a's `WipeMarker` and `SessionStore`.
 - `…/data/session/SessionAccountDatabase.kt` [F `Kit/LocalStore/SessionAccountDatabase.swift`]: `class SessionAccountDatabase(storageRoot: suspend () -> File, namespace, driverFactory: AccountDriverFactory, io, detach: suspend () -> Unit) : SessionAccountStore, ActiveSyncDatabase`, wrapping one 4a `AccountDatabase(root, namespace, driverFactory, io)` built on first `open`:
   - `open(id)` reuses the database when the account is the same; otherwise it closes first (4a's `AlreadyOpen` must never surface).
+  - Opening the candidate and assigning ownership share `withContext(NonCancellable)` on the injected IO context. A cancelled caller must not strand a driver after the writer returns (round-2 L4).
   - `activeAccountDatabase(): AccountDatabase?` returns null while closing; `activeDatabase(): SyncDatabase?` (4d's `ActiveSyncDatabase`) returns `SqlSyncDatabase(it)` for the same database, or null.
   - `upsert(account)`: with no open database, or an open database for another account, throw `StoreFailure.InvalidAccountID` [F `SessionAccountDatabase.swift:30–32`]; otherwise delegate to 4d's `AccountDatabase.upsertSessionAccount(account)` (OQ-A40). Do not re-implement the protections.
   - `markEmailVerified(id, email)` requires the email to match and the id to be the open account.
