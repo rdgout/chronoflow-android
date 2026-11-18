@@ -3,7 +3,8 @@
 package net.chronoflow.app.shell
 
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
-import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.isDisplayed
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.test.core.app.ApplicationProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -95,15 +96,7 @@ abstract class ShellActivityFixture {
 
     protected fun loaded() {
         waitFor { graph.sessionGraphs.current.value != null }
-        compose.waitUntil(5_000) {
-            scheduler.runCurrent()
-            compose.mainClock.advanceTimeByFrame()
-            compose
-                .onAllNodesWithTag("trip.$activeTripId")
-                .fetchSemanticsNodes(atLeastOneRootRequired = false)
-                .size == 1
-        }
-        compose.waitForIdle()
+        waitFor { compose.onNodeWithTag("trip.$activeTripId").isDisplayed() }
     }
 
     @After fun closeShell() {
