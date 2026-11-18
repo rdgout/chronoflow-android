@@ -13,11 +13,11 @@ import net.chronoflow.core.model.api.AccountPolicies
 import net.chronoflow.core.model.api.ApiJson
 import net.chronoflow.core.model.api.SessionResult
 import net.chronoflow.core.model.auth.AuthenticationMethod
+import net.chronoflow.core.model.passkey.PasskeyCapability
+import net.chronoflow.core.model.passkey.PasskeyFailure
 import net.chronoflow.core.model.session.SessionFailure
 import net.chronoflow.core.navigation.Route
 import net.chronoflow.core.testing.Fixtures
-import net.chronoflow.feature.auth.model.passkey.PasskeyCapability
-import net.chronoflow.feature.auth.model.passkey.PasskeyFailure
 import net.chronoflow.feature.auth.testing.AUTH_DEVICE_ID
 import net.chronoflow.feature.auth.testing.AuthTestFixture
 import net.chronoflow.feature.auth.testing.FakeSecretField

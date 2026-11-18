@@ -11,12 +11,12 @@ import net.chronoflow.core.model.api.AccountSnapshot
 import net.chronoflow.core.model.api.ApiJson
 import net.chronoflow.core.model.api.SessionResult
 import net.chronoflow.core.model.auth.AuthenticationMethod
+import net.chronoflow.core.model.passkey.PasskeyCapability
 import net.chronoflow.core.model.session.SessionFailure
 import net.chronoflow.core.testing.Fixtures
 import net.chronoflow.feature.auth.model.SecretField
 import net.chronoflow.feature.auth.model.SessionAcceptor
 import net.chronoflow.feature.auth.model.SignInModel
-import net.chronoflow.feature.auth.model.passkey.PasskeyCapability
 import net.chronoflow.feature.auth.signin.SignInRouter
 import java.time.Instant
 
@@ -149,7 +149,7 @@ class AuthTestFixture(
             { "test" },
             PasskeyCapability(capability),
             passkey =
-                passkey ?: { throw net.chronoflow.feature.auth.model.passkey.PasskeyFailure.Unavailable },
+                passkey ?: { throw net.chronoflow.core.model.passkey.PasskeyFailure.Unavailable },
             accepted = routes::acceptedSession,
             onTwoFactor = routes::twoFactor,
         )

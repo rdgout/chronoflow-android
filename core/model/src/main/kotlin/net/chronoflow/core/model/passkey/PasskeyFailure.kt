@@ -1,4 +1,4 @@
-package net.chronoflow.feature.auth.model.passkey
+package net.chronoflow.core.model.passkey
 
 sealed class PasskeyFailure : Exception(null, null, false, false) {
     data object Canceled : PasskeyFailure()

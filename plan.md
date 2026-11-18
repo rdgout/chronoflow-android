@@ -2045,6 +2045,20 @@ Implementation commits (brief §7):
 **Delivers.** Adds the two-factor step with code and recovery entry (numeric and ASCII keyboards, one-time-code autofill), throttling and errors, then the hand-over to the gate. It adds passkey sign-in through Credential Manager behind PasskeyCapability, which stays false until server items S1–S3 are live, with a silent cancel and mapped errors. The iOS two-factor cases are ported, and both two-factor variants get seeded screen tests.
 
 **Tasks**
+
+Implementation commits (brief §7):
+- [x] T1 — Move the passkey seam.
+- [ ] T2 — Base64URL and passkey JSON.
+- [ ] T3 — Credential Manager client.
+- [ ] T4 — Two-factor model.
+- [ ] T5 — Two-factor screen.
+- [ ] T6 — Route and hand-over.
+- [ ] T7 — Guards and captures.
+- [ ] T8 — Passkey sign-in.
+- [ ] T9 — Passkey wiring.
+- [ ] T10 — Emulator checks.
+- [ ] T11 — Docs and plan.
+
 - [ ] **TwoFactorScreen and TwoFactorViewModel**, porting `TwoFactorModel`.
   - A 6-digit code (`KeyboardType.Number`, `SmsOtpCode` autofill) and a recovery code (`KeyboardType.Ascii`), with a mode switch.
   - Throttling and errors; success goes to the gate.

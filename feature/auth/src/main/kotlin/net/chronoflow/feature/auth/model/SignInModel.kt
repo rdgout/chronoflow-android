@@ -15,10 +15,10 @@ import net.chronoflow.core.model.api.SessionResult
 import net.chronoflow.core.model.api.SignInResult
 import net.chronoflow.core.model.auth.AuthenticationMethod
 import net.chronoflow.core.model.device.DeviceIdentityFailure
+import net.chronoflow.core.model.passkey.PasskeyCapability
+import net.chronoflow.core.model.passkey.PasskeyFailure
 import net.chronoflow.core.model.session.SessionFailure
 import net.chronoflow.core.model.store.StoreFailure
-import net.chronoflow.feature.auth.model.passkey.PasskeyCapability
-import net.chronoflow.feature.auth.model.passkey.PasskeyFailure
 import java.io.IOException
 import java.security.GeneralSecurityException
 

@@ -14,6 +14,7 @@ import net.chronoflow.core.model.api.PasswordSignInInput
 import net.chronoflow.core.model.api.SignInResult
 import net.chronoflow.core.model.auth.AuthenticationMethod
 import net.chronoflow.core.model.launch.Gate
+import net.chronoflow.core.model.passkey.PasskeyCapability
 import net.chronoflow.core.model.session.StoredAccountReadiness
 import net.chronoflow.core.model.session.readStoredSession
 import net.chronoflow.core.navigation.RootNavigator
@@ -30,7 +31,6 @@ import net.chronoflow.core.testing.sync.ScriptedSource
 import net.chronoflow.core.testing.sync.TestGate
 import net.chronoflow.feature.auth.model.SessionAcceptor
 import net.chronoflow.feature.auth.model.SignInModel
-import net.chronoflow.feature.auth.model.passkey.PasskeyCapability
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
