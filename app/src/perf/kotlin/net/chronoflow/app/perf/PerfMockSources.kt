@@ -1,15 +1,18 @@
 package net.chronoflow.app.perf
 
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.delay
 import net.chronoflow.app.BuildConfig
 import net.chronoflow.app.GraphOverrides
 import net.chronoflow.app.MockSources
 import net.chronoflow.core.datamock.FileMockStateStore
 import net.chronoflow.core.datamock.MockAppSeed
 import net.chronoflow.core.datamock.MockDataSource
+import net.chronoflow.core.datamock.MockLatency
 import net.chronoflow.core.model.DataSource
 import java.io.File
 import java.time.Instant
+import kotlin.math.roundToLong
 import kotlin.random.Random
 import kotlin.time.DurationUnit
 
@@ -35,6 +38,9 @@ class PerfMockSources(
             delay =
                 overrides.mockDelay?.let { duration -> { duration.toDouble(DurationUnit.SECONDS) } }
                     ?: { Random.nextDouble(0.3, 0.8) },
+            sleep =
+                overrides.mockDelay?.let { MockLatency.exact(it.toDouble(DurationUnit.SECONDS)) }
+                    ?: { seconds -> delay((seconds * 1000).roundToLong()) },
             bearer = bearer,
             debugAppSeed = BuildConfig.DEBUG,
             io = io,

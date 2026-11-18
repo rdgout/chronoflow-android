@@ -412,11 +412,13 @@ data class StoredAccountReadiness(val accountId: String, val gate: Gate?, val ha
           store = FileMockStateStore(root),
           seed = overrides.mockSeed?.let { MockAppSeed.make(Instant.now(), it.unverified, it.walkthroughSeen, it.termsPending) },
           delay = overrides.mockDelay?.let { d -> { d.toDouble(DurationUnit.SECONDS) } } ?: <4c default>,
+          sleep = overrides.mockDelay?.let { MockLatency.exact(it.toDouble(DurationUnit.SECONDS)) } ?: <4c default sleep>,
           bearer = bearer,
           debugAppSeed = BuildConfig.DEBUG,
       )
       ```
       Debug seeds the demo accounts, perf does not (4c OQ-4c-4). The auth-test seed goes in as the mock's `seed` argument, exactly as iOS (§2.3), never as a pre-written `state.json`. Release returns null, and `Mock` cannot be selected in release (4b fixes release to `api`). One `MockDataSource` per graph, shared by every session (the mock server is process state); its `bearer` reads the current `sessionStore.readStoredSession()?.token`.
+      A non-null fixture delay uses `MockLatency.exact` to bypass the ordinary 300–800 ms clamp, including exact zero. Bootstrap seeding uses a separate zero-latency source over the same file store before the runtime graph source is built, matching iOS `seedSignedIn` (round-2 M2).
   - **`GraphOverrides`** (main, `…/app/GraphOverrides.kt`), the only knob debug uses (T11):
     ```kotlin
     data class MockSeedFlags(val unverified: Boolean, val walkthroughSeen: Boolean, val termsPending: Boolean)
@@ -713,7 +715,7 @@ T5/T6 test dependency: the source-startup suspension case first exercises `contr
   3. Delete and recreate `filesDir/uitests/<id>/` (0e).
   4. Delete the test session alias `ChronoFlowMock.uitest.<id>` and its blob. Clear the test DataStore if 0e/4a created one.
   5. `DebugAppHooks.resetGraph(app, GraphOverrides(storageDir = filesDir/uitests/<id>, mockDelay = seed.mockDelay, sessionAlias = "ChronoFlowMock.uitest.<id>", mockSeed = MockSeedFlags(unverified, walkthroughSeen, termsPending), sessionCipher = <the cipher passed to apply, default null>))`. The graph's `MockDataSource` uses `FileMockStateStore(storageDir)` (`<storageDir>/ChronoFlowMock/Server/state.json`) and receives `MockAppSeed.make(now, unverified, walkthroughSeen, termsPending)` as its **`seed`** argument (§5.6, iOS §2.3); the directory is fresh, so the first load takes the seed. The session file is `KeystoreSessionStore(File(storageDir, "ChronoFlowMock/session.bin"), "ChronoFlowMock.uitest.<id>", cipher, io)` (4a: file and alias are overridable).
-  6. If `signedIn != null`: `MockSessionSeed.run(root = storageDir, ns = StorageNamespace.Mock, credentials = graph.sessionStore, source = graph.dataSources.public(), input = PasswordSignInInput(email = MockScenarioValues.demoEmail | twoFactorEmail, password = MockScenarioValues.password, deviceId = testId, deviceName = "UI test"), twoFactorCode = MockScenarioValues.twoFactorCode, driverFactory = AndroidAccountDriverFactory(context), io)`.
+  6. If `signedIn != null`: `MockSessionSeed.run(root = storageDir, ns = StorageNamespace.Mock, credentials = graph.sessionStore, source = TestSeeds.sourceForSeed(storageDir, overrides, io) { credentials.readStoredSession()?.token }, input = PasswordSignInInput(email = MockScenarioValues.demoEmail | twoFactorEmail, password = MockScenarioValues.password, deviceId = testId, deviceName = "UI test"), twoFactorCode = MockScenarioValues.twoFactorCode, driverFactory = AndroidAccountDriverFactory(context), io)`.
   7. The stored gate is now in the DB (the full pull wrote the account, policies and walkthrough). Log `CF_UI_TIMELINE … event=seed-applied signedIn=<demo|twofactor|none>`.
 
   Without `CF_AUTH_TEST_ID`, none of this runs. Seeded state lives for the process only (OQ-4e-7).
