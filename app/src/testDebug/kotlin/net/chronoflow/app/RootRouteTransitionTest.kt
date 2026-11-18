@@ -34,9 +34,15 @@ class RootRouteTransitionTest {
         compose.onNodeWithTag("route.terms").assertExists()
         compose.runOnIdle { state.value = RootState(Route.Today, 2) }
         compose.waitForIdle()
+        // Let Nav3 settle without waiting long enough to hide a short crossfade.
         compose.mainClock.advanceTimeByFrame()
         compose.waitForIdle()
-        compose.mainClock.advanceTimeBy(350)
+        compose.mainClock.advanceTimeByFrame()
+        compose.waitForIdle()
+        compose.mainClock.advanceTimeByFrame()
+        compose.waitForIdle()
+        compose.mainClock.advanceTimeByFrame()
+        compose.waitForIdle()
         compose.onNodeWithTag("route.today").assertExists()
         compose.onNodeWithTag("route.terms").assertDoesNotExist()
     }

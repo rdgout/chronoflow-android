@@ -281,3 +281,30 @@ The brief corrections accompany their findings: all three root transition specs 
 No Gradle run stalled for three minutes, so the stop/retry allowance was not used. The L3 formatter caught one overlong test line; it was corrected and formatting passed before that commit. Logs and timing snapshots are under ignored `build/phase4e-review-r2/`.
 
 The single final `make quick` **passed in 30.16 s wall**. The primary tier passed **2,196 cases** in 14.12 s; build-logic passed 26 in 1.25 s; tooling passed 107 script, 25 contract, 49 l10n and 9 icon cases; serial timing passed 6 in 0.83 s. All budget reports have zero violations. The command was not repeated. The final formatter, KDoc metadata check and `git diff --check` passed before the L6 commit.
+
+
+## Review round 3 (final)
+
+The warm-activity hand-over fix and the stronger transition regression use two new signed commits. No history is rewritten or pushed. The source probe was ported as `WarmLaunchIntentTest`, marked Android-only and new; its diagnostic intent printing was removed. A second independent case covers reminders.
+
+| Finding | Commit | Subject |
+|---|---|---|
+| M | `16189a6` | `fix(app): hand over a launch intent captured by a warm activity` |
+| L | This record's commit | `test(app): prove the root swap has no fade` |
+
+Every selector below ran through `make targeted ONLY="<selector>"`, one class per invocation. Times are measured command wall times.
+
+| Selector | Failing-before / negative control | Passing validation |
+|---|---|---|
+| `app:WarmLaunchIntentTest` | 6.12 s; both link and reminder remain buffered after the new warm activity mounts | 4.33 s; both are handed over and the buffer is empty |
+| `app:RootRouteTransitionTest` | 5.36 s; temporary 300 ms forward/pop/predictive fades leave Terms present after four frames | 4.94 s; shipped None specs remove Terms within those frames |
+| `app:PendingLaunchIntentsTest` | Existing cold-launch hold/consume guard | 3.40 s |
+| `app:LaunchIntentRestorationTest` | Existing recreation/history guards and fresh-launch positive control | 4.22 s |
+
+`finishLaunch` still starts the router and route observer once per process, while consuming and handling pending intents on every completed activity mount. The brief's root-content and hand-off sections now distinguish those two lifetimes.
+
+The transition test explicitly advances four post-swap frames with idling between them and no longer advances 350 ms. The temporary 300 ms fade failed specifically because `route.terms` still existed alongside `route.today`. The production RootContent file was then restored byte-for-byte before passing validation. The temporary fade is not committed. The brief records the four-frame bound and negative-control requirement.
+
+No Gradle call stalled for three minutes, so the stop/retry allowance was unused. No emulator, perf or profile tier was run in this round. Logs and timing snapshots are under ignored `build/phase4e-review-r3/`.
+
+The single final `make quick` **passed in 29.07 s wall**. The primary tier passed **2,198 cases** in 12.94 s; build-logic passed 26 in 1.25 s; tooling passed 107 script, 25 contract, 49 l10n and 9 icon cases; serial timing passed 6 in 0.83 s. All budget reports have zero violations. The command was not repeated. `make format` passed before each commit, and `git diff --check` passed.
