@@ -5,6 +5,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import net.chronoflow.core.model.DataSource
+import net.chronoflow.core.model.auth.ResetPasswordLink
 import net.chronoflow.core.model.session.StorageNamespace
 import net.chronoflow.core.model.session.StoredSession
 import net.chronoflow.core.network.ApiClient
@@ -13,6 +14,11 @@ import net.chronoflow.core.network.DataSourceFactory
 import java.io.File
 
 fun interface MockSources {
+    suspend fun latestResetLink(
+        source: DataSource,
+        email: String,
+    ): ResetPasswordLink? = null
+
     fun dataSource(
         root: File,
         overrides: GraphOverrides,

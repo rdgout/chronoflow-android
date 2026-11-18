@@ -14,6 +14,7 @@ import net.chronoflow.core.model.passkey.PasskeyCapability
 import net.chronoflow.core.model.passkey.PasskeyFailure
 import net.chronoflow.core.navigation.RootNavigator
 import net.chronoflow.core.navigation.Route
+import net.chronoflow.feature.auth.model.ForgotPasswordModel
 import net.chronoflow.feature.auth.model.SessionAcceptor
 import net.chronoflow.feature.auth.model.SignInModel
 import net.chronoflow.feature.auth.model.passkey.DeterministicAssertionProvider
@@ -25,13 +26,14 @@ class AuthServices(
     private val navigator: RootNavigator,
     appScope: CoroutineScope,
     private val dispatchers: AppDispatchers,
-    source: DataSource,
+    private val source: DataSource,
     session: SessionAcceptor,
     deviceIdentity: suspend () -> String,
     deviceName: suspend () -> String,
     routeAcceptedSession: suspend () -> Unit,
     passkeyCapability: PasskeyCapability = PasskeyCapability.Shipped,
     assertionProvider: PasskeyAssertionProviding = DeterministicAssertionProvider { throw PasskeyFailure.Unavailable },
+    val mockMail: (suspend (String) -> Boolean)? = null,
 ) {
     private val nameMutex = Mutex()
     private var cachedName: String? = null
@@ -42,6 +44,8 @@ class AuthServices(
             }
 
             override fun forgot() {
+                signIn.navigation.forgot()
+                startForgot()
                 navigator.navigate(Route.Forgot)
             }
 
@@ -88,10 +92,27 @@ class AuthServices(
         )
     }
 
+    var forgotModel: ForgotPasswordModel? = null
+        private set
+
+    fun startForgot(): ForgotPasswordModel {
+        forgotModel?.cancel()
+        return ForgotPasswordModel(source, signIn.navigation, ::toSignIn, signIn.navigation.forgotEmail, mockMail)
+            .also { forgotModel = it }
+    }
+
+    private fun toSignIn() {
+        navigator.navigate(Route.SignIn)
+    }
+
     init {
         var previous = navigator.state.value.route
         appScope.launch(dispatchers.main, start = CoroutineStart.UNDISPATCHED) {
             navigator.state.collect { state ->
+                if (navigator.state.value.route != Route.Forgot) {
+                    forgotModel?.cancel()
+                    forgotModel = null
+                }
                 if (previous.isAuth() && !state.route.isAuth()) signIn.clearSecrets()
                 previous = state.route
             }

@@ -130,8 +130,9 @@ class AppGraph(
             )
         }
     val sessionAccounts: SessionAccountDatabase by accountsLazy
+    val mockSources: MockSources? by lazy { LaunchPlatform.mockSources(dispatchers.io) }
     val dataSources by lazy {
-        SessionDataSources(selection, storageRoot, overrides, LaunchPlatform.mockSources(dispatchers.io), {
+        SessionDataSources(selection, storageRoot, overrides, mockSources, {
             sessionStore.readStoredSession()?.token
         }, dispatchers.io)
     }

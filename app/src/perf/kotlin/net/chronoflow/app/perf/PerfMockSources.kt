@@ -9,9 +9,12 @@ import net.chronoflow.core.datamock.FileMockStateStore
 import net.chronoflow.core.datamock.MockAppSeed
 import net.chronoflow.core.datamock.MockDataSource
 import net.chronoflow.core.datamock.MockLatency
+import net.chronoflow.core.datamock.MockMail
 import net.chronoflow.core.model.DataSource
+import net.chronoflow.core.model.auth.ResetPasswordLink
 import java.io.File
 import java.time.Instant
+import java.util.Locale
 import kotlin.math.roundToLong
 import kotlin.random.Random
 import kotlin.time.DurationUnit
@@ -19,6 +22,18 @@ import kotlin.time.DurationUnit
 class PerfMockSources(
     private val io: CoroutineDispatcher,
 ) : MockSources {
+    override suspend fun latestResetLink(
+        source: DataSource,
+        email: String,
+    ): ResetPasswordLink? {
+        val normalized = email.trim().lowercase(Locale.ROOT)
+        val event =
+            (source as? MockDataSource)?.inbox()?.lastOrNull {
+                it is MockMail.PasswordReset && it.to.lowercase(Locale.ROOT) == normalized
+            } as? MockMail.PasswordReset
+        return event?.input?.let { ResetPasswordLink(it.token, it.email) }
+    }
+
     override fun dataSource(
         root: File,
         overrides: GraphOverrides,

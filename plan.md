@@ -2111,6 +2111,7 @@ Implementation commits (brief §7):
 **Delivers.** Builds Forgot, Reset, Reset done and Reset expired with the honest reset copy and no session from the 204. It adds verified App Link intent filters for the reset and verify URLs, an exact port of the AuthLink parser, and pending launch intents so a reset link waits until the user is signed out. Tests port the parser cases and drive one link journey with adb on the emulator.
 
 **Tasks**
+- [x] Task 3: port the Forgot model, ownership and mock mail lookup seam.
 - [ ] **Forgot** (`AuthForgot`): an email field, a rate-limited send, and the honest confirmation copy (OQ 22, 27).
 - [x] Task 2: shared heading glyph, password policy, email launcher and verify-link seam.
 - [ ] **Reset** (`AuthReset`), **Reset done** (`AuthResetDone`) and **Reset expired** (`AuthResetExpired`). The password field shows the policy hint. The 204 creates no session. An expired link offers a new one.
