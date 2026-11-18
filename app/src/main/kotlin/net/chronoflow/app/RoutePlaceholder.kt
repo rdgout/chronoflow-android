@@ -8,7 +8,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import net.chronoflow.core.designsystem.theme.CfTheme
+import net.chronoflow.core.navigation.Route
+import net.chronoflow.core.navigation.debugName
 import net.chronoflow.feature.launch.model.LaunchRoute
+
+@Composable
+internal fun RoutePlaceholder(
+    route: Route,
+    label: (@Composable (String) -> Unit)?,
+) {
+    RoutePlaceholder(route.debugName(), label)
+}
 
 @Composable
 internal fun RoutePlaceholder(

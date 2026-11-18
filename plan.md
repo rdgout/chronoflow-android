@@ -1923,12 +1923,12 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - A `SessionGraph` per epoch holds the database, repositories and `SyncEngine`.
   - `ProcessLifecycleOwner`: ON_START syncs; ON_STOP only disables sync (no flush, no source call), as iOS `setActive(false)`.
   - ViewModel factories read the graph from `CreationExtras`.
-- [ ] **StoredDataReadiness** replaces `StubReadiness` in debug and release; the stub stays in perf. It emits the `session` trace.
-- [ ] **Gate and routes.**
+- [x] **StoredDataReadiness** replaces `StubReadiness` in debug and release; the stub stays in perf. It emits the `session` trace.
+- [x] **Gate and routes.**
   - [x] A `SessionGateRouter` port: verify → terms → walkthrough → app. Missing policies keep the gate loading.
   - [x] The routes and sheets of "Android spec: navigation and routes", in `:core:navigation`.
   - [x] `RootNavigator`, exposing `StateFlow<RootState(route, revision)>`.
-  - Nav3 `NavDisplay` in `:app`, plus `PendingLaunchIntent` and a debug route probe for tests.
+  - [x] Nav3 `NavDisplay` in `:app`, plus `PendingLaunchIntent` and a debug route probe for tests.
 - [ ] **Seeds.** `TestSeeds.apply` gains `CF_AUTH_TEST_SIGNED_IN`, `CF_AUTH_TEST_WALKTHROUGH_SEEN`, `CF_AUTH_TEST_AUDIT_SCREEN`/`STATE`, `CF_PLAN_TEST_ROUTE`, `CF_PLAN_TEST_POSITION`, `CF_PLAN_TEST_SHEET`, `CF_SETTINGS_ROUTE`, `CF_WIZARD_AUTO_OPEN`, `CF_WIZARD_BOARD_CAPTURE` and `CF_MOCK_DELAY`. It follows `13 §5` steps 1–7. Test: `ReseedEqualsColdSeedTest`.
 - [ ] **Release readiness.** No seed or mock class ships in release, and `verifyReleaseManifest` finds no exported debug component.
 - [ ] **Tests.**

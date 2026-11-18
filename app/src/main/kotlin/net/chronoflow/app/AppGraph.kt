@@ -3,6 +3,7 @@ package net.chronoflow.app
 import android.app.Application
 import android.os.Process
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
@@ -43,6 +44,7 @@ import net.chronoflow.core.sync.session.SessionGateRouter
 import net.chronoflow.core.sync.session.SessionTeardown
 import net.chronoflow.core.sync.session.StoredDataReadiness
 import net.chronoflow.feature.launch.LaunchController
+import net.chronoflow.feature.launch.LaunchTrace
 import java.io.File
 
 class AppGraph(
@@ -52,7 +54,7 @@ class AppGraph(
     val overrides: GraphOverrides = GraphOverrides.None,
     private val suppliedDispatchers: AppDispatchers = AppDispatchers(),
 ) {
-    val dispatchers by lazy { suppliedDispatchers }
+    val dispatchers by lazy { overrides.dispatchers ?: suppliedDispatchers }
     val appScope by lazy { CoroutineScope(SupervisorJob() + dispatchers.main) }
     internal val launchScope get() = appScope
     internal val processToken = "${Process.myPid()}:${Process.getStartElapsedRealtime()}"
@@ -240,6 +242,44 @@ class AppGraph(
             { sessionSync.resume(it.session, it.epoch) },
         )
     }
+
+    val welcomeDestinations: WelcomeDestinations by lazy {
+        object : WelcomeDestinations {
+            override fun planMyTrip() {
+                rootNavigator.navigate(Route.GuestWizard)
+            }
+
+            override fun signIn() {
+                rootNavigator.navigate(Route.SignIn)
+            }
+        }
+    }
+    private val firstCommit by lazy { CompletableDeferred<Unit>() }
+    internal val launchReadiness by lazy { FirstCommitReadiness(firstCommit, { readiness }, dispatchers.io) }
+    val launchBridge by lazy { LaunchSessionBridge(rootNavigator) }
+    val pendingLaunchIntents by lazy { PendingLaunchIntents() }
+    private val finishMutex by lazy { Mutex() }
+    private var launchFinished = false
+
+    internal fun onFirstCommit() {
+        if (firstCommit.isCompleted) return
+        LaunchTrace.beginSession()
+        firstCommit.complete(Unit)
+    }
+
+    suspend fun finishLaunch() =
+        finishMutex.withLock {
+            if (launchFinished) return@withLock
+            launchFinished = true
+            gateRouter.start()
+            LaunchPlatform.observeRoutes(this)
+            pendingLaunchIntents.consume()?.let { launchIntentHandler.handle(it) }
+        }
+
+    suspend fun handlePendingLaunchIntents() =
+        finishMutex.withLock {
+            if (launchFinished) pendingLaunchIntents.consume()?.let { launchIntentHandler.handle(it) }
+        }
 
     private fun onSignedOut() {
         if (rootNavigator.state.value.route != Route.SignIn) rootNavigator.navigate(Route.SignIn)

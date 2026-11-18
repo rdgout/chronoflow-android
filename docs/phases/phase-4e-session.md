@@ -423,6 +423,7 @@ data class StoredAccountReadiness(val accountId: String, val gate: Gate?, val ha
         val sessionAlias: String? = null,      // Keystore alias override
         val mockSeed: MockSeedFlags? = null,   // CF_AUTH_TEST_* gate seeds, passed to MockAppSeed.make
         val sessionCipher: SessionCipher? = null, // Robolectric tests pass a software cipher (no AndroidKeyStore there)
+        val dispatchers: AppDispatchers? = null, // suspend graph tests share their runTest scheduler (user, 2026-11-18)
     ) { companion object { val None = GraphOverrides() } }
     ```
   - `ChronoFlowApp.onCreate` registers `activation` on `ProcessLifecycleOwner`. Registering is not I/O.

@@ -17,7 +17,30 @@ internal object LaunchPlatform {
 
     fun controller(graph: AppGraph): LaunchController = current ?: newLaunchController(graph).also { current = it }
 
-    fun overrides(intent: Intent?) = DebugLaunchOverrides.fromIntent(intent)
+    fun overrides(
+        intent: Intent?,
+        graph: AppGraph? = null,
+    ) = DebugLaunchOverrides.fromIntent(
+        intent,
+        graph?.launchReadiness ?: net.chronoflow.core.model.launch.SignedOutReadiness,
+    )
+
+    fun observeRoutes(graph: AppGraph) =
+        net.chronoflow.debug.RouteProbe
+            .observe(graph)
+
+    suspend fun routeScreen(
+        graph: AppGraph,
+        intent: Intent?,
+    ) {
+        val seed =
+            net.chronoflow.debug.TestSeed
+                .fromIntent(intent)
+        if (seed.profile == net.chronoflow.debug.UiTestProfile.Screen) {
+            net.chronoflow.debug.ScreenSessionFixture
+                .route(graph, seed.raw["CF_AUTH_TEST_AUDIT_SCREEN"])
+        }
+    }
 
     fun reset(graph: AppGraph) {
         check(BuildConfig.DEBUG)

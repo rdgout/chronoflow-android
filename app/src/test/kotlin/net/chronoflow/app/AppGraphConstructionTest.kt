@@ -5,6 +5,7 @@ import android.os.StrictMode
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import net.chronoflow.core.testing.tiers.Logic
@@ -37,6 +38,7 @@ class AppGraphConstructionTest {
                         error("files resolved during graph construction")
                     }
                 }
+            val dispatcher = StandardTestDispatcher(testScheduler)
             val old = StrictMode.getThreadPolicy()
             val graph: AppGraph
             try {
@@ -48,7 +50,15 @@ class AppGraphConstructionTest {
                         .penaltyDeath()
                         .build(),
                 )
-                graph = AppGraph(guarded, overrides = GraphOverrides(sessionCipher = SoftwareSessionCipher()))
+                graph =
+                    AppGraph(
+                        guarded,
+                        overrides =
+                            GraphOverrides(
+                                sessionCipher = SoftwareSessionCipher(),
+                                dispatchers = AppDispatchers(dispatcher, dispatcher, dispatcher),
+                            ),
+                    )
             } finally {
                 StrictMode.setThreadPolicy(old)
             }

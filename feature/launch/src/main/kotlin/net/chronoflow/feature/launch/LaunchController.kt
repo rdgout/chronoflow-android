@@ -59,6 +59,8 @@ class LaunchController(
     private val readinessFactory: (LaunchClock) -> LaunchReadiness = { SignedOutReadiness },
     private val statusIo: CoroutineDispatcher = Dispatchers.IO,
     val frameLog: LaunchFrameLog? = null,
+    private val onFirstCommit: () -> Unit = {},
+    private val onStateChange: (LaunchState) -> Unit = {},
     private val onReadinessStarted: (Long, LaunchOverrides) -> Unit = { _, _ -> },
 ) {
     private var capturedAppearance: LaunchAppearance? = null
@@ -240,6 +242,7 @@ class LaunchController(
         effects: List<LaunchEffect>,
     ) {
         launchState = state
+        onStateChange(state)
         if (state.isReady) tracing.endReady()
         if (state.route == LaunchRoute.Welcome && overlayClaimedByCurrentActivity && !reduceMotion &&
             launchIntro == null
@@ -400,6 +403,7 @@ class LaunchController(
                 scope = scope,
                 onChange = { state, _ ->
                     launchState = state
+                    onStateChange(state)
                     state.route?.let {
                         route = it
                         coordinator?.stop()
@@ -464,6 +468,7 @@ class LaunchController(
             }
         frameZeroMoonRectPx = moonRectPx
         tracing.endFirstCommit()
+        onFirstCommit()
         firstDraw.complete(t0Nanos)
         scope.launch {
             yield()
@@ -487,6 +492,7 @@ class LaunchController(
     fun onFrameCommitted(overlayClaimed: Boolean) {
         if (!overlayClaimed && !overlayActive) {
             tracing.endFirstCommit()
+            onFirstCommit()
             tracing.endLaunch()
         }
     }

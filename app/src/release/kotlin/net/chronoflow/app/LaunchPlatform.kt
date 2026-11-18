@@ -16,12 +16,31 @@ internal object LaunchPlatform {
     fun controller(graph: AppGraph): net.chronoflow.feature.launch.LaunchController =
         current ?: newLaunchController(graph).also { current = it }
 
-    fun overrides(intent: Intent?): LaunchOverrides =
+    fun overrides(
+        intent: Intent?,
+        graph: AppGraph? = null,
+    ): LaunchOverrides =
         if (BuildConfig.PERF_ENTRY &&
             intent?.hasExtra("cf.trip-page") == true
         ) {
-            LaunchDiagnosticsParser.overrides(launchExtras(intent)).copy(skipOverlay = true)
+            LaunchDiagnosticsParser
+                .overrides(
+                    launchExtras(intent),
+                    graph?.launchReadiness ?: net.chronoflow.core.model.launch.SignedOutReadiness,
+                ).copy(skipOverlay = true)
         } else {
-            LaunchDiagnosticsParser.overrides(launchExtras(intent))
+            LaunchDiagnosticsParser.overrides(
+                launchExtras(intent),
+                graph?.launchReadiness ?: net.chronoflow.core.model.launch.SignedOutReadiness,
+            )
         }
+
+    @Suppress("UNUSED_PARAMETER")
+    fun observeRoutes(graph: AppGraph) = Unit
+
+    @Suppress("UNUSED_PARAMETER")
+    suspend fun routeScreen(
+        graph: AppGraph,
+        intent: Intent?,
+    ) = Unit
 }

@@ -46,7 +46,7 @@ class SessionGraphs(
                     if (controller.epoch != update.epoch || controller.presence != update.presence) return@collect
                     val signedIn = update.presence as? SessionPresence.SignedIn
                     val databaseMatches = signedIn != null && database?.accountID?.rawValue == signedIn.accountId
-                    if (databaseMatches && database != null && snapshot != null && snapshot.epoch == update.epoch) {
+                    if (databaseMatches && snapshot != null && snapshot.epoch == update.epoch) {
                         val dataSource = source(snapshot.session)
                         if (controller.activeSession() != snapshot ||
                             accountModel.attachmentToken != token
