@@ -1,9 +1,16 @@
 package net.chronoflow.core.database
 
+import app.cash.sqldelight.Query
+import app.cash.sqldelight.db.SqlDriver
 import app.cash.turbine.test
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import net.chronoflow.core.database.testing.HandDrainedDispatcher
 import net.chronoflow.core.database.testing.JdbcAccountDriverFactory
 import net.chronoflow.core.database.testing.TestRoots
 import net.chronoflow.core.database.testing.accountA
@@ -11,6 +18,7 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.util.concurrent.Executors
 import kotlin.time.Duration.Companion.seconds
@@ -128,6 +136,66 @@ class ObservationTests {
                     awaitComplete()
                     assertEquals(0, db.observationCount)
                 }
+            }
+        }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun cancellationBeforeRegistrationResumesRemovesObserverAndListener() =
+        runTest(timeout = 60.seconds) {
+            val io = HandDrainedDispatcher()
+            val collectorDispatcher = HandDrainedDispatcher()
+            var listeners = 0
+            val factory =
+                AccountDriverFactory { file ->
+                    val driver = JdbcAccountDriverFactory().open(file)
+                    object : SqlDriver by driver {
+                        override fun addListener(
+                            vararg queryKeys: String,
+                            listener: Query.Listener,
+                        ) {
+                            listeners++
+                            driver.addListener(*queryKeys, listener = listener)
+                        }
+
+                        override fun removeListener(
+                            vararg queryKeys: String,
+                            listener: Query.Listener,
+                        ) {
+                            listeners--
+                            driver.removeListener(*queryKeys, listener = listener)
+                        }
+                    }
+                }
+            val store = AccountDatabase(root, driverFactory = factory, io = io)
+
+            suspend fun drainIo(operation: suspend () -> Unit) {
+                val pending = async { operation() }
+                runCurrent()
+                io.runAll()
+                runCurrent()
+                pending.await()
+            }
+            drainIo { store.open(accountA) }
+            val collector =
+                backgroundScope.launch(collectorDispatcher) {
+                    store.observe("account") { Unit }.collect { }
+                }
+            try {
+                collectorDispatcher.runAll()
+                assertEquals(0, store.observationCount)
+                io.runAll()
+                assertEquals(1, store.observationCount)
+                assertEquals(1, listeners)
+                collector.cancel()
+                collectorDispatcher.runAll()
+                assertTrue(collector.isCompleted)
+                assertEquals(0, store.observationCount)
+                assertEquals(0, listeners)
+            } finally {
+                collector.cancel()
+                collectorDispatcher.runAll()
+                drainIo { store.close() }
             }
         }
 

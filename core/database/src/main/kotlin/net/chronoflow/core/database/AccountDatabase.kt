@@ -131,18 +131,21 @@ class AccountDatabase(
         lifecycle.read { if (current == null) throw StoreFailure.Closed }
         return callbackFlow {
             val listener = Query.Listener { trySend(Unit) }
-            val observed =
+            var observed: AccountSql? = null
+            try {
                 withContext(io) {
                     lifecycle.read {
-                        current?.also { sql ->
+                        current?.let { sql ->
+                            observed = sql
                             synchronized(observers) { observers.add(this@callbackFlow) }
                             sql.driver.addListener(*tables, listener = listener)
                             trySend(Unit)
                         }
                     }
                 }
-            if (observed == null) close()
-            awaitClose {
+                if (observed == null) close()
+                awaitClose { }
+            } finally {
                 observed?.driver?.removeListener(*tables, listener = listener)
                 synchronized(observers) { observers.remove(this@callbackFlow) }
             }

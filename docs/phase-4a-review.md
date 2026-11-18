@@ -5,3 +5,4 @@ Each finding is fixed in its own signed commit. Reproductions supplied for findi
 | Finding | Red evidence | Green wall time |
 |---|---|---:|
 | 1 | Two nested Turbine observers make close throw ConcurrentModificationException; the regression now completes both observers, clears the count and clears accountID. (red run 1.98 s). | 1.23 s |
+| 2 | Cancellation between IO registration and producer resumption leaves one observer/listener; the hand-drained regression now verifies both are removed. The whole ObservationTests class passes. (red run 2.00 s). | 1.78 s |
