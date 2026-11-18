@@ -350,4 +350,4 @@ Scripts/emulator.sh prep-functional emulator-5554
 make targeted ONLY="app:SignedInColdLaunchSmokeTest"
 ```
 
-Both were attempted once in the sandbox. Preparation returned `adb: device 'emulator-5554' not found`; adb listed no attached devices. The smoke APK compiled, then Gradle failed with `com.android.builder.testing.api.DeviceException: No connected devices!` (7.42 s wall). The user must run these commands on the visible pixel emulator. No device test result or passing smoke is claimed. Full validation, diagnostic history and pending measurements are recorded in [Phase 4e results](phase-4e-results.md).
+The initial sandbox attempts could not see the emulator: preparation returned `adb: device 'emulator-5554' not found`, and the compiled smoke run failed with `No connected devices!` (7.42 s wall). The user subsequently reported a passing `make check`, including `SignedInColdLaunchSmokeTest.signedInColdLaunchReachesToday` in **3.4 s** on **pixel** (review round 1, 2026-11-18). This supersedes the pending smoke status. Full validation, diagnostic history and delegated performance measurements are recorded in [Phase 4e results](phase-4e-results.md).

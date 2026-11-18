@@ -1945,13 +1945,13 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - The ported iOS session cases: teardown order, generation, and D23 (an old 401 never wipes a new session).
   - The gate router cases.
   - A Robolectric launch test per gate state.
-  - One emulator smoke test: a seeded signed-in cold launch reaches the app root. Implemented and compiled; device validation is pending with the user because the sandbox reports `No connected devices!` (2026-11-18).
-- [x] **Session trace and results.** Cold startup collects the real `session` trace; the report-only measurement and profile regeneration remain with the user. [Phase 4e results](docs/phase-4e-results.md) records commits, scoped checks, the single quick timing failure and correction, and pending device commands.
+  - One emulator smoke test: a seeded signed-in cold launch reaches the app root. User-reported `make check` passes `SignedInColdLaunchSmokeTest.signedInColdLaunchReachesToday` in **3.4 s** on **pixel** (review round 1, 2026-11-18).
+- [x] **Session trace and results.** Cold startup collects the real `session` trace; the report-only measurement and profile regeneration remain with the user. [Phase 4e results](docs/phase-4e-results.md) records commits, scoped checks, the single quick timing failure and correction, and the user-reported device smoke evidence.
 
 **Acceptance**
 - The teardown order and D23 tests pass.
 - Cold launches route correctly: signed in to the app root, signed out to Welcome.
-- The `session` trace setup and pending user measurement are reported in `docs/perf-startup.md`.
+- The `session` trace is reported in `docs/perf-startup.md`.
 
 ### Phase 5a: Auth shell and sign-in (`feat/phase-5a-sign-in`)
 

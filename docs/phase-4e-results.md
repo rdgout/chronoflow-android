@@ -1,6 +1,6 @@
 # Phase 4e results — 2026-11-18
 
-Session acceptance, sign-out and forced wipe, stored-data readiness, the session gate router, lazy app/session graphs, foreground activation, Nav3 root routing and debug session seeds are implemented. All Phase 4e plan tasks are ticked. Device smoke validation and performance measurements remain pending with the user; they are not passing evidence.
+Session acceptance, sign-out and forced wipe, stored-data readiness, the session gate router, lazy app/session graphs, foreground activation, Nav3 root routing and debug session seeds are implemented. All Phase 4e plan tasks are ticked. The user reports that `make check` passes, including `SignedInColdLaunchSmokeTest.signedInColdLaunchReachesToday` in **3.4 s** on **pixel** (review round 1). Performance measurement and profile regeneration remain delegated to the user.
 
 ## Commits
 
@@ -69,7 +69,7 @@ Every selector below was run through `make targeted ONLY="<selectors>"`. Times m
 | T12 extras rejection | `app:ReleaseSeedExtrasTest` | Pass; 4 s Gradle |
 | T13 initial | `app:LaunchGateRoutingTest` | 6 StrictMode disk-write fixture failures; 6 s Gradle; fixed IO dispatcher injection |
 | T13 fixed | `app:LaunchGateRoutingTest` | 6 pass; 15.38 s wall; individual cases 0.122–4.849 s, no budget violation |
-| T13 device | `app:SignedInColdLaunchSmokeTest` | APK compiled; no connected device; exit 1 in 7.42 s wall; no test result |
+| T13 device | `app:SignedInColdLaunchSmokeTest` | Initial sandbox run: no device, exit 1 / 7.42 s wall. Subsequent user-run `make check`: `signedInColdLaunchReachesToday` passes on pixel in **3.4 s** test time |
 
 T9's other original app suites passed: construction (1), source selection (2), session graphs (3), lifecycle (4), ViewModel extras (1). Test fixtures were also corrected for actual `SettingsRecord.section` and nullable `parentFile` during T4 compilation, and explicit property types during T9 compilation. T4's WAL fixture retains a real reader; its preference-wipe test uses the Android driver under Robolectric. T6 explicitly seeds an unverified account instead of relying on a fixture default. These corrections preserve production behavior.
 
@@ -112,13 +112,13 @@ No earlier-phase behavior required a preparatory change during refresh. Later ta
 
 Added **OQ-A172–A181**, corresponding in order to OQ-4e-2, -3, -4, -5, -7, -10, -13, -15, -16 and -17. They bind production readiness in all variants, shared SessionSync ownership, the two missing account flags, memory-only reset secrets, process-only seeded roots, reminder extra names, variant mock construction, route mapping ownership, readiness test placement and software-cipher/dispatcher graph seams. A4, the seeds/navigation specifications and the 3b/4e task descriptions now match these defaults.
 
-## Release and pending device/performance evidence
+## Release, device smoke and pending performance evidence
 
 `./gradlew :app:verifyReleaseManifest :app:assembleRelease` passed in 31 s Gradle time. The release readiness/extras classes passed separately. `apkanalyzer dex packages app/build/outputs/apk/release/app-release-unsigned.apk` succeeded and `grep -c datamock` printed `0` (grep exit 1 means no matches). APK inspection found only the existing `libandroidx.graphics.path.so` under the four ABIs, allowed by OQ-0a-22; no new `.so`. The bundle size target itself was not run.
 
 `./gradlew :benchmark:compileBenchmarkReleaseKotlin` passed in 2 s Gradle time after adding the session metric. This compiles the measurement but does not execute a device tier.
 
-Preparation command and exact output (exit 1):
+Initial sandbox preparation command and exact output (exit 1; superseded by the user-reported passing smoke below):
 
 ```sh
 Scripts/emulator.sh prep-functional emulator-5554
@@ -139,7 +139,7 @@ List of devices attached
 
 ```
 
-The sole smoke attempt:
+The initial sandbox smoke attempt:
 
 ```sh
 make targeted ONLY="app:SignedInColdLaunchSmokeTest"
@@ -160,7 +160,7 @@ Configuration cache entry stored.
 make: *** [targeted] Error 1
 ```
 
-Full logs, XML copies and available tier timings are retained under ignored `build/phase4e/`, including the earlier stop reports as historical evidence. No missing/stale XML is treated as a pass. The smoke command needs the user's visible pixel emulator; the manual unseeded cold launch is also unverified.
+Full logs, XML copies and available tier timings are retained under ignored `build/phase4e/`, including the earlier stop reports as historical evidence. No missing/stale XML is treated as a pass. These logs describe the initial sandbox limitation. The user subsequently reported a passing `make check`, including `SignedInColdLaunchSmokeTest.signedInColdLaunchReachesToday` in **3.4 s** on **pixel**. That result closes the pending smoke validation; it is user-provided evidence, not a new worker device run. A separate manual unseeded cold launch was not reported.
 
 User-run measurements remain **Session known, signed out**, reference ≤50 ms / low-end ≤100 ms after first-commit, report only, through `make perf`. Baseline/startup profiles need `make baseline-profile` after the startup change. These measurements and profile regeneration were explicitly delegated; none were run and no number is fabricated. `make check`, `make perf-timeline` and other emulator tiers were not run. See [startup performance](perf-startup.md) and [tooling](tooling.md) for setup.
 
@@ -187,3 +187,52 @@ The remaining quick steps then ran once each, with the Make environment exported
 The initial invocation, scoped correction and remaining steps total **49.52 s wall**. `make format` and `git diff --check` pass. The quick tier, its initial timing failure and the scoped passing timings are retained in `build/phase4e/`. No assertion failure, new phase test budget overrun or hang occurred during this final sequence.
 
 An optional signature-display probe, `git log -14 --format='%h %G? %s'`, produced no output and was interrupted (exit 130). All commits were created with `git commit -S`; commit objects were inspected directly and contain GPG signature headers. No unsigned fallback was used. An earlier read-only process probe, `ps -Ao pid,etime,command | rg 'Gradle Test Executor|targeted.py app:SessionActivation'`, was sandbox-blocked with exact output `zsh:1: operation not permitted: ps`. Neither probe supplies test evidence.
+
+
+## Review round 1
+
+The user reported `make check` passing on the preceding top, including `SignedInColdLaunchSmokeTest.signedInColdLaunchReachesToday` in **3.4 s** on **pixel**. The changes below address the five review findings. The pixel result is user-provided evidence; no new device, perf or profile run was performed for this review.
+
+| Finding | New signed commit | Change |
+|---|---|---|
+| H1 | `843fc2c` | `fix(sync): keep the session queue ordered when a waiter is cancelled` |
+| H2 | `1d68f1f` | `fix(app): restore the welcome seams from 3c` |
+| M1 | `af908f0` | `fix(sync): treat a cancelled flush as a flush failure like ios` |
+| M2 | `4390da3` | `fix(app): rebuild only the routes ios keys` |
+| L1 | This record's commit | `docs(session): record the device smoke and restore the session-trace acceptance` |
+
+Each code regression was exercised before changing production. Every table entry below uses `make targeted ONLY="<selector>"`, one class per invocation. Times are measured command wall times, including Gradle setup/compilation.
+
+| Finding | Selector | Before fix | After fix |
+|---|---|---|---|
+| H1 | `core:sync:SessionQueueCancellationTest` | 1.84 s; expected replacement DB id, got null after old sign-out | 3.20 s; replacement DB, credentials, presence and teardown/open order preserved |
+| H2 debug | `app:WelcomeSeamTest` | 7.94 s; Back could not restore `welcome.wordmark` using the actual default | 5.88 s; default seam returns to final Welcome |
+| H2 release | `app:WelcomeDestinationsReleaseTest` | 5.06 s; expected Welcome, got SignIn after tapping the actual CfRoot default | 5.75 s; both actions stay inert without changing route/revision |
+| M1 | `core:sync:CancelledFlushSignOutTest` | 2.45 s; both cases throw `CancellationException: sync stopped` | 1.77 s; pending session returns confirmation, merged unauthorized request wipes for both callers |
+| M2 | `app:RootContentConstructionTest` | 5.84 s; `[Terms, Terms, Today]` and `[Today, Today]` | 4.43 s; `[Terms, Today]` and `[Today]` |
+
+Additional scoped checks passed:
+
+| Selector | Wall time |
+|---|---:|
+| `core:sync:SessionControllerTests` | 2.25 s |
+| `core:sync:SignOutTests` | 2.22 s |
+| `app:RootContentTest` | 4.01 s |
+| `app:WelcomeHandOffTest` | 5.84 s |
+| `app:CfRootTest` | 4.98 s |
+| `app:WelcomeSeamTest` after M2 | 4.06 s |
+
+The H1 test initially needed a nullable parse-result compile correction (2.16 s); that attempt is not regression evidence. The release H2 fixture initially lacked its Compose host activity (4.84 s). After registering the test-only host, two unprofiled exploratory runs (4.60 / 5.07 s) passed without the taps reaching the buttons and were rejected as proof. Applying the existing pixel profile produced the real failing-before result above. The release test now mounts CfRoot itself instead of checking an unused platform property.
+
+L1's temporary documentation consistency check failed before the edit because the original session-trace acceptance was missing, then passed after restoring it and recording the user-provided smoke result in the plan, results and tooling. It resolves the project root from `settings.gradle.kts` and `gradlew`; no permanent test or production hook was added for these records.
+
+Brief patches in the corresponding commits:
+
+- H1, §5.2: replace the cancellable-operation tail with an independent tail that drains both predecessor and operation, including cancellation before dispatch.
+- H2, §5.8: explicitly retain the platform Welcome defaults, debug Back behavior and inert release/perf actions.
+- M1, §5.3 and checklist: distinguish cancellation of the separate refresh from cancellation of the current coroutine; check current activity, recount and honor merged forced requests.
+- M2, §5.8, ViewModel wording and T10 tests: derive entries during composition and use revision identity only for GuestWizard, Terms and Walkthrough. Plan A8 now states the same iOS policy.
+
+No new OQ rows were needed. All changes use new commits; no history was rewritten or pushed. Formatting-only corrections to the new release fixture and RootContent were carried forward into the following commit rather than rewriting signed commits. No test stalled for three minutes, so the stop/retry allowance was not used. Logs and available timing snapshots are under ignored `build/phase4e-review-r1/`.
+
+The review's single final `make quick` **passed in 38.95 s wall**. Its primary tier passed **2,188 cases** in 22.62 s with zero budget violations; build-logic passed 26 cases in 1.18 s; tooling passed 107 script, 25 contract, 49 l10n and 9 icon cases; serial timing passed 6 cases in 0.74 s with zero budget violations. The full quick command was not repeated. The final formatter and documentation consistency check also pass. `make perf` and `make baseline-profile` remain delegated, and the acceptance again requires the session trace to be reported in `docs/perf-startup.md`.

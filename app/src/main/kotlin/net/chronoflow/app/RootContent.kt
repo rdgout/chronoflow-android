@@ -15,15 +15,23 @@ internal fun RootContent(
     content: @Composable (Route) -> Unit,
 ) {
     val currentContent = rememberUpdatedState(content)
-    val revision = when (state.route) {
-        Route.GuestWizard, Route.Terms, is Route.Walkthrough -> state.revision
-        else -> null
-    }
-    val entries = remember(state.route, revision) {
-        state.route?.let { route ->
-            listOf(NavEntry(route, contentKey = revision?.let { route to it } ?: route) { currentContent.value(it) })
-        }.orEmpty()
-    }
+    val revision =
+        when (state.route) {
+            Route.GuestWizard, Route.Terms, is Route.Walkthrough -> state.revision
+            else -> null
+        }
+    val entries =
+        remember(state.route, revision) {
+            state.route
+                ?.let { route ->
+                    listOf(
+                        NavEntry(
+                            route,
+                            contentKey = revision?.let { route to it } ?: route,
+                        ) { currentContent.value(it) },
+                    )
+                }.orEmpty()
+        }
     if (entries.isNotEmpty()) {
         NavDisplay(
             entries = entries,
