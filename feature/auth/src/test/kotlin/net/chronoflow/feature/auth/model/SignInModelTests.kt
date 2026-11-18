@@ -127,6 +127,19 @@ class SignInModelTests {
     }
 
     class Behavior {
+        @Test fun clearSecretsCancelsTheTwoFactorModel() =
+            runTest(timeout = 60.seconds) {
+                val signIn = challenged(twoFactorSource(StandardTestDispatcher(testScheduler)))
+                val old = signIn.twoFactor.value!!
+                old.editCode("123456")
+                signIn.clearSecrets()
+                old.editCode("1")
+                assertEquals("", old.code)
+                assertNull(signIn.twoFactor.value)
+                assertNull(signIn.navigation.challengeID)
+                assertEquals("twofactor@example.com", signIn.email.value)
+            }
+
         @Test
         fun twoFactorNeverAcceptsSessionAndBackDiscardsChallenge() {
             runTest(timeout = 60.seconds) {

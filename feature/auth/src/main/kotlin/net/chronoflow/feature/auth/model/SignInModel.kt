@@ -31,11 +31,14 @@ class SignInModel(
     private val passkey: suspend () -> SessionResult = { throw PasskeyFailure.Unavailable },
     private val accepted: suspend (SessionResult, AuthenticationMethod) -> Unit,
     private val onTwoFactor: () -> Unit,
+    private val onLeaveTwoFactor: () -> Unit = {},
 ) {
     private val mutableEmail = MutableStateFlow("")
     val email: StateFlow<String> = mutableEmail.asStateFlow()
     val form: AuthFormModel = AuthFormModel()
     val navigation: AuthNavigation = AuthNavigation()
+    private val mutableTwoFactor = MutableStateFlow<TwoFactorModel?>(null)
+    val twoFactor: StateFlow<TwoFactorModel?> = mutableTwoFactor.asStateFlow()
     var sessionFailure: SessionFailure? = null
         private set
 
@@ -80,7 +83,16 @@ class SignInModel(
                 }
 
                 is SignInResult.TwoFactor -> {
-                    if (navigation.twoFactor(result.challengeId)) onTwoFactor()
+                    if (navigation.twoFactor(result.challengeId)) {
+                        mutableTwoFactor.value =
+                            TwoFactorModel(
+                                source,
+                                navigation,
+                                accept = { accept(it, AuthenticationMethod.TwoFactor, {}, null) },
+                                leave = onLeaveTwoFactor,
+                            )
+                        onTwoFactor()
+                    }
                 }
             }
         }
@@ -145,6 +157,8 @@ class SignInModel(
     }
 
     fun clearSecrets() {
+        twoFactor.value?.cancel()
+        mutableTwoFactor.value = null
         navigation.reset()
         form.clear()
     }

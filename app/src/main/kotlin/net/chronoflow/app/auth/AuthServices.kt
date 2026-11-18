@@ -46,6 +46,10 @@ class AuthServices(
                 navigator.navigate(Route.GuestWizard)
             }
 
+            override fun backToSignIn() {
+                if (navigator.state.value.route == Route.TwoFactor) navigator.navigate(Route.SignIn)
+            }
+
             override fun twoFactor() {
                 navigator.navigate(Route.TwoFactor)
             }

@@ -114,6 +114,13 @@ class RecordingRoutes : SignInRouter {
         actions += "guest"
     }
 
+    var backToSignIn = 0
+        private set
+
+    override fun backToSignIn() {
+        backToSignIn++
+    }
+
     override fun twoFactor() {
         actions += "twoFactor"
     }
