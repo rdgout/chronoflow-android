@@ -94,7 +94,14 @@ class OutboxRepository(
                     }
                     val pending =
                         sql.fetchPendingOutbox().firstOrNull {
-                            OutboxPayload.dependency(it) == "settings:policies" && OutboxPayload.change(it) == change
+                            if (OutboxPayload.dependency(it) != "settings:policies") return@firstOrNull false
+                            val pendingChange =
+                                try {
+                                    OutboxPayload.change(it)
+                                } catch (_: LocalMutationFailure) {
+                                    null
+                                }
+                            pendingChange == change
                         }
                     val next =
                         value + ("acceptedTermsVersion" to JsonPrimitive(change.version)) +

@@ -17,6 +17,7 @@ import net.chronoflow.core.model.api.AccountPolicies
 import net.chronoflow.core.model.api.ApiJson
 import net.chronoflow.core.model.contracts.CheckStatus
 import net.chronoflow.core.model.store.LocalMutationFailure
+import net.chronoflow.core.model.store.OutboxRecord
 import net.chronoflow.core.model.store.SettingsRecord
 import net.chronoflow.core.testing.sync.check
 import net.chronoflow.core.testing.sync.syncAccount
@@ -122,6 +123,33 @@ class LocalMutationsTests {
                 ) {
                 }
                 assertEquals(4, OutboxRepository(store.database).pending().size)
+            } finally {
+                store.close()
+            }
+        }
+
+    // (new) A malformed durable row must not block accepting policies or finding a valid pending match.
+    @Test fun malformedPendingPoliciesRowIsSkipped() =
+        runTest(timeout = 60.seconds) {
+            val store = SyncStore(StandardTestDispatcher(testScheduler))
+            try {
+                val policies =
+                    ApiJson.response.encodeToString(AccountPolicies.serializer(), AccountPolicies("new", "1"))
+                SettingsRepository(store.database).upsert(SettingsRecord("policies", policies))
+                val outbox = OutboxRepository(store.database)
+                val malformed =
+                    OutboxRecord("bad", "settings", """{"section":"policies"}""", "2026-01-01T00:00:00.000Z")
+                outbox.upsert(malformed)
+                val row = store.enqueue(OutboxChange.Policies("new"), 1)
+                assertEquals(listOf(malformed, row), outbox.pending())
+                val accepted =
+                    ApiJson.response.parseToJsonElement(
+                        SettingsRepository(store.database).settings().single().value,
+                    ) as JsonObject
+                assertEquals(JsonPrimitive("new"), accepted["acceptedTermsVersion"])
+                assertEquals(JsonPrimitive(row.createdAt), accepted["acceptedTermsAt"])
+                assertEquals(row, store.enqueue(OutboxChange.Policies("new"), 2))
+                assertEquals(listOf(malformed, row), outbox.pending())
             } finally {
                 store.close()
             }
