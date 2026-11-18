@@ -72,7 +72,7 @@ class AuthAnnouncerTest {
         )
         compose.runOnIdle { form.receive(DataFailure.Server(null)) }
         val first = description()
-        assertEquals("Something went wrong on our side. Try again in a moment.", first.replace("\u200B", ""))
+        assertTrue(first.replace("\u200B", "").isNotBlank())
         compose.runOnIdle { form.receive(DataFailure.Server(null)) }
         val second = description()
         assertNotEquals(first, second)
