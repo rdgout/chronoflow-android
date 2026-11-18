@@ -2219,11 +2219,11 @@ Implementation commits (brief §7):
   - `NavigationSuiteScaffold`: a bar below 600 dp and a rail from 600 dp. The bar never hides.
   - Tabs: Today, My trips and Settings, with Material Symbols per OQ-A4 and the tint per OQ-A3.
   - One Nav3 back stack per tab. Reselecting a tab pops it to its root and scrolls to the top. Back from a non-Today root goes to Today, then exits.
-- [ ] **My trips** (`feature/trips/…`).
+- [x] **My trips** (`feature/trips/…`).
   - `TripsViewModel` over the trips flow, with the sections and sort order of iOS 15b.
   - Cards, `TripsEmpty`, and a `TripsLoading` skeleton.
   - New trip goes to a wizard seam until 9c. A card opens `TripPage(tripId)`, a placeholder until 6b.
-- [ ] **Pull to refresh.**
+- [x] **Pull to refresh.**
   - `CfPullToRefreshBox` calls `refreshNow`.
   - The designed capsule shows at the top inset with its copy for about 2 s, and fades instead with Reduce Motion.
   - Test tag `refresh.feedback`, plus a debug "was presented" counter.
