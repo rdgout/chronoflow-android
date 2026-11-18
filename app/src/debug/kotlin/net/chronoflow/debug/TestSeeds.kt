@@ -9,10 +9,19 @@ import android.os.Build
 import android.os.LocaleList
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
+import net.chronoflow.app.AppDispatchers
+import net.chronoflow.app.ChronoFlowApp
+import net.chronoflow.app.GraphOverrides
 import net.chronoflow.app.MainActivity
+import net.chronoflow.app.MockSeedFlags
+import net.chronoflow.core.database.AndroidAccountDriverFactory
+import net.chronoflow.core.datastore.AndroidKeystoreSessionCipher
 import net.chronoflow.core.datastore.DevicePreferences
+import net.chronoflow.core.datastore.KeystoreSessionStore
+import net.chronoflow.core.datastore.SessionCipher
 import net.chronoflow.core.model.config.LanguageChoice
 import net.chronoflow.core.model.config.ThemeChoice
+import net.chronoflow.core.model.session.StorageNamespace
 import java.io.File
 
 object TestSeeds {
@@ -22,12 +31,30 @@ object TestSeeds {
         seed: TestSeed,
         io: CoroutineDispatcher,
         sdkInt: Int = Build.VERSION.SDK_INT,
+        sessionCipher: SessionCipher? = null,
+        dispatchers: AppDispatchers? = null,
     ) = withContext(io) {
         UITestTimeline.record("seed-begin", seed)
         if (seed.testId != null) {
+            val app = context.applicationContext as ChronoFlowApp
             val dir = File(context.filesDir, "uitests/${seed.testId}")
-            dir.deleteRecursively()
-            dir.mkdirs()
+            val alias = "ChronoFlowMock.uitest.${seed.testId}"
+            val cipher = sessionCipher ?: AndroidKeystoreSessionCipher()
+            val overrides =
+                GraphOverrides(
+                    dir,
+                    seed.mockDelay,
+                    alias,
+                    MockSeedFlags(seed.unverified, seed.walkthroughSeen, seed.termsPending),
+                    cipher,
+                    dispatchers,
+                )
+            DebugAppHooks.resetGraph(app, overrides)
+            val graph = app.graph
+            val credentials = KeystoreSessionStore(File(dir, "ChronoFlowMock/session.bin"), alias, cipher, io)
+            SeedRunner(dir, credentials, AndroidAccountDriverFactory(context), graph.dataSources.public(), io)
+                .reseed(seed.signedIn, seed.testId)
+            DebugSeedRouting.current = seed
         }
         seed.language?.let { language ->
             DevicePreferences.shared(context).setLanguage(language, sdkInt)

@@ -713,14 +713,14 @@ T5/T6 test dependency: the source-startup suspension case first exercises `contr
   Without `CF_AUTH_TEST_ID`, none of this runs. Seeded state lives for the process only (OQ-4e-7).
 - **Graph reset.**
   - Main code defines the `GraphOverrides` data class of §5.6 with `GraphOverrides.None`. `AppGraph(app, overrides = GraphOverrides.None, …)` is the production constructor. Preserve the existing `fontPreloader` and `launchProvider` constructor parameters used by landed launch tests; these inject dependencies and perform no I/O. Add overrides without breaking those named call sites.
-  - `TestSeeds.apply` gains a trailing parameter `sessionCipher: SessionCipher? = null`, forwarded into `GraphOverrides`; Robolectric tests pass `SoftwareSessionCipher()`.
+  - `TestSeeds.apply` gains trailing parameters `sessionCipher: SessionCipher? = null` and `dispatchers: AppDispatchers? = null`, forwarded into `GraphOverrides`; suspend Robolectric graph tests pass `SoftwareSessionCipher()` and their shared scheduler (user, 2026-11-18).
   - `ChronoFlowApp.graph` (the 0a `lateinit var`) gets an `internal set`.
   - Only `app/src/debug/…/DebugAppHooks.kt` (`fun resetGraph(app, overrides)`) calls the setter: it calls the old graph's `close()` (cancels `appScope` and the scopes owned by its controller, readiness and session sync), then assigns `AppGraph(app, overrides)`. Add `AppGraph.close()` (main, used only by this hook) in T9.
   - Release has no caller, so there is no reset path.
 - **Tests:**
   - `app/src/testDebug/…/TestSeedSessionKeysTest` (JVM): every row of the table, with valid, invalid and ungated input. `CF_MOCK_DELAY` cases: `0`, `60`, `60.1`, `-1`, `NaN`, `abc`.
   - `MockSessionSeedTests` (JVM, JDBC, temp root, in-memory credentials). Port:
-    - `signedInSeedUsesRestorableCredentialsAndAccountGates`, parameterized over `demo|twofactor × app|verify|terms|walkthrough`: `gate` as expected; `hasStoredData == (gate != Verify)`; re-running after deleting the credentials does not resurrect the session.
+    - `signedInSeedUsesRestorableCredentialsAndAccountGates`, in its own `MockSessionSeedGateTests` parameterized class (Appendix B), over `demo|twofactor × app|verify|terms|walkthrough`: `gate` as expected; `hasStoredData == (gate != Verify)`; re-running after deleting the credentials does not resurrect the session.
     - `reseedRemovesPreviousAccountQueueAndCompletionMarkerAndMatchesColdSeed`.
   - `ReseedEqualsColdSeedTest` (JVM, `app/src/testDebug`). Extract steps 2–6 of `apply` into `internal class SeedRunner(storageDir: File, credentials: SessionStore, driverFactory: AccountDriverFactory, source: DataSource, io)` with `suspend fun reseed(signedIn: SeedAccount?, testId: String)` (reset = `MockSessionSeed.reset(storageDir, credentials)`, then `MockSessionSeed.run` when signed in). `TestSeeds.apply` builds it from the production instances; the test builds it with `JdbcAccountDriverFactory()`, a `MemorySessionStore` and `MockDataSource(MemoryMockStateStore(), seed = MockAppSeed.make(Instant.ofEpochSecond(1_800_000_000), walkthroughSeen = true), delay = { 0.0 }, sleep = {}, bearer = { credentials.readStoredSession()?.token })` (Swift `MockSessionSeedTests` l.65–71):
     1. cold-seed `twofactor` → `SeedSummary(id, email, walkthrough, verified, trips.sorted(), pending, synced)`;

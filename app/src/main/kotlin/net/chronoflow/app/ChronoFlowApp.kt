@@ -9,7 +9,7 @@ open class ChronoFlowApp : Application() {
     val launchPath = LaunchPath()
 
     lateinit var graph: AppGraph
-        private set
+        internal set
 
     protected open fun createGraph(): AppGraph = AppGraph(this)
 
