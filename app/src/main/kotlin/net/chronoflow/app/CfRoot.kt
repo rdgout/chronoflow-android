@@ -38,6 +38,7 @@ import kotlinx.coroutines.Dispatchers
 import net.chronoflow.app.auth.SignInViewModelFactory
 import net.chronoflow.app.auth.SignUpViewModelFactory
 import net.chronoflow.app.auth.TwoFactorViewModelFactory
+import net.chronoflow.app.shell.AppShell
 import net.chronoflow.core.designsystem.effect.skyBackground
 import net.chronoflow.core.designsystem.layout.LocalSafeInsets
 import net.chronoflow.core.designsystem.theme.CfTheme
@@ -220,6 +221,10 @@ internal fun CfRoot(
                                             viewModel(factory = SignInViewModelFactory, extras = extras),
                                             graph.auth.router,
                                         )
+                                    }
+
+                                    Route.Today, Route.Trips, Route.Settings, is Route.TripPage, is Route.Wizard -> {
+                                        AppShell(route) { RoutePlaceholder(it, LaunchPlatform.routeLabel) }
                                     }
 
                                     else -> {

@@ -2215,7 +2215,7 @@ Implementation commits (brief §7):
 **Delivers.** Adds the three-tab shell with NavigationSuiteScaffold (a bar below 600 dp, a rail from 600 dp, never hidden on scroll), one back stack per tab, reselect-to-root and the back rules. It builds My trips with its sections, cards, empty and loading states and the New trip entry, and pull to refresh with the designed result capsule. Today and Settings show debug route seams until Phases 7 and 10a.
 
 **Tasks**
-- [ ] **Shell** (`app/…/shell/AppShell.kt`).
+- [x] **Shell** (`app/…/shell/AppShell.kt`).
   - `NavigationSuiteScaffold`: a bar below 600 dp and a rail from 600 dp. The bar never hides.
   - Tabs: Today, My trips and Settings, with Material Symbols per OQ-A4 and the tint per OQ-A3.
   - One Nav3 back stack per tab. Reselecting a tab pops it to its root and scrolls to the top. Back from a non-Today root goes to Today, then exits.
@@ -2227,7 +2227,7 @@ Implementation commits (brief §7):
   - `CfPullToRefreshBox` calls `refreshNow`.
   - The designed capsule shows at the top inset with its copy for about 2 s, and fades instead with Reduce Motion.
   - Test tag `refresh.feedback`, plus a debug "was presented" counter.
-- [ ] **Seams.** The Today and Settings tabs show debug seams until 7 and 10a.
+- [x] **Seams.** The Today and Settings tabs show debug seams until 7 and 10a.
 - [ ] **Tests.**
   - ViewModel cases: sections, sorting, empty.
   - Guards for `Trips`, `TripsEmpty` and `TripsLoading` at `pixel8` (bar) and `foldInner` (rail).
