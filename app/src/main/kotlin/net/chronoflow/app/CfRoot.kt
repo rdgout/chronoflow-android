@@ -17,6 +17,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.withFrameNanos
@@ -76,7 +77,9 @@ internal fun CfRoot(
     // Skipped overlays wait for first commit before readiness can select a route.
     val launchSky = content == null && (displayedRoute == null || displayedRoute == Route.Welcome)
     SideEffect { onSystemBars(night, overlayShowing, onSky || launchSky) }
-    ReportDrawnWhen { !graph.launch.overlayActive && displayedRoute != null }
+    val currentRoute = rememberUpdatedState(displayedRoute)
+    // Replacing the predicate disposes its reporter and can report before the overlay exits.
+    ReportDrawnWhen(remember(graph) { { !graph.launch.overlayActive && currentRoute.value != null } })
     ChronoFlowTheme(darkTheme = night, reduceMotion = reduceMotion) {
         CompositionLocalProvider(
             LocalSafeInsets provides WindowInsets.safeDrawing,
