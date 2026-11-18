@@ -21,6 +21,7 @@ import net.chronoflow.core.model.api.ApiJson
 import okhttp3.Authenticator
 import okhttp3.Call
 import okhttp3.Callback
+import okhttp3.ConnectionPool
 import okhttp3.CookieJar
 import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
@@ -66,6 +67,7 @@ class ApiClient(
                     .authenticator(Authenticator.NONE)
                     .proxyAuthenticator(Authenticator.NONE)
                     .cache(null)
+                    .connectionPool(ConnectionPool(5, 4, TimeUnit.SECONDS))
                     .retryOnConnectionFailure(false)
                     .connectTimeout(0, TimeUnit.MILLISECONDS)
                     .readTimeout(0, TimeUnit.MILLISECONDS)

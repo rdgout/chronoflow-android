@@ -43,6 +43,50 @@ class ApiClientTests {
 
     @get:Rule val folder = TemporaryFolder()
 
+    @Test fun poolKeepAliveStaysBelowTheServerIdleBoundWithoutRetries() =
+        runTest(timeout = 60.seconds) {
+            val base =
+                withContext(Dispatchers.IO) {
+                    OkHttpClient
+                        .Builder()
+                        .connectionPool(okhttp3.ConnectionPool(8, 2, java.util.concurrent.TimeUnit.MINUTES))
+                        .build()
+                }
+            val client = api.client(base = { base }).effectiveClient()
+            val (maxIdle, keepAliveNanos) = poolSettings(client.connectionPool)
+            org.junit.Assert.assertTrue(
+                "Pool idle duration was $keepAliveNanos ns",
+                keepAliveNanos < 5.seconds.inWholeNanoseconds,
+            )
+            assertThat(keepAliveNanos).isEqualTo(4.seconds.inWholeNanoseconds)
+            assertThat(maxIdle).isEqualTo(5)
+            assertThat(client.retryOnConnectionFailure).isEqualTo(false)
+            assertThat(client.connectionPool === base.connectionPool).isEqualTo(false)
+            assertThat(poolSettings(base.connectionPool)).isEqualTo(8 to 120.seconds.inWholeNanoseconds)
+        }
+
+    private fun poolSettings(pool: okhttp3.ConnectionPool): Pair<Int, Long> {
+        // OkHttp 5.5.1 exposes neither policy value publicly; inspect it without a wall-clock wait.
+        val delegate =
+            pool.javaClass
+                .getDeclaredField("delegate")
+                .apply { isAccessible = true }
+                .get(pool)
+        val maxIdle =
+            delegate.javaClass
+                .getDeclaredField(
+                    "maxIdleConnections",
+                ).apply { isAccessible = true }
+                .getInt(delegate)
+        val keepAlive =
+            delegate.javaClass
+                .getDeclaredField("keepAliveDurationNs")
+                .apply {
+                    isAccessible = true
+                }.getLong(delegate)
+        return maxIdle to keepAlive
+    }
+
     @Test fun serviceUnavailableWithZeroRetryAfterIsNotRetried() =
         runTest(timeout = 60.seconds) {
             val attempts =
