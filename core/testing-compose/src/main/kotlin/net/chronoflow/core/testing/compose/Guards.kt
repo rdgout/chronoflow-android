@@ -28,6 +28,7 @@ import kotlin.math.roundToInt
  */
 object Guards {
     private const val TOLERANCE = 0.5f
+    private const val SAFE_AREA_ROUNDING_PX = 1f
     private const val MIN_OVERLAP_DP = 48f
 
     private val interactive =
@@ -159,10 +160,11 @@ object Guards {
         val min = minSize.value * profile.density
         for (node in rule.onAllNodes(interactive).fetchSemanticsNodes()) {
             if (isExempt(node, exemptTags)) continue
-            // Layout size, never touchBoundsInRoot: Compose enlarges touch bounds, so a 40 dp box would pass.
-            // layoutInfo spans the whole modifier chain, so Material's minimumInteractiveComponentSize counts.
-            val width = node.layoutInfo.width
-            val height = node.layoutInfo.height
+            // Native inline links must retain the paragraph's text geometry; Compose owns their expanded targets.
+            // Other controls use layout size so a 40 dp button cannot pass on automatic touch expansion alone.
+            val inlineLink = SemanticsProperties.LinkTestMarker in node.config
+            val width = if (inlineLink) node.touchBoundsInRoot.width else node.layoutInfo.width.toFloat()
+            val height = if (inlineLink) node.touchBoundsInRoot.height else node.layoutInfo.height.toFloat()
             if (width < min - TOLERANCE || height < min - TOLERANCE) {
                 throw AssertionError("${describe(node)} is $width x $height px, below $min px")
             }
@@ -188,8 +190,9 @@ object Guards {
             val bounds =
                 settledBounds(rule, node, useUnmergedTree = false, safe = safe, minOverlap = MIN_OVERLAP_DP * d)
             val inside =
-                bounds.left >= safe.left - TOLERANCE && bounds.top >= safe.top - TOLERANCE &&
-                    bounds.right <= safe.right + TOLERANCE && bounds.bottom <= safe.bottom + TOLERANCE
+                bounds.left >= safe.left - SAFE_AREA_ROUNDING_PX && bounds.top >= safe.top - SAFE_AREA_ROUNDING_PX &&
+                    bounds.right <= safe.right + SAFE_AREA_ROUNDING_PX &&
+                    bounds.bottom <= safe.bottom + SAFE_AREA_ROUNDING_PX
             if (!inside) {
                 throw AssertionError(
                     "${describe(node)} ${rect(bounds)} lies outside the safe area ${rect(safe)}",
@@ -208,17 +211,40 @@ object Guards {
                 val a = nodes[i]
                 val b = nodes[j]
                 if (ancestors(a).any { it.id == b.id } || ancestors(b).any { it.id == a.id }) continue
-                val x =
-                    minOf(a.boundsInRoot.right, b.boundsInRoot.right) - maxOf(a.boundsInRoot.left, b.boundsInRoot.left)
-                val y =
-                    minOf(a.boundsInRoot.bottom, b.boundsInRoot.bottom) - maxOf(a.boundsInRoot.top, b.boundsInRoot.top)
-                if (x > TOLERANCE && y > TOLERANCE) {
+                val overlaps =
+                    interactionRects(a).any { first ->
+                        interactionRects(b).any { second ->
+                            val x = minOf(first.right, second.right) - maxOf(first.left, second.left)
+                            val y = minOf(first.bottom, second.bottom) - maxOf(first.top, second.top)
+                            x > TOLERANCE && y > TOLERANCE
+                        }
+                    }
+                if (overlaps) {
                     throw AssertionError(
                         "${describe(a)} ${rect(a.boundsInRoot)} overlaps ${describe(b)} ${rect(b.boundsInRoot)}",
                     )
                 }
             }
         }
+    }
+
+    private fun interactionRects(node: SemanticsNode): List<Rect> {
+        if (SemanticsProperties.LinkTestMarker !in node.config) return listOf(node.boundsInRoot)
+        // A wrapped link's enclosing rectangle can contain a different link; native hit testing uses the text path.
+        val paragraph =
+            ancestors(node).firstOrNull {
+                SemanticsActions.GetTextLayoutResult in it.config && SemanticsProperties.Text in it.config
+            } ?: throw AssertionError("native inline link has no paragraph")
+        val siblings = paragraph.children.filter { SemanticsProperties.LinkTestMarker in it.config }
+        val index = siblings.indexOfFirst { it.id == node.id }
+        val text = paragraph.config[SemanticsProperties.Text].single()
+        val range =
+            text.getLinkAnnotations(0, text.length).getOrNull(index)
+                ?: throw AssertionError("native inline link has no annotation")
+        val layouts = mutableListOf<TextLayoutResult>()
+        paragraph.config[SemanticsActions.GetTextLayoutResult].action?.invoke(layouts)
+        val layout = layouts.singleOrNull() ?: throw AssertionError("native inline link has no text layout")
+        return (range.start until range.end).map { layout.getBoundingBox(it).translate(paragraph.positionInRoot) }
     }
 
     fun assertHeadings(
