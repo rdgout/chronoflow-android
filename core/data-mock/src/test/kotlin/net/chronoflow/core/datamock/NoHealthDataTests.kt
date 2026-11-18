@@ -1,11 +1,16 @@
 package net.chronoflow.core.datamock
 
+import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import net.chronoflow.core.model.DataFailure
+import net.chronoflow.core.model.FieldMessage
+import net.chronoflow.core.model.api.ApiTripReviewInput
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
+import kotlin.time.Duration.Companion.seconds
 
 class NoHealthDataTests {
     @Test fun readinessOnlyAgeAndShiftWorkBlockAndPreferencesAdjust() {
@@ -38,4 +43,42 @@ class NoHealthDataTests {
             )["variant"],
         )
     }
+
+    private val retired =
+        listOf("bipolar", "eye_disease", "pregnancy", "vte", "sleep_phase_disorder", "oral_contraception")
+
+    @Test fun mockRejectsEveryRetiredReviewProfileKeyWith422() =
+        runTest(timeout = 60.seconds) {
+            val source = wizardMockSource()
+            login(source)
+
+            suspend fun reject(key: String) {
+                val error =
+                    failure {
+                        source.reviewTrip(
+                            ApiTripReviewInput(
+                                wizardInput(),
+                                profile =
+                                    JsonObject(
+                                        mapOf(key to JsonPrimitive(false)),
+                                    ),
+                            ),
+                        )
+                    }
+                assertEquals(422, error.status)
+                assertEquals(
+                    DataFailure.ProfileInvalid(
+                        mapOf("profile.form" to FieldMessage("This setting cannot be changed here.")),
+                    ),
+                    error,
+                )
+            }
+            reject(retired[0])
+            reject(retired[1])
+            reject(retired[2])
+            reject(retired[3])
+            reject(retired[4])
+            reject(retired[5])
+            reject("caffeine_ruled_out")
+        }
 }

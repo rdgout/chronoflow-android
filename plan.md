@@ -2805,7 +2805,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - Entered from Welcome's Plan my trip.
   - The guest variants: `WizardWhereGuest`, `WizardOutboundGuest`, `WizardOutboundPastGuest`, `WizardCheckingGuest`, `WizardFineTuneGuest`, `WizardReadyGuest`, `WizardReadyGuestFree` and `WizardDiscardGuest`.
   - Questions are excluded for guests, per 9e.
-- [ ] **Guest review endpoint.** `POST guest/trips/review` (90 s) in `ApiDataSource` and in the mock (iOS 18b, 18c).
+- [ ] **Guest review endpoint.** `POST guest/trips/review` (90 s) in `ApiDataSource` and in the mock (iOS 18b, 18c; mock side ported in 4c, OQ-A165).
 - [ ] **GuestSecretStore:** Keystore alias `<ns>.guest` plus a DataStore key (06 OQ 12). The guest draft file is `noBackupFilesDir/<ns>/guest-wizard.json` (18f).
 - [ ] **Discard and recovery.** Discard returns to Welcome. The guest draft is recovered quietly after the Welcome intro (OQ 17, 18m).
 - [ ] **Tests.** The ported 18b–18h and 18k–18m cases, plus guards for every guest board and its DarkNL wrapper.
@@ -2837,7 +2837,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 
 **Tasks**
 - [ ] **Guest sign-up sheet** (`GuestSignup`, `GuestSignupFailed`, `GuestSignupRetry`, `GuestSignupReview`) over guest Ready, with a 520 dp column on wide windows; plus `GuestExcluded`.
-- [ ] **Claim**, porting `GuestClaim`.
+- [ ] **Claim**, porting `GuestClaim` (mock side ported in 4c, OQ-A165).
   - Register with the claim.
   - Claim on sign-in and on passkey sign-in (18i).
   - Consume `GuestSessionContinuation` after verification, so the claimed trip opens (18j; iOS `AppTabs.swift:341–369`).
