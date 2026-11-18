@@ -235,7 +235,7 @@ Pure functions (`ShellNav.kt`):
   - one `SaveableStateHolder`, with `SaveableStateProvider(tab)` around each tab's `NavDisplay`;
   - one `TabViewModelStoreOwner` per tab, held by the shell holder. It implements `ViewModelStoreOwner` and `HasDefaultViewModelProviderFactory`, forwarding the activity's `defaultViewModelCreationExtras` and factory. It is provided as `LocalViewModelStoreOwner` around that tab's `NavDisplay`;
   - all three sets of decorated entries stay remembered through `rememberDecoratedNavEntries`, with `rememberSaveableStateHolderNavEntryDecorator()` and `rememberViewModelStoreNavEntryDecorator(viewModelStoreOwner = tabOwner)`. Only the selected set is passed to `NavDisplay`. A pop clears its entry’s ViewModel; switching tabs keeps it (§4, Lifecycle 2.11.0);
-  - `DisposableEffect(Unit) { onDispose { holder.clear() } }` clears all three tab stores when the shell leaves composition (sign-out or a new root revision).
+  - The shell holder is a ViewModel in the parent root entry's store. Its state and all three tab stores survive configuration recreation; `onCleared` clears tab stores when the root entry is removed. Process death cold-launches to Today (state-survival spec; OQ-A246).
 - **Only the selected tab's `NavDisplay` is composed.**
 - **Back:**
   - the `NavDisplay` of the selected tab gets `onBack = { holder.back() }`;

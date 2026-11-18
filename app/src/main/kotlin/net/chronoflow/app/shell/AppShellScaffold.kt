@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -100,7 +99,6 @@ internal fun AppShellScaffold(
                 }
             }
         }
-    DisposableEffect(holder) { onDispose { holder.clear() } }
     val currentOverlay = state.overlay
     if (currentOverlay == null) {
         CfNavigationSuiteScaffold(

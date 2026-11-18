@@ -17,7 +17,6 @@ import net.chronoflow.app.LaunchPlatform
 import net.chronoflow.core.model.contracts.Language
 import net.chronoflow.core.navigation.Route
 import net.chronoflow.core.navigation.WizardMode
-import net.chronoflow.core.navigation.shell.ShellNav
 import net.chronoflow.core.sync.refresh.RefreshFeedbackState
 import net.chronoflow.feature.trips.TripsContent
 import net.chronoflow.feature.trips.TripsDependenciesKey
@@ -33,8 +32,7 @@ internal fun AppShell(
     val graph = (LocalContext.current.applicationContext as ChronoFlowApp).graph
     val sessionGraph by graph.sessionGraphs.current.collectAsStateWithLifecycle()
     val render = rememberUpdatedState(placeholder)
-    val parent = checkNotNull(LocalViewModelStoreOwner.current)
-    val holder = remember(parent, root) { ShellHolder(ShellNav.fromRoot(root), parent) }
+    val holder = rememberShellHolder(root)
     LaunchedEffect(holder) { LaunchPlatform.shellStart()?.let(holder::seed) }
     AppShellScaffold(
         holder,

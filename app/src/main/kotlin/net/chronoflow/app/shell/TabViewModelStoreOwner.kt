@@ -11,9 +11,20 @@ internal class TabViewModelStoreOwner(
 ) : ViewModelStoreOwner,
     HasDefaultViewModelProviderFactory {
     override val viewModelStore = ViewModelStore()
-    override val defaultViewModelProviderFactory: ViewModelProvider.Factory =
-        (parent as? HasDefaultViewModelProviderFactory)?.defaultViewModelProviderFactory
-            ?: ViewModelProvider.NewInstanceFactory()
-    override val defaultViewModelCreationExtras: CreationExtras =
-        (parent as? HasDefaultViewModelProviderFactory)?.defaultViewModelCreationExtras ?: CreationExtras.Empty
+    override var defaultViewModelProviderFactory: ViewModelProvider.Factory = ViewModelProvider.NewInstanceFactory()
+        private set
+    override var defaultViewModelCreationExtras: CreationExtras = CreationExtras.Empty
+        private set
+
+    init {
+        updateParent(parent)
+    }
+
+    fun updateParent(parent: ViewModelStoreOwner) {
+        defaultViewModelProviderFactory =
+            (parent as? HasDefaultViewModelProviderFactory)?.defaultViewModelProviderFactory
+                ?: ViewModelProvider.NewInstanceFactory()
+        defaultViewModelCreationExtras =
+            (parent as? HasDefaultViewModelProviderFactory)?.defaultViewModelCreationExtras ?: CreationExtras.Empty
+    }
 }

@@ -18,7 +18,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -32,13 +31,11 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import net.chronoflow.core.designsystem.layout.LocalSafeInsets
 import net.chronoflow.core.designsystem.theme.ChronoFlowTheme
 import net.chronoflow.core.navigation.Route
 import net.chronoflow.core.navigation.WizardMode
-import net.chronoflow.core.navigation.shell.ShellNav
 import net.chronoflow.core.navigation.shell.ShellTab
 import net.chronoflow.core.testing.DeviceProfile
 import net.chronoflow.core.testing.DeviceProfiles
@@ -76,9 +73,8 @@ class AppShellTest {
         compose.setContent {
             ProfileHost(profile) {
                 ChronoFlowTheme(reduceMotion = true) {
-                    val parent = checkNotNull(LocalViewModelStoreOwner.current)
                     val currentActivity = LocalActivity.current as ComponentActivity
-                    val currentHolder = remember { ShellHolder(ShellNav.fromRoot(root), parent) }
+                    val currentHolder = rememberShellHolder(root)
                     SideEffect {
                         holder = currentHolder
                         activity = currentActivity
