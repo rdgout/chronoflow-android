@@ -1,10 +1,11 @@
 # Phase 4b brief: API client and error mapping
 
-- **Branch:** `feat/phase-4b-api-client`, from the stack top once 0d and 1a are in the stack (1a owns `CheckOffChange`, review 2026-11-16). It runs in parallel with 1b, 3a and 12a (wave 4), in its own worktree.
-- **Depends on:** 0d (contracts, `ApiJson`, `DataFailure`, fixtures), 1a (`CheckOffChange` in `net.chronoflow.core.model`). **Wave:** 4. **Unblocks:** 4c (mock data source), and through it 4d and 4e.
-- **Plan entry:** `plan.md` "### Phase 4b: API client and error mapping (`feat/phase-4b-api-client`)" (l.1515–1557). Decisions **A3** (modules), **A6** (networking and data-source selection), **A23** (security), **A24** (scope), OQ-A16 (no ETags). "Android spec: build and repository layout" (BuildConfig in `:app` only).
+- **Branch:** `feat/phase-4b-api-client`, already created from the Phase 4a stack top. Work in the main checkout, one phase at a time; the former wave-4 parallel-worktree scheduling no longer applies.
+- **Depends on:** 0d (contracts, `ApiJson`, `DataFailure`, fixtures), 1a (`CheckOffChange` in `net.chronoflow.core.model`). **Stack:** 0a–0e, 1a–1e, 2, 3a–3c and 4a have landed. **Unblocks:** 4c (mock data source), and through it 4d and 4e.
+- **Plan entry:** `plan.md` "### Phase 4b: API client and error mapping (`feat/phase-4b-api-client`)" (l.1702–1745). Decisions **A3** (modules), **A6** (networking and data-source selection), **A23** (security), **A24** (scope), OQ-A16 (no ETags). "Android spec: build and repository layout" (BuildConfig in `:app` only).
 - **Brief written:** 2026-11-16 by the orchestrator; revised the same day against the final 0a, 0d and 0e briefs (JUnit 4 table rules, `make targeted` syntax, convention-plugin test dependencies, perf variants) and re-verified against the iOS sources at the pin. iOS read at `f391a1fa` (`tools/ios-pin.txt`), web at `e36368ec82e6c44c0a5b1c624324e2a4fb5ddd19` (`tools/web-pin.txt`). Checked the same day against the iOS sources and tests, the web routes and the 0a/0d/0e briefs (adversarial pass): line references, the wizard wire test, the mid-body `ProtocolException`, the device-id header (OQ-4b-15) and the `args` rule corrected.
-- **Tests:** every test follows `AGENTS.md` "Tests". This phase is **JVM only**: JUnit 4.13.2 and assertk 0.28.1 (both already added by 0a's `chronoflow.jvm.library` plugin), plus kotlinx-coroutines-test 1.11.0 and mockwebserver3 5.5.1, and two plain-JVM `:app` unit tests (`testDebugUnitTest`, `testReleaseUnitTest`). No Robolectric, no emulator, no UI, no tier annotation (plain JVM tests carry none, 0e).
+- **Refreshed 2026-11-18:** checked landed contracts, fixtures, `CheckOffChange`, Gradle aliases/plugins, perf build types and test harness against the Phase 4a tree. `TripDetailResponse` exposes `detail.trip`, not `trip`; preserve its legacy-health sanitizer. New OQ rows start at OQ-A132.
+- **Tests:** every test follows `AGENTS.md` "Tests". This phase is **JVM only**: JUnit 4.13.2 and assertk 0.28.1 (both already added by 0a's `chronoflow.jvm.library` plugin), plus kotlinx-coroutines-test 1.11.0 (already available in `:core:model`) and mockwebserver3 5.5.1, and two plain-JVM `:app` unit tests (`testDebugUnitTest`, `testReleaseUnitTest`). No Robolectric, no emulator, no UI, no tier annotation (plain JVM tests carry none, 0e).
 - **Table-driven tests (0d §4.2, binding here too):** a class annotated `@RunWith(Parameterized::class)` holds **only** parameterized tests, with `@Parameters(name = "{0}")` and a readable first column. A short fixed list (0d §4.2 sets no number; here: ≤ 5 rows, unless the task names a **Parameterized** class for it, as for the 4 transport modes) is written as one plain method per row, each a one-line call to a private helper, with the Swift name as the prefix (`deadlinesCancelUnderlyingTask3s`). Never loop over rows inside one `@Test`; never use `Enclosed`. Every class name below says which kind it is.
 - **Boards:** none. This phase has no UI. Do not add a screen, a string resource, a `CopyIndex` entry or a design token. Server message keys travel as `FieldMessage.key` and are translated by later UI phases.
 - **Tags:** **[F]** fact verified in source (path and line at the pin). **[R]** rule this brief sets for Android. `I/` = `/Users/rickgout/Sites/chronoflow-ios` read with `git -C /Users/rickgout/Sites/chronoflow-ios show f391a1fa:<path>` (never write there). `Kit/` = `I/Packages/ChronoFlowKit/Sources`. `KitTests/` = `I/Packages/ChronoFlowKit/Tests/DataAccessTests`. `W/` = `/Users/rickgout/Sites/chronoflow-new`, read with `git -C … show e36368ec:<path>`.
@@ -34,15 +35,15 @@ No mock (4c), no database, outbox persistence or sync (4a, 4d), no session wirin
 
 | What | Path | Why |
 |---|---|---|
-| Plan | `plan.md` l.1515–1557 (Phase 4b), A3, A6, A23, A24, "Android spec: build and repository layout" (BuildConfig), "Android spec: seeds and test hooks" (release readiness), OQ-A16 | Scope and decisions |
+| Plan | `plan.md` l.1702–1745 (Phase 4b), A3, A6, A23, A24, "Android spec: build and repository layout" (BuildConfig), "Android spec: seeds and test hooks" (release readiness), OQ-A16 | Scope and decisions |
 | Agent rules | `AGENTS.md` "Working rules" (Secrets, Comments), "Tests", "Commands", "Git", "Traps" (rethrow `CancellationException`; configuration cache; release ships no mock) | How to work |
 | 0d brief | `docs/phases/phase-0d-contracts.md` §4 (packages, serialization rules 4.1), Task 3 (`ApiErrorEnvelope`, `FieldMessage`, `DataFailure`), Tasks 5–7 (DTO names and wire keys), §9 "Hand-off to later phases" (4b items) | The types you call; do not change them unless a task below says so |
 | Research | `docs/research/03-api-contract.md` §2–§13 (transport, envelope, rate limits, endpoint table §5, tokens, 2FA, links, passkeys, guest, wizard, trips, settings) | Wire contract |
 | Research | `docs/research/02-ios-architecture.md` §5.1–§5.3 (DataSource, factory, APIClient, endpoint table) | iOS structure |
 | Research | `docs/research/09-rn-android-lessons.md` §7 (RN client: `redirect: error`, origin check, timeouts) | Lessons |
-| 0a output | `gradle/libs.versions.toml` (`okhttp`, `mockwebserver3` 5.5.1; `kotlinx-coroutines-core`/`-test` 1.11.0; use the aliases exactly as 0a wrote them), `core/network/build.gradle.kts` (plugin `chronoflow.jvm.library`), `app/build.gradle.kts`, `konsist/src/test/kotlin/net/chronoflow/konsist/{KonsistRules,KonsistRulesTest}.kt` and `konsist/src/test/resources/violations/` (rule + planted-violation convention), `Scripts/targeted.py`, `Makefile` | Where you wire things |
+| 0a output | `gradle/libs.versions.toml` (`okhttp`, `okhttp-mockwebserver3` 5.5.1; `kotlinx-coroutines-core`/`-test` 1.11.0; use the aliases exactly as 0a wrote them), `core/network/build.gradle.kts` (plugin `chronoflow.jvm.library`), `app/build.gradle.kts`, `konsist/src/test/kotlin/net/chronoflow/konsist/{KonsistRules,KonsistRulesTest}.kt` and `konsist/src/test/resources/violations/` (rule + planted-violation convention), `Scripts/targeted.py`, `Makefile` | Where you wire things |
 | 0e output | `docs/tooling.md` "perf variants" (OQ-A28: the build-type names actually used, `benchmarkRelease`/`nonMinifiedRelease` or the fallback `benchmark`), `app/src/testRelease/…/ReleaseReadinessTest.kt` | Task 10 needs the perf build-type names |
-| 0d output | `…/model/DataFailure.kt`, `…/model/OutboxKind.kt`, `…/model/api/*.kt`, `…/model/contracts/*.kt`, `core/testing/…/Fixtures.kt`, `core/testing/src/main/resources/fixtures/**` | Inputs |
+| 0d output | `…/model/DataFailure.kt`, `…/model/OutboxKind.kt`, `…/model/api/*.kt`, `…/model/contracts/*.kt`, `core/testing/src/main/kotlin/net/chronoflow/core/testing/Fixtures.kt`, `core/testing/src/main/resources/fixtures/**` | Inputs |
 
 ### 2.2 iOS (read-only, at `f391a1fa`): port behaviour from these files
 
@@ -93,21 +94,21 @@ iOS `plan.md` sections (at the pin): l.25 "Decisions" (**D20**: one `DataSource`
 
 ## 4. Module and package layout
 
-- **`:core:model`** (`chronoflow.jvm.library`, set up in 0d). New files: `DataSource.kt`, `OutboxChange.kt` (package `net.chronoflow.core.model`); `api/TripWizardErrors.kt`, `api/SettingsPatchValidation.kt`; append to `api/AccountSecurityContracts.kt`. No new dependency.
-- **`:core:network`** (`chronoflow.jvm.library`, empty skeleton from 0a; package `net.chronoflow.core.network`). `build.gradle.kts`:
+- **`:core:model`** (`chronoflow.jvm.library`, set up in 0d). New files: `DataSource.kt`, `OutboxChange.kt` (package `net.chronoflow.core.model`); `api/TripWizardErrors.kt`, `api/SettingsPatchValidation.kt`; append to `api/AccountSecurityContracts.kt`. No new dependency: serialization JSON and coroutines core are already `api` dependencies, and coroutines-test and `:core:testing` are already test dependencies.
+- **`:core:network`** (`chronoflow.jvm.library`, plugin-only skeleton from 0a; package `net.chronoflow.core.network`). `build.gradle.kts`:
   ```kotlin
   dependencies {
       api(project(":core:model"))
       api(libs.okhttp)                       // ApiClient's constructor takes an OkHttpClient
       implementation(libs.kotlinx.coroutines.core)
       testImplementation(project(":core:testing"))
-      testImplementation(libs.mockwebserver3)
+      testImplementation(libs.okhttp.mockwebserver3)
       testImplementation(libs.kotlinx.coroutines.test)
       // junit4 and assertk come from the chronoflow.jvm.library plugin; do not add them again
   }
   ```
-  The alias spellings above are illustrative: use the ones in 0a's `libs.versions.toml`. No serialization compiler plugin (this module declares no `@Serializable` type). No `android.*`, no Compose (A3 Konsist rule 2 already covers `core/network`). No `kotlin-reflect` (not in the catalog).
-- **`:app`**: `BuildConfig.DATA_SOURCE`, `BuildConfig.API_BASE_URL` (Task 10) and `testImplementation(project(":core:network"))` for one test. `:app` does **not** get an `implementation` dependency on `:core:network` in this phase (4e adds it).
+  These aliases match the current `libs.versions.toml`. No serialization compiler plugin (this module declares no `@Serializable` type). No `android.*`, no Compose (A3 Konsist rule 2 already covers `core/network`). No `kotlin-reflect` (not in the catalog).
+- **`:app`**: `BuildConfig.DATA_SOURCE`, `BuildConfig.API_BASE_URL` (Task 10) and plain JVM configuration tests. `implementation(project(":core:network"))` already exists from the scaffold; keep it as landed and do not add a duplicate test dependency.
 - **Why the helpers go to `:core:model` [R, OQ-4b-1]:** `TripWizardErrors` and `SettingsPatchValidation` are used by the mock (4c, `:core:data-mock`), sign-up (5d) and the wizard (9b, `:core:wizard`). In `:core:model` they need no OkHttp.
 - Ported code keeps the **Swift type, method and case names** (`passkeyOptions`, `fetchTripDetail`, `AccountSecurityChange.EnableTwoFactor`, `MutationReceipt.Acknowledged`), so a reviewer can diff against Swift. Swift enum cases become PascalCase (`checkOff` → `CheckOff`).
 
@@ -115,7 +116,7 @@ iOS `plan.md` sections (at the pin): l.25 "Decisions" (**D20**: one `DataSource`
 
 ## 5. Tasks
 
-Each task is one commit, in this order. Every commit compiles and passes `make quick`. Tick the named `plan.md` checkbox in the commit that completes it.
+Each task is one commit, in this order. Run `make targeted ONLY=…` for each task; run `make quick` once at the end (user instruction). Tick the named `plan.md` checkbox in the commit that completes it.
 
 ### Task 1. The DataSource contract and its in-memory types
 
@@ -236,7 +237,7 @@ Commit: `feat(model): port trip wizard error paths and settings patch validation
 
 **`…/model/api/SettingsPatchValidation.kt`** (`object SettingsPatchValidation`, port of `SettingsPatchValidation.swift`):
 - `fun validate(section: SettingsSection, patch: JsonObject)`, throwing `DataFailure.Validation(…, 422)`:
-  - `allowed`: Preferences → `time_format`, `hidden_categories`, `show_optional_items`; Reminders → `light`, `avoid`, `caffeine`, `winddown`, `lead_min`; BodyClock → `ProfilePreferences.requestFields` (0d; 20 keys).
+  - `allowed`: Preferences → `time_format`, `hidden_categories`, `show_optional_items`; Reminders → `light`, `avoid`, `caffeine`, `winddown`, `lead_min`; BodyClock → `ProfilePreferences.requestFields` (0d; use the landed set).
   - First, for `key` in `["exclude_caffeine", "flight_movement_breaks"]` in that order: if `key in patch` and the value is **not a JSON boolean** → throw `Validation(mapOf(key to FieldMessage("Choose one of the available options.")), 422)`. A JSON boolean is `value is JsonPrimitive && !value.isString && value.booleanOrNull != null`. **`JsonPrimitive("true").booleanOrNull` is `true` and `JsonNull` is a `JsonPrimitive`**: both must fail.
   - Then: `patch.isEmpty()` or any key not in `allowed` → throw `Validation(mapOf("form" to FieldMessage("This setting cannot be changed here.")), 422)`.
 
@@ -458,7 +459,7 @@ Commit: `feat(network): implement auth, reads and outbox writes in the api data 
 - `passkeyOptions()`: decode `ApiPasskeyChallenge`, then require `challengeId.length == 64`, `options.rpId == "app.chronoflow.net"`, `options.timeout == 60_000`, `options.challenge.length == 43`, every char in `[A-Za-z0-9_-]`, and `Base64.getUrlDecoder().decode(challenge).size == 32` (catch `IllegalArgumentException`); otherwise `Server(200)`. Run these checks in the `decode` lambda so they stay off the caller's thread.
 - `verificationStatus()` = `fetchIdentity()` mapped to `EmailVerificationStatus(email, hasVerifiedEmail, resendAfterSeconds = 0)` (no invented resend delay, iOS plan l.449; `APIDataSource.swift:47-51`).
 - `fetchTrips()`: decode `TripListResponse`; any trip with an empty `card.id` or `card.departureUtc` → `Server(200)`; return `trips`.
-- `fetchTripDetail(id)`: `request(endpoint) { bytes -> TripDetailResponse.decode(bytes) }`; a decode failure → `Server(200)`; `detail.trip.id != id` → `Server(200)`. **The exact server bytes are kept** (`response.data`).
+- `fetchTripDetail(id)`: `request(endpoint) { bytes -> TripDetailResponse.decode(bytes) }`; a decode failure → `Server(200)`; `detail.detail.trip.id != id` → `Server(200)`. **The exact server bytes are kept** (`response.data`) for clean payloads. Preserve 0d's `TripDetailResponse.decode` legacy-health sanitization, which matches iOS at the pin; never bypass it.
 - `send(change)`:
   - `CheckOff(c)` → body `ApiCheckOffInput(c.planInputHash, c.type, c.localDate, c.ordinal, c.status)` (0d), path `trips/<c.tripID>/checks`, `PUT` → `Checks(TripCheckResult)`.
   - `Settings(section, patch)` → `SettingsPatchValidation.validate(section, patch)` **before any I/O**; path `account/body-clock` for BodyClock, else `account/<raw>`; `PATCH`; body = `patch` as is → `Account(AccountSnapshot)`.
@@ -557,7 +558,7 @@ Commit: `build(app): select the data source and api base url per build type`.
 - Debug value checks, mapped lazily on the provider: `cf.dataSource` must be `mock` or `api`, else `GradleException("cf.dataSource must be mock or api, was <value>")`; `cf.apiBaseUrl` must not contain `"` or `\`, else `GradleException("cf.apiBaseUrl must not contain quotes or backslashes")`. Full URL validation happens at runtime in `ApiBaseUrl.parse`.
 - Values become `BuildConfigField("String", "\"<value>\"", null)`. Read the properties only through `providers` (configuration cache, AGENTS trap). No `buildConfigField` in `defaultConfig` (a second source of truth).
 - Why perf is `mock`: the perf variants exist to measure the app on seeded data (`:core:data-mock` is a perf dependency, A6; 4c OQ-4c-4 seeds large60 there; iOS `Config/Base.xcconfig` sets `CHRONOFLOW_DATA_SOURCE = mock` for every configuration, Perf included). A perf build never talks to a server.
-- `testImplementation(project(":core:network"))`.
+- Keep the existing `implementation(project(":core:network"))`; it also supplies the test classpath.
 - Local server testing (no code here): `./gradlew :app:assembleDebug -Pcf.dataSource=api -Pcf.apiBaseUrl=http://10.0.2.2:<port>/v1`; 0a's debug network config allows cleartext only to `10.0.2.2`.
 
 **Tests**
@@ -565,9 +566,9 @@ Commit: `build(app): select the data source and api base url per build type`.
 - `app/src/testRelease/kotlin/net/chronoflow/app/ReleaseApiConfigTest` (plain JVM, runs in `testReleaseUnitTest`): `DATA_SOURCE == "api"`, `API_BASE_URL == "https://api.chronoflow.net/v1"`, and `ApiBaseUrl.parse(BuildConfig.API_BASE_URL, release = true)` succeeds; `ApiBaseUrl.parse("http://api.chronoflow.net/v1", release = true)` throws `InvalidBaseUrl`; `DataSourceFactory(BuildConfig.DATA_SOURCE, BuildConfig.API_BASE_URL, release = true, testing = false).source == Api`.
 - The perf build types have no unit-test task of their own; acceptance 5 checks their generated `BuildConfig.java` instead.
 
-### Task 11. Konsist: OkHttp stays inside `:core:network`
+#### Task 10 continued. Konsist: OkHttp stays inside `:core:network`
 
-Commit: `test(konsist): keep okhttp inside core network`.
+Include these guards in Task 10's commit; the user requested Tasks 1–10 in ten atomic commits.
 
 Two rules, following 0a's convention exactly: one function per rule in `KonsistRules.kt`; in `KonsistRulesTest.kt` the pair `<rule>()` (project scope, must pass) and `<rule>RejectsPlantedViolation()` (scope from `konsist/src/test/resources/violations/<rule>/`, must throw); module and source set from `ProjectPaths.moduleOf`/`sourceSetOf`/`isTestSourceSet`; whole-segment import matching (`import == "okhttp3" || import.startsWith("okhttp3.")`).
 - `okhttpOnlyInCoreNetwork`: no file in a **non-test** source set of a module other than `core/network` imports `okhttp3` or anything under it. Test source sets are exempt (4c and 4d tests use mockwebserver3 and OkHttp types). Planted: `violations/okhttpOnlyInCoreNetwork/core/sync/src/main/kotlin/net/chronoflow/core/sync/UsesOkHttp.kt` importing `okhttp3.OkHttpClient`. Allowed control (`<rule>AllowsControl()`, must pass): `allowed/okhttpOnlyInCoreNetwork/core/sync/src/test/kotlin/net/chronoflow/core/sync/UsesOkHttpTest.kt` importing `okhttp3.OkHttpClient`.
@@ -592,8 +593,8 @@ All commands from the worktree root with `ANDROID_HOME` set (AGENTS.md "Commands
 6. `./gradlew :konsist:test` passes; both new rules reject their planted files and the control passes.
 7. `grep -rn "okhttp3.logging\|HttpLoggingInterceptor\|println(\|runCatching\|catch (e: Exception)\|catch (e: Throwable)" core/network/src/main core/model/src/main` finds nothing new from this phase; `grep -rn "toRequestBody" core/network/src/main` shows only `ByteArray` receivers; `grep -rn "addPathSegment(" core/network/src/main` finds nothing (only `addEncodedPathSegment`).
 8. Every JVM test is under 1 s (`build/test-results/quick/timings.json` from `make quick`, or `build/test-results/targeted/timings.json`); list the five slowest in the hand-off.
-9. `make quick` passes and stays under 60 s warm; `make check` passes (standard acceptance; this phase adds no emulator or Robolectric test).
-10. The five 4b checkboxes in `plan.md` are ticked, each in the commit its task names, and OQ-4b-1 … OQ-4b-15 are added to plan.md "Open questions for the user" in the commits that apply them. Commits are the eleven above, Conventional Commits, no trailers.
+9. `make quick` passes and stays under 60 s warm; `make check` is deferred to the orchestrator under the user's testing instructions; this phase adds no emulator or Robolectric test.
+10. The five 4b checkboxes in `plan.md` are ticked, each in the commit its task names, and OQ-4b-1 … OQ-4b-15 are added to plan.md "Open questions for the user" in the commits that apply them. Commits are the ten above, preceded by the signed brief-refresh commit, Conventional Commits, no trailers.
 11. Nothing was written inside `/Users/rickgout/Sites/chronoflow-ios`, `/Users/rickgout/Sites/chronoflow-new` or `/Users/rickgout/Sites/chronoflow-mobile`: `git -C <repo> status --porcelain` is unchanged before and after (record both).
 
 No screenshots and no performance numbers are produced by this phase.
@@ -626,7 +627,7 @@ No screenshots and no performance numbers are produced by this phase.
 
 **Data source**
 - [ ] All 40 routes match Appendix A (method, path, access, status, body); `send(Unsupported)` makes no request; `SettingsPatchValidation` runs before transport.
-- [ ] Post-decode checks: passkey options (64 / `app.chronoflow.net` / 60000 / 43 chars / 32 bytes), trip list ids, detail id; raw detail bytes are returned untouched.
+- [ ] Post-decode checks: passkey options (64 / `app.chronoflow.net` / 60000 / 43 chars / 32 bytes), trip list ids, detail id; clean raw detail bytes are returned untouched; legacy-health sanitization remains in `TripDetailResponse.decode`.
 - [ ] `AddPasskey` expects 201, `saveTrip` 201, `updateTrip` 200, every 204 route requires an empty body.
 - [ ] Decoding (including `TripDetailResponse.decode`) runs on `io`.
 
@@ -641,7 +642,7 @@ No screenshots and no performance numbers are produced by this phase.
 
 ---
 
-## 8. Open questions (proceed on the default; add each to plan.md "Open questions for the user" in the commit that applies it)
+## 8. Open questions (proceed on the default; add each to plan.md "Open questions for the user", numbered from OQ-A132 (OQ-A68 stays unused), in the commit that applies it)
 
 | # | Question | Default |
 |---|---|---|
