@@ -12,8 +12,11 @@ import net.chronoflow.core.model.DataFailure
 import net.chronoflow.core.model.DataSource
 import net.chronoflow.core.model.api.SessionResult
 import net.chronoflow.core.model.api.TwoFactorInput
+import net.chronoflow.core.model.device.DeviceIdentityFailure
 import net.chronoflow.core.model.session.SessionFailure
+import net.chronoflow.core.model.store.StoreFailure
 import java.io.IOException
+import java.security.GeneralSecurityException
 
 data class TwoFactorState(
     val mode: TwoFactorModel.Mode = TwoFactorModel.Mode.Code,
@@ -86,7 +89,13 @@ class TwoFactorModel(
             }
         } catch (failure: DataFailure) {
             if (active) form.receive(failure)
+        } catch (_: DeviceIdentityFailure) {
+            if (active) form.receive(DataFailure.Server(null))
+        } catch (_: StoreFailure) {
+            if (active) form.receive(DataFailure.Server(null))
         } catch (_: IOException) {
+            if (active) form.receive(DataFailure.Server(null))
+        } catch (_: GeneralSecurityException) {
             if (active) form.receive(DataFailure.Server(null))
         } catch (_: RuntimeException) {
             if (active) form.receive(DataFailure.Server(null))

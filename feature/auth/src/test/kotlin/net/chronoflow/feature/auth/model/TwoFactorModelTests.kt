@@ -8,8 +8,12 @@ import net.chronoflow.core.datamock.MockMethod
 import net.chronoflow.core.model.DataFailure
 import net.chronoflow.core.model.FieldMessage
 import net.chronoflow.core.model.auth.AuthenticationMethod
+import net.chronoflow.core.model.device.DeviceIdentityFailure
 import net.chronoflow.core.model.session.SessionFailure
+import net.chronoflow.core.model.store.StoreFailure
 import net.chronoflow.core.navigation.Route
+import net.chronoflow.feature.auth.testing.AUTH_DEVICE_ID
+import net.chronoflow.feature.auth.testing.FakeSecretField
 import net.chronoflow.feature.auth.testing.FakeSessionController
 import net.chronoflow.feature.auth.testing.RecordingRoutes
 import org.junit.Assert.assertEquals
@@ -19,6 +23,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
+import java.security.GeneralSecurityException
 import kotlin.time.Duration.Companion.seconds
 
 @OptIn(
@@ -894,6 +899,51 @@ class TwoFactorModelTests {
                 StandardTestDispatcher(
                     testScheduler,
                 ),
+            )
+        }
+
+    private suspend fun checkedAcceptanceFailure(
+        failure: Exception,
+        io: kotlinx.coroutines.CoroutineDispatcher,
+    ) {
+        val signIn =
+            SignInModel(
+                twoFactorSource(io),
+                FakeSessionController(),
+                { AUTH_DEVICE_ID },
+                { "test" },
+                accepted = { _, _ -> throw failure },
+                onTwoFactor = {},
+            )
+        signIn.editEmail("twofactor@example.com")
+        signIn.submitPassword(FakeSecretField("password")) {}
+        val model = signIn.twoFactor.value!!
+        model.editCode("123456")
+        model.submit()
+        assertFalse(model.form.busy)
+        assertEquals(AuthBannerKind.Server, model.form.state.value.banner)
+        assertEquals(DataFailure.Server(null), model.form.state.value.failure)
+        assertEquals("", model.code)
+    }
+
+    /** (new) Android-only: a checked store failure during acceptance must show feedback instead of escaping. */
+    @Test fun acceptanceStoreFailureShowsServerBanner() =
+        runTest(timeout = 60.seconds) {
+            checkedAcceptanceFailure(StoreFailure.Unavailable(), StandardTestDispatcher(testScheduler))
+        }
+
+    /** (new) Android-only: cryptographic acceptance failures must use the same fallback as password sign-in. */
+    @Test fun acceptanceSecurityFailureShowsServerBanner() =
+        runTest(timeout = 60.seconds) {
+            checkedAcceptanceFailure(GeneralSecurityException(), StandardTestDispatcher(testScheduler))
+        }
+
+    /** (new) Android-only: checked device identity failures must also remain in the form. */
+    @Test fun acceptanceDeviceIdentityFailureShowsServerBanner() =
+        runTest(timeout = 60.seconds) {
+            checkedAcceptanceFailure(
+                DeviceIdentityFailure.InvalidPersistedIdentity,
+                StandardTestDispatcher(testScheduler),
             )
         }
 
