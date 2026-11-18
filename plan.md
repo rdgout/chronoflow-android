@@ -2163,7 +2163,7 @@ Implementation commits (brief §7):
   - Name, email, and a password with the policy hint (OQ 21); server field errors.
   - Two consent links open `https://chronoflow.net/terms` and `/privacy` in a Custom Tab (OQ-A32).
   - Register (90 s), then the verify gate.
-- [ ] **Verify gate**, porting `VerifyEmailModel`.
+- [x] **Verify gate**, porting `VerifyEmailModel`.
   - Waiting, and a resend with its rate limit and countdown.
   - Open the email app with `Intent.makeMainSelectorActivity(Intent.ACTION_MAIN, Intent.CATEGORY_APP_EMAIL)`.
   - Consumes links from the per-account inbox.
