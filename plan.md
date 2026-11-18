@@ -1925,7 +1925,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - ViewModel factories read the graph from `CreationExtras`.
 - [ ] **StoredDataReadiness** replaces `StubReadiness` in debug and release; the stub stays in perf. It emits the `session` trace.
 - [ ] **Gate and routes.**
-  - A `SessionGateRouter` port: verify → terms → walkthrough → app. Missing policies keep the gate loading.
+  - [x] A `SessionGateRouter` port: verify → terms → walkthrough → app. Missing policies keep the gate loading.
   - The routes and sheets of "Android spec: navigation and routes", in `:core:navigation`.
   - `RootNavigator`, exposing `StateFlow<RootState(route, revision)>`.
   - Nav3 `NavDisplay` in `:app`, plus `PendingLaunchIntent` and a debug route probe for tests.
