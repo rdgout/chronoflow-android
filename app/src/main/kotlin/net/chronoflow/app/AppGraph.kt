@@ -258,10 +258,11 @@ class AppGraph(
 
     suspend fun finishLaunch() =
         finishMutex.withLock {
-            if (launchFinished) return@withLock
-            launchFinished = true
-            gateRouter.start()
-            LaunchPlatform.observeRoutes(this)
+            if (!launchFinished) {
+                launchFinished = true
+                gateRouter.start()
+                LaunchPlatform.observeRoutes(this)
+            }
             pendingLaunchIntents.consume()?.let { launchIntentHandler.handle(it) }
         }
 
