@@ -2051,7 +2051,7 @@ Implementation commits (brief §7):
 - [x] T2 — Base64URL and passkey JSON.
 - [x] T3 — Credential Manager client.
 - [x] T4 — Two-factor model.
-- [ ] T5 — Two-factor screen.
+- [x] T5 — Two-factor screen.
 - [ ] T6 — Route and hand-over.
 - [ ] T7 — Guards and captures.
 - [ ] T8 — Passkey sign-in.
