@@ -2,7 +2,7 @@
 
 Phase 5a, 2026-11-18. The implementation follows the pinned iOS auth models and the AuthSignIn/AuthStates boards. Auth routes replace the root without transitions. Two-factor, Forgot, Sign up and the accepted-session destinations retain their existing route placeholders until their phases.
 
-Implementation and the focused JVM/Robolectric checks are complete. The orchestrator-authorized keyboard follow-up passes with the full keyboard after correcting functional device prep. Acceptance remains **open**: the original `make quick` invocation failed; its failures pass focused checks after correction, and the authorized full rerun is next. The sandbox cannot launch a browser for board comparison, and manual autofill/TalkBack checks need configured services. No performance benchmark, baseline-profile, `make check` or other emulator tier ran.
+Implementation and the focused JVM/Robolectric checks are complete. Both orchestrator-authorized follow-up checks pass: the unchanged keyboard test with the full keyboard after correcting functional device prep, and the complete `make quick` command in 31.88 s. Acceptance remains **open** for browser board comparison, manual autofill/TalkBack checks, and `make check`. No performance benchmark, baseline-profile, `make check` or other emulator tier ran.
 
 ## Shell and tokens
 
@@ -122,8 +122,8 @@ Targeted times below include Gradle/harness overhead unless identified as test d
 | `make targeted ONLY="feature:auth:SignInAdaptationCaptureTest feature:auth:AuthStatesCaptureTest"` | Six complementary PNGs; preserves the eight board PNGs | 7.97 s |
 | `./gradlew :app:compileDebugAndroidTestKotlin --console=plain` | Passed, includes updated Welcome journey | Gradle 2 s |
 | `make targeted ONLY="app:SignInJourneyTest"` | Passed on pixel/API 36; test **2.279 s**; StrictMode IO counter **0** | 10.24 s |
-| `make targeted ONLY="app:SignInKeyboardTest"` | **Failed**, no full software keyboard; test **4.112 s**; no reveal result | 8.81 s |
-| `make quick` (one invocation) | **Failed**: 2,525 passed / one failed; old forced-sign-out placeholder tag and a 2,689 ms Konsist route guard (1,000 ms budget) | 22.64 s |
+| `make targeted ONLY="app:SignInKeyboardTest"` (original run) | **Failed**, no full software keyboard; test **4.112 s**; no reveal result | 8.81 s |
+| `make quick` (original run) | **Failed**: 2,525 passed / one failed; old forced-sign-out placeholder tag and a 2,689 ms Konsist route guard (1,000 ms budget) | 22.64 s |
 | `make targeted ONLY="app:LaunchGateRoutingTest#currentUnauthorizedRoutesToSignInAndErasesAccountFiles"` | Passed after updating the structural tag; test 2.647 s | 5.80 s |
 | `make targeted ONLY="konsist:KonsistRulesTest#routesAreSerializable"` (diagnostic, before optimization) | JUnit passed; tier failed its budget at 1.263 s | 3.22 s |
 | Five focused `KonsistRulesTest` route methods | Passed after memoizing ancestry; project check 542 ms; four positive/negative fixture controls all under 1 s | 3.95 s |
@@ -132,6 +132,8 @@ Targeted times below include Gradle/harness overhead unless identified as test d
 | `python3 -I -m unittest discover -s tools/icons -t tools/icons -p test_generate_icons.py -k test_manifest_names_all_generate` | Passed after updating count to 34; test 11 ms | 0.057 s |
 | `make timing` | Six passed, zero over-budget; serial JVM preparation/drawing budgets | 3.02 s tier / 3.07 s process |
 | `make targeted ONLY="feature:auth:AuthAnnouncerTest#persistentLiveRegionRepeatsOnlyForANewFailure"` | Passed after keeping the screen assertion structural; test 2.356 s | 5.62 s |
+| `make targeted ONLY="app:SignInKeyboardTest"` (follow-up, after functional prep) | **Passed**, real keyboard and both field/submit geometry checks; test **1.441 s** | 5.49 s tier / 6.74 s prep plus process |
+| `make quick` (one authorized follow-up invocation) | **Passed**, 2,528 quick results / zero budget violations; all remaining substeps passed | **31.88 s** complete command |
 
 Initial compilation fixes were explicit parameter array types, fixture construction through the existing validated account constructors, correct Compose action return types/geometry accessors, and parenthesized factory delegation. Layout/semantics fixes were confined to the test harness; no assertion was weakened. Lint was fixed with `make format`.
 
@@ -140,6 +142,8 @@ Final verification found one additional stale screen tag in the earlier forced-s
 The brief's requested literal announcement assertion was replaced with a nonempty content-description check to follow the user's stronger structure-only screen-test instruction. The persistent live region, identical-repeat content change, unchanged message across repeats, and absence of a second banner live region remain checked; model/resource tests cover the copy.
 
 The first standalone `Scripts/test_scripts.sh` invocation omitted Make's exported `IOS_REPO`/`WEB_REPO` values and stopped at the contract parity precondition (14.13 s): `AssertionError: set IOS_REPO and WEB_REPO to run the iOS parity test (make exports them)`. The corrected invocation is recorded above. An initial isolated icon invocation using `-I -m unittest test_generate_icons...` could not import the local module; the discovery-based command above ran the actual method. These invocation errors changed no production behaviour.
+
+The complete follow-up `make quick` ran once after commit `5410b29`: quick Gradle tier 15.37 s, including `routesAreSerializable` at 782 ms; build-logic 1.26 s / 26 results; Python tooling 107 + 25 + 49 + 9 passing tests (13.703 + 0.114 + 0.017 + 0.038 s test-runner times); serial timing tier 0.83 s / six results. Build-logic and timing Gradle test tasks were up to date; their result files were collected. The full 31.88 s process is below the 60 s warm budget. No additional quick or emulator tier was run.
 
 The debug APK contains only the existing allow-listed `libandroidx.graphics.path.so` for its packaged ABIs. No Credential Manager or other new native dependency was added. Release readiness passes; `make size` was not run. There is no Sign in performance-budget metric to claim. Startup/timeline benchmarks and profile regeneration remain unmeasured under the user's run limits.
 
@@ -247,6 +251,8 @@ ff6f9c0 feat(app): route sign-in and hand over to the session gate
 68a4798 perf(konsist): memoize route ancestry checks
 9353fb5 test(icons): include the sign-in glyphs in the manifest count
 7845c2b test(auth): keep announcement checks structural
+fe8389e docs(auth): record sign-in decisions and acceptance
+5410b29 build(scripts): use the full keyboard in functional tests
 ```
 
-The final acceptance documentation commit is `docs(auth): record sign-in decisions and acceptance`.
+The follow-up results are recorded by `docs(auth): record the passing follow-up checks`.
