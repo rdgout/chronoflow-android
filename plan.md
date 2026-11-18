@@ -742,6 +742,11 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A158 | (4c-9) Can fixture decoding exceed the JVM case budget? | Memoize decoded fixtures per JVM and warm them in BeforeClass. Keep every test below 1 s with no PerfBudget exemption; report any miss. | 4c |
 | OQ-A159 | (4c-10) Which zone defines the daily seed anchor? | Inject ZoneId, defaulting to the device zone at production entry signatures only. Tests pin Europe/Amsterdam. Rebase calendar days in each card’s origin zone. | 4c |
 | OQ-A160 | (4c-11) Rename demo passkeys for Android? | Keep iPhone 16 and MacBook Pro for pinned iOS parity; the mock never ships in release. Revisit if the designer changes capture data. | 4c |
+| OQ-A161 | (4c-7) Must resend and verify use rate windows? | Port iOS exactly: forgot and the other named limiters use windows; resend has a 60 s resendAvailableAt bound; verify has no separate window. | 4c |
+| OQ-A162 | (4c-8) Are preparatory contracts missing after 4b? | Rechecked against the landed tree: all required contracts and helpers exist. Reuse their exact types and signatures; no earlier-phase behavior changes or preparatory contract commit. | 4c |
+| OQ-A163 | (4c-14) Should MockClock and scenario helpers be shared with later modules now? | Keep them in data-mock/src/test. A consumer phase may move them to a java-test-fixtures source set; never duplicate them into another module. | 4c, 4d, 5, 9 |
+| OQ-A164 | (4c-15) How does password policy retain Swift Unicode semantics? | Count grapheme boundaries with BreakIterator(Locale.ROOT), classify Unicode code points by Character.getType, and count device/name scalars with codePointCount. Verify Ä as an uppercase letter and reject all-uppercase passwords. | 4c |
+| OQ-A165 | (4c-1) Split guest mock review and registration claim into 11a/11b? | Port the full intertwined MockDataSource now, including sign-in/passkey claim replay and guest registration. 11a/11b verify the mock and retain their UI/API work. | 4c, 11a, 11b |
 | OQ-0a-22 | Native libraries in the bundle? | Allow only `libandroidx.graphics.path.so` (Compose graphics-path; excluding it breaks Path conversion below API 34); fail on any other `.so` | 0a, 13 |
 | OQ-0b-1 | Where does `PlanMetrics` live? `08 §3.1` lists it inside `CfDimens`, but its consumer `:core:plan` is a JVM module that cannot depend on `:core:designsystem` | `core/plan/…/generated/PlanMetrics.generated.kt` (Double, dp), as iOS keeps it in `PlanCore` | 0b, 1b, 1c |
 | OQ-0b-2 | Port all iOS TokenGen outputs now (Auth, Settings, Terms, Welcome, PlanUI, Press, LaunchPaint, TypeMetrics), or only colors, sky and type? | All of them now (the iOS files are exact goldens and Phases 2, 3a, 3c, 5a, 9 and 10 need them) | 0b |
@@ -1791,13 +1796,13 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 **Delivers.** Ports the mock server: MockDataSource with injectable latency (zero in tests), a one-shot failNext for every method, offline mode, rate windows and a link inbox; MockServerState schema 2 persisted under the mock namespace; and MockAppSeed with the demo and two-factor accounts, seven rebased trips and large30/large60. It is a debug and perf-only dependency, and release-readiness tests prove it never ships. The iOS mock tests are ported.
 
 **Tasks**
-- [ ] **MockDataSource** (`core/data-mock/…`, JVM). It implements `DataSource`, with:
+- [x] **MockDataSource** (`core/data-mock/…`, JVM). It implements `DataSource`, with:
   - latency from `CF_MOCK_DELAY`, default 0;
   - `failNext(method, failure)`;
   - an offline switch;
   - rate windows for forgot, resend and verify on the injected clock;
   - a link inbox for reset and verify links.
-- [ ] **MockServerState**, schema 2, at `noBackupFilesDir/ChronoFlowMock/Server/state.json`: atomic writes, a tolerant read, and a reset on a schema mismatch.
+- [x] **MockServerState**, schema 2, at `noBackupFilesDir/ChronoFlowMock/Server/state.json`: atomic writes, a tolerant read, and a reset on a schema mismatch.
 - [x] **MockAppSeed.**
   - Accounts: `demo@example.com` / `password`, and `twofactor@example.com` / `password` with code `123456` and recovery code `AbCdEf1234-GhIjKl5678`.
   - Account ids `0199a3c0-0000-7000-8000-000000000000` and `…0001`.

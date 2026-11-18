@@ -346,3 +346,31 @@ internal fun mockRegistration(
             ),
     )
 }
+
+internal fun MockServerState.updateAccount(
+    id: String,
+    change: (MockServerAccount) -> MockServerAccount,
+): MockServerState {
+    val account = accounts[id] ?: return this
+    return copy(accounts = accounts + (id to change(account)))
+}
+
+internal fun AccountSnapshot.with(
+    id: String = this.id,
+    name: String = this.name,
+    email: String = this.email,
+    hasVerifiedEmail: Boolean = this.hasVerifiedEmail,
+    settings: AccountSettings = this.settings,
+    readiness: JsonObject = this.readiness,
+    billing: JsonObject = this.billing,
+    security: JsonObject = this.security,
+): AccountSnapshot = AccountSnapshot(id, name, email, hasVerifiedEmail, settings, readiness, billing, security)
+
+internal fun AccountSettings.with(
+    bodyClock: JsonObject = this.bodyClock,
+    sleepAnswered: Boolean = this.sleepAnswered,
+    preferences: JsonObject = this.preferences,
+    reminders: JsonObject = this.reminders,
+    planCredits: JsonObject = this.planCredits,
+    policies: AccountPolicies = this.policies,
+): AccountSettings = AccountSettings(bodyClock, sleepAnswered, preferences, reminders, planCredits, policies)
