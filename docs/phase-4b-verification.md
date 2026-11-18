@@ -100,3 +100,28 @@ An optional signature-status query, `git log -10 --format='%h %G? %s'`, produced
 No required command was blocked by the sandbox. `make check` was deferred under the phase's targeted-tests-plus-one-quick instructions. No emulator tests are needed for this JVM-only phase. `make perf`, `make perf-timeline` and `make baseline-profile` were not run as instructed; this phase needs no startup/timeline performance numbers.
 
 Logs, configuration results and copied timing evidence are in `build/test-results/phase-4b/`. The normal final evidence remains under `build/test-results/{quick,build-logic,timing}/` and the app's debug/release JUnit XML directories.
+
+## Post-phase fix: remove OkHttp's startup initializer
+
+The release gate reported `STARTUP_INITIALIZER: okhttp3.internal.platform.PlatformInitializer` on `39c4323`. The app manifest now removes that metadata with `tools:node="remove"`. The merged release provider retains exactly `ProcessLifecycleInitializer` and `ProfileInstallerInitializer`. `Application.onCreate` and the production client construction code are unchanged.
+
+The decision is OQ-A148. Inspected the cached `okhttp-android-5.5.1-sources.jar`, its matching AAR manifest and compiled classes:
+
+- `androidMain/okhttp3/internal/platform/PlatformInitializer.kt` sets `PlatformRegistry.applicationContext` and forces `Platform.get()`.
+- `androidMain/okhttp3/internal/platform/PlatformRegistry.kt` enables Android logging and selects the Android platform lazily. `Android10Platform.kt` implements API 29+ TLS, certificate-chain cleaning and cleartext policy using platform APIs without that context.
+- `androidMain/okhttp3/internal/publicsuffix/AssetPublicSuffixList.kt` needs the context to read `PublicSuffixDatabase.list` from assets. Without it, public suffix loading fails; the callers are cookie parsing and `HttpUrl.topPrivateDomain()`.
+- `commonJvmAndroid/okhttp3/internal/http/HttpHeaders.kt` returns before cookie parsing when the jar is `NO_COOKIES`. Our client enforces that jar and never calls `topPrivateDomain()`, so it currently needs no manual context initialization. If either context-dependent API is introduced, initialize with `OkHttp.initialize(applicationContext)` at the existing lazy IO boundary before using it.
+
+`OkHttpStartupTest.clientBuildsOnIoWithoutTheStartupInitializerOrApplicationContext` checks the actual merged manifest, then exercises `ApiClient` with the real Android OkHttp artifact. It proves construction is lazy and off main, application context remains null, Android TLS socket factory/trust manager construction succeeds, and an injected DNS failure reaches `Offline` without external traffic. Its file fixture resolves through AGP's `test_config.properties` and the project root.
+
+Validation for this fix:
+
+| Command | Result | Wall time |
+|---|---|---:|
+| `./gradlew :app:verifyReleaseManifest` | Pass; report `OK`, only the two allowed initializers | 1.00 s |
+| `make targeted ONLY='app:OkHttpStartupTest#clientBuildsOnIoWithoutTheStartupInitializerOrApplicationContext'` | One Robolectric case passes | 2.65 s |
+| `make quick` (once for this fix) | Pass; 1,475 main-tier cases, 26 build-logic cases, tooling suites and six serial timing cases | 21.84 s total |
+
+The new case took 0.096 s in the quick run. An initial test compilation required OkHttp's internal-API opt-in for checking the platform type. The first executable test attempt exposed an unsupported Robolectric provider-info overload; the final test uses this repo's existing merged-manifest fixture pattern instead. No test hung. No sandbox command was blocked.
+
+The brief's Task 11 Konsist work remains in Task 10 commit `39c4323`. History was left intact; this fix is a new signed commit.
