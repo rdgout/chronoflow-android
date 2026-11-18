@@ -8,6 +8,7 @@ import kotlinx.serialization.json.JsonPrimitive
 import net.chronoflow.core.model.AccountID
 import net.chronoflow.core.model.api.ApiJson
 import java.io.File
+import java.io.FileOutputStream
 import java.nio.file.Files
 import java.nio.file.NoSuchFileException
 import java.nio.file.StandardCopyOption.ATOMIC_MOVE
@@ -25,7 +26,10 @@ class WipeMarker(
         withContext(io) {
             namespaceRoot.mkdirs()
             val tmp = File(namespaceRoot, "pending-wipe.json.tmp")
-            tmp.writeText(ApiJson.response.encodeToString(String.serializer(), id.rawValue))
+            FileOutputStream(tmp).use { output ->
+                output.write(ApiJson.response.encodeToString(String.serializer(), id.rawValue).encodeToByteArray())
+                output.fd.sync()
+            }
             Files.move(tmp.toPath(), file.toPath(), ATOMIC_MOVE, REPLACE_EXISTING)
             Unit
         }
