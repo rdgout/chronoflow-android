@@ -317,7 +317,7 @@ On iOS, auth links are separate from `PendingLaunchIntent.urls`. `SceneDelegate.
   - `dataString != null`;
   - the data starts with `https:`, as 4e already requires.
 - The reminder extras stay as 4e wrote them (12b).
-- After capture, `MainActivity` replaces its intent with `setIntent(Intent(intent).setData(null))` in both `onCreate` and `onNewIntent`.
+- After cold capture, `MainActivity.onCreate` replaces its launch intent with `setIntent(Intent(intent).setData(null))`. `onNewIntent` captures only its parameter and preserves the original activity intent; Android does not store that parameter unless `setIntent` is called (orchestrator follow-up, 2026-11-18).
 - Links are kept in **capture order**: a `LinkedHashSet`, where an equal string captured again is removed and re-added at the end.
 - Add `fun takeLinks(matching: (String) -> Boolean): List<String>`. It removes and returns the matching links in capture order. 4e's `consume()` still returns what is left (the reminder part and non-auth links) at `finishLaunch`.
 
@@ -720,7 +720,7 @@ Rules for the journey:
 - [ ] Both Swift parser tests are ported case by case, not summarised.
 
 **Capture and routing**
-- [ ] `capture` ignores restored activities, `FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY` and non-VIEW intents. Both paths clear the intent's data. To check by hand: open a link, rotate, change the font size (it recreates), then relaunch from Recents. The reset opens once.
+- [ ] `capture` ignores restored activities, `FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY` and non-VIEW intents. Cold capture clears the launch intent's data; warm capture leaves the original activity intent unchanged. To check by hand: open a link, rotate, change the font size (it recreates), then relaunch from Recents. The reset opens once.
 - [ ] Auth links are handed over at the first launch navigation (with `finishLaunch` as the backstop), never in `onCreate`. A link never changes the launch ending.
 - [ ] The latest link wins, both in `takeLinks` order and in the router. A non-auth link is left for `LaunchIntentHandler`.
 - [ ] A reset link while signed in, or with unknown presence, stays pending and opens once on the next sign-out.

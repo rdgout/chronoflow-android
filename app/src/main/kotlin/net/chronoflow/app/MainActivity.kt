@@ -103,7 +103,6 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         val graph = (application as ChronoFlowApp).graph
         graph.pendingLaunchIntents.capture(intent, restored = false)
-        setIntent(Intent(intent).setData(null))
         graph.authLinks.deliver()
         graph.appScope.launch { graph.handlePendingLaunchIntents() }
     }

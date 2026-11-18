@@ -1,6 +1,7 @@
 package net.chronoflow.app.links
 
 import android.content.Intent
+import android.net.Uri
 import androidx.compose.ui.test.onNodeWithTag
 import kotlinx.coroutines.test.runTest
 import net.chronoflow.app.SessionTestApplication
@@ -13,11 +14,14 @@ import net.chronoflow.core.testing.tiers.Logic
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
+import org.robolectric.util.ReflectionHelpers
+import org.robolectric.util.ReflectionHelpers.ClassParameter
 import kotlin.time.Duration.Companion.seconds
 
 @Logic
@@ -49,6 +53,32 @@ class LinkRecreationTest : AuthResetActivityFixture() {
         assertNull(graph.pendingLaunchIntents.consume())
         assertNull(graph.auth.resetModel)
         onActivity { assertNull(it.intent.data) }
+    }
+
+    @Test fun warmViewKeepsTheLaunchIntentAndCapturesTheLinkOnce() {
+        launch("sign-in")
+        val before = graph.rootNavigator.state.value.revision
+        onActivity { activity ->
+            val original = activity.intent
+            val incoming =
+                Intent(Intent.ACTION_VIEW, Uri.parse(AuthLinkUrls.reset(link.token, link.email)))
+                    .addCategory(Intent.CATEGORY_BROWSABLE)
+            ReflectionHelpers.callInstanceMethod<Unit>(
+                activity,
+                "onNewIntent",
+                ClassParameter.from(Intent::class.java, incoming),
+            )
+            assertSame(original, activity.intent)
+            assertNull(activity.intent.data)
+        }
+        waitFor { graph.rootNavigator.state.value.route == Route.Reset(link.email) }
+        assertEquals(link, graph.auth.resetModel!!.link)
+        assertEquals(before + 2, graph.rootNavigator.state.value.revision)
+        assertNull(graph.pendingLaunchIntents.consume())
+        onActivity { graph.authLinks.deliver() }
+        recreate(Route.Reset(link.email))
+        assertEquals(before + 2, graph.rootNavigator.state.value.revision)
+        assertNull(graph.resetRouter.pending)
     }
 
     @Test fun debugSeedCapturesInMemoryAndDoesNotForwardTheSecret() {
