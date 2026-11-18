@@ -17,7 +17,7 @@ class VerifyCompositionProbe {
 val LocalVerifyCompositionProbe = staticCompositionLocalOf<VerifyCompositionProbe?> { null }
 
 @Composable
-internal fun verifyCountdownModifier(remaining: Int): Modifier {
+internal fun Modifier.verifyCountdown(remaining: Int): Modifier {
     val probe = LocalVerifyCompositionProbe.current
     SideEffect {
         probe?.let {
@@ -25,11 +25,11 @@ internal fun verifyCountdownModifier(remaining: Int): Modifier {
             it.lastRemaining = remaining
         }
     }
-    return Modifier
+    return this
 }
 
 @Composable
-internal fun verifyButtonsModifier(state: VerifyEmailUiState): Modifier {
+internal fun Modifier.verifyButtons(state: VerifyEmailUiState): Modifier {
     val probe = LocalVerifyCompositionProbe.current
     SideEffect {
         probe?.let {
@@ -37,5 +37,5 @@ internal fun verifyButtonsModifier(state: VerifyEmailUiState): Modifier {
             it.lastButtons = state
         }
     }
-    return Modifier
+    return this
 }

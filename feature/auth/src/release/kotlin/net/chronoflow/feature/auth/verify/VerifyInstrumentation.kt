@@ -4,7 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 
 @Composable
-internal fun verifyCountdownModifier(remaining: Int): Modifier = Modifier
+internal fun Modifier.verifyCountdown(remaining: Int): Modifier = this
 
 @Composable
-internal fun verifyButtonsModifier(state: VerifyEmailUiState): Modifier = Modifier
+internal fun Modifier.verifyButtons(state: VerifyEmailUiState): Modifier = this

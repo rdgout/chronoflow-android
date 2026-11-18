@@ -3,8 +3,8 @@ package net.chronoflow.feature.auth.signup
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import androidx.browser.customtabs.CustomTabsIntent
+import androidx.core.net.toUri
 import net.chronoflow.feature.auth.model.AuthPolicy
 
 fun interface PolicyOpener {
@@ -18,7 +18,7 @@ class CustomTabPolicyOpener(
 ) : PolicyOpener {
     override fun open(url: String) {
         if (AuthPolicy.entries.none { it.url == url }) return
-        val uri = Uri.parse(url)
+        val uri = url.toUri()
         val tab =
             CustomTabsIntent
                 .Builder()

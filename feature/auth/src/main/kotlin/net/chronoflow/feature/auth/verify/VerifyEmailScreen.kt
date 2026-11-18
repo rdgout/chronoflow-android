@@ -84,7 +84,8 @@ fun VerifyEmailRoute(
 ) {
     val presentation =
         remember(model) { model.uiState.map { it.presentation(model.context.email) }.distinctUntilChanged() }
-    val state by presentation.collectAsStateWithLifecycle(model.uiState.value.presentation(model.context.email))
+    val initialPresentation = remember(model) { model.uiState.value.presentation(model.context.email) }
+    val state by presentation.collectAsStateWithLifecycle(initialPresentation)
     val remainingState =
         remember(model) { model.uiState.map { it.remaining }.distinctUntilChanged() }
             .collectAsStateWithLifecycle(model.remaining)
@@ -215,7 +216,7 @@ private fun VerifyEmailButtons(
     val failed = state.state == VerifyState.Failed
     val enabled = !state.form.busy
     Column(
-        verifyButtonsModifier(state).fillMaxWidth(),
+        Modifier.verifyButtons(state).fillMaxWidth(),
         verticalArrangement =
             Arrangement.spacedBy(
                 if (failed) AuthTokens.cardGap.dp else AuthMetrics.VERIFY_BUTTON_GAP.dp,
@@ -255,7 +256,7 @@ private fun VerifyCountdown(remaining: () -> Int) {
     if (seconds > 0) {
         Text(
             stringResource(R.string.auth_you_can_resend_in_x, countdownArgument(seconds)),
-            verifyCountdownModifier(seconds).fillMaxWidth().testTag("verify.countdown"),
+            Modifier.verifyCountdown(seconds).fillMaxWidth().testTag("verify.countdown"),
             color = CfTheme.colors.mutedForeground,
             style = CfTheme.type.authHint.copy(fontFeatureSettings = "tnum"),
             textAlign = TextAlign.Center,
