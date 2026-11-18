@@ -19,7 +19,6 @@ import net.chronoflow.core.model.api.ApiPasskeyChallenge
 import net.chronoflow.core.model.api.AuthLanguage
 import net.chronoflow.core.model.contracts.ApiTripInputSnapshot
 import net.chronoflow.core.model.contracts.ObjectSerializer
-import net.chronoflow.core.model.contracts.ProfilePreferences
 import net.chronoflow.core.model.contracts.TripDetail
 import net.chronoflow.core.model.contracts.TripDirection
 import net.chronoflow.core.model.contracts.TripListItem
@@ -314,13 +313,7 @@ internal fun mockRegistration(
             planCredits = JsonObject(mapOf("credits" to JsonPrimitive(3), "unlimited" to JsonPrimitive(false))),
             policies = AccountPolicies("1.0", "1.0", "1.0", iso(now)),
         ),
-        readiness =
-            ProfilePreferences.readiness(
-                JsonObject(
-                    mapOf("invalidSections" to kotlinx.serialization.json.JsonArray(emptyList())),
-                ),
-                body,
-            ),
+        readiness = MockSettings.readiness(body),
         billing =
             JsonObject(
                 mapOf(
