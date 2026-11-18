@@ -26,6 +26,7 @@ fun authTestSource(
     io: CoroutineDispatcher,
     verified: Boolean = true,
     twoFactor: Boolean = false,
+    password: String = "Password123!",
 ): MockDataSource {
     val original =
         ApiJson.response.decodeFromString(
@@ -54,7 +55,7 @@ fun authTestSource(
     val account =
         MockServerAccount(
             snapshot,
-            "Password123!",
+            password,
             twoFactorCode = if (twoFactor) "123456" else null,
             walkthroughSeen = true,
         )
@@ -131,12 +132,13 @@ class AuthTestFixture(
     verified: Boolean = true,
     twoFactor: Boolean = false,
     capability: Boolean = false,
+    password: String = "Password123!",
     identity: suspend () -> String = {
         AUTH_DEVICE_ID
     },
     passkey: (suspend () -> SessionResult)? = null,
 ) {
-    val source = authTestSource(io, verified, twoFactor)
+    val source = authTestSource(io, verified, twoFactor, password)
     val session = FakeSessionController()
     val routes = RecordingRoutes()
     val model =

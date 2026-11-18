@@ -1984,7 +1984,7 @@ Implementation commits (brief §7):
 - [x] T4 — Sign-in glyphs and field input hook.
 - [x] T5 — SignInModel.
 - [x] T6 — Auth shell.
-- [ ] T7 — Sign-in screen and ViewModel.
+- [x] T7 — Sign-in screen and ViewModel.
 - [ ] T8 — App wiring and accepted-session routing.
 - [ ] T9 — Guards and board captures.
 - [ ] T10 — Emulator journey and keyboard check.
@@ -1994,17 +1994,17 @@ Implementation commits (brief §7):
   - The plain sky, with the values of "### Auth geometry, tokens and typography" plus the Android delta: insets `safeTop + 16`, 16 at the sides and 24 at the bottom; card padding 20, radius 26, gap 14.
   - A 560 dp column from 600 dp.
   - `auth.back`, and `auth.banner` for error, info and offline ("Needs a connection" / "Verbinding nodig").
-- [ ] **Fields.**
+- [x] **Fields.**
   - `CfTextFieldDecoration` with autofill `contentType` (Username, Password).
   - IME actions run email → password → Go.
   - `imePadding()` and `BringIntoViewRequester` keep the focused field and the primary button visible.
   - The password lives only in `TextFieldState` and is never saved.
-- [ ] **SignInViewModel**, porting `SignInModel` and `AuthFormModel`.
+- [x] **SignInViewModel**, porting `SignInModel` and `AuthFormModel`.
   - Validation, and the `05 §8.4` failure mapping to the banner or a field.
   - The `LockoutWait` countdown.
   - Email-unverified goes to the verify route, and two-factor to the 5b route.
   - Success calls `SessionController.accept`, then the gate. Autofill commits only after success.
-- [ ] **Passkey entry.** The passkey button and divider exist but stay hidden while `PasskeyCapability` is false.
+- [x] **Passkey entry.** The passkey button and divider exist but stay hidden while `PasskeyCapability` is false.
 - [ ] **Tests.**
   - The ported iOS sign-in and form cases (JVM).
   - Guards for the `AuthSignIn`, `AuthSignInError` and `AuthStates` states.
