@@ -37,7 +37,7 @@ import net.chronoflow.core.ui.shell.LocalTabReselect
 /** Labels use the generated screens catalog; chrome keeps the native Material bar/rail defaults. */
 @Composable
 internal fun AppShellScaffold(
-    holder: ShellHolder,
+    holder: ShellViewModel,
     today: @Composable () -> Unit,
     trips: @Composable () -> Unit,
     settings: @Composable () -> Unit,
@@ -130,7 +130,7 @@ internal fun AppShellScaffold(
 
 @Composable
 private fun rememberTabEntries(
-    holder: ShellHolder,
+    holder: ShellViewModel,
     tab: ShellTab,
     content: @Composable (Route) -> Unit,
 ): List<NavEntry<Route>> {

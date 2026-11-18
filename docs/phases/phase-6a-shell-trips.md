@@ -381,7 +381,7 @@ sealed interface NextLabel { data object Now; data class In(val duration: String
 | `CfNavigationSuiteScaffold`, `CfNavLayout`, `CfNavItem`, `WindowPolicy`, `CfBadge(icon)` | `:core:designsystem` `…designsystem.system`, `…designsystem.layout` |
 | `MetaChip`, `CategorySwatch`, `RefreshFeedbackCapsule`, `LocalTabReselect` | `:core:ui` `…ui.trip` (`MetaChip`), `…ui.plan` (`CategorySwatch`), `…ui.refresh`, `…ui.shell` |
 | `TripsDependencies`, `TripsDependenciesKey`, `TripsPreferences`, `TripsViewModel`, `TripsUiState`, `TripsScreen`, `TripsContent`, `TripCard`, `TripsEmpty`, `TripsLoading`, `TripsMetrics` | `:feature:trips` `net.chronoflow.feature.trips` |
-| `AppShell`, `AppShellScaffold` (slots, testable), `ShellHolder`, `TabViewModelStoreOwner`, `SessionTripsDependencies` | `:app` `net.chronoflow.app.shell` |
+| `AppShell`, `AppShellScaffold` (slots, testable), `ShellViewModel`, `TabViewModelStoreOwner`, `SessionTripsDependencies` | `:app` `net.chronoflow.app.shell` |
 | `shellStart: () -> ShellStart?` and `refreshProbe: RefreshDebugProbe`, two members added to **the existing variant hook that carries `LaunchOverrides`** (find its real name with `grep -rn "LaunchOverrides.None\|DebugLaunchOverrides\|MockSources" app/src`). Release twin: `{ null }` and `RefreshDebugProbe.None`. The perf twin, if the hook has one, gives the same values as release. | `:app` main interface; implementations in the hook's existing source sets |
 | `DebugRefreshProbe`, `DebugShellStart` (the seed mapping) | `app/src/debug` `net.chronoflow.debug` |
 
@@ -508,7 +508,7 @@ sealed interface NextLabel { data object Now; data class In(val duration: String
   - Captures: `make captures ONLY=Trips,TripsEmpty,TripsLoading` (add the three to the capture registry, light and dark, `pixel8`).
 
 ### T10. Three-tab shell (`feat(app): add the three-tab shell`) [ticks "Shell" and "Seams"]
-- Files: `…/app/shell/AppShell.kt` (`AppShell(root: Route)` wiring the graph), `AppShellScaffold.kt` (stateless slots: `today`, `trips`, `settings`, `page: @Composable (Route) -> Unit`, `overlay`), `ShellHolder.kt`, `TabViewModelStoreOwner.kt`, and the `RootContent` change: `Today`, `Trips`, `Settings`, `TripPage` and `Wizard` render `AppShell(root = route)` inside the existing `key(revision)`, with the initial state `fromRoot(route)` (§5.6).
+- Files: `…/app/shell/AppShell.kt` (`AppShell(root: Route)` wiring the graph), `AppShellScaffold.kt` (stateless slots: `today`, `trips`, `settings`, `page: @Composable (Route) -> Unit`, `overlay`), `ShellViewModel.kt`, `TabViewModelStoreOwner.kt`, and the `RootContent` change: `Today`, `Trips`, `Settings`, `TripPage` and `Wizard` render `AppShell(root = route)` inside the existing `key(revision)`, with the initial state `fromRoot(route)` (§5.6).
 - `AppShell(root: Route, placeholder: @Composable (Route) -> Unit)`. `RootContent` passes its existing `{ RoutePlaceholder(it, label) }` (§5.7 "Seams").
 - In this task the Trips tab root renders `placeholder(Route.Trips)` (`route.trips`). T11 replaces it.
 - **Tests** (Robolectric `@Logic`, `AppShellTest`, on `AppShellScaffold` with fake slot content: a `LazyColumn` of 50 items tagged `test.list.<tab>` plus a button that calls `openTrip("t1")`):

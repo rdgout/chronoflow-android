@@ -17,7 +17,7 @@ import net.chronoflow.core.navigation.shell.ShellStart
 import net.chronoflow.core.navigation.shell.ShellTab
 
 @Stable
-internal class ShellHolder(
+internal class ShellViewModel(
     initial: ShellNavState,
     parent: ViewModelStoreOwner,
 ) : ViewModel() {
@@ -63,9 +63,9 @@ internal class ShellHolder(
 }
 
 @Composable
-internal fun rememberShellHolder(root: Route): ShellHolder {
+internal fun rememberShellViewModel(root: Route): ShellViewModel {
     val parent = checkNotNull(LocalViewModelStoreOwner.current)
-    val holder = viewModel { ShellHolder(ShellNav.fromRoot(root), parent) }
+    val holder = viewModel { ShellViewModel(ShellNav.fromRoot(root), parent) }
     SideEffect { holder.updateParent(parent) }
     return holder
 }

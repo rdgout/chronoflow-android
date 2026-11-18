@@ -113,7 +113,7 @@ internal class ShellRecreationFixture : TripsDependencies {
     override val decoder = PlanDecoder(worker)
     override val refreshProbe = RefreshDebugProbe.None
     val root = mutableStateOf(RootState(Route.Trips, 1))
-    var holder: ShellHolder? = null
+    var holder: ShellViewModel? = null
     var model: TripsViewModel? = null
     val refreshStopped = CompletableDeferred<Unit>()
     private val refreshResult = CompletableDeferred<SyncResult?>()
@@ -145,7 +145,7 @@ internal class ShellRecreationActivity : ComponentActivity() {
                 CompositionLocalProvider(LocalSafeInsets provides WindowInsets(0)) {
                     RootContent(fixture.root.value, {}) { root ->
                         if (root == Route.Trips) {
-                            val holder = rememberShellHolder(root)
+                            val holder = rememberShellViewModel(root)
                             SideEffect { fixture.holder = holder }
                             AppShellScaffold(
                                 holder,

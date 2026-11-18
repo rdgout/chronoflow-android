@@ -58,7 +58,7 @@ import java.util.concurrent.atomic.AtomicInteger
 @Config(sdk = [36], qualifiers = "w411dp-h914dp-420dpi")
 class AppShellTest {
     @get:Rule val compose = createComposeRule()
-    private lateinit var holder: ShellHolder
+    private lateinit var holder: ShellViewModel
     private lateinit var activity: ComponentActivity
     private val lists = mutableMapOf<ShellTab, LazyListState>()
     private val modelIds = mutableMapOf<ShellTab, Int>()
@@ -74,7 +74,7 @@ class AppShellTest {
             ProfileHost(profile) {
                 ChronoFlowTheme(reduceMotion = true) {
                     val currentActivity = LocalActivity.current as ComponentActivity
-                    val currentHolder = rememberShellHolder(root)
+                    val currentHolder = rememberShellViewModel(root)
                     SideEffect {
                         holder = currentHolder
                         activity = currentActivity

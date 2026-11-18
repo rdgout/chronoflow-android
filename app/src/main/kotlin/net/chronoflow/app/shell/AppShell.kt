@@ -32,7 +32,7 @@ internal fun AppShell(
     val graph = (LocalContext.current.applicationContext as ChronoFlowApp).graph
     val sessionGraph by graph.sessionGraphs.current.collectAsStateWithLifecycle()
     val render = rememberUpdatedState(placeholder)
-    val holder = rememberShellHolder(root)
+    val holder = rememberShellViewModel(root)
     LaunchedEffect(holder) { LaunchPlatform.shellStart()?.let(holder::seed) }
     AppShellScaffold(
         holder,
