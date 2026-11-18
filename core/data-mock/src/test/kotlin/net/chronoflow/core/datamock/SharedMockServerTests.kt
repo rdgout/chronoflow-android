@@ -6,12 +6,82 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import net.chronoflow.core.model.DataFailure
+import net.chronoflow.core.model.FieldMessage
+import net.chronoflow.core.model.api.SignInResult
+import net.chronoflow.core.model.api.TwoFactorInput
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import kotlin.time.Duration.Companion.seconds
 
 class SharedMockServerTests {
+    /** A concurrent removal must remain removed after a wrong proof (new). */
+    @Test fun wrongTwoFactorProofDoesNotRestoreRemovedChallenge() =
+        runTest(timeout = 60.seconds) {
+            val (challenge, state) = wrongProofAfterSharedChallengeChange { null }
+            assertNull(state.twoFactor[challenge])
+        }
+
+    /** An increment uses the store's current attempts rather than the request snapshot (new). */
+    @Test fun wrongTwoFactorProofIncrementsCurrentChallenge() =
+        runTest(timeout = 60.seconds) {
+            val (challenge, state) = wrongProofAfterSharedChallengeChange { it.copy(attempts = 3) }
+            assertEquals(4, state.twoFactor[challenge]?.attempts)
+        }
+
+    /** A fifth failure removes the challenge even if other failures arrived meanwhile (new). */
+    @Test fun wrongTwoFactorProofRemovesCurrentFifthAttempt() =
+        runTest(timeout = 60.seconds) {
+            val (challenge, state) = wrongProofAfterSharedChallengeChange { it.copy(attempts = 4) }
+            assertNull(state.twoFactor[challenge])
+        }
+
+    private suspend fun wrongProofAfterSharedChallengeChange(
+        change: (MockTwoFactor) -> MockTwoFactor?,
+    ): Pair<String, MockServerState> {
+        val store = MemoryMockStateStore()
+        val original = scenarioState()
+        var interleave: (() -> Unit)? = null
+        // Account lookup follows the challenge read, so this places a shared-store write between read and update.
+        val accounts =
+            object : Map<String, MockServerAccount> by original.accounts {
+                override fun get(key: String): MockServerAccount? {
+                    val account = original.accounts[key]
+                    if (key == twoFactorID) {
+                        val action = interleave
+                        interleave = null
+                        action?.invoke()
+                    }
+                    return account
+                }
+            }
+        val source = mockSource(store = store, seed = original.copy(accounts = accounts))
+        val challenge =
+            (
+                source.signIn(
+                    passwordInput(email = MockScenarioValues.twoFactorEmail),
+                ) as SignInResult.TwoFactor
+            ).challengeId
+        interleave = {
+            store.update(checkNotNull(store.load())) { current ->
+                val changed = change(checkNotNull(current.twoFactor[challenge]))
+                val challenges = current.twoFactor - challenge
+                current.copy(twoFactor = if (changed == null) challenges else challenges + (challenge to changed)) to
+                    Unit
+            }
+        }
+        assertEquals(
+            DataFailure.Validation(
+                mapOf("code" to FieldMessage("The authentication code was not accepted. Try again.")),
+                422,
+            ),
+            failure { source.completeTwoFactor(TwoFactorInput(challenge, TwoFactorInput.Proof.Code("000000"))) },
+        )
+        assertNull(interleave)
+        return challenge to checkNotNull(store.load())
+    }
+
     @Test fun cachedSourcesShareMailAndSessionInvalidation() =
         runTest(timeout = 60.seconds) {
             val store = MemoryMockStateStore()

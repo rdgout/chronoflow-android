@@ -443,16 +443,17 @@ class MockDataSource(
             val account = server.accounts[challenge.accountID] ?: throw validation(field, key)
             val accepted = if (code) value == account.twoFactorCode else value in account.recoveryCodes
             if (!accepted) {
-                update {
-                    it.copy(
+                update { current ->
+                    val pending = current.twoFactor[input.challengeId] ?: return@update current
+                    current.copy(
                         twoFactor =
-                            if (challenge.attempts >=
+                            if (pending.attempts >=
                                 4
                             ) {
-                                it.twoFactor - input.challengeId
+                                current.twoFactor - input.challengeId
                             } else {
-                                it.twoFactor +
-                                    (input.challengeId to challenge.copy(attempts = challenge.attempts + 1))
+                                current.twoFactor +
+                                    (input.challengeId to pending.copy(attempts = pending.attempts + 1))
                             },
                     )
                 }
