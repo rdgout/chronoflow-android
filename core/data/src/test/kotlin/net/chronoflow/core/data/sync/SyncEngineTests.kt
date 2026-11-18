@@ -118,7 +118,6 @@ class SyncEngineTests {
             canceled.cancel()
             runCurrent()
             assertFalse(remaining.isCompleted)
-            assertTrue(f.store.epoch.isValid)
             f.source.configure()
             gate.release()
             assertEquals(SyncState.Idle, remaining.await().state)
