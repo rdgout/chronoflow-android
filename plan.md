@@ -2114,6 +2114,7 @@ Implementation commits (brief §7):
 - [ ] **Forgot** (`AuthForgot`): an email field, a rate-limited send, and the honest confirmation copy (OQ 22, 27).
 - [ ] **Reset** (`AuthReset`), **Reset done** (`AuthResetDone`) and **Reset expired** (`AuthResetExpired`). The password field shows the policy hint. The 204 creates no session. An expired link offers a new one.
 - [ ] **App Links.**
+  - [x] Task 1: port the auth link parser and RFC 3986 test URL helper.
   - `autoVerify` intent filters on `MainActivity` for `https://app.chronoflow.net/reset-password/…` and `/email/verify/…`, handled in `onNewIntent` under `singleTask`.
   - `AuthLink.kt`, an exact port. A verify link has 5 segments, a UUID id, a 40-hex hash, digit-only `expires` and a 64-hex signature. A reset link has 3 segments and exactly one `email`.
   - `PendingLaunchIntent`: a reset link waits until the user is signed out, and verify links go to the per-account inbox.
