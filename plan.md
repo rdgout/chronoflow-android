@@ -622,7 +622,7 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A37 | Settings column on wide windows | 560 dp (`07` OQ-11) | 10a |
 | OQ-A38 | Debug key in production `assetlinks.json`? | Never | 13 |
 | OQ-A39 | AAB language splits | Off (in-app language switch) | 13 |
-| OQ-A40 | iOS deferred "keep pending edits on login upsert" | Already done at the pin (`SessionAccountDatabase.swift:29–48`, `StoreApplication.swift:51–60`); 4d ports it as it is, with store-level `LoginUpsertTests`. Tell iOS only that its deferred-fix checkbox (`plan.md:2327`) can be ticked | 4d |
+| OQ-A40 | iOS deferred "keep pending edits on login upsert" | Already done at the pin (`SessionAccountDatabase.swift:29–48`, `StoreApplication.swift:51–60`); 4d ports it as it is, with store-level `LoginUpsertTests`. Tell iOS only that its deferred-fix checkbox (`plan.md:2327`) can be ticked 4d: store-level `LoginUpsertTests` added. | 4d |
 | OQ-A41 | Play Data safety answers, shared with the undecided iOS privacy label | `14 §9.2` answers | 13 |
 | OQ-A42 | Material chrome has no Android boards (`08` OQ 1) | Build per the Material mapping, capture each component light/dark en/nl in Phase 14, and ask the designer to confirm | 2, 14 |
 | OQ-A43 | Adaptive icon horizon crop (`08` OQ 15) | Ship `_design/canvas/icon/android/*` unchanged | 0b |
@@ -1858,7 +1858,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - A 401 signals a forced wipe, except that a walkthrough POST 401 keeps its row.
   - A 403 `email_unverified` goes to the verify gate and never wipes.
 - [x] **Repositories** (`core/data/…/repository/`): trips, plans, marks, settings and walkthrough. Every mutation writes its domain row and its outbox row in one transaction. Plans have retention leases and eviction. Also port `AccountModel` and the LocalStore cases moved from 4a: `RecordsTests.allRecordsRoundTripUnknownJSONNullsAndCompositeKeys` and `repositoriesBindKeysAndOrderOutboxByTimestampThenID` (without their draft halves), and all six `RepositoryObservationTests`. Build on 4a's `RecordMapping` and `AccountDatabase.observe`.
-- [ ] **Preserving login upsert** (OQ-A40), a port of iOS `SessionAccountDatabase.upsert` (`SessionAccountDatabase.swift:29–48`). Server data never overwrites a field that has a pending outbox change. Tests cover the RN `store-account.ts:10–23,46–64` scenario and its reverse.
+- [x] **Preserving login upsert** (OQ-A40), a port of iOS `SessionAccountDatabase.upsert` (`SessionAccountDatabase.swift:29–48`). Server data never overwrites a field that has a pending outbox change. Tests cover the RN `store-account.ts:10–23,46–64` scenario and its reverse.
 - [ ] **Ported tests.** Port iOS `Tests/SyncTests` (35+ cases) to the JVM with `FakeDataSource`, a fake clock and the JDBC driver, keeping the names.
 
 **Acceptance**
