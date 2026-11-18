@@ -215,11 +215,11 @@ class SessionSync(
         flow {
             val id = UUID.randomUUID()
             val channel = Channel<SyncEvent>(Channel.CONFLATED)
-            withContext(confined) {
-                observers[id] = channel
-                latestEvent?.let { channel.trySend(it) }
-            }
             try {
+                withContext(confined) {
+                    observers[id] = channel
+                    latestEvent?.let { channel.trySend(it) }
+                }
                 emitAll(channel.receiveAsFlow())
             } finally {
                 withContext(NonCancellable + confined) {
