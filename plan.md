@@ -1976,6 +1976,20 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 **Delivers.** Builds the shared auth shell on the plain sky (reference frame, insets, card, a 560 dp column on wide windows), the designed fields and banners including the offline banner, and the sign-in screen with validation, server field errors, lockout waits, autofill and IME handling. A successful sign-in hands over to the session gate. The passkey button and divider stay hidden behind the capability. One emulator journey signs in the demo account; everything else is tested on the JVM or in Robolectric.
 
 **Tasks**
+
+Implementation commits (brief §7):
+- [x] T1 — LockoutWait and AuthenticationMethod.
+- [ ] T2 — Form model and failure mapping.
+- [ ] T3 — Navigation and layout math.
+- [ ] T4 — Sign-in glyphs and field input hook.
+- [ ] T5 — SignInModel.
+- [ ] T6 — Auth shell.
+- [ ] T7 — Sign-in screen and ViewModel.
+- [ ] T8 — App wiring and accepted-session routing.
+- [ ] T9 — Guards and board captures.
+- [ ] T10 — Emulator journey and keyboard check.
+- [ ] T11 — Docs.
+
 - [ ] **Auth shell** (`feature/auth/…/shell/`).
   - The plain sky, with the values of "### Auth geometry, tokens and typography" plus the Android delta: insets `safeTop + 16`, 16 at the sides and 24 at the bottom; card padding 20, radius 26, gap 14.
   - A 560 dp column from 600 dp.
