@@ -150,6 +150,15 @@ object LucideGlyphs {
             ),
         )
 
+    val Eye =
+        LucideGlyph(
+            "eye",
+            listOf(
+                LucidePath("M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0", false),
+                LucidePath("M9 12a3 3 0 1 0 6 0a3 3 0 1 0-6 0Z", false),
+            ),
+        )
+
     val Footprints =
         LucideGlyph(
             "footprints",

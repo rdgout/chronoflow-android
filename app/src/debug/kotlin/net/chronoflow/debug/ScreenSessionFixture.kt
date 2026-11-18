@@ -30,6 +30,10 @@ object ScreenSessionFixture {
                 graph.rootNavigator.navigate(Route.SignIn)
             }
 
+            "sign-up" -> {
+                graph.rootNavigator.navigate(Route.SignUp)
+            }
+
             "forgot" -> {
                 graph.rootNavigator.navigate(Route.Forgot)
             }

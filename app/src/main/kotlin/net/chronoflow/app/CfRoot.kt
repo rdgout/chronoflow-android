@@ -35,6 +35,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import net.chronoflow.app.auth.SignInViewModelFactory
+import net.chronoflow.app.auth.SignUpViewModelFactory
 import net.chronoflow.app.auth.TwoFactorViewModelFactory
 import net.chronoflow.core.designsystem.effect.skyBackground
 import net.chronoflow.core.designsystem.layout.LocalSafeInsets
@@ -47,6 +48,8 @@ import net.chronoflow.feature.auth.forgot.ForgotPasswordRoute
 import net.chronoflow.feature.auth.reset.ResetPasswordRoute
 import net.chronoflow.feature.auth.shell.EmailAppLauncher
 import net.chronoflow.feature.auth.signin.SignInScreen
+import net.chronoflow.feature.auth.signup.CustomTabPolicyOpener
+import net.chronoflow.feature.auth.signup.SignUpRoute
 import net.chronoflow.feature.auth.twofactor.TwoFactorScreen
 import net.chronoflow.feature.launch.LaunchOverlay
 import net.chronoflow.feature.launch.model.LaunchRoute
@@ -92,7 +95,8 @@ internal fun CfRoot(
                 displayedRoute == null || displayedRoute == Route.Welcome ||
                     (
                         displayedRoute == Route.SignIn || displayedRoute == Route.TwoFactor ||
-                            displayedRoute == Route.Forgot || displayedRoute is Route.Reset
+                            displayedRoute == Route.Forgot || displayedRoute is Route.Reset ||
+                            displayedRoute == Route.SignUp || displayedRoute == Route.Verify
                     )
             )
     SideEffect { onSystemBars(night, overlayShowing, onSky || launchSky) }
@@ -174,6 +178,19 @@ internal fun CfRoot(
                                                 MutableCreationExtras().apply { set(AppGraphKey, graph) }
                                             }
                                         TwoFactorScreen(viewModel(factory = TwoFactorViewModelFactory, extras = extras))
+                                    }
+
+                                    Route.SignUp -> {
+                                        val extras =
+                                            remember(
+                                                graph,
+                                            ) { MutableCreationExtras().apply { set(AppGraphKey, graph) } }
+                                        val context = LocalContext.current
+                                        val opener = remember(context, night) { CustomTabPolicyOpener(context, night) }
+                                        SignUpRoute(
+                                            viewModel(factory = SignUpViewModelFactory, extras = extras),
+                                            opener,
+                                        )
                                     }
 
                                     Route.SignIn -> {

@@ -2159,7 +2159,7 @@ Implementation commits (brief §7):
 **Delivers.** Builds sign-up: name, email and password with the server policy hint, and two consent links that open the policy pages in a Custom Tab. It builds the verify gate: waiting with a rate-limited resend, open-the-email-app, the per-account verify-link inbox, the failed state, and Verify back as sign-out. Tests port the iOS sign-up and verify cases, and one emulator journey goes from sign-up to a verified account through the mock link inbox.
 
 **Tasks**
-- [ ] **SignUpScreen and ViewModel**, porting `SignUpModel`.
+- [x] **SignUpScreen and ViewModel**, porting `SignUpModel`.
   - Name, email, and a password with the policy hint (OQ 21); server field errors.
   - Two consent links open `https://chronoflow.net/terms` and `/privacy` in a Custom Tab (OQ-A32).
   - Register (90 s), then the verify gate.
