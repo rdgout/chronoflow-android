@@ -1,5 +1,7 @@
 package net.chronoflow.core.data.repository
 
+import app.cash.sqldelight.Query
+import app.cash.sqldelight.db.SqlDriver
 import app.cash.turbine.test
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.awaitCancellation
@@ -9,6 +11,7 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import net.chronoflow.core.database.AccountDatabase
+import net.chronoflow.core.database.AccountDriverFactory
 import net.chronoflow.core.database.store.fetchAccount
 import net.chronoflow.core.database.store.saveAccount
 import net.chronoflow.core.database.testing.JdbcAccountDriverFactory
@@ -239,6 +242,36 @@ class RepositoryObservationTests {
                 assertEquals(0, store.database.observationCount)
             } finally {
                 model.detach()
+                store.close()
+            }
+        }
+
+    // (new) Android database observers can fail with framework errors outside StoreFailure and SQLException.
+    @Test fun accountModelSurfacesUnexpectedObservationFailure() =
+        runTest(timeout = 60.seconds) {
+            val store = RepositoryStore(StandardTestDispatcher(testScheduler))
+            val factory =
+                AccountDriverFactory { file ->
+                    val driver = JdbcAccountDriverFactory().open(file)
+                    object : SqlDriver by driver {
+                        override fun addListener(
+                            vararg queryKeys: String,
+                            listener: Query.Listener,
+                        ): Unit = throw IllegalStateException("observer registration failed")
+                    }
+                }
+            val database = AccountDatabase(store.root, driverFactory = factory, io = store.io)
+            val model = AccountModel(backgroundScope)
+            try {
+                store.database.close()
+                database.open(syncAccount)
+                model.attach(AccountRepository(database), 1)
+                runCurrent()
+                assertEquals(AccountModel.LoadState.Failed, model.state.value)
+                assertEquals(0, database.observationCount)
+            } finally {
+                model.detach()
+                database.close()
                 store.close()
             }
         }

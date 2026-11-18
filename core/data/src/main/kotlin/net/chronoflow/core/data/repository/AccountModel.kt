@@ -12,7 +12,6 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import net.chronoflow.core.model.store.AccountRecord
-import net.chronoflow.core.model.store.StoreFailure
 
 class AccountModel(
     private val scope: CoroutineScope,
@@ -67,11 +66,7 @@ class AccountModel(
                         }
                     } catch (failure: CancellationException) {
                         throw failure
-                    } catch (_: StoreFailure) {
-                        failed(attachedGeneration)
-                    } catch (_: android.database.SQLException) {
-                        failed(attachedGeneration)
-                    } catch (_: java.sql.SQLException) {
+                    } catch (_: Exception) {
                         failed(attachedGeneration)
                     }
                 }
