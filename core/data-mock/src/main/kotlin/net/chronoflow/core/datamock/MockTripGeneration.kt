@@ -109,7 +109,7 @@ data class MockWizardDraft private constructor(
                 obj.optionalStringAt("tripID"),
                 json.decodeFromJsonElement(ApiTripInput.serializer(), obj.require("input")),
                 json.decodeFromJsonElement(ApiTripReview.serializer(), obj.require("review")),
-                obj.objectAt("profile"),
+                ProfilePreferences.bodyClock(obj.objectAt("profile")),
                 (obj.require("expiresAt") as? JsonPrimitive)?.takeIf { !it.isString }?.doubleOrNull
                     ?: throw SerializationException("expiresAt must be a number"),
             )

@@ -4,7 +4,11 @@ import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonObject
+import net.chronoflow.core.model.api.ApiJson
 import net.chronoflow.core.model.api.AuthLanguage
+import net.chronoflow.core.model.contracts.ApiTripInput
+import net.chronoflow.core.model.contracts.ProfilePreferences
+import net.chronoflow.core.testing.Fixtures
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertThrows
@@ -30,6 +34,46 @@ internal fun codecState(): MockServerState =
 
 /** Android state codec coverage (new). */
 class MockServerStateCodecTest {
+    @Test fun draftDecodeNormalizesProfile() {
+        val raw = legacyDraftProfile()
+        val draft = MockJson.decodeFromJsonElement(MockWizardDraft.serializer(), draftJson(raw))
+        assertEquals(ProfilePreferences.bodyClock(raw), draft.profile)
+    }
+
+    @Test fun guestDraftDecodeNormalizesNestedProfile() {
+        val raw = legacyDraftProfile()
+        val obj =
+            JsonObject(
+                mapOf(
+                    "deviceID" to JsonPrimitive(mockDeviceID),
+                    "secretHash" to JsonPrimitive("artificial-secret-hash"),
+                    "draft" to draftJson(raw),
+                ),
+            )
+        val guest = MockJson.decodeFromJsonElement(MockGuestDraft.serializer(), obj)
+        assertEquals(ProfilePreferences.bodyClock(raw), guest.draft.profile)
+    }
+
+    private fun legacyDraftProfile(): JsonObject =
+        JsonObject(
+            mapOf(
+                "ageBand" to JsonPrimitive("18_64"),
+                "pregnancy" to JsonPrimitive(true),
+                "caffeineRuledOut" to JsonPrimitive(true),
+            ),
+        )
+
+    private fun draftJson(profile: JsonObject): JsonObject =
+        JsonObject(
+            mapOf(
+                "owner" to JsonPrimitive("owner"),
+                "input" to ApiJson.response.encodeToJsonElement(ApiTripInput.serializer(), wizardInput()),
+                "review" to ApiJson.response.parseToJsonElement(Fixtures.text("wizard/review.json")),
+                "profile" to profile,
+                "expiresAt" to JsonPrimitive(100.0),
+            ),
+        )
+
     @Test fun stateRoundTrips() {
         val state = codecState()
         assertEquals(
