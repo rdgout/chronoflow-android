@@ -109,12 +109,16 @@ class SessionSync(
         try {
             lifecycle.start()
         } catch (failure: CancellationException) {
-            lifecycle.stop()
-            if (this@SessionSync.generation == generation) this@SessionSync.lifecycle = null
+            withContext(NonCancellable) {
+                lifecycle.stop()
+                if (this@SessionSync.generation == generation) this@SessionSync.lifecycle = null
+            }
             throw failure
         } catch (_: Exception) {
-            lifecycle.stop()
-            if (this@SessionSync.generation == generation) this@SessionSync.lifecycle = null
+            withContext(NonCancellable) {
+                lifecycle.stop()
+                if (this@SessionSync.generation == generation) this@SessionSync.lifecycle = null
+            }
         }
         if (this@SessionSync.generation != generation) lifecycle.stop()
     }

@@ -1,6 +1,7 @@
 package net.chronoflow.core.data.sync
 
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitCancellation
@@ -17,8 +18,10 @@ import net.chronoflow.core.data.sync.support.TriggerFixture
 import net.chronoflow.core.model.DataFailure
 import net.chronoflow.core.model.OutboxChange
 import net.chronoflow.core.model.session.StoredSession
+import net.chronoflow.core.model.store.OutboxRecord
 import net.chronoflow.core.sync.ActiveSyncDatabase
 import net.chronoflow.core.sync.SessionSync
+import net.chronoflow.core.sync.SyncDatabase
 import net.chronoflow.core.sync.SyncLifecycle
 import net.chronoflow.core.sync.SyncPathMonitoring
 import net.chronoflow.core.sync.SyncState
@@ -272,6 +275,45 @@ class SyncTriggerTests {
             cancelled { refresh.await() }
             f.lifecycle.stop()
             assertTrue(f.events.unauthorized.isEmpty())
+        }
+
+    // (new) Cancellation while starting must detach the stopped lifecycle so the same epoch can resume.
+    @Test fun cancelledStartDetachesTheStoppedLifecycle() =
+        triggerTest { f ->
+            val gate = CompletableDeferred<Unit>()
+            var gated = true
+            val database =
+                object : SyncDatabase by f.store.sync {
+                    override suspend fun pending(): List<OutboxRecord> {
+                        if (gated) {
+                            gated = false
+                            gate.await()
+                        }
+                        return f.store.sync.pending()
+                    }
+                }
+            val sync =
+                SessionSync(
+                    ActiveSyncDatabase { database },
+                    f.scheduler,
+                    source = { f.source },
+                    unauthorized = {},
+                    verification = {},
+                    dispatcher = f.dispatcher,
+                )
+            val session = StoredSession("test", syncAccount)
+            try {
+                val starter = backgroundScope.launch { sync.start(session, 5) }
+                runCurrent()
+                starter.cancel()
+                runCurrent()
+                assertNull(sync.refreshNow())
+                sync.resume(session, 5)
+                runCurrent()
+                assertEquals(SyncState.Idle, sync.refreshNow()?.state)
+            } finally {
+                sync.stop()
+            }
         }
 
     // (new) Android caller cancellation must not interrupt draining the replaced lifecycle.
