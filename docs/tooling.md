@@ -243,3 +243,77 @@ The single warm `make quick` invocation took **30.97 s** overall (log creation t
 Device tests ran once per class through `make targeted`, under the device lock. `KeystoreSessionStoreTest` passed five cases in 0.122 s of reported case time (10.43 s including Gradle/build/install); `StoreThreadingSmokeTest` passed its one case in 0.103 s (5.52 s including Gradle/build/install). Both used isolated roots and `test.<uuid>` key aliases; their combined case time was 0.225 s. The strict main-thread disk policy survived every store operation. These are functional emulator timings, not device performance claims.
 
 Commands, fix history, brief-refresh patches and remaining broad gates are recorded in [phase-4a-validation.md](phase-4a-validation.md). Exact local run logs and tier JSON snapshots are under `build/phase4a/`.
+
+
+## Phase 4c: mock source, seeds and release boundary
+
+2026-11-18, macOS host, Zulu JDK 17 build / provisioned JDK 21 tests. This phase ran JVM checks, the release build and static APK probes. It produced no emulator, capture, timeline or device performance result.
+
+All targeted commands use `make targeted ONLY="core:data-mock:<Class> …"` (the brief lists each class). From Task 6 onward the command environment sets `ORG_GRADLE_PROJECT_kotlin.compiler.execution.strategy=in-process`. Before that override, Kotlin's daemon could not create its client marker under `~/Library/Application Support/kotlin/daemon/` (`java.nio.file.FileSystemException: …: Operation not permitted`); compilation fell back successfully. The override avoids that sandbox path without changing repository configuration.
+
+| Task | Targeted coverage | Cases | Wall time | Result |
+|---|---|---:|---:|---|
+| 1 | time, crypto, limiter, latency; fixture import boundary | 19 + 4 | Gradle 1 s + 2.25 s | pass; 0 over budget |
+| 2 | state codec, atomic stores, legacy claim | 9 | 1.83 s | pass; 0 over budget |
+| 3 | settings readiness and codec | 6 | 1.81 s | pass; 0 over budget |
+| 4 | seed/rebase suite | 11 | 1.81 s | pass; 0 over budget |
+| 5 | generation helpers | 3 | 7.60 s | pass; 0 over budget |
+| 6 | auth and confirmation | 26 | 8.80 s | pass; 0 over budget |
+| 7 | account, persistence, passkeys, security/delete | 28 | 2.13 s | pass; 0 over budget |
+| 8 | app seed and refresh through source | 18 | 3.00 s | pass; 0 over budget |
+| 9 | wizard, guest and claims | 59 | 3.43 s | pass; 0 over budget |
+| 10 | API parity and all method controls | 81 | 2.38 s | pass; 0 over budget |
+| 11 | selected Konsist guards / release mock absence | 12 / 1 | 2.80 s / 2.90 s | pass; 0 over budget |
+
+Task 4 also reran its seven timestamp cases in 2.13 s after making their expected local times and offsets independent of production helpers. Task 7's failed-save case reaches the profile write after a successful session refresh; it proves the unsaved candidate does not become visible. Parameter rows are separate JUnit cases: method controls 75, passkey add faults 7, password confirmations 6, guest possession 6, stale claims 10 and claim replay 6. The method-coverage table matches all 25 `MockMethod` entries.
+
+### Dependency and APK proof
+
+With `JAVA_HOME=/Library/Java/JavaVirtualMachines/zulu-17.jdk/Contents/Home` and `ANDROID_HOME=/opt/homebrew/share/android-commandlinetools`:
+
+```sh
+./gradlew :app:dependencies --configuration <configuration>
+```
+
+Each report exited 0 with the configuration cache enabled. Counting the report using `grep -c "project ':core:data-mock'"` and `grep -c "project ':core:testing'"` gives:
+
+| configuration | data-mock | testing | command wall time |
+|---|---:|---:|---:|
+| `releaseRuntimeClasspath` | 0 | 0 | 1.44 s |
+| `debugRuntimeClasspath` | 1 | 2 | 1.28 s |
+| `benchmarkReleaseRuntimeClasspath` | 1 | 2 | 1.27 s |
+| `nonMinifiedReleaseRuntimeClasspath` | 1 | 2 | 1.25 s |
+
+The old brief's unquoted `project :core:…` pattern returned 0 for every report; Gradle 9 quotes project paths. The corrected debug/perf positive controls prove the release zeros. No dependency line in `app/build.gradle.kts` changed.
+
+```sh
+./gradlew :app:assembleRelease :app:testReleaseUnitTest :app:verifyReleaseManifest
+```
+
+Exit 0, `BUILD SUCCESSFUL in 4s`; all 40 release JVM cases passed. `ReleaseReadinessTest.mockDataSourceIsAbsent` checks four classes. OQ-A166 gives these lookups to 4c; 4e keeps its other release assertions.
+
+```sh
+$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer dex packages app/build/outputs/apk/release/app-release-unsigned.apk
+```
+
+Exit 0, 0.57 s. `grep -c "net.chronoflow.core.datamock"` on that output prints `0`. APK ZIP inspection finds only `libandroidx.graphics.path.so` under the four ABI directories, all already allowed by OQ-0a-22; no new native library.
+
+`onlyDebugAndPerfImportTheMock` passes on the project, rejects the two planted main-source imports and accepts its debug, perf and test controls. The existing JVM/import/sleep/OkHttp/module-graph guards also pass. `testingNotInMain` keeps its prior boundary and adds only the named mock fixture imports (OQ-A151).
+
+### Final inner-loop result
+
+`env 'ORG_GRADLE_PROJECT_kotlin.compiler.execution.strategy=in-process' make quick` ran once, exited 0, and took **26.95 s wall time** including tooling tests and the serial timing tier (under 60 s). Its primary tier recorded 1,734 cases in 10.54 s; build-logic recorded 26 in 1.41 s; timing recorded 6 in 1.39 s. All tier reports have zero over-budget cases. The mock module's final XML contains **249 cases in all 31 required classes**; every mock case is under 1 s, with no PerfBudget annotation. The first Task 1 helper duration above is Gradle's reported build duration; its separate wrapper wall time was not retained. Its cases are all included in this final result.
+
+Five slowest mock cases from the final JVM timing report:
+
+| Class | Method | Time |
+|---|---|---:|
+| `MockAppSeedTests` | `defaultAppMockReseedsIncompatibleFilesEmptyObject` | 562 ms |
+| `DataSourceParityTests` | `invalidSettingsReturnEveryFieldReminders` | 496 ms |
+| `MockAccountTripsTests` | `unsupportedAndSensitivePatchRefusal` | 387 ms |
+| `PlanDecodingTests` | `mockTripsRebaseEveryTimestampAndDate20000229` | 368 ms |
+| `MockAuthTests` | `newPasswordPolicyAndDeviceValidation` | 308 ms |
+
+Results: `build/test-results/quick/`, `build/test-results/build-logic/`, `build/test-results/timing/`, `core/data-mock/build/test-results/test/` and `core/data-mock/build/cf-timings/test/`. The release XML is under `app/build/test-results/testReleaseUnitTest/`.
+
+The phase intentionally leaves `make check` (including the pixel emulator tier) to the user. No `make perf`, `make perf-timeline`, `make baseline-profile`, emulator tier or T2 AVD was run. The APK and JVM probes completed in the sandbox; no requested command remains blocked.

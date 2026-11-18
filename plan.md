@@ -747,6 +747,7 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A163 | (4c-14) Should MockClock and scenario helpers be shared with later modules now? | Keep them in data-mock/src/test. A consumer phase may move them to a java-test-fixtures source set; never duplicate them into another module. | 4c, 4d, 5, 9 |
 | OQ-A164 | (4c-15) How does password policy retain Swift Unicode semantics? | Count grapheme boundaries with BreakIterator(Locale.ROOT), classify Unicode code points by Character.getType, and count device/name scalars with codePointCount. Verify Ä as an uppercase letter and reject all-uppercase passwords. | 4c |
 | OQ-A165 | (4c-1) Split guest mock review and registration claim into 11a/11b? | Port the full intertwined MockDataSource now, including sign-in/passkey claim replay and guest registration. 11a/11b verify the mock and retain their UI/API work. | 4c, 11a, 11b |
+| OQ-A166 | (4c-13) Should 4e repeat mock-class release lookups? | No: 4c adds mockDataSourceIsAbsent for MockDataSource, MockAppSeed, MockServerState and MockScenarioValues. 4e retains its other release-readiness assertions and reuses this proof. | 4c, 4e |
 | OQ-0a-22 | Native libraries in the bundle? | Allow only `libandroidx.graphics.path.so` (Compose graphics-path; excluding it breaks Path conversion below API 34); fail on any other `.so` | 0a, 13 |
 | OQ-0b-1 | Where does `PlanMetrics` live? `08 §3.1` lists it inside `CfDimens`, but its consumer `:core:plan` is a JVM module that cannot depend on `:core:designsystem` | `core/plan/…/generated/PlanMetrics.generated.kt` (Double, dp), as iOS keeps it in `PlanCore` | 0b, 1b, 1c |
 | OQ-0b-2 | Port all iOS TokenGen outputs now (Auth, Settings, Terms, Welcome, PlanUI, Press, LaunchPaint, TypeMetrics), or only colors, sky and type? | All of them now (the iOS files are exact goldens and Phases 2, 3a, 3c, 5a, 9 and 10 need them) | 0b |
@@ -1808,7 +1809,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - Account ids `0199a3c0-0000-7000-8000-000000000000` and `…0001`.
   - Seven trips rebased to the seed clock: S1–S6 and S6-RETURN-10N.
   - large30 and large60 from 1b.
-- [ ] **Wiring.** The mock is a `debugImplementation` and perf-variant dependency only. `ReleaseReadinessTest` asserts that no mock class is on the release classpath.
+- [x] **Wiring.** The mock is a `debugImplementation` and perf-variant dependency only. `ReleaseReadinessTest` asserts that no mock class is on the release classpath.
 - [x] **Ported tests.** Port the iOS mock tests (the `MockScenarios` and `MockScenarioValues` cases) with the same names.
 
 **Acceptance**

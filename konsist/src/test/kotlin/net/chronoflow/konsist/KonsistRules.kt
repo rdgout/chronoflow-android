@@ -402,3 +402,17 @@ fun noHttpLoggingInterceptor(scope: KoScope) {
             .map { it.path }
     fail("noHttpLoggingInterceptor", violations)
 }
+
+fun onlyDebugAndPerfImportTheMock(scope: KoScope) {
+    val prefix = "net.chronoflow.core.datamock"
+    val violations =
+        scope
+            .moduleFiles()
+            .filterNot { file ->
+                file.module == "core/data-mock" || file.sourceSet?.let(::isTestSourceSet) == true ||
+                    (file.module == "app" && file.sourceSet in setOf("debug", "perf"))
+            }.flatMap { file ->
+                file.imports.filter { it == prefix || it.startsWith("$prefix.") }.map { "${file.path}: $it" }
+            }
+    fail("onlyDebugAndPerfImportTheMock", violations)
+}
