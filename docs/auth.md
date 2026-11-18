@@ -1,6 +1,6 @@
 # Authentication
 
-The implementation follows the pinned iOS auth models and the auth boards. Auth routes replace the root without transitions. Sign in (5a), two-factor (5b) and password reset/App Links (5c) are implemented; Sign up and the accepted-session destinations retain their placeholders until their phases. The sections below retain each phase's verification record.
+The implementation follows the pinned iOS auth models and the auth boards. Auth routes replace the root without transitions. Sign in (5a), two-factor (5b), password reset/App Links (5c), and Sign up/Verify (5d) are implemented. Accepted-session destinations retain their placeholders until their phases. The sections below retain each phase's verification record.
 
 Phase 5a, 2026-11-18: implementation and the focused JVM/Robolectric checks are complete. Both orchestrator-authorized follow-up checks pass: the unchanged keyboard test with the full keyboard after correcting functional device prep, and the complete `make quick` command in 31.88 s. Acceptance remains **open** for browser board comparison, manual autofill/TalkBack checks, and `make check`. No performance benchmark, baseline-profile, `make check` or other emulator tier ran.
 
@@ -46,7 +46,7 @@ No strings were added. Every label uses generated en/nl resources; dynamic banne
 |---|---|---|
 | Email, form, challenge | Process-scoped `AuthServices.signIn` / `AuthNavigation` | Kept between auth routes; leaving auth clears form/challenge and keeps email |
 | Password | `remember { TextFieldState() }` in `SignInScreen` | Dropped on recreation/disposal; never saved |
-| Request job and presentation state | Activity-scoped `SignInViewModel` | `leave()` cancels its request on disposal |
+| Request job and presentation state | Entry-scoped `SignInViewModel` (since 5d) | `leave()` cancels its request on disposal; removing the entry clears the ViewModel |
 | Layout coordinates | Plain remembered `AuthCoordinates` holder | Layout only; never snapshot state |
 
 `SignInContent` takes state, caller-owned field states and events. The ViewModel adapts the model and owns the request lock. Its presentation state contains the form and passkey visibility: email keystrokes with unchanged feedback do not emit a new card state. A JVM emission test covers this.
@@ -55,7 +55,7 @@ The secret adapter reads the password once for the request and clears it in `fin
 
 The app supplies `LazyPublicDataSource`, resolving the suspend `SessionDataSources.public()` accessor inside each request. Construction performs no IO. Device identity and the memoized device name run on injected IO; the existing source/controller dispatch their network, storage and Keystore work to IO. Production acceptance delegates directly to `StoredDataReadiness.routeAcceptedSession`, which owns its routing task and rechecks the current epoch. No extra app-scope acceptance task or duplicate gate logic was added. The 20 routing cases exercise password/passkey, every gate, cancellation after commit, and sign-out during suspended gate reads.
 
-`AppGraphKey` is read by the factory in `:app`; `CfRoot` supplies creation extras at the composition boundary. `RootContent` retains its transition-free host and activity scoping. Debug Welcome keeps only its guest seam; every variant routes Sign in normally.
+`AppGraphKey` is read by the factory in `:app`; `CfRoot` supplies creation extras at the composition boundary. `RootContent` retains its transition-free host. Since 5d, its entries have saveable-state and ViewModel-store decorators, in that order. Debug Welcome keeps only its guest seam; every variant routes Sign in normally.
 
 ## Failure mapping
 
@@ -494,3 +494,170 @@ The first Task 8 run hung because `ActivityScenario` matches activities with `In
 Logs, XML and available per-run timing JSON are retained under `build/phase5c-validation/`. The earlier failed journey took 47.631 s in teardown (tier 68.38 s); the authorized production fix and single retry above supersede it. No additional emulator journey was run. OQ-5c-1…9 are recorded as OQ-A205…OQ-A213. `CF_AUTH_TEST_LINK` is listed in the seed spec and is debug/test-ID gated, memory-only, and absent from release.
 
 The single final `make quick` follows the documentation commit; its exact command, exit status and wall time are retained in the validation directory and the final report. `make check`, performance tiers and profile regeneration are reserved for the orchestrator as instructed. Startup cold/warm TTID, launch first-frame/TTFD and launch-jank numbers remain unmeasured for this phase; no device performance claim is made. No dependency or native library was added.
+
+## Sign up and email verification (Phase 5d, 2026-11-18)
+
+`SignUpModel`, `VerifyEmailModel` and `VerificationLinkInbox` port iOS at `f391a1fa`. The coordinator ports the verification portion of `AuthSessionServices`; it implements the `VerifyLinkReceiver` handed over by 5c. Existing parser, dispatcher, routing, heading glyph, password policy and email launcher are reused. No duplicate shared-piece tests were added.
+
+### Sign-up behaviour and ownership
+
+| Event / state | Result |
+|---|---|
+| Enter Sign up | Empty name, email, password and confirmation; shared Show password switch off |
+| Edit / submit | Server alone validates; four displayed fields; captured device ID, device name and selected en/nl language; no guest claim fields |
+| Busy | One request; fields, switch, consent links, drawn back and footer disabled; system back still cancels |
+| Email taken | Designed banner; other supported field messages remain; first invalid field receives focus |
+| Other failure | Existing field/banner mapping; name and email retained; both passwords cleared |
+| Successful register | Accept session, commit autofill, clear passwords and route through stored readiness; an unverified account reaches Verify |
+| Drawn back / footer / system back | Cancel model/request and navigate once to Sign in |
+| Policy link | Two native annotated spans; only the terms/privacy allow-listed HTTPS URLs open a Custom Tab, then ACTION_VIEW fallback; no handler leaves the screen unchanged |
+
+The full submit catch list maps `SessionFailure`, `DataFailure`, `DeviceIdentityFailure`, `StoreFailure`, `IOException`, `GeneralSecurityException` and `RuntimeException` to feedback, after rethrowing cancellation. `NonCancellable` covers committed-session acceptance through routing and secret cleanup. Secrets are also cleared and the form unlocked in `finally`.
+
+| State / work | Owner and lifetime |
+|---|---|
+| Name, email, visibility and form | Fresh `SignUpModel` in entry-scoped `SignUpViewModel`; retained on activity recreation; cleared with a removed entry |
+| Password and confirmation | Route composition's plain remembered `TextFieldState`s; recreation loses both; never saved |
+| Sign-up request | ViewModel child scope; disposal/back cancels; late completion cannot accept an uncommitted session |
+| Verify model and signed input | Process coordinator's current-account model; child scope cancelled on disposal/replacement; no saved deadline or link input |
+| Pending signed link | In-memory `VerificationLinkInbox`; consumed once for the matching account and epoch |
+| IO | Device identity, source resolution, mock inbox, database, session storage and Keystore use injected IO dispatchers |
+
+`RootContent` applies the saveable-state decorator followed by the entry ViewModel-store decorator through `rememberDecoratedNavEntries(entries, decorators)`. Saveable content keys retain route/revision identity, without secrets. Root swaps have no transition. The unchanged Sign-in tests still pass with entry scoping. SignUp and Verify both use the launch sky, including its system-bar appearance.
+
+Standalone Robolectric activities rendering auth content outside `CfRoot` must provide `LocalSafeInsets`, LTR layout direction and the nullable timeline jank tagger. `SignUpEntryScopeTest` supplies zero insets and test dispatchers. Its earlier setup stall came from the missing inset provider; the corrected method passed in **2.389 s** (6.14 s tier wall), below the 5 s layout budget.
+
+### Verify state machine and account isolation
+
+Waiting has Open email app, Resend and Use a different email. Failed has the problem glyph, Try again and Send a new link, with both buttons visually at least 48 dp. A failed check changes Waiting to Failed; a failed resend retains its state. A malformed pending input selects Failed without sending a request. An invalid submitted link is dropped before the failure is presented, so Retry checks server status.
+
+Activation refreshes status whenever the lifecycle enters STARTED. Ticks run only while STARTED; the wall-clock deadline includes background time. Remaining seconds round up and never go below zero. Only the countdown reads the changing seconds; ten test ticks recompose that node ten times and the button group zero times. The countdown has no live region. A failure announces once per attempt; repeating a failure creates a new announcement.
+
+Resend requires a status (or Failed), no busy request and zero remaining seconds. The real API's first status returns zero, so Resend is initially enabled; the server's 429 starts the countdown. It is not pre-emptively disabled after registration. The generated countdown uses ASCII `m:ss` with `Locale.ROOT` in both languages. Verify uses the catalog's heading without a period and the catalog's Dutch interpolation.
+
+Every asynchronous boundary rechecks the active account, exact email, epoch and request revision. Verified status is insufficient on its own: fetch identity must match and be verified; sync stops before the session controller confirms verification. Persistence must succeed before routing. Completion routes only while still on Verify, allowing the existing gate observer to win without a second navigation. `onVerify` likewise avoids recreating an already displayed Verify entry.
+
+The inbox retains a guest link only across the first subsequent sign-in epoch. A foreign account, verified account, replacement epoch, sign-out or skipped/coalesced epoch clears it; malformed input cannot replace a matching pending link. Taking a link clears it. Synchronization rechecks presence/epoch after the account read. Preparing a model rechecks the session after suspending source resolution and reuses an active model for the same context.
+
+Both drawn back and Use a different email explicitly discard/sign out, erase account files, invalidate the old mock token and reach Sign in. Disposal caused by SignedOut publication cannot interrupt teardown: discard completes in `NonCancellable`. A stale model cannot discard a replacement account. System back leaves the app with the session intact.
+
+`AppGraph.auth.verification` is lazy and first touched at launch hand-off, a delivered link or a gate callback. It is not constructed in `Application.onCreate` or `MainActivity.onCreate`. A null Verify model draws only the plain sky. Release/API builds use the existing native email selector. Debug mock builds consume the last matching verification mail for the exact email and account ID; there is no inbox UI. Release readiness proves the mock mail implementation and composition counter are absent.
+
+### Board captures and review status
+
+The single capture invocation was:
+
+```sh
+make captures ONLY=AuthSignUp,AuthVerify,AuthVerifyFailed,auth/SignUpOffline,auth/VerifyWaiting,auth/VerifySignOutError
+```
+
+It passed in **15.19 s** and produced these **14 PNGs** in `build/captures/`:
+
+| Surface | Capture names (all `.png`) |
+|---|---|
+| Sign up | `AuthSignUp_none_en_light`, `AuthSignUp_none_en_dark`, `AuthSignUp_taken_en_light`, `AuthSignUp_taken_en_dark`, `AuthSignUp_server_en_light`, `AuthSignUp_server_en_dark` |
+| Verify | `AuthVerify_en_light`, `AuthVerify_en_dark`, `AuthVerify_server_en_light` |
+| Verify failed | `AuthVerifyFailed_en_light`, `AuthVerifyFailed_en_dark` |
+| Adaptations | `auth/SignUpOffline_en_light`, `auth/VerifyWaiting_en_light`, `auth/VerifySignOutError_en_light` |
+
+Native renders were inspected against the board source declarations and settled iOS overrides. **Browser-rendered side-by-side comparison and final reviewer acceptance remain open.** No Opus comparison is claimed. These are the recorded differences to assess when that render is available:
+
+| Board | Difference / disposition |
+|---|---|
+| All three | Settled: plain sky without dots; generated light/dark colors and typography; 48 dp header/action targets; standard native underline offset |
+| `AuthSignUp` | Settled: real form starts empty; capture alone uses board samples; full 12-character policy replaces the short 10-character hint; two policy links and the native switch row replace the board's single link and eye button |
+| `AuthSignUp` | Native adaptation: 48 dp fields and wrapped policy increase card height. At 375 × 812 the consent/footer and error-state submit are reached by scrolling; no type or control shrinks. Guards prove reachability, including Dutch/large font |
+| `AuthVerify` | Settled: real account email/deadline; capture uses 42 seconds and disabled Resend. Normal waiting has no countdown at zero. The catalog's Dutch sentence takes precedence over board wording |
+| `AuthVerifyFailed` | Settled: 48 dp problem disc, generated destructive glyph and 8 dp below it; both actions have a 48 dp visual minimum; no different-email action/countdown |
+| Verify error states | Settled: check/resend share iOS Verify banner copy; sign-out error is the designed destructive line; offline is title-only; no invented loading screen |
+
+The layout matrix has 20 Sign-up cases and 21 Verify cases, each independently timed, across `small`, `pixel8`, `foldInner`, `landscapeSideNav`, `largeFont`, English/Dutch and the specified dark states. Native inline links keep the paragraph's text-sized layout. Their guard checks Compose's expanded 48 dp touch bounds and annotated character regions for wrapped-link overlap; ordinary controls still require 48 dp layout. Positive and negative harness controls reject a reduced native target, ordinary 40 dp control and overlapping link ranges. Safe-area edges alone allow one physical pixel for fractional dp-to-pixel window rounding. Existing negative inset controls still fail for the real reason. Two additional board-viewport tests pin the brand row and both heading positions.
+
+### Swift test port map
+
+All Swift files are read at `f391a1fa`. Parameter rows have distinct Kotlin names; model logic uses fake clocks/repositories and `runTest(timeout = 60.seconds)`. Screen assertions use tags and structure; copy checks read resources directly.
+
+| Swift suite / cases | Kotlin coverage |
+|---|---|
+| `SignUpModelTests.registrationUsesDeviceLanguageAndTheExistingSessionController`, `serverAloneValidatesAllFieldsAndTakenEmailUsesTheBanner` | Same suite/method names; password-policy arguments independently parameterized |
+| `uiTestSeedReturnsTheExpectedRegistrationBanner` | Same prefix with `Online` / `Offline` methods |
+| `failuresPreserveNameEmailAndClearPasswordsIncludingKeychainFailure`, `createdAccountAfterSessionFailureCanRecoverThroughSignIn` | Same prefixes with failure suffixes; all five session failures |
+| `emailTakenPreservesOtherFieldErrorsInTheSameResponse`, `emailTakenKeepsBannerWhenOtherMessagesNeedTheFallback` | Same prefixes; three mixed-message methods and fallback case |
+| `unchangedFieldCallbacksPreserveMixedFailureUntilAnEdit` | Name/email in model suite; password/confirmation in `SignUpFieldEditTest`; same prefix plus field suffix |
+| `unchangedConfirmationPreservesServerFeedbackUntilTheValueChanges`, `oneToggleControlsBothPasswordsAndBusyCancellationStopsAcceptance` | Same names in field-edit/model suites; native toggle additionally checked by `SignUpVisibilityTest` |
+| `VerifyEmailModelTests.signedMockMailPersistsOnceAndRoutesOnlyForMatchingAccountEmailEpoch`, `resendDeadlineSurvivesIdentityRefreshActivationAndBackgroundTime`, `activationAfterWebVerificationAndEmailAppReturnObserveTheServer` | Same suite/method names |
+| `invalidExpiredForeignAndTamperedLinksUseFailedAndRetryChecksStatus`, `staleSessionOrEmailAndCanceledResponsesCannotPersistOrRoute`, `serverOfflineUnverifiedFailureDoesNotLoopAndBackExplicitlyDiscards` | Same prefixes with independent input/context/failure suffixes |
+| `responseArrivingAfterEmailChangeCannotWriteAndStaleBackCannotDiscard`, `offlineResendShowsAndAnnouncesTheConnectionBanner`, `repeatedSignOutFailuresEachShowAndAnnounceTheConnectionBanner` | Same suite/method names |
+| `signOutFailureIsAnnouncedOncePerAttemptAndReplacedByTheNextFailure`, `sessionFailuresAreVisibleOnCheckActivationResendAndSignOut` | Same prefixes; Check/Resend methods and uniquely parameterized session-failure cases |
+| All seven `VerificationLinkInboxTests` methods | Same names; replacement argument split into SignedOut/SameAccount/OtherAccount methods |
+| `SignUpControlTests.testSharedVisibilityPreservesValuesAutoFillAndNativeNameTraits`, `SignUpLayoutTests.testMixedFailureFocusesAndRevealsTheConfirmationMessage` | Same methods in `SignUpVisibilityTest` / `SignUpFailureFocusTest` |
+| `SignUpSnapshotTests` ten states and `testAllStatesKeepConsentToggleAndFooterReachableAtXXLarge` | `SignUpGuardsTest`, same method name; board samples in `SignUpVerifyBoardCaptureTest` |
+| `VerifyEmailControlTests.testWaitingCountdownAndFailedHaveNoInputsAndKeepLargeActions`, `VerifyEmailLayoutTests.testWaitingFailedAndErrorActionsFitTheLeanDeviceProfiles` | Same methods in `VerifyEmailControlTest` / `VerifyGuardsTest`; all ten snapshot states |
+| `AccountRecoveryTests.secondAccountConsumesItsOwnMailAfterTheFirstAccountIsWiped`, `VerifyEmailTests.unverifiedDifferentEmailReturnsToSignIn`, `tamperedLinkOpensFailedScreen` | Same names in JVM `VerificationCoordinatorTest`; real graph teardown in `VerifyRoutingTest` |
+| Auth native sign-up/verification journey | `SignUpVerifyJourneyTest.signUpVerifiesThroughTheMockLinkAndOpensTheGate`, the only emulator journey |
+
+The three guest cases remain deferred to 11b: `guestSignupRequiresALiveClaimBeforeCreatingAnAccount`, `guestSignupDistinguishesARequestFailureFromAnAccountAwaitingAcceptance`, and `expiredGuestClaimShowsReviewAndClearsPasswords`.
+
+Android additions cover committed-session cancellation, all checked submit failures, a newer link during a suspended check, coordinator epoch/dedup races, IME chaining, disabled controls, policy annotations/opener fallbacks, secret registry/recreation, entry scoping, lifecycle/countdown accessibility, and native-link harness negatives. A temporary mutation dropping the matching first guest link failed `guestLinkIsConsumedOnceByTheMatchingFirstSignIn`; restoring it passed before commit.
+
+### Verification and outstanding acceptance
+
+| Selection / command | Result | Wall time |
+|---|---|---|
+| `AuthConsentTextTest PolicyOpenerTest` | 10 passed | 35.84 s (first compilation) |
+| `SignUpModelTests SignInModelTests` | 54 passed | 4.20 s |
+| `VerifyEmailModelTests VerificationLinkInboxTests` | 65 passed | 4.06 s |
+| Sign-up screen/ViewModel and unchanged Sign-in selection | 56 unique cases: initial 52 pass / four fixture assertions fail; four corrected cases pass | initial 7.93 s; corrected Gradle 6 s |
+| `SignUpEntryScopeTest#removedEntryIsClearedAndARecreatedActivityKeepsItsCurrentEntry` | Pass after the user-diagnosed missing-provider fix; test 2.389 s | 6.14 s |
+| `core:designsystem:LucideGlyphsTest` | Pass; generated eye and 35-glyph manifest | Gradle 3 s |
+| Verify controls/copy/lifecycle/countdown/accessibility | Six passed, copy in en/nl | 5.82 s |
+| `VerificationCoordinatorTest` | Nine passed | Gradle 2 s |
+| Verify routing and unchanged 5c dispatcher/routing | Initial 14/15 pass; drawn-back method passes after waiting for activation and completed teardown; test 3.059 s | initial 14.27 s; corrected 5.35 s |
+| `app:ReleaseReadinessTest` | 10 passed, including mock/counter absence | 8.15 s |
+| `./gradlew --console=plain :app:verifyReleaseManifest` | Pass, allow-lists unchanged | Gradle 1 s |
+| `SignUpGuardsTest` | 20 passed after native-inline-link/window-rounding harness corrections | Gradle 7 s |
+| `NativeInlineLinkTargetTest` plus existing negative inset guard | Six passed | 5.18 s |
+| `VerifyGuardsTest` | 21 passed with final shared guard | 6.73 s |
+| `VerifyBoardGeometryTest` | Two passed; corrected the assertion to measure the brand row rather than its centred text | 6.65 s |
+| `make captures ONLY=AuthSignUp,AuthVerify,AuthVerifyFailed,auth/SignUpOffline,auth/VerifyWaiting,auth/VerifySignOutError` | 14 captures, one invocation | 15.19 s |
+| `make targeted ONLY="app:SignUpVerifyJourneyTest"` | Pixel/API 36/debug: pass; test **3.168 s**, Walkthrough reached, StrictMode IO counter **0** | **26.53 s**, including APK rebuild/install |
+| `make quick` (initial invocation) | 2,935 passed / one stale Verify placeholder-tag assertion failed; zero budget violations; timing outputs left uncertified | 29.04 s |
+| `app:LaunchGateRoutingTest#unverifiedLaunchesVerify app:RootContentTest app:RootContentConstructionTest app:RootRouteTransitionTest` | Seven passed; real Verify control/status replaces the placeholder assertion; all standalone root fixtures provide root locals | 6.83 s |
+| `make quick` (one allowed stamp rerun) | All 2,936 assertions pass; **fails timing gate** on the three methods below | 43.64 s |
+| Remaining quick substeps: build-logic / tooling / serial timing | 37 / 211 / six passed; run once after the failed quick gate | 4.12 / 18.34 / 2.76 s |
+
+Every successful tier reports zero budget violations. The original entry-scope setup stalled before the user's diagnosed fix; no further test run hung. The real-graph back fixture now waits for initial status before tapping an enabled back control, then waits for teardown completion before checking disk removal. Formatting ran through `make format`. Kotlin's sandboxed daemon marker warning fell back successfully; it did not prevent compilation.
+
+Validation logs and saved per-run timing JSON are in `build/phase5d-validation/`. The initial quick failure left its outputs without matching passed stamps. After the focused fix, the user's one allowed rerun passed every assertion but failed three existing methods' timing budgets. No further quick or method retry was run. The remaining quick substeps passed separately, with serial timing last. **Quick acceptance remains open**; thresholds were not changed. The failing command was `make quick` (exit 2 from Make, tier exit 3), with this exact gate output:
+
+```text
+run-tier: over budget: jvm net.chronoflow.konsist.HapticsRulesTest#noHapticsInLaunchRejectsPlantedViolation 1261 ms > 1000 ms
+run-tier: over budget: jvm net.chronoflow.core.datamock.MockSeedRefreshTests#restoresTenDayOldSeedWithoutLosingUserStateCurrentAnchor 1402 ms > 1000 ms
+run-tier: over budget: robolectric net.chronoflow.app.LaunchGateRoutingTest#pendingTermsLaunchesTerms 5147 ms > 5000 ms
+make: *** [quick] Error 3
+```
+
+No `make check`, other emulator tier, perf/timeline benchmark or profile regeneration ran, as instructed. No performance-budget row applies to 5d; no performance number is claimed. The debug APK still packages only the existing allow-listed `libandroidx.graphics.path.so`; Browser added no native library. `make size` was not run.
+
+The preflight refresh is `e1f605a`: `MockScenarioValues`, `RegisterInput.deviceID`, suspending source resolution, core `LaunchRoute` adapter, injected feature dispatchers, debug/perf source seam, main interface/debug implementation split, stateless screen adapters and existing shared geometry/resource names. The Task 4 brief records the landed navigation decorator/provider adaptation; Task 7 records native-link guard semantics and one-pixel safe-area rounding. OQ-5d-1…18 are **OQ-A214…OQ-A231**. A1 includes stable Browser 1.10.0. No visible copy was added; the Android-only approval table is unchanged. Shipped passkey capability remains disabled.
+
+The fully qualified selector requested for the entry-scope fix is unsupported by `Scripts/targeted.py`:
+
+```sh
+make targeted ONLY="app:net.chronoflow.app.auth.SignUpEntryScopeTest#removedEntryIsClearedAndARecreatedActivityKeepsItsCurrentEntry"
+```
+
+```text
+targeted: class 'net.chronoflow.app.auth.SignUpEntryScopeTest' not found in app
+make: *** [targeted] Error 2
+```
+
+The supported short-class selector shown in the verification table ran that exact method once and passed.
+
+Browser comparison could not run. This command exited **134** with **empty stdout/stderr** and produced no screenshot:
+
+```sh
+'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' --headless --no-sandbox --disable-gpu --disable-crash-reporter --no-first-run --no-default-browser-check --user-data-dir=/private/tmp/cf-phase5d-browser --screenshot=/private/tmp/cf-phase5d-browser-smoke.png --window-size=375,812 about:blank
+```
+
+The board HTML also references `_design/canvas/support.js`, which is absent: `head: _design/canvas/support.js: No such file or directory`. Browser review is the outstanding visual acceptance item; the captures and structural guards are available for that review.

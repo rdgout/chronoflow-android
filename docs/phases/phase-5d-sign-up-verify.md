@@ -546,7 +546,7 @@ Follow 5a Task 9's lean matrix (the tallest state on every profile, the rest whe
 
 ### Task 9: Docs (`docs(auth): record sign-up and verify acceptance`)
 - Extend `docs/auth.md`: the sign-up and verify tables of §4, the Verify state machine (§5.6 in prose), the coordinator and inbox rules, the 5c hand-off point, which iOS tests were ported (Swift name → Kotlin name) and which were deferred to 11b, the capture list, and the reviewer's board comparison (every difference fixed or recorded with its board name).
-- Append OQ-5d-1 … OQ-5d-16 to `plan.md` "Open questions for the user" with the next free `OQ-A` numbers. Add `androidx.browser` to A1 if Task 1 did not.
+- Append OQ-5d-1 … OQ-5d-18 to `plan.md` "Open questions for the user" with the next free `OQ-A` numbers. Add `androidx.browser` to A1 if Task 1 did not.
 
 ## 8. Acceptance criteria
 
