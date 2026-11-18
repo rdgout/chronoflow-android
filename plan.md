@@ -1748,7 +1748,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - The error envelope maps to `DataFailure`: validation with its field errors, throttling with `retry-after` from the header or the body, a 403 with `email_unverified`, and 401, 404, 405, 409, 413, 5xx and 503.
   - Timeouts and I/O errors become `Offline`.
   - Each of the 13 `errors/*.json` fixtures maps to one expected case.
-- [ ] **MockWebServer suite** (`core/network/src/test`, mockwebserver3, deny-by-default dispatcher).
+- [x] **MockWebServer suite** (`core/network/src/test`, mockwebserver3, deny-by-default dispatcher).
   - It pins the method, path, query, body keys and decoding of all 25 methods.
   - Redirects are not followed, `Set-Cookie` is ignored, timeouts become `Offline`, and a response from another origin is rejected.
 
