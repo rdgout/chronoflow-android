@@ -717,6 +717,8 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A133 | (4b-1) Where do `TripWizardErrors` and `SettingsPatchValidation` live (iOS: `DataAccess`)? | `:core:model` package `api`, so the mock, auth and wizard modules use them without OkHttp. | 4b |
 | OQ-A134 | (4b-2) iOS sends a `..` path segment as `%2E%2E`; OkHttp resolves `.`/`..` and their `%2E` forms as dot segments. | Refuse `.` and `..` segments with `Server(null)` before sending (ids are UUIDs in practice); otherwise encode exactly as iOS, `.` → `%2E`. | 4b |
 | OQ-A135 | (4b-9) `DataSourceFactory.testing` (iOS forces mock under tests). | Port the parameter; 4e passes `false` in the app (instrumented tests run the debug build, which defaults to mock). | 4b |
+| OQ-A136 | (4b-7) A 401 or 403 without a decodable envelope maps to `Server(status)` on iOS, so it never wipes or gates. | Keep iOS parity; 4d decides retry/refusal from the status. | 4b |
+| OQ-A137 | (4b-11) `Retry-After` header grammar: Swift `Double()` also accepts exponents. | Digits with an optional fraction, then RFC 1123 date, then 60 s. | 4b |
 | OQ-0a-22 | Native libraries in the bundle? | Allow only `libandroidx.graphics.path.so` (Compose graphics-path; excluding it breaks Path conversion below API 34); fail on any other `.so` | 0a, 13 |
 | OQ-0b-1 | Where does `PlanMetrics` live? `08 §3.1` lists it inside `CfDimens`, but its consumer `:core:plan` is a JVM module that cannot depend on `:core:designsystem` | `core/plan/…/generated/PlanMetrics.generated.kt` (Double, dp), as iOS keeps it in `PlanCore` | 0b, 1b, 1c |
 | OQ-0b-2 | Port all iOS TokenGen outputs now (Auth, Settings, Terms, Welcome, PlanUI, Press, LaunchPaint, TypeMetrics), or only colors, sky and type? | All of them now (the iOS files are exact goldens and Phases 2, 3a, 3c, 5a, 9 and 10 need them) | 0b |
@@ -1735,7 +1737,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
     - 3 s for logout.
   - Every response's origin is checked.
 - [ ] **ApiDataSource:** all 25 methods, using the 0d DTOs and `ApiJson`.
-- [ ] **ApiErrorMapper** (`03 §3–§4`).
+- [x] **ApiErrorMapper** (`03 §3–§4`).
   - The error envelope maps to `DataFailure`: validation with its field errors, throttling with `retry-after` from the header or the body, a 403 with `email_unverified`, and 401, 404, 405, 409, 413, 5xx and 503.
   - Timeouts and I/O errors become `Offline`.
   - Each of the 13 `errors/*.json` fixtures maps to one expected case.
