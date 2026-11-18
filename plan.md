@@ -1841,7 +1841,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 - [x] **Task 1: stored outbox payloads.**
 - [x] **Task 2: sync values, failure policy and plan retention.**
 - [x] **Task 3b: repository observation and AccountModel.**
-- [ ] **Task 4: full pull.**
+- [x] **Task 4: full pull.**
 - [ ] **Task 6: sync engine flights.**
 - [ ] **Task 9: network path monitor.**
 
