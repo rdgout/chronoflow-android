@@ -12,12 +12,41 @@ import net.chronoflow.core.model.api.SignInResult
 import net.chronoflow.core.model.api.TwoFactorInput
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
 import kotlin.time.Duration.Companion.seconds
 
 class MockAuthTests {
+    /** Unknown challenges within the character limit reach the expiry check (new). */
+    @Test fun passkeyLoginChallengeLengthCountsGraphemes() =
+        runTest(timeout = 60.seconds) {
+            val source = mockSource()
+            val input = passkeyInput(source.passkeyOptions()).copy(challengeId = "👍".repeat(64))
+            assertEquals(
+                DataFailure.Validation(
+                    mapOf("challengeId" to FieldMessage("The passkey request expired. Please try again.")),
+                    422,
+                ),
+                failure { source.passkeyLogin(input) },
+            )
+        }
+
+    /** Both claim fields accept their maximum grapheme counts (new). */
+    @Test fun passkeyLoginClaimLengthLimitsCountGraphemes() =
+        runTest(timeout = 60.seconds) {
+            val source = mockSource()
+            val input =
+                passkeyInput(source.passkeyOptions()).copy(
+                    draftToken = "👍".repeat(64),
+                    guestSecret = "e\u0301".repeat(128),
+                )
+            val result = source.passkeyLogin(input)
+            assertEquals(demoID, result.account.id)
+            assertNull(result.tripId)
+        }
+
     /**
      * Empty, unseeded non-debug clamp probes preserve iOS's 401 assertion
      * without paying for unused fixture rebases.

@@ -288,6 +288,13 @@ class MockDataSource(
         }
     }
 
+    private fun graphemeCount(value: String): Int {
+        val iterator = BreakIterator.getCharacterInstance(Locale.ROOT).apply { setText(value) }
+        var count = 0
+        while (iterator.next() != BreakIterator.DONE) count++
+        return count
+    }
+
     private fun password(
         value: String,
         confirmation: String,
@@ -295,9 +302,6 @@ class MockDataSource(
         val fields = linkedMapOf<String, FieldMessage>()
         if (value != confirmation) fields["password_confirmation"] = FieldMessage("The passwords don't match yet.")
         val types = value.codePoints().toArray().map { Character.getType(it) }
-        val iterator = BreakIterator.getCharacterInstance(Locale.ROOT).apply { setText(value) }
-        var count = 0
-        while (iterator.next() != BreakIterator.DONE) count++
         val symbols =
             setOf(
                 Character.MATH_SYMBOL,
@@ -316,7 +320,7 @@ class MockDataSource(
             }.toSet()
         val message =
             when {
-                count < 12 -> {
+                graphemeCount(value) < 12 -> {
                     FieldMessage("Use at least :min characters.", mapOf("min" to JsonPrimitive(12)))
                 }
 
@@ -428,7 +432,7 @@ class MockDataSource(
             val code = input.proof is TwoFactorInput.Proof.Code
             val field = if (code) "code" else "recovery_code"
             if (code &&
-                (value.length != 6 || value.any { it !in '0'..'9' })
+                (graphemeCount(value) != 6 || value.any { it !in '0'..'9' })
             ) {
                 throw validation(field, "Enter the 6-digit code from your authenticator app.")
             }
@@ -882,7 +886,7 @@ class MockDataSource(
         val raw = base64URL(credential.rawId)
         val authenticator = base64URL(r.authenticatorData)
         val signature = base64URL(r.signature)
-        if (fields.any { it.length > 8192 } || !validURL(credential.id) || !validURL(r.clientDataJSON) ||
+        if (fields.any { graphemeCount(it) > 8192 } || !validURL(credential.id) || !validURL(r.clientDataJSON) ||
             (raw == null || raw.isEmpty()) ||
             !raw.contentEquals(base64URL(credential.id)) ||
             (authenticator == null || authenticator.isEmpty()) ||
@@ -905,7 +909,7 @@ class MockDataSource(
             try {
                 device(input.deviceID, input.deviceName)
                 if (input.challengeId.isEmpty()) throw validation("challengeId", "Please fill this in.")
-                if (input.challengeId.length >
+                if (graphemeCount(input.challengeId) >
                     64
                 ) {
                     throw validation(
@@ -919,7 +923,7 @@ class MockDataSource(
                     Triple("guest_secret", input.guestSecret, 128),
                 )) {
                     if (value != null &&
-                        value.length > maximum
+                        graphemeCount(value) > maximum
                     ) {
                         throw validation(
                             field,
@@ -1196,11 +1200,11 @@ class MockDataSource(
         begin(MockMethod.SearchAirports) {
             val trimmed = query.trim()
             val count = limit ?: 8
-            if (query.length > 60 || trimmed.length !in 2..60 ||
+            if (graphemeCount(query) > 60 || graphemeCount(trimmed) !in 2..60 ||
                 count !in 1..20
             ) {
                 throw validation(
-                    if (trimmed.length in
+                    if (graphemeCount(trimmed) in
                         2..60
                     ) {
                         "limit"
@@ -1797,7 +1801,7 @@ class MockDataSource(
                     val maximum = if (field == "name") 255 else 64
                     if (value.isEmpty()) {
                         fields[field] = FieldMessage("Please fill this in.")
-                    } else if (value.length >
+                    } else if (graphemeCount(value) >
                         maximum
                     ) {
                         fields[field] =

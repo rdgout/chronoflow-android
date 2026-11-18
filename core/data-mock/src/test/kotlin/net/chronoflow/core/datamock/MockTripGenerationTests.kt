@@ -26,6 +26,21 @@ import org.junit.Test
 import kotlin.time.Duration.Companion.seconds
 
 class MockTripGenerationTests {
+    /** Combining marks do not consume a second query character (new). */
+    @Test fun searchAirportQueryLengthCountsGraphemes() =
+        runTest(timeout = 60.seconds) {
+            assertTrue(mockSource().searchAirports("e\u0301".repeat(31), null).isEmpty())
+        }
+
+    /** A two-code-unit grapheme still falls below the two-character minimum (new). */
+    @Test fun searchAirportsRejectsOneGrapheme() =
+        runTest(timeout = 60.seconds) {
+            assertEquals(
+                DataFailure.Validation(mapOf("query" to FieldMessage("Choose one of the available options.")), 422),
+                failure { mockSource().searchAirports("e\u0301", null) },
+            )
+        }
+
     companion object {
         @JvmStatic @BeforeClass
         fun warmFixtures() {

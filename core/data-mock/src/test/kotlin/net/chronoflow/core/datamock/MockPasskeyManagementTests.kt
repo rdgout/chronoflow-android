@@ -15,6 +15,44 @@ import org.junit.Test
 import kotlin.time.Duration.Companion.seconds
 
 class MockPasskeyManagementTests {
+    /** Swift character limits count surrogate pairs as one grapheme (new). */
+    @Test fun addAcceptsNamesWithinTheGraphemeLimit() =
+        runTest(timeout = 60.seconds) {
+            val source = mockSource(seed = passkeyState())
+            login(source)
+            val challenge = options(source)
+            val name = "👍".repeat(128)
+            val added =
+                source.accountSecurity(
+                    AccountSecurityChange.AddPasskey(
+                        ApiPasskeyRegistrationInput(challenge.challengeId, name, attestation(challenge)),
+                    ),
+                ) as AccountSecurityResult.PasskeyAdded
+            assertEquals(name, added.passkey.name)
+            assertEquals(3, list(source).size)
+        }
+
+    /** An unknown 64-grapheme challenge reaches the expiry check (new). */
+    @Test fun addChallengeLengthCountsGraphemes() =
+        runTest(timeout = 60.seconds) {
+            val source = mockSource(seed = passkeyState())
+            login(source)
+            val challenge = options(source)
+            assertEquals(
+                DataFailure.Validation(
+                    mapOf("challengeId" to FieldMessage("The passkey registration request expired. Please try again.")),
+                    422,
+                ),
+                failure {
+                    source.accountSecurity(
+                        AccountSecurityChange.AddPasskey(
+                            ApiPasskeyRegistrationInput("👍".repeat(64), "Phone", attestation(challenge)),
+                        ),
+                    )
+                },
+            )
+        }
+
     @Test fun listReturnsPersistedPasskeysAndAnAccountWithoutAnyIsEmpty() =
         runTest(timeout = 60.seconds) {
             val source = mockSource(seed = passkeyState())
