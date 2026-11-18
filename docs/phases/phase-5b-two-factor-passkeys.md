@@ -30,6 +30,8 @@
 
 - **Where code and brief differ:** the code that 5a, 4e and 4c actually landed wins over the names below. `grep` every name of §2.1 in the merged code before Task 1. Use the real names, never rename earlier code, and list the mapping in the body of your first commit.
 
+- **Implementation stack check (2026-11-18).** Repeated §2.1 and §6 against the checkout; all prerequisite symbols exist. Mechanical mappings: `RootContent` is a generic, transition-free route host; screen entries belong in `app/…/app/CfRoot.kt`. `AppGraphKey` belongs to `:app`, so Task 6 adds `app/…/app/auth/TwoFactorViewModelFactory.kt`, mirroring `SignInViewModelFactory`, rather than a graph-reading factory in the feature. `RootContent` keys only GuestWizard, Terms and Walkthrough by revision; auth retains route identity. `AuthScreen` takes `announcementRevision` and `takeAnnouncement`; its brand row hosts `AuthAnnouncer`, so Two-factor supplies those callbacks rather than composing another announcer. `AuthFailureFeedback` already accepts the ordered field/requester list. `RecordingRoutes.acceptedSession` is the acceptance callback; two-factor calls are recorded as `actions.count { it == "twoFactor" }`, not a numeric property. `ApiJson.request` and `ApiJson.response` are the serializer instances. `ApiPasskeyLoginInput` uses `deviceID`; `DataSource`, `DataFailure` and `FieldMessage` are in `net.chronoflow.core.model`, and 4b's implementation is `core/network/…/network/ApiDataSource.kt`. The shared session fakes live in `core/sync/src/testFixtures/…/sync/session/SessionFakes.kt`. All §6 files other than the existing capability/failure types are new. Preserve these landed names and behaviour.
+
 ---
 
 ## 1. Goal
