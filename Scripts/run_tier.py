@@ -25,6 +25,7 @@ def load_device_lock():
 
 
 BUDGETS = {"jvm": 1000, "robolectric": 5000, "robolectricWarmup": 20000, "emulator": 10000}
+FAILED_GATE_SUFFIX = ".gate-failed"
 
 
 def parse_args(argv):
@@ -95,7 +96,7 @@ def read_tests(files):
 
 
 def collect_timings(root, patterns, started_ns):
-    files, entries, measured_dirs = [], [], set()
+    files, entries, measured_dirs, failed_dirs = [], [], set(), set()
     for pattern in patterns:
         for match in sorted(glob.glob(str(root / pattern), recursive=True)):
             path = Path(match)
@@ -111,11 +112,13 @@ def collect_timings(root, patterns, started_ns):
             entries.extend(data["tests"])
             if data["tests"]:
                 measured_dirs.add(path.parent)
-    return files, entries, measured_dirs
+            if any(entry["status"] == "over" for entry in data["tests"]):
+                failed_dirs.add(path.parent)
+    return files, entries, measured_dirs, failed_dirs
 
 
 def missing_execution_evidence(root, patterns, started_ns, result_files, timing_files, measured_dirs):
-    missing = []
+    missing, failed_dirs = [], set()
     for pattern in patterns:
         marker_pattern = str(root / Path(pattern).parent / "execution.started")
         for match in sorted(glob.glob(marker_pattern, recursive=True)):
@@ -126,9 +129,55 @@ def missing_execution_evidence(root, patterns, started_ns, result_files, timing_
             result_dir = timing_dir.parent.parent / "test-results" / timing_dir.name
             if timing_dir in measured_dirs and not any(path.parent == result_dir for path in result_files):
                 missing.append("%s wrote no result files" % result_dir.relative_to(root))
+                failed_dirs.add(timing_dir)
             if not any(path.parent == timing_dir for path in timing_files):
                 missing.append("%s wrote no timing files" % timing_dir.relative_to(root))
-    return sorted(set(missing))
+                failed_dirs.add(timing_dir)
+    return sorted(set(missing)), failed_dirs
+
+
+def unbudgeted_task_dirs(root, result_files, unbudgeted, timing_patterns):
+    failed_dirs = set()
+    for path in result_files:
+        if not any("%s#%s" % (t["class"], t["name"]) in unbudgeted for t in read_tests([path])):
+            continue
+        result_dir = path.parent
+        if result_dir.parent.name == "test-results":
+            failed_dirs.add(result_dir.parent.parent / "cf-timings" / result_dir.name)
+        else:
+            for pattern in timing_patterns:
+                parent = str(root / Path(pattern).parent)
+                failed_dirs.update(Path(p) for p in glob.glob(parent, recursive=True))
+                if not glob.has_magic(parent):
+                    failed_dirs.add(Path(parent))
+    return failed_dirs
+
+
+def pending_gate_markers(root, patterns):
+    markers = set()
+    for pattern in patterns:
+        marker_pattern = str(root / Path(pattern).parent) + FAILED_GATE_SUFFIX
+        markers.update(Path(p) for p in glob.glob(marker_pattern, recursive=True))
+    return markers
+
+
+def gate_marker(timing_dir):
+    return timing_dir.with_name(timing_dir.name + FAILED_GATE_SUFFIX)
+
+
+def invalidate_task_outputs(root, timing_dirs):
+    for directory in sorted(timing_dirs):
+        directory.resolve().relative_to(root)
+        directory.parent.mkdir(parents=True, exist_ok=True)
+        # The retry marker must survive deletion of the Gradle task's declared outputs.
+        gate_marker(directory).write_text("A fresh measured run must pass before this task can be reused.\n")
+        if directory.parent.name != "cf-timings" or directory.parent.parent.name != "build":
+            continue
+        result_dir = directory.parent.parent / "test-results" / directory.name
+        for output in (directory, result_dir):
+            if output.exists():
+                output.resolve().relative_to(root)
+                shutil.rmtree(output)
 
 
 def _bare(method):
@@ -196,7 +245,9 @@ def main(argv):
                 return 75
 
     started = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    started_ns = time.time_ns()
+    reference = out_dir / "invocation.started"
+    reference.touch()
+    started_ns = reference.stat().st_mtime_ns
     t0 = time.monotonic()
     state = {"last": time.monotonic()}
     log = open(log_path, "wb")
@@ -261,12 +312,47 @@ def main(argv):
     files, tests = collect(root, out_dir, patterns)
     current_files = [path for path in files if path.stat().st_mtime_ns >= started_ns]
     current_tests = read_tests(current_files)
-    timing_files, listener_entries, measured_dirs = collect_timings(root, timing_patterns, started_ns)
-    missing_evidence = missing_execution_evidence(
+    timing_files, listener_entries, measured_dirs, failed_dirs = collect_timings(root, timing_patterns, started_ns)
+    missing_evidence, missing_dirs = missing_execution_evidence(
         root, timing_patterns, started_ns, current_files, timing_files, measured_dirs
     )
+    failed_dirs.update(missing_dirs)
     checks, unbudgeted = budget_checks(current_tests, listener_entries, emulator)
     over = [c for c in checks if c["status"] == "over"]
+    pending = pending_gate_markers(root, timing_patterns)
+    unresolved = set()
+    if timing_patterns:
+        failed_dirs.update(unbudgeted_task_dirs(root, current_files, set(unbudgeted), timing_patterns))
+        if not files:
+            failed_dirs.update(path.parent for path in timing_files)
+    invalidate_task_outputs(root, failed_dirs)
+    if exit_code == 0:
+        fresh_dirs = {path.parent for path in timing_files}
+        for marker in pending:
+            directory = marker.with_name(marker.name.removesuffix(FAILED_GATE_SUFFIX))
+            if directory in fresh_dirs and directory not in failed_dirs:
+                marker.unlink()
+            else:
+                unresolved.add(directory)
+        if not files:
+            print("run-tier: %s produced no result files" % tier, file=sys.stderr)
+            exit_code = 2
+        elif missing_evidence:
+            print("run-tier: " + "; ".join(missing_evidence), file=sys.stderr)
+            exit_code = 2
+        elif timing_patterns and current_files and not timing_files:
+            print("run-tier: %s wrote no timing files" % tier, file=sys.stderr)
+            exit_code = 2
+        elif timing_patterns and unbudgeted:
+            print("run-tier: %s ran tests without a timing entry: %s" % (tier, ", ".join(unbudgeted)), file=sys.stderr)
+            exit_code = 2
+        elif over:
+            exit_code = 3
+        elif unresolved:
+            print("run-tier: requires fresh timing measurements: " + ", ".join(
+                str(path.relative_to(root)) for path in sorted(unresolved)
+            ), file=sys.stderr)
+            exit_code = 2
     report = {
         "tier": tier,
         "command": command,
@@ -284,6 +370,10 @@ def main(argv):
         report["unbudgeted"] = unbudgeted
     if missing_evidence:
         report["missingEvidence"] = missing_evidence
+    if failed_dirs:
+        report["failedTaskOutputs"] = [str(path.relative_to(root)) for path in sorted(failed_dirs)]
+    if unresolved:
+        report["pendingMeasurements"] = [str(path.relative_to(root)) for path in sorted(unresolved)]
     (out_dir / "timings.json").write_text(json.dumps(report, indent=2) + "\n")
     for c in over:
         print(
@@ -294,20 +384,6 @@ def main(argv):
         save_logcat(out_dir)
     if lock_fd is not None:
         lock_module.release(lock_fd)
-    if exit_code == 0 and not files:
-        print("run-tier: %s produced no result files" % tier, file=sys.stderr)
-        return 2
-    if exit_code == 0 and missing_evidence:
-        print("run-tier: " + "; ".join(missing_evidence), file=sys.stderr)
-        return 2
-    if exit_code == 0 and timing_patterns and current_files and not timing_files:
-        print("run-tier: %s wrote no timing files" % tier, file=sys.stderr)
-        return 2
-    if exit_code == 0 and timing_patterns and unbudgeted:
-        print("run-tier: %s ran tests without a timing entry: %s" % (tier, ", ".join(unbudgeted)), file=sys.stderr)
-        return 2
-    if exit_code == 0 and over:
-        return 3
     return exit_code
 
 

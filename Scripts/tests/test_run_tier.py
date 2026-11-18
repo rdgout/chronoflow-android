@@ -147,13 +147,113 @@ class RunTierTest(unittest.TestCase):
         self.assertEqual(result.returncode, 3)
         self.assertIn("over budget: jvm a.B#t1 1200 ms > 1000 ms", result.stderr)
 
-    def test_stale_timings_are_not_judged_again(self):
+    def test_successful_stale_timings_are_not_judged_again(self):
         self._xml()
-        self._timings([self._entry(ms=1200, status="over")])
+        self._timings([self._entry()])
+        first = self.tier("t", "--results", "out/*.xml", "--timings", "tm/*.json", "--",
+                          *self._write_during_run("out/TEST-a.xml", "tm/1.json"))
+        self.assertEqual(first.returncode, 0, first.stderr)
         result = self.tier("t", "--results", "out/*.xml", "--timings", "tm/*.json", "--", "true")
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(self._report()["budgetChecks"], [])
         self.assertEqual(self._report()["overBudget"], 0)
+
+    def _task_outputs(self, entries, cases=(("a.B", "t1", "0.1"),)):
+        self._xml("a/build/test-results/test", cases)
+        self._timings(entries, tier_dir="a/build/cf-timings/test")
+        return self._write_during_run(
+            "a/build/cf-timings/test/execution.started", "a/build/test-results/test/TEST-a.xml",
+            "a/build/cf-timings/test/1.json",
+        )
+
+    def _task_tier(self, command):
+        return self.tier("t", "--results", "*/build/test-results/test/*.xml",
+                         "--timings", "*/build/cf-timings/test/*.json", "--", *command)
+
+    def _assert_task_outputs_invalidated(self):
+        self.assertFalse((self.root / "a/build/cf-timings/test").exists())
+        self.assertFalse((self.root / "a/build/test-results/test").exists())
+
+    def test_failed_budget_requires_fresh_task_outputs_before_a_retry_can_pass(self):
+        self._xml("b/build/test-results/test")
+        self._timings([self._entry()], tier_dir="b/build/cf-timings/test")
+        first = self._task_tier(self._task_outputs([self._entry(ms=1200, status="over")]))
+        self.assertEqual(first.returncode, 3, first.stderr)
+        self._assert_task_outputs_invalidated()
+        self.assertTrue((self.root / "b/build/cf-timings/test/1.json").is_file())
+        self.assertTrue((self.root / "b/build/test-results/test/TEST-a.xml").is_file())
+
+        retry_without_execution = self._task_tier(["true"])
+        self.assertNotEqual(retry_without_execution.returncode, 0)
+
+        quiet_retry = self._task_tier(self._task_outputs([self._entry()]))
+        self.assertEqual(quiet_retry.returncode, 0, quiet_retry.stderr)
+        cached_retry = self._task_tier(["true"])
+        self.assertEqual(cached_retry.returncode, 0, cached_retry.stderr)
+        self.assertEqual(self._report()["budgetChecks"], [])
+
+    def test_a_fresh_overrun_still_fails_on_the_next_execution(self):
+        first = self._task_tier(self._task_outputs([self._entry(ms=1200, status="over")]))
+        self.assertEqual(first.returncode, 3, first.stderr)
+        self._assert_task_outputs_invalidated()
+        second = self._task_tier(self._task_outputs([self._entry(ms=1200, status="over")]))
+        self.assertEqual(second.returncode, 3, second.stderr)
+        self._assert_task_outputs_invalidated()
+
+    def test_another_command_failure_does_not_preserve_failed_timing_outputs(self):
+        command = self._task_outputs([self._entry(ms=1200, status="over")])
+        command[3] += "; sys.exit(1)"
+        first = self._task_tier(command)
+        self.assertEqual(first.returncode, 1, first.stderr)
+        self._assert_task_outputs_invalidated()
+        self.assertNotEqual(self._task_tier(["true"]).returncode, 0)
+
+    def test_missing_evidence_invalidates_outputs_and_cannot_pass_without_execution(self):
+        self._xml("b/build/test-results/test")
+        self._task_outputs([self._entry()])
+        first = self._task_tier(self._write_during_run(
+            "a/build/cf-timings/test/execution.started", "a/build/test-results/test/TEST-a.xml",
+        ))
+        self.assertEqual(first.returncode, 2, first.stderr)
+        self._assert_task_outputs_invalidated()
+        self.assertNotEqual(self._task_tier(["true"]).returncode, 0)
+
+    def test_unbudgeted_cases_invalidate_outputs_and_cannot_pass_without_execution(self):
+        self._xml("b/build/test-results/test")
+        first = self._task_tier(self._task_outputs(
+            [self._entry()], cases=(("a.B", "t1", "0.1"), ("a.B", "missing", "0.1")),
+        ))
+        self.assertEqual(first.returncode, 2, first.stderr)
+        self._assert_task_outputs_invalidated()
+        self.assertNotEqual(self._task_tier(["true"]).returncode, 0)
+
+    def test_coarse_filesystem_timestamps_still_judge_current_evidence(self):
+        self._xml()
+        self._timings([self._entry(ms=1200, status="over")])
+        wrapper = """
+import importlib.util, os, sys
+from pathlib import Path
+spec = importlib.util.spec_from_file_location('run_tier', sys.argv[1])
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+original_touch = Path.touch
+def coarse_touch(path, *args, **kwargs):
+    original_touch(path, *args, **kwargs)
+    ns = path.stat().st_mtime_ns // 1_000_000_000 * 1_000_000_000
+    os.utime(path, ns=(ns, ns))
+Path.touch = coarse_touch
+sys.exit(module.main(sys.argv[2:]))
+"""
+        write = "from pathlib import Path; import os, sys\n" \
+                "for name in sys.argv[1:]:\n" \
+                " p=Path(name); p.touch(); ns=p.stat().st_mtime_ns//1000000000*1000000000; os.utime(p,ns=(ns,ns))"
+        result = run([sys.executable, "-I", "-c", wrapper, RUN_TIER, "t", "--results", "out/*.xml",
+                      "--timings", "tm/*.json", "--", sys.executable, "-I", "-c", write,
+                      "out/TEST-a.xml", "tm/1.json"], self.env)
+        self.assertEqual(result.returncode, 3, result.stderr)
+        self.assertEqual(self._report()["overBudget"], 1)
+        reference = self.root / "build/test-results/t/invocation.started"
+        self.assertEqual(reference.stat().st_mtime_ns % 1_000_000_000, 0)
 
     def test_stale_timing_cannot_cover_tests_that_ran_now(self):
         self._xml()
@@ -165,7 +265,7 @@ class RunTierTest(unittest.TestCase):
 
     def test_only_current_tests_need_current_timing_entries(self):
         self._xml()
-        self._timings([self._entry(ms=1200, status="over")])
+        self._timings([self._entry()])
         self._xml("new", cases=(("c.D", "other", "0.1"),))
         self._timings([{**self._entry(method="other"), "class": "c.D"}], name="2.json")
         result = self.tier("t", "--results", "out/*.xml", "--results", "new/*.xml",
