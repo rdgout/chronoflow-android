@@ -9,6 +9,23 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class KonsistRulesTest {
+    @Test fun noWorkManagerOutsideReminders() = noWorkManagerOutsideReminders(projectScope)
+
+    @Test fun noWorkManagerOutsideRemindersRejectsPlantedViolation() {
+        assertFailure { noWorkManagerOutsideReminders(violations("noWorkManagerOutsideReminders")) }
+            .messageContains("noWorkManagerOutsideReminders violated")
+    }
+
+    @Test fun noWorkManagerOutsideRemindersAllowsControl() =
+        noWorkManagerOutsideReminders(allowed("noWorkManagerOutsideReminders"))
+
+    @Test fun noFlowDebounceInSync() = noFlowDebounceInSync(projectScope)
+
+    @Test fun noFlowDebounceInSyncRejectsPlantedViolation() {
+        assertFailure { noFlowDebounceInSync(violations("noFlowDebounceInSync")) }
+            .messageContains("noFlowDebounceInSync violated")
+    }
+
     @Test fun databaseTestingIsTestOnly() = databaseTestingIsTestOnly(projectScope)
 
     @Test fun databaseTestingIsTestOnlyRejectsPlantedViolation() {
