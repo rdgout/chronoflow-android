@@ -604,6 +604,7 @@ SPLandroidx/compose/animation/AnimatedContentKt;->AnimatedContentImpl(Landroidx/
 SPLandroidx/compose/animation/AnimatedContentKt;->SizeTransform$default(ZLkotlin/jvm/functions/Function2;ILjava/lang/Object;)Landroidx/compose/animation/SizeTransform;
 SPLandroidx/compose/animation/AnimatedContentKt;->SizeTransform(ZLkotlin/jvm/functions/Function2;)Landroidx/compose/animation/SizeTransform;
 SPLandroidx/compose/animation/AnimatedContentKt;->access$getUnspecifiedSize$p()J
+SPLandroidx/compose/animation/AnimatedContentKt;->togetherWith(Landroidx/compose/animation/EnterTransition;Landroidx/compose/animation/ExitTransition;)Landroidx/compose/animation/ContentTransform;
 Landroidx/compose/animation/AnimatedContentKt$AnimatedContent$6$1;
 SPLandroidx/compose/animation/AnimatedContentKt$AnimatedContent$6$1;-><clinit>()V
 SPLandroidx/compose/animation/AnimatedContentKt$AnimatedContent$6$1;-><init>()V
@@ -14173,6 +14174,7 @@ SPLnet/chronoflow/app/MainActivity;->$r8$lambda$T1_3uSd5SE9V5ViTd-DlvEH8ZhA(Lnet
 SPLnet/chronoflow/app/MainActivity;->$r8$lambda$TL0jsk85clns3s5sSWhpwVMJYa4(Lnet/chronoflow/app/AppGraph;ZLnet/chronoflow/app/MainActivity;Lnet/chronoflow/feature/trip/timeline/TimelineJankTagger;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;I)Lkotlin/Unit;
 SPLnet/chronoflow/app/MainActivity;->$r8$lambda$e-S6-KsBFFcyS5_-1hsCMM0q31U(Lnet/chronoflow/app/MainActivity;)Z
 SPLnet/chronoflow/app/MainActivity;->$r8$lambda$llc4hlp8WtDK1hNVWElESaufqPI(Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;I)Lkotlin/Unit;
+SPLnet/chronoflow/app/MainActivity;->$r8$lambda$qiBbG--WoeN_Fk4MnUXtIvjQ0tc(Lnet/chronoflow/app/MainActivity;ZZLnet/chronoflow/app/AppGraph;)V
 SPLnet/chronoflow/app/MainActivity;->$r8$lambda$r6XIm5ISgdCOfsg53o-9_ck9JFs(Lnet/chronoflow/app/MainActivity;ZLnet/chronoflow/app/AppGraph;)V
 SPLnet/chronoflow/app/MainActivity;-><init>()V
 SPLnet/chronoflow/app/MainActivity;->access$applySystemBars(Lnet/chronoflow/app/MainActivity;ZZZ)V
@@ -14193,6 +14195,7 @@ Lnet/chronoflow/app/MainActivity$$ExternalSyntheticLambda1;
 SPLnet/chronoflow/app/MainActivity$$ExternalSyntheticLambda1;-><init>(Lnet/chronoflow/app/MainActivity;)V
 SPLnet/chronoflow/app/MainActivity$$ExternalSyntheticLambda1;-><init>(Lnet/chronoflow/app/MainActivity;Z)V
 SPLnet/chronoflow/app/MainActivity$$ExternalSyntheticLambda1;-><init>(Lnet/chronoflow/app/MainActivity;ZLnet/chronoflow/app/AppGraph;)V
+SPLnet/chronoflow/app/MainActivity$$ExternalSyntheticLambda1;-><init>(Lnet/chronoflow/app/MainActivity;ZZLnet/chronoflow/app/AppGraph;)V
 SPLnet/chronoflow/app/MainActivity$$ExternalSyntheticLambda1;->run()V
 Lnet/chronoflow/app/MainActivity$$ExternalSyntheticLambda2;
 SPLnet/chronoflow/app/MainActivity$$ExternalSyntheticLambda2;-><init>(Lnet/chronoflow/app/MainActivity;)V
@@ -14230,11 +14233,20 @@ SPLnet/chronoflow/app/ResourceFontPreloader;-><init>()V
 SPLnet/chronoflow/app/ResourceFontPreloader;->preload(Landroidx/compose/ui/text/font/FontFamily$Resolver;Landroidx/compose/ui/text/font/FontFamily;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 Lnet/chronoflow/app/RootContentKt;
 SPLnet/chronoflow/app/RootContentKt;->$r8$lambda$dtFqcaAsexrTNM7jHJ8t73-b5vQ(Landroidx/compose/runtime/State;Lnet/chronoflow/core/navigation/Route;Landroidx/compose/runtime/Composer;I)Lkotlin/Unit;
+SPLnet/chronoflow/app/RootContentKt;->$r8$lambda$e4_WyBtNx73OEFQmieu6DGPOIUA(Landroidx/compose/animation/AnimatedContentTransitionScope;)Landroidx/compose/animation/ContentTransform;
 SPLnet/chronoflow/app/RootContentKt;->RootContent$lambda$0$0$1(Landroidx/compose/runtime/State;Lnet/chronoflow/core/navigation/Route;Landroidx/compose/runtime/Composer;I)Lkotlin/Unit;
+SPLnet/chronoflow/app/RootContentKt;->RootContent$lambda$1$0(Landroidx/compose/animation/AnimatedContentTransitionScope;)Landroidx/compose/animation/ContentTransform;
 SPLnet/chronoflow/app/RootContentKt;->RootContent(Lnet/chronoflow/core/navigation/RootState;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;I)V
 Lnet/chronoflow/app/RootContentKt$$ExternalSyntheticLambda0;
 SPLnet/chronoflow/app/RootContentKt$$ExternalSyntheticLambda0;-><init>(Landroidx/compose/runtime/State;)V
 SPLnet/chronoflow/app/RootContentKt$$ExternalSyntheticLambda0;->invoke(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+Lnet/chronoflow/app/RootContentKt$$ExternalSyntheticLambda1;
+SPLnet/chronoflow/app/RootContentKt$$ExternalSyntheticLambda1;-><init>()V
+SPLnet/chronoflow/app/RootContentKt$$ExternalSyntheticLambda1;->invoke(Ljava/lang/Object;)Ljava/lang/Object;
+Lnet/chronoflow/app/RootContentKt$$ExternalSyntheticLambda2;
+SPLnet/chronoflow/app/RootContentKt$$ExternalSyntheticLambda2;-><init>()V
+Lnet/chronoflow/app/RootContentKt$$ExternalSyntheticLambda3;
+SPLnet/chronoflow/app/RootContentKt$$ExternalSyntheticLambda3;-><init>()V
 Lnet/chronoflow/app/RootOverrides;
 SPLnet/chronoflow/app/RootOverrides;-><clinit>()V
 SPLnet/chronoflow/app/RootOverrides;-><init>()V

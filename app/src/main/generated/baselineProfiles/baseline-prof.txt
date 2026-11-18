@@ -655,6 +655,7 @@ SPLandroidx/compose/animation/AnimatedContentKt;->AnimatedContentImpl(Landroidx/
 SPLandroidx/compose/animation/AnimatedContentKt;->SizeTransform$default(ZLkotlin/jvm/functions/Function2;ILjava/lang/Object;)Landroidx/compose/animation/SizeTransform;
 SPLandroidx/compose/animation/AnimatedContentKt;->SizeTransform(ZLkotlin/jvm/functions/Function2;)Landroidx/compose/animation/SizeTransform;
 SPLandroidx/compose/animation/AnimatedContentKt;->access$getUnspecifiedSize$p()J
+SPLandroidx/compose/animation/AnimatedContentKt;->togetherWith(Landroidx/compose/animation/EnterTransition;Landroidx/compose/animation/ExitTransition;)Landroidx/compose/animation/ContentTransform;
 Landroidx/compose/animation/AnimatedContentKt$AnimatedContent$6$1;
 SPLandroidx/compose/animation/AnimatedContentKt$AnimatedContent$6$1;-><clinit>()V
 SPLandroidx/compose/animation/AnimatedContentKt$AnimatedContent$6$1;-><init>()V
@@ -6273,7 +6274,7 @@ SPLandroidx/compose/runtime/snapshots/GlobalSnapshot;->takeNestedMutableSnapshot
 HPLandroidx/compose/runtime/snapshots/GlobalSnapshot;->takeNestedSnapshot(Lkotlin/jvm/functions/Function1;)Landroidx/compose/runtime/snapshots/Snapshot;
 Landroidx/compose/runtime/snapshots/GlobalSnapshot$$ExternalSyntheticLambda0;
 SPLandroidx/compose/runtime/snapshots/GlobalSnapshot$$ExternalSyntheticLambda0;-><init>()V
-SPLandroidx/compose/runtime/snapshots/GlobalSnapshot$$ExternalSyntheticLambda0;->invoke(Ljava/lang/Object;)Ljava/lang/Object;
+HSPLandroidx/compose/runtime/snapshots/GlobalSnapshot$$ExternalSyntheticLambda0;->invoke(Ljava/lang/Object;)Ljava/lang/Object;
 Landroidx/compose/runtime/snapshots/GlobalSnapshot$takeNestedMutableSnapshot$1$1;
 SPLandroidx/compose/runtime/snapshots/GlobalSnapshot$takeNestedMutableSnapshot$1$1;-><init>(Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)V
 SPLandroidx/compose/runtime/snapshots/GlobalSnapshot$takeNestedMutableSnapshot$1$1;->invoke(Landroidx/compose/runtime/snapshots/SnapshotIdSet;)Landroidx/compose/runtime/snapshots/MutableSnapshot;
@@ -17439,7 +17440,7 @@ PLkotlinx/serialization/internal/StringSerializer;->deserialize(Lkotlinx/seriali
 PLkotlinx/serialization/internal/StringSerializer;->deserialize(Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/String;
 PLkotlinx/serialization/internal/StringSerializer;->getDescriptor()Lkotlinx/serialization/descriptors/SerialDescriptor;
 PLkotlinx/serialization/internal/StringSerializer;->serialize(Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
-HSPLkotlinx/serialization/internal/StringSerializer;->serialize(Lkotlinx/serialization/encoding/Encoder;Ljava/lang/String;)V
+HPLkotlinx/serialization/internal/StringSerializer;->serialize(Lkotlinx/serialization/encoding/Encoder;Ljava/lang/String;)V
 Lkotlinx/serialization/internal/TaggedDecoder;
 PLkotlinx/serialization/internal/TaggedDecoder;->$r8$lambda$YtfVSmQ1yZxyCsfP1AEqMCYBcBw(Lkotlinx/serialization/internal/TaggedDecoder;Lkotlinx/serialization/DeserializationStrategy;Ljava/lang/Object;)Ljava/lang/Object;
 PLkotlinx/serialization/internal/TaggedDecoder;-><init>()V
@@ -17595,7 +17596,7 @@ PLkotlinx/serialization/json/JsonElementSerializer;->$r8$lambda$11pnsZ79xhRxEt_2
 PLkotlinx/serialization/json/JsonElementSerializer;-><clinit>()V
 PLkotlinx/serialization/json/JsonElementSerializer;-><init>()V
 PLkotlinx/serialization/json/JsonElementSerializer;->deserialize(Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
-HSPLkotlinx/serialization/json/JsonElementSerializer;->deserialize(Lkotlinx/serialization/encoding/Decoder;)Lkotlinx/serialization/json/JsonElement;
+HPLkotlinx/serialization/json/JsonElementSerializer;->deserialize(Lkotlinx/serialization/encoding/Decoder;)Lkotlinx/serialization/json/JsonElement;
 PLkotlinx/serialization/json/JsonElementSerializer;->getDescriptor()Lkotlinx/serialization/descriptors/SerialDescriptor;
 HPLkotlinx/serialization/json/JsonElementSerializer;->serialize(Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
 Lkotlinx/serialization/json/JsonElementSerializer$$ExternalSyntheticLambda0;
@@ -17838,7 +17839,7 @@ HPLkotlinx/serialization/json/internal/JsonTreeListEncoder;->putElement(Ljava/la
 Lkotlinx/serialization/json/internal/JsonTreeMapDecoder;
 Lkotlinx/serialization/json/internal/JsonTreeMapEncoder;
 PLkotlinx/serialization/json/internal/JsonTreeMapEncoder;-><init>(Lkotlinx/serialization/json/Json;Lkotlin/jvm/functions/Function1;)V
-PLkotlinx/serialization/json/internal/JsonTreeMapEncoder;->getCurrent()Lkotlinx/serialization/json/JsonElement;
+HPLkotlinx/serialization/json/internal/JsonTreeMapEncoder;->getCurrent()Lkotlinx/serialization/json/JsonElement;
 Lkotlinx/serialization/json/internal/JsonTreeReader;
 HPLkotlinx/serialization/json/internal/JsonTreeReader;-><init>(Lkotlinx/serialization/json/JsonConfiguration;Lkotlinx/serialization/json/internal/AbstractJsonLexer;)V
 PLkotlinx/serialization/json/internal/JsonTreeReader;->access$getMaxNestingDepth$p(Lkotlinx/serialization/json/internal/JsonTreeReader;)I
@@ -18535,6 +18536,7 @@ PLnet/chronoflow/app/MainActivity;->$r8$lambda$T1_3uSd5SE9V5ViTd-DlvEH8ZhA(Lnet/
 SPLnet/chronoflow/app/MainActivity;->$r8$lambda$TL0jsk85clns3s5sSWhpwVMJYa4(Lnet/chronoflow/app/AppGraph;ZLnet/chronoflow/app/MainActivity;Lnet/chronoflow/feature/trip/timeline/TimelineJankTagger;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;I)Lkotlin/Unit;
 SPLnet/chronoflow/app/MainActivity;->$r8$lambda$e-S6-KsBFFcyS5_-1hsCMM0q31U(Lnet/chronoflow/app/MainActivity;)Z
 SPLnet/chronoflow/app/MainActivity;->$r8$lambda$llc4hlp8WtDK1hNVWElESaufqPI(Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;I)Lkotlin/Unit;
+SPLnet/chronoflow/app/MainActivity;->$r8$lambda$qiBbG--WoeN_Fk4MnUXtIvjQ0tc(Lnet/chronoflow/app/MainActivity;ZZLnet/chronoflow/app/AppGraph;)V
 SPLnet/chronoflow/app/MainActivity;->$r8$lambda$r6XIm5ISgdCOfsg53o-9_ck9JFs(Lnet/chronoflow/app/MainActivity;ZLnet/chronoflow/app/AppGraph;)V
 SPLnet/chronoflow/app/MainActivity;-><init>()V
 SPLnet/chronoflow/app/MainActivity;->access$applySystemBars(Lnet/chronoflow/app/MainActivity;ZZZ)V
@@ -18555,6 +18557,7 @@ Lnet/chronoflow/app/MainActivity$$ExternalSyntheticLambda1;
 SPLnet/chronoflow/app/MainActivity$$ExternalSyntheticLambda1;-><init>(Lnet/chronoflow/app/MainActivity;)V
 SPLnet/chronoflow/app/MainActivity$$ExternalSyntheticLambda1;-><init>(Lnet/chronoflow/app/MainActivity;Z)V
 SPLnet/chronoflow/app/MainActivity$$ExternalSyntheticLambda1;-><init>(Lnet/chronoflow/app/MainActivity;ZLnet/chronoflow/app/AppGraph;)V
+SPLnet/chronoflow/app/MainActivity$$ExternalSyntheticLambda1;-><init>(Lnet/chronoflow/app/MainActivity;ZZLnet/chronoflow/app/AppGraph;)V
 PLnet/chronoflow/app/MainActivity$$ExternalSyntheticLambda1;->run()V
 Lnet/chronoflow/app/MainActivity$$ExternalSyntheticLambda2;
 SPLnet/chronoflow/app/MainActivity$$ExternalSyntheticLambda2;-><init>(Lnet/chronoflow/app/MainActivity;)V
@@ -18592,11 +18595,20 @@ SPLnet/chronoflow/app/ResourceFontPreloader;-><init>()V
 PLnet/chronoflow/app/ResourceFontPreloader;->preload(Landroidx/compose/ui/text/font/FontFamily$Resolver;Landroidx/compose/ui/text/font/FontFamily;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 Lnet/chronoflow/app/RootContentKt;
 SPLnet/chronoflow/app/RootContentKt;->$r8$lambda$dtFqcaAsexrTNM7jHJ8t73-b5vQ(Landroidx/compose/runtime/State;Lnet/chronoflow/core/navigation/Route;Landroidx/compose/runtime/Composer;I)Lkotlin/Unit;
+SPLnet/chronoflow/app/RootContentKt;->$r8$lambda$e4_WyBtNx73OEFQmieu6DGPOIUA(Landroidx/compose/animation/AnimatedContentTransitionScope;)Landroidx/compose/animation/ContentTransform;
 SPLnet/chronoflow/app/RootContentKt;->RootContent$lambda$0$0$1(Landroidx/compose/runtime/State;Lnet/chronoflow/core/navigation/Route;Landroidx/compose/runtime/Composer;I)Lkotlin/Unit;
+SPLnet/chronoflow/app/RootContentKt;->RootContent$lambda$1$0(Landroidx/compose/animation/AnimatedContentTransitionScope;)Landroidx/compose/animation/ContentTransform;
 SPLnet/chronoflow/app/RootContentKt;->RootContent(Lnet/chronoflow/core/navigation/RootState;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;I)V
 Lnet/chronoflow/app/RootContentKt$$ExternalSyntheticLambda0;
 SPLnet/chronoflow/app/RootContentKt$$ExternalSyntheticLambda0;-><init>(Landroidx/compose/runtime/State;)V
 SPLnet/chronoflow/app/RootContentKt$$ExternalSyntheticLambda0;->invoke(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+Lnet/chronoflow/app/RootContentKt$$ExternalSyntheticLambda1;
+SPLnet/chronoflow/app/RootContentKt$$ExternalSyntheticLambda1;-><init>()V
+SPLnet/chronoflow/app/RootContentKt$$ExternalSyntheticLambda1;->invoke(Ljava/lang/Object;)Ljava/lang/Object;
+Lnet/chronoflow/app/RootContentKt$$ExternalSyntheticLambda2;
+SPLnet/chronoflow/app/RootContentKt$$ExternalSyntheticLambda2;-><init>()V
+Lnet/chronoflow/app/RootContentKt$$ExternalSyntheticLambda3;
+SPLnet/chronoflow/app/RootContentKt$$ExternalSyntheticLambda3;-><init>()V
 Lnet/chronoflow/app/RootOverrides;
 SPLnet/chronoflow/app/RootOverrides;-><clinit>()V
 SPLnet/chronoflow/app/RootOverrides;-><init>()V
@@ -19606,6 +19618,7 @@ PLnet/chronoflow/core/model/contracts/BlockView$Serializer;-><init>()V
 PLnet/chronoflow/core/model/contracts/BlockView$Serializer;->deserialize(Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
 HPLnet/chronoflow/core/model/contracts/BlockView$Serializer;->deserialize(Lkotlinx/serialization/encoding/Decoder;)Lnet/chronoflow/core/model/contracts/BlockView;
 PLnet/chronoflow/core/model/contracts/BlockView$Serializer;->getDescriptor()Lkotlinx/serialization/descriptors/SerialDescriptor;
+HPLnet/chronoflow/core/model/contracts/BlockView$Serializer;->json(Ljava/lang/Object;)Lkotlinx/serialization/json/Json;
 HSPLnet/chronoflow/core/model/contracts/BlockView$Serializer;->serialize(Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
 HPLnet/chronoflow/core/model/contracts/BlockView$Serializer;->serialize(Lkotlinx/serialization/encoding/Encoder;Lnet/chronoflow/core/model/contracts/BlockView;)V
 Lnet/chronoflow/core/model/contracts/BlockViewWire;
