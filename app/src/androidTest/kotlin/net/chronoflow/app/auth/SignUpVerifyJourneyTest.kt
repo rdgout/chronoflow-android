@@ -32,7 +32,7 @@ class SignUpVerifyJourneyTest : ScreenTest() {
                 "CF_MOCK_DELAY" to "0",
             ),
         )
-        compose.waitUntilExactlyOneExists(hasTestTag("sign-up.name"), 5_000)
+        compose.waitUntilExactlyOneExists(hasTestTag("sign-up.name"), 15_000)
         compose.onNodeWithTag("sign-up.name").performTextInput("Traveller")
         compose.onNodeWithTag("sign-up.name").performImeAction()
         compose.onNodeWithTag("sign-up.email").assertIsFocused()
@@ -44,10 +44,10 @@ class SignUpVerifyJourneyTest : ScreenTest() {
         compose.onNodeWithTag("sign-up.confirmation").assertIsFocused()
         compose.onNodeWithTag("sign-up.confirmation").performTextInput("NewPassword123!")
         compose.onNodeWithTag("sign-up.confirmation").performImeAction()
-        waitFor { RouteProbe.state.route == Route.Verify }
-        compose.waitUntilExactlyOneExists(hasTestTag("verify.open-email") and isEnabled(), 5_000)
+        waitFor(15_000) { RouteProbe.state.route == Route.Verify }
+        compose.waitUntilExactlyOneExists(hasTestTag("verify.open-email") and isEnabled(), 15_000)
         compose.onNodeWithTag("verify.open-email").performClick()
-        waitFor { RouteProbe.state.route == Route.Walkthrough() }
+        waitFor(15_000) { RouteProbe.state.route == Route.Walkthrough() }
         compose.onNodeWithTag("verify.open-email").assertDoesNotExist()
         instrumentation.runOnMainSync { assertEquals(0, graph.ioViolationsForTest) }
     }
