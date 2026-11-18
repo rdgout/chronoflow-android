@@ -1,16 +1,14 @@
 package net.chronoflow.core.model.session
 
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.job
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.withContext
 import net.chronoflow.core.model.AccountID
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
-import org.junit.Assert.fail
 import org.junit.Test
 import kotlin.time.Duration.Companion.seconds
 
@@ -51,11 +49,18 @@ class SyncEpochTests {
     @Test fun checkThrowsWhenTheCallerIsCancelled() =
         runTest(timeout = 60.seconds) {
             val epoch = epoch()
-            try {
-                withContext(Job().apply { cancel() }) { epoch.check() }
-                fail()
-            } catch (_: CancellationException) {
-            }
+            var reachedCheck = false
+            var returned = false
+            val job =
+                launch {
+                    coroutineContext.job.cancel()
+                    reachedCheck = true
+                    epoch.check()
+                    returned = true
+                }
+            job.join()
+            assertTrue(reachedCheck)
+            assertFalse("check returned after cancellation", returned)
             assertTrue(epoch.isValid)
         }
 }
