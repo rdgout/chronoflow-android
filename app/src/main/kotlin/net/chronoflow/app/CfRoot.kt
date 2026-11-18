@@ -117,6 +117,7 @@ internal fun CfRoot(
                                                 graph.launch.moonAnchorStore,
                                                 destinations::planMyTrip,
                                                 destinations::signIn,
+                                                modifier = Modifier.testTag("route.welcome"),
                                             )
                                         }
                                     }

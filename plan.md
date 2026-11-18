@@ -1931,11 +1931,11 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - [x] Nav3 `NavDisplay` in `:app`, plus `PendingLaunchIntent` and a debug route probe for tests.
 - [x] **Seeds.** `TestSeeds.apply` gains `CF_AUTH_TEST_SIGNED_IN`, `CF_AUTH_TEST_WALKTHROUGH_SEEN`, `CF_AUTH_TEST_AUDIT_SCREEN`/`STATE`, `CF_PLAN_TEST_ROUTE`, `CF_PLAN_TEST_POSITION`, `CF_PLAN_TEST_SHEET`, `CF_SETTINGS_ROUTE`, `CF_WIZARD_AUTO_OPEN`, `CF_WIZARD_BOARD_CAPTURE` and `CF_MOCK_DELAY`. It follows `13 §5` steps 1–7. Test: `ReseedEqualsColdSeedTest`.
 - [x] **Release readiness.** No seed or mock class ships in release, and `verifyReleaseManifest` finds no exported debug component.
-- [ ] **Tests.**
+- [x] **Tests.**
   - The ported iOS session cases: teardown order, generation, and D23 (an old 401 never wipes a new session).
   - The gate router cases.
   - A Robolectric launch test per gate state.
-  - One emulator smoke test: a seeded signed-in cold launch reaches the app root.
+  - One emulator smoke test: a seeded signed-in cold launch reaches the app root. Implemented and compiled; device validation is pending with the user because the sandbox reports `No connected devices!` (2026-11-18).
 
 **Acceptance**
 - The teardown order and D23 tests pass.
