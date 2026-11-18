@@ -46,10 +46,13 @@ fun TwoFactorScreen(viewModel: TwoFactorViewModel) {
     LaunchedEffect(Unit) { viewModel.validateChallenge() }
     BackHandler { viewModel.back() }
     state?.let { current ->
-        val field = remember(viewModel.currentModel, current.mode) { TextFieldState(current.code) }
+        val model = viewModel.currentModel ?: return@let
+        val field = remember(model, current.mode) { TextFieldState(model.code) }
         LaunchedEffect(field) { snapshotFlow { field.text.toString() }.collect(viewModel::onCodeEdited) }
         LaunchedEffect(field, current.code) {
-            if (field.text.toString() != current.code) field.setTextAndPlaceCursorAtEnd(current.code)
+            // The combined UI flow can lag behind an edit when an activity is recreated.
+            val code = model.code
+            if (field.text.toString() != code) field.setTextAndPlaceCursorAtEnd(code)
         }
         TwoFactorContent(
             current,

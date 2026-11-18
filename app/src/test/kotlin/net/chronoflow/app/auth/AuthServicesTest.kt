@@ -92,6 +92,32 @@ class AuthServicesTest {
     }
 
     class Ownership {
+        @Test fun backToSignInOnlyLeavesTwoFactor() =
+            runTest(timeout = 60.seconds) {
+                val dispatcher = StandardTestDispatcher(testScheduler)
+                val navigator = RootNavigator().apply { navigate(Route.TwoFactor) }
+                val services =
+                    AuthServices(
+                        navigator,
+                        backgroundScope,
+                        AppDispatchers(dispatcher, dispatcher, dispatcher),
+                        ScriptedSource(),
+                        SessionAcceptor {},
+                        { "id" },
+                        { "test" },
+                        {},
+                    )
+                services.router.backToSignIn()
+                assertEquals(Route.SignIn, navigator.state.value.route)
+                val signIn = navigator.state.value
+                services.router.backToSignIn()
+                assertEquals(signIn, navigator.state.value)
+                navigator.navigate(Route.Today)
+                val today = navigator.state.value
+                services.router.backToSignIn()
+                assertEquals(today, navigator.state.value)
+            }
+
         @Test fun leavingAuthClearsTheFormAndChallengeAndKeepsTheEmail() =
             runTest(timeout = 60.seconds) {
                 val dispatcher = StandardTestDispatcher(testScheduler)

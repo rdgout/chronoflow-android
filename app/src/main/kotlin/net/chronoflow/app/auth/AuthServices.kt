@@ -76,6 +76,7 @@ class AuthServices(
             },
             accepted = router::acceptedSession,
             onTwoFactor = router::twoFactor,
+            onLeaveTwoFactor = router::backToSignIn,
         )
     }
 

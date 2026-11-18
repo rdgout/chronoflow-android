@@ -472,6 +472,7 @@ Every screen scrolls when height-constrained. The minimum width is 280 dp; below
 - **Welcome destinations:** `welcome.signIn` navigates to `Route.SignIn` in every build type through `RoutedWelcomeDestinations` (debug retains only the guest seam). `welcome.plan` opens the debug-only `route.guestWizard` seam until 11a. Back from Sign in returns to final Welcome without replaying its claimed intro.
 - **Welcome font gate:** while the overlay is active, compose Welcome when font warm-up completes or 1500 ms after the awaited first draw, whichever comes first. Without an overlay, compose immediately. The all-time debug StrictMode ChronoFlow disk/network counter covers the Welcome journey; the existing launch crash guard still ends at first commit.
 - **Entry point:** `net.chronoflow.debug.SeedReceiverActivity` (debug-exported, in `app/src/debug`) applies `TestSeeds.apply` (`13 §5`), then starts `MainActivity`.
+- **Two-factor audit:** `CF_AUTH_TEST_AUDIT_SCREEN=two-factor` with profile `screen` performs the mock password challenge through `SignInModel` on main before finishing launch; no challenge or proof is an intent extra.
 - **Mock accounts:** `demo@example.com` / `password`; `twofactor@example.com` / `password`, code `123456`, recovery `AbCdEf1234-GhIjKl5678`. Account ids `0199a3c0-0000-7000-8000-000000000000` / `…0001`; trips `…0001` (AMS→HND, active), `…0002` (AMS→JFK, upcoming).
 - **Release readiness:** `testReleaseUnitTest` asserts that `Class.forName("net.chronoflow.debug.SeedReceiverActivity")` throws and that the mock never seeds.
 
@@ -2052,14 +2053,14 @@ Implementation commits (brief §7):
 - [x] T3 — Credential Manager client.
 - [x] T4 — Two-factor model.
 - [x] T5 — Two-factor screen.
-- [ ] T6 — Route and hand-over.
+- [x] T6 — Route and hand-over.
 - [ ] T7 — Guards and captures.
 - [ ] T8 — Passkey sign-in.
 - [ ] T9 — Passkey wiring.
 - [ ] T10 — Emulator checks.
 - [ ] T11 — Docs and plan.
 
-- [ ] **TwoFactorScreen and TwoFactorViewModel**, porting `TwoFactorModel`.
+- [x] **TwoFactorScreen and TwoFactorViewModel**, porting `TwoFactorModel`.
   - A 6-digit code (`KeyboardType.Number`, `SmsOtpCode` autofill) and a recovery code (`KeyboardType.Ascii`), with a mode switch.
   - Throttling and errors; success goes to the gate.
 - [ ] **Passkey sign-in** (`feature/auth/…/passkey/`).

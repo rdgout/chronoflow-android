@@ -72,7 +72,7 @@ class SignInModelRoutingTests {
                 val verificationEpochs = mutableListOf<Long>()
                 val secret = RoutingSecret()
                 val model =
-                    model(controller, method, accepted = {
+                    model(controller, method, dispatcher, accepted = {
                         readiness.routeAcceptedSession(navigate = { gate ->
                             routes += gate.toRoute()
                             navigator.navigate(gate.toRoute())
@@ -87,12 +87,19 @@ class SignInModelRoutingTests {
                 try {
                     request =
                         backgroundScope.launch {
-                            if (method ==
-                                AuthenticationMethod.Password
-                            ) {
-                                model.submitPassword(secret) {}
-                            } else {
+                            if (method == AuthenticationMethod.Passkey) {
                                 model.submitPasskey(secret)
+                            } else {
+                                model.submitPassword(secret) {}
+                                if (method == AuthenticationMethod.TwoFactor) {
+                                    assertNotNull(model.twoFactor.value)
+                                    assertNull(controller.activeSession())
+                                    assertNull(credentials.data)
+                                    model.twoFactor.value!!.editCode("123456")
+                                    model.twoFactor.value!!.submit()
+                                    assertEquals("", model.twoFactor.value!!.code)
+                                    assertNull(model.twoFactor.value!!.sessionFailure)
+                                }
                             }
                         }
                     sync.waitUntilBlocked()
@@ -100,7 +107,11 @@ class SignInModelRoutingTests {
                     assertNotNull(stored)
                     assertEquals(stored, controller.activeSession()?.session)
                     assertTrue(routes.isEmpty())
-                    assertTrue(model.form.busy)
+                    assertTrue(
+                        model.twoFactor.value
+                            ?.form
+                            ?.busy ?: model.form.busy,
+                    )
                     if (cancelAfterCommit) request.cancel()
                     sync.release()
                     request.join()
@@ -144,6 +155,7 @@ class SignInModelRoutingTests {
                         listOf(
                             AuthenticationMethod.Password,
                             AuthenticationMethod.Passkey,
+                            AuthenticationMethod.TwoFactor,
                         ).map { method -> arrayOf(gate, cancel, method) }
                     }
                 }
@@ -180,7 +192,7 @@ class SignInModelRoutingTests {
                 val epochs = mutableListOf<Long>()
                 val secret = RoutingSecret()
                 val model =
-                    model(controller, AuthenticationMethod.Password, accepted = {
+                    model(controller, AuthenticationMethod.Password, dispatcher, accepted = {
                         readiness.routeAcceptedSession(navigate = {
                             routes +=
                                 it.toRoute()
@@ -235,12 +247,19 @@ class SignInModelRoutingTests {
 private fun model(
     controller: SessionController,
     method: AuthenticationMethod,
+    io: kotlinx.coroutines.CoroutineDispatcher,
     accepted: suspend () -> Unit,
 ): SignInModel {
     val result = sessionResult()
     val source =
-        object : DataSource by ScriptedSource() {
-            override suspend fun signIn(input: PasswordSignInInput): SignInResult = SignInResult.Session(result)
+        if (method ==
+            AuthenticationMethod.TwoFactor
+        ) {
+            twoFactorTestSource(io, password = "artificial-password")
+        } else {
+            object : DataSource by ScriptedSource() {
+                override suspend fun signIn(input: PasswordSignInInput): SignInResult = SignInResult.Session(result)
+            }
         }
     return SignInModel(
         source,
@@ -256,7 +275,17 @@ private fun model(
             accepted()
         },
         onTwoFactor = {},
-    ).also { it.editEmail("demo@example.com") }
+    ).also {
+        it.editEmail(
+            if (method ==
+                AuthenticationMethod.TwoFactor
+            ) {
+                "twofactor@example.com"
+            } else {
+                "demo@example.com"
+            },
+        )
+    }
 }
 
 private class RoutingSecret : net.chronoflow.feature.auth.model.SecretField {
