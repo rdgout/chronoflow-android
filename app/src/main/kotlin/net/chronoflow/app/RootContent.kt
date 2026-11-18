@@ -13,6 +13,7 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import net.chronoflow.core.navigation.RootState
 import net.chronoflow.core.navigation.Route
+import net.chronoflow.core.navigation.stateKey
 
 @Composable
 internal fun RootContent(
@@ -30,10 +31,11 @@ internal fun RootContent(
         remember(state.route, revision) {
             state.route
                 ?.let { route ->
+                    val routeKey = route.stateKey()
                     listOf(
                         NavEntry(
                             route,
-                            contentKey = revision?.let { "$route:$it" } ?: route.toString(),
+                            contentKey = revision?.let { "$routeKey:$it" } ?: routeKey,
                         ) { currentContent.value(it) },
                     )
                 }.orEmpty()
