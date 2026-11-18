@@ -2112,6 +2112,7 @@ Implementation commits (brief §7):
 
 **Tasks**
 - [ ] **Forgot** (`AuthForgot`): an email field, a rate-limited send, and the honest confirmation copy (OQ 22, 27).
+- [x] Task 2: shared heading glyph, password policy, email launcher and verify-link seam.
 - [ ] **Reset** (`AuthReset`), **Reset done** (`AuthResetDone`) and **Reset expired** (`AuthResetExpired`). The password field shows the policy hint. The 204 creates no session. An expired link offers a new one.
 - [ ] **App Links.**
   - [x] Task 1: port the auth link parser and RFC 3986 test URL helper.

@@ -156,6 +156,7 @@ object AuthTokens {
     const val darkShadowY: Float = 12f
     const val darkShadowRadius: Float = 20f
     const val darkShadowSpread: Float = -14f
+    const val headingCheckStroke: Float = 2.5f
 }
 
 object SettingsTokens {
