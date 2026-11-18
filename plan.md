@@ -1743,7 +1743,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
     - 90 s for `POST trips`, `POST trips/review`, `POST trips/{id}/review`, `PUT trips/{id}`, `POST guest/trips/review` and `POST auth/register`;
     - 3 s for logout.
   - Every response's origin is checked.
-- [ ] **ApiDataSource:** all 25 methods, using the 0d DTOs and `ApiJson`.
+- [x] **ApiDataSource:** all 25 methods, using the 0d DTOs and `ApiJson`.
 - [x] **ApiErrorMapper** (`03 §3–§4`).
   - The error envelope maps to `DataFailure`: validation with its field errors, throttling with `retry-after` from the header or the body, a 403 with `email_unverified`, and 401, 404, 405, 409, 413, 5xx and 503.
   - Timeouts and I/O errors become `Offline`.

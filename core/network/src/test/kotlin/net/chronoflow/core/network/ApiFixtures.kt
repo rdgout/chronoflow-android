@@ -48,28 +48,4 @@ internal fun saveInput(): ApiTripSaveInput =
         ApiJson.response.decodeFromString(ApiTripReview.serializer(), json("wizard/review.json")).identity,
     )
 
-internal fun testSource(client: ApiClient): ApiDataSource =
-    object : ApiDataSource(client) {
-        override suspend fun searchAirports(
-            query: String,
-            limit: Int?,
-        ): List<ApiAirportSuggestion> = error("unused")
-
-        override suspend fun reviewTrip(input: ApiTripReviewInput): ApiTripReview = error("unused")
-
-        override suspend fun reviewTripEdit(
-            input: ApiTripReviewInput,
-            id: String,
-            sourceRevision: String,
-        ): ApiTripReview = error("unused")
-
-        override suspend fun saveTrip(identity: ApiTripSaveInput): ApiTripSaveResult = error("unused")
-
-        override suspend fun updateTrip(
-            id: String,
-            identity: ApiTripSaveInput,
-            sourceRevision: String,
-        ): ApiTripSaveResult = error("unused")
-
-        override suspend fun tripInput(id: String): ApiTripInputSnapshot = error("unused")
-    }
+internal fun testSource(client: ApiClient): ApiDataSource = ApiDataSource(client)

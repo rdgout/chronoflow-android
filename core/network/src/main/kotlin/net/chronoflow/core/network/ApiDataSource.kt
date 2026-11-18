@@ -2,6 +2,7 @@ package net.chronoflow.core.network
 
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import net.chronoflow.core.model.DataFailure
@@ -14,6 +15,7 @@ import net.chronoflow.core.model.api.AccountSecurityChange
 import net.chronoflow.core.model.api.AccountSecurityResult
 import net.chronoflow.core.model.api.AccountSnapshot
 import net.chronoflow.core.model.api.ApiCheckOffInput
+import net.chronoflow.core.model.api.ApiGuestTripReviewInput
 import net.chronoflow.core.model.api.ApiJson
 import net.chronoflow.core.model.api.ApiPasskey
 import net.chronoflow.core.model.api.ApiPasskeyChallenge
@@ -21,6 +23,8 @@ import net.chronoflow.core.model.api.ApiPasskeyList
 import net.chronoflow.core.model.api.ApiPasskeyLoginInput
 import net.chronoflow.core.model.api.ApiPasskeyRegistrationChallenge
 import net.chronoflow.core.model.api.ApiRecoveryCodes
+import net.chronoflow.core.model.api.ApiTripReviewInput
+import net.chronoflow.core.model.api.ApiTripSaveInput
 import net.chronoflow.core.model.api.ApiTwoFactorSetup
 import net.chronoflow.core.model.api.EmailVerificationStatus
 import net.chronoflow.core.model.api.PasswordSignInInput
@@ -31,14 +35,20 @@ import net.chronoflow.core.model.api.SessionResult
 import net.chronoflow.core.model.api.SettingsPatchValidation
 import net.chronoflow.core.model.api.SignInResult
 import net.chronoflow.core.model.api.SignedVerificationInput
+import net.chronoflow.core.model.api.TripWizardErrors
 import net.chronoflow.core.model.api.TwoFactorInput
+import net.chronoflow.core.model.contracts.ApiAirportSearchResults
+import net.chronoflow.core.model.contracts.ApiAirportSuggestion
+import net.chronoflow.core.model.contracts.ApiTripInputSnapshot
+import net.chronoflow.core.model.contracts.ApiTripReview
+import net.chronoflow.core.model.contracts.ApiTripSaveResult
 import net.chronoflow.core.model.contracts.TripCheckResult
 import net.chronoflow.core.model.contracts.TripDetailResponse
 import net.chronoflow.core.model.contracts.TripListItem
 import net.chronoflow.core.model.contracts.TripListResponse
 import java.util.Base64
 
-abstract class ApiDataSource(
+class ApiDataSource(
     private val client: ApiClient,
 ) : DataSource {
     override suspend fun passkeyOptions(): ApiPasskeyChallenge =
@@ -306,6 +316,113 @@ abstract class ApiDataSource(
             }
         }
     }
+
+    override suspend fun searchAirports(
+        query: String,
+        limit: Int?,
+    ): List<ApiAirportSuggestion> {
+        val parameters = mutableMapOf("query" to query)
+        limit?.let { parameters["limit"] = it.toString() }
+        return client
+            .request(
+                ApiEndpoint(path = listOf("airports"), access = ApiEndpoint.Access.PublicRoute, query = parameters),
+                ApiAirportSearchResults.serializer(),
+            ).airports
+    }
+
+    override suspend fun reviewTrip(input: ApiTripReviewInput): ApiTripReview = review(input, listOf("trips", "review"))
+
+    override suspend fun reviewGuestTrip(input: ApiGuestTripReviewInput): ApiTripReview =
+        mapFailures(input.input.outbound.legs.size) {
+            client.request(
+                ApiEndpoint(
+                    "POST",
+                    listOf("guest", "trips", "review"),
+                    ApiEndpoint.Access.PublicRoute,
+                    body(input),
+                    ApiTimeouts.Generation,
+                ),
+                ApiTripReview.serializer(),
+            )
+        }
+
+    override suspend fun reviewTripEdit(
+        input: ApiTripReviewInput,
+        id: String,
+        sourceRevision: String,
+    ): ApiTripReview = review(input, listOf("trips", id, "review"), sourceRevision)
+
+    private suspend fun review(
+        input: ApiTripReviewInput,
+        path: List<String>,
+        sourceRevision: String? = null,
+    ): ApiTripReview =
+        mapFailures(input.input.outbound.legs.size) {
+            val fields = ApiJson.request.encodeToJsonElement(ApiTripReviewInput.serializer(), input) as JsonObject
+            val payload = withSource(fields, sourceRevision)
+            client.request(
+                ApiEndpoint("POST", path, body = body(payload), timeout = ApiTimeouts.Generation),
+                ApiTripReview.serializer(),
+            )
+        }
+
+    override suspend fun saveTrip(identity: ApiTripSaveInput): ApiTripSaveResult =
+        save(identity, listOf("trips"), "POST", null, 201)
+
+    override suspend fun updateTrip(
+        id: String,
+        identity: ApiTripSaveInput,
+        sourceRevision: String,
+    ): ApiTripSaveResult = save(identity, listOf("trips", id), "PUT", sourceRevision, 200)
+
+    private suspend fun save(
+        identity: ApiTripSaveInput,
+        path: List<String>,
+        method: String,
+        sourceRevision: String?,
+        expectedStatus: Int,
+    ): ApiTripSaveResult =
+        mapFailures {
+            val fields = ApiJson.request.encodeToJsonElement(ApiTripSaveInput.serializer(), identity) as JsonObject
+            client.request(
+                ApiEndpoint(
+                    method,
+                    path,
+                    body = body(withSource(fields, sourceRevision)),
+                    timeout = ApiTimeouts.Generation,
+                ),
+                expectedStatus,
+            ) { bytes ->
+                val result = ApiJson.response.decodeFromString(ApiTripSaveResult.serializer(), bytes.decodeToString())
+                if (result.tripId.isEmpty()) throw DataFailure.Server(expectedStatus)
+                result
+            }
+        }
+
+    override suspend fun tripInput(id: String): ApiTripInputSnapshot =
+        client.request(ApiEndpoint(path = listOf("trips", id, "input")), ApiTripInputSnapshot.serializer())
+
+    private fun withSource(
+        fields: JsonObject,
+        sourceRevision: String?,
+    ): JsonObject =
+        if (sourceRevision ==
+            null
+        ) {
+            fields
+        } else {
+            JsonObject(fields + ("source_revision" to JsonPrimitive(sourceRevision)))
+        }
+
+    private suspend fun <T> mapFailures(
+        outboundCount: Int? = null,
+        work: suspend () -> T,
+    ): T =
+        try {
+            work()
+        } catch (failure: DataFailure) {
+            throw TripWizardErrors.map(failure, outboundCount)
+        }
 
     private inline fun <reified T> body(input: T): ByteArray = ApiJson.request.encodeToString(input).encodeToByteArray()
 
