@@ -1809,7 +1809,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - Seven trips rebased to the seed clock: S1–S6 and S6-RETURN-10N.
   - large30 and large60 from 1b.
 - [ ] **Wiring.** The mock is a `debugImplementation` and perf-variant dependency only. `ReleaseReadinessTest` asserts that no mock class is on the release classpath.
-- [ ] **Ported tests.** Port the iOS mock tests (the `MockScenarios` and `MockScenarioValues` cases) with the same names.
+- [x] **Ported tests.** Port the iOS mock tests (the `MockScenarios` and `MockScenarioValues` cases) with the same names.
 
 **Acceptance**
 - The ported cases pass.
