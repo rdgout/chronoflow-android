@@ -150,13 +150,13 @@ class SyncLifecycle(
                 unauthorizedSent = true
                 cancelRetry()
                 // Wipe drains the event listener, so dispatch outside that listener.
-                scope.launch { if (epoch.isValid) unauthorized(epoch.generation) }
+                scope.launch { unauthorized(epoch.generation) }
             }
 
             SyncState.VerificationRequired -> {
                 failures = 0
                 cancelRetry()
-                scope.launch { if (epoch.isValid) verification(epoch.generation) }
+                scope.launch { verification(epoch.generation) }
             }
 
             SyncState.Offline -> {

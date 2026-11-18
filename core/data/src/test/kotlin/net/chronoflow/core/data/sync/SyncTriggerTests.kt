@@ -1,6 +1,7 @@
 package net.chronoflow.core.data.sync
 
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -24,6 +25,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration.Companion.seconds
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
@@ -186,6 +188,69 @@ class SyncTriggerTests {
             f.lifecycle.requestSync()
             assertEquals(listOf(1L), f.events.unauthorized)
         }
+
+    // (new) Android dispatch can run after stop invalidates an already accepted result's epoch.
+    @Test fun acceptedUnauthorizedDispatchesAfterEpochInvalidation() =
+        acceptedResultDispatchesAfterEpochInvalidation(DataFailure.Unauthorized(401), SyncState.Unauthorized)
+
+    // (new) Verification has the same accepted-result dispatch boundary as unauthorized.
+    @Test fun acceptedVerificationDispatchesAfterEpochInvalidation() =
+        acceptedResultDispatchesAfterEpochInvalidation(DataFailure.EmailUnverified(403), SyncState.VerificationRequired)
+
+    private fun acceptedResultDispatchesAfterEpochInvalidation(
+        failure: DataFailure,
+        expectedState: SyncState,
+    ) = triggerTest { f ->
+        lateinit var lifecycle: SyncLifecycle
+        val dispatcher =
+            object : CoroutineDispatcher() {
+                // The delegate's test scheduler already runs every task serially.
+                override fun limitedParallelism(
+                    parallelism: Int,
+                    name: String?,
+                ): CoroutineDispatcher {
+                    require(parallelism > 0)
+                    return this
+                }
+
+                override fun dispatch(
+                    context: CoroutineContext,
+                    block: Runnable,
+                ) {
+                    f.dispatcher.dispatch(context) {
+                        block.run()
+                        if (lifecycle.retryState.lastResult?.state == expectedState) f.store.epoch.invalidate()
+                    }
+                }
+            }
+        lifecycle =
+            SyncLifecycle(
+                f.store.sync,
+                f.source,
+                f.store.epoch,
+                f.scheduler,
+                unauthorized = { f.events.refused(it) },
+                verification = { f.events.verify(it) },
+                dispatcher = dispatcher,
+            )
+        try {
+            f.source.configure(failMethod = "identity", methodFailure = failure)
+            lifecycle.start()
+            f.clock.waitForSleep()
+            f.clock.advance()
+            runCurrent()
+            assertEquals(expectedState, lifecycle.retryState.lastResult?.state)
+            assertTrue(!f.store.epoch.isValid)
+            val dispatched =
+                when (expectedState) {
+                    SyncState.Unauthorized -> f.events.unauthorized
+                    else -> f.events.verification
+                }
+            assertEquals(listOf(1L), dispatched)
+        } finally {
+            lifecycle.stop()
+        }
+    }
 
     @Test fun invalidatedUnauthorizedResponseCannotDispatchWipe() =
         triggerTest { f ->
