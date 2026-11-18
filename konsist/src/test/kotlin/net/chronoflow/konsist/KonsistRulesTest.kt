@@ -150,6 +150,20 @@ class KonsistRulesTest {
 
     @Test fun routesAreSerializableAllowsControl() = routesAreSerializable(allowed("routesAreSerializable"))
 
+    @Test fun routesAreSerializableRejectsUnannotatedIndirectRoute() {
+        assertFailure {
+            routesAreSerializable(violations("routesAreSerializableIndirect"))
+        }.all {
+            messageContains("routesAreSerializable violated")
+            messageContains("LeakedRoute")
+        }
+    }
+
+    @Test fun routesAreSerializableAllowsIndirectControl() =
+        routesAreSerializable(
+            allowed("routesAreSerializableIndirect"),
+        )
+
     @Test fun noLiteralTextInText() = noLiteralTextInText(projectScope)
 
     @Test fun noLiteralTextInTextRejectsPlantedViolation() {
