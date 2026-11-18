@@ -9,6 +9,8 @@
 
 - **Stack check (2026-11-18, against 93b4cb9).** Every name in §2 item 7 resolves in the merged code. Deltas: `Route.Walkthrough` is `data class Walkthrough(val replay: Boolean = false)`, not an object; `RouteProbe` is debug-only (`app/src/debug/kotlin/net/chronoflow/debug/RouteProbe.kt`, absent from release per `ReleaseReadinessTest`); `PasswordSignInInput` declares `deviceID`/`deviceName`/`draftToken`/`guestSecret` (`core/model/…/model/api/AuthContracts.kt:14`); `SessionController.accept(result: SessionResult)` is in `core/sync/…/sync/session/SessionController.kt:105`; `StoredDataReadiness.routeAcceptedSession(navigate: (Gate) -> Unit, verification: suspend (Long) -> Unit)` at `core/sync/…/sync/session/StoredDataReadiness.kt:169`; `AppGraph.dataSources.public()` is `SessionDataSources.public()` (`app/…/app/SessionDataSources.kt:51`); `AuthTokens` lives in `core/designsystem/…/designsystem/generated/CfDimens.generated.kt`; `CfTypeScale.authBrand/authHeading/authBody/authLabel` exist; `CopyTable.Auth` exists.
 
+- **Implementation stack check (2026-11-18).** Repeated §2 item 7 and §6 against the current checkout. All prerequisite symbols exist; §6's auth files are new. Further mechanical mappings: `RootContent` is a generic, transition-free route host and the route-to-screen `when` lives in `CfRoot.kt`, so Task 8 adds the Sign in entry there. `AppGraphKey` is owned by `:app`; the `viewModelFactory { initializer { SignInViewModel(this[AppGraphKey]!!.auth.signIn) } }` therefore lives in `app/auth/SignInViewModelFactory.kt`, not in the feature (which cannot import `:app`). Task 7 keeps the constructor-injected ViewModel in the feature. `:app` already depends on `:feature:auth`. `LaunchPlatform.welcomeDestinations` is currently a variant property with no graph; Task 8 makes it a navigator-taking provider, retaining the debug guest seam. These resolutions preserve landed routes and Welcome behaviour except the Sign in seam explicitly replaced by this phase.
+
 ---
 
 ## 1. Goal
@@ -267,7 +269,7 @@ class SignInModel(
 ### 5.8 `SignInViewModel`, `AuthServices` and the screen [R, A4]
 
 - **`AuthServices`** (`…/app/auth/AuthServices.kt`), a lazy `AppGraph` member `auth`. Members: `val signIn: SignInModel` (process-scoped, built lazily on first use, on main; no I/O in construction), `val router: SignInRouter` (the §5.9 implementation), and `deviceName` memoised on `dispatchers.io`. Mirrors iOS `AuthSessionServices.model`.
-- **`SignInViewModel(model: SignInModel)`** (`…/auth/signin/`), created with `viewModelFactory { initializer { SignInViewModel(this[AppGraphKey]!!.auth.signIn) } }` (A4). It adapts the model for Compose:
+- **`SignInViewModel(model: SignInModel)`** (`…/auth/signin/`), created in `:app` with `viewModelFactory { initializer { SignInViewModel(this[AppGraphKey]!!.auth.signIn) } }` (A4). It adapts the model for Compose:
   - `uiState: StateFlow<SignInUiState>` = `combine(model.email, model.form.state) { … }` plus `passkeyVisible = model.passkeyCapability.enabled` (so a test builds the model with `PasskeyCapability(true)` to compose the passkey controls), `stateIn(viewModelScope, Eagerly, …)`. `SignInUiState` holds no password and no challenge.
   - `submitPassword(secret: SecretField, commitAutofill: () -> Unit)` and `submitPasskey(secret: SecretField)`: `if (request != null || uiState.value.form.busy) return`; `request = viewModelScope.launch { try { model.submit…() } finally { request = null } }` (iOS `SignInView.submit`).
   - `leave()`: `request?.cancel()`; `request = null` (iOS `SignInView.onDisappear`). The screen calls it from `DisposableEffect(Unit) { onDispose { vm.leave() } }`.
@@ -364,7 +366,8 @@ feature/auth/…/auth/signin/SignInRouter.kt
 feature/auth/…/auth/signin/SignInViewModel.kt       + SignInUiState, factory
 feature/auth/…/auth/signin/SignInScreen.kt          SignInScreen → SignInContent (stateless)
 app/…/app/auth/AuthServices.kt                      SignInModel owner, SignInRouter impl, auth-exit observer
-app/…/app/RootContent.kt                            the SignIn entry (edit)
+app/…/app/CfRoot.kt                                 the SignIn entry inside RootContent (edit)
+app/…/app/auth/SignInViewModelFactory.kt             factory reading AppGraphKey
 ```
 `model/` stays free of Android and Compose imports (JVM-testable). `AuthLayout` uses `androidx.compose.ui.geometry.Rect`/`Size` (plain Kotlin classes). Add `:feature:auth` to `:app` and `testImplementation(project(":core:data-mock"))` plus `:core:testing`/`:core:testing-compose` to `:feature:auth` if missing.
 
@@ -438,7 +441,7 @@ Each task is one commit: Conventional Commits, lower-case imperative subject, **
     - `nothingSavedContainsASecret`: host the screen under a recording `SaveableStateRegistry`; after typing `Secret123!` and a two-factor submit, the flattened `performSave()` map contains neither `Secret123!` nor the challenge id.
 
 ### Task 8: App wiring and accepted-session routing (`feat(app): route sign-in and hand over to the session gate`)
-- Files: `…/app/auth/AuthServices.kt` (§5.8, §5.9), `AppGraph` member `auth`, `RootContent` entry for `Route.SignIn` (`SignInScreen(viewModel(factory = SignInViewModel.Factory), graph.auth.router)`), `WelcomeDestinations.signIn()` → `navigate(Route.SignIn)` with `RoutedWelcomeDestinations` replacing `InertWelcomeDestinations` (§5.9), the removal of the debug `signIn` seam, and the three 3c test updates listed in §5.9 (`WelcomeSeamTest`, `WelcomeDestinationsReleaseTest`, `WelcomeJourneyTest`).
+- Files: `…/app/auth/AuthServices.kt` (§5.8, §5.9), `AppGraph` member `auth`, `CfRoot` entry for `Route.SignIn` inside `RootContent` (`SignInScreen(viewModel(factory = SignInViewModelFactory), graph.auth.router)`), with `app/auth/SignInViewModelFactory.kt` reading `AppGraphKey`, `WelcomeDestinations.signIn()` → `navigate(Route.SignIn)` with `RoutedWelcomeDestinations` replacing `InertWelcomeDestinations` (§5.9), the removal of the debug `signIn` seam, and the three 3c test updates listed in §5.9 (`WelcomeSeamTest`, `WelcomeDestinationsReleaseTest`, `WelcomeJourneyTest`).
 - **JVM** (`app/src/test/…/auth/`):
   - `SignInModelRoutingTests` (the app half of the Swift suite `SignInModelTests`; Swift method names; password and passkey methods; the two-factor variant moves to 5b): `committedSessionUsesStoredGateWithAndWithoutCancellation` (parameterised over every `Gate` × cancel-after-commit) and `signOutDuringStoredGateReadPreventsStaleRouting` (`Verify`, `Terms` × cancel). Use 4e's real `SessionController` and `StoredDataReadiness` with the in-memory credential and account fakes 4e's own tests use. If those fakes are private to 4e's test source set, move them to `:core:testing` in this commit. Assert the routes `RootNavigator` received, the verification epochs, a cleared secret, not busy and no banner.
   - `AuthServicesTest`: `back`, `forgot`, `signUp`, `guest` and `twoFactor` navigate to `Welcome`, `Forgot`, `SignUp`, `GuestWizard` and `TwoFactor`; no route value contains a password or the challenge; leaving auth (`SignIn` → `Today`) clears the form and the challenge and keeps the email; `SignIn` → `Forgot` clears nothing.
