@@ -2054,7 +2054,7 @@ Implementation commits (brief §7):
 - [x] T4 — Two-factor model.
 - [x] T5 — Two-factor screen.
 - [x] T6 — Route and hand-over.
-- [ ] T7 — Guards and captures.
+- [x] T7 — Guards and captures.
 - [ ] T8 — Passkey sign-in.
 - [ ] T9 — Passkey wiring.
 - [ ] T10 — Emulator checks.
