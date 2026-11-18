@@ -50,9 +50,11 @@ abstract class LaunchScreenTest : ScreenTest() {
         frameMs: Double,
     ) {
         Log.i("CfLaunchProof", "$label actualMs=$actualMs expectedMs=$expectedMs frameMs=$frameMs")
+        // The elapsed-time read happens after frame resumption, so allow half a frame of dispatch latency.
+        val upperMs = expectedMs + frameMs + frameMs / 2
         assertTrue(
-            "$label was $actualMs ms; expected $expectedMs..${expectedMs + frameMs + 2}",
-            actualMs >= expectedMs && actualMs <= expectedMs + frameMs + 2,
+            "$label was $actualMs ms; expected $expectedMs..$upperMs",
+            actualMs >= expectedMs && actualMs <= upperMs,
         )
     }
 
