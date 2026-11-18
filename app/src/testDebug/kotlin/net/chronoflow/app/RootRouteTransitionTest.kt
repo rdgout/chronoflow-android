@@ -3,7 +3,6 @@ package net.chronoflow.app
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
-import net.chronoflow.core.designsystem.theme.ChronoFlowTheme
 import net.chronoflow.core.navigation.RootState
 import net.chronoflow.core.navigation.Route
 import net.chronoflow.core.testing.tiers.Layout
@@ -26,7 +25,7 @@ class RootRouteTransitionTest {
         compose.mainClock.autoAdvance = false
         val state = mutableStateOf(RootState(Route.Terms, 1))
         compose.setContent {
-            ChronoFlowTheme {
+            RootContentTestHost {
                 RootContent(state.value, {}) { RoutePlaceholder(it, null) }
             }
         }

@@ -13,7 +13,6 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
-import net.chronoflow.core.designsystem.theme.ChronoFlowTheme
 import net.chronoflow.core.model.launch.Gate
 import net.chronoflow.core.model.launch.LaunchReadiness
 import net.chronoflow.core.model.launch.SignedOutReadiness
@@ -52,7 +51,7 @@ class RootContentConstructionTest {
         val state = mutableStateOf(RootState(Route.Terms, 1))
         val constructions = mutableListOf<Route>()
         compose.setContent {
-            ChronoFlowTheme {
+            RootContentTestHost {
                 RootContent(state.value, {}) { route ->
                     remember { constructions.add(route) }
                     RoutePlaceholder(route, null)
@@ -96,7 +95,7 @@ class RootContentConstructionTest {
                 )
                 compose.setContent {
                     val state by navigator.state.collectAsState()
-                    ChronoFlowTheme {
+                    RootContentTestHost {
                         RootContent(state, {}) { route ->
                             remember { constructions.add(route) }
                             RoutePlaceholder(route, null)
