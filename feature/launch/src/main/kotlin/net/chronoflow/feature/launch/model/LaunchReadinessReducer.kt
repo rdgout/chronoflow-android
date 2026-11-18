@@ -18,6 +18,9 @@ fun Gate.launchRoute(): LaunchRoute =
     }
 
 data class LaunchState(
+    val pendingIntent: net.chronoflow.core.navigation.PendingLaunchIntent =
+        net.chronoflow.core.navigation
+            .PendingLaunchIntent(),
     val ending: LaunchEnding? = null,
     val session: SessionPresence? = null,
     val gate: Gate? = null,
