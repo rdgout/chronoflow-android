@@ -306,7 +306,7 @@ data class StoredAccountReadiness(val accountId: String, val gate: Gate?, val ha
   3. Still no session: `credentials.delete()`, `publish(SignedOut)`, `detach()`, return `SignedOut`.
   4. **Voluntary only** (neither unauthorized nor discard):
      - `n = pendingCount()`;
-     - if `n > 0`: `try { flush() } catch (non-cancellation) {}`, then `n = pendingCount()`;
+     - if `n > 0`: attempt `flush()`, then `n = pendingCount()`. Like Swift's `try?`, a failure or cancellation from the separate sync refresh does not abort the owned `NonCancellable` teardown. In the `CancellationException` catch call `currentCoroutineContext().ensureActive()` before continuing, so genuine cancellation of the current coroutine would still propagate (review M1);
      - if still `n > 0` **and** neither `discardRequested` nor `unauthorizedRequested` was set meanwhile (a request merged during the flush upgrades this flight, l.306), return `NeedsConfirmation(n)`. Nothing has been touched: no marker, no logout, and the credentials stay.
   5. `id = AccountID.of(captured.accountId)`; `beginWipe(id)` writes the marker.
   6. `storedSession = null`; `publish(SignedOut)`. iOS: "Publication invalidates session consumers before awaiting any old work." The permit is revoked here.
@@ -802,7 +802,7 @@ T5/T6 test dependency: the source-startup suspension case first exercises `contr
 2. **Teardown order.** It matches §5.3 steps 4–12 exactly. Logout is skipped only when unauthorized. The marker is written before `publish(SignedOut)`. `publish(SignedOut)` comes before `stopSync`.
 3. **D23.** `unauthorized(epoch)` compares epochs before it enqueues anything. `SessionSync`'s `unauthorized` callback passes the epoch it was built with, never the current one.
 4. **Cleanup cannot be cancelled.** `performSignOut` runs as a job in the controller's own scope, never a child of the caller. The credentials write in `accept` and the publish after it share one `NonCancellable` block. No `Mutex` is held across a suspension anywhere in the controller (4d §5.3).
-5. **Cancellation.** No `runCatching` sits around suspend calls, and every `catch (e: Exception)` rethrows `CancellationException`.
+5. **Cancellation.** No `runCatching` sits around suspend calls. Propagate cancellation of the current coroutine; the best-effort flush inside owned `NonCancellable` teardown checks current-context activity and then recounts when the separate refresh job is cancelled (§5.3; review M1).
 6. **3 s bound.** The race uses the injected `sleep`. The test proves the loser is cancelled. There is no real `delay(3000)` in tests.
 7. **Wipe marker retry.** `prepare` = `close` + `recover` runs on every `restore` and `accept`. A corrupt marker blocks without deleting anything.
 8. **Secrets:**

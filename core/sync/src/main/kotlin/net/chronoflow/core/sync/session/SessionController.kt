@@ -216,9 +216,10 @@ class SessionController(
                     try {
                         teardown.flush()
                     } catch (
-                        cancelled: CancellationException,
+                        _: CancellationException,
                     ) {
-                        throw cancelled
+                        // The owned teardown is active; the refresh job can be cancelled independently.
+                        currentCoroutineContext().ensureActive()
                     } catch (_: Exception) {
                     }
                     count = teardown.pendingCount()
