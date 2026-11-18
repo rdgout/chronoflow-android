@@ -87,8 +87,8 @@ After 4e, a signed-in launch ends on `Route.Today` rendered as a debug `RoutePla
 ## 4. Platform facts this phase relies on (verify, then record the result in the T13 doc commit)
 
 - [R, verify in 1.4.0 sources] `NavigationSuiteScaffold` has an overload that takes an explicit layout type (`layoutType: NavigationSuiteType` or `navigationSuiteType`). Pass `NavigationSuiteType.NavigationBar` or `NavigationSuiteType.NavigationRail`, never `NavigationDrawer` and never the expressive short or wide variants. If the names differ, use the 1.4.0 equivalent and note it in the KDoc.
-- [R, verify in adaptive 1.3.0] `currentWindowAdaptiveInfo().windowSizeClass.isWidthAtLeastBreakpoint(600)` decides rail versus bar. The decision uses **width only**, either orientation.
-- [R, verify in lifecycle 2.11.0] `rememberViewModelStoreNavEntryDecorator(…)` takes a lambda that decides whether an entry's store is cleared when the entry leaves the back stack (`removeViewModelStoreOnPop` in 1.0). T10 relies on it returning `false` when a whole tab's `NavDisplay` leaves composition because another tab was selected.
+- [F, verified in adaptive 1.3.0 sources] `currentWindowAdaptiveInfoV2().windowSizeClass.isWidthAtLeastBreakpoint(600)` decides rail versus bar. The V2 function replaces the deprecated `currentWindowAdaptiveInfo()` entry point. The decision uses **width only**, either orientation.
+- [F, verified in lifecycle 2.11.0 sources] `removeViewModelStoreOnPop` is deprecated, ignored, and never invoked. The supported replacement is `rememberDecoratedNavEntries`: keep each tab’s decorated entries composed outside the conditional selected `NavDisplay`, using `rememberViewModelStoreNavEntryDecorator(viewModelStoreOwner = tabOwner)`. A pop removes an entry; a tab switch only changes which remembered entries are displayed. This preserves the specified lifetime without changing existing root navigation.
 - [F 4e §4] `MainActivity.defaultViewModelCreationExtras` carries `AppGraphKey`.
 - [F plan l.433 / phase 2 l.184] `toM3()` maps `surfaceContainer` to `popover` and `surface` to `background`. [R, verify in material3/navigation-suite 1.4.0 sources] The M3 default `NavigationBar` container is `surfaceContainer` (→ `popover`) and the default `NavigationRail` container is `surface` (→ `background`). Record the verified defaults in T13.
 
@@ -234,7 +234,7 @@ Pure functions (`ShellNav.kt`):
 - **Per-tab state:**
   - one `SaveableStateHolder`, with `SaveableStateProvider(tab)` around each tab's `NavDisplay`;
   - one `TabViewModelStoreOwner` per tab, held by the shell holder. It implements `ViewModelStoreOwner` and `HasDefaultViewModelProviderFactory`, forwarding the activity's `defaultViewModelCreationExtras` and factory. It is provided as `LocalViewModelStoreOwner` around that tab's `NavDisplay`;
-  - each `NavDisplay` uses `rememberSaveableStateHolderNavEntryDecorator()` and `rememberViewModelStoreNavEntryDecorator(removeViewModelStoreOnPop = { holder.state.selected == tab })`. A pop inside the selected tab clears that entry's ViewModel; switching tabs keeps it;
+  - all three sets of decorated entries stay remembered through `rememberDecoratedNavEntries`, with `rememberSaveableStateHolderNavEntryDecorator()` and `rememberViewModelStoreNavEntryDecorator(viewModelStoreOwner = tabOwner)`. Only the selected set is passed to `NavDisplay`. A pop clears its entry’s ViewModel; switching tabs keeps it (§4, Lifecycle 2.11.0);
   - `DisposableEffect(Unit) { onDispose { holder.clear() } }` clears all three tab stores when the shell leaves composition (sign-out or a new root revision).
 - **Only the selected tab's `NavDisplay` is composed.**
 - **Back:**
@@ -343,7 +343,7 @@ sealed interface NextLabel { data object Now; data class In(val duration: String
   - **Times:** `Row`: `Text(times)` (`screenBody`, `mutedForeground`, tnum, weight 1). When `next == null`, add lucide `chevron-right` 20 dp (`space5`) `mutedForeground`, decorative.
   - **Next row** (when `next != null`):
     - `Row(spacedBy(12), CenterVertically)`, `heightIn(min = 56)`, padding vertical 10 / horizontal 12 (`@BoardMetrics("Trips")`), background `surface2`, shape `radius2Xl` (22);
-    - contents: `CategorySwatch(type, CategorySwatchSize.Small)`; then a `Column(spacedBy(space1))` of the eyebrow (`screenEyebrow`, `dawnText`, uppercased per the board, OQ-6a-5: `"Next · now"` or `"Next · in %1$s"` with the duration) and the title (`screenBodyLg`, `foreground`); then a chevron 20 dp `mutedForeground`.
+    - contents: `CategorySwatch(type, size = CategorySwatchSize.Small)`; then a `Column(spacedBy(space1))` of the eyebrow (`screenEyebrow`, `dawnText`, uppercased per the board, OQ-6a-5: `"Next · now"` or `"Next · in %1$s"` with the duration) and the title (`screenBodyLg`, `foreground`); then a chevron 20 dp `mutedForeground`.
   - **Status labels:** "Active"/"Actief", "Upcoming"/"Binnenkort", "Completed"/"Afgerond".
 - **Reselect:** when `LocalTabReselect` changes (per §5.7), call `listState.animateScrollToItem(0)`, or `scrollToItem(0)` under Reduce Motion. Then set `scrollBehavior.state.heightOffset = 0f` and `contentOffset = 0f`.
 - **Card/board divergences** are listed in OQ-6a-5; the default is **board look, iOS behaviour**.
@@ -355,7 +355,7 @@ sealed interface NextLabel { data object Now; data class In(val duration: String
   - pill; padding horizontal 8, vertical 2;
   - border 1 dp in `LocalContentColor.current.copy(alpha = 0.2f)`;
   - text `screenMeta` (12/16), tnum, one line, `ellipsizable()`.
-- **`CategorySwatch(type: BlockType, size: CategorySwatchSize = Regular, modifier)`** (`…/ui/plan/CategorySwatch.kt`, package `net.chronoflow.core.ui.plan`, the path the 6d brief expects; OQ-6a-12):
+- **`CategorySwatch(type: BlockType, modifier = Modifier, size: CategorySwatchSize = Regular)`** (`…/ui/plan/CategorySwatch.kt`, package `net.chronoflow.core.ui.plan`, the path the 6d brief expects; OQ-6a-12):
   - size: `Small` = 28 dp (iOS `space6 + space1`; B sm 28); `Regular` = 32 dp (iOS `space8`);
   - shape radius `radiusLg` (14);
   - fill, foreground, pattern and dashed come from `TimelineCategoryStyle(type)` (1c §5.1);
