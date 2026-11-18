@@ -1,6 +1,6 @@
 # Phase 4b verification
 
-2026-11-18, branch `feat/phase-4b-api-client`. Tasks 1–10 are complete in order, each in a signed commit. The two Konsist guards formerly listed as Task 11 belong to Task 10, following the requested ten-task sequence. All five phase checkboxes are complete. Defaults are recorded as OQ-A132–OQ-A147; OQ-A68 remains unused.
+2026-11-18, branch `feat/phase-4b-api-client`. Tasks 1–11 are complete in signed commits. After the round 1 history split, Task 11's Konsist guards are in `d9d7b84` and Task 10's build configuration is in `9eff4fd`. All five phase checkboxes are complete. Defaults and review decisions are recorded as OQ-A132–OQ-A150; OQ-A68 remains unused.
 
 ## Brief refresh
 
@@ -11,7 +11,7 @@ The initial refresh commit is `c9fe81c` (`docs(phases): refresh the 4b brief aga
 - Retains the scaffold's existing app dependency on `:core:network`, without duplicating it as a test dependency.
 - Uses `TripDetailResponse.detail.trip` and preserves its legacy-health sanitizer. Clean payloads retain their exact bytes.
 - Uses the landed `ProfilePreferences.requestFields` set, the existing perf build types and current test harness.
-- Folds the Konsist guards into Task 10 and aligns verification with targeted tests per task and one final quick run.
+- Initially folds the Konsist guards into Task 10 and aligns verification with targeted tests per task and one final quick run. Review round 1 supersedes that grouping: Task 11 is now the separate signed commit `d9d7b84`, and Task 10 is `9eff4fd`.
 - Starts new OQ rows at OQ-A132.
 
 Later clarifications document the temporary abstract data source during Tasks 6–7 (concrete since Task 8), refresh the line references after adding OQs, and disable injected HTTP/proxy authenticators to preserve the single-request/public-route contract. No earlier phase's runtime behavior changed.
@@ -32,7 +32,8 @@ All selectors below were run through `make targeted ONLY="…"`. Times marked �
 | 7 | `core:network:AccountSecurityAPITests core:network:PasskeyManagementAPITests core:network:SettingsDeleteAPITests` | 6 pass | 2.02 s |
 | 8 | `core:network:TripWizardAPITests core:network:TripWizardTypedErrorTests core:network:GuestTripReviewAPITests` | 26 pass | 2.23 s |
 | 9 | `core:network:EndpointContractTest core:network:EndpointContractCoverageTest` | 43 pass | 2.10 s |
-| 10 | `app:DebugApiConfigTest app:ReleaseApiConfigTest konsist:KonsistRulesTest` | All pass; Konsist 65 cases | Debug 3 s Gradle; release 1 s Gradle; Konsist 2.87 s |
+| 10 | `app:DebugApiConfigTest app:ReleaseApiConfigTest` | Both pass | Debug 3 s Gradle; release 1 s Gradle |
+| 11 | `konsist:KonsistRulesTest` | 65 pass | 2.87 s |
 | Final audit | `core:network:ApiClientTests#injectedAuthenticatorsCannotRetryPublicCalls core:model:SecretRedactionTest#securityRemovePasskey` | Both pass | Network 2 s Gradle; model 1.71 s |
 
 Initial compilation failures in Tasks 1, 5 and 6 were resolved: imports/string escaping in test scaffolding, OkHttp builder interceptor method syntax, and test-only imports of the plan extension/health-test class. Each fix ran its affected selectors. No test assertion failed and no test run hung. Formatting issues were resolved with `make format`.
@@ -103,7 +104,7 @@ Logs, configuration results and copied timing evidence are in `build/test-result
 
 ## Post-phase fix: remove OkHttp's startup initializer
 
-The release gate reported `STARTUP_INITIALIZER: okhttp3.internal.platform.PlatformInitializer` on `39c4323`. The app manifest now removes that metadata with `tools:node="remove"`. The merged release provider retains exactly `ProcessLifecycleInitializer` and `ProfileInstallerInitializer`. `Application.onCreate` and the production client construction code are unchanged.
+The release gate originally reported `STARTUP_INITIALIZER: okhttp3.internal.platform.PlatformInitializer` on the pre-split commit `39c4323`. The fix was replayed as `0b3c526` in the rewritten branch. It removes that metadata with `tools:node="remove"`, retaining exactly `ProcessLifecycleInitializer` and `ProfileInstallerInitializer` in the merged release provider. That startup fix changes neither `Application.onCreate` nor the client-construction code; later transport/pool decisions are recorded in OQ-A149/A150.
 
 The decision is OQ-A148. Inspected the cached `okhttp-android-5.5.1-sources.jar`, its matching AAR manifest and compiled classes:
 
@@ -124,4 +125,4 @@ Validation for this fix:
 
 The new case took 0.096 s in the quick run. An initial test compilation required OkHttp's internal-API opt-in for checking the platform type. The first executable test attempt exposed an unsupported Robolectric provider-info overload; the final test uses this repo's existing merged-manifest fixture pattern instead. No test hung. No sandbox command was blocked.
 
-The brief's Task 11 Konsist work remains in Task 10 commit `39c4323`. History was left intact; this fix is a new signed commit.
+Review round 1 rebuilt the local unpublished history: Task 11's Konsist guards are in `d9d7b84`, Task 10's build configuration is in `9eff4fd`, and the original startup fix `170266c` was replayed as `0b3c526`. Before the phase branch was moved, the replayed tree was verified byte-for-byte identical to `170266c`. Subsequent review fixes and the superseding OQ-A150 pool/foreground-eviction decision are recorded in [the review report](phase-4b-review-r1.md).
