@@ -448,8 +448,8 @@ sealed interface NextLabel { data object Now; data class In(val duration: String
     - `Rail` the reverse (assert by the tags `app.tabs` plus a `cf.nav.bar`/`cf.nav.rail` test tag on the bar and rail);
     - the selected item's icon colour equals `CfTheme.colors.primary` (read the tint with a `LocalContentColor` probe inside the icon slot);
     - unselected equals `mutedForeground`.
-  - `CfNavigationSuiteGuardsTest` (`@Layout`, light cases `small`/nl, `largeFont`/nl, `pixel8`/en and `foldInner`/nl): the three tab labels fit (`assertTextFits`) and the touch targets are ≥ 48 dp.
-  - Extend `CfBadgeGuardsTest` with "Completed"/"Afgerond" plus the check icon.
+  - `CfNavigationSuiteGuardsTest` (`@Layout`, the shared `LayoutMatrix.wide` light cases (`small`/nl, `largeFont`/nl, `pixel8`/en, `foldInner`/en, `landscapeSideNav`/en)): the three tab labels fit (`assertTextFits`) and the touch targets are ≥ 48 dp.
+  - Add `CfBadgeGuardsTest` (the landed badge coverage is part of `CfPillGuardsTest`/`GallerySection.PillsBadges`) with "Completed"/"Afgerond" plus the check icon.
 
 ### T7. Meta chip, category swatch and refresh capsule (`feat(ui): add meta chip, category swatch and refresh capsule`)
 - Files: `…/ui/trip/MetaChip.kt`, `…/ui/plan/CategorySwatch.kt`, `…/ui/refresh/RefreshFeedbackCapsule.kt`, `…/ui/refresh/RefreshFeedbackText.kt` (`@Composable fun refreshFeedbackText(list): String`), `…/ui/shell/TabReselect.kt`, and the separator resource, per §5.5, §5.7 and §5.9.
@@ -498,7 +498,7 @@ sealed interface NextLabel { data object Now; data class In(val duration: String
   - nl variants use the nl strings.
 - **Tests:**
   - `TripCardFormattingTest` (JVM): the three board cards built as `TripCardView`s through the real formatter give exactly the board's `times` and `offset` strings in en. If 1a's formatter output differs from a board string, the formatter wins; record the difference in the T13 doc.
-  - `TripsGuardsTest` (`@Layout`): states Content, Empty and Loading × light cases `small`/nl, `largeFont`/nl, `pixel8`/en and `foldInner`/nl (12 cases). Each calls `assertTextFits`, `assertTouchTargets`, `assertInteractiveInSafeArea`, `assertNoInteractiveOverlap`, `assertInk`. At `foldInner` the card width is ≤ 640 dp and centred (±1 dp).
+  - `TripsGuardsTest` (`@Layout`): states Content, Empty and Loading × the shared `LayoutMatrix.wide` light cases (`small`/nl, `largeFont`/nl, `pixel8`/en, `foldInner`/en, `landscapeSideNav`/en) (15 cases). Each calls `assertTextFits`, `assertTouchTargets`, `assertInteractiveInSafeArea`, `assertNoInteractiveOverlap`, `assertInk`. At `foldInner` the card width is ≤ 640 dp and centred (±1 dp).
   - `TripsContentTest` (`@Logic`):
     - tags `trips.screen`, `trips.create`, `trips.section.active|upcoming|completed`, `trip.<id>`, `trips.empty`, `trips.create-empty`, `trips.loading` exist in their states;
     - a card click calls `onOpenTrip(id)`; "+" and "Plan a trip" call `onNewTrip`;
@@ -582,7 +582,7 @@ sealed interface NextLabel { data object Now; data class In(val duration: String
   - `make targeted ONLY="feature:trips:<Class> …"` for each T8/T9 class
   - `make targeted ONLY="app:AppShellTest app:ShellSeedTest app:TripsTabTest"`
 - Every ported Swift test name in T1–T4 and T8 exists with the same words.
-- Guards: `TripsGuardsTest` (12 cases) and `CfNavigationSuiteGuardsTest` pass. The bar is used at `pixel8` and the rail at `foldInner` (`AppShellTest`).
+- Guards: `TripsGuardsTest` (15 cases) and `CfNavigationSuiteGuardsTest` pass. The bar is used at `pixel8` and the rail at `foldInner` (`AppShellTest`).
 - Screenshots: `make captures ONLY=Trips,TripsEmpty,TripsLoading` produced light and dark captures. The Opus reviewer compared them with `B/Trips.dc.html` (default, empty, loading). Each difference is fixed or recorded with the board name.
 - The emulator test `ShellJourneySmokeTest` passes on `pixel` in under 10 s. It is the only new emulator test.
 - Performance (functional, no benchmark row):
