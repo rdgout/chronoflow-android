@@ -36,6 +36,7 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import net.chronoflow.app.auth.SignInViewModelFactory
 import net.chronoflow.app.auth.TwoFactorViewModelFactory
+import net.chronoflow.core.designsystem.effect.skyBackground
 import net.chronoflow.core.designsystem.layout.LocalSafeInsets
 import net.chronoflow.core.designsystem.theme.CfTheme
 import net.chronoflow.core.designsystem.theme.ChronoFlowTheme
@@ -43,6 +44,7 @@ import net.chronoflow.core.designsystem.theme.warmFontsAfterFirstFrame
 import net.chronoflow.core.navigation.RootState
 import net.chronoflow.core.navigation.Route
 import net.chronoflow.feature.auth.forgot.ForgotPasswordRoute
+import net.chronoflow.feature.auth.reset.ResetPasswordRoute
 import net.chronoflow.feature.auth.shell.EmailAppLauncher
 import net.chronoflow.feature.auth.signin.SignInScreen
 import net.chronoflow.feature.auth.twofactor.TwoFactorScreen
@@ -140,6 +142,18 @@ internal fun CfRoot(
                                                 destinations::signIn,
                                                 modifier = Modifier.testTag("route.welcome"),
                                             )
+                                        }
+                                    }
+
+                                    is Route.Reset -> {
+                                        val model = graph.auth.resetModel
+                                        if (model == null) {
+                                            Box(Modifier.fillMaxSize().skyBackground(CfTheme.colors.isDark))
+                                            LaunchedEffect(Unit) { graph.rootNavigator.navigate(Route.SignIn) }
+                                        } else {
+                                            val context = LocalContext.current
+                                            val launcher = remember(context) { EmailAppLauncher(context) }
+                                            ResetPasswordRoute(model, launcher::open)
                                         }
                                     }
 

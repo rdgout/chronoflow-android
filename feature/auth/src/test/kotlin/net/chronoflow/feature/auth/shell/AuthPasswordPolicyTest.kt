@@ -1,14 +1,17 @@
 package net.chronoflow.feature.auth.shell
 
+import androidx.compose.ui.test.junit4.v2.createComposeRule
+import net.chronoflow.core.model.config.AppLanguage
+import net.chronoflow.core.testing.DeviceProfiles
+import net.chronoflow.core.testing.compose.ProfileRule
 import net.chronoflow.core.testing.tiers.Logic
-import net.chronoflow.core.ui.l10n.generated.CopyIndex
-import net.chronoflow.core.ui.l10n.generated.CopyTable
 import net.chronoflow.feature.auth.form.AuthPasswordPolicy
 import org.junit.Assert.assertEquals
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.RuleChain
 import org.junit.runner.RunWith
 import org.robolectric.ParameterizedRobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 
 @Logic
@@ -18,10 +21,18 @@ class AuthPasswordPolicyTest(
     private val language: String,
     private val expected: String,
 ) {
+    private val compose = createComposeRule()
+
+    @get:Rule val rules: RuleChain =
+        RuleChain
+            .outerRule(
+                ProfileRule(DeviceProfiles.pixel8, if (language == "nl") AppLanguage.Nl else AppLanguage.En),
+            ).around(compose)
+
     @Test fun hintResolvesFromTheCatalog() {
-        RuntimeEnvironment.setQualifiers(language)
-        val resource = checkNotNull(CopyIndex.find(CopyTable.Auth, AuthPasswordPolicy.HINT_KEY))
-        assertEquals(expected, RuntimeEnvironment.getApplication().resources.getString(resource.resId))
+        var actual: String? = null
+        compose.setContent { actual = AuthPasswordPolicy.hint() }
+        compose.runOnIdle { assertEquals(expected, actual) }
     }
 
     companion object {

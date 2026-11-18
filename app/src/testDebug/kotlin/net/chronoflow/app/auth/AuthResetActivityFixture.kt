@@ -67,7 +67,15 @@ abstract class AuthResetActivityFixture {
         compose.mainClock.autoAdvance = false
         scenario = ActivityScenario.launch(intent)
         commitFrame()
-        waitFor { graph.rootNavigator.state.value.route != null }
+        waitFor {
+            val route = graph.rootNavigator.state.value.route
+            when (audit) {
+                "forgot" -> route == Route.Forgot
+                "reset" -> if (extras["CF_AUTH_TEST_AUDIT_STATE"] == "expired") route != null else route is Route.Reset
+                "sign-in" -> route == Route.SignIn
+                else -> route != null
+            }
+        }
         compose.mainClock.autoAdvance = true
         compose.waitForIdle()
     }
