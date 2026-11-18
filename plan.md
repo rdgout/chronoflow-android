@@ -2228,7 +2228,7 @@ Implementation commits (brief §7):
   - The designed capsule shows at the top inset with its copy for about 2 s, and fades instead with Reduce Motion.
   - Test tag `refresh.feedback`, plus a debug "was presented" counter.
 - [x] **Seams.** The Today and Settings tabs show debug seams until 7 and 10a.
-- [ ] **Tests.**
+- [x] **Tests.**
   - ViewModel cases: sections, sorting, empty.
   - Guards for `Trips`, `TripsEmpty` and `TripsLoading` at `pixel8` (bar) and `foldInner` (rail).
   - On the emulator: system and predictive back across tabs, tab reselect, and pull to refresh through the counter.
