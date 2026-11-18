@@ -2168,7 +2168,7 @@ Implementation commits (brief §7):
   - Open the email app with `Intent.makeMainSelectorActivity(Intent.ACTION_MAIN, Intent.CATEGORY_APP_EMAIL)`.
   - Consumes links from the per-account inbox.
   - The failed state; Verify back means sign out.
-- [ ] **Tests.**
+- [x] **Tests.**
   - The ported cases.
   - Guards for `AuthSignUp`, `AuthVerify` and `AuthVerifyFailed`.
   - One emulator journey: sign up → verify through the mock link → the gate.
