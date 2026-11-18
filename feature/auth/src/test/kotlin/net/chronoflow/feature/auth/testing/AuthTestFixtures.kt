@@ -27,6 +27,7 @@ fun authTestSource(
     verified: Boolean = true,
     twoFactor: Boolean = false,
     password: String = "Password123!",
+    assertionProvider: net.chronoflow.core.datamock.AssertionProvider = { _, _ -> null },
 ): MockDataSource {
     val original =
         ApiJson.response.decodeFromString(
@@ -61,7 +62,7 @@ fun authTestSource(
         )
     return MockDataSource(store = MemoryMockStateStore(), seed = MockServerState(accounts = listOf(account)), now = {
         Instant.parse("2026-11-18T00:00:00Z")
-    }, delay = { 0.0 }, sleep = {}, debugAppSeed = false, io = io)
+    }, delay = { 0.0 }, sleep = {}, debugAppSeed = false, io = io, assertionProvider = assertionProvider)
 }
 
 class FakeSessionController : SessionAcceptor {
