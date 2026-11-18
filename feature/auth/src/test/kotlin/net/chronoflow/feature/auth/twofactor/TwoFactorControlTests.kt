@@ -1,6 +1,5 @@
 package net.chronoflow.feature.auth.twofactor
 
-import androidx.compose.ui.autofill.ContentType
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
@@ -89,7 +88,7 @@ class TwoFactorControlTests : TwoFactorTestFixture() {
             .assert(
                 SemanticsMatcher.expectValue(
                     SemanticsProperties.ContentType,
-                    ContentType.SmsOtpCode,
+                    TwoFactorFieldSpec.CodeContentType,
                 ),
             ).assert(
                 SemanticsMatcher.expectValue(

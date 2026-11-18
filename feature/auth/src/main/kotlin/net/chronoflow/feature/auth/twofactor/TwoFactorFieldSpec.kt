@@ -18,6 +18,8 @@ data class FieldSpec(
 )
 
 object TwoFactorFieldSpec {
+    val CodeContentType: ContentType = ContentType.SmsOtpCode + ContentType("2faAppOTPCode")
+
     fun forMode(mode: TwoFactorModel.Mode): FieldSpec {
         val recovery = mode == TwoFactorModel.Mode.Recovery
         return FieldSpec(
@@ -30,7 +32,7 @@ object TwoFactorFieldSpec {
                 keyboardType = if (recovery) KeyboardType.Ascii else KeyboardType.Number,
                 imeAction = ImeAction.Go,
             ),
-            if (recovery) null else ContentType.SmsOtpCode,
+            if (recovery) null else CodeContentType,
             if (recovery) "two-factor.recovery_code" else "two-factor.code",
         )
     }

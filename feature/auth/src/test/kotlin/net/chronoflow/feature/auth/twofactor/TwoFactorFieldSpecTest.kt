@@ -1,6 +1,5 @@
 package net.chronoflow.feature.auth.twofactor
 
-import androidx.compose.ui.autofill.ContentType
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
@@ -8,8 +7,13 @@ import net.chronoflow.core.ui.R
 import net.chronoflow.feature.auth.model.TwoFactorModel
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
 import org.junit.Test
 
+/**
+ * ContentType uses identity equality and its public toString omits hints in Compose UI 1.12.1.
+ * Check the shared production value's wiring; hint-level assertions would require internal API.
+ */
 class TwoFactorFieldSpecTest {
     @Test fun codeUsesNumberKeyboardAndOneTimeCodeAutofill() {
         val spec = TwoFactorFieldSpec.forMode(TwoFactorModel.Mode.Code)
@@ -17,7 +21,7 @@ class TwoFactorFieldSpecTest {
         assertEquals(ImeAction.Go, spec.keyboardOptions.imeAction)
         assertEquals(KeyboardCapitalization.None, spec.keyboardOptions.capitalization)
         assertEquals(false, spec.keyboardOptions.autoCorrectEnabled)
-        assertEquals(ContentType.SmsOtpCode, spec.contentType)
+        assertSame(TwoFactorFieldSpec.CodeContentType, spec.contentType)
         assertEquals(R.string.auth_6_digit_code, spec.label)
         assertNull(spec.hint)
         assertNull(spec.placeholder)

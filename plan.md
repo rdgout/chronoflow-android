@@ -2057,7 +2057,7 @@ Implementation commits (brief §7):
 - [x] T7 — Guards and captures.
 - [x] T8 — Passkey sign-in.
 - [x] T9 — Passkey wiring.
-- [ ] T10 — Emulator checks.
+- [x] T10 — Emulator checks.
 - [ ] T11 — Docs and plan.
 
 - [x] **TwoFactorScreen and TwoFactorViewModel**, porting `TwoFactorModel`.
@@ -2069,7 +2069,7 @@ Implementation commits (brief §7):
   - Response fields are encoded as unpadded base64url. A cancel is silent, and errors are mapped per `05 §9.2`.
   - A `CredentialClient` wrapper lets the tests run on the JVM.
 - [ ] **Copy.** The Android-only 2FA intro (OQ-A12) comes from `android-only.json`.
-- [ ] **Tests.**
+- [x] **Tests.**
   - The ported iOS two-factor cases.
   - A passkey JSON round-trip and error mapping with a fake `CredentialClient`, using the `auth/passkey-options.json` fixture.
   - Guards for both two-factor variants.
