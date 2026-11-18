@@ -6,3 +6,4 @@ Each finding is fixed in its own signed commit. Reproductions supplied for findi
 |---|---|---:|
 | 1 | Two nested Turbine observers make close throw ConcurrentModificationException; the regression now completes both observers, clears the count and clears accountID. (red run 1.98 s). | 1.23 s |
 | 2 | Cancellation between IO registration and producer resumption leaves one observer/listener; the hand-drained regression now verifies both are removed. The whole ObservationTests class passes. (red run 2.00 s). | 1.78 s |
+| 3 | observe times out behind the lifecycle write lock, and validate completes without IO dispatch; both caller-thread regressions now pass, together with the epoch/permit guards and eager-closed check. (red run 2.00 s). | 2.32 s |

@@ -93,9 +93,11 @@ class AccountDatabase(
 
     suspend fun validate(epoch: SyncEpoch) {
         epoch.check()
-        lifecycle.read {
-            if (accountID != epoch.accountID) throw StoreFailure.InvalidAccountID
-            if (current == null) throw StoreFailure.Closed
+        withContext(io) {
+            lifecycle.read {
+                if (accountID != epoch.accountID) throw StoreFailure.InvalidAccountID
+                if (current == null) throw StoreFailure.Closed
+            }
         }
     }
 
@@ -128,7 +130,7 @@ class AccountDatabase(
         vararg tables: String,
         fetch: (AccountSql) -> T,
     ): Flow<T> {
-        lifecycle.read { if (current == null) throw StoreFailure.Closed }
+        if (accountID == null) throw StoreFailure.Closed
         return callbackFlow {
             val listener = Query.Listener { trySend(Unit) }
             var observed: AccountSql? = null
