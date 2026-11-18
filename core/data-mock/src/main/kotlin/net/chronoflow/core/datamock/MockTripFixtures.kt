@@ -98,6 +98,7 @@ object MockTripFixtures {
                                             text,
                                             localFormat,
                                         ).atZone(ZoneId.of(zone))
+                                        .withLaterOffsetAtOverlap()
                                         .plusDays(days.toLong())
                                         .plusMinutes(minutes.toLong())
                                 JsonPrimitive(localFormat.format(date))

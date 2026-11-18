@@ -179,7 +179,10 @@ object MockTripGeneration {
     ): Instant {
         val date =
             try {
-                LocalDateTime.parse(local, localFormat).atZone(ZoneId.of(airport.timezone))
+                LocalDateTime
+                    .parse(local, localFormat)
+                    .atZone(ZoneId.of(airport.timezone))
+                    .withLaterOffsetAtOverlap()
             } catch (
                 _: DateTimeException,
             ) {

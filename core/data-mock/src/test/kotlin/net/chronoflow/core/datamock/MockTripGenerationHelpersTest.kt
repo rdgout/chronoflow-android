@@ -10,6 +10,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.BeforeClass
 import org.junit.Test
+import java.time.Instant
 
 /** Android generation-helper coverage (new). */
 class MockTripGenerationHelpersTest {
@@ -36,6 +37,22 @@ class MockTripGenerationHelpersTest {
         assertEquals(
             DataFailure.Validation(mapOf("review" to FieldMessage("Check the departure and arrival times.")), 422),
             failure,
+        )
+    }
+
+    @Test fun instantUsesLaterOffsetInAmsterdamOverlap() {
+        val airport = MockTripGeneration.airports().first { it.iata == "AMS" }
+        assertEquals(
+            Instant.parse("2026-10-25T01:30:00Z"),
+            MockTripGeneration.instant("2026-10-25T02:30", airport),
+        )
+    }
+
+    @Test fun instantUsesLaterOffsetInNewYorkOverlap() {
+        val airport = MockTripGeneration.airports().first { it.iata == "JFK" }
+        assertEquals(
+            Instant.parse("2026-11-01T06:30:00Z"),
+            MockTripGeneration.instant("2026-11-01T01:30", airport),
         )
     }
 

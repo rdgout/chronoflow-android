@@ -5,6 +5,10 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import net.chronoflow.core.model.api.ApiJson
 import net.chronoflow.core.model.contracts.BlockParams
+import net.chronoflow.core.model.contracts.CopyArg
+import net.chronoflow.core.model.contracts.CopyArgKind
+import net.chronoflow.core.model.contracts.CopyArgValue
+import net.chronoflow.core.model.contracts.CopyArgument
 import net.chronoflow.core.model.contracts.TripDetail
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -13,6 +17,51 @@ import org.junit.Test
 import java.time.ZoneId
 
 class MockRebaseTests {
+    /** A local copy argument starts at the later occurrence before adding elapsed minutes (new). */
+    @Test fun localCopyTimeUsesLaterAmsterdamOverlap() =
+        localCopyTimeUsesLaterOffset(
+            "2026-10-25T02:30",
+            "Europe/Amsterdam",
+            "2026-10-25T03:30",
+        )
+
+    /** The same formatter policy applies to the New York overlap (new). */
+    @Test fun localCopyTimeUsesLaterNewYorkOverlap() =
+        localCopyTimeUsesLaterOffset(
+            "2026-11-01T01:30",
+            "America/New_York",
+            "2026-11-01T02:30",
+        )
+
+    private fun localCopyTimeUsesLaterOffset(
+        local: String,
+        zone: String,
+        expected: String,
+    ) {
+        val fixture = MockAppSeed.decodedFixtures.trips.first()
+        val block =
+            fixture.detail.plan.blocks
+                .first()
+        val argument = CopyArgument.Standard(CopyArg("time", CopyArgKind.Text, CopyArgValue.Text(local), zone))
+        val detail =
+            fixture.detail.copy(
+                plan =
+                    fixture.detail.plan.copy(
+                        blocks =
+                            listOf(block.copy(text = block.text.copy(args = listOf(argument)))) +
+                                fixture.detail.plan.blocks
+                                    .drop(1),
+                    ),
+            )
+        val shifted = MockTripFixtures.rebase(fixture.copy(detail = detail), days = 0, minutes = 60)
+        val shiftedArgument =
+            shifted.detail.plan.blocks
+                .first()
+                .text.args
+                .single() as CopyArgument.Standard
+        assertEquals(CopyArgValue.Text(expected), shiftedArgument.value.value)
+    }
+
     companion object {
         @JvmStatic @BeforeClass
         fun warmFixtures() {
