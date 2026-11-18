@@ -9,8 +9,8 @@ import net.chronoflow.app.StubConfig
 import net.chronoflow.app.StubSession
 import net.chronoflow.app.StubStored
 import net.chronoflow.core.model.launch.LaunchReadiness
-import net.chronoflow.core.model.launch.SessionPresence
 import net.chronoflow.core.model.launch.SignedOutReadiness
+import net.chronoflow.core.model.session.SessionPresence
 import net.chronoflow.feature.launch.model.LaunchClock
 import net.chronoflow.feature.launch.model.ManualLaunchClock
 import org.junit.Assert.assertEquals

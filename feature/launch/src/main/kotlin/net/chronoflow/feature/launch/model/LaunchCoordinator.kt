@@ -8,7 +8,7 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import net.chronoflow.core.model.launch.LaunchReadiness
-import net.chronoflow.core.model.launch.SessionPresence
+import net.chronoflow.core.model.session.SessionPresence
 import kotlin.time.Duration.Companion.seconds
 
 class LaunchCoordinator(

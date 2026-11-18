@@ -1897,6 +1897,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 **Delivers.** Ports SessionController (accept order, generation, sign-out with needsConfirmation, the forced 401 wipe, and the exact teardown order with a 3 s logout bound and the wipe-marker retry). It wires AppGraph and the per-epoch SessionGraph with the foreground sync triggers. It replaces the stub launch readiness with stored-data readiness and adds the session gate (verify, terms, walkthrough, app) with its router, the Nav3 routes, RootNavigator and pending launch intents. It extends TestSeeds with the session, account and route seeds, proves that a reseed equals a cold seed, and proves with release-readiness tests that no seed or mock code ships.
 
 **Tasks**
+- [x] **T1: session value types and unified session presence.**
 - [ ] **SessionController** (`core/sync/…`; its Android seams are implemented in `:core:data`).
   - Accept order: DB upsert → secure write → publish.
   - A generation counter.

@@ -3,8 +3,8 @@ package net.chronoflow.feature.launch.model
 import net.chronoflow.core.model.launch.Gate
 import net.chronoflow.core.model.launch.LaunchEnding.App
 import net.chronoflow.core.model.launch.LaunchEnding.Welcome
-import net.chronoflow.core.model.launch.SessionPresence.SignedIn
-import net.chronoflow.core.model.launch.SessionPresence.SignedOut
+import net.chronoflow.core.model.session.SessionPresence.SignedIn
+import net.chronoflow.core.model.session.SessionPresence.SignedOut
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull

@@ -2,6 +2,7 @@ package net.chronoflow.core.model.launch
 
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
+import net.chronoflow.core.model.session.SessionPresence
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import kotlin.time.Duration.Companion.seconds

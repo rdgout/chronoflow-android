@@ -64,7 +64,7 @@ class LaunchHandOffTimelineTests {
             reduce(
                 state,
                 LaunchEvent.Session(
-                    net.chronoflow.core.model.launch.SessionPresence
+                    net.chronoflow.core.model.session.SessionPresence
                         .SignedIn("a"),
                 ),
                 false,

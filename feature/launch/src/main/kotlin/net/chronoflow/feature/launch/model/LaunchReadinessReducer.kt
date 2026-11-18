@@ -2,7 +2,7 @@ package net.chronoflow.feature.launch.model
 
 import net.chronoflow.core.model.launch.Gate
 import net.chronoflow.core.model.launch.LaunchEnding
-import net.chronoflow.core.model.launch.SessionPresence
+import net.chronoflow.core.model.session.SessionPresence
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
