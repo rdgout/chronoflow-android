@@ -36,6 +36,37 @@ class DetailValuesTest {
             }
         }
 
+    @Test fun aNullInputHashStillObservesChecksAndPendingCheckOffs() =
+        runTest(timeout = 60.seconds) {
+            val store = SyncStore(StandardTestDispatcher(testScheduler))
+            try {
+                val repository = TripRepository(store.database)
+                val trip = repository.trips().single().copy(currentInputHash = null)
+                repository.upsert(trip)
+                val mark = CheckMarkRecord(syncTrip, "", "sleep", "2026-11-10", 1, "done", "1")
+                store.database.write { sql ->
+                    sql.saveCheckMark(mark)
+                    sql.saveCheckMark(mark.copy(inputHash = "old"))
+                }
+                val pending = check()
+                store.enqueue(OutboxChange.CheckOff(pending))
+                repository.detailValues(syncTrip).test {
+                    val first = awaitItem()
+                    assertEquals(trip, first.trip)
+                    assertNull(first.plan)
+                    assertEquals(listOf(mark), first.checks)
+                    assertEquals(listOf(pending), first.pendingChecks)
+                    val next = pending.copy(ordinal = 2)
+                    store.enqueue(OutboxChange.CheckOff(next), 1)
+                    runCurrent()
+                    assertEquals(listOf(pending, next), expectMostRecentItem().pendingChecks)
+                    cancelAndIgnoreRemainingEvents()
+                }
+            } finally {
+                withContext(NonCancellable) { store.close() }
+            }
+        }
+
     @Test fun insertingTheCurrentPlanVersionEmitsIt() =
         runTest(timeout = 60.seconds) {
             val store = SyncStore(StandardTestDispatcher(testScheduler))

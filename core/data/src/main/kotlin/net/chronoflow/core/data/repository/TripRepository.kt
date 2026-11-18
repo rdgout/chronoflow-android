@@ -63,12 +63,9 @@ class TripRepository(
         tripValue(tripId)
             .flatMapLatest { trip ->
                 val hash = trip?.currentInputHash
-                if (trip == null || hash == null) {
-                    flowOf(TripPlanSnapshot(trip = trip, plan = null))
-                } else {
-                    combine(planValues(tripId, hash), checkValues(tripId, hash), pendingCheckOffs(tripId)) { p, c, o ->
-                        TripPlanSnapshot(trip = trip, plan = p, checks = c, pendingChecks = o)
-                    }
+                val plan = if (hash == null) flowOf(null) else planValues(tripId, hash)
+                combine(plan, checkValues(tripId, hash ?: ""), pendingCheckOffs(tripId)) { p, c, o ->
+                    TripPlanSnapshot(trip = trip, plan = p, checks = c, pendingChecks = o)
                 }
             }.distinctUntilChanged()
 
