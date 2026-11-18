@@ -1845,7 +1845,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 - [x] **Task 6: sync engine flights.**
 - [ ] **Task 9: network path monitor.**
 
-- [ ] **SyncEngine** (`core/sync/…`).
+- [x] **SyncEngine** (`core/sync/…`).
   - Pull order: users/me → account → trips → one transaction → details.
   - One flight per epoch, with coalescing, a 1 s debounce, and `refreshNow`.
   - Backoff is `min(1 s × 2^n, 5 min)`, or a larger `retryAfterSeconds` from the server.
