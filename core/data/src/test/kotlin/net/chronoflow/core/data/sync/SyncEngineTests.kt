@@ -65,6 +65,25 @@ class SyncEngineTests {
         }
     }
 
+    // (new) A cancelled Android caller must keep its detail task visible until that task drains.
+    @Test fun cancelAndWaitJoinsADetailFetchWhoseCallerWasCancelled() =
+        engineTest { f ->
+            f.engine.refreshNow()
+            val gate = f.gate()
+            f.source.configure(hook = { if (it == "detail") gate.block() })
+            val request = async { f.engine.fetchDetail(syncTrip) }
+            gate.waitUntilBlocked()
+            request.cancel()
+            runCurrent()
+            val done = async { f.engine.cancelAndWait() }
+            runCurrent()
+            assertFalse("cancelAndWait returned while the detail task is still running", done.isCompleted)
+            gate.release()
+            runCurrent()
+            assertTrue(done.isCompleted)
+            assertTrue(request.isCompleted)
+        }
+
     @Test fun concurrentRefreshesCoalesceOneRerun() =
         engineTest { f ->
             val gate = f.gate()

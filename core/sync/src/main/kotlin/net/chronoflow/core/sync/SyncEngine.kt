@@ -112,6 +112,7 @@ class SyncEngine(
                 currentCoroutineContext().ensureActive()
                 requestEpoch.check()
             } finally {
+                withContext(NonCancellable) { task.join() }
                 detailTasks.remove(id)
             }
         }
