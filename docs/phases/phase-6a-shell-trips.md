@@ -663,3 +663,81 @@ sealed interface NextLabel { data object Now; data class In(val duration: String
 | OQ-6a-12 | The 6d brief also plans `core/ui/…/plan/CategorySwatch.kt` (`net.chronoflow.core.ui.plan`, signature `small: Boolean = false`), but 6a needs the swatch first, for the Next row. | 6a owns it at that path and package, with the iOS shape `size: CategorySwatchSize` (iOS `CategorySwatch.Size`; ported code keeps Swift names). 6d finds it and reuses it (its own brief says to use earlier names). T13 adds one line to the 6a "Results"; it does not edit the 6d brief |
 | OQ-6a-13 | 1a assigns `Today.swift` to Phase 7, and the Phase 7 brief also ports `todayView`, `calendarDaysUntil` and the two `TodayTests` cases, but 6a needs `todayView(...).nextStep` for the Next row (`TripsScreen.swift:77–81`). | 6a ports the whole file and the two tests (§5.2, T2). Phase 7 finds `Today.kt` and extends it (`selectTodayTrip`, `lastEndedTrip`) instead of porting it again. T13 records this in the 6a "Results" |
 | OQ-6a-14 | The plan's 6a "Tests" item puts predictive back on the emulator, while AGENTS "Tests" asks for the cheapest tier. | Predictive back start/progress/cancel is proven in Robolectric (`AppShellTest.predictiveBackCancelKeepsThePage`, `dispatchOnBackStarted`); the one emulator journey (T12) covers system back across tabs, reselect and pull to refresh. Add an emulator predictive-back gesture only if the Robolectric check turns out unable to fail for the real reason (AGENTS Tests 6) |
+
+
+## Results (2026-11-19)
+
+T1–T12 are implemented. Shell and Seams were ticked in T10, My trips and Pull to refresh in T11, and Tests in T12. T13 adds OQ-A232–OQ-A245 (OQ-6a-1…14) without ticking another phase. The branch preflight returned `feat/phase-6a-shell-trips`; every implementation commit is signed. Existing untracked future-phase briefs were left untouched.
+
+### Verified APIs and integration
+
+- **Navigation suite 1.4.0:** the `NavigationSuiteScaffold(navigationSuiteItems, layoutType, …)` overload accepts `NavigationSuiteType.NavigationBar` and `NavigationSuiteType.NavigationRail`. `NavigationSuiteDefaults.itemColors` accepts separate standard bar and rail item colours. There is no hide-on-scroll state or expressive navigation type in the wrapper. Verified against the [1.4.0 source archive](https://dl.google.com/dl/android/maven2/androidx/compose/material3/material3-adaptive-navigation-suite-android/1.4.0/material3-adaptive-navigation-suite-android-1.4.0-sources.jar) and the compiled wrapper tests.
+- **Material 3 1.4.0 defaults:** `NavigationBarDefaults.containerColor` reads `NavigationBarTokens.ContainerColor = SurfaceContainer`; `NavigationRailDefaults.ContainerColor` reads `NavigationRailCollapsedTokens.ContainerColor = Surface`. Through `toM3()`, these are `popover` and `background`. Verified in the [Material 3 source archive](https://dl.google.com/dl/android/maven2/androidx/compose/material3/material3-android/1.4.0/material3-android-1.4.0-sources.jar). Neither container is overridden.
+- **Adaptive 1.3.0:** `currentWindowAdaptiveInfoV2().windowSizeClass.isWidthAtLeastBreakpoint(WindowPolicy.wideBreakpointDp)` is the supported width-only decision. V2 replaces the deprecated `currentWindowAdaptiveInfo()` function. The 600 dp breakpoint is used in either orientation; Robolectric proves both fold-inner and landscape rail layouts.
+- **Lifecycle 2.11.0:** `removeViewModelStoreOnPop` is deprecated, ignored and never invoked. All three tab entry sets remain in `rememberDecoratedNavEntries`, using `rememberViewModelStoreNavEntryDecorator(viewModelStoreOwner = tabOwner)`, while only the selected `NavDisplay` is composed. The [2.11.0 source archive](https://dl.google.com/dl/android/maven2/androidx/lifecycle/lifecycle-viewmodel-navigation3-android/2.11.0/lifecycle-viewmodel-navigation3-android-2.11.0-sources.jar) describes this replacement. Tests prove retained scroll/ViewModels on tab switches, clearing on pop, and actual predictive-back progress before cancellation.
+- Standalone `:core:designsystem` initially resolved the navigation suite's older Lifecycle 2.9.4 dependency, whose lint registry references an obsolete Kotlin light-class API. A catalog constraint aligns it with A1's 2.11.0 pin, which the app already selected. Standalone and app Lint then pass, with no lint rule disabled.
+- Repository observation reuses `AccountDatabase.observe` and `selectTrip`, preserving IO dispatch and completion on database close. `TripSection` lives in `TripSection.kt` to satisfy Kotlin's class/file naming check.
+- The hook is the existing `LaunchPlatform`: debug provides the one-shot shell seed and in-process refresh probe; release and perf return null/None. The release readiness test proves both debug implementation classes absent. No extra variant mechanism or route probe was added.
+- The active demo id used in seeded tests comes from the first existing `MockTripTemplates` template, which `MockAppSeed.rebase` makes active; no duplicate fixture id was introduced.
+
+### Capture comparison
+
+`make captures ONLY=Trips,TripsEmpty,TripsLoading` was run once and produced six `pixel8` en PNGs in `build/captures/`. Two initial images caught the scaffold before its app-bar inset was applied. The capture fixture now waits for idle, advances one frame and waits for idle again; a targeted rerun of only `TripsBoardCaptureTest#capturesTheBoardState` corrected those images. Production UI did not change for that correction.
+
+The six images were inspected against the checked-in board markup, component definitions and tokens. The external Opus review is not performed by this worker. Robolectric supplies fixture insets and does not draw the real status or gesture bars.
+
+| Board | Comparison and remaining differences |
+|---|---|
+| `Trips.dc.html` default, light/dark | Active/Upcoming/Completed order, 26 dp cards, 20 dp card padding, active 2 dp dawn border, ordinary 1 dp border, non-completed soft shadows, completed opacity/no shadow, outline Upcoming badge, Completed check icon, flight chip, dashed plane connector and 10/12 dp Next-row padding follow the board. The Next title keeps iOS `screenBodyLg` regular weight rather than the board's extra 500 weight (OQ-6a-5). The header uses the system large app bar, omits the glass logo, and the tab chrome uses the native Material bar (OQ-6a-1/6/9). These are the remaining deliberate platform/default differences. The connector's dashes yield to airport labels at narrow widths; all text fits at 280 dp. |
+| `TripsEmpty.dc.html` / Trips empty, light/dark | Dashed 2 dp border, 26 dp radius, unfilled surface, 56 dp muted circle, foreground plane, title/body, spacing and full-width primary button follow the board. The native button wrapper retains its 48 dp touch target around the designed button. Header/logo/tab differences are the same approved platform defaults above. |
+| `TripsLoading.dc.html` / Trips loading, light/dark | Two 30%-width, 18 dp headings and 260/180 dp muted rounded skeletons follow the board. Skeletons remain static under the Phase 2 default. Header/logo/tab differences are the same approved platform defaults above. |
+
+**Formatter versus board:** none. The real formatter produces `12 Oct 14:40 → 13 Oct 09:15` / `+7 h`, `21 Oct 10:25 → 21 Oct 15:30` / `−7 h`, and `3 Jun 10:10 → 3 Jun 12:20` / `−6 h` exactly.
+
+**Swatch versus timeline mapping:** iOS swatches dash `Note`, while the timeline does not. For `Unknown`, the swatch uses travel fill/foreground and the info glyph; the timeline uses card/foreground and no glyph. `CategorySwatch.swatchStyle` contains these differences. Other fill/foreground and pattern mappings agree. The swatch keeps `CategorySwatchSize` and named `size` after the conventional modifier parameter.
+
+### Validation
+
+Raw command logs and the final report are in `build/phase6a-validation/`; tier outputs remain under `build/test-results/`. Command wall times below are rounded from the output log's creation-to-last-write interval unless a tier supplies an exact value. They include Gradle work, not just test execution.
+
+| Scope | Result | Command wall time |
+|---|---|---|
+| T1 `TripsTests`, `TripSectionsTest`, `PlanDecoderTripsTest` | 7 pass | 3.36 s |
+| T2 `TodayTests` | 3 pass | 3.33 s |
+| T3 `DetailValuesTest` and existing `PlanDecoderTests` | All 5 snapshot cases and 9 decoder cases pass after correcting a test fixture to valid JSON | 5.26 s final focused invocation |
+| T4 `RefreshFeedbackTests` | 10 pass, including caller cancellation and stale dismissal | 2.98 s |
+| T5 `ShellNavStateTest` | 16 pass | 2.72 s |
+| T6 bar/rail tint/role checks and badge/navigation guards | 15 pass | 8.60 s |
+| T7 text/capsule/swatch/chip guards | All 25 cases pass across focused runs; the single final quick run also passes the logic cases | 6.39 s initial 25-case run, followed by focused clock fixes |
+| T8 Trips model classes | All 13 cases pass; the corrected check-off fixture selects distinct steps after removing optional steps | 7 s initial suite; 2 s final focused method |
+| T9 formatting, content and layout | 1 formatter + 8 content cases pass; 18 guards pass (15 required plus one 280 dp Dutch large-font case per state) | 7 s initial suite; 7 s guard rerun |
+| T9 captures | 6 PNGs; targeted capture fixture correction described above | 14 s capture invocation; 6 s targeted correction |
+| T10 `AppShellTest` | 13 pass | 6 s |
+| T11 seeded shell/Trips + release readiness | 7 seeded tests pass; release readiness passes | 8 s debug + 5 s release |
+| T12 `ShellJourneySmokeTest` on `pixel`, Android 16/API 36, debug | Pass; **5.442 s measured test**, under 10 s; StrictMode IO counter 0 | 15.27 s tier wall |
+| App, Trips, UI and design-system `lintDebug`; `verifyReleaseManifest` | Pass after Lifecycle alignment | 19 s |
+| Shared UI layout guards after Lifecycle alignment | All 14 pass | 6.68 s tier wall |
+| Single `make quick` invocation | 2,898 measured tests, zero budget overruns; stopped on one resource-count assertion (see below) | 31.41 s tier wall |
+| `StringParityTest#countsAreRecorded` after correction | Pass; refresh punctuation is excluded from the unchanged iOS catalog count | 2.89 s tier wall |
+| Remaining quick steps, run individually | Build-logic tests, tooling tests and all 6 serial timing cases pass | Build logic 2.03 s; timing 2.99 s tier wall |
+| `:app:testReleaseUnitTest -Pcf.tier=quick` | All 142 tests pass | 13 s |
+| `make size` | **2,869,902 B (2.87 MB)** for arm64-v8a/xxhdpi/en; native-library gate passes | 41 s |
+
+The final quick invocation found that the existing fixed iOS resource count included the new untranslatable separator. The assertion now excludes it alongside the existing app name/date-format resources; the iOS counts are unchanged. Only that method was rerun, then the build-logic, tooling and serial timing steps that quick had not reached were run individually. The first direct tooling invocation lacked the environment variables normally exported by make; it was rerun with those exports. **`make quick` itself was not rerun**, as requested, so its recorded invocation remains failed despite the focused correction and passing remaining steps.
+
+The capsule restart test needed `write → waitForIdle → frame → waitForIdle` before checking its new effect. Its elapsed-time arithmetic remains exact. Temporarily keying the effect on `Unit` made it fail with one presentation instead of two; restoring `presentationId` made the method pass again. No production timing workaround was introduced.
+
+Loading guards use the same low-contrast ink threshold as the Phase 2 skeleton guard (`minChannelDifference = 2`), retaining the normal minimum ink area. The ordinary text/interaction guards are unchanged. No screen test asserts copy.
+
+Functional performance evidence: minute ticks without changed card output do not emit; records decode only on repository emissions; decoding and formatting run on the injected worker; lists have stable keys and content types; UI value models are immutable. This is not a timeline change and adds no benchmark row. No `make perf`, `make perf-timeline`, `make baseline-profile`, `make check` or T2 emulator tier was run. Existing baseline/startup profiles were not regenerated under the user's run limits; full commit-gate and external capture review remain with the orchestrator.
+
+### Earlier/later phase ownership
+
+- 6a owns `TripPlanSnapshot.trip` and `TripRepository.detailValues` in the 6b shape. 6b Task 1 verifies/reuses them.
+- 6a owns `core/ui/…/plan/CategorySwatch.kt` with `CategorySwatchSize`; 6d reuses it.
+- 6a owns the whole `Today.kt` port and its two Swift-named tests; Phase 7 extends it.
+- All visible copy reuses generated en/nl resources. There is no new Android-only wording awaiting approval; the refresh separator is untranslatable punctuation.
+
+### Cleanup
+
+`Scripts/emulator.sh busy` returned 1 (no active test), then `make emu-down` stopped pixel. `./gradlew --stop` stopped the Gradle daemons. `make du` reported 21G Gradle caches, 8.8G AVDs, 2.2G build output and 4.3G for this checkout. No worktree or AVD was created or removed.
