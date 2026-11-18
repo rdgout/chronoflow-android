@@ -10,11 +10,18 @@ import net.chronoflow.core.model.MutationReceipt
 import net.chronoflow.core.model.OutboxChange
 import net.chronoflow.core.model.SettingsSection
 import net.chronoflow.core.model.api.AccountIdentity
+import net.chronoflow.core.model.api.AccountSecurityChange
+import net.chronoflow.core.model.api.AccountSecurityResult
 import net.chronoflow.core.model.api.AccountSnapshot
 import net.chronoflow.core.model.api.ApiCheckOffInput
 import net.chronoflow.core.model.api.ApiJson
+import net.chronoflow.core.model.api.ApiPasskey
 import net.chronoflow.core.model.api.ApiPasskeyChallenge
+import net.chronoflow.core.model.api.ApiPasskeyList
 import net.chronoflow.core.model.api.ApiPasskeyLoginInput
+import net.chronoflow.core.model.api.ApiPasskeyRegistrationChallenge
+import net.chronoflow.core.model.api.ApiRecoveryCodes
+import net.chronoflow.core.model.api.ApiTwoFactorSetup
 import net.chronoflow.core.model.api.EmailVerificationStatus
 import net.chronoflow.core.model.api.PasswordSignInInput
 import net.chronoflow.core.model.api.RegisterInput
@@ -176,6 +183,129 @@ abstract class ApiDataSource(
                 throw DataFailure.Unsupported(change.kind)
             }
         }
+
+    override suspend fun deleteAccount(password: String) =
+        client.requestNoContent(
+            ApiEndpoint("DELETE", listOf("account"), body = body(buildJsonObject { put("password", password) })),
+        )
+
+    override suspend fun accountSecurity(change: AccountSecurityChange): AccountSecurityResult {
+        fun endpoint(
+            method: String,
+            path: List<String>,
+            fields: JsonObject,
+        ) = ApiEndpoint(method, listOf("account") + path, body = body(fields))
+
+        fun current(value: String) = buildJsonObject { put("current_password", value) }
+        return when (change) {
+            is AccountSecurityChange.RequestPasswordReset -> {
+                requestPasswordReset(change.email)
+                AccountSecurityResult.Changed
+            }
+
+            is AccountSecurityChange.Password -> {
+                client.requestNoContent(
+                    endpoint(
+                        "PUT",
+                        listOf("password"),
+                        buildJsonObject {
+                            put("current_password", change.current)
+                            put("password", change.password)
+                            put("password_confirmation", change.confirmation)
+                        },
+                    ),
+                )
+                AccountSecurityResult.Changed
+            }
+
+            is AccountSecurityChange.EnableTwoFactor -> {
+                AccountSecurityResult.Setup(
+                    client.request(
+                        endpoint("POST", listOf("two-factor"), current(change.current)),
+                        ApiTwoFactorSetup.serializer(),
+                    ),
+                )
+            }
+
+            is AccountSecurityChange.ConfirmTwoFactor -> {
+                AccountSecurityResult.Codes(
+                    client.request(
+                        endpoint(
+                            "POST",
+                            listOf("two-factor", "confirmation"),
+                            buildJsonObject {
+                                put("code", change.code)
+                            },
+                        ),
+                        ApiRecoveryCodes.serializer(),
+                    ),
+                )
+            }
+
+            is AccountSecurityChange.DisableTwoFactor -> {
+                AccountSecurityResult.Snapshot(
+                    client.request(
+                        endpoint("DELETE", listOf("two-factor"), current(change.current)),
+                        AccountSnapshot.serializer(),
+                    ),
+                )
+            }
+
+            is AccountSecurityChange.RevealRecoveryCodes -> {
+                AccountSecurityResult.Codes(
+                    client.request(
+                        endpoint("POST", listOf("two-factor", "recovery-codes", "reveal"), current(change.current)),
+                        ApiRecoveryCodes.serializer(),
+                    ),
+                )
+            }
+
+            is AccountSecurityChange.RegenerateRecoveryCodes -> {
+                AccountSecurityResult.Codes(
+                    client.request(
+                        endpoint("POST", listOf("two-factor", "recovery-codes"), current(change.current)),
+                        ApiRecoveryCodes.serializer(),
+                    ),
+                )
+            }
+
+            AccountSecurityChange.ListPasskeys -> {
+                AccountSecurityResult.Passkeys(
+                    client
+                        .request(
+                            ApiEndpoint(path = listOf("account", "passkeys")),
+                            ApiPasskeyList.serializer(),
+                        ).passkeys,
+                )
+            }
+
+            is AccountSecurityChange.PasskeyCreationOptions -> {
+                AccountSecurityResult.PasskeyCreation(
+                    client.request(
+                        endpoint("POST", listOf("passkeys", "options"), current(change.current)),
+                        ApiPasskeyRegistrationChallenge.serializer(),
+                    ),
+                )
+            }
+
+            is AccountSecurityChange.AddPasskey -> {
+                AccountSecurityResult.PasskeyAdded(
+                    client.request(
+                        ApiEndpoint("POST", listOf("account", "passkeys"), body = body(change.input)),
+                        ApiPasskey.serializer(),
+                        expectedStatus = 201,
+                    ),
+                )
+            }
+
+            is AccountSecurityChange.RemovePasskey -> {
+                client.requestNoContent(
+                    endpoint("DELETE", listOf("passkeys", change.id.toString()), current(change.current)),
+                )
+                AccountSecurityResult.Changed
+            }
+        }
+    }
 
     private inline fun <reified T> body(input: T): ByteArray = ApiJson.request.encodeToString(input).encodeToByteArray()
 
