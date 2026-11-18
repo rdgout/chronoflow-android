@@ -455,7 +455,7 @@ Never log anything: no `println`, no logging interceptor, no exception messages 
 
 Commit: `feat(network): implement auth, reads and outbox writes in the api data source`.
 
-**`…/network/ApiDataSource.kt`**: `class ApiDataSource(private val client: ApiClient) : DataSource`. Request bodies are encoded with `ApiJson.request` into `ByteArray`; inline bodies are `buildJsonObject { … }`. Rows below are from Appendix A (the full table): implement rows 1–11, 14–17 and 25a–25h here.
+**`…/network/ApiDataSource.kt`**: final shape `class ApiDataSource(private val client: ApiClient) : DataSource`. During Tasks 6–7 it is abstract so each commit compiles while wizard methods remain for Task 8; test-only subclasses supply unused members. Task 8 makes it concrete and removes those test stubs. Request bodies are encoded with `ApiJson.request` into `ByteArray`; inline bodies are `buildJsonObject { … }`. Rows below are from Appendix A (the full table): implement rows 1–11, 14–17 and 25a–25h here.
 - `passkeyOptions()`: decode `ApiPasskeyChallenge`, then require `challengeId.length == 64`, `options.rpId == "app.chronoflow.net"`, `options.timeout == 60_000`, `options.challenge.length == 43`, every char in `[A-Za-z0-9_-]`, and `Base64.getUrlDecoder().decode(challenge).size == 32` (catch `IllegalArgumentException`); otherwise `Server(200)`. Run these checks in the `decode` lambda so they stay off the caller's thread.
 - `verificationStatus()` = `fetchIdentity()` mapped to `EmailVerificationStatus(email, hasVerifiedEmail, resendAfterSeconds = 0)` (no invented resend delay, iOS plan l.449; `APIDataSource.swift:47-51`).
 - `fetchTrips()`: decode `TripListResponse`; any trip with an empty `card.id` or `card.departureUtc` → `Server(200)`; return `trips`.

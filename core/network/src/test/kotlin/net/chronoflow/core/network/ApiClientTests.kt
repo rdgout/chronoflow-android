@@ -343,4 +343,46 @@ class ApiClientTests {
         assertThat(client.writeTimeoutMillis).isEqualTo(0)
         assertThat(client.callTimeoutMillis).isEqualTo(0)
     }
+
+    @Test fun registrationValidationEnvelopePreservesVisibleFieldMessages() =
+        runTest(timeout = 60.seconds) {
+            val deadline = RecordingDeadline()
+            api.reply(
+                "POST",
+                "/v1/auth/register",
+                422,
+                """{"code":"validation_failed","message":"Please fill this in.","errors":{"name":"Please fill this in.","email":"Please fill this in.","password":"Please fill this in."}}""",
+            )
+            val expected =
+                mapOf(
+                    "name" to FieldMessage("Please fill this in."),
+                    "email" to FieldMessage("Please fill this in."),
+                    "password" to FieldMessage("Please fill this in."),
+                )
+            assertThat(
+                failure {
+                    testSource(api.client(deadline = deadline)).signUp(registration())
+                },
+            ).isEqualTo(DataFailure.Validation(expected, 422))
+            assertThat(deadline.durations.single()).isEqualTo(90.seconds)
+        }
+
+    @Test fun malformedSuccessEmptyObject() = malformedSuccess("{}")
+
+    @Test fun malformedSuccessHtml() = malformedSuccess("<html>OK</html>")
+
+    @Test fun malformedSuccessSessionWithoutAccount() = malformedSuccess("""{"kind":"session","token":"fake"}""")
+
+    private fun malformedSuccess(body: String) =
+        runTest(timeout = 60.seconds) {
+            api.reply("POST", "/v1/auth/login", 200, body)
+            assertThat(
+                failure {
+                    testSource(api.client()).signIn(
+                        net.chronoflow.core.model.api
+                            .PasswordSignInInput("x", "x", "x", "x"),
+                    )
+                },
+            ).isEqualTo(DataFailure.Server(200))
+        }
 }
