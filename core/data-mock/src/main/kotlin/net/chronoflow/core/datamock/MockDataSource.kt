@@ -444,14 +444,14 @@ class MockDataSource(
             val accepted = if (code) value == account.twoFactorCode else value in account.recoveryCodes
             if (!accepted) {
                 update { current ->
-                    val pending = current.twoFactor[input.challengeId] ?: return@update current
                     current.copy(
                         twoFactor =
-                            if (pending.attempts >=
+                            if (challenge.attempts >=
                                 4
                             ) {
                                 current.twoFactor - input.challengeId
                             } else {
+                                val pending = current.twoFactor[input.challengeId] ?: return@update current
                                 current.twoFactor +
                                     (input.challengeId to pending.copy(attempts = pending.attempts + 1))
                             },

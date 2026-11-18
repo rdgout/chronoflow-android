@@ -30,11 +30,11 @@ class SharedMockServerTests {
             assertEquals(4, state.twoFactor[challenge]?.attempts)
         }
 
-    /** A fifth failure removes the challenge even if other failures arrived meanwhile (new). */
-    @Test fun wrongTwoFactorProofRemovesCurrentFifthAttempt() =
+    /** Removal uses the count read before another instance changes the challenge (new). */
+    @Test fun wrongTwoFactorProofKeepsChallengeWhenEarlierReadWasBelowLimit() =
         runTest(timeout = 60.seconds) {
             val (challenge, state) = wrongProofAfterSharedChallengeChange { it.copy(attempts = 4) }
-            assertNull(state.twoFactor[challenge])
+            assertEquals(5, state.twoFactor[challenge]?.attempts)
         }
 
     private suspend fun wrongProofAfterSharedChallengeChange(
