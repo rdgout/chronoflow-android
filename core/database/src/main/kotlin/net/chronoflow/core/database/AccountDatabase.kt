@@ -155,10 +155,11 @@ class AccountDatabase(
     suspend fun close() =
         withContext(io) {
             lifecycle.write {
-                synchronized(observers) {
-                    observers.forEach { it.close() }
-                    observers.clear()
-                }
+                val closing =
+                    synchronized(observers) {
+                        observers.toList().also { observers.clear() }
+                    }
+                closing.forEach { it.close() }
                 current?.driver?.close()
                 current = null
                 accountID = null

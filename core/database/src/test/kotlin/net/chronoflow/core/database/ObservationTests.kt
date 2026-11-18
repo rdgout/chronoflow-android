@@ -113,6 +113,24 @@ class ObservationTests {
             }
         }
 
+    @Test fun closeCompletesTwoUnconfinedObserversAndClearsTheDatabase() =
+        runTest(timeout = 60.seconds) {
+            opened {
+                db.observe("account") { Unit }.test {
+                    awaitItem()
+                    db.observe("settings") { Unit }.test {
+                        awaitItem()
+                        assertEquals(2, db.observationCount)
+                        db.close()
+                        awaitComplete()
+                        assertNull(db.accountID)
+                    }
+                    awaitComplete()
+                    assertEquals(0, db.observationCount)
+                }
+            }
+        }
+
     @Test fun observeOnAClosedDatabaseThrowsClosed() {
         assertThrows(StoreFailure.Closed::class.java) { db.observe("account") { Unit } }
     }
