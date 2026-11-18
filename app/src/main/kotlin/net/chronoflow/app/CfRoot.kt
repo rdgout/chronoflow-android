@@ -22,6 +22,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFontFamilyResolver
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
@@ -41,6 +42,8 @@ import net.chronoflow.core.designsystem.theme.ChronoFlowTheme
 import net.chronoflow.core.designsystem.theme.warmFontsAfterFirstFrame
 import net.chronoflow.core.navigation.RootState
 import net.chronoflow.core.navigation.Route
+import net.chronoflow.feature.auth.forgot.ForgotPasswordRoute
+import net.chronoflow.feature.auth.shell.EmailAppLauncher
 import net.chronoflow.feature.auth.signin.SignInScreen
 import net.chronoflow.feature.auth.twofactor.TwoFactorScreen
 import net.chronoflow.feature.launch.LaunchOverlay
@@ -85,7 +88,10 @@ internal fun CfRoot(
         content == null &&
             (
                 displayedRoute == null || displayedRoute == Route.Welcome ||
-                    (displayedRoute == Route.SignIn || displayedRoute == Route.TwoFactor)
+                    (
+                        displayedRoute == Route.SignIn || displayedRoute == Route.TwoFactor ||
+                            displayedRoute == Route.Forgot
+                    )
             )
     SideEffect { onSystemBars(night, overlayShowing, onSky || launchSky) }
     val currentRoute = rememberUpdatedState(displayedRoute)
@@ -135,6 +141,17 @@ internal fun CfRoot(
                                                 modifier = Modifier.testTag("route.welcome"),
                                             )
                                         }
+                                    }
+
+                                    Route.Forgot -> {
+                                        val model =
+                                            remember(graph.auth) {
+                                                graph.auth.forgotModel
+                                                    ?: graph.auth.startForgot()
+                                            }
+                                        val context = LocalContext.current
+                                        val launcher = remember(context) { EmailAppLauncher(context) }
+                                        ForgotPasswordRoute(model, expired = false, openEmailApp = launcher::open)
                                     }
 
                                     Route.TwoFactor -> {

@@ -2112,7 +2112,7 @@ Implementation commits (brief §7):
 
 **Tasks**
 - [x] Task 3: port the Forgot model, ownership and mock mail lookup seam.
-- [ ] **Forgot** (`AuthForgot`): an email field, a rate-limited send, and the honest confirmation copy (OQ 22, 27).
+- [x] **Forgot** (`AuthForgot`): an email field, a rate-limited send, and the honest confirmation copy (OQ 22, 27).
 - [x] Task 2: shared heading glyph, password policy, email launcher and verify-link seam.
 - [ ] **Reset** (`AuthReset`), **Reset done** (`AuthResetDone`) and **Reset expired** (`AuthResetExpired`). The password field shows the policy hint. The 204 creates no session. An expired link offers a new one.
 - [ ] **App Links.**
