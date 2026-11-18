@@ -713,6 +713,7 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A129 | (4a-17) iOS `DeviceIdentityStore` shares one in-flight task, so concurrent callers see the same error; a `Mutex` makes each waiting caller retry in turn. | `Mutex`; the observable contract (one write, no caching of a failure) is the same. | 4a |
 | OQ-A130 | (4a-18) Should `:core:model` stay free of `kotlinx.coroutines`? 4d needs `SyncEpoch.check()` to see coroutine cancellation. | Keep the existing `api(libs.kotlinx.coroutines.core)` in `:core:model`; Konsist rule 2 forbids only `android.*` and Compose there. | 4a |
 | OQ-A131 | DataStore 1.3.0 bundles `libdatastore_shared_counter.so`, but all app stores are single-process. Exclude it? | Exclude `**/libdatastore_shared_counter.so` from app JNI packaging while stores remain single-process. Konsist forbids `MultiProcessDataStoreFactory`, `createMultiProcessCoordinator` and `MultiProcessCoordinator`; introducing multi-process storage requires revisiting the exclusion before using that factory. Keep OQ-0a-22's native-library allow-list unchanged. | 4a |
+| OQ-A132 | (4b-5) `DataSource.send` needs `OutboxChange` in 4b, but 0d's hand-off gives `OutboxChange`/`CheckOffChange` to 4d. | 4b adds the in-memory types (only `ProfileChange` is `@Serializable`, because it is a request body); 4d adds the storage codec (including `@Serializable` on `CheckOffChange`, status omitted when null, 4d OQ-4d-3) and the outbox round-trip test. | 4b |
 | OQ-0a-22 | Native libraries in the bundle? | Allow only `libandroidx.graphics.path.so` (Compose graphics-path; excluding it breaks Path conversion below API 34); fail on any other `.so` | 0a, 13 |
 | OQ-0b-1 | Where does `PlanMetrics` live? `08 §3.1` lists it inside `CfDimens`, but its consumer `:core:plan` is a JVM module that cannot depend on `:core:designsystem` | `core/plan/…/generated/PlanMetrics.generated.kt` (Double, dp), as iOS keeps it in `PlanCore` | 0b, 1b, 1c |
 | OQ-0b-2 | Port all iOS TokenGen outputs now (Auth, Settings, Terms, Welcome, PlanUI, Press, LaunchPaint, TypeMetrics), or only colors, sky and type? | All of them now (the iOS files are exact goldens and Phases 2, 3a, 3c, 5a, 9 and 10 need them) | 0b |
@@ -1720,7 +1721,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 **Delivers.** Implements the DataSource contract (25 methods) and its OkHttp ApiDataSource: no redirects, no cookies, no cache, per-call timeouts (15 s; 90 s for generation, save and register; 3 s for logout), origin checks and HTTPS-only release builds. It maps the error envelope and status codes to DataFailure, including field errors, throttling with retry-after and email-unverified. Deny-by-default MockWebServer tests pin every endpoint's method, path, body keys and decoding.
 
 **Tasks**
-- [ ] **DataSource interface** (`core/model/…/DataSource.kt`): the 25 iOS methods as suspend functions. An expected failure surfaces as `DataFailure`, never as a raw `IOException`.
+- [x] **DataSource interface** (`core/model/…/DataSource.kt`): the 25 iOS methods as suspend functions. An expected failure surfaces as `DataFailure`, never as a raw `IOException`.
 - [ ] **ApiClient** (`core/network/…`).
   - OkHttp per A6: no redirects, no cookies, no cache.
   - The base URL and the HTTPS rule come from `:app`.

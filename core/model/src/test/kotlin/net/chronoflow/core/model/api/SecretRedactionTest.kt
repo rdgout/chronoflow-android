@@ -72,4 +72,20 @@ class SecretRedactionTest {
 
     @Test
     fun guestReviewInputRedactsItsSecret() = check(guestReviewInput().copy(guestSecret = secret))
+
+    @Test fun securityPassword() = check(AccountSecurityChange.Password(secret, secret, secret))
+
+    @Test fun securityEnableTwoFactor() = check(AccountSecurityChange.EnableTwoFactor(secret))
+
+    @Test fun securityConfirmTwoFactor() = check(AccountSecurityChange.ConfirmTwoFactor(secret))
+
+    @Test fun securityDisableTwoFactor() = check(AccountSecurityChange.DisableTwoFactor(secret))
+
+    @Test fun securityRevealRecoveryCodes() = check(AccountSecurityChange.RevealRecoveryCodes(secret))
+
+    @Test fun securityRegenerateRecoveryCodes() = check(AccountSecurityChange.RegenerateRecoveryCodes(secret))
+
+    @Test fun securityPasskeyCreationOptions() = check(AccountSecurityChange.PasskeyCreationOptions(secret))
+
+    @Test fun securityRemovePasskey() = check(AccountSecurityChange.RemovePasskey(1L, secret))
 }
