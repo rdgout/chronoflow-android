@@ -9,6 +9,13 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class KonsistRulesTest {
+    @Test fun databaseTestingIsTestOnly() = databaseTestingIsTestOnly(projectScope)
+
+    @Test fun databaseTestingIsTestOnlyRejectsPlantedViolation() {
+        assertFailure { databaseTestingIsTestOnly(violations("databaseTestingIsTestOnly")) }
+            .messageContains("databaseTestingIsTestOnly violated")
+    }
+
     private fun violations(rule: String): KoScope =
         Konsist.scopeFromDirectory("konsist/src/test/resources/violations/$rule")
 

@@ -48,6 +48,7 @@ include(
     ":core:testing-junit",
     ":core:testing-compose",
     ":core:database",
+    ":core:database-testing",
     ":core:datastore",
     ":core:data",
     ":core:designsystem",

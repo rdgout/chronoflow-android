@@ -7,6 +7,7 @@ android {
 }
 
 dependencies {
+    testImplementation(project(":core:database-testing"))
     api(project(":core:plan"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.kotlinx.coroutines.core)

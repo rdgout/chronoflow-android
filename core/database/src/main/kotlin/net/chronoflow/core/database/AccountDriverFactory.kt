@@ -2,6 +2,7 @@ package net.chronoflow.core.database
 
 import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.db.SqlDriver
+import net.chronoflow.core.model.store.StoreFailure
 import java.io.File
 
 /** Opens, configures and migrates without deleting or replacing an existing database. Caller must run on IO. */

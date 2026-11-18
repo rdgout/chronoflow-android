@@ -1837,6 +1837,14 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 **Delivers.** Ports SyncEngine and the outbox rules: the full pull in the iOS order, one flight per epoch with coalescing, the 1 s debounce and refreshNow, backoff with retry-after, FIFO chains, rekeying, the stale-plan rule, final refusal with undo, and parked unsupported kinds. It adds the repositories whose mutations write their outbox row in the same transaction, and plan retention leases with eviction. It builds the login upsert that preserves pending local edits, which iOS still lists as a deferred fix. The iOS sync suite (35+ cases) is ported as JVM tests.
 
 **Tasks**
+- [x] **Task 0: shared store failure and JDBC test driver.** Move StoreFailure to :core:model and the JDBC helpers to test-only :core:database-testing; guard imports with Konsist.
+- [ ] **Task 1: stored outbox payloads.**
+- [ ] **Task 2: sync values, failure policy and plan retention.**
+- [ ] **Task 3b: repository observation and AccountModel.**
+- [ ] **Task 4: full pull.**
+- [ ] **Task 6: sync engine flights.**
+- [ ] **Task 9: network path monitor.**
+
 - [ ] **SyncEngine** (`core/sync/…`).
   - Pull order: users/me → account → trips → one transaction → details.
   - One flight per epoch, with coalescing, a 1 s debounce, and `refreshNow`.

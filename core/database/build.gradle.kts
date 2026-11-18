@@ -13,6 +13,7 @@ sqldelight {
 }
 
 dependencies {
+    testImplementation(project(":core:database-testing"))
     api(project(":core:model"))
     implementation(libs.sqldelight.android.driver)
     implementation(libs.kotlinx.coroutines.core)

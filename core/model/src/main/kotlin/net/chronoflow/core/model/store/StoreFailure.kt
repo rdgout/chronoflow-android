@@ -1,4 +1,4 @@
-package net.chronoflow.core.database
+package net.chronoflow.core.model.store
 
 sealed class StoreFailure(
     cause: Throwable? = null,

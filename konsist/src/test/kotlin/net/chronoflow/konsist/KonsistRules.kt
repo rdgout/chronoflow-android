@@ -416,3 +416,14 @@ fun onlyDebugAndPerfImportTheMock(scope: KoScope) {
             }
     fail("onlyDebugAndPerfImportTheMock", violations)
 }
+
+fun databaseTestingIsTestOnly(scope: KoScope) {
+    val violations =
+        scope
+            .moduleFiles()
+            .filter { it.module != "core/database-testing" && it.sourceSet != null && !isTestSourceSet(it.sourceSet) }
+            .flatMap { file ->
+                file.imports.importsFrom("net.chronoflow.core.database.testing").map { "${file.path}: $it" }
+            }
+    fail("databaseTestingIsTestOnly", violations)
+}

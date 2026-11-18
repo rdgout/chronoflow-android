@@ -12,6 +12,7 @@ import net.chronoflow.core.database.testing.exec
 import net.chronoflow.core.database.testing.long
 import net.chronoflow.core.database.testing.string
 import net.chronoflow.core.model.AccountID
+import net.chronoflow.core.model.store.StoreFailure
 import net.chronoflow.core.testing.tiers.Logic
 import org.junit.After
 import org.junit.Assert.assertArrayEquals
