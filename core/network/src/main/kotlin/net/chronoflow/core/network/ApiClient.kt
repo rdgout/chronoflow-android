@@ -54,7 +54,13 @@ class ApiClient(
     private val now: () -> Instant = { Instant.now() },
 ) {
     private val clientLock = Mutex()
+
+    @Volatile
     private var client: OkHttpClient? = null
+
+    fun evictIdleConnections() {
+        client?.connectionPool?.evictAll()
+    }
 
     internal suspend fun effectiveClient(): OkHttpClient =
         withContext(io) {
@@ -67,7 +73,9 @@ class ApiClient(
                     .authenticator(Authenticator.NONE)
                     .proxyAuthenticator(Authenticator.NONE)
                     .cache(null)
-                    .connectionPool(ConnectionPool(5, 4, TimeUnit.SECONDS))
+                    // Cloudflare allows 400 s idle for HTTP/1.1 and HTTP/2 (the default), ahead of nginx.
+                    // Pool idle uses nanoTime (awake time); 4e evicts on ON_START after sleep or network changes.
+                    .connectionPool(ConnectionPool(5, 300, TimeUnit.SECONDS))
                     .retryOnConnectionFailure(false)
                     .connectTimeout(0, TimeUnit.MILLISECONDS)
                     .readTimeout(0, TimeUnit.MILLISECONDS)

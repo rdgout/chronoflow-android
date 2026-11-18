@@ -43,7 +43,7 @@ class ApiClientTests {
 
     @get:Rule val folder = TemporaryFolder()
 
-    @Test fun poolKeepAliveStaysBelowTheServerIdleBoundWithoutRetries() =
+    @Test fun dedicatedPoolUsesTheDefaultKeepAliveBelowTheCloudflareEdgeLimitWithoutRetries() =
         runTest(timeout = 60.seconds) {
             val base =
                 withContext(Dispatchers.IO) {
@@ -55,14 +55,37 @@ class ApiClientTests {
             val client = api.client(base = { base }).effectiveClient()
             val (maxIdle, keepAliveNanos) = poolSettings(client.connectionPool)
             org.junit.Assert.assertTrue(
-                "Pool idle duration was $keepAliveNanos ns",
-                keepAliveNanos < 5.seconds.inWholeNanoseconds,
+                "Pool idle duration must stay below Cloudflare's 400 s edge limit: $keepAliveNanos ns",
+                keepAliveNanos < 400.seconds.inWholeNanoseconds,
             )
-            assertThat(keepAliveNanos).isEqualTo(4.seconds.inWholeNanoseconds)
+            assertThat(keepAliveNanos).isEqualTo(300.seconds.inWholeNanoseconds)
             assertThat(maxIdle).isEqualTo(5)
             assertThat(client.retryOnConnectionFailure).isEqualTo(false)
             assertThat(client.connectionPool === base.connectionPool).isEqualTo(false)
             assertThat(poolSettings(base.connectionPool)).isEqualTo(8 to 120.seconds.inWholeNanoseconds)
+        }
+
+    @Test fun evictIdleConnectionsIsANoOpBeforeTheClientIsBuilt() {
+        val client = api.client(base = { error("eviction must not build the client") })
+        client.evictIdleConnections()
+    }
+
+    @Test fun evictIdleConnectionsPreventsReuseOfAnIdleConnection() =
+        runTest(timeout = 60.seconds) {
+            api.reply("GET", "/v1/users/me", body = "reply")
+            val client = api.client()
+            assertThat(client.request(endpoint) { it.decodeToString() }).isEqualTo("reply")
+            assertThat(client.request(endpoint) { it.decodeToString() }).isEqualTo("reply")
+            assertThat(api.requests[0].connectionIndex).isEqualTo(api.requests[1].connectionIndex)
+            assertThat(client.effectiveClient().connectionPool.idleConnectionCount()).isEqualTo(1)
+
+            client.evictIdleConnections()
+
+            assertThat(client.effectiveClient().connectionPool.idleConnectionCount()).isEqualTo(0)
+            assertThat(client.request(endpoint) { it.decodeToString() }).isEqualTo("reply")
+            org.junit.Assert.assertNotEquals(api.requests[0].connectionIndex, api.requests[2].connectionIndex)
+            assertThat(api.requests.map { it.exchangeIndex }).isEqualTo(listOf(0, 1, 0))
+            assertThat(api.server.requestCount).isEqualTo(3)
         }
 
     private fun poolSettings(pool: okhttp3.ConnectionPool): Pair<Int, Long> {

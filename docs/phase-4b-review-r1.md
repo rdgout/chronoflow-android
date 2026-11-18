@@ -37,13 +37,15 @@ After writing those assertions, temporarily changed only `SignedVerificationInpu
 
 Retry-after rows `date`, `invalid`, `negative`, `string` and `past` now carry the Swift `code: throttled` / `message: fake` envelope wrapper. Deliberately bare/error-body rows remain bare. All ten parameter cases pass.
 
-## I2: short idle reuse, retries remain disabled
+## I2: edge-aware pool and foreground eviction (re-decided in round 2)
 
-Chose **4 seconds**, with **five maximum idle connections**. The pinned web deployment files (`e36368ec`, `docker/Caddyfile`, `compose.yaml`, `Dockerfile`, `docker/entrypoint.sh`) specify no HTTP keep-alive/idle timeout; the image runs Caddy/FrankenPHP. Therefore the orchestrator's four-second default applies. The five-second reference is Node's documented [`server.keepAliveTimeout`](https://nodejs.org/docs/latest-v24.x/api/http.html#serverkeepalivetimeout), not a claim about the deployed API server's timeout.
+Round 2 supersedes the four-second decision. The pinned web deployment sources (`e36368ec`, `.ai/rules/deploy.md:12–29`, `docker/Caddyfile:8–9`, `docker/nginx/maintenance.conf`) establish **Cloudflare → nginx → Caddy/FrankenPHP**. There is no Node tier, so the previous Node five-second comparison does not apply. Cloudflare documents a [400-second client-side idle limit for HTTP/1.1 and HTTP/2](https://developers.cloudflare.com/fundamentals/reference/connection-limits/); [HTTP/2 is enabled by default](https://developers.cloudflare.com/speed/optimization/protocol/http2/).
 
-The cached OkHttp 5.5.1 `ConnectionPool.kt` documents/defaults to five idle connections and five minutes. The effective client now owns `ConnectionPool(5, 4, TimeUnit.SECONDS)`, constructed on its existing IO boundary. An injected base client's pool is unchanged. Retries stay off under OQ-A138/A149; OQ-A150 records that the user may revisit the policy. Shorter idle reuse reduces exposure to stale connections; abrupt peer closes can still become `Offline`.
+The effective client owns a dedicated **`ConnectionPool(5, 300, TimeUnit.SECONDS)`**: five idle connections and OkHttp's default 300-second keep-alive, below that edge limit. An injected base client's pool remains unchanged. Retries stay disabled under OQ-A138/A149.
 
-The test reads the pinned pool's actual policy fields through Java reflection, avoiding a multi-second timing test. Red observed the injected pool's unchanged 120-second duration. Green proves the effective pool uses four seconds, below the five-second bound, with five idle connections, no connection retries and the original base pool unchanged.
+The cached OkHttp 5.5.1 `RealConnectionPool.kt` measures idle time with `System.nanoTime()`, which tracks awake time on Android. A short pool cap cannot cover deep sleep. `ApiClient.evictIdleConnections()` evicts only idle connections from the already-built client, using a volatile reference without building a client or acquiring its initialization Mutex. Phase 4e calls it as ON_START step 0, covering sleep and network changes. OQ-A150 records option B and that the user may revisit it; the untracked 4e brief remains uncommitted.
+
+The renamed pool-policy test checks 300 seconds below the 400-second edge limit, five idle connections, disabled retries and an unchanged injected pool. A MockWebServer regression proves that two requests reuse one connection before eviction and a subsequent request opens a new connection after eviction. A separate test proves eviction before client construction is a no-op. Round 2 results follow below; the round 1 timing table records the superseded policy's historical run.
 
 ## Red → green evidence
 
@@ -63,7 +65,13 @@ Each green production fix passed on its first attempt. No tests hung or needed a
 
 Logs, JUnit XML, per-run timings and history-tree evidence are archived under `build/test-results/phase-4b-review-r1/`. No required command was sandbox-blocked. No emulator or performance/profile commands were run.
 
-## Final phase commit list
+## Round 2 I2 evidence
+
+The targeted selectors were `core:network:ApiClientTests#dedicatedPoolUsesTheDefaultKeepAliveBelowTheCloudflareEdgeLimitWithoutRetries core:network:ApiClientTests#evictIdleConnectionsIsANoOpBeforeTheClientIsBuilt core:network:ApiClientTests#evictIdleConnectionsPreventsReuseOfAnIdleConnection`.
+
+Written first, the tests ran red against the four-second pool and an eviction no-op: three cases ran, with the expected failures for 300 s versus 4 s and one idle connection remaining after eviction (2.32 s command wall time). The implementation then passed all three cases on its first green run (1.25 s). MockWebServer observed reuse before eviction and a new connection afterwards, with exchange indices `[0, 1, 0]`; no sleeps or wall-clock expiry waits are used. The already-built client reference is volatile, and eviction never enters the construction Mutex. Logs and JUnit/timing evidence are in `build/test-results/phase-4b-review-r2/`.
+
+## Phase commit list after round 1
 
 All commits below are GPG-signed Conventional Commits without trailers. Commits through `4c87ac8` are unchanged.
 
