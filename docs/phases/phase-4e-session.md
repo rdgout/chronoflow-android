@@ -465,6 +465,7 @@ fun Route.debugName(): String   // "welcome", "signIn", "twoFactor", …, "tripP
   - `CfRoot` collects `rootNavigator.state` and passes the current snapshot to `RootContent`.
   - Derive the current entries during composition, without a later `LaunchedEffect` stack update. Each entry captures its own identity so an outgoing screen cannot observe the incoming revision (review M2).
   - Call `NavDisplay(entries = entries, onBack = { /* root: system back finishes the activity */ })`; the prebuilt entries use no saved-state decorators.
+  - Set forward, pop and predictive-pop transition specs to `EnterTransition.None togetherWith ExitTransition.None`. RootView swaps branches immediately; Nav3's default crossfade is not part of the design (round-2 M1).
   - Only GuestWizard, Terms and Walkthrough include `revision` in entry identity, matching `RootView.swift:93/97/101`. Today/AppTabs, Welcome and auth stay unkeyed by revision. In particular the gate router's initial same-route Today navigation must not rebuild Today.
   - The stack is **never** a `rememberNavBackStack` and never saved. It is derived from the process-level `RootNavigator`, so an activity recreation in the same process (locale, font scale, layout direction; A8) shows the same route at once, and a size or uiMode change does not recreate at all. Process death is a cold launch (A8, iOS OQ 16).
 - **Entries:**
