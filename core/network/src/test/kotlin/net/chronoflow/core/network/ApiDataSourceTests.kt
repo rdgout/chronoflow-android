@@ -63,14 +63,23 @@ class ApiDataSourceTests {
             assertThat(
                 requestJson(api.requests[0]),
             ).isEqualTo(
-                ApiJson.request.encodeToJsonElement(
-                    ResetPasswordInput.serializer(),
-                    ResetPasswordInput("a%2Fb", "a+b@example.com", "NewPassword123!", "NewPassword123!"),
-                ),
+                buildJsonObject {
+                    put("token", "a%2Fb")
+                    put("email", "a+b@example.com")
+                    put("password", "NewPassword123!")
+                    put("password_confirmation", "NewPassword123!")
+                },
             )
             assertThat(
                 requestJson(api.requests[1]),
-            ).isEqualTo(ApiJson.request.encodeToJsonElement(SignedVerificationInput.serializer(), signed))
+            ).isEqualTo(
+                buildJsonObject {
+                    put("id", "0199a3c0-0000-7000-8000-000000000001")
+                    put("hash", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+                    put("expires", 1800000000L)
+                    put("signature", "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
+                },
+            )
             assertThat(api.requests[0].headers["Authorization"]).isEqualTo(null)
             assertThat(api.requests[1].headers["Authorization"]).isEqualTo("Bearer artificial-old-token")
             assertThat(api.server.requestCount).isEqualTo(2)
