@@ -56,7 +56,7 @@ class VerificationSessionAdapter(
         email: String,
     ): Boolean =
         withContext(graph.dispatchers.io) {
-            graph.sessionSync.stop()
+            graph.stopSyncIfStarted()
             graph.controller.confirmEmailVerification(expected, email)
         }
 

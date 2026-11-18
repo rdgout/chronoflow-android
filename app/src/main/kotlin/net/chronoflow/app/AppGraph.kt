@@ -230,6 +230,11 @@ class AppGraph(
             )
         }
     val sessionSync: SessionSync by syncLazy
+
+    internal suspend fun stopSyncIfStarted() {
+        if (syncLazy.isInitialized()) sessionSync.stop()
+    }
+
     private val controllerLazy: Lazy<SessionController> =
         lazy {
             SessionController(
@@ -363,7 +368,7 @@ class AppGraph(
     suspend fun close() =
         withContext(NonCancellable) {
             if (routerLazy.isInitialized()) gateRouter.stop()
-            if (syncLazy.isInitialized()) sessionSync.stop()
+            stopSyncIfStarted()
             if (graphsLazy.isInitialized()) sessionGraphs.close()
             if (accountsLazy.isInitialized()) sessionAccounts.close()
             if (readinessLazy.isInitialized()) readiness.close()
