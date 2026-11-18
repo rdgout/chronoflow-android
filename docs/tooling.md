@@ -317,3 +317,15 @@ Five slowest mock cases from the final JVM timing report:
 Results: `build/test-results/quick/`, `build/test-results/build-logic/`, `build/test-results/timing/`, `core/data-mock/build/test-results/test/` and `core/data-mock/build/cf-timings/test/`. The release XML is under `app/build/test-results/testReleaseUnitTest/`.
 
 The phase intentionally leaves `make check` (including the pixel emulator tier) to the user. No `make perf`, `make perf-timeline`, `make baseline-profile`, emulator tier or T2 AVD was run. The APK and JVM probes completed in the sandbox; no requested command remains blocked.
+
+## Phase 4e release inspection (2026-11-18)
+
+`make targeted ONLY="app:ReleaseReadinessTest"` passed (6 s reported Gradle time), including session-seed class absence and native session restoration. The isolated `app:ReleaseSeedExtrasTest` passed (4 s). `./gradlew :app:verifyReleaseManifest :app:assembleRelease` passed (31 s).
+
+```sh
+JAVA_HOME=/Library/Java/JavaVirtualMachines/zulu-17.jdk/Contents/Home \
+  "$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer" dex packages \
+  app/build/outputs/apk/release/app-release-unsigned.apk | grep -c datamock
+```
+
+Output: `0` (grep exits 1 for no matches). The APK's only native library basename is the existing OQ-0a-22 allow-list entry `libandroidx.graphics.path.so`, across arm64-v8a, armeabi-v7a, x86 and x86_64. No new `.so` was introduced. No device or performance tier was run for this inspection.

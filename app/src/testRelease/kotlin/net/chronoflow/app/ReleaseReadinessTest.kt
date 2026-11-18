@@ -2,15 +2,60 @@ package net.chronoflow.app
 
 import assertk.assertThat
 import assertk.assertions.isFalse
-import assertk.assertions.isInstanceOf
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
+import net.chronoflow.core.model.launch.SignedOutReadiness
+import net.chronoflow.core.model.session.SessionPresence
+import net.chronoflow.core.model.session.StoredSession
+import net.chronoflow.core.sync.session.AccountReadinessSource
+import net.chronoflow.core.sync.session.MemorySessionStore
+import net.chronoflow.core.sync.session.RecordingAccountStore
+import net.chronoflow.core.sync.session.SessionController
+import net.chronoflow.core.sync.session.SessionTeardown
+import net.chronoflow.core.sync.session.StoredDataReadiness
+import net.chronoflow.core.testing.sync.syncAccount
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.fail
 import org.junit.Test
+import kotlin.time.Duration.Companion.seconds
 
 class ReleaseReadinessTest {
     private fun missing(name: String) {
-        val result = runCatching { Class.forName(name) }
-        assertThat(result.exceptionOrNull() ?: IllegalStateException("$name is on the release classpath"))
-            .isInstanceOf(ClassNotFoundException::class)
+        try {
+            Class.forName(name)
+            fail("$name is on the release classpath")
+        } catch (_: ClassNotFoundException) {
+        }
     }
+
+    @Test fun sessionSeedCodeIsAbsent() {
+        missing("net.chronoflow.debug.MockSessionSeed")
+        missing("net.chronoflow.debug.RouteProbe")
+        missing("net.chronoflow.debug.DebugSeedRouting")
+        missing("net.chronoflow.debug.ScreenSessionFixture")
+        missing("net.chronoflow.debug.DebugAppHooks")
+        missing("net.chronoflow.app.perf.PerfMockSources")
+        assertFalse(net.chronoflow.core.ui.R.string::class.java.fields.any { it.name == "app_debug_route_x" })
+    }
+
+    @Test fun releaseRestoresNativeSession() =
+        runTest(timeout = 60.seconds) {
+            val io = StandardTestDispatcher(testScheduler)
+            val credentials = MemorySessionStore(StoredSession("t", syncAccount).encode())
+            val controller = SessionController(credentials, RecordingAccountStore(), SessionTeardown(sleep = {}), io)
+            val readiness = StoredDataReadiness(controller, AccountReadinessSource { emptyFlow() }, io)
+            try {
+                assertEquals(SessionPresence.SignedIn(syncAccount), readiness.session())
+                assertEquals(1, credentials.reads)
+                assertEquals(SessionPresence.SignedOut, SignedOutReadiness.session())
+                assertEquals(1, credentials.reads)
+            } finally {
+                readiness.close()
+                controller.close()
+            }
+        }
 
     @Test
     fun mockDataSourceIsAbsent() {
@@ -22,9 +67,10 @@ class ReleaseReadinessTest {
 
     @Test
     fun releaseShipsNoSeedCode() {
-        listOf("SeedReceiverActivity", "TestSeeds", "TestSeed", "UITestTimeline").forEach {
-            missing("net.chronoflow.debug.$it")
-        }
+        missing("net.chronoflow.debug.SeedReceiverActivity")
+        missing("net.chronoflow.debug.TestSeeds")
+        missing("net.chronoflow.debug.TestSeed")
+        missing("net.chronoflow.debug.UITestTimeline")
     }
 
     @Test
