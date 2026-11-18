@@ -73,6 +73,14 @@ object LucideGlyphs {
             ),
         )
 
+    val ChevronLeft =
+        LucideGlyph(
+            "chevron-left",
+            listOf(
+                LucidePath("m15 18-6-6 6-6", false),
+            ),
+        )
+
     val ChevronRight =
         LucideGlyph(
             "chevron-right",
@@ -191,6 +199,15 @@ object LucideGlyphs {
                 LucidePath("M2 12a10 10 0 1 0 20 0a10 10 0 1 0-20 0Z", false),
                 LucidePath("M12 16v-4", false),
                 LucidePath("M12 8h.01", false),
+            ),
+        )
+
+    val KeyRound =
+        LucideGlyph(
+            "key-round",
+            listOf(
+                LucidePath("M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z", false),
+                LucidePath("M16 7.5a0.5 0.5 0 1 0 1 0a0.5 0.5 0 1 0-1 0Z", true),
             ),
         )
 
