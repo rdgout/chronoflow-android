@@ -2123,7 +2123,7 @@ Implementation commits (brief §7):
   - `AuthLink.kt`, an exact port. A verify link has 5 segments, a UUID id, a 40-hex hash, digit-only `expires` and a 64-hex signature. A reset link has 3 segments and exactly one `email`.
   - `PendingLaunchIntent`: a reset link waits until the user is signed out, and verify links go to the per-account inbox.
 - [ ] **docs/app-links.md:** the `assetlinks.json` content for server item S1 (`handle_all_urls`, the release fingerprint only, OQ-A38), and how to test with `adb shell pm verify-app-links`.
-- [ ] **Tests.**
+- [x] **Tests.**
   - The ported `AuthLink` cases.
   - Routing cases: signed in versus signed out, cold versus warm.
   - Guards.
