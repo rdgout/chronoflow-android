@@ -79,7 +79,7 @@ sealed interface AccountSecurityChange {
         val id: Long,
         val current: String,
     ) : AccountSecurityChange {
-        override fun toString(): String = "RemovePasskey(***)"
+        override fun toString(): String = "RemovePasskey(id=$id, current=***)"
     }
 }
 

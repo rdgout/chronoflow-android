@@ -87,5 +87,9 @@ class SecretRedactionTest {
 
     @Test fun securityPasskeyCreationOptions() = check(AccountSecurityChange.PasskeyCreationOptions(secret))
 
-    @Test fun securityRemovePasskey() = check(AccountSecurityChange.RemovePasskey(1L, secret))
+    @Test fun securityRemovePasskey() {
+        val change = AccountSecurityChange.RemovePasskey(1L, secret)
+        check(change)
+        assertThat(change.toString()).contains("id=1")
+    }
 }
