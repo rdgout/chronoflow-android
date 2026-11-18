@@ -1987,7 +1987,7 @@ Implementation commits (brief §7):
 - [x] T7 — Sign-in screen and ViewModel.
 - [x] T8 — App wiring and accepted-session routing.
 - [x] T9 — Guards and board captures.
-- [ ] T10 — Emulator journey and keyboard check.
+- [x] T10 — Emulator journey and keyboard check.
 - [ ] T11 — Docs.
 
 - [x] **Auth shell** (`feature/auth/…/shell/`).
@@ -2005,7 +2005,7 @@ Implementation commits (brief §7):
   - Email-unverified goes to the verify route, and two-factor to the 5b route.
   - Success calls `SessionController.accept`, then the gate. Autofill commits only after success.
 - [x] **Passkey entry.** The passkey button and divider exist but stay hidden while `PasskeyCapability` is false.
-- [ ] **Tests.**
+- [x] **Tests.**
   - The ported iOS sign-in and form cases (JVM).
   - Guards for the `AuthSignIn`, `AuthSignInError` and `AuthStates` states.
   - On the emulator: one journey (a typed demo sign-in → the app root), and one IME check (the password field and submit stay visible with the keyboard up).
@@ -2014,6 +2014,8 @@ Implementation commits (brief §7):
 **Acceptance**
 - The screens match the boards, and the journey takes under 10 s.
 - No secret appears in saved state.
+
+**Validation pending (2026-11-18):** the typed demo journey passes on `pixel` in 2.279 s with zero StrictMode IO violations. `SignInKeyboardTest` fails in 4.112 s: `software keyboard not visible — check show_ime_with_hard_keyboard`. It therefore has no reveal result. Each emulator class ran once, as requested; the keyboard check remains an acceptance failure until rerun with a full software keyboard. Browser board comparison and manual TalkBack/provider checks also remain open (see `docs/auth.md`).
 
 ### Phase 5b: Two-factor and passkey sign-in (`feat/phase-5b-two-factor-passkeys`)
 
