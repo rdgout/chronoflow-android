@@ -385,4 +385,43 @@ class ApiClientTests {
                 },
             ).isEqualTo(DataFailure.Server(200))
         }
+
+    @Test fun injectedAuthenticatorsCannotRetryPublicCalls() =
+        runTest(timeout = 60.seconds) {
+            val invocations =
+                java.util.concurrent.atomic
+                    .AtomicInteger()
+            val authenticator =
+                okhttp3.Authenticator { _, response ->
+                    invocations.incrementAndGet()
+                    response.request
+                        .newBuilder()
+                        .header("Authorization", "Bearer stale")
+                        .build()
+                }
+            val base =
+                withContext(Dispatchers.IO) {
+                    OkHttpClient
+                        .Builder()
+                        .authenticator(authenticator)
+                        .proxyAuthenticator(authenticator)
+                        .build()
+                }
+            val client = api.client(base = { base })
+            api.reply("GET", "/v1/users/me", 401, json("errors/unauthenticated.json"))
+            assertThat(
+                failure {
+                    client.request(
+                        ApiEndpoint(path = listOf("users", "me"), access = ApiEndpoint.Access.PublicRoute),
+                    ) { Unit }
+                },
+            ).isEqualTo(DataFailure.Unauthorized(401))
+            assertThat(invocations.get()).isEqualTo(0)
+            assertThat(api.server.requestCount).isEqualTo(1)
+            assertThat(api.requests.single().headers["Authorization"]).isEqualTo(null)
+            assertThat(client.effectiveClient().authenticator === okhttp3.Authenticator.NONE).isEqualTo(true)
+            assertThat(client.effectiveClient().proxyAuthenticator === okhttp3.Authenticator.NONE).isEqualTo(true)
+            assertThat(base.authenticator === authenticator).isEqualTo(true)
+            assertThat(base.proxyAuthenticator === authenticator).isEqualTo(true)
+        }
 }

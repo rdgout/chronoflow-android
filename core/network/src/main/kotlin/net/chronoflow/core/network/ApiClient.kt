@@ -18,6 +18,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.DeserializationStrategy
 import net.chronoflow.core.model.DataFailure
 import net.chronoflow.core.model.api.ApiJson
+import okhttp3.Authenticator
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.CookieJar
@@ -61,6 +62,8 @@ class ApiClient(
                     .followRedirects(false)
                     .followSslRedirects(false)
                     .cookieJar(CookieJar.NO_COOKIES)
+                    .authenticator(Authenticator.NONE)
+                    .proxyAuthenticator(Authenticator.NONE)
                     .cache(null)
                     .retryOnConnectionFailure(false)
                     .connectTimeout(0, TimeUnit.MILLISECONDS)
