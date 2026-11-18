@@ -21,6 +21,8 @@ import net.chronoflow.debug.TestSeed
 import net.chronoflow.debug.TestSeeds
 import org.junit.After
 import org.junit.Rule
+import org.robolectric.Robolectric
+import org.robolectric.android.controller.ActivityController
 import org.robolectric.util.ReflectionHelpers
 import org.robolectric.util.ReflectionHelpers.ClassParameter
 import java.util.UUID
@@ -33,12 +35,14 @@ abstract class AuthResetActivityFixture {
     protected val dispatcher = StandardTestDispatcher(scheduler)
     protected lateinit var graph: AppGraph
     protected lateinit var scenario: ActivityScenario<MainActivity>
+    private var linkActivity: ActivityController<MainActivity>? = null
 
     protected fun launch(
         audit: String? = null,
         extras: Map<String, String> = emptyMap(),
         link: String? = null,
         flags: Int = 0,
+        initialRoute: Route? = null,
     ) {
         val app = ApplicationProvider.getApplicationContext<SessionTestApplication>()
         val values =
@@ -61,11 +65,23 @@ abstract class AuthResetActivityFixture {
             )
         }
         graph = app.graph
+        initialRoute?.let(graph.rootNavigator::navigate)
         val intent = TestSeeds.forwardIntent(app, seed)
         if (link != null) intent.setAction(Intent.ACTION_VIEW).setData(Uri.parse(link))
         intent.addFlags(flags)
         compose.mainClock.autoAdvance = false
-        scenario = ActivityScenario.launch(intent)
+        if (link == null) {
+            scenario = ActivityScenario.launch(intent)
+        } else {
+            // ActivityScenario matches the original intent against the scrubbed activity intent and never resumes.
+            linkActivity =
+                Robolectric
+                    .buildActivity(MainActivity::class.java, intent)
+                    .create()
+                    .start()
+                    .resume()
+                    .visible()
+        }
         commitFrame()
         waitFor {
             val route = graph.rootNavigator.state.value.route
@@ -80,8 +96,13 @@ abstract class AuthResetActivityFixture {
         compose.waitForIdle()
     }
 
+    protected fun onActivity(action: (MainActivity) -> Unit) {
+        val controller = linkActivity
+        if (controller == null) scenario.onActivity { action(it) } else action(controller.get())
+    }
+
     protected fun commitFrame() {
-        scenario.onActivity { activity ->
+        onActivity { activity ->
             ReflectionHelpers
                 .callInstanceMethod<ArrayList<Runnable>?>(
                     activity.window.decorView.viewTreeObserver,
@@ -103,7 +124,7 @@ abstract class AuthResetActivityFixture {
 
     protected fun savedBundle(): Bundle =
         Bundle().also { out ->
-            scenario.onActivity {
+            onActivity {
                 ReflectionHelpers.callInstanceMethod<Unit>(
                     it,
                     "onSaveInstanceState",
@@ -113,12 +134,13 @@ abstract class AuthResetActivityFixture {
         }
 
     protected fun recreate(route: Route) {
-        scenario.recreate()
+        linkActivity?.recreate() ?: scenario.recreate()
         commitFrame()
         waitFor { graph.rootNavigator.state.value.route == route }
     }
 
     @After fun closeGraph() {
+        linkActivity?.pause()?.stop()?.destroy()
         if (::scenario.isInitialized) scenario.close()
         if (::graph.isInitialized) runTest(dispatcher, timeout = 60.seconds) { graph.close() }
     }

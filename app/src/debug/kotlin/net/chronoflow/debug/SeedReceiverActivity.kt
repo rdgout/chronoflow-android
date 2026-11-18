@@ -11,6 +11,7 @@ class SeedReceiverActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val seed = TestSeed.fromIntent(intent)
+        intent.removeExtra("CF_AUTH_TEST_LINK")
         lifecycleScope.launch {
             TestSeeds.apply(applicationContext, seed, Dispatchers.IO)
             startActivity(TestSeeds.forwardIntent(this@SeedReceiverActivity, seed))
