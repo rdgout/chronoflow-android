@@ -69,6 +69,12 @@ internal fun Project.configureTestTimingOutputs() {
         val timings = layout.buildDirectory.dir("cf-timings/$name")
         outputs.dir(timings)
         outputs.doNotCacheIf("Test timings measure this host and must not be replayed from the build cache") { true }
-        doFirst { timings.get().asFile.deleteRecursively() }
+        doFirst {
+            val directory = timings.get().asFile
+            directory.deleteRecursively()
+            directory.mkdirs()
+            // Prove execution even when the listener or JUnit report is missing.
+            directory.resolve("execution.started").writeText("")
+        }
     }
 }

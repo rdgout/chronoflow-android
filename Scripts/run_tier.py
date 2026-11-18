@@ -64,10 +64,15 @@ def collect(root, out_dir, patterns):
             path = Path(match)
             if path.is_file():
                 files.append(path)
-    tests = []
     for path in files:
         target = junit / str(path.relative_to(root)).replace(os.sep, "__")
         shutil.copyfile(path, target)
+    return files, read_tests(files)
+
+
+def read_tests(files):
+    tests = []
+    for path in files:
         try:
             tree = ET.parse(path)
         except ET.ParseError:
@@ -86,23 +91,44 @@ def collect(root, out_dir, patterns):
                     "status": status,
                 }
             )
-    return files, tests
+    return tests
 
 
-def collect_timings(root, patterns):
-    files, entries = [], []
+def collect_timings(root, patterns, started_ns):
+    files, entries, measured_dirs = [], [], set()
     for pattern in patterns:
         for match in sorted(glob.glob(str(root / pattern), recursive=True)):
             path = Path(match)
-            if not path.is_file():
+            if not path.is_file() or path.stat().st_mtime_ns < started_ns:
                 continue
-            files.append(path)
             try:
                 data = json.loads(path.read_text())
             except (OSError, ValueError):
                 continue
-            entries.extend(data.get("tests", []))
-    return files, entries
+            if not isinstance(data, dict) or not isinstance(data.get("tests"), list):
+                continue
+            files.append(path)
+            entries.extend(data["tests"])
+            if data["tests"]:
+                measured_dirs.add(path.parent)
+    return files, entries, measured_dirs
+
+
+def missing_execution_evidence(root, patterns, started_ns, result_files, timing_files, measured_dirs):
+    missing = []
+    for pattern in patterns:
+        marker_pattern = str(root / Path(pattern).parent / "execution.started")
+        for match in sorted(glob.glob(marker_pattern, recursive=True)):
+            marker = Path(match)
+            if marker.stat().st_mtime_ns < started_ns:
+                continue
+            timing_dir = marker.parent
+            result_dir = timing_dir.parent.parent / "test-results" / timing_dir.name
+            if timing_dir in measured_dirs and not any(path.parent == result_dir for path in result_files):
+                missing.append("%s wrote no result files" % result_dir.relative_to(root))
+            if not any(path.parent == timing_dir for path in timing_files):
+                missing.append("%s wrote no timing files" % timing_dir.relative_to(root))
+    return sorted(set(missing))
 
 
 def _bare(method):
@@ -170,6 +196,7 @@ def main(argv):
                 return 75
 
     started = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    started_ns = time.time_ns()
     t0 = time.monotonic()
     state = {"last": time.monotonic()}
     log = open(log_path, "wb")
@@ -232,8 +259,13 @@ def main(argv):
     else:
         exit_code = code if code >= 0 else 128 - code
     files, tests = collect(root, out_dir, patterns)
-    timing_files, listener_entries = collect_timings(root, timing_patterns)
-    checks, unbudgeted = budget_checks(tests, listener_entries, emulator)
+    current_files = [path for path in files if path.stat().st_mtime_ns >= started_ns]
+    current_tests = read_tests(current_files)
+    timing_files, listener_entries, measured_dirs = collect_timings(root, timing_patterns, started_ns)
+    missing_evidence = missing_execution_evidence(
+        root, timing_patterns, started_ns, current_files, timing_files, measured_dirs
+    )
+    checks, unbudgeted = budget_checks(current_tests, listener_entries, emulator)
     over = [c for c in checks if c["status"] == "over"]
     report = {
         "tier": tier,
@@ -242,6 +274,7 @@ def main(argv):
         "wallSeconds": round(wall, 2),
         "exitCode": exit_code,
         "tests": tests,
+        "measuredTests": len(current_tests),
         "budgets": BUDGETS,
         "budgetChecks": checks,
         "overBudget": len(over),
@@ -249,6 +282,8 @@ def main(argv):
     }
     if unbudgeted:
         report["unbudgeted"] = unbudgeted
+    if missing_evidence:
+        report["missingEvidence"] = missing_evidence
     (out_dir / "timings.json").write_text(json.dumps(report, indent=2) + "\n")
     for c in over:
         print(
@@ -262,7 +297,10 @@ def main(argv):
     if exit_code == 0 and not files:
         print("run-tier: %s produced no result files" % tier, file=sys.stderr)
         return 2
-    if exit_code == 0 and timing_patterns and files and not timing_files:
+    if exit_code == 0 and missing_evidence:
+        print("run-tier: " + "; ".join(missing_evidence), file=sys.stderr)
+        return 2
+    if exit_code == 0 and timing_patterns and current_files and not timing_files:
         print("run-tier: %s wrote no timing files" % tier, file=sys.stderr)
         return 2
     if exit_code == 0 and timing_patterns and unbudgeted:

@@ -115,15 +115,20 @@ class RunTierTest(unittest.TestCase):
         self.assertFalse(marker.exists())
 
     def _xml(self, tier_dir="out", cases=(("a.B", "t1", "0.1"),)):
-        (self.root / tier_dir).mkdir(exist_ok=True)
+        (self.root / tier_dir).mkdir(parents=True, exist_ok=True)
         body = "".join('<testcase classname="%s" name="%s" time="%s"/>' % c for c in cases)
         (self.root / tier_dir / "TEST-a.xml").write_text("<testsuite>%s</testsuite>" % body)
 
-    def _timings(self, entries, name="1.json"):
+    def _timings(self, entries, name="1.json", tier_dir="tm"):
         import json
 
-        (self.root / "tm").mkdir(exist_ok=True)
-        (self.root / "tm" / name).write_text(json.dumps({"tier": "t", "tests": entries}))
+        (self.root / tier_dir).mkdir(parents=True, exist_ok=True)
+        (self.root / tier_dir / name).write_text(json.dumps({"tier": "t", "tests": entries}))
+
+    @staticmethod
+    def _write_during_run(*paths):
+        return [sys.executable, "-I", "-c", "from pathlib import Path; import sys; "
+                "[Path(p).touch() for p in sys.argv[1:]]", *paths]
 
     @staticmethod
     def _entry(kind="jvm", ms=10, budget=1000, status="ok", method="t1"):
@@ -137,9 +142,74 @@ class RunTierTest(unittest.TestCase):
     def test_listener_over_budget_fails(self):
         self._xml()
         self._timings([self._entry(ms=1200, status="over")])
-        result = self.tier("t", "--results", "out/*.xml", "--timings", "tm/*.json", "--", "true")
+        result = self.tier("t", "--results", "out/*.xml", "--timings", "tm/*.json", "--",
+                           *self._write_during_run("out/TEST-a.xml", "tm/1.json"))
         self.assertEqual(result.returncode, 3)
         self.assertIn("over budget: jvm a.B#t1 1200 ms > 1000 ms", result.stderr)
+
+    def test_stale_timings_are_not_judged_again(self):
+        self._xml()
+        self._timings([self._entry(ms=1200, status="over")])
+        result = self.tier("t", "--results", "out/*.xml", "--timings", "tm/*.json", "--", "true")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self._report()["budgetChecks"], [])
+        self.assertEqual(self._report()["overBudget"], 0)
+
+    def test_stale_timing_cannot_cover_tests_that_ran_now(self):
+        self._xml()
+        self._timings([self._entry()])
+        result = self.tier("t", "--results", "out/*.xml", "--timings", "tm/*.json", "--",
+                           *self._write_during_run("out/TEST-a.xml"))
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("wrote no timing files", result.stderr)
+
+    def test_only_current_tests_need_current_timing_entries(self):
+        self._xml()
+        self._timings([self._entry(ms=1200, status="over")])
+        self._xml("new", cases=(("c.D", "other", "0.1"),))
+        self._timings([{**self._entry(method="other"), "class": "c.D"}], name="2.json")
+        result = self.tier("t", "--results", "out/*.xml", "--results", "new/*.xml",
+                           "--timings", "tm/*.json", "--",
+                           *self._write_during_run("new/TEST-a.xml", "tm/2.json"))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self._report()["measuredTests"], 1)
+        self.assertEqual(len(self._report()["tests"]), 2)
+        self.assertEqual([e["class"] for e in self._report()["budgetChecks"]], ["c.D"])
+
+    def test_executed_task_cannot_borrow_another_tasks_timing_evidence(self):
+        for module in ("a", "b"):
+            self._xml(module + "/build/test-results/test")
+            self._timings([self._entry()], tier_dir=module + "/build/cf-timings/test")
+        result = self.tier(
+            "t", "--results", "*/build/test-results/test/*.xml", "--timings", "*/build/cf-timings/test/*.json", "--",
+            *self._write_during_run(
+                "a/build/cf-timings/test/execution.started", "a/build/test-results/test/TEST-a.xml",
+                "b/build/cf-timings/test/execution.started", "b/build/test-results/test/TEST-a.xml",
+                "b/build/cf-timings/test/1.json",
+            ),
+        )
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("a/build/cf-timings/test wrote no timing files", result.stderr)
+
+    def test_executed_task_cannot_reuse_old_result_files(self):
+        self._xml("a/build/test-results/test")
+        self._timings([self._entry()], tier_dir="a/build/cf-timings/test")
+        result = self.tier(
+            "t", "--results", "a/build/test-results/test/*.xml", "--timings", "a/build/cf-timings/test/*.json", "--",
+            *self._write_during_run("a/build/cf-timings/test/execution.started", "a/build/cf-timings/test/1.json"),
+        )
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("a/build/test-results/test wrote no result files", result.stderr)
+
+    def test_executed_task_with_no_selected_cases_has_explicit_empty_timings(self):
+        self._xml()
+        self._timings([], tier_dir="a/build/cf-timings/test")
+        result = self.tier(
+            "t", "--results", "out/*.xml", "--timings", "a/build/cf-timings/test/*.json", "--",
+            *self._write_during_run("a/build/cf-timings/test/execution.started", "a/build/cf-timings/test/1.json"),
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self._report()["measuredTests"], 0)
 
     def test_exempt_and_warmup_pass(self):
         self._xml(cases=(("a.B", "t1", "0.1"), ("a.B", "t2", "0.1")))
@@ -149,26 +219,30 @@ class RunTierTest(unittest.TestCase):
                 self._entry(ms=6000, budget=None, status="exempt", method="t2"),
             ]
         )
-        result = self.tier("t", "--results", "out/*.xml", "--timings", "tm/*.json", "--", "true")
+        result = self.tier("t", "--results", "out/*.xml", "--timings", "tm/*.json", "--",
+                           *self._write_during_run("out/TEST-a.xml", "tm/1.json"))
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(self._report()["overBudget"], 0)
 
     def test_emulator_xml_over_budget_fails(self):
         self._xml(cases=(("a.B", "t1", "10.5"),))
-        result = self.tier("t", "--results", "out/*.xml", "--emulator", "--", "true")
+        result = self.tier("t", "--results", "out/*.xml", "--emulator", "--",
+                           *self._write_during_run("out/TEST-a.xml"))
         self.assertEqual(result.returncode, 3)
         self.assertIn("over budget: emulator a.B#t1 10500 ms > 10000 ms", result.stderr)
 
     def test_missing_timing_files_fail(self):
         self._xml()
-        result = self.tier("t", "--results", "out/*.xml", "--timings", "tm/*.json", "--", "true")
+        result = self.tier("t", "--results", "out/*.xml", "--timings", "tm/*.json", "--",
+                           *self._write_during_run("out/TEST-a.xml"))
         self.assertEqual(result.returncode, 2)
         self.assertIn("wrote no timing files", result.stderr)
 
     def test_xml_without_listener_entry_is_not_budgeted(self):
         self._xml(cases=(("a.B", "t1", "0.1"), ("c.D", "other", "0.1")))
         self._timings([self._entry()])
-        result = self.tier("t", "--results", "out/*.xml", "--timings", "tm/*.json", "--", "true")
+        result = self.tier("t", "--results", "out/*.xml", "--timings", "tm/*.json", "--",
+                           *self._write_during_run("out/TEST-a.xml", "tm/1.json"))
         self.assertEqual(result.returncode, 2)
         self.assertIn("without a timing entry: c.D#other", result.stderr)
         report = self._report()
@@ -178,7 +252,8 @@ class RunTierTest(unittest.TestCase):
     def test_slowest_lists_top_ten(self):
         self._xml()
         self._timings([self._entry(ms=i, method="m%d" % i) for i in range(1, 16)] + [self._entry(ms=0)])
-        result = self.tier("t", "--results", "out/*.xml", "--timings", "tm/*.json", "--", "true")
+        result = self.tier("t", "--results", "out/*.xml", "--timings", "tm/*.json", "--",
+                           *self._write_during_run("out/TEST-a.xml", "tm/1.json"))
         self.assertEqual(result.returncode, 0, result.stderr)
         slowest = self._report()["slowest"]
         self.assertEqual([c["ms"] for c in slowest], list(range(15, 5, -1)))
