@@ -2,6 +2,7 @@
 
 - **Branch:** `feat/phase-6a-shell-trips`, from the stack top once 4e and 2 are in it. This phase also uses 1a (`PlanDecoder`, `CopyLineFormatter`, `tripDisplayStatus`, `buildCheckState`, `withoutOptionalSteps`, `checkIdentity`, `planDate`, `PlanClock`), 1c (`TimelineCategoryStyle`, `TimelineGlyph`), 1d (`SystemPlanClock`, `AppGraph.planClock`), 4c (mock demo trips), 4d (`TripRepository`, `AccountRepository`, `SettingsRepository`, `SyncResult`, `SyncChanges`) and 0c/0e (strings, `ProfileRule`, `Guards`, tiers). All of them are earlier waves. If one is missing, stop and report it.
 - **Stack check (2026-11-18, against 7ab9823).** Single lane: 4e, 2 and everything up to 5d are in the stack. Every upstream name this brief cites resolves (`RoutePlaceholder`, `LaunchOverrides`, `MockSources`, `TripRepository`, `PlanDecoder`, `CopyLineFormatter`, `tripDisplayStatus`, `buildCheckState`, `TimelineCategoryStyle`, `TimelineGlyph`, `SystemPlanClock`, `AppGraph.planClock`, `CfPullToRefresh`, `Route.Trips/Today/Settings`). Deltas since the brief was written: root route entries are registered in `CfRoot.kt`'s `when (displayedRoute)`. `RootContent` decorates entries with the saveable-state and ViewModel-store decorators (5d), so ViewModels are entry-scoped and cleared when their root route leaves, and the content key is the secret-free `Route.stateKey()` (`core/navigation/…/Route.kt`). Extend `stateKey()` for any route that gains fields. A Robolectric fixture that renders `RootContent` outside `CfRoot` must provide `LocalSafeInsets` and the other root locals that `CfRoot` provides. Robolectric link launches use `Robolectric.buildActivity`, not `ActivityScenario`. OQ rows end at OQ-A231. `make quick`'s timing gate requires a passed stamp to reuse test outputs (5c).
+- **Repeated stack check (2026-11-18).** Rechecked the cited upstream symbols and signatures. The existing variant hook is `LaunchPlatform` (debug and release, with perf using the release twin); `CfBadge` lives in `component/CfPill.kt`. Repository observation is `AccountDatabase.observe`, not raw SQLDelight coroutine extensions: it registers table listeners, fetches on injected IO and completes on database close. Reuse it for `tripValue` and `pendingCheckOffs`, preserving the landed lifecycle. The existing `selectTrip` query already supplies the single-trip lookup; no duplicate `tripById` query is needed. `make targeted` requires module/class selectors and does not expand package wildcards. Layout matrices below follow current plan.md standard acceptance §5 (light geometry guards, light/dark captures).
 - **Plan entry:** `plan.md` "Phase 6a: Tab shell, My trips and pull to refresh" (l.1856–1896). Decisions **A3** (l.90), **A4** (l.91), **A8** (l.95), **A10** (l.97). "Android spec: window policy" (l.357–369), "Android spec: Material mapping" (l.414–432), OQ-A3/A4/A5 (l.578–580), "Standard acceptance for every phase" (l.636–643).
 - **Revised 2026-11-16** (single pass, no subagents) against the final 2, 3a, 3b, 4d and 4e briefs and iOS `f391a1fa`. Changes: 4e has no `RouteSeam` and no `VariantHooks`. Seams are 3b/4e's `RoutePlaceholder(route, label)`, and debug-only values come through **the variant hook that already carries 3a's `LaunchOverrides`** (4e put `MockSources` there too) (§5.7, T10, T11). Other changes: Phase 2 line numbers; `softShadow(shape, dark)`; `LocalSafeInsets` now lives in `…designsystem.layout`; `core/ui` dp literals need `@BoardMetrics`; the empty-state glyph colour is `foreground`; `CopyCatalogProvider` is owned by `AppGraph`; `detailValues` uses the shape from the 6b brief; added OQ-6a-9…11.
 - **Checked 2026-11-16** against iOS `f391a1fa`, the boards, web `e36368ec` and the 1a/1c/2/3b/4d/4e/6b/6d/7 briefs. Corrected: line references (plan l.433, 1c §5.1 l.190, `RefreshFeedback.swift:58–60`), the rail container default, out-of-scope owners (trip actions 6d, refused changes 6d, wizard save 9g), safe-area insets for the list and capsule (iOS `planPageRail`), token names for the loading skeleton, the empty-state button size, `cfClickable` focus shape, `TripsMetrics` visibility, the `AppLanguage` → `Language` mapping, the T3 file list, the `CategorySwatch` package (6d path), and added OQ-6a-12…14.
@@ -123,8 +124,8 @@ Port the whole file into `…/plan/Today.kt` (`net.chronoflow.core.plan`), which
 ### 5.3 Plan snapshot observation [F `TripRepository+PlanObservation.swift:12–30`]
 
 - Add `val trip: TripRecord? = null` as the **first** property of `TripPlanSnapshot` (closes OQ-1a-5). Update every existing constructor call with named arguments.
-- **Shape [R]:** use the code shape from `phase-6b-trip-page.md` Task 1 (l.160–170): `tripValue(tripId).flatMapLatest { trip -> … combine(planValues, checkValues, pendingCheckOffs) … }.distinctUntilChanged()`, with a new named query `tripById` (`asFlow().mapToOneOrNull(io)`) unless 4d already observes a single trip. 6a owns this code, and 6b's Task 1 then only verifies it (OQ-6a-11).
-- `TripRepository.detailValues(tripId: String): Flow<TripPlanSnapshot>` in `:core:data`, built on the 4d SQLDelight query flows (`asFlow().mapToList(io)`). It re-emits when any of these change:
+- **Shape [R]:** use the code shape from `phase-6b-trip-page.md` Task 1 (l.160–170): `tripValue(tripId).flatMapLatest { trip -> … combine(planValues, checkValues, pendingCheckOffs) … }.distinctUntilChanged()`, using `AccountDatabase.observe("trips") { it.fetchTrip(tripId) }` and the existing `selectTrip` query. 6a owns this code, and 6b's Task 1 then only verifies it (OQ-6a-11).
+- `TripRepository.detailValues(tripId: String): Flow<TripPlanSnapshot>` in `:core:data`, built on the 4d `AccountDatabase.observe` flows (table listeners, fetched on injected IO, completion on close). It re-emits when any of these change:
   - the trip row;
   - the `plan_versions` row where `trip_id = tripId AND input_hash = trip.currentInputHash` (`plan = null` when the hash is null);
   - `check_marks` where `trip_id = tripId AND input_hash = currentInputHash ?: ""`, `ORDER BY marked_at`;
@@ -408,7 +409,7 @@ sealed interface NextLabel { data object Now; data class In(val duration: String
   - Android-only `nextStepIgnoresHiddenCategories`: the same `nextStep` with `hidden = all categories`.
 
 ### T3. Plan snapshot observation (`feat(data): observe a trip's plan snapshot`)
-- Files: `core/model/…/store/TripPlanSnapshot.kt` (the `trip` field), the 4a `.sq` file that holds the `trips` queries in `:core:database` (the named query `tripById`, unless 4d already observes a single trip), and `core/data/…/repository/TripRepository.kt` (`detailValues`, §5.3). Update 1a's `PlanDecoder.detail(snapshot)` callers and tests only for the constructor change.
+- Files: `core/model/…/store/TripPlanSnapshot.kt` (the `trip` field), `core/data/…/repository/TripRepository.kt` (`detailValues`, §5.3). Update 1a's `PlanDecoder.detail(snapshot)` callers and tests only for the constructor change.
 - **Tests** (JVM, `core/data/src/test/…`, on the 4d file-backed `SyncStore`), class `DetailValuesTest`:
   - an unknown trip emits `TripPlanSnapshot(trip = null, plan = null)`;
   - inserting the plan version at `currentInputHash` emits it with `plan != null`;
@@ -447,7 +448,7 @@ sealed interface NextLabel { data object Now; data class In(val duration: String
     - `Rail` the reverse (assert by the tags `app.tabs` plus a `cf.nav.bar`/`cf.nav.rail` test tag on the bar and rail);
     - the selected item's icon colour equals `CfTheme.colors.primary` (read the tint with a `LocalContentColor` probe inside the icon slot);
     - unselected equals `mutedForeground`.
-  - `CfNavigationSuiteGuardsTest` (`@Layout`, profiles `small`, `pixel8`, `foldInner`, `largeFont` × en/nl × light/dark): the three tab labels fit (`assertTextFits`) and the touch targets are ≥ 48 dp.
+  - `CfNavigationSuiteGuardsTest` (`@Layout`, light cases `small`/nl, `largeFont`/nl, `pixel8`/en and `foldInner`/nl): the three tab labels fit (`assertTextFits`) and the touch targets are ≥ 48 dp.
   - Extend `CfBadgeGuardsTest` with "Completed"/"Afgerond" plus the check icon.
 
 ### T7. Meta chip, category swatch and refresh capsule (`feat(ui): add meta chip, category swatch and refresh capsule`)
@@ -464,7 +465,7 @@ sealed interface NextLabel { data object Now; data class In(val duration: String
     - a new `presentationId` restarts the 2 s;
     - motion: 100 ms after appearing, the node's top equals its final top with Reduce Motion on and is above it with Reduce Motion off.
   - `CategorySwatchTest` (`@Logic`): `Small` is 28 × 28 dp and `Regular` 32 × 32; the node has no semantics.
-  - `MetaChipGuardsTest`, `RefreshCapsuleGuardsTest` (`@Layout`, 8 cases each per Phase 2 l.112):
+  - `MetaChipGuardsTest`, `RefreshCapsuleGuardsTest` (`@Layout`, light cases `small`/nl, `largeFont`/nl and `pixel8`/en):
     - chip "KL 861";
     - capsule "3 trips added · 1 trip removed" and the nl equivalent: fits and wraps without clipping at `small` and `largeFont`.
 
@@ -497,7 +498,7 @@ sealed interface NextLabel { data object Now; data class In(val duration: String
   - nl variants use the nl strings.
 - **Tests:**
   - `TripCardFormattingTest` (JVM): the three board cards built as `TripCardView`s through the real formatter give exactly the board's `times` and `offset` strings in en. If 1a's formatter output differs from a board string, the formatter wins; record the difference in the T13 doc.
-  - `TripsGuardsTest` (`@Layout`): states Content, Empty and Loading × profiles `small`, `pixel8`, `foldInner`, `largeFont` × en/nl × light/dark (48 cases). Each calls `assertTextFits`, `assertTouchTargets`, `assertInteractiveInSafeArea`, `assertNoInteractiveOverlap`, `assertInk`. At `foldInner` the card width is ≤ 640 dp and centred (±1 dp).
+  - `TripsGuardsTest` (`@Layout`): states Content, Empty and Loading × light cases `small`/nl, `largeFont`/nl, `pixel8`/en and `foldInner`/nl (12 cases). Each calls `assertTextFits`, `assertTouchTargets`, `assertInteractiveInSafeArea`, `assertNoInteractiveOverlap`, `assertInk`. At `foldInner` the card width is ≤ 640 dp and centred (±1 dp).
   - `TripsContentTest` (`@Logic`):
     - tags `trips.screen`, `trips.create`, `trips.section.active|upcoming|completed`, `trip.<id>`, `trips.empty`, `trips.create-empty`, `trips.loading` exist in their states;
     - a card click calls `onOpenTrip(id)`; "+" and "Plan a trip" call `onNewTrip`;
@@ -575,13 +576,13 @@ sealed interface NextLabel { data object Now; data class In(val duration: String
 
 - `make quick` and `make check` pass. `./gradlew :konsist:test :app:testReleaseUnitTest` passes.
 - Targeted runs pass:
-  - `make targeted ONLY="net.chronoflow.core.plan.TripsTests net.chronoflow.core.plan.TripSectionsTest net.chronoflow.core.plan.PlanDecoderTripsTest net.chronoflow.core.plan.TodayTests"`
-  - `make targeted ONLY=net.chronoflow.core.sync.refresh.*`
-  - `make targeted ONLY=net.chronoflow.core.navigation.shell.*`
-  - `make targeted ONLY=net.chronoflow.feature.trips.*`
-  - `make targeted ONLY=net.chronoflow.app.shell.*`
+  - `make targeted ONLY="core:plan:TripsTests core:plan:TripSectionsTest core:plan:PlanDecoderTripsTest core:plan:TodayTests"`
+  - `make targeted ONLY=core:sync:RefreshFeedbackTests`
+  - `make targeted ONLY=core:navigation:ShellNavStateTest`
+  - `make targeted ONLY="feature:trips:<Class> …"` for each T8/T9 class
+  - `make targeted ONLY="app:AppShellTest app:ShellSeedTest app:TripsTabTest"`
 - Every ported Swift test name in T1–T4 and T8 exists with the same words.
-- Guards: `TripsGuardsTest` (48 cases) and `CfNavigationSuiteGuardsTest` pass. The bar is used at `pixel8` and the rail at `foldInner` (`AppShellTest`).
+- Guards: `TripsGuardsTest` (12 cases) and `CfNavigationSuiteGuardsTest` pass. The bar is used at `pixel8` and the rail at `foldInner` (`AppShellTest`).
 - Screenshots: `make captures ONLY=Trips,TripsEmpty,TripsLoading` produced light and dark captures. The Opus reviewer compared them with `B/Trips.dc.html` (default, empty, loading). Each difference is fixed or recorded with the board name.
 - The emulator test `ShellJourneySmokeTest` passes on `pixel` in under 10 s. It is the only new emulator test.
 - Performance (functional, no benchmark row):
