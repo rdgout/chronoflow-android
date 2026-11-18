@@ -89,14 +89,64 @@ class KeystoreSessionStoreFileTests {
             assertArrayEquals(bytes, store.file.readBytes())
         }
 
-    @Test fun deleteRemovesTheFileOnly() =
+    @Test fun deleteRemovesTheFileAndAlias() =
         runTest(timeout = 60.seconds) {
             store.write(byteArrayOf(1))
             File(store.file.path + ".bak").writeText("backup")
             store.delete()
             assertFalse(store.file.exists())
             assertFalse(File(store.file.path + ".bak").exists())
-            assertTrue(cipher.keys.containsKey(StorageNamespace.Api.sessionKeyAlias))
+            assertFalse(cipher.keys.containsKey(StorageNamespace.Api.sessionKeyAlias))
+        }
+
+    private class BrokenSessionCipher(
+        private val delegate: SessionCipher,
+        private val repairsAfterDeletion: Boolean = true,
+    ) : SessionCipher by delegate {
+        var encryptions = 0
+        var deletions = 0
+        private var broken = true
+
+        override fun encrypt(
+            alias: String,
+            plaintext: ByteArray,
+        ): SessionCipher.Sealed {
+            encryptions++
+            if (broken) throw PermanentSessionKeyFailure()
+            return delegate.encrypt(alias, plaintext)
+        }
+
+        override fun deleteKey(alias: String) {
+            deletions++
+            if (repairsAfterDeletion) broken = false
+            delegate.deleteKey(alias)
+        }
+    }
+
+    @Test fun writeRepairsABrokenKeyWhileSignedOut() =
+        runTest(timeout = 60.seconds) {
+            val broken = BrokenSessionCipher(cipher)
+            val signedOut = KeystoreSessionStore.forNamespace(root, StorageNamespace.Api, broken, Dispatchers.IO)
+            assertNull(signedOut.read())
+            val plaintext = "new-session".encodeToByteArray()
+            signedOut.write(plaintext)
+            assertEquals(2, broken.encryptions)
+            assertEquals(1, broken.deletions)
+            assertArrayEquals(plaintext, signedOut.read())
+        }
+
+    @Test fun writeRetriesAPermanentKeyFailureOnlyOnce() =
+        runTest(timeout = 60.seconds) {
+            val broken = BrokenSessionCipher(cipher, repairsAfterDeletion = false)
+            val signedOut = KeystoreSessionStore.forNamespace(root, StorageNamespace.Api, broken, Dispatchers.IO)
+            try {
+                signedOut.write("new-session".encodeToByteArray())
+                fail()
+            } catch (_: PermanentSessionKeyFailure) {
+            }
+            assertEquals(2, broken.encryptions)
+            assertEquals(1, broken.deletions)
+            assertFalse(signedOut.file.exists())
         }
 
     @Test fun namespacesAreIsolated() =

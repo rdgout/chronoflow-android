@@ -469,14 +469,14 @@ Commit: `feat(datastore): store the session in an aes-gcm keystore file`. Ticks 
   - `Cipher.getInstance("AES/GCM/NoPadding")`, `updateAAD(alias.encodeToByteArray())` on both sides; decrypt with `GCMParameterSpec(128, iv)`. The IV must be 12 bytes.
   - Throw `PermanentSessionKeyFailure` on `KeyPermanentlyInvalidatedException`, `UnrecoverableKeyException`, `AEADBadTagException` (any `BadPaddingException`), and a missing alias on decrypt.
   - Any other `GeneralSecurityException`, `ProviderException` or `KeyStoreException` propagates unchanged (transient).
-  - `encrypt` hitting `KeyPermanentlyInvalidatedException` deletes the alias, generates a new key and retries once.
+  - `encrypt` normalizes both `KeyPermanentlyInvalidatedException` and `UnrecoverableKeyException` to `PermanentSessionKeyFailure`; retry belongs only to `KeystoreSessionStore.write`, so recovery never nests retries.
 - `KeystoreSessionStore.kt`: `class KeystoreSessionStore(val file: File, private val alias: String, private val cipher: SessionCipher, private val io: CoroutineDispatcher) : SessionStore`, plus `companion fun forNamespace(root: File, namespace: StorageNamespace, cipher: SessionCipher, io: CoroutineDispatcher) = KeystoreSessionStore(File(File(root, namespace.directoryName), "session.bin"), namespace.sessionKeyAlias, cipher, io)`. 4e passes its own file and alias for UI tests (`ChronoFlowMock.uitest.<id>`).
   - Writes go through `android.util.AtomicFile(file)`. Format: `[0x01][12-byte IV][ciphertext with its 16-byte tag]`.
   - A `Mutex` serializes the three operations, each inside `withContext(io)`.
   - `file` is public (no secret; `StoragePathsTest` in `:app` reads it, and `internal` is invisible across modules).
   - `read()`: read with `AtomicFile(file).readFully()` (it recovers a leftover backup). `FileNotFoundException` → `null`; catch it **before** the general `IOException`, which it extends. Any other `IOException` while reading → throw (keep the file); fewer than 29 bytes, or a first byte other than `0x01` → delete the file, `null`; `PermanentSessionKeyFailure` → delete the file **and** the alias, `null`; anything else → throw (keep the file).
-  - `write(data)`: `parentFile.mkdirs()`, encrypt, `startWrite`/`write`/`finishWrite`; on `IOException` call `failWrite` and rethrow.
-  - `delete()`: `AtomicFile.delete()` (it removes the base and the backup). The key stays.
+  - `write(data)`: `parentFile.mkdirs()`, encrypt, `startWrite`/`write`/`finishWrite`; on `PermanentSessionKeyFailure` from encryption, delete the alias and retry encryption exactly once before starting the atomic write. A second permanent failure propagates; transient failures keep the existing key and file. On `IOException` during the atomic write, call `failWrite` and rethrow.
+  - `delete()`: `AtomicFile.delete()` (it removes the base and backup), then `cipher.deleteKey(alias)`, including when no session file exists. A broken signed-out alias must not strand the next secure write.
   - Never logs; never puts bytes in an exception.
 
 **Tests**
@@ -485,7 +485,7 @@ Commit: `feat(datastore): store the session in an aes-gcm keystore file`. Ticks 
   - `roundTripWritesTheVersionedFormat`: byte 0 is `1`; size is 1 + 12 + plaintext + 16; the plaintext bytes are not in the file.
   - `missingFileReadsNull`; `truncatedOrUnknownVersionIsDeleted`; `permanentKeyFailureDeletesFileAndAlias`.
   - `transientFailureThrowsAndKeepsTheFile` (`failNext = ProviderException()`, then an `IOException`; the file bytes are unchanged both times).
-  - `deleteRemovesTheFileOnly`; `namespacesAreIsolated` (Api and Mock use different files and aliases).
+  - `deleteRemovesTheFileAndAlias`; `writeRepairsABrokenKeyWhileSignedOut`; `writeRetriesAPermanentKeyFailureOnlyOnce`; `namespacesAreIsolated` (Api and Mock use different files and aliases).
   - `wrongAliasCannotDecrypt`: a file copied from Mock to Api fails the AAD check → deleted, `null`.
 - `app/src/androidTest/kotlin/net/chronoflow/app/store/KeystoreSessionStoreTest.kt` (`@Smoke`, the real `AndroidKeystoreSessionCipher`, a temporary root under `cacheDir` resolved in `@Before`, aliases `test.<uuid>.session` deleted in `@After`; **at most 6 tests**):
   1. `hostedKeystoreRoundTripAndMalformedDeletion` (Swift `testHostedKeychainRoundTripAndMalformedDeletion`, [F] `AppTests/KeychainSessionStoreTests.swift:9–29`): `delete()`, then `read()` is null; `write(StoredSession("test", "account").encode())` → `loadSession()` is `SignedIn("account")`; `write("invalid".encodeToByteArray())` → `loadSession()` is `SignedOut`, then `read()` is null and the file is gone.

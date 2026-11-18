@@ -17,15 +17,7 @@ class AndroidKeystoreSessionCipher : SessionCipher {
     override fun encrypt(
         alias: String,
         plaintext: ByteArray,
-    ): SessionCipher.Sealed =
-        try {
-            encryptOnce(alias, plaintext)
-        } catch (_: KeyPermanentlyInvalidatedException) {
-            deleteKey(alias)
-            permanentFailures { encryptOnce(alias, plaintext) }
-        } catch (e: UnrecoverableKeyException) {
-            throw PermanentSessionKeyFailure(e)
-        }
+    ): SessionCipher.Sealed = permanentFailures { encryptOnce(alias, plaintext) }
 
     private fun encryptOnce(
         alias: String,

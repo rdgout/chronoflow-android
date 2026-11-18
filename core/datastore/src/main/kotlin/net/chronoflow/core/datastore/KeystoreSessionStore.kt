@@ -48,7 +48,13 @@ class KeystoreSessionStore(
         withContext(io) {
             mutex.withLock {
                 file.parentFile?.mkdirs()
-                val sealed = cipher.encrypt(alias, data)
+                val sealed =
+                    try {
+                        cipher.encrypt(alias, data)
+                    } catch (_: PermanentSessionKeyFailure) {
+                        cipher.deleteKey(alias)
+                        cipher.encrypt(alias, data)
+                    }
                 check(sealed.iv.size == 12)
                 val atomic = AtomicFile(file)
                 val stream = atomic.startWrite()
@@ -64,7 +70,13 @@ class KeystoreSessionStore(
             }
         }
 
-    override suspend fun delete() = withContext(io) { mutex.withLock { AtomicFile(file).delete() } }
+    override suspend fun delete() =
+        withContext(io) {
+            mutex.withLock {
+                AtomicFile(file).delete()
+                cipher.deleteKey(alias)
+            }
+        }
 
     companion object {
         fun forNamespace(
