@@ -8,6 +8,14 @@ import net.chronoflow.debug.DebugRouteLabel
 import net.chronoflow.feature.launch.LaunchController
 
 internal object LaunchPlatform {
+    val passkeyCapability: net.chronoflow.core.model.passkey.PasskeyCapability
+        get() =
+            net.chronoflow.core.model.passkey.PasskeyCapability(
+                net.chronoflow.debug.DebugSeedRouting.current
+                    ?.passkeyCapability
+                    ?: net.chronoflow.core.model.passkey.PasskeyCapability.SERVER_READY,
+            )
+
     fun mockSources(io: kotlinx.coroutines.CoroutineDispatcher): MockSources? = platformMockSources(io)
 
     fun welcomeDestinations(navigator: RootNavigator): WelcomeDestinations =

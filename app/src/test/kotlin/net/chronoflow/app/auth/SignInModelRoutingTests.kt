@@ -72,7 +72,7 @@ class SignInModelRoutingTests {
                 val verificationEpochs = mutableListOf<Long>()
                 val secret = RoutingSecret()
                 val model =
-                    model(controller, method, dispatcher, accepted = {
+                    model(controller, method, accepted = {
                         readiness.routeAcceptedSession(navigate = { gate ->
                             routes += gate.toRoute()
                             navigator.navigate(gate.toRoute())
@@ -192,7 +192,7 @@ class SignInModelRoutingTests {
                 val epochs = mutableListOf<Long>()
                 val secret = RoutingSecret()
                 val model =
-                    model(controller, AuthenticationMethod.Password, dispatcher, accepted = {
+                    model(controller, AuthenticationMethod.Password, accepted = {
                         readiness.routeAcceptedSession(navigate = {
                             routes +=
                                 it.toRoute()
@@ -247,18 +247,28 @@ class SignInModelRoutingTests {
 private fun model(
     controller: SessionController,
     method: AuthenticationMethod,
-    io: kotlinx.coroutines.CoroutineDispatcher,
     accepted: suspend () -> Unit,
 ): SignInModel {
     val result = sessionResult()
     val source =
-        if (method ==
-            AuthenticationMethod.TwoFactor
-        ) {
-            twoFactorTestSource(io, password = "artificial-password")
-        } else {
-            object : DataSource by ScriptedSource() {
-                override suspend fun signIn(input: PasswordSignInInput): SignInResult = SignInResult.Session(result)
+        object : DataSource by ScriptedSource() {
+            override suspend fun signIn(input: PasswordSignInInput): SignInResult =
+                if (method == AuthenticationMethod.TwoFactor) {
+                    SignInResult.TwoFactor("a".repeat(64))
+                } else {
+                    SignInResult.Session(result)
+                }
+
+            override suspend fun completeTwoFactor(
+                input: net.chronoflow.core.model.api.TwoFactorInput,
+            ): net.chronoflow.core.model.api.SessionResult {
+                assertEquals("a".repeat(64), input.challengeId)
+                assertEquals(
+                    net.chronoflow.core.model.api.TwoFactorInput.Proof
+                        .Code("123456"),
+                    input.proof,
+                )
+                return result
             }
         }
     return SignInModel(

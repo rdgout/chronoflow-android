@@ -22,6 +22,13 @@ import org.junit.Test
 import kotlin.time.Duration.Companion.seconds
 
 class ReleaseReadinessTest {
+    @Test fun passkeyCapabilityIsShippedOff() {
+        val message = "Flip only with S1–S3 evidence (docs/passkeys.md)"
+        assertFalse(message, net.chronoflow.core.model.passkey.PasskeyCapability.SERVER_READY)
+        assertFalse(message, net.chronoflow.core.model.passkey.PasskeyCapability.Shipped.enabled)
+        assertFalse(message, LaunchPlatform.passkeyCapability.enabled)
+    }
+
     private fun missing(name: String) {
         try {
             Class.forName(name)

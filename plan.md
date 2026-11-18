@@ -466,7 +466,7 @@ Every screen scrolls when height-constrained. The minimum width is 280 dp; below
 ### Android spec: seeds and test hooks (debug only)
 
 - **Seed names** are identical to iOS (`12 §2`): `CF_AUTH_TEST_ID`, `CF_UI_TEST_PROFILE=screen|launch`, `CF_AUTH_TEST_SIGNED_IN=demo|twofactor`, `CF_AUTH_TEST_WALKTHROUGH_SEEN`, `CF_AUTH_TEST_UNVERIFIED`, `CF_AUTH_TEST_TERMS_PENDING` (the three flags equal `"1"`), `CF_AUTH_TEST_AUDIT_SCREEN`/`STATE`, `CF_PLAN_TEST_ROUTE=trips|trip:<id>[:list]`, `CF_PLAN_TEST_POSITION=summary`, `CF_PLAN_TEST_SHEET=step:<id>|legend`, `CF_SETTINGS_ROUTE`, `CF_WIZARD_AUTO_OPEN`, `CF_WIZARD_BOARD_CAPTURE`, `CF_MOCK_DELAY` (default 0).
-- **Intent extras:** `cf.trip-page=S1…S6|large30|large60|<uuid>`, `cf.timeline-fixtures`, `cf.settings.theme`, `cf.settings.language`, `cf.reduceMotion`, `cf.freezeAt`, `cf.readyAt`, `cf.mainThreadStall`, `cf.holdSplash`, `cf.session`, `cf.gate`, `cf.stored`, `cf.readyDelay`, `cf.mode`.
+- **Intent extras:** `cf.trip-page=S1…S6|large30|large60|<uuid>`, `cf.timeline-fixtures`, `cf.settings.theme`, `cf.settings.language`, `cf.reduceMotion`, `cf.passkeyCapability` (debug only: `1`/`true`, `0`/`false`; otherwise no override), `cf.freezeAt`, `cf.readyAt`, `cf.mainThreadStall`, `cf.holdSplash`, `cf.session`, `cf.gate`, `cf.stored`, `cf.readyDelay`, `cf.mode`.
 - **Launch diagnostics** (String extras, debug and perf only): `cf.session=in|signedIn|out|signedOut|never` (default native), `cf.gate=verify|terms|walkthrough|app` (default app), `cf.stored=yes|no|never` (default yes), `cf.readyDelay` in finite seconds `0…60` (default 0). Presence of any stub key injects `StubReadiness`; otherwise every variant uses `StoredDataReadiness` (OQ-A172). `cf.readyDelay` is an absolute time on the shared launch clock, not a second delay from collection.
 - **Fixed diagnostic endings:** `cf.mode=ready|slow|welcome` bypasses readiness. Ready/slow leave the route empty after removal; welcome publishes Welcome under the overlay, with a measured moon target and optional frozen intro. `cf.readyAt` is finite ms `0…60000`, default 4600, for slow mode. `cf.mainThreadStall` uses the same ms range and blocks from 300 ms after t0. Invalid values use the defaults. Release parsing and stalls are no-ops. `cf.freezeAt` still freezes a debug frame; `cf.holdSplash` remains debug only.
 - **Welcome destinations:** `welcome.signIn` navigates to `Route.SignIn` in every build type through `RoutedWelcomeDestinations` (debug retains only the guest seam). `welcome.plan` opens the debug-only `route.guestWizard` seam until 11a. Back from Sign in returns to final Welcome without replaying its claimed intro.
@@ -2056,14 +2056,14 @@ Implementation commits (brief §7):
 - [x] T6 — Route and hand-over.
 - [x] T7 — Guards and captures.
 - [x] T8 — Passkey sign-in.
-- [ ] T9 — Passkey wiring.
+- [x] T9 — Passkey wiring.
 - [ ] T10 — Emulator checks.
 - [ ] T11 — Docs and plan.
 
 - [x] **TwoFactorScreen and TwoFactorViewModel**, porting `TwoFactorModel`.
   - A 6-digit code (`KeyboardType.Number`, `SmsOtpCode` autofill) and a recovery code (`KeyboardType.Ascii`), with a mode switch.
   - Throttling and errors; success goes to the gate.
-- [ ] **Passkey sign-in** (`feature/auth/…/passkey/`).
+- [x] **Passkey sign-in** (`feature/auth/…/passkey/`).
   - `PasskeyCapability` is false until S1–S3 are live, with a debug override for tests.
   - `CredentialManager.getCredential(GetPublicKeyCredentialOption(requestJson))`, built from the server options: rpId `app.chronoflow.net`, timeout 60000, challenge valid for 120 s.
   - Response fields are encoded as unpadded base64url. A cancel is silent, and errors are mapped per `05 §9.2`.
