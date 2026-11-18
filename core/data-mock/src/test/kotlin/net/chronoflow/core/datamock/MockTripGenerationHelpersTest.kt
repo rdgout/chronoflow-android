@@ -40,19 +40,21 @@ class MockTripGenerationHelpersTest {
         )
     }
 
-    @Test fun instantUsesLaterOffsetInAmsterdamOverlap() {
-        val airport = MockTripGeneration.airports().first { it.iata == "AMS" }
-        assertEquals(
-            Instant.parse("2026-10-25T01:30:00Z"),
-            MockTripGeneration.instant("2026-10-25T02:30", airport),
-        )
-    }
+    @Test fun instantUsesLaterOffsetInAmsterdamOverlap() =
+        instantUsesLaterOffset("AMS", "2026-10-25T02:30", "2026-10-25T01:30:00Z")
 
-    @Test fun instantUsesLaterOffsetInNewYorkOverlap() {
-        val airport = MockTripGeneration.airports().first { it.iata == "JFK" }
+    @Test fun instantUsesLaterOffsetInNewYorkOverlap() =
+        instantUsesLaterOffset("JFK", "2026-11-01T01:30", "2026-11-01T06:30:00Z")
+
+    private fun instantUsesLaterOffset(
+        iata: String,
+        local: String,
+        expectedUtc: String,
+    ) {
+        val airport = MockTripGeneration.airports().first { it.iata == iata }
         assertEquals(
-            Instant.parse("2026-11-01T06:30:00Z"),
-            MockTripGeneration.instant("2026-11-01T01:30", airport),
+            Instant.parse(expectedUtc),
+            MockTripGeneration.instant(local, airport),
         )
     }
 
