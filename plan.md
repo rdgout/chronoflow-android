@@ -1983,14 +1983,14 @@ Implementation commits (brief §7):
 - [x] T3 — Navigation and layout math.
 - [x] T4 — Sign-in glyphs and field input hook.
 - [x] T5 — SignInModel.
-- [ ] T6 — Auth shell.
+- [x] T6 — Auth shell.
 - [ ] T7 — Sign-in screen and ViewModel.
 - [ ] T8 — App wiring and accepted-session routing.
 - [ ] T9 — Guards and board captures.
 - [ ] T10 — Emulator journey and keyboard check.
 - [ ] T11 — Docs.
 
-- [ ] **Auth shell** (`feature/auth/…/shell/`).
+- [x] **Auth shell** (`feature/auth/…/shell/`).
   - The plain sky, with the values of "### Auth geometry, tokens and typography" plus the Android delta: insets `safeTop + 16`, 16 at the sides and 24 at the bottom; card padding 20, radius 26, gap 14.
   - A 560 dp column from 600 dp.
   - `auth.back`, and `auth.banner` for error, info and offline ("Needs a connection" / "Verbinding nodig").
