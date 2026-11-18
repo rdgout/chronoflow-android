@@ -9,10 +9,14 @@ import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.selects.select
 import kotlinx.coroutines.withContext
 import net.chronoflow.core.model.AccountID
 import net.chronoflow.core.model.api.SessionResult
@@ -24,8 +28,10 @@ import net.chronoflow.core.model.session.SessionPresence.SignedOut
 import net.chronoflow.core.model.session.SessionSnapshot
 import net.chronoflow.core.model.session.SessionStore
 import net.chronoflow.core.model.session.SessionUpdate
+import net.chronoflow.core.model.session.SignOutResult
 import net.chronoflow.core.model.session.StoredSession
 import net.chronoflow.core.model.session.readStoredSession
+import kotlin.time.Duration.Companion.seconds
 
 class SessionController(
     private val credentials: SessionStore,
@@ -52,6 +58,21 @@ class SessionController(
 
     @Volatile internal var generation: Long = 0
         private set
+
+    @Volatile var pendingUnauthorizedEpoch: Long? = null
+        private set
+
+    @Volatile internal var signOutFlight: Deferred<SignOutResult>? = null
+        private set
+
+    private data class UnconditionalSignOut(
+        val discardPending: Boolean,
+        val unauthorized: Boolean,
+    )
+
+    private var unconditionalSignOut: UnconditionalSignOut? = null
+    private var discardRequested = false
+    private var unauthorizedRequested = false
     private val mutableUpdates = MutableStateFlow<SessionUpdate?>(null)
     val updates = mutableUpdates.asStateFlow()
 
@@ -105,6 +126,185 @@ class SessionController(
                     generation == gen && snapshot() == expected
                 },
             )
+        }
+
+    suspend fun signOut(
+        discardPending: Boolean,
+        unauthorized: Boolean = false,
+    ): SignOutResult = withContext(confined) { enqueueSignOut(discardPending, unauthorized, null) }
+
+    suspend fun signOut(
+        expected: SessionSnapshot,
+        discardPending: Boolean,
+    ): SignOutResult =
+        withContext(confined) {
+            if (snapshot() !=
+                expected
+            ) {
+                SignOutResult.SignedOut
+            } else {
+                enqueueSignOut(discardPending, false, expected.epoch)
+            }
+        }
+
+    suspend fun unauthorized(epoch: Long): SignOutResult =
+        withContext(confined) {
+            if (this@SessionController.epoch != epoch) return@withContext SignOutResult.SignedOut
+            pendingUnauthorizedEpoch = epoch
+            val result = enqueueSignOut(true, true, epoch)
+            if (pendingUnauthorizedEpoch == epoch) pendingUnauthorizedEpoch = null
+            result
+        }
+
+    suspend fun retryUnauthorized() =
+        withContext(confined) {
+            val pending = pendingUnauthorizedEpoch ?: return@withContext
+            if (epoch != pending) {
+                pendingUnauthorizedEpoch = null
+                return@withContext
+            }
+            unauthorized(pending)
+            Unit
+        }
+
+    private suspend fun enqueueSignOut(
+        discardPending: Boolean,
+        unauthorized: Boolean,
+        expectedEpoch: Long?,
+    ): SignOutResult {
+        if (expectedEpoch != null && epoch != expectedEpoch) return SignOutResult.SignedOut
+        discardRequested = discardRequested || discardPending
+        unauthorizedRequested = unauthorizedRequested || unauthorized
+        if (expectedEpoch == null) {
+            generation += 1
+            unconditionalSignOut =
+                UnconditionalSignOut(
+                    (unconditionalSignOut?.discardPending ?: false) || discardPending,
+                    (unconditionalSignOut?.unauthorized ?: false) || unauthorized,
+                )
+        }
+        signOutFlight?.let { return it.await() }
+        val flight = enqueue { withContext(NonCancellable) { performSignOut(expectedEpoch) } }
+        signOutFlight = flight
+        return flight.await()
+    }
+
+    private suspend fun performSignOut(expectedEpoch: Long?): SignOutResult {
+        try {
+            if (expectedEpoch != null && epoch != expectedEpoch) {
+                val explicit = unconditionalSignOut ?: return SignOutResult.SignedOut
+                discardRequested = explicit.discardPending
+                unauthorizedRequested = explicit.unauthorized
+            }
+            var captured = storedSession
+            if (captured == null) {
+                stopSync()
+                accounts.close()
+                teardown.prepare()
+                captured = credentials.readStoredSession()
+            }
+            val session = captured
+            if (session == null) {
+                credentials.delete()
+                publish(SignedOut)
+                teardown.detach()
+                return SignOutResult.SignedOut
+            }
+            if (!unauthorizedRequested && !discardRequested) {
+                var count = teardown.pendingCount()
+                if (count > 0) {
+                    try {
+                        teardown.flush()
+                    } catch (
+                        cancelled: CancellationException,
+                    ) {
+                        throw cancelled
+                    } catch (_: Exception) {
+                    }
+                    count = teardown.pendingCount()
+                }
+                if (count > 0 && !discardRequested &&
+                    !unauthorizedRequested
+                ) {
+                    return SignOutResult.NeedsConfirmation(count)
+                }
+            }
+            val id = AccountID.of(session.accountId)
+            teardown.beginWipe(id)
+            storedSession = null
+            publish(SignedOut)
+            stopSync()
+            if (!unauthorizedRequested) bestEffortLogout(session)
+            teardown.detach()
+            accounts.close()
+            var failure: Exception? = null
+            try {
+                teardown.erase(id)
+            } catch (
+                cancelled: CancellationException,
+            ) {
+                throw cancelled
+            } catch (error: Exception) {
+                failure =
+                    error
+            }
+            try {
+                credentials.delete()
+            } catch (
+                cancelled: CancellationException,
+            ) {
+                throw cancelled
+            } catch (error: Exception) {
+                if (failure ==
+                    null
+                ) {
+                    failure = error
+                }
+            }
+            failure?.let { throw it }
+            teardown.finishWipe()
+            return SignOutResult.SignedOut
+        } finally {
+            signOutFlight = null
+            unconditionalSignOut = null
+            discardRequested = false
+            unauthorizedRequested = false
+        }
+    }
+
+    private suspend fun bestEffortLogout(session: StoredSession) =
+        coroutineScope {
+            val request =
+                launch {
+                    try {
+                        teardown.logout(session)
+                    } catch (
+                        cancelled: CancellationException,
+                    ) {
+                        throw cancelled
+                    } catch (_: Exception) {
+                    }
+                }
+            val deadline =
+                launch {
+                    try {
+                        teardown.sleep(3.seconds)
+                    } catch (
+                        cancelled: CancellationException,
+                    ) {
+                        throw cancelled
+                    } catch (_: Exception) {
+                    }
+                }
+            try {
+                select {
+                    request.onJoin { }
+                    deadline.onJoin { }
+                }
+            } finally {
+                request.cancelAndJoin()
+                deadline.cancelAndJoin()
+            }
         }
 
     private fun <T> enqueue(work: suspend () -> T): Deferred<T> {

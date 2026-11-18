@@ -1899,7 +1899,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 **Tasks**
 - [x] **T1: session value types and unified session presence.**
 - [x] **T2: restore, accept, generation and shared session test fixtures.**
-- [ ] **SessionController** (`core/sync/…`; its Android seams are implemented in `:core:data`).
+- [x] **SessionController** (`core/sync/…`; its Android seams are implemented in `:core:data`).
   - Accept order: DB upsert → secure write → publish.
   - A generation counter.
   - `signOut` asks for confirmation when the outbox is not empty.
