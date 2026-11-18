@@ -236,3 +236,48 @@ Brief patches in the corresponding commits:
 No new OQ rows were needed. All changes use new commits; no history was rewritten or pushed. Formatting-only corrections to the new release fixture and RootContent were carried forward into the following commit rather than rewriting signed commits. No test stalled for three minutes, so the stop/retry allowance was not used. Logs and available timing snapshots are under ignored `build/phase4e-review-r1/`.
 
 The review's single final `make quick` **passed in 38.95 s wall**. Its primary tier passed **2,188 cases** in 22.62 s with zero budget violations; build-logic passed 26 cases in 1.18 s; tooling passed 107 script, 25 contract, 49 l10n and 9 icon cases; serial timing passed 6 cases in 0.74 s with zero budget violations. The full quick command was not repeated. The final formatter and documentation consistency check also pass. `make perf` and `make baseline-profile` remain delegated, and the acceptance again requires the session trace to be reported in `docs/perf-startup.md`.
+
+
+## Review round 2
+
+The six findings are addressed with new signed commits; no commit was rewritten or pushed. Every commit in this round is preceded by a successful `make format`. No formatting correction is deferred to another finding's commit. No emulator, perf or profile command was run; the earlier user-reported pixel smoke remains historical evidence rather than a claim about this new top.
+
+| Finding | Commit | Subject |
+|---|---|---|
+| M1 | `42dd306` | `fix(app): swap root routes without a transition like ios` |
+| M2 | `5084c3f` | `fix(app): honour the exact mock delay for seeded runs` |
+| L3 | `66b5ee7` | `fix(app): capture a launch link only on a fresh launch` |
+| L4 | `47e2067` | `fix(data): close a session database opened by a cancelled caller` |
+| L5 | `b103c53` | `fix(debug): route a seeded screen only on first creation` |
+| L6 | This record's commit | `test(app): mark the android-only regression tests` |
+
+Each selector below ran separately through `make targeted ONLY="<selector>"`. Times are measured command wall times, including Gradle setup and compilation. Expected failing-before runs are regression evidence, not passing checks.
+
+| Finding | Selector | Before fix | After fix |
+|---|---|---|---|
+| M1 | `app:RootRouteTransitionTest` | 4.32 s; Terms still exists beside Today at 350 ms | 3.81 s; outgoing Terms is absent |
+| M2 | `app:MockSourceLatencyTest` | 4.02 s; runtime 5 s → 800 ms, zero → 300 ms, bootstrap → 800 ms | 2.77 s; virtual elapsed time is exactly 5000 / 0 / 0 ms |
+| L3 | `app:LaunchIntentRestorationTest` | 5.99 s; recreation and history recapture the link; fresh-launch control passes | 4.32 s; both exclusions and fresh-launch capture pass |
+| L4 | `core:data:CancelledSessionDatabaseOpenTest` | 2.46 s; cancelling factory leaves the opened driver unowned and unclosed | 1.63 s; driver remains owned and adapter close closes it exactly once |
+| L5 | `app:SeededScreenRecreationTest` | 5.47 s; Settings revision 3 becomes Today revision 4 | 5.15 s; Settings and its revision survive recreation |
+
+The first M1 probe did not process the route-change frame, so it failed to reach Today both before the change (6.52 s) and in the first validation (4.94 s). Those runs are rejected as overlap evidence. Processing the pending frame explicitly produced the valid red/green pair above. The initial L5 probe (6.49 s) also admitted the initial gate observer's pending emission; the final fixture stops that observer after initial routing to isolate the registered activity frame-commit callback. The isolated pre-fix failure still reproduces the route reset. Test-only reflection dispatches Robolectric's frame-commit callbacks; no production test hook was added.
+
+Additional scoped checks passed:
+
+| Selector | Wall time |
+|---|---:|
+| `app:MockSessionSeedTests` | 2.14 s |
+| `app:TestSeedsApplyTest` | 3.59 s |
+| `core:data:SessionAccountDatabaseTests` | 2.44 s |
+| `core:sync:SessionQueueCancellationTest` after KDoc | 1.74 s |
+| `core:sync:CancelledFlushSignOutTest` after KDoc | 1.42 s |
+| `app:RootContentConstructionTest` after KDoc | 5.37 s |
+
+L6's temporary source-metadata check resolves the project root from `settings.gradle.kts` and `gradlew`. It failed on the three missing round-1 class comments, then passed for all eight regression classes after adding them. Every new class in this round was introduced with Android-only KDoc. The checker stays outside the repository; no production hook or permanent test for prose was added.
+
+The brief corrections accompany their findings: all three root transition specs are None; fixture sleep uses `MockLatency.exact` and bootstrap seeding has its own zero-latency source over the same store; initial-intent capture excludes saved-state/history launches; database open and ownership assignment share a non-cancellable IO block; and seeded screen routing runs only on fresh creation. No OQ rows were added.
+
+No Gradle run stalled for three minutes, so the stop/retry allowance was not used. The L3 formatter caught one overlong test line; it was corrected and formatting passed before that commit. Logs and timing snapshots are under ignored `build/phase4e-review-r2/`.
+
+The single final `make quick` **passed in 30.16 s wall**. The primary tier passed **2,196 cases** in 14.12 s; build-logic passed 26 in 1.25 s; tooling passed 107 script, 25 contract, 49 l10n and 9 icon cases; serial timing passed 6 in 0.83 s. All budget reports have zero violations. The command was not repeated. The final formatter, KDoc metadata check and `git diff --check` passed before the L6 commit.

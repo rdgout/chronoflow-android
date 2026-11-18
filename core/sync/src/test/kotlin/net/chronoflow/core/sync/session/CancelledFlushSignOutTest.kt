@@ -20,6 +20,7 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 import kotlin.time.Duration.Companion.seconds
 
+/** Android-only regression for separate sync-job cancellation during owned teardown. */
 class CancelledFlushSignOutTest {
     private class Fixture(
         scope: TestScope,

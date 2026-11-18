@@ -18,6 +18,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 import kotlin.time.Duration.Companion.seconds
 
+/** Android-only regression for cancelled Kotlin waiters preserving the session queue. */
 class SessionQueueCancellationTest {
     @Test fun cancelledRestoreCannotLetReplacementOvertakeSignOut() =
         runTest(timeout = 60.seconds) {

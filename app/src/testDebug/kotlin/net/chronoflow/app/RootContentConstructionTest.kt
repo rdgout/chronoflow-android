@@ -40,6 +40,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import kotlin.time.Duration.Companion.seconds
 
+/** Android-only regression for Nav3 composition identity across launch and gate routing. */
 @Layout
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [36], application = SessionTestApplication::class)
