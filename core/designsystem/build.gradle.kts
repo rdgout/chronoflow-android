@@ -10,6 +10,7 @@ dependencies {
     debugImplementation(libs.compose.ui.test.manifest)
     api(libs.compose.foundation)
     api(libs.compose.material3)
+    api(libs.compose.material3.adaptive.navigation.suite)
     implementation(libs.kotlinx.coroutines.core)
     testImplementation(project(":core:testing"))
     testImplementation(libs.compose.ui.test.junit4)

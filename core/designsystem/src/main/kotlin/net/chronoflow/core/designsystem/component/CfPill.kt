@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
@@ -38,6 +39,7 @@ fun CfBadge(
     text: String,
     modifier: Modifier = Modifier,
     variant: CfBadgeVariant = CfBadgeVariant.Secondary,
+    icon: ImageVector? = null,
 ) {
     val c = CfTheme.colors
     val container =
@@ -54,10 +56,8 @@ fun CfBadge(
             CfBadgeVariant.Outline -> c.foreground
             CfBadgeVariant.Dawn -> c.dawnForeground
         }
-    Text(
-        text,
+    Row(
         modifier
-            .ellipsizable()
             .background(container, CfTheme.shapes.full)
             .border(
                 AuthTokens.borderWidth.dp,
@@ -70,11 +70,23 @@ fun CfBadge(
                 },
                 CfTheme.shapes.full,
             ).padding(horizontal = PlanUITokens.space2.dp, vertical = (2 * AuthTokens.borderWidth).dp),
-        color = ink,
-        style = CfTheme.type.settingsBadge,
-        maxLines = 1,
-        overflow = TextOverflow.Ellipsis,
-    )
+        horizontalArrangement = Arrangement.spacedBy(PlanUITokens.space1.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (icon !=
+            null
+        ) {
+            Icon(icon, contentDescription = null, modifier = Modifier.size(PlanUITokens.space3.dp), tint = ink)
+        }
+        Text(
+            text,
+            Modifier.ellipsizable(),
+            color = ink,
+            style = CfTheme.type.settingsBadge,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
 }
 
 @Composable
