@@ -775,6 +775,17 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A190 | (OQ-5a-9) No board for the offline banner or for field errors on Sign in. | Offline: the user-approved RN copy on the AuthStates surface, title only. Field errors: the bundle `Field` error row (AuthStates: "Field problems stay under the field"). Both are captured under `auth/` and labelled as adaptations. | 5a |
 | OQ-A191 | (OQ-5a-10) iOS posts a one-shot VoiceOver announcement that is not a focus stop. Compose has no equivalent: a live region announces only on a content change of a persistent, non-empty node, so the announcer is a real node TalkBack can also reach. | The brand row's end 48 dp box carries the live region; after a failure it is a TalkBack stop between brand and heading that reads the last announcement. Record in `docs/auth.md` what TalkBack does on the `pixel` emulator (manual check, not a test). | 5a |
 | OQ-A192 | (OQ-5a-11) At the `AuthSignIn` reference frame (375 × 812 dp, density 3) the Forgot / Create account links measure 162.0 + 133.67 dp plus the 8 dp gap = 303.67 dp in a 303 dp card row, so the ported iOS `ViewThatFits` policy (`AuthLinkRow`) stacks them; the board and the iOS screenshot show one row. At `pixel8` (density 2.625) they fit (298.67 dp). The card grows 48 dp, and in the error states the footer moves below the fold at 375 × 812. | Keep the ported fit policy (no tolerance, no smaller text or gap); record it as an adaptation of `AuthSignIn` / `AuthSignInError`. Changing it needs a user decision. | 5a |
+| OQ-A193 | (OQ-5b-1) The plan's 5b "Copy" item says the Android-only 2FA intro b1 comes from `android-only.json`. But b1 replaces a **Settings** string shown on `Set2FA` (plan l.2491, 10c), plan l.76 lists it as iOS-only copy, and neither the `AuthTwoFactor` board nor iOS `TwoFactorView` shows an intro. | No new copy in 5b. Check that `android_two_factor_intro_b1` exists and leave its use to 10c. | 5b, 10c |
+| OQ-A194 | (OQ-5b-2) Autofill hint for an authenticator code: the plan says `SmsOtpCode`, while `05` OQ A15 prefers `AUTOFILL_HINT_2FA_APP_OTP`. iOS uses `.oneTimeCode`, which covers both. | Shipped both hints as `TwoFactorFieldSpec.CodeContentType = ContentType.SmsOtpCode + ContentType("2faAppOTPCode")`, using the public constructor and `plus` (orchestrator, 2026-11-18). The single public-API probe found identity equality and no hints in `toString()`; tests assert the shared value wiring and recovery omission, without internal API or reflection. | 5b |
+| OQ-A195 | (OQ-5b-3) `NoCredentialException` (no passkey for this RP on the device): silent or a banner? | Silent, like a cancel (`05` OQ A13). | 5b |
+| OQ-A196 | (OQ-5b-4) `GetPublicKeyCredentialDomException` (for example `NotAllowedError` on a timeout or RP mismatch): silent or a banner? | Server banner. iOS maps every non-cancel error to `unavailable`. Revisit on the first device test. | 5b |
+| OQ-A197 | (OQ-5b-5) Should the code field be auto-focused, opening the keyboard, when the screen appears? | No, for iOS parity: `TwoFactorView` sets no initial focus. | 5b |
+| OQ-A198 | (OQ-5b-6) Where the shared passkey types live: the plan says `feature/auth/…/passkey/`. | `:core:model` (capability, failure, Base64URL, JSON, client interface) and `:core:data` (Credential Manager). 10d (`:feature:settings`) reuses them, and features never depend on features. The sign-in classes stay in `:feature:auth`. | 5b, 10d |
+| OQ-A199 | (OQ-5b-7) iOS pushes Two-factor onto an auth navigation path; 4e/5a use single-entry root routes with no ViewModel entry decorator (OQ-5a-5, OQ-5a-7). | Follow 5a: `navigate(Route.TwoFactor)` and back → `navigate(Route.SignIn)` with `BackHandler` (no predictive cross-screen preview); the two-factor state lives in `SignInModel.twoFactor`, so the activity-scoped ViewModel is safe. | 5b |
+| OQ-A200 | (OQ-5b-8) Trim or normalise recovery codes before sending them? | No. Send them as typed, as iOS does; the server decides. | 5b |
+| OQ-A201 | (OQ-5b-9) Process death while the person reads the code in the authenticator app. | Cold launch; the challenge is lost and they sign in again (iOS OQ 16, A8). | 5b |
+| OQ-A202 | (OQ-5b-10) A runtime passkey availability probe (provider present, RP association) on top of the constant. | None. The constant stays false until S1–S3, then failures map per §5.7. | 5b |
+| OQ-A203 | (OQ-5b-11) Password autofill commit for two-factor accounts: 5a commits only after a successful password sign-in, but a 2FA account's password field is cleared when the challenge arrives, before any session exists. | No commit on the two-factor path (`commitAutofill = {}`), so the provider gets no save offer for 2FA accounts. Revisit on a device; a fix would need the password kept in memory until the two-factor success, which A23 discourages. | 5b |
 | OQ-0a-22 | Native libraries in the bundle? | Allow only `libandroidx.graphics.path.so` (Compose graphics-path; excluding it breaks Path conversion below API 34); fail on any other `.so` | 0a, 13 |
 | OQ-0b-1 | Where does `PlanMetrics` live? `08 §3.1` lists it inside `CfDimens`, but its consumer `:core:plan` is a JVM module that cannot depend on `:core:designsystem` | `core/plan/…/generated/PlanMetrics.generated.kt` (Double, dp), as iOS keeps it in `PlanCore` | 0b, 1b, 1c |
 | OQ-0b-2 | Port all iOS TokenGen outputs now (Auth, Settings, Terms, Welcome, PlanUI, Press, LaunchPaint, TypeMetrics), or only colors, sky and type? | All of them now (the iOS files are exact goldens and Phases 2, 3a, 3c, 5a, 9 and 10 need them) | 0b |
@@ -2058,17 +2069,17 @@ Implementation commits (brief §7):
 - [x] T8 — Passkey sign-in.
 - [x] T9 — Passkey wiring.
 - [x] T10 — Emulator checks.
-- [ ] T11 — Docs and plan.
+- [x] T11 — Docs and plan.
 
 - [x] **TwoFactorScreen and TwoFactorViewModel**, porting `TwoFactorModel`.
-  - A 6-digit code (`KeyboardType.Number`, `SmsOtpCode` autofill) and a recovery code (`KeyboardType.Ascii`), with a mode switch.
+  - A 6-digit code (`KeyboardType.Number`, SMS + authenticator-app OTP autofill) and a recovery code (`KeyboardType.Ascii`), with a mode switch.
   - Throttling and errors; success goes to the gate.
 - [x] **Passkey sign-in** (`feature/auth/…/passkey/`).
   - `PasskeyCapability` is false until S1–S3 are live, with a debug override for tests.
   - `CredentialManager.getCredential(GetPublicKeyCredentialOption(requestJson))`, built from the server options: rpId `app.chronoflow.net`, timeout 60000, challenge valid for 120 s.
   - Response fields are encoded as unpadded base64url. A cancel is silent, and errors are mapped per `05 §9.2`.
   - A `CredentialClient` wrapper lets the tests run on the JVM.
-- [ ] **Copy.** The Android-only 2FA intro (OQ-A12) comes from `android-only.json`.
+- [x] **Copy.** b1 belongs to Set2FA (10c); the sign-in two-factor screen uses only catalog copy. `android_two_factor_intro_b1` exists in en + nl and is unused here.
 - [x] **Tests.**
   - The ported iOS two-factor cases.
   - A passkey JSON round-trip and error mapping with a fake `CredentialClient`, using the `auth/passkey-options.json` fixture.
@@ -2078,6 +2089,8 @@ Implementation commits (brief §7):
 **Acceptance**
 - The two-factor cases and the passkey JSON tests pass.
 - Every passkey entry point stays hidden while the capability is false.
+
+**Validation (2026-11-18):** 38 layout guard cases pass; the single `make captures ONLY=AuthTwoFactor` invocation writes 18 PNGs. The follow-up public-API probe confirms identity equality and an opaque `ContentType.toString()`; seven field/control cases pass with the shared-value wiring check. On pixel/API 36, the single follow-up run of each requested emulator class passes: Sign-in keyboard 1.450 s, two-factor journey 1.776 s (StrictMode IO counter 0), code keyboard 1.432 s and recovery keyboard 0.885 s. The shipped passkey capability remains false; S1–S3 and real provider verification remain open. Docs and OQ-A193–OQ-A203 are recorded in `docs/auth.md` and `docs/passkeys.md`. The final `make quick` invocation follows the docs commit; its output is retained in `build/phase5b-validation/final-quick.log`. Browser-rendered board comparison and `make check` remain open under the user's run limits.
 
 ### Phase 5c: Password reset and App Links (`feat/phase-5c-password-reset-links`)
 
