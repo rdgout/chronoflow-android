@@ -283,7 +283,9 @@ class MockAuthTests {
                     it.copy(snapshot = it.snapshot.with(hasVerifiedEmail = false))
                 }
             val source = mockSource(clock, seed = seed)
-            assertFalse(source.passkeyLogin(passkeyInput(source.passkeyOptions(), "AQ")).account.hasVerifiedEmail)
+            val result = source.passkeyLogin(passkeyInput(source.passkeyOptions(), "AQ"))
+            assertEquals(twoFactorID, result.account.id)
+            assertFalse(result.account.hasVerifiedEmail)
             assertEquals(twoFactorID, source.fetchIdentity().id)
             val expired = source.passkeyOptions()
             clock.advance(120.0)
