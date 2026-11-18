@@ -65,8 +65,10 @@ class SessionSync(
         val oldEvents = eventTask
         eventTask = null
         oldEvents?.cancel()
-        oldEvents?.join()
-        old?.stop()
+        withContext(NonCancellable) {
+            oldEvents?.join()
+            old?.stop()
+        }
         if (this@SessionSync.generation != generation) return@withContext
         val database = accounts.activeDatabase() ?: return@withContext
         val id =
@@ -243,14 +245,16 @@ class SessionSync(
         val previousEvents = eventTask
         eventTask = null
         previousEvents?.cancel()
-        previousEvents?.join()
-        if (!preservingRetry) {
-            retryContext = null
-            retention.clear()
-        }
-        previous?.stop()
-        if (preservingRetry && this.generation == generation && epoch != null && previous != null) {
-            retryContext = epoch to previous.retryState
+        withContext(NonCancellable) {
+            previousEvents?.join()
+            if (!preservingRetry) {
+                retryContext = null
+                retention.clear()
+            }
+            previous?.stop()
+            if (preservingRetry && this@SessionSync.generation == generation && epoch != null && previous != null) {
+                retryContext = epoch to previous.retryState
+            }
         }
     }
 }

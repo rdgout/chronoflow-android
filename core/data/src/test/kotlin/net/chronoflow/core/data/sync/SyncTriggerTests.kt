@@ -201,6 +201,42 @@ class SyncTriggerTests {
             assertTrue(f.events.unauthorized.isEmpty())
         }
 
+    // (new) Android caller cancellation must not interrupt draining the replaced lifecycle.
+    @Test fun cancelledReplacementStillStopsTheOldLifecycle() =
+        triggerTest { f ->
+            var cancelCaller: () -> Unit = {}
+            val sync =
+                SessionSync(
+                    ActiveSyncDatabase { f.store.sync },
+                    f.scheduler,
+                    source = { f.source },
+                    isCurrent = { _, epoch ->
+                        if (epoch == 6L) cancelCaller()
+                        true
+                    },
+                    unauthorized = { f.events.refused(it) },
+                    verification = { f.events.verify(it) },
+                    dispatcher = f.dispatcher,
+                )
+            val session = StoredSession("test", syncAccount)
+            try {
+                f.source.configure(failMethod = "identity", methodFailure = DataFailure.Server(500))
+                sync.start(session, 5)
+                sync.refreshNow()
+                runCurrent()
+                assertTrue(f.clock.pendingCount > 0)
+                val replace = async { sync.start(session, 6) }
+                cancelCaller = { replace.cancel() }
+                runCurrent()
+                assertTrue(replace.isCancelled)
+                sync.stop()
+                runCurrent()
+                assertEquals("epoch-5 lifecycle still has a pending timer", 0, f.clock.pendingCount)
+            } finally {
+                sync.stop()
+            }
+        }
+
     @Test fun sessionPausePreservesServerDeadlineAndReplacementEpochDropsIt() =
         triggerTest { f ->
             f.source.configure(failMethod = "identity", methodFailure = DataFailure.Throttled(300.0, 429))
