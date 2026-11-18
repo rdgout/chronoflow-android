@@ -92,7 +92,7 @@ internal fun CfRoot(
                 displayedRoute == null || displayedRoute == Route.Welcome ||
                     (
                         displayedRoute == Route.SignIn || displayedRoute == Route.TwoFactor ||
-                            displayedRoute == Route.Forgot
+                            displayedRoute == Route.Forgot || displayedRoute is Route.Reset
                     )
             )
     SideEffect { onSystemBars(night, overlayShowing, onSky || launchSky) }
