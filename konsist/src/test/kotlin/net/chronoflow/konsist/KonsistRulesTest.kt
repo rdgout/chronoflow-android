@@ -77,6 +77,14 @@ class KonsistRulesTest {
         }
     }
 
+    @Test fun noMultiProcessDataStoreRejectsCoordinatorEntryPoints() {
+        assertFailure { noMultiProcessDataStore(violations("noMultiProcessCoordinator")) }.all {
+            messageContains("noMultiProcessDataStore violated")
+            messageContains("CreatedCoordinator.kt")
+            messageContains("ConstructedCoordinator.kt")
+        }
+    }
+
     @Test fun noMultiProcessDataStoreAllowsSingleProcessFactory() =
         noMultiProcessDataStore(allowed("noMultiProcessDataStore"))
 
