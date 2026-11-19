@@ -4,6 +4,12 @@
     <issue id="GradleDependency" severity="ignore" />
     <issue id="NewerVersionAvailable" severity="ignore" />
     <issue id="AndroidGradlePluginVersion" severity="ignore" />
+    <!-- 0c: no visible string without its Dutch twin. -->
+    <issue id="MissingTranslation" severity="error" />
+    <issue id="ExtraTranslation" severity="error" />
+    <issue id="StringFormatInvalid" severity="error" />
+    <issue id="StringFormatCount" severity="error" />
+    <issue id="PluralsCandidate" severity="error" />
     <issue id="UnusedResources">
         <!-- 0b: consumed in Phase 2 -->
         <ignore path="**/res/font/*.ttf" />

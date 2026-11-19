@@ -160,3 +160,53 @@ fun routesAreSerializable(scope: KoScope) {
             .map { "${it.path}: ${it.name}" }
     fail("routesAreSerializable", violations)
 }
+
+private val textCallRegex = Regex("""\b(Basic)?Text\(""")
+private val textLiteralArgRegex = Regex("""\A(text\s*=\s*)?("|\"\"\")""")
+private val namedTextLiteralRegex = Regex("""\btext\s*=\s*("|\"\"\")""")
+
+private fun hasLiteralTextArgument(source: String): Boolean =
+    textCallRegex.findAll(source).any { call ->
+        val args = source.substring(call.range.last + 1)
+        if (textLiteralArgRegex.containsMatchIn(args.trimStart())) return@any true
+        var depth = 1
+        var index = 0
+        while (index < args.length && depth > 0) {
+            when (args[index]) {
+                '(' -> {
+                    depth++
+                }
+
+                ')' -> {
+                    depth--
+                }
+
+                else -> {
+                    if (depth == 1 && namedTextLiteralRegex.matchAt(args, index) != null &&
+                        (index == 0 || !args[index - 1].isLetterOrDigit())
+                    ) {
+                        return@any true
+                    }
+                }
+            }
+            index++
+        }
+        false
+    }
+
+fun noLiteralTextInText(scope: KoScope) {
+    val violations =
+        scope
+            .functions()
+            .filter { function ->
+                val sourceSet = sourceSetOf(function.path)
+                sourceSet != null && !isTestSourceSet(sourceSet)
+            }.filterNot { function ->
+                function.annotations.any {
+                    it.name.startsWith("Preview") ||
+                        it.name.endsWith("Preview")
+                }
+            }.filter { hasLiteralTextArgument(it.text) }
+            .map { "${it.path}: ${it.name}" }
+    fail("noLiteralTextInText", violations)
+}

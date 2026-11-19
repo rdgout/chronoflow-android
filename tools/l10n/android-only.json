@@ -1,0 +1,40 @@
+{
+  "entries": [
+    {
+      "name": "android_two_factor_intro_b1",
+      "en": "You need an authenticator app.",
+      "nl": "Je hebt een authenticator-app nodig.",
+      "replaces": [{"table": "settings", "key": "You need an authenticator app, like the one built into Passwords on iPhone."}],
+      "review": "needs review",
+      "comment": "OQ-A12: 2FA intro b1 without the iPhone reference."
+    },
+    {
+      "name": "android_passkeys_intro",
+      "en": "Sign in with your fingerprint, face or screen lock instead of your password.",
+      "nl": "Log in met je vingerafdruk, gezicht of schermvergrendeling in plaats van je wachtwoord.",
+      "replaces": [{"table": "settings", "key": "Sign in with Face ID, a fingerprint or your screen lock instead of your password."}],
+      "review": "needs review",
+      "comment": "OQ-A12: passkeys intro without Face ID."
+    },
+    {
+      "name": "android_notifications_blocked_step",
+      "en": "Tap Open phone settings and turn on notifications for ChronoFlow.",
+      "nl": "Tik op Telefooninstellingen openen en zet meldingen voor ChronoFlow aan.",
+      "replaces": [
+        {"table": "reminders", "key": "Open your phone's Settings."},
+        {"table": "reminders", "key": "Tap Notifications, then ChronoFlow."},
+        {"table": "reminders", "key": "Turn on Allow notifications."}
+      ],
+      "review": "needs review",
+      "comment": "OQ-A12, OQ-0c-2: one Android step; the button is reminders 'Open phone settings'."
+    },
+    {
+      "name": "android_recovery_codes_file_name",
+      "en": "Recovery codes.txt",
+      "nl": "Herstelcodes.txt",
+      "replaces": [],
+      "review": "needs review",
+      "comment": "OQ-A12, A23: CreateDocument file name; nl from settings 'Recovery codes' = 'Herstelcodes'."
+    }
+  ]
+}

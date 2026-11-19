@@ -87,6 +87,20 @@ class KonsistRulesTest {
 
     @Test fun routesAreSerializableAllowsControl() = routesAreSerializable(allowed("routesAreSerializable"))
 
+    @Test fun noLiteralTextInText() = noLiteralTextInText(projectScope)
+
+    @Test fun noLiteralTextInTextRejectsPlantedViolation() {
+        assertFailure { noLiteralTextInText(violations("noLiteralTextInText")) }.all {
+            messageContains("noLiteralTextInText violated")
+            messageContains("TextLiteral.kt: positional")
+            messageContains("TextLiteral.kt: named")
+            messageContains("TextLiteral.kt: raw")
+            messageContains("TextLiteral.kt: namedNotFirst")
+        }
+    }
+
+    @Test fun noLiteralTextInTextAllowsControl() = noLiteralTextInText(allowed("noLiteralTextInText"))
+
     private companion object {
         val projectScope: KoScope by lazy { projectScope() }
     }
