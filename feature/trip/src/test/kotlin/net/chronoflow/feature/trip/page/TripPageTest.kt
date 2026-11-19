@@ -1,5 +1,6 @@
 package net.chronoflow.feature.trip.page
 
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
@@ -14,6 +15,7 @@ import androidx.compose.ui.test.performScrollToNode
 import net.chronoflow.core.model.contracts.BlockType
 import net.chronoflow.core.plan.planDate
 import net.chronoflow.core.plan.trippage.PlanPreferences
+import net.chronoflow.core.plan.trippage.TripPageAnchor
 import net.chronoflow.core.testing.LargeTimelineFixtures
 import net.chronoflow.core.testing.tiers.Logic
 import net.chronoflow.feature.trip.timeline.CountingTimelineProbe
@@ -96,6 +98,44 @@ class TripPageTest : PageComponentTest() {
             compose.onNodeWithTag("trip.summary").getUnclippedBoundsInRoot().top,
         )
         compose.onNodeWithTag("trip.compactHeader").onChildren().assertCountEquals(0)
+    }
+
+    @Test fun restoredOffsetUsesScrolledChromeInTheFirstComposition() {
+        val host = TripPageTestRig().also { rig = it }
+        host.prewarm(compose.density)
+        val day = host.model.prepared.days[0]
+        val anchor = TripPageAnchor(day.id, day.day.labelDate, 120.0)
+        val target = restoreTarget(host.model.index, anchor, (anchor.offset * compose.density.density).toInt())
+        val list = LazyListState(target.first, target.second)
+        assertTrue(list.firstVisibleItemIndex > host.model.index.headerIndex(day.id))
+        val state =
+            TripPageScreenState(
+                host.vm.ui.value,
+                anchor,
+                list,
+                host.vm.clocks,
+                host.vm.summaryClock,
+                host.vm.repository,
+                host.vm.firstFrame,
+                host.vm.scrollCommands,
+                host.vm::prefetchAround,
+                host.vm.refreshState.value,
+                host.vm.refreshProbe,
+                false,
+                false,
+                false,
+            )
+        host {
+            CompositionLocalProvider(LocalTimelineProbe provides probe) {
+                TripPageScreen(state, {})
+            }
+        }
+        compose.onNodeWithTag("trip.subtitle.day", useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag("trip.subtitle.dates", useUnmergedTree = true).assertDoesNotExist()
+        compose.onNodeWithTag("trip.compactHeader").onChildren().assertCountEquals(1)
+        val counts = probe.snapshot()
+        assertEquals("the scrolled top bar is its first composition", 1, counts.composed(Kind.ANCHOR, day.id))
+        assertEquals("compact semantics are visible in its first composition", 1, counts.composed(Kind.COMPACT, day.id))
     }
 
     @Test fun menuJumpReachesTheEnd() {

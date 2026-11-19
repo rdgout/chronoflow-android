@@ -19,6 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
@@ -59,7 +60,14 @@ fun TripPageScreen(
     val listState = state.listState
     val dayId = state.anchor.dayID
     val header = if (dayId != null && plan?.layouts?.containsKey(dayId) == true) plan.index.headerIndex(dayId) else null
-    var scrolled by remember(listState, header) { mutableStateOf(false) }
+    var scrolled by remember(listState, header) {
+        mutableStateOf(
+            listState != null && header != null &&
+                Snapshot.withoutReadObservation {
+                    headerScrolled(listState.layoutInfo.visibleItemsInfo, listState.firstVisibleItemIndex, header)
+                },
+        )
+    }
     // Composition-read derived state over layoutInfo still schedules passes when its value stays unchanged.
     LaunchedEffect(listState, header) {
         if (listState != null && header != null) {
@@ -298,7 +306,9 @@ private fun ReadyTripPage(
                     }
                 }
             }
-        var visible by remember(alpha) { mutableStateOf(false) }
+        var visible by remember(alpha) {
+            mutableStateOf(Snapshot.withoutReadObservation { alpha() >= 1f })
+        }
         LaunchedEffect(alpha) {
             snapshotFlow { alpha() >= 1f }.collect { visible = it }
         }

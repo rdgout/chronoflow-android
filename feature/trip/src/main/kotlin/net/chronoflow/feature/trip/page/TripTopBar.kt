@@ -160,6 +160,7 @@ private fun DayMenuAnchor(
             Text(code, style = CfTheme.type.planTitle, maxLines = 1, color = colors.foreground)
             if (ready) {
                 Row(
+                    modifier = Modifier.testTag(if (headerScrolled) "trip.subtitle.day" else "trip.subtitle.dates"),
                     horizontalArrangement = Arrangement.spacedBy(PlanMetrics.smallGap.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
