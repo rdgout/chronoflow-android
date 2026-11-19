@@ -22,7 +22,7 @@ internal fun WideListRows(
     onCheck: (String, CheckStatus?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    PinnedDayList(day.id, pin = pin, modifier = modifier, revision = rows, rows = {
+    PinnedDayList(day.id, pin = pin, modifier = modifier, rows = {
         rows.rows.forEach { row ->
             val selected = remember(row.blockId, selectedBlock) { { selectedBlock() == row.blockId } }
             if (row.zone) {

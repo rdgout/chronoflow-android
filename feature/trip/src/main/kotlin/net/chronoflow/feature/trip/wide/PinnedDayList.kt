@@ -13,7 +13,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.layout.Layout
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
@@ -21,23 +20,15 @@ import net.chronoflow.core.plan.generated.PlanMetrics
 import net.chronoflow.feature.trip.timeline.LocalTimelineProbe
 import net.chronoflow.feature.trip.timeline.TimelineProbe
 
-private class ContentHeight {
-    var width = -1
-    var height = 0
-}
-
 @Composable
 fun PinnedDayList(
     dayId: String,
     rows: @Composable ColumnScope.() -> Unit,
     pin: WidePinSource,
     modifier: Modifier = Modifier,
-    revision: Any? = rows,
 ) {
     val probe = LocalTimelineProbe.current
     SideEffect { probe?.composed(TimelineProbe.Kind.LIST, dayId) }
-    val density = LocalDensity.current
-    val content = remember(dayId, revision, density) { ContentHeight() }
     val itemKey = remember(dayId) { "t:$dayId" }
     Layout(content = {
         Box(Modifier.testTag("trip.wide.list.$dayId").clipToBounds()) {
@@ -52,15 +43,12 @@ fun PinnedDayList(
         }
     }, modifier = modifier) { children, constraints ->
         val width = constraints.maxWidth
-        if (content.width != width) {
-            content.width = width
-            content.height = children[0].maxIntrinsicHeight(width)
-        }
         val height = constraints.maxHeight
-        val viewport = pin.position(itemKey, height, content.height).heightPx
-        val child = children[0].measure(Constraints.fixed(width, viewport))
+        val viewport = pin.position(itemKey, height, Int.MAX_VALUE).heightPx
+        // A clock child can change row height without recomposing this parent.
+        val child = children[0].measure(Constraints(minWidth = width, maxWidth = width, maxHeight = viewport))
         layout(width, height) {
-            child.placeRelative(0, pin.position(itemKey, height, content.height).offsetPx)
+            child.placeRelative(0, pin.position(itemKey, height, child.height).offsetPx)
         }
     }
 }

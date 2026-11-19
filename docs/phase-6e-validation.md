@@ -24,6 +24,20 @@ OQ-A311 result: retain the per-item pin implementation; the hosted first-frame c
 
 Mutation XML and restored-source results: `build/test-results/phase-6e-review1/finding2/`.
 
+## Review round 1 — finding 3
+
+PinnedDayList no longer caches intrinsic content height by width/revision. It measures the existing verticalScroll container once with a zero minimum height and the live pin cap as maximum height. The scroll container wraps short content and scrolls taller content, so child-only row growth updates the viewport immediately. The unused revision parameter/cache and intrinsic-height walk were removed. The pin path still uses cached item keys, its cached mutable position and primitive sizes; this change adds no per-frame objects or state publication of measured sizes.
+
+- Test first: `make targeted ONLY='feature:trip:PinnedDayListContentHeightTest'` failed before the fix (5 s Gradle wall): the last row ended at 217.5 dp while the viewport retained its original 144.8 dp height.
+- The guard uses a Dutch profile, the 1.3 font cap and a 280 dp list column. A deterministic child row grows after first layout while the rows lambda, width and parent composition remain unchanged. It proves the content still fits below the cap, then checks the last row's unclipped bottom is within the viewport. This isolates measurement invalidation without depending on a particular string wrapping.
+- The new guard passes after the fix (5 s Gradle wall, 1.870 s test time).
+- `make targeted ONLY='feature:trip:PinnedDayListContentHeightTest feature:trip:PinnedDayListTest feature:trip:PinnedDayListFontScaleTest feature:trip:WidePinSourceTest feature:trip:WideDayRowTest feature:trip:WideDayRowBreakpointTest feature:trip:TimelineInvalidationTest feature:trip:TripPageWideGuardTest'`: PASS, all 56 cases, 11.19 s host wall, no budget overruns. This includes the tightened first-frame pin guard and unchanged invalidation budgets after the measurement change.
+- Formatting required the fixture child to accept a value-provider lambda rather than State directly (compose:state-param-check). `make format` then passed (11 s Gradle wall); the final guard rerun passed (4.40 s host wall).
+
+Red/green XML and timings: `build/test-results/phase-6e-review1/finding3/`. No profile regeneration or perf tier is run in this review round; device follow-up remains `make perf-timeline` and, for the orchestrator-owned generated profiles, `make baseline-profile`. Neither profiles nor docs/perf-timeline.md are changed here.
+
+Final review-round checks: `./gradlew :app:lintDebug :feature:trip:lintDebug` PASS (14 s Gradle wall). `make quick` ran once and passed (55.65 s host wall), including all JVM/Robolectric, tooling and timing checks with no budget overruns. Evidence: `build/test-results/phase-6e-review1/`.
+
 ## Task 1
 
 - `make targeted ONLY="core:testing-compose:WindowSizeFakeHostTest core:testing-compose:ProfileHostTest konsist:KonsistRulesTest#featureSizesComeFromTheWindow konsist:KonsistRulesTest#featureSizesComeFromTheWindowRejectsPlantedViolation"`: first run caught two fixture expectations (inherited top inset and fractional-density pixel rounding).
