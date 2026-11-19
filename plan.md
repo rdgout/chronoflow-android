@@ -465,7 +465,7 @@ Every screen scrolls when height-constrained. The minimum width is 280 dp; below
 
 ### Android spec: seeds and test hooks (debug only)
 
-- **Seed names** are identical to iOS (`12 §2`): `CF_AUTH_TEST_ID`, `CF_UI_TEST_PROFILE=screen|launch`, `CF_AUTH_TEST_SIGNED_IN=demo|twofactor`, `CF_AUTH_TEST_WALKTHROUGH_SEEN`, `CF_AUTH_TEST_UNVERIFIED`, `CF_AUTH_TEST_TERMS_PENDING` (the three flags equal `"1"`), `CF_AUTH_TEST_AUDIT_SCREEN`/`STATE`, `CF_PLAN_TEST_ROUTE=trips|trip:<id>[:list]`, `CF_PLAN_TEST_POSITION=summary`, `CF_PLAN_TEST_SHEET=step:<id>|legend`, `CF_SETTINGS_ROUTE`, `CF_WIZARD_AUTO_OPEN`, `CF_WIZARD_BOARD_CAPTURE`, `CF_MOCK_DELAY` (default 0).
+- **Seed names** are identical to iOS (`12 §2`): `CF_AUTH_TEST_ID`, `CF_UI_TEST_PROFILE=screen|launch`, `CF_AUTH_TEST_SIGNED_IN=demo|twofactor`, `CF_AUTH_TEST_WALKTHROUGH_SEEN`, `CF_AUTH_TEST_UNVERIFIED`, `CF_AUTH_TEST_TERMS_PENDING` (the three flags equal `"1"`), `CF_AUTH_TEST_AUDIT_SCREEN`/`STATE`, `CF_AUTH_TEST_LINK` (test-id gated HTTPS link, captured in memory before MainActivity and omitted from forwarded extras), `CF_PLAN_TEST_ROUTE=trips|trip:<id>[:list]`, `CF_PLAN_TEST_POSITION=summary`, `CF_PLAN_TEST_SHEET=step:<id>|legend`, `CF_SETTINGS_ROUTE`, `CF_WIZARD_AUTO_OPEN`, `CF_WIZARD_BOARD_CAPTURE`, `CF_MOCK_DELAY` (default 0).
 - **Intent extras:** `cf.trip-page=S1…S6|large30|large60|<uuid>`, `cf.timeline-fixtures`, `cf.settings.theme`, `cf.settings.language`, `cf.reduceMotion`, `cf.passkeyCapability` (debug only: `1`/`true`, `0`/`false`; otherwise no override), `cf.freezeAt`, `cf.readyAt`, `cf.mainThreadStall`, `cf.holdSplash`, `cf.session`, `cf.gate`, `cf.stored`, `cf.readyDelay`, `cf.mode`.
 - **Launch diagnostics** (String extras, debug and perf only): `cf.session=in|signedIn|out|signedOut|never` (default native), `cf.gate=verify|terms|walkthrough|app` (default app), `cf.stored=yes|no|never` (default yes), `cf.readyDelay` in finite seconds `0…60` (default 0). Presence of any stub key injects `StubReadiness`; otherwise every variant uses `StoredDataReadiness` (OQ-A172). `cf.readyDelay` is an absolute time on the shared launch clock, not a second delay from collection.
 - **Fixed diagnostic endings:** `cf.mode=ready|slow|welcome` bypasses readiness. Ready/slow leave the route empty after removal; welcome publishes Welcome under the overlay, with a measured moon target and optional frozen intro. `cf.readyAt` is finite ms `0…60000`, default 4600, for slow mode. `cf.mainThreadStall` uses the same ms range and blocks from 300 ms after t0. Invalid values use the defaults. Release parsing and stalls are no-ops. `cf.freezeAt` still freezes a debug frame; `cf.holdSplash` remains debug only.
@@ -787,6 +787,15 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A202 | (OQ-5b-10) A runtime passkey availability probe (provider present, RP association) on top of the constant. | None. The constant stays false until S1–S3, then failures map per §5.7. | 5b |
 | OQ-A203 | (OQ-5b-11) Password autofill commit for two-factor accounts: 5a commits only after a successful password sign-in, but a 2FA account's password field is cleared when the challenge arrives, before any session exists. | No commit on the two-factor path (`commitAutofill = {}`), so the provider gets no save offer for 2FA accounts. Revisit on a device; a fix would need the password kept in memory until the two-factor success, which A23 discourages. | 5b |
 | OQ-A204 | `credentials-play-services-auth` merges `USE_BIOMETRIC`, `USE_FINGERPRINT` and the exported Google Sign-In `RevocationBoundService` into the app manifest, outside the release manifest contract. The app uses no Google Sign-In; the system Credential Manager sheet holds its own permissions. | remove; revisit if Credential Manager ever needs biometric permissions in-app. All three entries are stripped with `tools:node="remove"`; the verifier allow-lists stay unchanged (orchestrator, 2026-11-18). | 5b |
+| OQ-A205 | (OQ-5c-1) Who owns the reset token in memory? OQ-A175 names an AuthLinkHolder. | `AuthServices.resetModel`, the `ResetPasswordModel` carrying the link, is the holder. No separate class; the route stays `Reset(email)`. | 5c |
+| OQ-A206 | (OQ-5c-2) Cold-link hand-over at iOS root mount or after the launch overlay? | Immediately after `LaunchSessionBridge` first navigates its launch route, with `finishLaunch` as an idempotent backstop. Keep the ending committed and use the existing Welcome moon fallback. Hand-over only at `finishLaunch` would briefly show Welcome first. | 5c |
+| OQ-A207 | (OQ-5c-3) Trailing-slash prefixes leave tokenless reset URLs on the web, though the parser can show Expired. | Keep `/reset-password/` and `/email/verify/`. Server links have the complete shape. | 5c |
+| OQ-A208 | (OQ-5c-4) Which fingerprints belong in assetlinks.json? | Play app-signing certificate only. Add the upload key only if locally signed release builds must verify. Never the debug key (OQ-A38). | 5c, S1 |
+| OQ-A209 | (OQ-5c-5) Port mock Open email app, opening the latest mock reset link in the app? | Yes, only in debug with the mock data source. Release has no mock code. | 5c |
+| OQ-A210 | (OQ-5c-6) Native mail selector and missing-handler behaviour? | `makeMainSelectorActivity(ACTION_MAIN, CATEGORY_APP_EMAIL)`. A missing handler does nothing visible and retains the sent notice, matching iOS. | 5c |
+| OQ-A211 | (OQ-5c-7) Redact ResetPasswordLink and SignedVerificationInput in toString? | Yes, redact link secrets so accidental diagnostics cannot expose them. | 5c |
+| OQ-A212 | (OQ-5c-8) Malformed percent-encoding in a query value; exact Foundation behaviour is untested. | Treat the value as missing: empty reset email selects Expired; malformed verification becomes `Verify(null)`. | 5c |
+| OQ-A213 | (OQ-5c-9) Use activity-scoped ViewModels for Forgot/Reset or port iOS model ownership? | No ViewModel for these routes. Models live in `AuthServices`; requests use composition-owned coroutine scopes. Entry-scoped ViewModel decoration remains a later refactor (OQ-A186). | 5c |
 | OQ-0a-22 | Native libraries in the bundle? | Allow only `libandroidx.graphics.path.so` (Compose graphics-path; excluding it breaks Path conversion below API 34); fail on any other `.so` | 0a, 13 |
 | OQ-0b-1 | Where does `PlanMetrics` live? `08 §3.1` lists it inside `CfDimens`, but its consumer `:core:plan` is a JVM module that cannot depend on `:core:designsystem` | `core/plan/…/generated/PlanMetrics.generated.kt` (Double, dp), as iOS keeps it in `PlanCore` | 0b, 1b, 1c |
 | OQ-0b-2 | Port all iOS TokenGen outputs now (Auth, Settings, Terms, Welcome, PlanUI, Press, LaunchPaint, TypeMetrics), or only colors, sky and type? | All of them now (the iOS files are exact goldens and Phases 2, 3a, 3c, 5a, 9 and 10 need them) | 0b |
@@ -2111,14 +2120,19 @@ Implementation commits (brief §7):
 **Delivers.** Builds Forgot, Reset, Reset done and Reset expired with the honest reset copy and no session from the 204. It adds verified App Link intent filters for the reset and verify URLs, an exact port of the AuthLink parser, and pending launch intents so a reset link waits until the user is signed out. Tests port the parser cases and drive one link journey with adb on the emulator.
 
 **Tasks**
-- [ ] **Forgot** (`AuthForgot`): an email field, a rate-limited send, and the honest confirmation copy (OQ 22, 27).
-- [ ] **Reset** (`AuthReset`), **Reset done** (`AuthResetDone`) and **Reset expired** (`AuthResetExpired`). The password field shows the policy hint. The 204 creates no session. An expired link offers a new one.
-- [ ] **App Links.**
+- [x] Task 3: port the Forgot model, ownership and mock mail lookup seam.
+- [x] **Forgot** (`AuthForgot`): an email field, a rate-limited send, and the honest confirmation copy (OQ 22, 27).
+- [x] Task 2: shared heading glyph, password policy, email launcher and verify-link seam.
+- [x] Task 5: port the Reset model, prepareReset, model ownership and mock reset opening.
+- [x] **Reset** (`AuthReset`), **Reset done** (`AuthResetDone`) and **Reset expired** (`AuthResetExpired`). The password field shows the policy hint. The 204 creates no session. An expired link offers a new one.
+- [x] **App Links.**
+  - [x] Task 7: port the guest reset link router and signed-out hand-over tests.
+  - [x] Task 1: port the auth link parser and RFC 3986 test URL helper.
   - `autoVerify` intent filters on `MainActivity` for `https://app.chronoflow.net/reset-password/…` and `/email/verify/…`, handled in `onNewIntent` under `singleTask`.
   - `AuthLink.kt`, an exact port. A verify link has 5 segments, a UUID id, a 40-hex hash, digit-only `expires` and a 64-hex signature. A reset link has 3 segments and exactly one `email`.
   - `PendingLaunchIntent`: a reset link waits until the user is signed out, and verify links go to the per-account inbox.
-- [ ] **docs/app-links.md:** the `assetlinks.json` content for server item S1 (`handle_all_urls`, the release fingerprint only, OQ-A38), and how to test with `adb shell pm verify-app-links`.
-- [ ] **Tests.**
+- [x] **docs/app-links.md:** the `assetlinks.json` content for server item S1 (`handle_all_urls`, the release fingerprint only, OQ-A38), and how to test with `adb shell pm verify-app-links`.
+- [x] **Tests.**
   - The ported `AuthLink` cases.
   - Routing cases: signed in versus signed out, cold versus warm.
   - Guards.

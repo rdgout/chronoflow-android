@@ -46,6 +46,23 @@ class LaunchSessionBridgeTest {
     @Test fun walkthroughMapsToFirstRunWalkthrough() =
         assertEquals(Route.Walkthrough(false), LaunchRoute.Walkthrough.toRoute())
 
+    @Test fun rootMountAttachesOnceAfterTheFirstLaunchNavigation() {
+        val navigator = RootNavigator()
+        val mounted = mutableListOf<Route?>()
+        val bridge = LaunchSessionBridge(navigator) { mounted += navigator.state.value.route }
+        bridge.update(LaunchState(session = SessionPresence.SignedOut))
+        bridge.update(LaunchState(session = SessionPresence.SignedIn("a"), gate = Gate.Terms))
+        assertEquals(listOf(Route.Welcome), mounted)
+    }
+
+    @Test fun rootMountLinkNavigationIsNotOverwrittenByALaterLaunchUpdate() {
+        val navigator = RootNavigator()
+        val bridge = LaunchSessionBridge(navigator) { navigator.navigate(Route.Reset("a@b.c")) }
+        bridge.update(LaunchState(session = SessionPresence.SignedOut))
+        bridge.update(LaunchState(session = SessionPresence.SignedIn("a"), gate = Gate.Terms))
+        assertEquals(Route.Reset("a@b.c"), navigator.state.value.route)
+    }
+
     private fun checkState(
         state: LaunchState,
         expected: Route,

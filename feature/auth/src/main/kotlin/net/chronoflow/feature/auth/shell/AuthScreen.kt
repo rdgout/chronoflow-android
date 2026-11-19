@@ -43,6 +43,7 @@ fun AuthScreen(
     modifier: Modifier = Modifier,
     showsBack: Boolean = true,
     compact: Boolean = false,
+    headingGlyph: AuthHeadingGlyph? = null,
     enabled: Boolean = true,
     announcementRevision: Int = 0,
     takeAnnouncement: () -> String? = { null },
@@ -83,6 +84,10 @@ fun AuthScreen(
                     Column(
                         columnWidth.padding(top = if (compact) AuthTokens.spacer.dp else AuthTokens.headingMargin.dp),
                     ) {
+                        if (headingGlyph != null) {
+                            AuthHeadingBadge(headingGlyph)
+                            Spacer(Modifier.height((2 * AuthTokens.fieldGap).dp))
+                        }
                         Text(
                             title,
                             Modifier.testTag("auth.heading").semantics {

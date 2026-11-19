@@ -3,13 +3,24 @@ package net.chronoflow.tools.tokengen
 import kotlinx.serialization.json.JsonObject
 import java.nio.file.Path
 
-fun authTokens(root: Path): TokenSet =
-    authTokens(
-        root.design("AuthSignIn.dc.html"),
-        root.design("ds/chronoflow/components/bundle.js"),
-        root.design("ds/chronoflow/components/bundle.css"),
-        parseJson(root.design("ds/chronoflow/tokens.json")).obj(),
-    )
+fun authTokens(root: Path): TokenSet {
+    val base =
+        authTokens(
+            root.design("AuthSignIn.dc.html"),
+            root.design("ds/chronoflow/components/bundle.js"),
+            root.design("ds/chronoflow/components/bundle.css"),
+            parseJson(root.design("ds/chronoflow/tokens.json")).obj(),
+        )
+    val done =
+        root
+            .design(
+                "AuthTwoFactor.dc.html",
+            ).substringAfter("value=\"{{c.isDoneIcon}}\"")
+            .substringBefore("</sc-if>")
+    val strokes = captures("""stroke-width="([0-9.]+)"""", done)
+    val stroke = strokes.singleOrNull()?.toDoubleOrNull() ?: throw GenerationError("Missing auth heading check stroke")
+    return TokenSet(base.metrics + Metric("headingCheckStroke", stroke), base.styles, base.lists)
+}
 
 internal fun authTokens(
     board: String,

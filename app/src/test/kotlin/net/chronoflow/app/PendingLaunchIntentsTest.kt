@@ -34,12 +34,13 @@ class PendingLaunchIntentsTest {
             val uri = "https://app.chronoflow.net/x"
             graph.pendingLaunchIntents.capture(
                 Intent(Intent.ACTION_VIEW, Uri.parse(uri)).putExtra("cf.reminder.tripId", "trip"),
+                restored = false,
             )
             graph.handlePendingLaunchIntents()
             val held = graph.pendingLaunchIntents.consume()!!
             assertEquals(setOf(uri), held.links)
             assertEquals("trip", held.reminder?.tripId)
-            graph.pendingLaunchIntents.capture(Intent(Intent.ACTION_VIEW, Uri.parse(uri)))
+            graph.pendingLaunchIntents.capture(Intent(Intent.ACTION_VIEW, Uri.parse(uri)), restored = false)
             graph.finishLaunch()
             assertNull(graph.pendingLaunchIntents.consume())
             graph.close()

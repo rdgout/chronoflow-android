@@ -46,6 +46,7 @@ data class TestSeed(
     val wizardAutoOpen: Boolean = false,
     val wizardBoardCapture: String? = null,
     val passkeyCapability: Boolean? = null,
+    val authTestLink: String? = null,
 ) {
     override fun toString(): String = "TestSeed(testId=$testId, profile=$profile, keys=${raw.keys})"
 
@@ -176,6 +177,7 @@ data class TestSeed(
                 walkthroughSeen = walkthroughSeen,
                 termsPending = termsPending,
                 unverified = unverified,
+                authTestLink = parsed("CF_AUTH_TEST_LINK") { it.takeIf { url -> url.startsWith("https:") } },
                 auditScreen = accepted["CF_AUTH_TEST_AUDIT_SCREEN"],
                 auditState = accepted["CF_AUTH_TEST_AUDIT_STATE"],
                 mockDelay = mockDelay.seconds,

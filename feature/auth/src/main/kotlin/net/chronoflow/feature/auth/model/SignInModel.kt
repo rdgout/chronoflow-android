@@ -156,6 +156,12 @@ class SignInModel(
         }
     }
 
+    fun prepareReset() {
+        twoFactor.value?.cancel()
+        mutableTwoFactor.value = null
+        navigation.reset()
+    }
+
     fun clearSecrets() {
         twoFactor.value?.cancel()
         mutableTwoFactor.value = null

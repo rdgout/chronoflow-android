@@ -48,7 +48,7 @@ internal object LaunchPlatform {
                 .fromIntent(intent)
         if (seed.profile == net.chronoflow.debug.UiTestProfile.Screen) {
             net.chronoflow.debug.ScreenSessionFixture
-                .route(graph, seed.raw["CF_AUTH_TEST_AUDIT_SCREEN"])
+                .route(graph, seed.raw["CF_AUTH_TEST_AUDIT_SCREEN"], seed.raw["CF_AUTH_TEST_AUDIT_STATE"])
         }
     }
 

@@ -2,12 +2,13 @@ package net.chronoflow.app
 
 import android.content.Intent
 import android.net.Uri
-import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import net.chronoflow.core.testing.tiers.Logic
 import net.chronoflow.debug.DebugAppHooks
 import org.junit.Assert.assertEquals
@@ -36,7 +37,7 @@ class LaunchIntentRestorationTest {
         try {
             check(app, app.graph)
         } finally {
-            app.graph.close()
+            withContext(NonCancellable) { app.graph.close() }
         }
     }
 
@@ -50,10 +51,10 @@ class LaunchIntentRestorationTest {
     @Test fun handledLinkIsNotCapturedAgainAfterRecreation() =
         runTest(timeout = 60.seconds) {
             withGraph { app, graph ->
-                ActivityScenario.launch<MainActivity>(link(app)).use { scenario ->
+                withLinkActivity(link(app)) { controller ->
                     graph.finishLaunch()
                     assertNull(graph.pendingLaunchIntents.consume())
-                    scenario.recreate()
+                    controller.recreate()
                     assertNull(graph.pendingLaunchIntents.consume())
                 }
             }
@@ -63,7 +64,7 @@ class LaunchIntentRestorationTest {
         runTest(timeout = 60.seconds) {
             withGraph { app, graph ->
                 val intent = link(app).addFlags(Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY)
-                ActivityScenario.launch<MainActivity>(intent).use {
+                withLinkActivity(intent) {
                     assertNull(graph.pendingLaunchIntents.consume())
                 }
             }
@@ -72,7 +73,7 @@ class LaunchIntentRestorationTest {
     @Test fun freshLaunchStillCapturesItsLink() =
         runTest(timeout = 60.seconds) {
             withGraph { app, graph ->
-                ActivityScenario.launch<MainActivity>(link(app)).use {
+                withLinkActivity(link(app)) {
                     assertEquals(setOf("https://app.chronoflow.net/x"), graph.pendingLaunchIntents.consume()?.links)
                 }
             }

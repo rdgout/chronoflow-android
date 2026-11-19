@@ -58,6 +58,9 @@ object TestSeeds {
             val source = sourceForSeed(dir, overrides, io) { credentials.readStoredSession()?.token }
             SeedRunner(dir, credentials, AndroidAccountDriverFactory(context), source, io)
                 .reseed(seed.signedIn, seed.testId)
+            seed.authTestLink?.let { link ->
+                withContext(app.graph.dispatchers.main) { app.graph.pendingLaunchIntents.captureLink(link) }
+            }
             DebugSeedRouting.current = seed
         }
         seed.language?.let { language ->
@@ -99,7 +102,7 @@ object TestSeeds {
         seed: TestSeed,
     ): Intent =
         Intent(context, MainActivity::class.java).apply {
-            seed.raw.forEach { (key, value) -> putExtra(key, value) }
+            seed.raw.filterKeys { it != "CF_AUTH_TEST_LINK" }.forEach { (key, value) -> putExtra(key, value) }
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
         }
 }

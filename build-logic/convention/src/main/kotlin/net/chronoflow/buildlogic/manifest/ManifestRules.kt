@@ -15,6 +15,7 @@ enum class Rule {
     BACKUP,
     DIRECT_BOOT,
     STARTUP_INITIALIZER,
+    APP_LINK,
 }
 
 data class ManifestViolation(
@@ -110,7 +111,39 @@ object ManifestRules {
             .filter { it.android("directBootAware") == "true" }
             .forEach { violations += ManifestViolation(Rule.DIRECT_BOOT, "${it.tagName} ${it.android("name")}".trim()) }
 
+        val verified =
+            document
+                .getElementsByTagName("intent-filter")
+                .asElements()
+                .filter { it.android("autoVerify") == "true" }
+        val main =
+            application?.childElements("activity")?.singleOrNull {
+                qualify(it.android("name")) == MAIN_ACTIVITY
+            }
+        val filter = verified.singleOrNull()
+        if (filter == null || filter.parentNode != main || !validAuthLinkFilter(filter)) {
+            violations +=
+                ManifestViolation(Rule.APP_LINK, "expected one verified HTTPS auth link filter on MainActivity")
+        }
         return violations
+    }
+
+    private fun validAuthLinkFilter(filter: Element): Boolean {
+        val data = filter.childElements("data")
+        val actions = filter.childElements("action").map { it.android("name") }.toSet()
+        val categories = filter.childElements("category").map { it.android("name") }.toSet()
+
+        fun values(name: String): Set<String> = data.map { it.android(name) }.filter { it.isNotEmpty() }.toSet()
+        return actions == setOf("android.intent.action.VIEW") &&
+            categories == setOf("android.intent.category.DEFAULT", "android.intent.category.BROWSABLE") &&
+            values("scheme") == setOf("https") && values("host") == setOf("app.chronoflow.net") &&
+            values("pathPrefix") == setOf("/reset-password/", "/email/verify/") &&
+            data.all { element ->
+                (0 until element.attributes.length).all { index ->
+                    val attr = element.attributes.item(index)
+                    attr.namespaceURI == ANDROID_NS && attr.localName in setOf("scheme", "host", "pathPrefix")
+                }
+            }
     }
 
     private fun qualify(name: String) = if (name.startsWith(".")) APP_NAMESPACE + name else name
