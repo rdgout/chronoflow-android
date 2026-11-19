@@ -209,7 +209,7 @@ Eight commits (Tasks 1, 3–9; Task 2 lands inside Task 3). Each commit compiles
 - `start()`: idempotent (a second call does nothing). Sets `started`. If `path != null`, launch one collector: `path.updates().collect { setOnline(it) }`. Then `retry()`.
 - `retry()`: if a fetch job is active, return. If `!online.value`: `fetch = Offline`, return (no request). Else `fetch = Loading` and launch the job:
   - `fetchDetail(tripId)` returns → `fetch = Loaded`.
-  - `CancellationException` → rethrow (no state change).
+  - `CancellationException` → rethrow with no state change only when the page's own coroutine is cancelled (`!currentCoroutineContext().isActive`). Cancellation from sync/session work while the page job is active → `Failed`, then run the normal finally/reconnect logic (iOS's `guard !Task.isCancelled` and default error branch).
   - `DataFailure.Offline` → `Offline`; a `DataFailure` whose HTTP status is 404 (`DataFailure.Server(404)`) → `NotFound`; any other `DataFailure`, `IOException` or `SerializationException` → `Failed` [R: iOS's `default` branch]. Do not catch `Throwable` or `Error`.
   - In `finally` (not on cancellation): clear the job; if `reconnectPending`: clear it and, if `online.value`, `retry()`.
 - `stop()`: cancel the path collector and the fetch job, clear `reconnectPending`, `started = false`, and call `path?.stop()` from a `NonCancellable` launch on `scope` (it is `suspend`). `fetch` keeps its last value.
@@ -234,7 +234,7 @@ Eight commits (Tasks 1, 3–9; Task 2 lands inside Task 3). Each commit compiles
   - `notFoundAndServerMapping` (new): `Server(404)` → `NotFound`; `Server(500)`, `Server(null)` and an `IOException` → `Failed`.
   - `reconnectDuringFetchRetriesOnceAfterIt` (new): a gated fetch in flight; `setOnline(false)`, `setOnline(true)` → no second request yet; release the gate with an `Offline` failure → exactly one more request.
   - `stopCancelsFetchAndPath` (new): `stop()` during a gated fetch → the fake's coroutine sees cancellation, `fetch` stays `Loading`, `FakePath.stopped == true`, a later `setOnline(true)` makes no request.
-  - `cancellationIsRethrown` (new): a fetch that throws `CancellationException` leaves `fetch == Loading` and does not count as `Failed`.
+  - `foreignCancellationIsFailed` (Android-only, renamed from `cancellationIsRethrown` in review H1): a fetch that throws `CancellationException` while the page coroutine is active sets `fetch == Failed`. This was never a Swift test name; the ported Swift names stay unchanged. `foreignCancellationHonorsPendingReconnect` proves the normal reconnect path still runs. Page-owned cancellation remains covered by `stopCancelsFetchAndPath`.
 
 ### Task 2: The page's path monitor (`TripPagePathMonitor`)
 
@@ -584,7 +584,7 @@ The "7 days" in the offline copy is fixed copy; the server's `mobile_prefetch_da
 ## 9. Review checklist (Opus reviewer)
 
 - [ ] **Resolve order** is untouched (1b), and `TripPageInputs.state()` passes `keepOffline ?: true`, `missingAfterSync = hasLoaded && !recordPresent && syncCompleted`, `tombstoned = deletedAt != null || deletedLocally`.
-- [ ] **Fetch model** matches iOS: `online` starts true; `retry` is a no-op while a job runs; offline → `Offline` without a request; 404 → `NotFound`; other failures → `Failed`; reconnect only on a false → true transition while started; `reconnectPending` honoured after the fetch; `CancellationException` rethrown; no `catch (Throwable)`.
+- [ ] **Fetch model** matches iOS: `online` starts true; `retry` is a no-op while a job runs; offline → `Offline` without a request; 404 → `NotFound`; other failures → `Failed`; reconnect only on a false → true transition while started; `reconnectPending` honoured after the fetch; page-owned cancellation rethrown, foreign cancellation → `Failed`; no `catch (Throwable)`.
 - [ ] `syncCompleted` only from `Finished` with the current epoch and `SyncState.Idle`; the replayed event counts.
 - [ ] `awaitingSync` is a route parameter (default false) and clears when a record appears.
 - [ ] No second path monitor: each page gets a new 4d `ConnectivitySyncPathMonitor` (current state first, INTERNET + VALIDATED, `distinctUntilChanged`, `stop()` on page stop); collected off main (`flowOn(io)` at the call site if 4d's class does not already).

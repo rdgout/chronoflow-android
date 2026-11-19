@@ -199,12 +199,36 @@ class TripPageFetchTests {
             assertEquals(1, requests)
         }
 
-    @Test fun cancellationIsRethrown() =
+    @Test fun foreignCancellationIsFailed() =
         runTest(timeout = 60.seconds) {
             val model = TripPageFetchModel("trip", { throw CancellationException() }, null, backgroundScope)
             model.start()
             runCurrent()
-            assertEquals(TripPageFetch.Loading, model.fetch.value)
+            assertEquals(TripPageFetch.Failed, model.fetch.value)
+            model.stop()
+        }
+
+    @Test fun foreignCancellationHonorsPendingReconnect() =
+        runTest(timeout = 60.seconds) {
+            val gate = CompletableDeferred<Unit>()
+            var requests = 0
+            val model =
+                TripPageFetchModel("trip", {
+                    requests++
+                    if (requests == 1) {
+                        gate.await()
+                        throw CancellationException()
+                    }
+                }, null, backgroundScope)
+            model.start()
+            runCurrent()
+            model.setOnline(false)
+            model.setOnline(true)
+            assertEquals(1, requests)
+            gate.complete(Unit)
+            runCurrent()
+            assertEquals(2, requests)
+            assertEquals(TripPageFetch.Loaded, model.fetch.value)
             model.stop()
         }
 

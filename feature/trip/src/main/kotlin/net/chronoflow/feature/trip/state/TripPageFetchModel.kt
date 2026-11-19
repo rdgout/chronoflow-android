@@ -70,7 +70,8 @@ class TripPageFetchModel(
                     currentCoroutineContext().ensureActive()
                     _fetch.value = TripPageFetch.Loaded
                 } catch (cancelled: CancellationException) {
-                    throw cancelled
+                    if (!currentCoroutineContext().isActive) throw cancelled
+                    _fetch.value = TripPageFetch.Failed
                 } catch (failure: DataFailure) {
                     currentCoroutineContext().ensureActive()
                     _fetch.value =
