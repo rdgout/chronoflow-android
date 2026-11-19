@@ -134,10 +134,7 @@ class TimelineBenchmark {
                 pressHome()
                 startActivityAndWait(large60Intent(packageName))
                 awaitPresented()
-                checkNotNull(device.findObject(By.res("trip.viewToggle"))).click()
-                check(device.wait(Until.hasObject(By.res("trip.viewToggle").desc("Show as timeline")), WAIT_MS)) {
-                    "list mode did not open"
-                }
+                device.toggleTripView(list = true)
                 check(device.wait(Until.hasObject(By.res("trip.block.$LARGE60_OPENING_FIRST_BLOCK")), READY_WAIT_MS)) {
                     "the opening list row never appeared"
                 }

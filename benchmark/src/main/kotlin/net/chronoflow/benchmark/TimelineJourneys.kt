@@ -4,6 +4,7 @@ import android.content.Intent
 import android.graphics.Rect
 import androidx.benchmark.macro.MacrobenchmarkScope
 import androidx.test.uiautomator.By
+import androidx.test.uiautomator.StaleObjectException
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
 import net.chronoflow.core.testing.LargeTimelineFixtures
@@ -21,10 +22,24 @@ private val listBlockTags = Pattern.compile("trip\\.block\\..*")
 
 fun UiDevice.topListBlock(): String? =
     findObjects(By.res(listBlockTags))
-        .minByOrNull { it.visibleBounds.top }
-        ?.resourceName
+        .mapNotNull { row ->
+            try {
+                row.resourceName?.let { it to row.visibleBounds.top }
+            } catch (_: StaleObjectException) {
+                null
+            }
+        }.minByOrNull { it.second }
+        ?.first
 
 private const val READY_WAIT_MS = 10_000L
+
+fun UiDevice.toggleTripView(list: Boolean) {
+    val toggle = By.res("trip.viewToggle").enabled(true)
+    check(wait(Until.hasObject(toggle), READY_WAIT_MS)) { "the view toggle never became enabled" }
+    checkNotNull(findObject(toggle)).click()
+    val mode = if (list) "trip.mode.list" else "trip.mode.timeline"
+    check(wait(Until.hasObject(By.res(mode)), READY_WAIT_MS)) { "$mode never appeared" }
+}
 
 private val large60DayTags by lazy {
     LargeTimelineFixtures.large60.detail.plan.days

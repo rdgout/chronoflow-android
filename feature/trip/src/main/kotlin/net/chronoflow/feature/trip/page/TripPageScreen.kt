@@ -407,6 +407,12 @@ private fun ReadyTripPage(
         if (!state.timeline) {
             Box(Modifier.size(PlanMetrics.border.dp).testTag("trip.timeline.ready"))
         }
+        Box(
+            Modifier
+                .size(
+                    PlanMetrics.border.dp,
+                ).testTag(if (state.timeline) "trip.mode.timeline" else "trip.mode.list"),
+        )
         TimelinePresentedMarker(state.firstFrame.presented, Modifier.align(Alignment.TopStart))
     }
 }

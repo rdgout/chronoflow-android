@@ -61,13 +61,19 @@ class ViewToggleTest : PageComponentTest() {
     @Test fun toggleShowsListRowsAndKeepsDay() {
         val host = start()
         val day = host.model.listRows[1]
+        compose.onNodeWithTag("trip.mode.timeline").assertExists()
+        compose.onNodeWithTag("trip.mode.list").assertDoesNotExist()
         compose.onNodeWithTag("trip.viewToggle").performClick()
         compose.waitForIdle()
+        compose.onNodeWithTag("trip.mode.list").assertExists()
+        compose.onNodeWithTag("trip.mode.timeline").assertDoesNotExist()
         compose.onNodeWithTag("trip.block.${day.rows.first { !it.zone }.blockId}").assertExists()
         compose.onNodeWithTag("trip.day.${day.dayId}").assertDoesNotExist()
         headerAtTop(host, true)
         compose.onNodeWithTag("trip.viewToggle").performClick()
         compose.waitForIdle()
+        compose.onNodeWithTag("trip.mode.timeline").assertExists()
+        compose.onNodeWithTag("trip.mode.list").assertDoesNotExist()
         compose.onNodeWithTag("trip.day.${day.dayId}").assertExists()
         headerAtTop(host, false)
     }
