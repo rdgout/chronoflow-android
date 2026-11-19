@@ -1,6 +1,7 @@
 package net.chronoflow.core.data.repository
 
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.serialization.json.JsonObject
 import net.chronoflow.core.data.store.encoded
 import net.chronoflow.core.data.store.objectValue
@@ -12,6 +13,8 @@ import net.chronoflow.core.database.store.saveSetting
 import net.chronoflow.core.model.contracts.ProfilePreferences
 import net.chronoflow.core.model.session.SessionMutationPermit
 import net.chronoflow.core.model.store.SettingsRecord
+import net.chronoflow.core.plan.trippage.PlanPreferences
+import net.chronoflow.core.plan.trippage.planPreferences
 
 class SettingsRepository(
     val database: AccountDatabase,
@@ -19,6 +22,12 @@ class SettingsRepository(
     suspend fun settings(): List<SettingsRecord> = database.read { it.fetchSettings() }
 
     fun values(): Flow<List<SettingsRecord>> = database.observe("settings") { it.fetchSettings() }
+
+    fun planPreferences(): Flow<PlanPreferences> =
+        database
+            .observe("settings") { sql ->
+                planPreferences(sql.fetchSetting("preferences")?.let { objectValue(it.value) })
+            }.distinctUntilChanged()
 
     suspend fun upsert(record: SettingsRecord) =
         database.write { sql ->
