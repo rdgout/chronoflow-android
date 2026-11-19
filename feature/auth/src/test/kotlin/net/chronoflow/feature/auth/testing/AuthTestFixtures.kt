@@ -11,12 +11,12 @@ import net.chronoflow.core.model.api.AccountSnapshot
 import net.chronoflow.core.model.api.ApiJson
 import net.chronoflow.core.model.api.SessionResult
 import net.chronoflow.core.model.auth.AuthenticationMethod
+import net.chronoflow.core.model.passkey.PasskeyCapability
 import net.chronoflow.core.model.session.SessionFailure
 import net.chronoflow.core.testing.Fixtures
 import net.chronoflow.feature.auth.model.SecretField
 import net.chronoflow.feature.auth.model.SessionAcceptor
 import net.chronoflow.feature.auth.model.SignInModel
-import net.chronoflow.feature.auth.model.passkey.PasskeyCapability
 import net.chronoflow.feature.auth.signin.SignInRouter
 import java.time.Instant
 
@@ -27,6 +27,7 @@ fun authTestSource(
     verified: Boolean = true,
     twoFactor: Boolean = false,
     password: String = "Password123!",
+    assertionProvider: net.chronoflow.core.datamock.AssertionProvider = { _, _ -> null },
 ): MockDataSource {
     val original =
         ApiJson.response.decodeFromString(
@@ -61,7 +62,7 @@ fun authTestSource(
         )
     return MockDataSource(store = MemoryMockStateStore(), seed = MockServerState(accounts = listOf(account)), now = {
         Instant.parse("2026-11-18T00:00:00Z")
-    }, delay = { 0.0 }, sleep = {}, debugAppSeed = false, io = io)
+    }, delay = { 0.0 }, sleep = {}, debugAppSeed = false, io = io, assertionProvider = assertionProvider)
 }
 
 class FakeSessionController : SessionAcceptor {
@@ -114,6 +115,13 @@ class RecordingRoutes : SignInRouter {
         actions += "guest"
     }
 
+    var backToSignIn = 0
+        private set
+
+    override fun backToSignIn() {
+        backToSignIn++
+    }
+
     override fun twoFactor() {
         actions += "twoFactor"
     }
@@ -149,7 +157,7 @@ class AuthTestFixture(
             { "test" },
             PasskeyCapability(capability),
             passkey =
-                passkey ?: { throw net.chronoflow.feature.auth.model.passkey.PasskeyFailure.Unavailable },
+                passkey ?: { throw net.chronoflow.core.model.passkey.PasskeyFailure.Unavailable },
             accepted = routes::acceptedSession,
             onTwoFactor = routes::twoFactor,
         )

@@ -41,3 +41,11 @@ fun projectScope(): com.lemonappdev.konsist.api.container.KoScope {
     return com.lemonappdev.konsist.api.Konsist
         .scopeFromFiles(files)
 }
+
+// Resolve the shared graph during class setup so rule timings do not depend on execution order.
+fun resolvedProjectScope(): com.lemonappdev.konsist.api.container.KoScope =
+    projectScope().apply {
+        classesAndInterfacesAndObjects().forEach { declaration ->
+            declaration.parents(indirectParents = false).forEach { it.sourceDeclaration }
+        }
+    }

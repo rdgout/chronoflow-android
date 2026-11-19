@@ -237,3 +237,15 @@ Orchestrator, 2026-11-18, Apple M4 Max host (indexers idle); `make perf`, pixel 
 | Launch `frameOverrunMs` P99 | 8.9 | 12.3 |
 
 Run 1 (`build/perf/startup/20261118T114418Z-88cad27-…`) exited 1: one `welcomeInteractiveMs` iteration was 0.8 ms over its hard gate (one late frame; the other nine were 2550–2565 ms). Run 2 (`build/perf/startup/20261118T114735Z-88cad27-…`) exited 0, with its maximum 0.07 ms under the gate. The gate (2550 ms designed hand-off plus one 60 Hz frame plus 1 ms) leaves no room for a single late emulator frame; this is recorded as a follow-up rather than relaxed here. Cold TTID moved from 95.8 ms (Phase 3a row) to 106–107 ms, +11%, inside the ±25% flag threshold. See [Phase 4e results](phase-4e-results.md) for functional validation.
+
+
+## Release size
+
+Phase 5b Task 3, 2026-11-18; `make size`, release AAB, bundletool arm64-v8a / xxhdpi / en device specification (size selection only, no attached-device timing claim). These measurements bracket adding Credential Manager dependencies/client/keep rules; they are not a later measurement of the final wired phase tree.
+
+| Point | Tree | Exact command output | Gradle duration |
+|---|---|---|---|
+| Before dependencies | `dddb27e` | `Bundle size: 2309016 bytes (2.31 MB), arm64-v8a/xxhdpi/en: OK` | 52 s |
+| After dependencies | Task 3 working tree committed as `4e9dda3` | `Bundle size: 2445635 bytes (2.45 MB), arm64-v8a/xxhdpi/en: OK` | 37 s |
+
+Delta: 136,619 bytes. Both runs stay below the 8 MB warning and pass the native-library gate. Neither Credential Manager AAR contains a `.so`; no native-library exclusion or allow-list change was added. The Play-services consumer keep rule and the app's broader guard appear in the merged release R8 configuration. Original logs are retained in `build/phase5b-validation/size-before.log` and `size-after.log`. No startup/perf/profile run was performed in Phase 5b.

@@ -15,6 +15,8 @@ import kotlinx.coroutines.withContext
 import net.chronoflow.app.auth.AuthServices
 import net.chronoflow.app.auth.LazyPublicDataSource
 import net.chronoflow.core.data.clock.SystemPlanClock
+import net.chronoflow.core.data.passkey.CredentialManagerClient
+import net.chronoflow.core.data.passkey.PasskeyAnchor
 import net.chronoflow.core.data.repository.AccountModel
 import net.chronoflow.core.data.repository.OutboxRepository
 import net.chronoflow.core.data.session.AccountReadinessRepository
@@ -30,6 +32,9 @@ import net.chronoflow.core.datastore.DeviceIdentityStore
 import net.chronoflow.core.datastore.DevicePreferences
 import net.chronoflow.core.datastore.KeystoreSessionStore
 import net.chronoflow.core.datastore.androidDeviceName
+import net.chronoflow.core.model.passkey.CredentialClient
+import net.chronoflow.core.model.passkey.PasskeyCapability
+import net.chronoflow.core.model.passkey.PasskeyFailure
 import net.chronoflow.core.model.session.SessionStore
 import net.chronoflow.core.model.session.readStoredSession
 import net.chronoflow.core.model.store.StoreFailure
@@ -47,6 +52,8 @@ import net.chronoflow.core.sync.session.SessionGateRouter
 import net.chronoflow.core.sync.session.SessionTeardown
 import net.chronoflow.core.sync.session.StoredDataReadiness
 import net.chronoflow.feature.auth.model.SessionAcceptor
+import net.chronoflow.feature.auth.model.passkey.DeterministicAssertionProvider
+import net.chronoflow.feature.auth.model.passkey.SystemPasskeyAssertionProvider
 import net.chronoflow.feature.launch.LaunchController
 import net.chronoflow.feature.launch.LaunchTrace
 import java.io.File
@@ -132,6 +139,9 @@ class AppGraph(
     val hooks: SessionHooks by lazy { NoopSessionHooks }
     val rootNavigator by lazy { RootNavigator() }
     val welcomeDestinations: WelcomeDestinations by lazy { LaunchPlatform.welcomeDestinations(rootNavigator) }
+    val passkeyAnchor: PasskeyAnchor by lazy { PasskeyAnchor() }
+    val credentialClient: CredentialClient by lazy { CredentialManagerClient(app, passkeyAnchor) }
+    val passkeyCapability: PasskeyCapability get() = LaunchPlatform.passkeyCapability
     val auth: AuthServices by lazy {
         AuthServices(
             rootNavigator,
@@ -147,6 +157,13 @@ class AppGraph(
                     verification = ::onVerify,
                 )
             },
+            passkeyCapability = passkeyCapability,
+            assertionProvider =
+                if (selection.source == DataSourceFactory.Source.Mock) {
+                    DeterministicAssertionProvider { throw PasskeyFailure.Unavailable }
+                } else {
+                    SystemPasskeyAssertionProvider(credentialClient)
+                },
         )
     }
 

@@ -10,6 +10,26 @@ import net.chronoflow.core.model.config.ThemeChoice
 import org.junit.Test
 
 class TestSeedTest {
+    @Test fun passkeyCapabilityOneEnables() {
+        assertThat(seed("cf.passkeyCapability" to "1").passkeyCapability).isEqualTo(true)
+    }
+
+    @Test fun passkeyCapabilityTrueEnables() {
+        assertThat(seed("cf.passkeyCapability" to "true").passkeyCapability).isEqualTo(true)
+    }
+
+    @Test fun passkeyCapabilityZeroDisables() {
+        assertThat(seed("cf.passkeyCapability" to "0").passkeyCapability).isEqualTo(false)
+    }
+
+    @Test fun passkeyCapabilityFalseDisables() {
+        assertThat(seed("cf.passkeyCapability" to "false").passkeyCapability).isEqualTo(false)
+    }
+
+    @Test fun passkeyCapabilityUnknownHasNoOverride() {
+        assertThat(seed("cf.passkeyCapability" to "x").passkeyCapability).isNull()
+    }
+
     private val id = "0a1b2c3d-4e5f-6789-abcd-ef0123456789"
 
     private fun seed(vararg pairs: Pair<String, String>) = TestSeed.parse(mapOf(*pairs))
