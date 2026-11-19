@@ -10,6 +10,7 @@ dependencies {
     implementation(project(":core:plan"))
     implementation(project(":core:sync"))
     implementation(libs.kotlinx.coroutines.core)
+    testImplementation(project(":core:data-mock"))
     testImplementation(project(":core:testing"))
     testImplementation(project(":core:testing-compose"))
     testImplementation(libs.kotlinx.coroutines.test)

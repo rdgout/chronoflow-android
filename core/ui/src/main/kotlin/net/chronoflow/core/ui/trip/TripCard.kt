@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Constraints
@@ -199,6 +200,7 @@ private fun Airport(
     Column(horizontalAlignment = if (trailing) Alignment.End else Alignment.Start) {
         Text(
             airport.iata,
+            Modifier.semantics { heading() },
             color = CfTheme.colors.cardForeground,
             style = CfTheme.type.style(CfTypeScale.screenPageTitle),
         )
