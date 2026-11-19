@@ -8,6 +8,12 @@ import net.chronoflow.debug.DebugRouteLabel
 import net.chronoflow.feature.launch.LaunchController
 
 internal object LaunchPlatform {
+    val startTripAtSummary: Boolean get() =
+        net.chronoflow.debug.DebugSeedRouting.current
+            ?.planSummary == true
+    val freezePlanClock: Boolean get() =
+        net.chronoflow.debug.DebugSeedRouting.current
+            ?.freezePlanClock == true
     val shellStart: () -> net.chronoflow.core.navigation.shell.ShellStart? = net.chronoflow.debug.DebugShellStart::take
     val refreshProbe: net.chronoflow.core.sync.refresh.RefreshDebugProbe = net.chronoflow.debug.DebugRefreshProbe
 

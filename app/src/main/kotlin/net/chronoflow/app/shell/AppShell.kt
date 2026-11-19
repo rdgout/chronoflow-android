@@ -14,9 +14,11 @@ import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import net.chronoflow.app.ChronoFlowApp
 import net.chronoflow.app.LaunchPlatform
+import net.chronoflow.app.trip.TripPageRoute
 import net.chronoflow.core.model.contracts.Language
 import net.chronoflow.core.navigation.Route
 import net.chronoflow.core.navigation.WizardMode
+import net.chronoflow.core.navigation.shell.ShellTab
 import net.chronoflow.core.sync.refresh.RefreshFeedbackState
 import net.chronoflow.feature.trips.TripsContent
 import net.chronoflow.feature.trips.TripsDependenciesKey
@@ -70,7 +72,13 @@ internal fun AppShell(
             }
         },
         settings = { render.value(Route.Settings) },
-        page = { render.value(it) },
+        page = { route ->
+            if (route is Route.TripPage) {
+                TripPageRoute(route, { if (!holder.back()) onRootBack() }, { holder.select(ShellTab.Settings) })
+            } else {
+                render.value(route)
+            }
+        },
         overlay = { render.value(it) },
     )
 }

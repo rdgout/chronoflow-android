@@ -7,6 +7,8 @@ import net.chronoflow.core.navigation.RootNavigator
 import net.chronoflow.feature.launch.LaunchOverrides
 
 internal object LaunchPlatform {
+    val startTripAtSummary = false
+    val freezePlanClock = false
     val shellStart: () -> net.chronoflow.core.navigation.shell.ShellStart? = { null }
     val refreshProbe: net.chronoflow.core.sync.refresh.RefreshDebugProbe =
         net.chronoflow.core.sync.refresh.RefreshDebugProbe.None

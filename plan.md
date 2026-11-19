@@ -851,6 +851,7 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A266 | The proposed 6b `TripPageSource.refresh(): Unit` discards the result required by the exported 6a refresh capsule. | Return `SyncResult?` from the new seam and feed the shared `RefreshFeedbackModel` and capsule, matching iOS. | 6b |
 | OQ-A267 | Task 11 removes the host still referenced by Task 12 tests and Task 13 app/perf code. | Introduce the new page in 11, retarget its tests in 12, then remove legacy code with the app/perf migration in 13. Each task stays buildable. | 6b |
 | OQ-A268 | `DayTimeline` already owns `trip.day.<id>`; tagging an outer lanes wrapper would duplicate the identifier and break exact queries. | Add an optional headings content slot to the existing primitive. Its tagged root includes the lanes; its inner drawing and NowLine keep their coordinates. Existing callers have an empty slot. | 6b |
+| OQ-A269 | The 6b summary emulator test expects Back to My trips after a `trip:<id>` seed, but 6a OQ-A238 and pinned iOS push that seed on the Today stack. | Preserve 6a/iOS routing. Seed `trips` with the summary/freeze flags, open the active card in the feature's single native journey, then assert Back to My trips. The once-run original test reached the summary and failed its incorrect back expectation; the corrected arrangement awaits the user's run. | 6b |
 | OQ-0a-22 | Native libraries in the bundle? | Allow only `libandroidx.graphics.path.so` (Compose graphics-path; excluding it breaks Path conversion below API 34); fail on any other `.so` | 0a, 13 |
 | OQ-0b-1 | Where does `PlanMetrics` live? `08 §3.1` lists it inside `CfDimens`, but its consumer `:core:plan` is a JVM module that cannot depend on `:core:designsystem` | `core/plan/…/generated/PlanMetrics.generated.kt` (Double, dp), as iOS keeps it in `PlanCore` | 0b, 1b, 1c |
 | OQ-0b-2 | Port all iOS TokenGen outputs now (Auth, Settings, Terms, Welcome, PlanUI, Press, LaunchPaint, TypeMetrics), or only colors, sky and type? | All of them now (the iOS files are exact goldens and Phases 2, 3a, 3c, 5a, 9 and 10 need them) | 0b |
@@ -2306,7 +2307,7 @@ Implementation commits (brief §7):
   - The anchor `(dayId, offsetInDay)` goes into `SavedStateHandle`, for configuration changes only.
 - [x] **Page chrome**, per `Plan`, `PlanScrolled` and `PlanTimelineTop`: the top bar, summary card, designed sticky `DayHeader`, the compact header line on scroll, lane headings, the `NowLine` placement, the day menu and pills (`PlanDayMenu`), and jumps.
 - [x] **End of plan.** The end card (`PlanEnd`, `PlanEndNoText`) and the hidden-steps notice.
-- [ ] **Opening position.** `openingDay`, and the summary-position seed `CF_PLAN_TEST_POSITION=summary`.
+- [x] **Opening position.** `openingDay`, and the summary-position seed `CF_PLAN_TEST_POSITION=summary`.
 - [ ] **Perf.**
   - The perf entry now opens this page instead of the 1d host.
   - Re-run `make perf-timeline`. Every emulator gate of "Where gates apply" must pass; this first run of the real page (Page = `trip`) starts the baseline that 6c–6e are compared with. Trend flags are listed in the commit body and do not fail; record the rows in `docs/perf-timeline.md`.

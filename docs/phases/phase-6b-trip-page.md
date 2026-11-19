@@ -932,7 +932,7 @@ Port of `TripPageView.toolbar`, `titleItem`, `dayMenuLabel` and `subtitle`:
 **Tests**
 - `TripPageViewModelFactoryTest` (Robolectric `@Logic`, debug, the 4e `ScreenSessionFixture` session): creating the ViewModel through the factory with a seeded mock session holds one lease (`retention.withHeldPlans { it == setOf(tripId) }`). After `ViewModelStore.clear()`, it is empty.
 - `TripPageSummarySeedTest` (emulator, `app/src/androidTest`, `@Smoke`, < 10 s):
-  - launch with the 4e seeds: `CF_AUTH_TEST_ID`, `CF_AUTH_TEST_SIGNED_IN=demo`, `CF_PLAN_TEST_ROUTE=trip:<the active mock trip id from 4c MockAppSeed, ending 0001>`, `CF_PLAN_TEST_POSITION=summary`, `CF_PLAN_TEST_FREEZE_CLOCK=1`, passed the way 4e's seeded tests pass them [verify];
+  - launch with the 4e seeds: `CF_AUTH_TEST_ID`, `CF_AUTH_TEST_SIGNED_IN=demo`, `CF_PLAN_TEST_ROUTE=trips`, `CF_PLAN_TEST_POSITION=summary`, `CF_PLAN_TEST_FREEZE_CLOCK=1`; wait for the active mock card (ending 0001) and open it. 6a deliberately puts `trip:<id>` seeds on Today's stack, as pinned iOS does, so they cannot prove Back to My trips (OQ-A269). This is the feature's single native navigation journey;
   - wait for `trip.summary` (5 s);
   - assert its top is within 1 dp of the `trip.scroll` top;
   - assert `trip.dayMenu` exists with a description ending "Go to a day";
@@ -1100,6 +1100,16 @@ Port of `TripPageView.toolbar`, `titleItem`, `dayMenuLabel` and `subtitle`:
 | OQ-6b-15 | Who owns the on-open detail fetch, `awaitingSync` and `syncCompleted`: an earlier draft of this brief built them in 6b, while the 6c brief ports them as `TripPageFetchModel` and wires them into 6b's ViewModel (6c Tasks 1, 3), and plan.md lists the remote/fetch states under 6c. | 6c. 6b resolves the state with `online = true`, `fetch = Idle`, no `awaitingSync`/`missingAfterSync`; a trip whose plan is not stored stays on the 6c placeholder until 6c lands. |
 | OQ-6b-16 | plan.md 6b says the anchor goes into `SavedStateHandle` "for configuration changes only"; A8 handles size changes in place and makes process death a cold launch. | `SavedStateHandle` only; it matters for locale and font-scale recreation. No disk. |
 | OQ-6b-17 | Title text: board "Amsterdam → Tokyo" (cities); iOS at the pin shows airport codes `AMS → HND` on iOS 26 (`codeTitle`, TripPageView l.285–291, screenshot `06-trip-summary.png`) and `prepared.title` before iOS 26. | iOS 26 codes through the catalog key `%@ → %@`; delta C14. |
+
+---
+
+## Results and remaining measurements
+
+- Tasks 1–13: the database observation, model, scroll math, page components, assembled page, six invalidation cases, perf marker, JankStats, eight fixture variants, seed grammar and entry factory pass their focused JVM/Robolectric checks. ReleaseReadinessTest passes all 11 cases, including absence of the renamed fixture source.
+- The one `make targeted ONLY="app:TripPageSummarySeedTest"` run reached the summary and passed its alignment and disabled-legend checks, then failed the incorrect My trips back expectation in 8.656 s (Gradle 15 s). Existing 6a and pinned iOS seed that route on Today. OQ-A269 corrects the test arrangement to seed Trips and open its active card; the corrected test compiles and awaits the user's rerun under the once-only emulator limit.
+- Its captured log has no StrictMode violations. The global `adb -s emulator-5554 logcat -d | rg -c StrictMode` prints `6`: all six matches are older test start/finish names (`AppLaunchSmokeTest`, `DeviceConfigStrictModeTest`, `LaunchStrictModeTest`), not violations. The log was not cleared.
+- User rerun: `make targeted ONLY="app:TripPageSummarySeedTest"`. Keep `pixel` running.
+- Timeline perf, baseline profiles, full check and captures are recorded below as their owning tasks finish. No benchmark run is claimed here.
 
 ---
 
