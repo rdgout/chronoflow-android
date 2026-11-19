@@ -1,0 +1,216 @@
+# Test diet
+
+Branch `chore/app-test-diet`, stacked on `feat/phase-7-today`. Preflight matched. Audit begun 2026-11-19 and completed 2026-11-20. Sources outside this repository were not touched.
+
+## Measurement
+
+The baseline is the parent of `864f944f` (before the diet). The last check's XML/timing records were copied into `build/test-diet-before/` before running anything. A targeted run of every app debug test then measured 405 cases; XML and the listener records are preserved in `build/test-diet-before/full/`. The broad `app:*` selector initially selected instrumented tests; that empty instrumentation invocation failed. All reported suite measurements use explicitly enumerated JVM class selectors instead.
+
+Times below are seconds **per case**, read from JUnit XML, not class totals. Warm ranges exclude the listener's first sandbox case for each SDK/fork. A temporary, uncommitted `AColdSandboxProbeTest` rendered/captured a tagged Box before graph construction, hand-off, flight-path and forced-exit measurements; the release probe warmed Android resources without launching an Activity. Before/after runs used the original/current test sources respectively and restored all current sources in `finally`. Their XML lives in `build/test-diet-probe/{before,after}/`; the probes were removed. This supplies warm observations for single-case classes rather than subtracting an estimated startup cost.
+
+A first sandbox cost is not a warm case regression. The last check explicitly recorded these as `warmup`: CfRootHandOffTest 4.671; AppGraphConstructionTest (release) 2.260; FlightPathStrokeTest 2.102; ConfigurationPolicyTest SDK 29/32/33 0.796/1.071/0.870. Layout first cases were TripsGuardsTest 4.678, TripActionsGuardsTest 4.107, ForgotGuardsTest 4.125 and TodayAllHiddenLayoutTests 4.515. Subsequent cases in each sandbox are in the XML. Parameterized display names can be classified as SDK `default` by the listener, so XML and process/SDK ordering were checked together.
+
+The ordinary full app baseline also recorded 1.287 for its first native Compose hand-off after an earlier non-graphics Robolectric case. The render probe measured that same original case at 0.514 (a repeat at 0.525); Android sandbox and first renderer initialization are reported separately. Original ReleaseSeedExtrasTest was 1.475 in the last check, 1.895 when first in a targeted release fork, and 0.654 after the resource probe. Original forced-data exit was about 1.7 in the last check and 0.151 after the render probe. These are measured observations, not estimates of cold overhead.
+
+The XML guard cases agree with the per-fork warm-up markers; the single-case Today guard has no separate warm observation and is not assigned an invented warm time:
+
+| Guard | First XML case (s) | Subsequent warm cases (s) |
+|---|---:|---:|
+| `TripsGuardsTest` | 4.676 | 0.076–0.386 |
+| `TripActionsGuardsTest` | 4.107 | 0.047–0.289 |
+| `ForgotGuardsTest` | 4.123 | 0.102–0.264 |
+| `TodayAllHiddenLayoutTests` | 4.515 | single case; no separate warm sample |
+
+## Inventory and decisions
+
+The inventory follows direct calls, inherited fixtures, seed helpers and implicit `ChronoFlowApp.onCreate` graph construction. There are 47 app classes, including manifest/reflection-only references for completeness. No feature test constructs the app graph/root; two named launch performance suspects are included as additional audit rows. The quick run identified one extra core data identity test that also launched unnecessary Activity windows. Fixtures without test methods (`SessionTestApplication`, `AppSessionFixture`, `AuthResetActivityFixture`, `ShellActivityFixture`, `LinkActivityFixture`, `RootContentTestHost`, the custom entry Activities) are accounted for through their concrete test classes.
+
+Decisions across the 50 audited classes: **27 shrink, 17 keep, 3 delete duplicate, 3 move to JVM**. A class with both moved logic and retained native cases is counted as shrink.
+
+| Class | Before warm case range (s) | Decision | What it proves / change |
+|---|---:|---|---|
+| `AppGraphConstructionTest` | 0.029 | shrink | StrictMode and guarded Android directories prove lazy graph construction; remove the unrelated Application graph and redundant directory listing. |
+| `BackupRulesTest` | 0.007–0.016 | shrink | Merged manifest and resource XML exclude backup domains; plain Application. |
+| `ConfigurationPolicyTest` | 0.003–0.015 | shrink | Real SDK configurations apply locale, direction and capped density, and read the small device-config file only below API 33; plain Application. |
+| `LauncherIconInflationTest` | 0.028 | shrink | Android drawable inflation has all adaptive icon layers; plain Application. |
+| `OkHttpStartupTest` | 0.082 | shrink | Android client construction runs on IO without an initializer or Application context; plain Application. |
+| `PendingLaunchIntentsTest` | 0.007 | keep | Keep the graph integration boundary: intents stay buffered before finishLaunch and are drained afterward. No Activity or composition; direct buffer/policy logic has separate JVM tests. |
+| `SessionActivationTest` | 0.002–0.171 | keep | Direct JVM activation ordering/cancellation; one JDBC SessionGraphs fixture proves sync resume uses the current session. No Android app. |
+| `SessionGraphsTest` | 0.011–0.019 | keep | Direct JVM scope/epoch ownership, cancellation and account-model detachment are the graph contract itself. |
+| `SessionLifecycleTests` | 0.012–0.022 | keep | Direct JVM JDBC restore/readiness and graph attach/detach integration; no Activity or app composition. |
+| `SplashThemeTest` | 0.004–0.009 | shrink | Platform theme resources across SDK 29/31/36 and night mode; plain Application. |
+| `StoragePathsTest` | 0.004–0.006 | shrink | Android no-backup path integration and validated account paths; plain Application. |
+| `ViewModelExtrasTest` | 0.027 | shrink | MainActivity supplies its real default creation extras; seeded signed-out, create only, no attached window. |
+| `CfRootHandOffTest` | 0.050–0.514 | shrink | Accessibility shielding/overlay teardown, plus immediate accessible Welcome. Signed-in presentation uses a tagged child instead of AppShell/Today; remove duplicate route and Welcome hand-off cases. |
+| `CfRootTest` | 0.020–0.123 | keep | Root background pixels, pointer interception, accessibility shielding and actual system-bar flags. These assertions need composition/window state. |
+| `LaunchGateRoutingTest` | 0.049–0.520 | delete duplicate | Only route/revision and account wipe assertions; despite its name the first case never asserted notification permission. Existing JVM policies cover all assertions (mapping below). |
+| `LaunchIntentRestorationTest` | 0.022–0.036 | delete duplicate | Activity link capture/history/recreation duplicates the stronger signed-out LinkRecreationTest, which also checks intent scrubbing. |
+| `MainActivityConfigChangesTest` | 0.004 | keep | Manifest configuration flags only; already uses a plain Application and never starts MainActivity. |
+| `ProcessDeathRestoreTest` | 0.012–0.013 | keep | Actual saved-state registry restoration versus mismatched process token, overlay claim and splash hold; seeded signed-out lifecycle. |
+| `RootContentConstructionTest` | 0.023–0.025 | shrink | Nav3 subtree identity is a composition contract. Separate bridge/router scheduling into LaunchConnectionTests; keep only minimal route/revision composition fixtures. |
+| `RootContentTest` | 0.020–0.038 | shrink | Tagged destination structure, repeated-route remember identity, and actual Activity recreation without another navigation; isolate the two composition cases from the Application graph. |
+| `RootRouteTransitionTest` | 0.024 | shrink | Nav3 removes the outgoing subtree before a crossfade could mask overlap; plain Application. |
+| `RootThemeTest` | 0.037 | keep | Real Activity frame-commit callback gates IO font preloading and provides system reduce-motion state; seeded signed-out. |
+| `RoutePlaceholderGuardTest` | 0.015–0.020 | shrink | Profile geometry and safe bounds only; plain Application. |
+| `SeededScreenRecreationTest` | 0.181 | shrink | Actual frame-commit routing is not reapplied on recreation. Use signed-out Welcome → SignIn rather than signed-in Today → Settings. |
+| `WarmLaunchIntentTest` | 0.042–0.043 | shrink | Real warm Activity hand-off of link/reminder intents drains the buffer without changing the process route. Seed signed-out and retain Terms instead of rendering Today. |
+| `WelcomeHandOffTest` | 0.047–0.073 | keep | Measured Welcome moon anchor/landing geometry, font visibility, accessibility and exactly-once fully-drawn reporting need real layout. |
+| `WelcomeSeamTest` | 0.089 | keep | Measured Welcome position after the real back-handler seam returns; the sign-in/guest actions exercise those seams. |
+| `ForgotRecreationTest` | 0.084–0.158 | keep | Real recreation preserves the process model/form/sent state, and the installed system back-handler returns to sign-in; seeded signed-out. |
+| `PasskeyGraphTest` | 0.093–0.216 | shrink | Keep capability injection and Activity anchor attach/detach, using lifecycle callbacks without an attached Compose window. Move unavailable-provider banner logic to AuthServicesTest. |
+| `ResetRecreationTest` | 0.171–0.234 | shrink | Real locale recreation drops editable passwords, retains the in-memory link and saves no secrets; keep native back. Done-continue is already a JVM model assertion. |
+| `SignUpEntryScopeTest` | 0.126 | shrink | Nav3 entry removal clears the ViewModel and recreation retains the current entry. Replace AppGraph with AuthServices and a fake source. |
+| `TwoFactorRoutingTest` | 0.156–0.477 | shrink | Keep native back and recreation of the challenge/code. Move replacement, cancel and re-entry routing to TwoFactorRoutingModelTest; acceptance already has stored-gate JVM coverage. |
+| `VerificationSessionAdapterTest` | 0.005–0.006 | keep | Concrete adapter must not initialize lazy sync for stale confirmation, and stopping initialized sync releases held plans; graph wiring/laziness, no Activity. |
+| `VerifyRoutingTest` | 0.406–0.615 | shrink | Keep the real system back-handler that leaves an unverified session signed in. Sign-out routing/revocation/wipe are covered by coordinator, session and storage JVM tests. |
+| `AppLinkIntentFilterTest` | 0.002–0.008 | shrink | Real merged manifest resolves only the allowed auth prefixes; plain Application. |
+| `LinkRecreationTest` | 0.016–0.035 | keep | Actual cold/onNewIntent/history/recreation callbacks scrub secrets and capture once; seeded signed-out and no attached Compose window. |
+| `AppShellRefusalGuardTest` | 0.043–0.063 | shrink | Actual snackbar geometry stays within fixture insets and bar/rail bounds; plain Application. |
+| `AppShellTest` | 0.017–0.059 | shrink | Nav3 owners, remembered scroll, reselect handling, predictive/system back, overlay coverage and bar/rail/inset geometry require composition. Uses tagged placeholder pages and plain Application. |
+| `ShellRecreationTest` | 0.053 | shrink | Activity/Nav3 retain tab/page/ViewModels across recreation, then cancel removed entry work; fake dependencies and plain Application. |
+| `ShellSeedTest` | 0.145–0.189 | move to JVM | DebugShellStart single consumption plus ShellViewModel state, directly on JVM; no database, Activity, root or live clock. |
+| `TodayNavigationTest` | 0.097 | move to JVM | Hero route push and pop move to TodayActionsTest; the real back-handler already has AppShellTest coverage. |
+| `TripsTabTest` | 0.150–0.212 | delete duplicate | Demo data and card/create callbacks duplicate MockAppSeedTests, TripsContentTest and ShellNavStateTest; the existing seeded emulator shell journey retains app wiring coverage. |
+| `TripPageSheetRouteTest` | 0.047 | shrink | Nav3 must retain the same entry ViewModel/list/scroll across sheet-route replacement; fake source and plain Application. |
+| `TripPageViewModelFactoryTest` | 0.087 | keep | Actual Android creation extras/entry factory hold and release the real session sync lease; no MainActivity or app root. |
+| `TestSeedsApplyTest` | 0.005–0.021 | keep | Android seed hooks recreate the test directory, apply device configuration and forward intent flags. Keep the real hook/graph integration, no Activity. |
+| `ReleaseReadinessTest` | 0.000–0.046 | keep | Classpath/reflective release boundary only (listed for completeness); never creates MainActivity or AppGraph. |
+| `ReleaseSeedExtrasTest` | 0.654 | shrink | Call the real release Intent override boundary and assert no mock source directly; classpath exclusion tests cover absence of all seed writers. Remove the indirect Activity/directory check. |
+| `LaunchForcedExitTest` | 0.099–0.152 | move to JVM | Coordinator deadlines/force count and generated timeline exit endpoints on JVM, without advancing hundreds of UI frames. Real overlay teardown remains in LaunchReadyExitRenderTest. |
+| `FlightPathStrokeTest` | 0.016 | keep | Android native PathMeasure matches the sampled flight path; keep the framework geometry check. Its large first result was sandbox initialization. |
+| `PasskeyAnchorTest` | 1.439 | shrink | Identity/weak-reference ownership only. Construct two Activity handles without starting their lifecycle or windows; retain every assertion. |
+
+## Assertion coverage before shrinking/removal
+
+These are assertion mappings, not claims that lower layers render a screen. Kept native checks cover the Android wiring that actually needs a window or lifecycle.
+
+| Old assertions | JVM coverage / retained framework proof |
+|---|---|
+| LaunchGateRoutingTest signed-out route and unchanged revision after foreground/no intent | `SessionGateRouterTests#initiallySignedOutKeepsWelcomeRoute`, `SessionActivationTest#foregroundRunsTheIosStepsAfterEvictingIdleConnections`, `PendingLaunchIntentsTest#viewAndReminderIntentsAreHeldUntilLaunchFinishes`. The old case did not check a permission API. |
+| LaunchGateRoutingTest Today, Verify, Terms, Walkthrough routes | `LaunchSessionBridgeTest#todayMapsToToday`, `#verifyMapsToVerify`, `#signedInTermsRoutesToTerms`, `#walkthroughMapsToFirstRunWalkthrough`; `StoredDataReadinessLaunchTests#verificationIsReadyWithoutMarkerAndSignedOutDoesNotReadDatabase`; `MockSessionSeedGateTests#signedInSeedUsesRestorableCredentialsAndAccountGates` validates every seeded stored gate on JVM. |
+| LaunchGateRoutingTest unauthorized → SignIn and erased account files | `SessionGateRouterTests#signedOutRoutesAndRevokesMutationsBeforeLogoutFinishes`, `AccountWiperTests#memberSignOutClearsGuestSecretsAndRecoveryUnauthorized` checks actual files. |
+| LaunchIntentRestorationTest capture, history suppression, no replay after consume/finish | `AuthLinkIntentPolicyTest#capturesOnlyFreshHttpsViewIntents`, `AuthLinkDispatcherTest#attachTwiceDeliversOnce`, `PendingLaunchIntentTest` buffer assertions; retained `LinkRecreationTest#coldViewIsCapturedAndRecreationDoesNotReplayIt`, `#historyRelaunchDoesNotCaptureTheLink`, `#warmViewKeepsTheLaunchIntentAndCapturesTheLinkOnce` prove the actual lifecycle and scrubbed Intent. |
+| ShellSeedTest selected tab, trip on Today, invalid route, consumption only once | Same four names now test `TestSeed.parse`, `DebugShellStart.take` and `ShellViewModel` directly; they fail if parsing, consumption or selected stack changes. `ShellNavStateTest#seedSelectsATab` / `#seedTripUsesTodayWhileKeepingOtherStacks` remain. |
+| TripsTabTest demo active trip, card push, create wizard | `MockAppSeedTests#defaultAppMockSignsInDemoWithRNSettingsAndTrips`, `TripsViewModelTest#loadingUntilSynced`, `ShellNavStateTest#openTripUsesTheSelectedStack`, `#wizardPushOpensAnOverlay`; `TripsContentTest#cardAndCreateActions` checks the component callbacks. The existing `ShellJourneySmokeTest#tripsRefreshNavigationReselectAndSystemBack` checks the actual card → app route wiring. No new emulator journey. |
+| TodayNavigationTest hero push, Today selected, back to Today | New `TodayActionsTest#heroPushesOnTodayAndBackReturns` calls the production action factory and shell model; retained `AppShellTest#backPopsPushedPageFirst` checks the installed back-handler and Nav3 subtree. |
+| TwoFactorRoutingTest route replacement and route contains no challenge | New `TwoFactorRoutingModelTest#twoFactorReplacesSignInWithoutAChallengeInTheRoute` uses real AuthServices + SignInModel and a memory mock source. `AuthServicesTest.Navigation#routerNavigatesWithoutPuttingASecretInTheRoute` remains. |
+| TwoFactorRoutingTest drawn back clears challenge, retains email, disables old model; re-entry creates empty fresh model | New `TwoFactorRoutingModelTest#backDiscardsChallengeAndKeepsTheEmail` / `#reenteringGetsAFreshModel`; `TwoFactorViewModelTest#backClearsTheChallengeAndDisablesTheOldModel` / `#secondVisitUsesTheCurrentModel` cover the ViewModel handler. Native system back/recreation stay. |
+| TwoFactorRoutingTest accepted code clears challenge and routes through gate | `SignInModelRoutingTests.Committed#committedSessionUsesStoredGateWithAndWithoutCancellation` covers TwoFactor × each stored gate × cancellation; `TwoFactorModelRoutingTests#onlySessionAcceptancePersistsATokenAndNeverTheChallengeOrProof` covers clearing and persistence. |
+| PasskeyGraphTest enabled capability, server banner, no native prompt | Capability binding remains in `#activityAnchorAttachesAndDetaches`. New `AuthServicesTest.Ownership#unavailablePasskeyShowsTheServerBannerWithoutAcceptingASession` supplies valid options, counts the deterministic provider invocation and proves no login/session acceptance. No Android credential client is involved. The provider count prevents an earlier options failure from making the test pass. |
+| VerifyRoutingTest sign-out → SignIn, inactive/disposed model, signed-out session, revoked token, wiped files | `VerificationCoordinatorTest#unverifiedDifferentEmailReturnsToSignIn` / `#secondAccountConsumesItsOwnMailAfterTheFirstAccountIsWiped`; `SharedMockServerTests#cachedSourcesShareMailAndSessionInvalidation` checks real token revocation from a second source; `AccountWiperTests#memberSignOutClearsGuestSecretsAndRecoveryVoluntary` checks real file deletion. The remaining VerifyRoutingTest checks system back preserves the session. |
+| ResetRecreationTest done-continue → SignIn | `OpenResetTest#resetSuccessNeverAcceptsOrRoutesASession` calls real reset success and `backToSignIn`; the locale/secret saved-state test and done-state system back remain. |
+| RootContentConstructionTest bridge + gate router choose Today, advance one revision, construct Today once | New `LaunchConnectionTests#coldLaunchBridgeAndGateRouterSelectTheSameToday` covers actual bridge/router emissions. `RootContentConstructionTest#gateRevisionKeepsTheCurrentTodaySubtree` independently proves Nav3 remembers one subtree across that revision. Existing incoming-route construction check stays. |
+| CfRootHandOffTest Terms exists after hand-off; Welcome exists and overlay is gone | `LaunchSessionBridgeTest#signedInTermsRoutesToTerms`, `RootContentTest#termsRendersOneTaggedRoot`; retained `WelcomeHandOffTest#teardownMakesWelcomeAccessibleAndReportsFullyDrawnOnce` covers real Welcome/overlay teardown. The retained signed-in case still checks hidden→accessible semantics and overlay removal around a tagged child. |
+| LaunchForcedExitTest forced route/count, completion and 8.400/8.950 endpoints | Same two names now use real LaunchCoordinator with ManualLaunchClock, generated LaunchHandOffTimeline exit endpoints, and ExitCompleted reducer state. They check no early commit at 7.9 s, the 8 s commit, exact endpoint, force count and completion. `LaunchReadyExitRenderTest#readyFadesAndLeavesOnTheFirstFrameAt1900` / `LaunchReduceMotionEndingTest#reduceMotionFadesWithoutScalingAtReadiness` retain the real render→controller completion bridge. |
+| ReleaseSeedExtrasTest no test/mock directories after receiving extras | Direct `LaunchPlatform.overrides(realIntent) == LaunchOverrides.None` and `mockSources == null` replace the indirect directory observation. `ReleaseReadinessTest#releaseShipsNoSeedCode`, `#sessionSeedCodeIsAbsent`, `#mockDataSourceIsAbsent` prove the code which can create those directories is absent. No Activity is needed for the release policy. |
+| Removed incidental graph construction in resource/layout tests | Every original assertion is retained, with `Application` instead of `ChronoFlowApp`. `AppGraphConstructionTest` retains guarded files/no-backup access and StrictMode death; the removed directory listing inspected a different Application from the guarded graph. |
+
+`PasskeyAnchorTest#detachOnlyClearsTheAttachedActivity` retained all attach, foreign-detach, same-detach assertions and now takes 0.035 s after the existing clock test warms SDK 36. Its unnecessary two `.setup()` calls were the only non-cold quick case above 1 s (1.439 s).
+
+No production code changed. All retained MainActivity checks are signed out unless verification/session persistence is their subject; none composes Today's live clock on a virtual-time dispatcher.
+
+## Watchdog proof
+
+`TestHangWatchdogTest#theFirstPlainJvmTestKeepsTheNormalCap` starts worker mode `first-jvm`. Its first test id is `[engine:watchdog-proof]/[test:firstJvmTest]`, it blocks on a latch for 200 ms under a 100 ms cap, and the parent requires exit 86 and a hang file naming that id/cap with the blocked stack. It never starts a preceding test. Removing `isRobolectric()` from the first-SDK condition would give this test 300 ms, let the worker finish normally, and fail the proof. A deliberate mutation removing that condition was run: the worker returned 0 instead of 86, the new proof failed, and the restored full watchdog proof suite passed.
+
+## Before/after and validation
+
+All changed test classes are listed below; ranges are warm **individual cases**, never whole-class totals. A dash in the before column means a newly added class. For a parameterized SDK-default warm-up marker, only the first matching parameter case is excluded, not every case of that method. The two application/launch probe pairs above supply warm results where a single test would otherwise be first in its fork. Removed cases map to the coverage table. First-class/cold costs remain recorded above.
+
+| Changed class | Before warm per case (s) | After warm per case (s) |
+|---|---:|---:|
+| `AppGraphConstructionTest` | 0.029 | 0.019 |
+| `AppLinkIntentFilterTest` | 0.002–0.008 | 0.003–0.008 |
+| `AppShellRefusalGuardTest` | 0.043–0.063 | 0.046–0.089 |
+| `AppShellTest` | 0.017–0.059 | 0.018–0.069 |
+| `AuthServicesTest` | <0.001–0.006 | <0.001–0.004 |
+| `BackupRulesTest` | 0.007–0.016 | 0.007–0.017 |
+| `CfRootHandOffTest` | 0.050–0.514 | 0.163–0.286 |
+| `ConfigurationPolicyTest` | 0.003–0.015 | 0.003–0.010 |
+| `LaunchConnectionTests` | 0.002 | 0.001–0.009 |
+| `LaunchForcedExitTest` | 0.099–0.152 | 0.002–0.025 |
+| `LaunchGateRoutingTest` | 0.049–0.520 | deleted; assertion mapping above |
+| `LaunchIntentRestorationTest` | 0.022–0.036 | deleted; assertion mapping above |
+| `LauncherIconInflationTest` | 0.028 | 0.025 |
+| `OkHttpStartupTest` | 0.082 | 0.055 |
+| `PasskeyAnchorTest` | 1.439 | 0.035 |
+| `PasskeyGraphTest` | 0.093–0.216 | 0.021 |
+| `ReleaseSeedExtrasTest` | 0.654 | 0.027 |
+| `ResetRecreationTest` | 0.171–0.234 | 0.217–0.259 |
+| `RootContentConstructionTest` | 0.023–0.025 | 0.020–0.029 |
+| `RootContentTest` | 0.020–0.038 | 0.020–0.038 |
+| `RootRouteTransitionTest` | 0.024 | 0.025 |
+| `RoutePlaceholderGuardTest` | 0.015–0.020 | 0.016–0.019 |
+| `SeededScreenRecreationTest` | 0.181 | 0.229 |
+| `ShellRecreationTest` | 0.053 | 0.054 |
+| `ShellSeedTest` | 0.145–0.189 | <0.001–0.001 |
+| `SignUpEntryScopeTest` | 0.126 | 0.120 |
+| `SplashThemeTest` | 0.004–0.009 | 0.003–0.010 |
+| `StoragePathsTest` | 0.004–0.006 | 0.003–0.005 |
+| `TestHangWatchdogTest` | 0.001–0.894 | <0.001–0.771 |
+| `TodayActionsTest` | <0.001–0.003 | <0.001–0.002 |
+| `TodayNavigationTest` | 0.097 | moved: hero action 0.002 |
+| `TodayTestBoundaryTest` | 0.008 | 0.004 |
+| `TripPageSheetRouteTest` | 0.047 | 0.069 |
+| `TripsTabTest` | 0.150–0.212 | deleted; assertion mapping above |
+| `TwoFactorRoutingModelTest` | — | 0.001–0.003 |
+| `TwoFactorRoutingTest` | 0.156–0.477 | 0.165–0.476 |
+| `VerifyRoutingTest` | 0.406–0.615 | 0.527 |
+| `ViewModelExtrasTest` | 0.027 | 0.007 |
+| `WarmLaunchIntentTest` | 0.042–0.043 | 0.026–0.031 |
+
+| Measurement/check | Before | After/result |
+|---|---:|---:|
+| App debug cases, all JVM/Robolectric tiers | 405 | 389 |
+| `:app:testDebugUnitTest` full task wall, Gradle profile | 17.801 s | 13.148 s (−26.1%) |
+| App debug total XML suite wall | 18.299 s | 12.386 s (−32.3%) |
+| App debug sum of listener per-case times | 17.659 s | 11.789 s |
+| App debug warm cases ≥ 1 s in final full run | first native-renderer case 1.287 s (0.514 s with render probe) | 0; first cold sandbox 1.264 s excluded |
+| `make quick`, executed once | — | 34.617 s, exit 2: stale TodayTestBoundaryTest file assertion |
+| Fixed boundary guard, targeted | — | pass |
+| Final full watchdog suite, targeted | — | 8 cases pass; deliberate forbidden mutation rejected |
+| Warm anchor identity check, targeted with existing clock control | 1.439 s | 0.035 s; pass |
+| Build-logic tests, remaining quick step | — | pass (`make targeted ONLY='build-logic:convention:*'`) |
+| Tooling scripts, remaining quick step | — | pass with make's IOS_REPO/WEB_REPO environment |
+| Serial timing tier, remaining quick step | — | pass, 1.07 s command; reused stamped measurements (no budget-test changes) |
+| Final Spotless check | — | pass |
+| Touched app/launch layout tier, executed once | — | 170 cases pass, 13.330 s wall, no warm case ≥ 1 s (max 0.288 s) |
+
+The XML suite wall is the span from the first suite timestamp to the last suite end, including inter-class gaps. To measure the complete Gradle task separately, two controlled targeted runs used `--profile`: original app test sources, then current app test sources, with all current files restored in `finally`. The task durations above come directly from the `:app:testDebugUnitTest` rows in `build/test-diet-task-wall/{before,after}/profile-*.html`. Their containing invocations took 20.642 s and 14.860 s respectively; both passed. The temporary profiling flag and original test sources were fully restored. No cold-start cost was subtracted from either task wall or XML span.
+
+The quick invocation produced 2,397 measured cases and no existing harness-budget overruns. Its only failing case was the architecture guard still reading the deleted TodayNavigationTest path. The guard now checks that TodayActionsTest has no AppGraph/RootContent, Robolectric or Compose-test dependency. It passed targeted after the fix. The remaining quick steps were then completed separately, preserving the requested single `make quick` invocation. The identity outlier found by quick was also fixed and verified targeted. The full app test set had already passed before quick; all other quick test tasks passed during that invocation.
+
+The first standalone tooling-script attempt lacked the environment variables normally exported by make; its exact failure was `AssertionError: set IOS_REPO and WEB_REPO to run the iOS parity test (make exports them)`. Re-running with those read-only source paths passed. Sandbox Kotlin-daemon/FSEvents warnings occurred, but Gradle compilation and all final checks completed. The temporary release rendering probe initially could not resolve ComponentActivity because the release test manifest does not declare that debug test host; its corrected resource-only probe passed. No failed fix was repeated blindly and no unexpected watchdog hang occurred.
+
+After the one layout invocation, the two additional targeted full-app runs were used only to obtain the requested Gradle task-wall comparison; no tests or production behavior were changed.
+
+Commands and complete outputs are retained under `build/test-diet-*.log`, the original/warm comparison XML under `build/test-diet-before/`, `build/test-diet-after/full/`, `build/test-diet-probe/`, and the final layout tier under `build/test-results/layout/`. `:core:data`, `:core:testing-junit` and `:konsist` contain no layout cases affected by this change; the one layout invocation selected `:app` and `:feature:launch`:
+
+```sh
+Scripts/run-tier.sh layout \
+  --results 'app/build/test-results/testDebugUnitTest/*.xml' \
+  --results 'feature/launch/build/test-results/testDebugUnitTest/*.xml' \
+  --timings 'app/build/cf-timings/testDebugUnitTest/*.json' \
+  --timings 'feature/launch/build/cf-timings/testDebugUnitTest/*.json' \
+  -- ./gradlew --console=plain :app:testDebugUnitTest :feature:launch:testDebugUnitTest -Pcf.tier=layout
+```
+
+## Commits
+
+All commits are signed, have no trailers, and remain local on `chore/app-test-diet`. The default verifier cannot reach the host keybox service from the sandbox. `%G?` below was obtained with `git -c gpg.program=... log`, using a temporary verifier home containing only the public key for the user's configured full signing fingerprint `BA0F82C4F60B6014D7281E76A057A81A19909681` and local owner trust for that known identity; private keys and host configuration were untouched.
+
+| Commit | `%G?` | Area |
+|---|:---:|---|
+| `864f944f` | G | test(testing): prove the first jvm test keeps its hang cap |
+| `10b93c83` | G | test(app): test shell routes without launching the signed-in app |
+| `8a149102` | G | test(launch): check forced exits on the coordinator and timeline |
+| `5a60304b` | G | test(app): move authentication routing checks to models |
+| `ed18cf1b` | G | test(launch): isolate hand-offs and remove duplicate routing flows |
+| `79398a7f` | G | test(data): check passkey anchor identity without activity windows |
+| `79257ed7` | G | test(app): use lightweight hosts for resources and layout guards |
+| `4e881461` | G | test(app): enforce the jvm action boundary and warm case budget |
+
+The documentation commit containing this report is reported separately in the hand-off to avoid a self-referential commit hash. No merge, push or sibling-repository write was performed.
+
+
+
