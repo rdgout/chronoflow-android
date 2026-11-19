@@ -70,6 +70,8 @@ make baseline-profile                      # regenerates the committed profiles
 | 2026-11-17 | 3a3a442 | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | host | benchmarkRelease, Partial(Require), bounded-swipe-v3 | 67.6/85.0 | 3.3/4.3/5.7 | 2.2/4.8 | -8.1 | 0.0/0.0 | 0.0/0.0 | 0 | 0.8 | 105.6 | -0.2 | 55 | 3 | ok | ok | PASS |
 | 2026-11-19 | 984736e | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | trip | benchmarkRelease, Partial(Require), bounded-swipe-v3 | 99.3/105.3 | 3.8/4.7/6.1 | 2.7/4.3 | -5.3 | 0.0/0.0 | 0.0/0.0 | 0 | 0.5 | 107.2 | -0.1 | 6346 | 4 | ok | ok | PASS |
 | 2026-11-19 | 9c60131 | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | trip | benchmarkRelease, Partial(Require), bounded-swipe-v3 | 82.7/100.0 | 3.8/5.1/6.7 | 3.0/4.7 | -4.6 | 0.0/0.0 | 0.0/0.0 | 0 | 0.4 | 106.9 | 0.2 | 571 | 3 | ok | ok | PASS |
+| 2026-11-19 | d61c3ac | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | trip | benchmarkRelease, Partial(Require), bounded-swipe-v3 | 98.9/100.2 | 3.7/4.8/6.6 | 2.8/4.6 | -5.5 | 0.0/0.0 | 0.0/0.0 | 0 | 0.5 | 108.1 | 0.1 | 571 | 3 | ok | ok | PASS |
+| 2026-11-19 | b869739 | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | trip | benchmarkRelease, Partial(Require), bounded-swipe-v3 | 83.3/84.1 | 3.7/4.8/6.7 | 3.0/4.7 | -4.6 | 0.1/0.1 | 0.1/0.3 | 0 | 0.5 | 108.2 | 0.1 | 571 | 3 | ok | ok | PASS |
 
 `-dirty` marks a run made with uncommitted changes (here the regenerated baseline profile, committed right after).
 
@@ -515,4 +517,13 @@ restartable skippable ... fun net.chronoflow.feature.trip.timeline.TimelineTarge
 
 The baseline journey now opens a checkable block, expands the native sheet, checks it, undoes it and closes it using bounded structural-tag waits. The perf-only source feeds pending checks through the real decoder. Its JVM test passes. The timeline/list measurement workloads and checker thresholds are unchanged.
 
-**Reserved for the user, as requested:** run `make baseline-profile`, then `make perf-timeline` on the final stack top. Profiles were not regenerated here. Record the first-frame time, timeline/list CPU P50/P90/P99 and CPU band against the last three trip rows, overruns, jank, hitch ratio, placeholders, main-thread build count, main/RenderThread frame times, target composition maximum, first-frame breakdown, last-day result, RSS and growth. List every ±25% FLAGGED line with its cause; flags alone do not fail. OQ-A291 remains applicable. No new emulator perf row or device claim is made by this phase; `make perf`, `make perf-timeline`, `make baseline-profile` and `make check` were not run.
+**Emulator runs (orchestrator, 2026-11-19, `make perf-timeline`, quiet host):**
+
+| Commit | Profiles | First frame mean/max ms | Timeline CPU P50/P90/P99 ms | List CPU P50/P90/P99 ms | Main/RT P99 ms | Jank % max | Result |
+|---|---|---:|---:|---:|---:|---:|---|
+| d61c3ac | 6c profiles | 98.9/100.2 | 3.7/4.8/6.6 | 3.4/4.4/5.9 | 2.8/4.6 | 0.0 | PASS |
+| b869739 | regenerated with the step-sheet journey | 83.1/84.1 | 3.7/4.8/6.7 | 3.5/4.5/6.0 | 3.0/4.7 | 0.1 | PASS |
+
+Both runs sit inside the trip CPU band, next to the 9c60131 row (3.8/5.1/6.7), with zero placeholders, zero main-thread builds and RSS growth under 0.2 MiB. No ±25% FLAGGED line. These are the first in-band `listScroll` numbers. They close OQ-A291: on a quiet host the 6c-and-later stack measures like 6b, so the 6c misses were environmental.
+
+**Profiles:** `make baseline-profile` first failed at "native sheet missing", because the sheet window did not export its test tags. After 6028332 the profiles regenerate in about 4 min; they are committed in b869739.
