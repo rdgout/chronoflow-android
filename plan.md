@@ -2533,7 +2533,7 @@ Implementation commits (brief §7):
   - The minute clock is read only in leaf composables.
   - From 600 dp, cards are at most 640 dp wide.
 - [ ] **TTFD.** `reportFullyDrawn()` fires after the first Today content frame on a signed-in launch.
-- [ ] **Tests.**
+- [x] **Tests.**
   - Guards for each state.
   - An invalidation probe: a minute tick recomposes only the leaf.
   - One emulator journey: Today → trip page → back (system and predictive back).

@@ -41,3 +41,9 @@ The sheet integration and two added JVM refresh-policy cases pass (2.957 s for t
 ## Task 6
 
 `make targeted ONLY="feature:today:TodayInvalidationTest"` passes both cases in 7.37 s wall. The complete fixture is composed in a test-only tall viewport so no missing off-screen row can produce a false zero. On one quiet minute, SCREEN, HERO, PANEL and all seven ROW scopes have delta **0**; the five unmarked row subtitles and the future hero eyebrow each have delta **1**. Done/skipped rows have no clock leaf. The negative control passes an Instant directly into a test-only row and records ROW delta **1**, proving the counter detects the bad scope.
+
+## Task 7
+
+`make targeted ONLY="feature:today:TodayControlTests#testEachRowStateKeepsOneLargeTapTargetAtXXLarge"` passes in 6.50 s wall after removing an unnecessary member-function import (first compile: 2.56 s). All three Dutch rows at the capped large font have one clickable node, height ≥56 dp and 16 dp gutters.
+
+`make targeted ONLY="app:TodayTests"` passes on **pixel AVD / Android 16** in 9.72 s command wall, including build/install. The result XML records **4.323 s** for the test; it enforces <10 s and asserts **0** debug main-thread IO violations. It launches seeded into Today, opens the trip twice, and returns through system Back and an actual predictive edge swipe, checking the Today structural tag and debug route probe after each return. This was the only executed emulator journey. An earlier command stopped before execution on the absent Espresso import (3.19 s); the existing UiAutomator system-Back API resolved it without adding a dependency. The landed 6a tree has no edge helper, so the new helper is Android-test-only and derives coordinates from the display. Pixel remains running.
