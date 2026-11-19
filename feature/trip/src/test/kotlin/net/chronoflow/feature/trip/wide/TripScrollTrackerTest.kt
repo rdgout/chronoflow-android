@@ -78,6 +78,29 @@ class TripScrollTrackerTest {
         assertEquals(Restore(2, 0), observe(wide))
     }
 
+    @Test fun phoneViewToggleDoesNotOverwriteTheRequestedDayWithTheOldListPosition() {
+        val rows = net.chronoflow.feature.trip.list.ListTestRows.days
+        val old =
+            net.chronoflow.feature.trip.list
+                .ListModeIndex(rows.map { it.dayId }, rows, false)
+        val next = TripListIndex(rows.map { it.dayId }, false)
+        val opening = listOf(ItemSample("h:${rows[1].dayId}", "dayHeader", 0))
+        observe(phone.copy(timelineMode = false), opening, oldIndex = old)
+        tracker.cancelRestoration()
+
+        // The toggle requests a timeline index before the old list's item table has been replaced.
+        val transient = listOf(ItemSample(rows[0].rows[0].key, "listRow", 0))
+        assertNull(observe(phone, transient, oldIndex = old, newIndex = next))
+        assertNull(tracker.lastCaptured)
+    }
+
+    @Test fun phoneTimelineToListToggleDoesNotRestoreTheOldTimelinePosition() {
+        observe()
+        tracker.cancelRestoration()
+        assertNull(observe(phone.copy(timelineMode = false)))
+        assertNull(tracker.lastCaptured)
+    }
+
     @Test fun unknownDayDoesNotRestore() {
         observe()
         assertNull(observe(wide, newIndex = TripListIndex(listOf("b"), false)))

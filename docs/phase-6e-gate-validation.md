@@ -46,3 +46,25 @@ Device follow-up commands for the orchestrator (not run here):
 make baseline-profile
 make perf-timeline
 ```
+
+## Gate round 2 — phone list-to-timeline anchor
+
+Preflight: branch feat/phase-6e-trip-wide, starting HEAD 4dfa6642. The regenerated profiles and the orchestrator's uncommitted perf-timeline.md results are left untouched.
+
+The phone exposed zero matching travel-day nodes, not two. One diagnostic `make targeted ONLY='app:TripListSmokeTest'` run before the fix replaced the timeout temporarily with exact tag counts. It failed with `prep=1, travel=0, arrival=0 expected:<1> but was:<0>` in 2.210 s test time (7 s Gradle wall). The phone had switched to timeline but scrolled to the previous preparation day. Those diagnostic test edits were removed; the existing smoke test is unchanged.
+
+Root cause: TripScrollTracker.SizeKey includes timelineMode, and onSize treated a mode-only change as a resize. The phone toggle already requests the target day's header, as in 6c/6d. That request can remeasure the old list before the new item table is composed. The tracker then captured that transient old-list position and overwrote the requested travel day with the preparation day. Tag placement on WideDayRow was correct.
+
+The tracker now restores only when window width, density or resolved layout changes. It still updates its observed mode, and actual resizes that change modes still restore the day header. This matches iOS TripScrollTracker.resize at f391a1fa, whose restoration trigger is viewport width/layout, while the phone toggle owns its scroll request.
+
+- Added JVM regression `phoneViewToggleDoesNotOverwriteTheRequestedDayWithTheOldListPosition`: the old code failed with `expected null, but was:<Restore(index=2, offsetPx=0)>`; the fix passes. Targeted red/green commands: `make targeted ONLY='feature:trip:TripScrollTrackerTest#phoneViewToggleDoesNotOverwriteTheRequestedDayWithTheOldListPosition'` (3 s / 2 s Gradle wall).
+- Added the inverse phone mode-change guard and an S1 Robolectric structural check for one same-day timeline node and the correct header after a list-seeded toggle. The structural check also passes before the fix; the JVM stale-position case reproduces the actual race deterministically.
+- `make format`: PASS, 10 s Gradle wall.
+- `make targeted ONLY='feature:trip:TripScrollTrackerTest feature:trip:ViewToggleTest feature:trip:TripPageResizeTest'`: PASS, all 32 cases, 8.72 s host wall, no budget overruns.
+- `./gradlew :app:lintDebug :feature:trip:lintDebug`: PASS, 16 s Gradle wall.
+- `make quick`, once: PASS, 54.91 s host wall, no budget overruns.
+- Final structure-only S1 check, `make targeted ONLY='feature:trip:ViewToggleTest#seededListTogglesToTheSameDayTimeline'`: PASS, 5.32 s host wall, no budget overrun.
+
+The single allowed emulator invocation was used for diagnosis before the fix. Post-fix device handoff: `make targeted ONLY='app:TripListSmokeTest'`. Pixel remains running at 1080×2400 with animator scales 0. No perf tier or profile generator is run in this round.
+
+Evidence: `build/test-results/phase-6e-gate/round2/`.

@@ -47,6 +47,12 @@ class TripScrollTracker {
         previous = key
         if (old == null || old == key) return null
         lastCaptured = null
+        // A phone toggle owns its scroll request; its old item table can already have been remeasured.
+        if (old.windowWidthDp == key.windowWidthDp && old.density == key.density &&
+            old.layout == key.layout
+        ) {
+            return null
+        }
         if (scrollInProgress) return null
         val current =
             previousItems.lastOrNull {
