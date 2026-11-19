@@ -155,6 +155,7 @@ internal class ShellRecreationActivity : ComponentActivity() {
                             SideEffect { fixture.holder = holder }
                             AppShellScaffold(
                                 holder,
+                                onRootBack = { finish() },
                                 today = {},
                                 trips = {
                                     val model: TripsViewModel = viewModel(factory = fixture.factory)

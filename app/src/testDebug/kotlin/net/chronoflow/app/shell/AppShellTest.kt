@@ -32,6 +32,7 @@ import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigationevent.NavigationEventHandler
 import net.chronoflow.core.designsystem.layout.LocalSafeInsets
 import net.chronoflow.core.designsystem.theme.ChronoFlowTheme
 import net.chronoflow.core.navigation.Route
@@ -44,6 +45,7 @@ import net.chronoflow.core.testing.tiers.Logic
 import net.chronoflow.core.ui.R
 import net.chronoflow.core.ui.shell.LocalTabReselect
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -51,6 +53,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.util.ReflectionHelpers
 import java.util.concurrent.atomic.AtomicInteger
 
 @Logic
@@ -81,6 +84,7 @@ class AppShellTest {
                     }
                     AppShellScaffold(
                         currentHolder,
+                        onRootBack = { currentActivity.finish() },
                         today = { TabRoot(ShellTab.Today) },
                         trips = { TabRoot(ShellTab.Trips) },
                         settings = { TabRoot(ShellTab.Settings) },
@@ -165,6 +169,30 @@ class AppShellTest {
         compose.onNodeWithTag("route.today").assertExists()
         compose.runOnIdle { activity.onBackPressedDispatcher.onBackPressed() }
         assertTrue(activity.isFinishing)
+    }
+
+    @Test fun staleBackCallbackAtTodayFallsThroughWithoutChangingState() {
+        host()
+        lateinit var callback: NavigationEventHandler<*>
+        compose.runOnIdle {
+            val processor = ReflectionHelpers.getField<Any>(activity.navigationEventDispatcher, "sharedProcessor")
+            val callbacks =
+                ReflectionHelpers.getField<ArrayDeque<NavigationEventHandler<*>>>(
+                    processor,
+                    "defaultHandlers",
+                )
+            callback = callbacks.single { it.isBackEnabled }
+            holder.select(ShellTab.Today)
+        }
+        compose.waitForIdle()
+        compose.runOnIdle {
+            val before = holder.state
+            assertEquals(ShellTab.Today, before.selected)
+            assertFalse(activity.isFinishing)
+            ReflectionHelpers.callInstanceMethod<Void>(callback, "onBackCompleted")
+            assertEquals(before, holder.state)
+            assertTrue(activity.isFinishing)
+        }
     }
 
     @Test fun backPopsPushedPageFirst() {

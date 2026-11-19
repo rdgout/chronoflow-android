@@ -76,6 +76,7 @@ internal fun CfRoot(
     val root by graph.rootNavigator.state.collectAsState()
     val displayedRoute = root.route ?: graph.launch.route?.toRoute()
     val activity = LocalActivity.current
+    val onRootBack: () -> Unit = { activity?.finish() }
     LaunchedEffect(graph, graph.launch.overlayActive, displayedRoute) {
         if (!graph.launch.overlayActive && displayedRoute != null) graph.finishLaunch()
     }
@@ -135,7 +136,7 @@ internal fun CfRoot(
                         } else {
                             RootContent(
                                 RootState(displayedRoute, root.revision),
-                                onBack = { activity?.finish() },
+                                onBack = onRootBack,
                             ) { route ->
                                 when (route) {
                                     Route.Welcome -> {
@@ -224,7 +225,7 @@ internal fun CfRoot(
                                     }
 
                                     Route.Today, Route.Trips, Route.Settings, is Route.TripPage, is Route.Wizard -> {
-                                        AppShell(route) { RoutePlaceholder(it, LaunchPlatform.routeLabel) }
+                                        AppShell(route, onRootBack) { RoutePlaceholder(it, LaunchPlatform.routeLabel) }
                                     }
 
                                     else -> {

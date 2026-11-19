@@ -42,6 +42,7 @@ import net.chronoflow.core.ui.shell.LocalTabReselect
 @Composable
 internal fun AppShellScaffold(
     holder: ShellViewModel,
+    onRootBack: () -> Unit,
     today: @Composable () -> Unit,
     trips: @Composable () -> Unit,
     settings: @Composable () -> Unit,
@@ -49,6 +50,7 @@ internal fun AppShellScaffold(
     overlay: @Composable (Route) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val onBack: () -> Unit = { if (!holder.back()) onRootBack() }
     val state = holder.state
     val safe = LocalSafeInsets.current
     val layout =
@@ -117,7 +119,7 @@ internal fun AppShellScaffold(
                 LocalViewModelStoreOwner provides holder.owner(state.selected),
             ) {
                 saveable.SaveableStateProvider(state.selected.name) {
-                    NavDisplay(entries = entries.getValue(state.selected), onBack = { holder.back() })
+                    NavDisplay(entries = entries.getValue(state.selected), onBack = onBack)
                 }
             }
         }
@@ -126,10 +128,8 @@ internal fun AppShellScaffold(
     }
     val atTabRoot = state.stacks.getValue(state.selected).size == 1
     val backSelectsToday = currentOverlay == null && atTabRoot && state.selected != ShellTab.Today
-    BackHandler(enabled = backSelectsToday) {
-        holder.back()
-    }
-    BackHandler(enabled = currentOverlay != null) { holder.back() }
+    BackHandler(enabled = backSelectsToday, onBack = onBack)
+    BackHandler(enabled = currentOverlay != null, onBack = onBack)
 }
 
 @Composable

@@ -238,14 +238,14 @@ Pure functions (`ShellNav.kt`):
   - The shell holder is a ViewModel in the parent root entry's store. Its state and all three tab stores survive configuration recreation; `onCleared` clears tab stores when the root entry is removed. Process death cold-launches to Today (state-survival spec; OQ-A246).
 - **Only the selected tab's `NavDisplay` is composed.**
 - **Back:**
-  - the `NavDisplay` of the selected tab gets `onBack = { holder.back() }`;
-  - plus `BackHandler(enabled = overlay == null && depth == 1 && selected != Today) { holder.back() }`;
-  - plus, with the overlay shown, `BackHandler(enabled = true) { holder.back() }`, composed last so it wins;
+  - the selected tab's `NavDisplay` and both shell `BackHandler`s share a callback that evaluates `holder.back()` at invocation time. If it returns false, call the same root `onBack` action as `RootContent` (finish, A8), so a stale registered callback at the Today root cannot swallow a press;
+  - plus `BackHandler(enabled = overlay == null && depth == 1 && selected != Today, onBack = onBack)`;
+  - plus, with the overlay shown, `BackHandler(enabled = true, onBack = onBack)`, composed last so it wins;
   - nothing intercepts at the Today root;
   - predictive back is already on (4e manifest).
 - **Scroll to top:** `LocalTabReselect` (`compositionLocalOf { 0 }`, `…/ui/shell/TabReselect.kt`) carries `scrollToTop[tab] ?: 0` for that tab. A screen reacts only when the value differs from the last one it handled. Keep that last value in `rememberSaveable`, so re-entering a tab never scrolls.
 - **Overlay:** with `overlay != null`, a full-screen `Box(Modifier.fillMaxSize().background(background))` above the scaffold shows `placeholder(overlay)`, which gives the tag `route.<debugName>`, e.g. `route.wizard`. The tab bar is covered, as with the iOS `fullScreenCover`.
-- **Seams** [F 4e §5.8 l.464]: a seam is 3b/4e's `RoutePlaceholder(route, label)`, unchanged. Its tag is `route.<route.debugName()>`, and it shows text only through the variant `label` hook (`DebugRouteLabel` in debug, `null` in perf and release). `AppShell` takes a parameter `placeholder: @Composable (Route) -> Unit`. `RootContent` passes the same lambda it already uses for its own placeholder entries, `{ RoutePlaceholder(it, label) }`. Do not add a new composable, string or tag scheme.
+- **Seams** [F 4e §5.8 l.464]: a seam is 3b/4e's `RoutePlaceholder(route, label)`, unchanged. Its tag is `route.<route.debugName()>`, and it shows text only through the variant `label` hook (`DebugRouteLabel` in debug, `null` in perf and release). `AppShell` takes `onRootBack: () -> Unit` and `placeholder: @Composable (Route) -> Unit`. `RootContent` passes the same lambda it already uses for its own placeholder entries, `{ RoutePlaceholder(it, label) }`. Do not add a new composable, string or tag scheme.
   - the Today root renders `placeholder(Route.Today)`; the Settings root renders `placeholder(Route.Settings)`;
   - any `TripPage` entry renders `placeholder(route)`, giving `route.tripPage`;
   - the tab bar stays visible on pushed pages (iOS keeps the TabView).
@@ -508,7 +508,7 @@ sealed interface NextLabel { data object Now; data class In(val duration: String
   - Captures: `make captures ONLY=Trips,TripsEmpty,TripsLoading` (add the three to the capture registry, light and dark, `pixel8`).
 
 ### T10. Three-tab shell (`feat(app): add the three-tab shell`) [ticks "Shell" and "Seams"]
-- Files: `…/app/shell/AppShell.kt` (`AppShell(root: Route)` wiring the graph), `AppShellScaffold.kt` (stateless slots: `today`, `trips`, `settings`, `page: @Composable (Route) -> Unit`, `overlay`), `ShellViewModel.kt`, `TabViewModelStoreOwner.kt`, and the `RootContent` change: `Today`, `Trips`, `Settings`, `TripPage` and `Wizard` render `AppShell(root = route)` inside the existing `key(revision)`, with the initial state `fromRoot(route)` (§5.6).
+- Files: `…/app/shell/AppShell.kt` (`AppShell(root: Route, onRootBack: () -> Unit)` wiring the graph), `AppShellScaffold.kt` (stateless slots: `today`, `trips`, `settings`, `page: @Composable (Route) -> Unit`, `overlay`), `ShellViewModel.kt`, `TabViewModelStoreOwner.kt`, and the `RootContent` change: `Today`, `Trips`, `Settings`, `TripPage` and `Wizard` render `AppShell(root = route, onRootBack = onRootBack)` inside the existing `key(revision)`, with the initial state `fromRoot(route)` (§5.6).
 - `AppShell(root: Route, placeholder: @Composable (Route) -> Unit)`. `RootContent` passes its existing `{ RoutePlaceholder(it, label) }` (§5.7 "Seams").
 - In this task the Trips tab root renders `placeholder(Route.Trips)` (`route.trips`). T11 replaces it.
 - **Tests** (Robolectric `@Logic`, `AppShellTest`, on `AppShellScaffold` with fake slot content: a `LazyColumn` of 50 items tagged `test.list.<tab>` plus a button that calls `openTrip("t1")`):

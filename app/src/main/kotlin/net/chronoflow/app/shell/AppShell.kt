@@ -27,6 +27,7 @@ import net.chronoflow.feature.trips.TripsViewModel
 @Composable
 internal fun AppShell(
     root: Route,
+    onRootBack: () -> Unit,
     placeholder: @Composable (Route) -> Unit,
 ) {
     val graph = (LocalContext.current.applicationContext as ChronoFlowApp).graph
@@ -36,6 +37,7 @@ internal fun AppShell(
     LaunchedEffect(holder) { LaunchPlatform.shellStart()?.let(holder::seed) }
     AppShellScaffold(
         holder,
+        onRootBack = onRootBack,
         today = { render.value(Route.Today) },
         trips = {
             val session = sessionGraph
