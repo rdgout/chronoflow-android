@@ -2,6 +2,7 @@ package net.chronoflow.core.testing.junit
 
 import java.io.File
 import java.io.IOException
+import java.lang.management.ManagementFactory
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.ScheduledThreadPoolExecutor
 import java.util.concurrent.TimeUnit
@@ -26,24 +27,34 @@ internal class TestHangWatchdog(
             Thread(task, "cf-test-hang-watchdog").apply { isDaemon = true }
         }.apply { removeOnCancelPolicy = true }
     private val active = mutableMapOf<String, ScheduledFuture<*>>()
+    private val debugging =
+        ManagementFactory.getRuntimeMXBean().inputArguments.any { it.contains("jdwp", ignoreCase = true) }
+    private var firstTest = true
 
     @Synchronized fun started(uniqueId: String) {
+        if (debugging) return
         active.remove(uniqueId)?.cancel(false)
-        active[uniqueId] = executor.schedule({ expired(uniqueId) }, capMillis, TimeUnit.MILLISECONDS)
+        // Vintage starts the first test before Robolectric resolves its sandbox and android-all.
+        val deadline = if (firstTest) capMillis.coerceAtMost(Long.MAX_VALUE / 3) * 3 else capMillis
+        firstTest = false
+        active[uniqueId] = executor.schedule({ expired(uniqueId, deadline) }, deadline, TimeUnit.MILLISECONDS)
     }
 
     @Synchronized fun finished(uniqueId: String) {
         active.remove(uniqueId)?.cancel(false)
     }
 
-    private fun expired(uniqueId: String) {
+    private fun expired(
+        uniqueId: String,
+        deadline: Long,
+    ) {
         synchronized(this) {
             if (active.remove(uniqueId) == null) return
         }
         try {
             val evidence =
                 buildString {
-                    appendLine("cf test hang: $uniqueId exceeded ${capMillis}ms")
+                    appendLine("cf test hang: $uniqueId exceeded ${deadline}ms")
                     Thread.getAllStackTraces().entries.sortedBy { it.key.id }.forEach { (thread, stack) ->
                         appendLine()
                         appendLine("Thread ${thread.id} ${thread.name} ${thread.state}")
