@@ -129,7 +129,9 @@ internal fun AppShellScaffold(
                         snackbarHost = {
                             net.chronoflow.core.ui.plan
                                 .RefusedChangeFeedback(
-                                    Modifier.windowInsetsPadding(contentInsets.only(WindowInsetsSides.Bottom)),
+                                    Modifier.windowInsetsPadding(
+                                        contentInsets.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal),
+                                    ),
                                 )
                         },
                     ) { padding ->

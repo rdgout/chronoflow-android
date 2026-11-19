@@ -7,6 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import net.chronoflow.core.designsystem.layout.WindowPolicy
 import net.chronoflow.core.designsystem.theme.ChronoFlowTheme
 import net.chronoflow.core.navigation.Route
 import net.chronoflow.core.sync.SyncRefusal
@@ -40,7 +41,7 @@ class AppShellRefusalGuardTest(
 
     @get:Rule val rules: RuleChain = RuleChain.outerRule(ProfileRule(profile)).around(compose)
 
-    @Test fun refusalStaysAboveTheBottomSafeInset() {
+    @Test fun refusalStaysInsideTheSafeInsets() {
         val model = RefusedChangeModel()
         val before = RefusedChangeDebug.presentedCount.get()
         compose.setContent {
@@ -71,15 +72,24 @@ class AppShellRefusalGuardTest(
         val window = compose.onNodeWithTag("test.window").fetchSemanticsNode().boundsInRoot
         val refusal = compose.onNodeWithTag("sync.refusal").fetchSemanticsNode().boundsInRoot
         val safeBottom = window.bottom - profile.insets.bottom * profile.density
-        compose.onNodeWithTag("cf.nav.rail").assertExists()
+        val safeRight = window.right - profile.insets.right * profile.density
+        val layout = if (profile.widthDp >= WindowPolicy.wideBreakpointDp) "rail" else "bar"
+        compose.onNodeWithTag("cf.nav.$layout").assertExists()
         assertTrue("refusal must have visible content", refusal.height > 0)
         assertTrue("refusal bottom ${refusal.bottom} exceeds safe bottom $safeBottom", refusal.bottom <= safeBottom)
+        println("${profile.name}: refusal right=${refusal.right}, safe right=$safeRight, window right=${window.right}")
+        assertTrue("refusal right ${refusal.right} exceeds safe right $safeRight", refusal.right <= safeRight)
     }
 
     companion object {
         @JvmStatic
         @Parameters(name = "{0}")
         fun cases(): List<Array<Any>> =
-            listOf(DeviceProfiles.landscapeSideNav, DeviceProfiles.foldInner).map { arrayOf(it) }
+            listOf(
+                DeviceProfiles.landscapeSideNav,
+                DeviceProfiles.foldInner,
+                DeviceProfiles.landscapeSideNav.copy(name = "narrowLandscapeSideNav", widthDp = 640, heightDp = 360),
+                DeviceProfiles.landscapeSideNav.copy(name = "barLandscapeSideNav", widthDp = 560, heightDp = 360),
+            ).map { arrayOf(it) }
     }
 }
