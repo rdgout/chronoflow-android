@@ -1,6 +1,10 @@
 # Phase 6c performance investigation (2026-11-19)
 
-## P1: frame-cost comparison — attribution unresolved
+## Matched A/B (orchestrator)
+
+On pixel at 12:06–12:18 on 2026-11-19, the orchestrator ran 6b (`87e4d7a`), 6c (`e418883`), then 6b again. CPU P50/P90/P99 was **6.4/8.9/16.6 ms**, **6.6/8.7/11.9 ms**, and **6.4/8.6/13.4 ms**, respectively. Unchanged 6b reproduces the elevated costs, confirming an environment change consistent with the launcher/SurfaceFlinger evidence. **P1 is closed as environmental; no app code change is needed.** The earlier investigation below is retained as history; its open P1 status is superseded by this matched comparison.
+
+## P1: original frame-cost comparison (historical)
 
 These are analyses of the orchestrator's existing pixel traces, not new performance measurements or a gate pass. The CPU band remains unchanged. No app-level cause has been attributed; this investigation does not establish that the 6c diff is responsible for all of the observed increase.
 
@@ -78,3 +82,11 @@ No additional device run is made. Attribution needs a matched comparison of 6b a
 App/trip lint passes (29 s). The attempted command `./gradlew --console=plain :benchmark:lint :feature:trip:lintDebug :app:lintDebug` fails during task resolution because AGP's test module exposes no such lint task: `Cannot locate tasks that match ':benchmark:lint' as task 'lint' not found in project ':benchmark'.` The app/trip pair is then run once successfully; benchmark Kotlin compilation already passes. Logs are retained in `build/phase6c-perf-review/`.
 
 The single final `make quick` passes: 3,321 JVM/Robolectric tests in 35.64 s tier wall, 37 build-logic tests in 1.17 s, tooling suites 138 / 25 / 49 / 9 tests in 18.148 / 0.125 / 0.018 / 0.046 s, and six serial timing gates in 1.84 s. No test budget overrun is reported. Both timeline and list invalidation guards pass. Final evidence is archived in `build/phase6c-perf-review/final/`. Profiles and performance history remain unchanged, and pixel remains running.
+
+## P2: collection budget correction
+
+The orchestrator's next `make baseline-profile` at e418883 completed startup in **96.089 s**, then failed timeline collection at **599.898 s**, for **11m 41s** overall. Logcat shows six startup launches at intervals **16.725–17.118 s** (median **16.877 s**) and fourteen timeline launches at intervals **44.234–45.651 s** (median **45.013 s**). Timeline was making progress; a fixed 600 s collector could not accommodate its configured fifteen attempts plus ART profile flushing and compilation.
+
+`ProfileCollectionBudget` now caps both collectors at **three attempts**, stopping early after **two stable iterations**. AndroidX Benchmark 1.5.0 supports this policy; its existing non-strict behavior is preserved. The journey remains three timeline gestures plus three list gestures, with the existing first-tour style coverage guard and generated-profile descriptor checks. Each journey remains capped at **120 s**, each input at **10 s**, and the collector deadline is derived as **60 s setup + 3 × (120 s journey + 30 s ART/teardown) = 510 s**. The 900 s instrumentation cap stays as a later backstop. A fake-clock JVM test proves the last allowed journey and ART flush can run after earlier iterations consume their full budgets, including a fifteen-iteration configuration that would fail with the previous fixed deadline.
+
+`CfProfile` logcat entries now record begin/end and elapsed milliseconds for every startup and timeline iteration. Original XML/logcat, downloaded AndroidX source and new validation results are retained under `build/phase6c-profile-final/`. Required descriptors (TripPage, DayHeader, SummaryCard and DayListRow) remain mandatory; lowering the attempt cap does not bypass those checks.

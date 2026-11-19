@@ -1,5 +1,6 @@
 package net.chronoflow.benchmark
 
+import android.util.Log
 import androidx.benchmark.macro.MacrobenchmarkScope
 import androidx.benchmark.macro.junit4.BaselineProfileRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -7,6 +8,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.Until
 import net.chronoflow.core.testing.BoundedProfileInput
+import net.chronoflow.core.testing.ProfileCollectionBudget
 import net.chronoflow.core.testing.tiers.Perf
 import org.junit.Rule
 import org.junit.Test
@@ -19,18 +21,34 @@ class BaselineProfileGenerator {
 
     private val packageName: String =
         InstrumentationRegistry.getArguments().getString("targetAppId") ?: "net.chronoflow.app.native"
+    private val budget = ProfileCollectionBudget()
 
     private fun collectProfile(
         startup: Boolean = false,
         block: MacrobenchmarkScope.() -> Unit,
-    ) = BoundedProfileInput(stepTimeoutMillis = 600_000, journeyTimeoutMillis = 600_000).use { collection ->
+    ) = BoundedProfileInput(
+        stepTimeoutMillis = budget.collectorTimeoutMillis,
+        journeyTimeoutMillis = budget.collectorTimeoutMillis,
+    ).use { collection ->
         collection.step("profile collection") {
             rule.collect(
                 packageName,
-                maxIterations = 15,
-                stableIterations = 3,
+                maxIterations = budget.maxIterations,
+                stableIterations = budget.stableIterations,
                 includeInStartupProfile = startup,
-                profileBlock = block,
+                profileBlock = {
+                    val name = if (startup) "startup" else "timelineLarge60"
+                    val start = System.nanoTime()
+                    Log.i("CfProfile", "$name iteration=$iteration begin")
+                    try {
+                        block()
+                    } finally {
+                        Log.i(
+                            "CfProfile",
+                            "$name iteration=$iteration end elapsedMs=${(System.nanoTime() - start) / 1_000_000}",
+                        )
+                    }
+                },
             )
         }
     }
@@ -39,7 +57,7 @@ class BaselineProfileGenerator {
     @Test
     fun startup() =
         collectProfile(startup = true) {
-            BoundedProfileInput().use { input ->
+            BoundedProfileInput(journeyTimeoutMillis = budget.journeyTimeoutMillis).use { input ->
                 input.step("cancel stale touch") { cancelStaleTouch() }
                 input.step("startup home") { pressHome() }
                 input.step("startup launch") { startActivityAndWait() }
@@ -71,7 +89,7 @@ class BaselineProfileGenerator {
     @Test
     fun timelineLarge60() =
         collectProfile {
-            BoundedProfileInput().use { input ->
+            BoundedProfileInput(journeyTimeoutMillis = budget.journeyTimeoutMillis).use { input ->
                 input.step("cancel stale touch") { cancelStaleTouch() }
                 input.step("trip home") { pressHome() }
                 input.step("trip launch") { startActivityAndWait(large60Intent(packageName)) }

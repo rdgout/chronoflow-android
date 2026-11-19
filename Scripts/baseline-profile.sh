@@ -43,7 +43,7 @@ if [ "$prep_status" != 0 ]; then
   exit "$prep_status"
 fi
 
-# Keep the existing 15-attempt/three-stable collection policy; input and journeys have shorter deadlines.
+# Three collection attempts; the generator derives its deadline from the per-iteration caps.
 step "$GRADLEW" --console=plain :app:generateBaselineProfile \
   -Pandroid.testInstrumentationRunnerArguments.class=net.chronoflow.benchmark.BaselineProfileGenerator \
   -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.enabledRules=BaselineProfile \
