@@ -113,3 +113,31 @@ No production ticker bug was found or changed: TodayViewModel shares only `PlanC
 | warmViewKeepsTheLaunchIntentAndCapturesTheLinkOnce | 0.055 | warm |
 
 All warm Activity cases are below 1 s. The eight router JVM cases take 0.001–0.048 s each; the extended signed-in case takes 0.002 s.
+
+## Fix round 0 — per-test watchdog and final gate
+
+`:core:testing-junit` now arms a daemon-thread watchdog in TestTimingListener for each JUnit Platform test id, cancels it at completion, and shuts it down at plan completion. The default cap is 60 s; `./gradlew -Dcf.testHangCapSeconds=<seconds>` (or the same Gradle property) is forwarded through provider-backed JVM arguments. The timing tier retains its separate budgets. On expiry the watchdog writes the unique id plus every thread's stack to stderr and `build/cf-timings/<task>/hang-<test>-<hash>.txt`, then calls Runtime.halt(86). It does not move tests off Robolectric's main thread, use interrupt-based JUnit rules, print argument values, or run shutdown hooks. The tier runner copies fresh hang files into its result `hangs/` directory, lists their source paths in failure output, and records them in timings.json. AGENTS.md records the cap in its Hang caps line.
+
+`make targeted ONLY="core:testing-junit:TestHangWatchdogTest"` passes three cases in **8.09 s command wall**, including compilation. A separate child JVM deliberately blocks with a **100 ms** cap: it emits the exact unique id and the CountDownLatch/blockedTest stack, writes identical stderr/file evidence, and exits with **86**. That test takes **0.194 s**. A completed-test child survives beyond its cap with no dump (**0.339 s**), and the configuration/timing-tier case takes **0.001 s**. Proof files remain under `core/testing-junit/build/watchdog-proof-*/` (outside the real timing output directories).
+
+The one added tooling case, `python3 -I -m unittest discover -s Scripts/tests -p test_run_tier.py -k worker_hang_evidence`, passes in **0.26 s command wall** (0.150 s test). It proves an exit-86 worker's dump is surfaced and preserved rather than lost with the worker.
+
+The single fix-round `make quick` **passes**, **102.31 s command wall**. It rebuilds consumers of the changed test-runtime library and convention plugin; no retry or second warm run was made. Tier evidence:
+
+| Tier | Measured cases | Wall seconds | Result |
+|---|---:|---:|---|
+| Main JVM/Robolectric quick tier | 3,686 | 73.47 | pass, zero budget overruns, no hangs |
+| Build logic | 37 | 3.96 | pass |
+| Tooling (Scripts/contracts/l10n/icons) | 168 + 25 + 49 + 9 | 20.724 + 0.124 + 0.018 + 0.053 test time | pass |
+| Serial timing | 7 | 3.48 | pass; TimelinePreparationBudgetTest 3, DayDrawingBudgetTest 3, TodayViewBudgetTest 1 |
+
+Final warm `LinkRecreationTest` XML times from that app run:
+
+| Case | Seconds |
+|---|---:|
+| debugSeedCapturesInMemoryAndDoesNotForwardTheSecret | 0.026 |
+| historyRelaunchDoesNotCaptureTheLink | 0.023 |
+| coldViewIsCapturedAndRecreationDoesNotReplayIt | 0.033 |
+| warmViewKeepsTheLaunchIntentAndCapturesTheLinkOnce | 0.035 |
+
+The prior app hang and stale icon-count failure are resolved. All requested fix-round checks completed; no production ticker behaviour changed. Logs: `/tmp/phase7-fix0-confirm.log`, `/tmp/phase7-fix0-app-tests.log`, `/tmp/phase7-fix0-watchdog-test.log`, `/tmp/phase7-fix0-watchdog-tooling.log`, `/tmp/phase7-fix0-quick.log`. Performance/profile measurements and OQ-A336's device title verification remain deferred as before; no sibling repository or emulator state was modified.

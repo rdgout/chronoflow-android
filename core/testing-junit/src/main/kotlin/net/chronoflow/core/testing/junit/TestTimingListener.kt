@@ -33,12 +33,19 @@ private val sdkSuffix = Regex("""\[(\d+)]$""")
 class TestTimingListener : TestExecutionListener {
     private val tier = System.getProperty("cf.tier") ?: "quick"
     private val outDir = System.getProperty("cf.timingsDir")
+    private val watchdog =
+        hangCapMillis(tier, System.getProperty("cf.testHangCapSeconds"))?.let {
+            TestHangWatchdog(it, File(outDir ?: "build/cf-timings/test"))
+        }
     private val starts = ConcurrentHashMap<String, Long>()
     private val seenSdks = ConcurrentHashMap.newKeySet<String>()
     private val entries = java.util.Collections.synchronizedList(mutableListOf<String>())
 
     override fun executionStarted(identifier: TestIdentifier) {
-        if (identifier.isTest) starts[identifier.uniqueId] = System.nanoTime()
+        if (identifier.isTest) {
+            watchdog?.started(identifier.uniqueId)
+            starts[identifier.uniqueId] = System.nanoTime()
+        }
     }
 
     override fun executionFinished(
@@ -46,6 +53,7 @@ class TestTimingListener : TestExecutionListener {
         result: org.junit.platform.engine.TestExecutionResult,
     ) {
         if (!identifier.isTest) return
+        watchdog?.finished(identifier.uniqueId)
         val start = starts.remove(identifier.uniqueId) ?: return
         val ms = (System.nanoTime() - start) / 1_000_000
         val source = identifier.source.orElse(null) as? MethodSource ?: return
@@ -70,6 +78,7 @@ class TestTimingListener : TestExecutionListener {
     }
 
     override fun testPlanExecutionFinished(testPlan: TestPlan) {
+        watchdog?.close()
         val dir = outDir ?: return
         try {
             val folder = File(dir)
