@@ -1109,7 +1109,8 @@ Port of `TripPageView.toolbar`, `titleItem`, `dayMenuLabel` and `subtitle`:
 - The one `make targeted ONLY="app:TripPageSummarySeedTest"` run reached the summary and passed its alignment and disabled-legend checks, then failed the incorrect My trips back expectation in 8.656 s (Gradle 15 s). Existing 6a and pinned iOS seed that route on Today. OQ-A269 corrects the test arrangement to seed Trips and open its active card; the corrected test compiles and awaits the user's rerun under the once-only emulator limit.
 - Its captured log has no StrictMode violations. The global `adb -s emulator-5554 logcat -d | rg -c StrictMode` prints `6`: all six matches are older test start/finish names (`AppLaunchSmokeTest`, `DeviceConfigStrictModeTest`, `LaunchStrictModeTest`), not violations. The log was not cleared.
 - User rerun: `make targeted ONLY="app:TripPageSummarySeedTest"`. Keep `pixel` running.
-- Timeline perf, baseline profiles, full check and captures are recorded below as their owning tasks finish. No benchmark run is claimed here.
+- Task 14 implements summary/menu coverage in the baseline journey and requires the four real-page descriptors after generation. Measurements and profile regeneration remain user-owned; `docs/perf-timeline.md` "Phase 6b" lists every pending number and exact commands. `BaselineProfileFilesTest` deliberately rejects the stale committed host profiles until `make baseline-profile` is run. The Perf checkbox stays open.
+- Full check and captures are recorded below as their owning tasks finish. No benchmark run is claimed here.
 
 ---
 

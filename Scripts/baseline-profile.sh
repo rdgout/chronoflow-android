@@ -57,3 +57,13 @@ for f in baseline-prof.txt startup-prof.txt; do
     exit 1
   fi
 done
+
+python3 -I - "$OUT/baseline-prof.txt" <<'PYTHON'
+from pathlib import Path
+import sys
+profile = Path(sys.argv[1]).read_text()
+required = ("TripPageKt", "TripPageScreenKt", "DayHeaderKt", "SummaryCardKt")
+missing = [name for name in required if f"Lnet/chronoflow/feature/trip/page/{name};" not in profile]
+if missing:
+    raise SystemExit("baseline-profile: missing trip page coverage: " + ", ".join(missing))
+PYTHON

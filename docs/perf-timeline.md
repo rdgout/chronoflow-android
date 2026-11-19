@@ -391,3 +391,41 @@ Observed values, retained only as the invalid run's evidence: initial first-fram
 The first scroll trace includes a **1673.533 ms PathStencilCoverOp**, **1728.106 ms flush commands** and **1681.548 ms main-thread postAndWait**. These are observations from the invalid run, not causal evidence against the timeline. Query output: `build/phase3a-validation/timeline-band-slices.txt`. No timing budget, workload or marker fallback was changed. Raw archives: `build/perf/timeline/20261117T103423Z-8b5db6a-dirty-light-1.0-bounded-swipe-v3.0uwwyu/` and `build/perf/timeline/20261117T103934Z-8b5db6a-dirty-light-1.0-bounded-swipe-v3.8atRZd/`. Full log: `build/phase3a-validation/perf-timeline.log`.
 
 The resumed worker did not re-run `make perf`, `make perf-timeline` or `make baseline-profile`, per the orchestrator's instruction. Quiet-host scheduling belongs to the orchestrator.
+
+
+## Phase 6b: real trip page — measurements pending
+
+2026-11-19, `feat/phase-6b-trip-page`. The perf entry now uses `TripPageViewModel` and the same `TripPageScreen` as the database-backed route. `benchmark/budgets.json` selects Page `trip`; the first passing trip row starts a separate CPU baseline. Historical host rows are not trip-page evidence. No budget changed.
+
+The worker did **not** run `make perf-timeline`, `make perf` or `make baseline-profile`, as requested. No timing, memory, StrictMode fixture sweep, trace review, trend flags or regenerated-profile result is claimed. The Perf plan checkbox remains open until the user records these results. The committed profiles still describe the previous page, so `BaselineProfileFilesTest.baselineProfileCoversTheStartupAndTimelinePaths` is expected to fail until regeneration; its required descriptors now cover the real page, day header and summary.
+
+The profile journey reveals the summary, checks it, and returns to day 0 through the real menu before the unchanged bounded-swipe-v3 traversal. Profile generation additionally fails if any required trip-page descriptor is absent.
+
+User commands, on a quiet host with the existing `pixel` AVD (the wrappers set animator scales to 1 and restore them):
+
+```sh
+make perf-timeline
+make baseline-profile
+make targeted ONLY="app:BaselineProfileFilesTest app:TripPageSummarySeedTest"
+```
+
+Record device/image, build type, commit, theme, language, font scale and refresh rate alongside the following numbers. These are emulator gates and reports, never physical-device claims.
+
+| Metric | Gate or comparison | Phase 6b measurement / delta from Phase 1e |
+|---|---|---|
+| First timeline frame median / max | max ≤ 800 ms | pending |
+| Decode / prepare / typeface | report each async slice (cookies 1 / 2 / 3) | pending |
+| Frame CPU P50 / P90 / P99 | P90/P99 trip-page band; no prior trip baseline | pending |
+| Main / RenderThread frame P50/P99 | report | pending |
+| Frame overrun P99, jank %, hitch ms/s | report | pending |
+| Peak RSS anon / growth | peak ≤ 150 MiB; growth > 40 MiB warns | pending |
+| Builds on main | 0 | pending |
+| Placeholder episodes per iteration / duration / unfinished | episodes ≤ 6; duration and unfinished reported | pending |
+| Replay max, targets max, recompositions and GC | report | pending |
+| Last day / end reachability | last day selected, end within six bounded gestures | pending |
+| Trend flags | list every `FLAGGED` line and its cause | pending |
+| Trace review | build only on DefaultDispatch workers; one firstFrame slice; replay on main | pending |
+| StrictMode across eight fixtures | 0 violations | pending |
+| Baseline / startup profile coverage | non-empty; TripPage, DayHeader, SummaryCard | pending |
+
+Host evidence: the retargeted six-case `TimelineInvalidationTest` passes (suite 3.628 s; individual maximum 2.804 s). Its sustained 120 × 1 dp scroll case takes 0.307 s, the summary minute case 0.090 s, and the perf presented-marker case 0.058 s. These are Robolectric test wall times, not timeline runtime metrics. The static drawing layer, off-main builder, clock isolation and all budget thresholds remain intact.
