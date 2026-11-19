@@ -572,3 +572,10 @@ adb -s emulator-5554 logcat -d | grep -c StrictMode
 ```
 
 T2 fold driving is on request only; see `docs/device-matrix.md`.
+
+
+## Phase 7 — shared card and check-off writer (2026-11-19)
+
+Task 1 moves the trip card to `:core:ui` and delegates the trip page's enqueue path to `CheckOffWriter`; busy, refusal and cancellation handling stay in the trip ViewModel. The targeted run passes all 12 `TimelineInvalidationTest` and 124 `ListInvalidationTest` cases. Drawing, replay, `NowLine` and per-frame code are unchanged.
+
+Per user instruction, the ±25% comparison is pending the user's `make perf-timeline` run on `pixel`, API 36, animator scales 1, `benchmarkRelease`. Compare with the matching phone/wide PASS baselines above; record raw metrics and explain any trend flag. No emulator performance claim is made here.

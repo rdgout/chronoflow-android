@@ -7,6 +7,7 @@ import net.chronoflow.core.model.contracts.TripStatus
 import net.chronoflow.core.plan.CopyCatalog
 import net.chronoflow.core.plan.CopyLineFormatter
 import net.chronoflow.core.plan.TripListValue
+import net.chronoflow.core.ui.trip.tripCardUi
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.time.Instant
@@ -22,7 +23,8 @@ class TripCardFormattingTest {
                         TripListValue(it, null, null, TripStatus.Upcoming),
                         null,
                         Instant.EPOCH,
-                        TripsPreferences(),
+                        net.chronoflow.core.plan.trippage
+                            .PlanPreferences(),
                         Language.En,
                         formatter,
                     )

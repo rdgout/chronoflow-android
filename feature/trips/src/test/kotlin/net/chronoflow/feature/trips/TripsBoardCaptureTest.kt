@@ -52,12 +52,14 @@ class TripsBoardCaptureTest(
 
     @Test fun capturesTheBoardState() {
         var state: TripsUiState = TripsUiState.Loading
+        lateinit var formatter: CopyLineFormatter
         runTest(timeout = 60.seconds) {
+            formatter = CopyLineFormatter(CopyCatalog.load(StandardTestDispatcher(testScheduler)))
             state =
                 when (board) {
                     "Trips" -> {
                         TripsBoardFixture.content(
-                            CopyLineFormatter(CopyCatalog.load(StandardTestDispatcher(testScheduler))),
+                            formatter,
                             Language.En,
                         )
                     }
@@ -106,7 +108,16 @@ class TripsBoardCaptureTest(
                         CompositionLocalProvider(
                             LocalSafeInsets provides safe.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
                         ) {
-                            TripsContent(state, RefreshFeedbackState(), Language.En, {}, {}, {}, {})
+                            TripsContent(
+                                state,
+                                RefreshFeedbackState(),
+                                Language.En,
+                                {},
+                                {},
+                                {},
+                                {},
+                                formatter = formatter,
+                            )
                         }
                     }
                 }

@@ -8,6 +8,8 @@ import net.chronoflow.core.model.contracts.TripStatus
 import net.chronoflow.core.plan.CopyLineFormatter
 import net.chronoflow.core.plan.TripListValue
 import net.chronoflow.core.testing.sync.card
+import net.chronoflow.core.ui.trip.NextStepUi
+import net.chronoflow.core.ui.trip.tripCardUi
 import java.time.Instant
 
 internal object TripsBoardFixture {
@@ -60,7 +62,8 @@ internal object TripsBoardFixture {
                         TripListValue(card, null, null, status),
                         null,
                         Instant.EPOCH,
-                        TripsPreferences(),
+                        net.chronoflow.core.plan.trippage
+                            .PlanPreferences(),
                         language,
                         formatter,
                     )
@@ -68,7 +71,7 @@ internal object TripsBoardFixture {
                     if (index == 0) {
                         NextStepUi(
                             BlockType.Transfer,
-                            NextLabel.In("30 min"),
+                            Instant.EPOCH.plusSeconds(1800),
                             if (language == Language.Nl) "Trein naar het hotel" else "Train to the hotel",
                         )
                     } else {

@@ -44,12 +44,14 @@ class TripsGuardsTest(
     @Test fun screenFitsTheProfileAndSafeArea() {
         val language = if (case.language == AppLanguage.Nl) Language.Nl else Language.En
         var content: TripsUiState = TripsUiState.Loading
+        lateinit var formatter: CopyLineFormatter
         runTest(timeout = 60.seconds) {
+            formatter = CopyLineFormatter(CopyCatalog.load(StandardTestDispatcher(testScheduler)))
             content =
                 when (stateName) {
                     "Content" -> {
                         TripsBoardFixture.content(
-                            CopyLineFormatter(CopyCatalog.load(StandardTestDispatcher(testScheduler))),
+                            formatter,
                             language,
                         )
                     }
@@ -66,7 +68,7 @@ class TripsGuardsTest(
         compose.setContent {
             ProfileHost(case.profile) {
                 ChronoFlowTheme(reduceMotion = true) {
-                    TripsContent(content, RefreshFeedbackState(), language, {}, {}, {}, {})
+                    TripsContent(content, RefreshFeedbackState(), language, {}, {}, {}, {}, formatter = formatter)
                 }
             }
         }

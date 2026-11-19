@@ -21,6 +21,7 @@
   - `TripCardUi`, `AirportUi` and `NextStepUi` carry Compose `@Immutable`; the pure `tripCardUi` builder returns those Android models and accepts feature-local `TripsPreferences`. Move the models and builder together to `:core:ui` `…ui.trip`, accepting the existing core `PlanPreferences` instead. A JVM `:core:plan` builder cannot depend on `:core:ui`. My trips maps its existing preferences at the call site; its preference behaviour stays unchanged.
   - `TripPageViewModel` receives `enqueueCheck: suspend (CheckOffChange) -> Unit`; it does not own an `OutboxRepository`. Preserve that dependency and its existing tests. `CheckOffWriter` accepts an enqueue function as well as the repository/permit constructor, so the trip page can delegate the enqueue path without moving its busy, refusal or cancellation behaviour.
   - `plan.md` standard acceptance #5 supersedes the exhaustive guard matrix below: geometry guards run each state at `small`/`largeFont` in Dutch and `pixel8` in English, light only, with the wide cases at `foldInner`/`landscapeSideNav`. Captures retain both themes and languages.
+  - `Scripts/targeted.py` selectors omit the Gradle-style leading colon (`core:plan:TodayTests`, not `:core:plan:TodayTests`); otherwise its module path becomes absolute. All targeted commands below use the landed selector syntax.
   - OQ rows in `plan.md` end at OQ-A323; this phase's open questions start at OQ-A324.
 - **Names from earlier phases.** This brief uses the plan's and the iOS names (`TripListValue`, `PlanDecoder.trips`, `TripCard`/`TripCardUi`, `CategorySwatch`, `StepSheetContent`/`stepSheetState`, `CfPullToRefreshBox`, `RootNavigator`, `OutboxRepository.enqueue`, `FakePlanClock`, …). Before coding, open the merged code of 1a, 1d, 2, 4d, 4e, 6a–6d and use **their exact names and signatures**. Where a name differs, keep theirs and note it in the final commit body. Do not rename earlier code except where Task 1 says to move it.
 
@@ -287,7 +288,7 @@ Tests: existing 6a/6c/6d tests must pass, changed only for imports and for the e
 - `TodayEdgeTests` (Android-only): a `skipped` mark also moves `nextStep`; marked blocks stay in `currentSteps`/`upcomingSteps`; a block with `priority == optional` of type `seek_light` never appears; `minutesUntilNext` for start − now = 1 ms → 1, = 60 000 ms → 1, = 60 001 ms → 2, started → 0; `importantHidden` is true when a core block's type is hidden even if the block is optional-stripped; `allCategoriesHidden` false with 16 of 17; invalid zone `"Mars/Base"` → UTC days; `at` in the past → 0; selection with `planStartUtc == null` uses the stored card status and `departureUtc`; equal ends tie-break on id.
 - `TodayViewBudgetTest` (declared perf test): `todayView` on the large60 detail from 1b's `LargeTimelineFixtures`, 1 warm-up then 10 samples with `System.nanoTime`, every sample ≤ 20 ms (OQ-7-9).
 
-Run: `make targeted ONLY=":core:plan:TodayTests :core:plan:TodayEdgeTests :core:plan:TodayViewBudgetTest"`.
+Run: `make targeted ONLY="core:plan:TodayTests core:plan:TodayEdgeTests core:plan:TodayViewBudgetTest"`.
 
 ### Task 3. Source, reducer and ViewModel (`feat(today): add the today source, reducer and view model`) — Ticks: none
 
@@ -358,7 +359,7 @@ Run: `make targeted ONLY=":core:plan:TodayTests :core:plan:TodayEdgeTests :core:
 - `TodayViewModelTest`: the first tick leaves Loading; a quiet `advance(+60 s)` emits **no** new `uiState` (`expectNoEvents()`) while `now` emits; a boundary tick emits once; `setCheck` twice while the first is suspended calls the source once; after the hero changes with the sheet open, `setCheck` still goes to `selection.tripId` and `stepSheetState` still comes from that trip's detail; `openStep` without a hero is a no-op; `setLanguage(Nl)` re-emits with Dutch titles.
 - `CheckOffWriterTest` (`:core:data`, JVM on 4d's JDBC `SyncStore`; only if Task 1 created the writer): `setCheck(Done)` inserts one outbox row of kind check-off with `plan_input_hash`, `type`, `local_date`, `ordinal`, `status = "done"` and sets the local mark in the same transaction; `status = null` stores the undo; a non-actionable block writes nothing.
 
-Run: `make targeted ONLY=":feature:today:TodayReducerTest :feature:today:TodayReducerQuietTickTest :feature:today:TodayViewModelTest"`.
+Run: `make targeted ONLY="feature:today:TodayReducerTest feature:today:TodayReducerQuietTickTest feature:today:TodayViewModelTest"`.
 
 ### Task 4. The five states (`feat(today): draw the today states`) — Ticks: none
 
@@ -429,7 +430,7 @@ First statement of `TodayScreen` content (SCREEN, "today"), the hero card wrappe
 - `TodayWideLayoutTest` (`@Layout`): at `foldInner` and `landscapeSideNav`, the hero card and panel rows are ≤ 640 dp wide and centred in the content area (left and right gaps equal ± 1 dp); at `pixel8` the card spans the width minus 2 × 16 dp.
 - `TodayBoardCaptureTest` (`@Capture`, Robolectric `BoardCapture`): one PNG per board (`Today`, `TodayEmpty`, `TodayFuture`, `TodayLoading`, `TodayCompleted`, `TodayRowStates`) × light/dark × en/nl, at 390 × 844 dp equivalent (`pixel8`), named per 0e.
 
-Run: `make targeted ONLY=":feature:today:TodayScreenTest"` while building, then the layout classes, then `make captures ONLY=Today,TodayEmpty,TodayFuture,TodayLoading,TodayCompleted,TodayRowStates`.
+Run: `make targeted ONLY="feature:today:TodayScreenTest"` while building, then the layout classes, then `make captures ONLY=Today,TodayEmpty,TodayFuture,TodayLoading,TodayCompleted,TodayRowStates`.
 
 ### Task 5. Wire the tab (`feat(today): open trips, steps, settings and the wizard from today`) — Ticks: "**Today tab**"
 
@@ -467,7 +468,7 @@ Run: `make targeted ONLY=":feature:today:TodayScreenTest"` while building, then 
 ## 7. Acceptance criteria
 
 1. Commands pass on the branch (orchestrator runs what the sandbox cannot, with `pixel` booted for `make check`):
-   - `make targeted ONLY=":core:ui:TripCardEyebrowTest :core:plan:TodayTests :core:plan:TodayEdgeTests :core:plan:TodayViewBudgetTest :feature:today:TodayReducerTest :feature:today:TodayReducerQuietTickTest :feature:today:TodayViewModelTest :feature:today:TodayScreenTest :feature:today:TodayInvalidationTest :feature:today:TodayNavigationTest :feature:today:TodayStepSheetTest"`
+   - `make targeted ONLY="core:ui:TripCardEyebrowTest core:plan:TodayTests core:plan:TodayEdgeTests core:plan:TodayViewBudgetTest feature:today:TodayReducerTest feature:today:TodayReducerQuietTickTest feature:today:TodayViewModelTest feature:today:TodayScreenTest feature:today:TodayInvalidationTest feature:today:TodayNavigationTest feature:today:TodayStepSheetTest"`
    - `make quick` (< 60 s warm), `make check` (< 5 min warm), `Scripts/ci.sh` (no generated-file diff).
    - `make captures ONLY=Today,TodayEmpty,TodayFuture,TodayLoading,TodayCompleted,TodayRowStates` produces 24 PNGs in `build/captures/`.
    - `make perf` reports a finite `timeToFullDisplayMs` for `startupColdSignedIn`; `make baseline-profile` passes with `BaselineProfileMode.Require`.

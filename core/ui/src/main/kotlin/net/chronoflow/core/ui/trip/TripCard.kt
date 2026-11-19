@@ -1,4 +1,4 @@
-package net.chronoflow.feature.trips
+package net.chronoflow.core.ui.trip
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -25,7 +25,6 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
@@ -44,19 +43,23 @@ import net.chronoflow.core.designsystem.theme.CfTheme
 import net.chronoflow.core.designsystem.theme.tnum
 import net.chronoflow.core.model.contracts.Language
 import net.chronoflow.core.model.contracts.TripStatus
-import net.chronoflow.core.ui.R
+import net.chronoflow.core.plan.CopyLineFormatter
+import net.chronoflow.core.ui.clock.MinuteClock
 import net.chronoflow.core.ui.plan.CategorySwatch
 import net.chronoflow.core.ui.plan.CategorySwatchSize
 import net.chronoflow.core.ui.trip.MetaChip
-import java.util.Locale
 
 @Composable
 fun TripCard(
     card: TripCardUi,
     onClick: () -> Unit,
+    clock: MinuteClock,
+    formatter: CopyLineFormatter,
     modifier: Modifier = Modifier,
     language: Language = Language.En,
 ) {
+    val probe = LocalTripCardProbe.current
+    androidx.compose.runtime.SideEffect { probe?.composed("card.${card.id}") }
     val colors = CfTheme.colors
     val shape = RoundedCornerShape(PlanUITokens.radius3Xl.dp)
     val completed = card.status == TripStatus.Completed
@@ -118,30 +121,16 @@ fun TripCard(
                         .fillMaxWidth()
                         .background(colors.surface2, RoundedCornerShape(PlanUITokens.radius2Xl.dp))
                         .heightIn(min = PlanUITokens.space14.dp)
-                        .padding(horizontal = PlanUITokens.space3.dp, vertical = TripsMetrics.NEXT_VERTICAL_PADDING.dp),
+                        .padding(
+                            horizontal = PlanUITokens.space3.dp,
+                            vertical = TripCardMetrics.NEXT_VERTICAL_PADDING.dp,
+                        ),
                     horizontalArrangement = Arrangement.spacedBy(PlanUITokens.space3.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     CategorySwatch(next.type, size = CategorySwatchSize.Small)
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(PlanUITokens.space1.dp)) {
-                        val label =
-                            when (val value = next.label) {
-                                NextLabel.Now -> stringResource(R.string.screens_next_now)
-                                is NextLabel.In -> stringResource(R.string.screens_next_in_duration, value.duration)
-                            }
-                        Text(
-                            label.uppercase(
-                                if (language ==
-                                    Language.Nl
-                                ) {
-                                    Locale.forLanguageTag("nl")
-                                } else {
-                                    Locale.ENGLISH
-                                },
-                            ),
-                            color = colors.dawnText,
-                            style = CfTheme.type.style(CfTypeScale.screenEyebrow),
-                        )
+                        NextEyebrow(next.startUtc, clock, formatter, language, card.id)
                         Text(next.text, color = colors.foreground, style = CfTheme.type.style(CfTypeScale.screenBodyLg))
                     }
                     Chevron()
