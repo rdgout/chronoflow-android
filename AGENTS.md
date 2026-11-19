@@ -91,7 +91,7 @@ Write every new or changed test this way. These rules translate the iOS Tests ru
 How the harness works:
 - **Seeds** use the iOS `CF_*` names, sent as intent extras to the debug-only `SeedReceiverActivity` (plan.md "Android spec: seeds and test hooks"). Profile `screen` skips the splash and readiness; profile `launch` runs them for real.
 - **Test tags** are the iOS dotted ids, such as `sign-in.email`, exposed as resource ids at the root.
-- **Hang caps:** `:core:testing-junit` TestTimingListener enforces 60 s per JVM/Robolectric test (`cf.testHangCapSeconds`), with 3× for the first test in a fork (180 s by default) for cold sandbox resolution and disabled under JDWP; stacks and the unique id go to stderr and `build/cf-timings/<task>/hang-*.txt` before the worker halts; the timing tier keeps its own budgets.
+- **Hang caps:** `:core:testing-junit` TestTimingListener enforces 60 s per JVM/Robolectric test (`cf.testHangCapSeconds`), with 3× for the first Robolectric test of each SDK in a fork (180 s by default) for cold sandbox resolution and disabled under JDWP; stacks and the unique id go to stderr and `build/cf-timings/<task>/hang-*.txt` before the worker halts; the timing tier keeps its own budgets.
   - coroutine tests use `runTest(timeout = 60.seconds)`;
   - instrumented tests run with `timeout_msec=60000`;
   - `Scripts/run-tier.sh` stops a tier after 600 s without output, or after 3,600 s in total.

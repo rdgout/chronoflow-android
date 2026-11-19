@@ -10,7 +10,12 @@ import org.junit.platform.engine.TestDescriptor
 import org.junit.platform.engine.TestExecutionResult
 import org.junit.platform.engine.UniqueId
 import org.junit.platform.engine.support.descriptor.AbstractTestDescriptor
+import org.junit.platform.engine.support.descriptor.MethodSource
 import org.junit.platform.launcher.TestIdentifier
+import org.junit.runner.Description
+import org.junit.runner.RunWith
+import org.junit.runner.Runner
+import org.junit.runner.notification.RunNotifier
 import java.io.File
 import java.nio.file.Files
 import java.util.concurrent.CountDownLatch
@@ -38,10 +43,22 @@ class TestHangWatchdogTest {
         assertTrue(File(directory, "worker.log").readText().contains("Listening for transport dt_socket"))
     }
 
-    @Test fun theFirstTestCanWarmUpBeforeTheNormalCapApplies() {
+    @Test fun aWarmRobolectricSdkUsesTheNormalCap() {
         val directory = runWorker("warm-up", 86)
         val evidence = directory.listFiles()!!.single { it.name.startsWith("hang-") }.readText()
         assertTrue(evidence.contains("[test:warmTest] exceeded 100ms"))
+    }
+
+    @Test fun aJvmTestDoesNotSpendTheFirstRobolectricSdkAllowance() {
+        val directory = runWorker("jvm-then-robo", 0)
+        assertFalse(directory.listFiles()!!.any { it.name.startsWith("hang-") })
+        assertEquals("", File(directory, "worker.log").readText())
+    }
+
+    @Test fun eachRobolectricSdkGetsItsOwnColdAllowance() {
+        val directory = runWorker("sdk-switch", 0)
+        assertFalse(directory.listFiles()!!.any { it.name.startsWith("hang-") })
+        assertEquals("", File(directory, "worker.log").readText())
     }
 
     @Test fun theCapIsConfigurableAndTheTimingTierUsesItsOwnBudgets() {
@@ -62,6 +79,7 @@ class TestHangWatchdogTest {
                 TestIdentifier::class.java,
                 TestDescriptor::class.java,
                 Preconditions::class.java,
+                Runner::class.java,
                 Unit::class.java,
             ).map {
                 File(
@@ -101,11 +119,17 @@ class TestHangWatchdogTest {
 
 internal object WatchdogProofWorker {
     @JvmStatic fun main(args: Array<String>) {
-        fun identifier(name: String): TestIdentifier {
+        fun identifier(
+            name: String,
+            sdk: Int? = null,
+        ): TestIdentifier {
+            val type = if (sdk == null) WatchdogProofJvmCase::class.java else WatchdogProofRobolectricCase::class.java
+            val displayName = if (sdk == null) name else "$name[$sdk]"
             val descriptor =
                 object : AbstractTestDescriptor(
                     UniqueId.forEngine("watchdog-proof").append("test", name),
-                    name,
+                    displayName,
+                    MethodSource.from(type.name, "body"),
                 ) {
                     override fun getType(): TestDescriptor.Type = TestDescriptor.Type.TEST
                 }
@@ -113,11 +137,27 @@ internal object WatchdogProofWorker {
         }
         val mode = args.single()
         val listener = TestTimingListener()
-        val cold = identifier("coldTest")
+        if (mode == "jvm-then-robo" || mode == "sdk-switch") {
+            val jvm = identifier("jvmTest")
+            listener.executionStarted(jvm)
+            listener.executionFinished(jvm, TestExecutionResult.successful())
+            val robo = identifier("robo", 29)
+            listener.executionStarted(robo)
+            CountDownLatch(1).await(200, TimeUnit.MILLISECONDS)
+            listener.executionFinished(robo, TestExecutionResult.successful())
+            if (mode == "sdk-switch") {
+                val otherSdk = identifier("otherSdk", 36)
+                listener.executionStarted(otherSdk)
+                CountDownLatch(1).await(200, TimeUnit.MILLISECONDS)
+                listener.executionFinished(otherSdk, TestExecutionResult.successful())
+            }
+            return
+        }
+        val cold = identifier("coldTest", if (mode == "warm-up") 29 else null)
         listener.executionStarted(cold)
         if (mode == "warm-up") CountDownLatch(1).await(200, TimeUnit.MILLISECONDS)
         listener.executionFinished(cold, TestExecutionResult.successful())
-        val test = identifier(if (mode == "warm-up") "warmTest" else "blockedTest")
+        val test = if (mode == "warm-up") identifier("warmTest", 29) else identifier("blockedTest")
         listener.executionStarted(test)
         when (mode) {
             "finish" -> {
@@ -139,4 +179,15 @@ internal object WatchdogProofWorker {
     fun blockedTest() {
         CountDownLatch(1).await()
     }
+}
+
+private class WatchdogProofJvmCase
+
+@RunWith(WatchdogProofRobolectricRunner::class)
+private interface WatchdogProofRobolectricCase
+
+private class WatchdogProofRobolectricRunner : Runner() {
+    override fun getDescription(): Description = Description.EMPTY
+
+    override fun run(notifier: RunNotifier) = Unit
 }

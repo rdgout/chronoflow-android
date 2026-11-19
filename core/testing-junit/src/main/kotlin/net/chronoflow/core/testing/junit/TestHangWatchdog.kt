@@ -29,14 +29,15 @@ internal class TestHangWatchdog(
     private val active = mutableMapOf<String, ScheduledFuture<*>>()
     private val debugging =
         ManagementFactory.getRuntimeMXBean().inputArguments.any { it.contains("jdwp", ignoreCase = true) }
-    private var firstTest = true
 
-    @Synchronized fun started(uniqueId: String) {
+    @Synchronized fun started(
+        uniqueId: String,
+        firstForSdk: Boolean,
+    ) {
         if (debugging) return
         active.remove(uniqueId)?.cancel(false)
-        // Vintage starts the first test before Robolectric resolves its sandbox and android-all.
-        val deadline = if (firstTest) capMillis.coerceAtMost(Long.MAX_VALUE / 3) * 3 else capMillis
-        firstTest = false
+        // Vintage starts a cold SDK's first test before Robolectric resolves its sandbox and android-all.
+        val deadline = if (firstForSdk) capMillis.coerceAtMost(Long.MAX_VALUE / 3) * 3 else capMillis
         active[uniqueId] = executor.schedule({ expired(uniqueId, deadline) }, deadline, TimeUnit.MILLISECONDS)
     }
 
