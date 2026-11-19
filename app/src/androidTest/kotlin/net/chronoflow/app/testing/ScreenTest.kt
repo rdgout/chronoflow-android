@@ -53,7 +53,6 @@ abstract class ScreenTest {
         val launched = ActivityScenario.launch<MainActivity>(seededIntent(overrides))
         scenario = launched
         compose.waitUntilExactlyOneExists(hasTestTag("app.root"), 5_000)
-        hideKeyboard()
         UITestTimeline.record("seeded-screen-visible", seed)
         return launched
     }
