@@ -37,54 +37,61 @@ internal fun AppShell(
     val render = rememberUpdatedState(placeholder)
     val holder = rememberShellViewModel(root)
     LaunchedEffect(holder) { LaunchPlatform.shellStart()?.let(holder::seed) }
-    AppShellScaffold(
-        holder,
-        onRootBack = onRootBack,
-        today = { render.value(Route.Today) },
-        trips = {
-            val session = sessionGraph
-            if (session == null) {
-                val language = if (LocalConfiguration.current.locales[0].language == "nl") Language.Nl else Language.En
-                TripsContent(
-                    TripsUiState.Loading,
-                    RefreshFeedbackState(),
-                    language,
-                    {},
-                    {},
-                    holder::openTrip,
-                    { holder.push(Route.Wizard(WizardMode.Create)) },
-                    refreshProbe = LaunchPlatform.refreshProbe,
-                )
-            } else {
-                val owner = checkNotNull(LocalViewModelStoreOwner.current) as HasDefaultViewModelProviderFactory
-                val deps = remember(graph, session) { SessionTripsDependencies(graph, session) }
-                val extras =
-                    remember(owner, deps) {
-                        MutableCreationExtras(
-                            owner.defaultViewModelCreationExtras,
-                        ).apply { set(TripsDependenciesKey, deps) }
-                    }
-                TripsScreen(
-                    viewModel(factory = TripsViewModel.Factory, extras = extras),
-                    holder::openTrip,
-                    { holder.push(Route.Wizard(WizardMode.Create)) },
-                )
-            }
-        },
-        settings = { render.value(Route.Settings) },
-        page = { route ->
-            if (route is Route.TripPage) {
-                TripPageRoute(
-                    route,
-                    { if (!holder.back()) onRootBack() },
-                    { holder.select(ShellTab.Settings) },
-                    onTrips = { holder.leaveTripPage(ShellTab.Trips) },
-                    onToday = { holder.leaveTripPage(ShellTab.Today) },
-                )
-            } else {
-                render.value(route)
-            }
-        },
-        overlay = { render.value(it) },
-    )
+    androidx.compose.runtime.CompositionLocalProvider(
+        net.chronoflow.core.ui.plan.LocalRefusedChanges provides sessionGraph?.refusedChanges,
+    ) {
+        AppShellScaffold(
+            holder,
+            onRootBack = onRootBack,
+            today = { render.value(Route.Today) },
+            trips = {
+                val session = sessionGraph
+                if (session == null) {
+                    val dutch = LocalConfiguration.current.locales[0].language == "nl"
+                    val language = if (dutch) Language.Nl else Language.En
+                    TripsContent(
+                        TripsUiState.Loading,
+                        RefreshFeedbackState(),
+                        language,
+                        {},
+                        {},
+                        holder::openTrip,
+                        { holder.push(Route.Wizard(WizardMode.Create)) },
+                        refreshProbe = LaunchPlatform.refreshProbe,
+                    )
+                } else {
+                    val owner = checkNotNull(LocalViewModelStoreOwner.current) as HasDefaultViewModelProviderFactory
+                    val deps = remember(graph, session) { SessionTripsDependencies(graph, session) }
+                    val extras =
+                        remember(owner, deps) {
+                            MutableCreationExtras(
+                                owner.defaultViewModelCreationExtras,
+                            ).apply { set(TripsDependenciesKey, deps) }
+                        }
+                    TripsScreen(
+                        viewModel(factory = TripsViewModel.Factory, extras = extras),
+                        holder::openTrip,
+                        { holder.push(Route.Wizard(WizardMode.Create)) },
+                    )
+                }
+            },
+            settings = { render.value(Route.Settings) },
+            page = { route ->
+                if (route is Route.TripPage) {
+                    TripPageRoute(
+                        route,
+                        { if (!holder.back()) onRootBack() },
+                        { holder.select(ShellTab.Settings) },
+                        onTrips = { holder.leaveTripPage(ShellTab.Trips) },
+                        onToday = { holder.leaveTripPage(ShellTab.Today) },
+                        onRouteChange = { holder.replaceRoute(route, it) },
+                        onWizard = { holder.push(Route.Wizard(it)) },
+                    )
+                } else {
+                    render.value(route)
+                }
+            },
+            overlay = { render.value(it) },
+        )
+    }
 }

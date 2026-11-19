@@ -32,6 +32,14 @@ class ReleaseReadinessTest {
         missing("net.chronoflow.debug.DebugShellStart")
     }
 
+    @Test fun tripSheetSeedsAndRefusalCounterAreAbsent() {
+        org.junit.Assert.assertNull(LaunchPlatform.initialTripSheet)
+        org.junit.Assert.assertNull(LaunchPlatform.frozenTripInstant)
+        missing("net.chronoflow.app.perf.FixtureTripPageSource")
+        val feedback = Class.forName("net.chronoflow.core.ui.plan.RefusedChangeDebug")
+        assertFalse(feedback.declaredFields.any { it.name == "presentedCount" })
+    }
+
     @Test fun passkeyCapabilityIsShippedOff() {
         val message = "Flip only with S1–S3 evidence (docs/passkeys.md)"
         assertFalse(message, net.chronoflow.core.model.passkey.PasskeyCapability.SERVER_READY)

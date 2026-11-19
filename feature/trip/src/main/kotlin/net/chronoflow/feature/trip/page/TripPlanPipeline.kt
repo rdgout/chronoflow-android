@@ -64,6 +64,7 @@ data class TripPageData(
     val clockShift: String? = null,
     val language: Language = Language.En,
     val timeFormat: TimeFormat = TimeFormat.Value24,
+    val actionsHeader: net.chronoflow.core.plan.actions.TripActionsHeader? = null,
 )
 
 data class PipelineOutput(
@@ -230,6 +231,11 @@ class DefaultTripPlanPipeline(
                 ?: listOfNotNull(card?.flightNumber)
         return TripPageData(
             card = card,
+            actionsHeader =
+                card?.let {
+                    net.chronoflow.core.plan.actions
+                        .tripActionsHeader(it, detail, copy)
+                },
             adaptation = adaptation,
             metadata =
                 card

@@ -135,7 +135,9 @@ data class TestSeed(
             val planSheet =
                 parsed("CF_PLAN_TEST_SHEET") { value ->
                     when {
-                        value == "legend" -> TripSheet.Legend
+                        value == "legend" -> TripSheet.StepsLegend
+
+                        value == "priorities" -> TripSheet.Legend
 
                         value.startsWith(
                             "step:",

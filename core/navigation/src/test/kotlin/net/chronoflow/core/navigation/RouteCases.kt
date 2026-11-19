@@ -33,6 +33,7 @@ internal fun routeCases(): List<Array<Any>> =
             Route.TripPage("trip", "day", "block", true, "inputHash", "reminder-dedup-id", TripSheet.Step("block")),
         ),
         arrayOf("tripPage", Route.TripPage("trip", sheet = TripSheet.Legend)),
+        arrayOf("tripPage", Route.TripPage("trip", sheet = TripSheet.StepsLegend)),
         arrayOf("tripPage", Route.TripPage("trip", sheet = TripSheet.TripActions)),
         arrayOf("wizard", Route.Wizard(WizardMode.Create)),
         arrayOf("wizard", Route.Wizard(WizardMode.Edit("trip"))),

@@ -23,6 +23,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.unit.dp
 import net.chronoflow.core.designsystem.theme.CfTheme
 
@@ -40,7 +42,8 @@ fun CfModalBottomSheet(
 ) {
     ModalBottomSheet(
         onDismissRequest,
-        modifier,
+        // A sheet has its own window and cannot inherit the activity root's semantics export.
+        modifier.semantics { testTagsAsResourceId = true },
         sheetState = sheetState,
         sheetMaxWidth = SheetMetrics.maxWidth,
         shape = CfTheme.shapes.sheetTop,

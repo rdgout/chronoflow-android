@@ -59,8 +59,10 @@ class TimelineInvalidationTest {
     private fun start(
         summary: Boolean = false,
         reduceMotion: Boolean = true,
+        list: Boolean = false,
+        applyChecks: Boolean = false,
     ) {
-        host = TimelineTestHost(startAtSummary = summary)
+        host = TimelineTestHost(startAtSummary = summary, initialTimeline = !list, applyChecks = applyChecks)
         val density = composeRule.density
         host.prewarm(
             density,
@@ -292,8 +294,12 @@ class TimelineInvalidationTest {
         )
     }
 
-    @Test fun checkOffRedrawsOnlyThatDay() {
-        start()
+    @Test fun checkOffRedrawsOnlyThatDay() = assertCheckOffRedrawsOneDay(false)
+
+    @Test fun customActionCheckOffRedrawsOneDay() = assertCheckOffRedrawsOneDay(true)
+
+    private fun assertCheckOffRedrawsOneDay(custom: Boolean) {
+        start(applyChecks = custom)
         val prepared = host.model.prepared
         val identities =
             host.model.detail.plan.blocks
@@ -315,32 +321,73 @@ class TimelineInvalidationTest {
         val before = probe.snapshot()
         val key = checkNotNull(block.block.checkKey)
         val snapshot = host.source.snapshot.value
-        host.source.snapshot.value =
-            snapshot.copy(
-                checks =
-                    snapshot.checks +
-                        CheckMarkRecord(
-                            snapshot.trip!!.id,
-                            snapshot.plan!!.inputHash,
-                            key.type.raw,
-                            key.localDate,
-                            key.ordinal,
-                            "done",
-                            "now",
-                        ),
-            )
+        if (custom) {
+            composeRule.runOnIdle { host.vm.checkFromAccessibility(block.id, CheckStatus.Done) }
+        } else {
+            host.source.snapshot.value =
+                snapshot.copy(
+                    checks =
+                        snapshot.checks +
+                            CheckMarkRecord(
+                                snapshot.trip!!.id,
+                                snapshot.plan!!.inputHash,
+                                key.type.raw,
+                                key.localDate,
+                                key.ordinal,
+                                "done",
+                                "now",
+                            ),
+                )
+        }
         settle()
         val delta = probe.snapshot().delta(before)
         assertEquals("the day is recomposed once", 1, delta.composed(Kind.STATIC, dayId))
+        // Check actions arrive before the asynchronous replacement drawing; a batched delivery needs only one pass.
+        assertTrue("changed targets compose at most twice", delta.composed(Kind.TARGETS, dayId) in 1..2)
         val draws = delta.drew(Kind.STATIC, dayId)
         assertTrue("and redrawn once or twice, was $draws", draws in 1..2)
         assertEquals(0, delta.composed(Kind.CLOCK, dayId))
         assertTrue(delta.composed(Kind.HEADER, dayId) <= 1)
         for (id in before.composedIds(Kind.STATIC) - dayId) {
-            for (kind in listOf(Kind.STATIC, Kind.HEADER, Kind.CLOCK)) {
+            for (kind in listOf(Kind.STATIC, Kind.HEADER, Kind.CLOCK, Kind.TARGETS)) {
                 assertEquals("$kind composition of $id", 0, delta.composed(kind, id))
             }
             assertEquals("static draws of $id", 0, delta.drew(Kind.STATIC, id))
+        }
+    }
+
+    @Test fun listScrollingWithinOneDayDoesNotRecomposeRowsOrPageChrome() {
+        start(list = true, reduceMotion = false)
+        val passes = composeRule.runOnIdle { CompositionPassProbe() }
+        try {
+            val header =
+                listState!!.layoutInfo.visibleItemsInfo.first {
+                    it.index == host.model.listIndex.headerIndex(dayIds.first())
+                }
+            scrollBy(header.size + 1f)
+            settle()
+            assertTrue("crossing the header must schedule composition", passes.count > 0)
+            val before = probe.snapshot()
+            val beforePasses = passes.count
+            val offset = listState!!.firstVisibleItemScrollOffset
+            val anchor = host.vm.anchor.value.dayID
+            scrollBy(composeRule.density.density)
+            scrollBy(composeRule.density.density)
+            settle()
+            assertTrue("the list must move", listState!!.firstVisibleItemScrollOffset > offset)
+            assertEquals(anchor, host.vm.anchor.value.dayID)
+            assertEquals("scrolling within a day must schedule no composition", 0, passes.count - beforePasses)
+            val delta = probe.snapshot().delta(before)
+            assertEquals(
+                0,
+                delta.composed
+                    .filterKeys {
+                        it.kind in setOf(Kind.LIST_ROW, Kind.HEADER, Kind.PILLS, Kind.COMPACT, Kind.ANCHOR)
+                    }.values
+                    .sum(),
+            )
+        } finally {
+            composeRule.runOnIdle { passes.close() }
         }
     }
 

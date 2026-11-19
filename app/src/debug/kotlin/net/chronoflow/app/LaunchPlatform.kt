@@ -8,6 +8,22 @@ import net.chronoflow.debug.DebugRouteLabel
 import net.chronoflow.feature.launch.LaunchController
 
 internal object LaunchPlatform {
+    val frozenTripInstant: java.time.Instant? get() =
+        net.chronoflow.app.perf.perfClockInstant(
+            net.chronoflow.debug.DebugSeedRouting.current
+                ?.freezeAtRaw,
+        )
+    val initialTripSheet: net.chronoflow.core.navigation.TripSheet? get() =
+        net.chronoflow.debug.DebugSeedRouting.current?.let {
+            it.planSheet
+                ?: if (it.wizardBoardCapture ==
+                    "TripActions"
+                ) {
+                    net.chronoflow.core.navigation.TripSheet.TripActions
+                } else {
+                    null
+                }
+        }
     val startTripInList: Boolean get() =
         (
             net.chronoflow.debug.DebugSeedRouting.current

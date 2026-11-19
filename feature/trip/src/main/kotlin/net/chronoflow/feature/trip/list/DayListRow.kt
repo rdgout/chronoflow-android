@@ -27,6 +27,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.unit.Constraints
@@ -38,7 +39,10 @@ import net.chronoflow.core.designsystem.theme.CfTheme
 import net.chronoflow.core.designsystem.theme.tnum
 import net.chronoflow.core.model.contracts.CheckStatus
 import net.chronoflow.core.plan.generated.PlanMetrics
+import net.chronoflow.core.plan.step.StepActions
 import net.chronoflow.core.plan.trippage.ListRow
+import net.chronoflow.feature.trip.step.checkAccessibilityActions
+import net.chronoflow.feature.trip.step.rememberCheckActionLabels
 import net.chronoflow.feature.trip.timeline.DayClock
 import net.chronoflow.feature.trip.timeline.LocalTimelineProbe
 import net.chronoflow.feature.trip.timeline.TimelineProbe
@@ -49,7 +53,14 @@ fun DayListRow(
     clock: DayClock?,
     onBlock: (String) -> Unit,
     modifier: Modifier = Modifier,
+    actions: StepActions = StepActions.None,
+    onCheck: (String, CheckStatus?) -> Unit = { _, _ -> },
 ) {
+    val labels = rememberCheckActionLabels()
+    val checkActions =
+        remember(row.blockId, actions, labels, onCheck) {
+            checkAccessibilityActions(actions, row.blockId, labels, onCheck)
+        }
     val running by remember(row, clock) {
         derivedStateOf { clock?.value?.value?.let { row.startMs <= it.nowMs && it.nowMs < row.endMs } == true }
     }
@@ -87,6 +98,7 @@ fun DayListRow(
                 .clearAndSetSemantics {
                     contentDescription = if (running) row.labelNow else row.label
                     role = Role.Button
+                    if (checkActions.isNotEmpty()) customActions = checkActions
                     onClick {
                         onBlock(row.blockId)
                         true

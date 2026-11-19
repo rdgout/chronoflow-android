@@ -164,6 +164,15 @@ object LucideGlyphs {
             ),
         )
 
+    val Copy =
+        LucideGlyph(
+            "copy",
+            listOf(
+                LucidePath("M10 8h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-10a2 2 0 0 1-2-2v-10a2 2 0 0 1 2-2Z", false),
+                LucidePath("M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2", false),
+            ),
+        )
+
     val Ellipsis =
         LucideGlyph(
             "ellipsis",
@@ -288,11 +297,31 @@ object LucideGlyphs {
             ),
         )
 
+    val PenLine =
+        LucideGlyph(
+            "pen-line",
+            listOf(
+                LucidePath("M12 20h9", false),
+                LucidePath("M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z", false),
+            ),
+        )
+
     val Plane =
         LucideGlyph(
             "plane",
             listOf(
                 LucidePath("M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z", false),
+            ),
+        )
+
+    val SearchX =
+        LucideGlyph(
+            "search-x",
+            listOf(
+                LucidePath("m13.5 8.5-5 5", false),
+                LucidePath("m8.5 8.5 5 5", false),
+                LucidePath("M3 11a8 8 0 1 0 16 0a8 8 0 1 0-16 0Z", false),
+                LucidePath("m21 21-4.3-4.3", false),
             ),
         )
 
@@ -379,6 +408,15 @@ object LucideGlyphs {
                 LucidePath("m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3", false),
                 LucidePath("M12 9v4", false),
                 LucidePath("M12 17h.01", false),
+            ),
+        )
+
+    val X =
+        LucideGlyph(
+            "x",
+            listOf(
+                LucidePath("M18 6 6 18", false),
+                LucidePath("m6 6 12 12", false),
             ),
         )
 }

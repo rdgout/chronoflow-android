@@ -13,6 +13,11 @@ class RouteStateKeyTest {
                 notificationInputHash = "private-input-hash",
                 notificationToken = "private-notification-token",
             )
+        val encoded =
+            kotlinx.serialization.json.Json
+                .encodeToString(Route.serializer(), route)
+        assertFalse(encoded.contains("private-notification-token"))
+        assertFalse(route.toString().contains("private-notification-token"))
         val key = route.stateKey()
         assertFalse(key.contains("private-input-hash"))
         assertFalse(key.contains("private-notification-token"))
