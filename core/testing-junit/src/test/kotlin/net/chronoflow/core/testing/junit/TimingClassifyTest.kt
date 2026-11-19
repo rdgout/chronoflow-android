@@ -5,19 +5,22 @@ import assertk.assertions.isEqualTo
 import org.junit.Test
 
 class TimingClassifyTest {
+    @Test fun parameterizedCasesKeepTheirSdkInsteadOfClaimingAnotherColdAllowance() =
+        assertThat(sdkFromDisplayName("case[36][unauthorized=true]")).isEqualTo("36")
+
     @Test fun jvmOverOneSecond() =
         assertThat(
             classify("jvm", "default", 1_200, false, false),
         ).isEqualTo(1_000L to "over")
 
-    @Test fun robolectricWithinFiveSeconds() =
-        assertThat(classify("robolectric", "36", 4_900, false, false)).isEqualTo(5_000L to "ok")
+    @Test fun robolectricWithinOneSecond() =
+        assertThat(classify("robolectric", "36", 900, false, false)).isEqualTo(1_000L to "ok")
 
     @Test fun firstRobolectricPerSdkIsWarmup() =
         assertThat(classify("robolectric", "36", 12_000, false, true)).isEqualTo(20_000L to "warmup")
 
     @Test fun secondRobolectricOnSameSdkIsOver() =
-        assertThat(classify("robolectric", "36", 6_000, false, false)).isEqualTo(5_000L to "over")
+        assertThat(classify("robolectric", "36", 1_500, false, false)).isEqualTo(1_000L to "over")
 
     @Test fun firstOnAnotherSdkIsWarmup() =
         assertThat(classify("robolectric", "29", 9_000, false, true)).isEqualTo(20_000L to "warmup")

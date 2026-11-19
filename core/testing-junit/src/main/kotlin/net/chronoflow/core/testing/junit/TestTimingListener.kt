@@ -9,7 +9,7 @@ import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 
 internal const val JVM_BUDGET_MS = 1_000L
-internal const val ROBOLECTRIC_BUDGET_MS = 5_000L
+internal const val ROBOLECTRIC_BUDGET_MS = 1_000L
 internal const val ROBOLECTRIC_WARMUP_MS = 20_000L
 
 /** Returns the budget in ms (null when exempt) and the status: ok, over, warmup or exempt. */
@@ -28,7 +28,9 @@ internal fun classify(
     return budget to if (ms > budget) "over" else "ok"
 }
 
-private val sdkSuffix = Regex("""\[(\d+)]$""")
+private val sdkMarker = Regex("""\[(\d+)](?=\[|$)""")
+
+internal fun sdkFromDisplayName(name: String): String = sdkMarker.find(name)?.groupValues?.get(1) ?: "default"
 
 class TestTimingListener : TestExecutionListener {
     private data class TestStart(
@@ -62,7 +64,7 @@ class TestTimingListener : TestExecutionListener {
                         null
                     }
                 }
-            val sdk = sdkSuffix.find(identifier.displayName)?.groupValues?.get(1) ?: "default"
+            val sdk = sdkFromDisplayName(identifier.displayName)
             val first = clazz?.isRobolectric() == true && seenSdks.add(sdk)
             starts[identifier.uniqueId] = TestStart(System.nanoTime(), source, clazz, sdk, first)
             watchdog?.started(identifier.uniqueId, first)
