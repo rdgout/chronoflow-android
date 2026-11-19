@@ -1,5 +1,7 @@
 # Phase 6c performance investigation (2026-11-19)
 
+Current outcome: P1 is closed by the matched A/B below. P2 profile generation now completes successfully; see "Successful profile generation" at the end of this report. Earlier failures are retained as history.
+
 ## Matched A/B (orchestrator)
 
 On pixel at 12:06–12:18 on 2026-11-19, the orchestrator ran 6b (`87e4d7a`), 6c (`e418883`), then 6b again. CPU P50/P90/P99 was **6.4/8.9/16.6 ms**, **6.6/8.7/11.9 ms**, and **6.4/8.6/13.4 ms**, respectively. Unchanged 6b reproduces the elevated costs, confirming an environment change consistent with the launcher/SurfaceFlinger evidence. **P1 is closed as environmental; no app code change is needed.** The earlier investigation below is retained as history; its open P1 status is superseded by this matched comparison.
@@ -90,3 +92,18 @@ The orchestrator's next `make baseline-profile` at e418883 completed startup in 
 `ProfileCollectionBudget` now caps both collectors at **three attempts**, stopping early after **two stable iterations**. AndroidX Benchmark 1.5.0 supports this policy; its existing non-strict behavior is preserved. The journey remains three timeline gestures plus three list gestures, with the existing first-tour style coverage guard and generated-profile descriptor checks. Each journey remains capped at **120 s**, each input at **10 s**, and the collector deadline is derived as **60 s setup + 3 × (120 s journey + 30 s ART/teardown) = 510 s**. The 900 s instrumentation cap stays as a later backstop. A fake-clock JVM test proves the last allowed journey and ART flush can run after earlier iterations consume their full budgets, including a fifteen-iteration configuration that would fail with the previous fixed deadline.
 
 `CfProfile` logcat entries now record begin/end and elapsed milliseconds for every startup and timeline iteration. Original XML/logcat, downloaded AndroidX source and new validation results are retained under `build/phase6c-profile-final/`. Required descriptors (TripPage, DayHeader, SummaryCard and DayListRow) remain mandatory; lowering the attempt cap does not bypass those checks.
+
+## Successful profile generation
+
+At source commit **02c8db7**, the first authorized `make baseline-profile` attempt **passes**, exit 0, **194.80 s tier wall / Gradle 3m 12s**. Device: pixel/emulator-5554, API 36, host GPU, nonMinifiedRelease collection. Both baseline and startup profiles are regenerated. The script verifies every required page/list descriptor; no second attempt is used. This is profile-generation evidence, not a new timeline performance judgement.
+
+| Case | Iterations | Journey times, s | Complete test time, s |
+|---|---:|---|---:|
+| Startup | 3 | 4.688 / 4.191 / 5.097 | 45.001 |
+| Timeline + list | 3 | 33.718 / 32.400 / 32.885 | 131.445 |
+
+The complete test times include ART export/compilation and collection overhead. Every journey stays within its 120 s cap and both collectors finish within their derived 510 s deadline. The regenerated baseline has **10 DayListRow rules**, versus **0** in the prior committed profile. `BaselineProfileFilesTest` now also guards the list-mode descriptor; the existing startup/timeline descriptor guards remain. All **three tests pass** in **3.61 s tier wall** (0.044 s total test time). The old profile's absent descriptor provides the cheap stale-profile negative control.
+
+Final validation: the single `make quick` **passes** 3,324 JVM/Robolectric cases (34.58 s tier), 37 build-logic cases (1.07 s), all 221 tooling cases (138 / 25 / 49 / 9 in 17.804 / 0.123 / 0.019 / 0.045 s), and all six serial timing gates (1.82 s), with zero budget overruns. App/trip lint passes once (15 s); benchmark Kotlin compilation passes (1 s). The two collection-budget JVM guards pass (2.46 s tier, 0.002 s each).
+
+Raw profile output, XML/logcat, targeted results and final host checks are archived under `build/phase6c-profile-final/`. No `make perf-timeline` or other device test tier is run in this repair. No app runtime change is made for P1, and no CPU-band baseline or threshold changes. Pixel remains running.

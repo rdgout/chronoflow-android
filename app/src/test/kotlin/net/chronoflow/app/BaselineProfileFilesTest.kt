@@ -25,6 +25,15 @@ class BaselineProfileFilesTest {
     }
 
     @Test
+    fun baselineProfileCoversTheListModePath() {
+        val profile = File(dir, "baseline-prof.txt").readText()
+        assertTrue(
+            "DayListRowKt is missing from baseline-prof.txt",
+            profile.contains("Lnet/chronoflow/feature/trip/list/DayListRowKt;"),
+        )
+    }
+
+    @Test
     fun startupProfileHoldsTheMainActivity() {
         val file = File(dir, "startup-prof.txt")
         assertThat(file.length()).isGreaterThan(0L)
