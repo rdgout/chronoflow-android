@@ -79,7 +79,12 @@ internal fun TodayTab(
                         owner.defaultViewModelCreationExtras,
                     ).apply { set(TodayDependenciesKey, dependencies) }
                 }
-            val model: TodayViewModel = viewModel(factory = TodayViewModel.Factory, extras = extras)
+            val model: TodayViewModel =
+                viewModel(
+                    key = todayViewModelKey(session?.snapshot?.epoch),
+                    factory = TodayViewModel.Factory,
+                    extras = extras,
+                )
             val actions =
                 remember(model, holder, session) {
                     todayActions(holder) { model.refresh { session?.sync?.refreshNow() } }
