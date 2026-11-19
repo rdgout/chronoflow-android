@@ -56,7 +56,10 @@ class TimelineInvalidationTest {
         if (::host.isInitialized) host.close()
     }
 
-    private fun start(summary: Boolean = false) {
+    private fun start(
+        summary: Boolean = false,
+        reduceMotion: Boolean = true,
+    ) {
         host = TimelineTestHost(startAtSummary = summary)
         val density = composeRule.density
         host.prewarm(
@@ -67,7 +70,7 @@ class TimelineInvalidationTest {
         composeRule.setContent {
             CompositionLocalProvider(LocalTimelineProbe provides probe) {
                 ProfileHost(DeviceProfiles.pixel8) {
-                    ChronoFlowTheme(reduceMotion = true) {
+                    ChronoFlowTheme(reduceMotion = reduceMotion) {
                         host.Content()
                         listState = host.listState
                     }
@@ -182,6 +185,45 @@ class TimelineInvalidationTest {
                 .values
                 .sum(),
         )
+    }
+
+    @Test fun scrollingWithinOneDayDoesNotRecomposePageChrome() {
+        start(reduceMotion = false)
+        val passes = composeRule.runOnIdle { CompositionPassProbe() }
+        try {
+            val header =
+                listState!!.layoutInfo.visibleItemsInfo.first {
+                    it.index ==
+                        host.model.index.headerIndex(
+                            dayIds[0],
+                        )
+                }
+            scrollBy(header.size + 1f)
+            settle()
+            assertTrue("positive control: crossing the header threshold schedules composition", passes.count > 0)
+            val before = probe.snapshot()
+            val beforePasses = passes.count
+
+            val offset = listState!!.firstVisibleItemScrollOffset
+            val anchor = host.vm.anchor.value
+            repeat(30) { scrollBy(composeRule.density.density) }
+            settle()
+            assertTrue("the measured scroll must move the list", listState!!.firstVisibleItemScrollOffset > offset)
+            assertEquals("the measured scroll stays within one day", anchor, host.vm.anchor.value)
+            assertEquals("within-day scrolling must not schedule composition passes", 0, passes.count - beforePasses)
+            val delta = probe.snapshot().delta(before)
+
+            assertNothingStaticMoved(before, delta)
+            assertEquals(
+                0,
+                delta.composed
+                    .filterKeys { it.kind in setOf(Kind.ANCHOR, Kind.COMPACT, Kind.PILLS) }
+                    .values
+                    .sum(),
+            )
+        } finally {
+            composeRule.runOnIdle { passes.close() }
+        }
     }
 
     @Test fun scrollingAndTicksInvalidateOnlyAffectedClockChildrenOnMinuteTick() {

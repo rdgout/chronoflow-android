@@ -13,8 +13,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
@@ -59,10 +59,13 @@ fun TripPageScreen(
     val listState = state.listState
     val dayId = state.anchor.dayID
     val header = if (dayId != null && plan?.layouts?.containsKey(dayId) == true) plan.index.headerIndex(dayId) else null
-    val scrolled by remember(listState, header) {
-        derivedStateOf {
-            listState != null && header != null &&
+    var scrolled by remember(listState, header) { mutableStateOf(false) }
+    // Composition-read derived state over layoutInfo still schedules passes when its value stays unchanged.
+    LaunchedEffect(listState, header) {
+        if (listState != null && header != null) {
+            snapshotFlow {
                 headerScrolled(listState.layoutInfo.visibleItemsInfo, listState.firstVisibleItemIndex, header)
+            }.collect { scrolled = it }
         }
     }
     val anchorDay = remember(plan, dayId) { plan?.prepared?.days?.firstOrNull { it.id == dayId } }
@@ -135,15 +138,16 @@ private fun ReadyTripPage(
     val anchorId = state.anchor.dayID
     val currentState = rememberUpdatedState(state)
     val currentEvent = rememberUpdatedState(onEvent)
-    val current by remember(listState, index, thresholdPx) {
-        derivedStateOf { currentDay(listState.layoutInfo.visibleItemsInfo, index, thresholdPx) }
-    }
 
     fun offsetDp(id: String): Double =
         with(density) {
             offsetInDayPx(listState.layoutInfo.visibleItemsInfo, index.timelineIndex(id)).toDp().value.toDouble()
         }
-    LaunchedEffect(current) { current?.let { currentEvent.value(TripPageEvent.Select(it, offsetDp(it))) } }
+    LaunchedEffect(listState, index, thresholdPx, density) {
+        snapshotFlow { currentDay(listState.layoutInfo.visibleItemsInfo, index, thresholdPx) }.collect { id ->
+            id?.let { currentEvent.value(TripPageEvent.Select(it, offsetDp(it))) }
+        }
+    }
     LaunchedEffect(listState, index, density) {
         snapshotFlow { listState.isScrollInProgress }.filter { !it }.collect {
             val id = currentState.value.anchor.dayID
@@ -276,23 +280,28 @@ private fun ReadyTripPage(
             }
         }
         val anchorHeader = anchorId?.takeIf { plan.layouts.containsKey(it) }?.let(index::headerIndex)
-        val alpha = {
-            if (anchorHeader == null) {
-                0f
-            } else {
-                compactAlpha(
-                    headerBottomPx(
-                        listState.layoutInfo.visibleItemsInfo,
-                        listState.firstVisibleItemIndex,
-                        anchorHeader,
-                    ),
-                    fadePx,
-                    reduceMotion,
-                )
+        val alpha =
+            remember(listState, anchorHeader, fadePx, reduceMotion) {
+                {
+                    if (anchorHeader == null) {
+                        0f
+                    } else {
+                        compactAlpha(
+                            headerBottomPx(
+                                listState.layoutInfo.visibleItemsInfo,
+                                listState.firstVisibleItemIndex,
+                                anchorHeader,
+                            ),
+                            fadePx,
+                            reduceMotion,
+                        )
+                    }
+                }
             }
+        var visible by remember(alpha) { mutableStateOf(false) }
+        LaunchedEffect(alpha) {
+            snapshotFlow { alpha() >= 1f }.collect { visible = it }
         }
-        val alphaNow = rememberUpdatedState(alpha)
-        val visible by remember { derivedStateOf { alphaNow.value() >= 1f } }
         val day = remember(days, anchorId) { days.firstOrNull { it.id == anchorId } }
         CompactHeader(
             day,
