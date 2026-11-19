@@ -6,6 +6,7 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.onChild
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import net.chronoflow.core.testing.tiers.Logic
@@ -28,6 +29,16 @@ class DayNavigationTest : PageComponentTest() {
         compose.onNodeWithTag("trip.days.next").assertIsEnabled().performClick()
         assertEquals(days[1].id, picked)
         compose.onNodeWithTag("trip.days.pill.0").assertIsSelected()
+        val previous =
+            compose
+                .onNodeWithTag(
+                    "trip.days.previous",
+                    useUnmergedTree = true,
+                ).onChild()
+                .getUnclippedBoundsInRoot()
+        val next = compose.onNodeWithTag("trip.days.next", useUnmergedTree = true).onChild().getUnclippedBoundsInRoot()
+        assertEquals(20f, (previous.right - previous.left).value, 0.5f)
+        assertEquals(20f, (next.right - next.left).value, 0.5f)
     }
 
     @Test fun changingSelectionScrollsThePillIntoTheViewport() {

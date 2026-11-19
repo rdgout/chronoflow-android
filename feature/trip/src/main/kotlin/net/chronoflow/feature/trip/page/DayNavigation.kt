@@ -79,6 +79,7 @@ fun DayNavigation(
             Modifier.testTag("trip.days.previous"),
             enabled =
                 selectedIndex > 0,
+            iconSize = TripPageMetrics.chevron,
         )
         LazyRow(
             Modifier.weight(1f).semantics { contentDescription = description }.testTag("trip.days"),
@@ -114,6 +115,7 @@ fun DayNavigation(
             { onSelect(days[selectedIndex + 1].id) },
             Modifier.testTag("trip.days.next"),
             enabled = selectedIndex + 1 < days.size,
+            iconSize = TripPageMetrics.chevron,
         )
     }
 }
