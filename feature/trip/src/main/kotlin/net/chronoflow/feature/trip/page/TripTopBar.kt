@@ -174,7 +174,7 @@ private fun DayMenuAnchor(
                     Icon(
                         LucideGlyphs.ChevronDown.imageVector(),
                         null,
-                        Modifier.size(PlanMetrics.sectionGap.dp),
+                        Modifier.size(TripPageMetrics.titleChevron),
                         tint = colors.mutedForeground,
                     )
                 }

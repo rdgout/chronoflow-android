@@ -19,4 +19,5 @@ object TripPageMetrics {
     val menuItemPaddingStart = 12.dp
     const val MENU_CHECK_STROKE = 2.6f
     val chevron = 20.dp
+    val titleChevron = 12.dp
 }
