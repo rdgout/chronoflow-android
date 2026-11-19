@@ -2,7 +2,11 @@ package net.chronoflow.benchmark
 
 import android.content.Intent
 import android.graphics.Rect
+import android.os.SystemClock
+import android.view.InputDevice
+import android.view.MotionEvent
 import androidx.benchmark.macro.MacrobenchmarkScope
+import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.StaleObjectException
 import androidx.test.uiautomator.UiDevice
@@ -32,6 +36,38 @@ fun UiDevice.topListBlock(): String? =
         ?.first
 
 private const val READY_WAIT_MS = 10_000L
+
+fun cancelStaleTouch() {
+    val now = SystemClock.uptimeMillis()
+    val pointer =
+        MotionEvent.PointerProperties().apply {
+            id = 0
+            toolType = MotionEvent.TOOL_TYPE_FINGER
+        }
+    val cancel =
+        MotionEvent.obtain(
+            now,
+            now,
+            MotionEvent.ACTION_CANCEL,
+            1,
+            arrayOf(pointer),
+            arrayOf(MotionEvent.PointerCoords()),
+            0,
+            0,
+            1f,
+            1f,
+            0,
+            0,
+            InputDevice.SOURCE_TOUCHSCREEN,
+            MotionEvent.FLAG_CANCELED,
+        )
+    try {
+        // Rejection is harmless when the previous run left no pointer down.
+        InstrumentationRegistry.getInstrumentation().uiAutomation.injectInputEvent(cancel, false)
+    } finally {
+        cancel.recycle()
+    }
+}
 
 fun UiDevice.toggleTripView(list: Boolean) {
     val toggle = By.res("trip.viewToggle").enabled(true)

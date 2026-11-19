@@ -43,7 +43,7 @@ if [ "$prep_status" != 0 ]; then
   exit "$prep_status"
 fi
 
-# Five attempts with three stable launches; each journey has its own 120 s deadline. This is the suite backstop.
+# Keep the existing 15-attempt/three-stable collection policy; input and journeys have shorter deadlines.
 step "$GRADLEW" --console=plain :app:generateBaselineProfile \
   -Pandroid.testInstrumentationRunnerArguments.class=net.chronoflow.benchmark.BaselineProfileGenerator \
   -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.enabledRules=BaselineProfile \

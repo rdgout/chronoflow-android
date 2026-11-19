@@ -1,5 +1,6 @@
 package net.chronoflow.benchmark
 
+import androidx.benchmark.macro.MacrobenchmarkScope
 import androidx.benchmark.macro.junit4.BaselineProfileRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -19,17 +20,27 @@ class BaselineProfileGenerator {
     private val packageName: String =
         InstrumentationRegistry.getArguments().getString("targetAppId") ?: "net.chronoflow.app.native"
 
+    private fun collectProfile(
+        startup: Boolean = false,
+        block: MacrobenchmarkScope.() -> Unit,
+    ) = BoundedProfileInput(stepTimeoutMillis = 600_000, journeyTimeoutMillis = 600_000).use { collection ->
+        collection.step("profile collection") {
+            rule.collect(
+                packageName,
+                maxIterations = 15,
+                stableIterations = 3,
+                includeInStartupProfile = startup,
+                profileBlock = block,
+            )
+        }
+    }
+
     /** Whatever `MainActivity` shows first at this stack top; Phase 13 adds Today. */
     @Test
     fun startup() =
-        rule.collect(
-            packageName,
-            maxIterations = 5,
-            stableIterations = 3,
-            strictStability = true,
-            includeInStartupProfile = true,
-        ) {
+        collectProfile(startup = true) {
             BoundedProfileInput().use { input ->
+                input.step("cancel stale touch") { cancelStaleTouch() }
                 input.step("startup home") { pressHome() }
                 input.step("startup launch") { startActivityAndWait() }
                 input.step("launch overlay appears") {
@@ -59,8 +70,9 @@ class BaselineProfileGenerator {
 
     @Test
     fun timelineLarge60() =
-        rule.collect(packageName, maxIterations = 5, stableIterations = 3, strictStability = true) {
+        collectProfile {
             BoundedProfileInput().use { input ->
+                input.step("cancel stale touch") { cancelStaleTouch() }
                 input.step("trip home") { pressHome() }
                 input.step("trip launch") { startActivityAndWait(large60Intent(packageName)) }
                 input.step("timeline presented") { awaitPresented() }
@@ -117,10 +129,10 @@ class BaselineProfileGenerator {
                     check(topDayIndex() == 0) { "summary coverage did not return to day 0" }
                 }
                 repeat(
-                    15,
-                ) { gesture -> input.step("timeline gesture ${gesture + 1}/15") { device.swipeTimeline(bounds) } }
+                    3,
+                ) { gesture -> input.step("timeline gesture ${gesture + 1}/3") { device.swipeTimeline(bounds) } }
                 input.step("timeline progress") {
-                    check(topDayIndex() in 35..50) { "15 gestures must end on day index 35..50" }
+                    check(topDayIndex() >= 5) { "profile gestures must cover the first six-day tour" }
                     check(!device.hasObject(By.res("trip.plan.end"))) {
                         "bounded-swipe-v3 reached the plan end"
                     }

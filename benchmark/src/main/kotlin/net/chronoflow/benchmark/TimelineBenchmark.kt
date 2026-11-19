@@ -17,7 +17,9 @@ import androidx.test.uiautomator.By
 import androidx.test.uiautomator.Direction
 import androidx.test.uiautomator.Until
 import net.chronoflow.core.plan.drawing.TimelineTraceNames
+import net.chronoflow.core.testing.BoundedProfileInput
 import net.chronoflow.core.testing.tiers.Perf
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -39,6 +41,10 @@ class TimelineBenchmark {
     private lateinit var pageBounds: Rect
     private var startDayIndex = -1
     private var startBlock: String? = null
+
+    @Before fun clearInterruptedGesture() {
+        BoundedProfileInput().use { input -> input.step("cancel stale touch") { cancelStaleTouch() } }
+    }
 
     @Test
     fun timelineFirstFrame() =
