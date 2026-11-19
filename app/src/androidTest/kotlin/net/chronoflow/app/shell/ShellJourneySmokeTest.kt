@@ -8,13 +8,13 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeDown
-import androidx.lifecycle.Lifecycle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import net.chronoflow.app.ChronoFlowApp
+import net.chronoflow.app.MainActivity
 import net.chronoflow.app.ioViolationsForTest
 import net.chronoflow.app.resetIoViolationsForTest
 import net.chronoflow.app.testing.ScreenTest
@@ -73,8 +73,14 @@ class ShellJourneySmokeTest : ScreenTest() {
         compose.onNodeWithTag("trips.screen").assertIsDisplayed()
         device.pressBack()
         compose.waitUntilExactlyOneExists(hasTestTag("route.today"), 3_000)
+        lateinit var activity: MainActivity
+        scenario.onActivity { activity = it }
         device.pressBack()
-        compose.waitUntil(3_000) { scenario.state == Lifecycle.State.DESTROYED }
+        compose.waitUntil(3_000) {
+            var finishing = false
+            instrumentation.runOnMainSync { finishing = activity.isFinishing }
+            finishing
+        }
         instrumentation.runOnMainSync { assertEquals(0, app.graph.ioViolationsForTest) }
         assertTrue(
             "journey took ${(System.nanoTime() - started) / 1_000_000} ms",
