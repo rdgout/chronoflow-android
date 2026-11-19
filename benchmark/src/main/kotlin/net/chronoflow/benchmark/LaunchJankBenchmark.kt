@@ -31,6 +31,9 @@ class LaunchJankBenchmark {
             setupBlock = { pressHome() },
         ) {
             startActivityAndWait()
-            device.wait(Until.gone(By.res("launch.opening")), 3500)
+            check(device.wait(Until.gone(By.res("launch.opening")), 3500))
+            check(device.wait(Until.hasObject(By.res("welcome.signIn")), 1000))
+            // Sign in remains on Welcome, so this intentionally times out after the intro has ended.
+            device.wait(Until.gone(By.res("welcome.signIn")), 900)
         }
 }

@@ -42,6 +42,13 @@ class LaunchControllerLifecycleTest {
                 }, scope = backgroundScope, clockFactory = { clock }, readinessFactory = { source })
             controller.captureReduceMotion(true, false)
             assertEquals(LaunchKind.Cold, controller.onActivityCreated(null, false))
+            controller.onOverlayGeometry(
+                net.chronoflow.feature.launch.model
+                    .LaunchSize(390.0, 844.0),
+                net.chronoflow.feature.launch.model.MoonTarget
+                    .Insets(0.0, 0.0, 0.0, 0.0),
+                28.0,
+            )
             controller.onFirstDraw(Rect())
             runCurrent()
             val coordinator = controller.coordinator
@@ -71,6 +78,13 @@ class LaunchControllerLifecycleTest {
                 }, scope = backgroundScope, clockFactory = { clock }, readinessFactory = { source })
             controller.captureReduceMotion(true, false)
             controller.onActivityCreated(null, false)
+            controller.onOverlayGeometry(
+                net.chronoflow.feature.launch.model
+                    .LaunchSize(390.0, 844.0),
+                net.chronoflow.feature.launch.model.MoonTarget
+                    .Insets(0.0, 0.0, 0.0, 0.0),
+                28.0,
+            )
             controller.onFirstDraw(Rect())
             runCurrent()
             assertTrue(clock.pendingSleeps > 0)
@@ -107,6 +121,13 @@ class LaunchControllerLifecycleTest {
                 })
             controller.captureReduceMotion(true, false)
             controller.onActivityCreated(null, false)
+            controller.onOverlayGeometry(
+                net.chronoflow.feature.launch.model
+                    .LaunchSize(390.0, 844.0),
+                net.chronoflow.feature.launch.model.MoonTarget
+                    .Insets(0.0, 0.0, 0.0, 0.0),
+                28.0,
+            )
             controller.onFirstDraw(Rect())
             runCurrent()
             controller.onActivityDestroyed(true, false)
@@ -151,6 +172,13 @@ class LaunchControllerLifecycleTest {
                 )
             controller.captureReduceMotion(true, false)
             controller.onActivityCreated(null, false)
+            controller.onOverlayGeometry(
+                net.chronoflow.feature.launch.model
+                    .LaunchSize(390.0, 844.0),
+                net.chronoflow.feature.launch.model.MoonTarget
+                    .Insets(0.0, 0.0, 0.0, 0.0),
+                28.0,
+            )
             controller.onFirstDraw(Rect())
             runCurrent()
             assertTrue(controller.overlayActive)
@@ -201,6 +229,13 @@ class LaunchControllerLifecycleTest {
             )
         controller.captureReduceMotion(true, false)
         assertEquals(LaunchKind.Cold, controller.onActivityCreated(null, false, overrides))
+        controller.onOverlayGeometry(
+            net.chronoflow.feature.launch.model
+                .LaunchSize(390.0, 844.0),
+            net.chronoflow.feature.launch.model.MoonTarget
+                .Insets(0.0, 0.0, 0.0, 0.0),
+            28.0,
+        )
         controller.onFirstDraw(Rect())
         runCurrent()
         assertNull(controller.route)

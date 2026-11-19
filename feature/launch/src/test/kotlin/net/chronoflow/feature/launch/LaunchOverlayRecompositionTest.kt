@@ -41,7 +41,7 @@ class LaunchOverlayRecompositionTest {
                     pendingFrames--
                 }
             })
-        compose.setContent { LaunchOverlay(controller) }
+        compose.setContent { ProfiledLaunchOverlay(controller) }
         firstDraw(compose, controller)
         repeat(330) {
             compose.mainClock.advanceTimeBy(8, ignoreFrameDuration = true)

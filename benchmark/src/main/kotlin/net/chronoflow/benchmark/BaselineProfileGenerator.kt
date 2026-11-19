@@ -26,7 +26,10 @@ class BaselineProfileGenerator {
             startActivityAndWait()
             check(device.wait(Until.hasObject(By.res("launch.opening")), 5000))
             check(device.wait(Until.gone(By.res("launch.opening")), 5000))
-            check(device.wait(Until.hasObject(By.res("route.welcome")), 2000))
+            check(device.wait(Until.hasObject(By.res("welcome.wordmark")), 2000))
+            check(device.wait(Until.hasObject(By.res("welcome.signIn")), 1000))
+            // Keep collection open through the first process intro, whose final item lands after hand-off.
+            device.wait(Until.gone(By.res("welcome.signIn")), 900)
         }
 
     @Test

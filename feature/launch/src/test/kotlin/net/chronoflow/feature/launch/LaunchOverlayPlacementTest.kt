@@ -26,7 +26,7 @@ class LaunchOverlayPlacementTest {
     @Test fun layoutReleasesSplashBeforeFirstDraw() {
         val controller = launchController(compose)
         assertTrue(controller.holdsSystemSplash())
-        compose.setContent { LaunchOverlay(controller) }
+        compose.setContent { ProfiledLaunchOverlay(controller) }
         firstDraw(compose, controller)
         assertTrue(controller.overlayPlaced)
         assertFalse(controller.holdsSystemSplash())

@@ -43,7 +43,7 @@ class LaunchOverlayGuardTest(
         val fontScale = mutableStateOf(case.profile.fontScale.coerceAtMost(1.3f))
         compose.setContent {
             CompositionLocalProvider(LocalDensity provides Density(case.profile.density, fontScale.value)) {
-                LaunchOverlay(controller)
+                ProfiledLaunchOverlay(controller, case.profile)
             }
         }
         firstDraw(compose, controller)

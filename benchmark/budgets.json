@@ -95,6 +95,38 @@
       "emulator": {
         "report": true
       }
+    },
+    {
+      "test": "startupCold",
+      "metric": "welcomeInteractiveMs",
+      "stat": "each",
+      "unit": "ms",
+      "reference": {
+        "report": true
+      },
+      "lowEnd": {
+        "report": true
+      },
+      "emulator": {
+        "min": 2549,
+        "hard": 2567.6666655555555
+      }
+    },
+    {
+      "test": "startupCold",
+      "metric": "introLastItemMs",
+      "stat": "each",
+      "unit": "ms",
+      "reference": {
+        "report": true
+      },
+      "lowEnd": {
+        "report": true
+      },
+      "emulator": {
+        "min": 3199,
+        "hard": 3217.6666655555555
+      }
     }
   ],
   "timeline": [
@@ -420,5 +452,6 @@
         "report": true
       }
     }
-  ]
+  ],
+  "welcomeEmulatorRefreshHz": 60.000004
 }

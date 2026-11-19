@@ -54,7 +54,7 @@ class RoutePlaceholderGuardTest(
                 DeviceProfiles.foldInner,
                 DeviceProfiles.largeFont,
             ).flatMap { profile ->
-                listOf(LaunchRoute.Welcome, LaunchRoute.Today).flatMap { route ->
+                listOf(LaunchRoute.Today).flatMap { route ->
                     listOf(false, true).map { dark -> arrayOf<Any>(profile, route, dark) }
                 }
             }

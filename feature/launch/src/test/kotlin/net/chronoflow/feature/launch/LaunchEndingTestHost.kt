@@ -66,7 +66,7 @@ internal class LaunchEndingTestHost(
 
     init {
         compose.mainClock.autoAdvance = false
-        compose.setContent { if (controller.overlayActive) key(generation) { LaunchOverlay(controller) } }
+        compose.setContent { if (controller.overlayActive) key(generation) { ProfiledLaunchOverlay(controller) } }
         firstDraw(compose, controller)
     }
 

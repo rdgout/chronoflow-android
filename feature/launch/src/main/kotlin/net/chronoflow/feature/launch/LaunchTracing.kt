@@ -16,14 +16,18 @@ interface LaunchTracing {
     fun beginExit()
 
     fun endExit()
+
+    fun beginIntro() {}
+
+    fun endIntro() {}
 }
 
 internal class LaunchTraceSession(
     private val begin: (String, Int) -> Unit,
     private val end: (String, Int) -> Unit,
 ) : LaunchTracing {
-    private val began = BooleanArray(4)
-    private val ended = BooleanArray(4)
+    private val began = BooleanArray(6)
+    private val ended = BooleanArray(6)
 
     override fun beginLaunch() = beginOnce("launch", 1)
 
@@ -40,6 +44,10 @@ internal class LaunchTraceSession(
     override fun beginExit() = beginOnce("exit", 4)
 
     override fun endExit() = endOnce("exit", 4)
+
+    override fun beginIntro() = beginOnce("intro", 6)
+
+    override fun endIntro() = endOnce("intro", 6)
 
     private fun beginOnce(
         name: String,

@@ -80,5 +80,12 @@ class LaunchDiagnosticsTests {
         assertNull(LaunchDiagnosticsParser.overrides(emptyMap()).readiness)
     }
 
-    @Test fun welcomeModeIsDeferred() = assertNull(LaunchDiagnosticsParser.parse(mapOf("cf.mode" to "welcome")).mode)
+    @Test fun welcomeModeParses() =
+        assertEquals(
+            LaunchMode.Welcome,
+            LaunchDiagnosticsParser
+                .parse(
+                    mapOf("cf.mode" to "welcome"),
+                ).mode,
+        )
 }

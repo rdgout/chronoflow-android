@@ -70,6 +70,20 @@ System overrides: checked switch track = dawn and thumb = dawnForeground; progre
 
 No token is changed to repair a board contrast gap. `dawnText` is used for text and selected checks; `dawn` is a fill.
 
+## Welcome contrast exceptions (Phase 3c)
+
+Keep the board colors for these five Welcome elements (OQ-A108), following iOS `f391a1fa:plan.md:845–849` and research `05-launch-auth.md` §4.5. These are accepted board exceptions, not claims of Android audit compliance; no corrective design or token change is introduced.
+
+| Element | Pair | Android evidence |
+|---|---|---|
+| Eyebrow | `dawn` on sky | not measured on Android |
+| Headline | `skyTitle` on sky | Existing `ContrastTest` passes across `skyTop`–`skyMid` in both themes; the full Welcome placement is not measured on Android |
+| Copy | `skyCopy` on `skyCopyBackground` | not measured on Android |
+| Sign in | `skyCopy` on `skyCopyBackground` | not measured on Android |
+| Plan my trip | `dawnForeground` on `dawn`; `dawn` pill against sky | Existing token contrast is 6.76:1 light / 9.54:1 dark for the text; pill against sky is not measured on Android |
+
+The iOS SE nl measurement for Plan my trip was 6.76:1 text on pill and 1.40:1 pill against sky. Phase 2's existing token tests remain unchanged; there are no additional Welcome contrast rows.
+
 ## Motion, focus, haptics and secrets
 
 Press feedback uses one graphics layer with scale 0.97, alpha 0.85, 120 ms and the generated cubic Bézier curve. Reduce Motion snaps alpha and keeps scale 1. Spinners remain animated; skeletons are always static, as on iOS. Material controls keep their native motion and ripple.
