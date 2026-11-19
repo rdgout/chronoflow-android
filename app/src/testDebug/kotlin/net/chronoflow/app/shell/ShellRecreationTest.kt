@@ -17,6 +17,9 @@ import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.lifecycle.HasDefaultViewModelProviderFactory
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
@@ -72,6 +75,7 @@ class ShellRecreationTest {
             flush()
             val model = checkNotNull(fixture.model)
             val holder = checkNotNull(fixture.holder)
+            assertSame(controller.get().defaultViewModelProviderFactory, fixture.tripFactory)
             compose.runOnIdle { model.refresh() }
             flush()
             assertTrue(model.refreshState.value.refreshing)
@@ -93,6 +97,7 @@ class ShellRecreationTest {
             compose.onNodeWithTag("route.tripPage").assertExists()
             compose.onNodeWithTag("tab.trips").performClick()
             flush()
+            assertSame(controller.get().defaultViewModelProviderFactory, fixture.tripFactory)
             assertSame(model, fixture.model)
             assertTrue(model.refreshState.value.refreshing)
             assertFalse(fixture.refreshStopped.isCompleted)
@@ -115,6 +120,7 @@ internal class ShellRecreationFixture : TripsDependencies {
     val root = mutableStateOf(RootState(Route.Trips, 1))
     var holder: ShellViewModel? = null
     var model: TripsViewModel? = null
+    var tripFactory: ViewModelProvider.Factory? = null
     val refreshStopped = CompletableDeferred<Unit>()
     private val refreshResult = CompletableDeferred<SyncResult?>()
     val factory = viewModelFactory { initializer { TripsViewModel(this@ShellRecreationFixture) } }
@@ -152,7 +158,15 @@ internal class ShellRecreationActivity : ComponentActivity() {
                                 today = {},
                                 trips = {
                                     val model: TripsViewModel = viewModel(factory = fixture.factory)
-                                    SideEffect { fixture.model = model }
+                                    val owner =
+                                        checkNotNull(
+                                            LocalViewModelStoreOwner.current,
+                                        ) as HasDefaultViewModelProviderFactory
+                                    val factory = owner.defaultViewModelProviderFactory
+                                    SideEffect {
+                                        fixture.model = model
+                                        fixture.tripFactory = factory
+                                    }
                                     Box(Modifier.fillMaxSize().testTag("trips.screen"))
                                 },
                                 settings = {},

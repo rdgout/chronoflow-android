@@ -15,6 +15,10 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.HasDefaultViewModelProviderFactory
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.CreationExtras
+import androidx.lifecycle.viewmodel.compose.rememberViewModelStoreProvider
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavEntry
@@ -142,11 +146,17 @@ private fun rememberTabEntries(
                 NavEntry(route, contentKey = "$index:${route.stateKey()}") { currentContent.value(it) }
             }
         }
+    val parent = checkNotNull(LocalViewModelStoreOwner.current) as? HasDefaultViewModelProviderFactory
+    val provider = rememberViewModelStoreProvider(
+        holder.owner(tab),
+        defaultCreationExtras = parent?.defaultViewModelCreationExtras ?: CreationExtras.Empty,
+        defaultFactory = parent?.defaultViewModelProviderFactory ?: remember { ViewModelProvider.NewInstanceFactory() },
+    )
     return rememberDecoratedNavEntries(
         entries,
         listOf(
             rememberSaveableStateHolderNavEntryDecorator(),
-            rememberViewModelStoreNavEntryDecorator(viewModelStoreOwner = holder.owner(tab)),
+            rememberViewModelStoreNavEntryDecorator(provider),
         ),
     )
 }
