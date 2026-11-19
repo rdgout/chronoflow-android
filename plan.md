@@ -2427,7 +2427,7 @@ Implementation commits (brief §7):
   - A refused change shows a Snackbar; a step that is gone shows the `SheetStates` state.
   - The sheet is part of the route key.
 - [x] **Legend sheet** (`PlanLegend`). Task 5: full steps legend and trip-page priority legend.
-- [ ] **Trip actions sheet** (`TripActions`, `TripActionsNoPlan`). Edit and Duplicate go to wizard seams until 9h, and are disabled offline or when the trip is not editable. There is no calendar, complete or delete.
+- [x] **Trip actions sheet** (`TripActions`, `TripActionsNoPlan`). Task 8. Edit and Duplicate go to wizard seams until 9h, and are disabled offline or when the trip is not editable. There is no calendar, complete or delete.
 - [ ] **Accessibility and input.**
   - TalkBack custom actions (Mark as done, Skip) on timeline targets and list rows, and a defined focus order.
   - Keyboard and D-pad traversal and activation.

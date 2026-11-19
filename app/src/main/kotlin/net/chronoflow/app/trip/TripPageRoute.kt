@@ -50,6 +50,7 @@ fun TripPageRoute(
     onTrips: (() -> Unit)? = null,
     onToday: (() -> Unit)? = null,
     onRouteChange: (Route.TripPage) -> Unit = {},
+    onWizard: (net.chronoflow.core.navigation.WizardMode) -> Unit = {},
 ) {
     val appContext = LocalContext.current.applicationContext
     val graph = (appContext as ChronoFlowApp).graph
@@ -85,6 +86,7 @@ fun TripPageRoute(
             onSettings,
             onTrips = onTrips,
             onToday = onToday,
+            onWizard = onWizard,
         )
     }
 }

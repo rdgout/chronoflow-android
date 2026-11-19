@@ -85,6 +85,7 @@ internal fun AppShell(
                         onTrips = { holder.leaveTripPage(ShellTab.Trips) },
                         onToday = { holder.leaveTripPage(ShellTab.Today) },
                         onRouteChange = { holder.replaceRoute(route, it) },
+                        onWizard = { holder.push(Route.Wizard(it)) },
                     )
                 } else {
                     render.value(route)

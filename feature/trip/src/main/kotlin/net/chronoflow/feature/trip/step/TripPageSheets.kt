@@ -17,10 +17,14 @@ import net.chronoflow.feature.trip.page.TripPageViewModel
 
 @Suppress("ktlint:compose:vm-forwarding-check", "ktlint:compose:modifier-missing-check")
 @Composable
-fun TripPageSheets(vm: TripPageViewModel) {
+fun TripPageSheets(
+    vm: TripPageViewModel,
+    onWizard: (net.chronoflow.core.navigation.WizardMode) -> Unit = {},
+) {
     val sheet by vm.sheet.collectAsStateWithLifecycle()
     val state by vm.stepSheet.collectAsStateWithLifecycle()
     val busy by vm.checkBusy.collectAsStateWithLifecycle()
+    val actions by vm.tripActions.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
     val dismiss: () -> Unit = {
@@ -43,6 +47,35 @@ fun TripPageSheets(vm: TripPageViewModel) {
             CfModalBottomSheet(vm::dismissSheet, sheetState = sheetState) { LegendSheetContent(dismiss) }
         }
 
-        TripSheet.TripActions, null -> {}
+        TripSheet.TripActions -> {
+            actions?.let { ui ->
+                val actionState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+                val close: () -> Unit = { scope.launch { actionState.hide() }.invokeOnCompletion { vm.dismissSheet() } }
+                CfModalBottomSheet(vm::dismissSheet, sheetState = actionState) {
+                    net.chronoflow.feature.trip.actions.TripActionsContent(ui, { action ->
+                        if (ui.availability.enabled(action)) {
+                            scope.launch {
+                                try {
+                                    actionState.hide()
+                                } finally {
+                                    vm.dismissSheet()
+                                }
+                                onWizard(
+                                    if (action == net.chronoflow.core.plan.actions.TripAction.Edit) {
+                                        net.chronoflow.core.navigation.WizardMode
+                                            .Edit(ui.tripId)
+                                    } else {
+                                        net.chronoflow.core.navigation.WizardMode
+                                            .Duplicate(ui.tripId)
+                                    },
+                                )
+                            }
+                        }
+                    }, close)
+                }
+            }
+        }
+
+        null -> {}
     }
 }

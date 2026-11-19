@@ -94,17 +94,19 @@ fun TripPage(
     onBack: () -> Unit,
     onSettings: (() -> Unit)?,
     onLegend: (() -> Unit)? = viewModel::openLegend,
-    onActions: (() -> Unit)? = null,
+    onActions: (() -> Unit)? = viewModel::openTripActions,
     onRefreshResult: (SyncResult?) -> Unit = {},
     onTrips: (() -> Unit)? = null,
     onToday: (() -> Unit)? = null,
+    onWizard: (net.chronoflow.core.navigation.WizardMode) -> Unit = {},
 ) {
+    val tripActions by viewModel.tripActions.collectAsStateWithLifecycle()
     val state =
         rememberTripPageScreenState(
             viewModel,
             onSettings != null,
             onLegend != null,
-            onActions != null,
+            onActions != null && tripActions != null,
             onToday != null,
         )
     val scope = rememberCoroutineScope()
@@ -179,7 +181,7 @@ fun TripPage(
         }
     TripPageScreen(state, onEvent)
     net.chronoflow.feature.trip.step
-        .TripPageSheets(viewModel)
+        .TripPageSheets(viewModel, onWizard)
 }
 
 @Composable
