@@ -2406,6 +2406,7 @@ Implementation commits (brief §7):
   - [x] Task 1: pure step-sheet, check-action, legend-copy and trip-action models.
   - [x] Task 2: per-session refused-change model with delayed, replay-safe presentation.
   - [x] Task 3: shared priority components and sheet icons.
+  - [x] Task 4: reusable step/gone content, focus, announcements and refusal feedback.
   - Priority, the Now badge, interval, time left, reasons and instructions.
   - Actionable steps get Mark as done, Skip and Undo, through the marks repository and the outbox.
   - A refused change shows a Snackbar; a step that is gone shows the `SheetStates` state.
