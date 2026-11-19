@@ -2310,17 +2310,17 @@ Implementation commits (brief §7):
 - [x] **Page chrome**, per `Plan`, `PlanScrolled` and `PlanTimelineTop`: the top bar, summary card, designed sticky `DayHeader`, the compact header line on scroll, lane headings, the `NowLine` placement, the day menu and pills (`PlanDayMenu`), and jumps.
 - [x] **End of plan.** The end card (`PlanEnd`, `PlanEndNoText`) and the hidden-steps notice.
 - [x] **Opening position.** `openingDay`, and the summary-position seed `CF_PLAN_TEST_POSITION=summary`.
-- [ ] **Perf.**
+- [x] **Perf.**
   - The perf entry now opens this page instead of the 1d host.
   - Re-run `make perf-timeline`. Every emulator gate of "Where gates apply" must pass; this first run of the real page (Page = `trip`) starts the baseline that 6c–6e are compared with. Trend flags are listed in the commit body and do not fail; record the rows in `docs/perf-timeline.md`.
   - Regenerate the baseline profile.
-- [ ] **Tests.**
+- [x] **Tests.**
   - ViewModel cases: the revision guard, lease release and the anchor.
   - The 1d invalidation test, re-run on the real page.
   - Guards for each board.
   - A seeded emulator screen test that opens the page at the summary position.
 
-**Validation (2026-11-19).** Implementation and host checks are recorded in the brief's Results. All 64 board guards and 16 captures pass. Perf stays open for the user's measurements/profile generation. Tests stays open for the corrected native summary journey's user-run result; its once-run predecessor exposed the seed/back-stack mismatch in OQ-A269. The single `make quick` run reports the intentionally stale profiles and missing wrapper guards; the latter now pass their focused checks. Profile regeneration is still needed before quick can pass.
+**Validation (2026-11-19).** Implementation and host checks are recorded in the brief's Results. All 64 board guards and 16 captures pass. The summary-position emulator test passes. The orchestrator ran `make perf-timeline` at 9c60131: every emulator gate passes, and the row starts the `trip` baseline (`docs/perf-timeline.md`). The review fixed a per-frame chrome recomposition (6346 → 571 per scroll iteration) found by the first run. Profiles were regenerated, and `make check` passes.
 
 **Acceptance**
 - The timeline budgets hold through the real page.
