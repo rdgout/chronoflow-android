@@ -36,10 +36,14 @@ class TripPageTestRig(
     clockStart: Instant? = null,
     startAtSummary: Boolean = false,
     val language: Language = Language.En,
+    initialTimeline: Boolean = true,
     metrics: suspend () -> TextMetrics = { FakeTextMetrics() },
+    initialSnapshot: net.chronoflow.core.model.store.TripPlanSnapshot? = null,
+    fetchDetail: suspend (String) -> Unit = {},
+    makePath: () -> net.chronoflow.core.sync.SyncPathMonitoring? = { null },
 ) {
     val detail = LargeTimelineFixtures.fixture(fixture).detail
-    val source = FakeTripPageSource.fixture(fixture)
+    val source = initialSnapshot?.let { FakeTripPageSource(it) } ?: FakeTripPageSource.fixture(fixture)
     val clock = FakePlanClock(clockStart ?: checkNotNull(planDate(detail.plan.days[0].startUtc)))
     val cache = DayDrawingCache(maxBytes = 64L * 1024 * 1024, maxEntries = 64)
     private val decoder = PlanDecoder(Dispatchers.Unconfined)
@@ -55,7 +59,13 @@ class TripPageTestRig(
                         TripPageArgs("fixture-$fixture", startAtSummary = startAtSummary),
                         source,
                         clock,
-                        DefaultTripPlanPipeline(decoder, preparer, TimelineTracer.None) {},
+                        DefaultTripPlanPipeline(
+                            decoder,
+                            preparer,
+                            catalogs,
+                            Dispatchers.Unconfined,
+                            TimelineTracer.None,
+                        ) {},
                         SavedStateHandle(),
                         language,
                         Dispatchers.Unconfined,
@@ -64,6 +74,9 @@ class TripPageTestRig(
                         cache,
                         { CopyLineFormatter(catalogs.catalog()) },
                         TimelineTracer.None,
+                        initialTimeline = initialTimeline,
+                        fetchDetail = fetchDetail,
+                        makePath = makePath,
                     )
                 }
             },
@@ -77,17 +90,44 @@ class TripPageTestRig(
         when (event) {
             is TripPageEvent.Jump -> vm.jump(event.dayId)
             is TripPageEvent.Select -> vm.select(event.dayId, event.offsetDp)
+            TripPageEvent.ToggleView -> vm.toggleView()
             TripPageEvent.SaveAnchor -> vm.saveAnchor()
             is TripPageEvent.Block -> vm.selectBlock(event.id)
             else -> Unit
         }
     }
 
-    @Composable fun Content() {
-        val state = rememberTripPageScreenState(vm)
+    @Composable fun Content(
+        pageState: net.chronoflow.core.plan.trippage.TripPageState? = null,
+        onEvent: ((TripPageEvent) -> Unit)? = null,
+        canToday: Boolean = false,
+    ) {
+        val base = rememberTripPageScreenState(vm, canToday = canToday)
+        val state =
+            if (pageState == null) {
+                base
+            } else {
+                TripPageScreenState(
+                    base.ui.copy(state = pageState),
+                    base.anchor,
+                    base.listState.takeIf { pageState == net.chronoflow.core.plan.trippage.TripPageState.Ready },
+                    base.clocks,
+                    base.summaryClock,
+                    base.repository,
+                    base.firstFrame,
+                    base.commands,
+                    base.prefetch,
+                    base.refresh,
+                    base.refreshProbe,
+                    base.canSettings,
+                    base.canLegend,
+                    base.canActions,
+                    base.timeline,
+                )
+            }
         listState = state.listState
         screenState = state
-        TripPageScreen(state, events)
+        TripPageScreen(state, onEvent ?: events)
     }
 
     fun dayStart(position: Int): Instant =

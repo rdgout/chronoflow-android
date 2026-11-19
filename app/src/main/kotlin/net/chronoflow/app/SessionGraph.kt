@@ -34,9 +34,10 @@ data class SessionGraph(
     fun tripPlanPipeline(
         compute: CoroutineDispatcher,
         catalogs: CopyCatalogProvider,
+        io: CoroutineDispatcher,
     ): DefaultTripPlanPipeline {
         val decoder = planDecoder ?: PlanDecoder(compute).also { planDecoder = it }
         val preparer = planPreparer ?: PlanPreparer(decoder, catalogs, compute).also { planPreparer = it }
-        return DefaultTripPlanPipeline(decoder, preparer)
+        return DefaultTripPlanPipeline(decoder, preparer, catalogs, io)
     }
 }

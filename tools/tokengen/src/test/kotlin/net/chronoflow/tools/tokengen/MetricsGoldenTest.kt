@@ -59,8 +59,16 @@ class MetricsGoldenTest {
     @Test
     fun overlayValuesAreEmitted() {
         val plan = planTokens(repoRoot)
-        assertEquals(listOf("minTouchTarget"), plan.overlay.map { it.name })
-        assertEquals(48.0, plan.overlay.single().value, 0.0)
+        assertEquals(
+            mapOf(
+                "minTouchTarget" to 48.0,
+                "listStatusIcon" to 18.0,
+                "listStatusStroke" to 2.5,
+                "errorPageHorizontal" to 24.0,
+                "errorPageBottom" to 48.0,
+            ),
+            plan.overlay.associate { it.name to it.value },
+        )
         assertEquals(44.0, plan.metrics.first { it.name == "touch" }.value, 0.0)
         assertEquals(true, plan.overlay.all { it.replaces.isNotBlank() })
         val emitted = String(tokenOutputs(repoRoot).getValue(PLAN_METRICS_PATH))

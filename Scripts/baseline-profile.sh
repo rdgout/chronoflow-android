@@ -43,7 +43,7 @@ if [ "$prep_status" != 0 ]; then
   exit "$prep_status"
 fi
 
-# Each collect runs up to 15 launches, far over the 60 s default; raise the cap rather than lower maxIterations.
+# Three collection attempts; the generator derives its deadline from the per-iteration caps.
 step "$GRADLEW" --console=plain :app:generateBaselineProfile \
   -Pandroid.testInstrumentationRunnerArguments.class=net.chronoflow.benchmark.BaselineProfileGenerator \
   -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.enabledRules=BaselineProfile \
@@ -66,4 +66,6 @@ required = ("TripPageKt", "TripPageScreenKt", "DayHeaderKt", "SummaryCardKt")
 missing = [name for name in required if f"Lnet/chronoflow/feature/trip/page/{name};" not in profile]
 if missing:
     raise SystemExit("baseline-profile: missing trip page coverage: " + ", ".join(missing))
+if "Lnet/chronoflow/feature/trip/list/DayListRowKt;" not in profile:
+    raise SystemExit("baseline-profile: missing list row coverage: DayListRowKt")
 PYTHON

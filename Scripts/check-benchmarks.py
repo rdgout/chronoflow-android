@@ -282,7 +282,7 @@ def check_timeline(args, budgets):
     failed = False
     band_missed = False
     features = {}
-    for test in ("timelineFirstFrame", "timelineScroll", "timelineLastDay"):
+    for test in ("timelineFirstFrame", "timelineScroll", "timelineLastDay", "listScroll"):
         if test not in benches:
             print("%s metric: test %s is absent from the results" % (label, test), file=sys.stderr)
             failed = True
@@ -323,6 +323,9 @@ def check_timeline(args, budgets):
                 continue
         if metric in ("timelineBuildCount", "timelineReplayCount") and len(vals) != 3:
             print("%s metric: %s needs all three iterations" % (label, metric), file=sys.stderr)
+            failed = True
+        if test == "listScroll" and metric in ("memoryRssAnonMaxKb", "frameCount", "jankPercent", "hitchRatioMsPerS") and len(vals) != 3:
+            print("%s metric: listScroll %s needs all three iterations" % (label, metric), file=sys.stderr)
             failed = True
         gate = timeline_gate(entry, args.device_class)
         feature = None

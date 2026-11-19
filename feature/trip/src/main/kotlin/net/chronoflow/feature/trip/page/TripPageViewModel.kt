@@ -5,12 +5,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
@@ -29,7 +31,7 @@ import net.chronoflow.core.plan.drawing.TextMetrics
 import net.chronoflow.core.plan.drawing.TimelineTraceNames
 import net.chronoflow.core.plan.generated.TimelinePalette
 import net.chronoflow.core.plan.trippage.TripPageAnchor
-import net.chronoflow.core.plan.trippage.TripPageFetch
+import net.chronoflow.core.plan.trippage.TripPageInputs
 import net.chronoflow.core.plan.trippage.TripPageState
 import net.chronoflow.core.plan.trippage.activeZone
 import net.chronoflow.core.plan.trippage.dualClockValues
@@ -37,9 +39,13 @@ import net.chronoflow.core.plan.trippage.openingDay
 import net.chronoflow.core.plan.trippage.projectDayClocks
 import net.chronoflow.core.plan.trippage.replacementAnchor
 import net.chronoflow.core.sync.PlanLease
+import net.chronoflow.core.sync.SyncEvent
+import net.chronoflow.core.sync.SyncPathMonitoring
 import net.chronoflow.core.sync.SyncResult
+import net.chronoflow.core.sync.SyncState
 import net.chronoflow.core.sync.refresh.RefreshDebugProbe
 import net.chronoflow.core.sync.refresh.RefreshFeedbackModel
+import net.chronoflow.feature.trip.state.TripPageFetchModel
 import net.chronoflow.feature.trip.timeline.DayClocks
 import net.chronoflow.feature.trip.timeline.DrawingRequest
 import net.chronoflow.feature.trip.timeline.TimelineDrawingRepository
@@ -52,6 +58,7 @@ data class TripPageUi(
     val state: TripPageState,
     val title: TripTitleParts?,
     val plan: ReadyPlan?,
+    val page: TripPageData = TripPageData(),
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -69,6 +76,12 @@ class TripPageViewModel(
     private val formatter: suspend () -> CopyLineFormatter,
     private val tracer: TimelineTracer = TimelineTracer.Android,
     val refreshProbe: RefreshDebugProbe = RefreshDebugProbe.None,
+    fetchDetail: suspend (String) -> Unit = {},
+    makePath: () -> SyncPathMonitoring? = { null },
+    syncEvents: Flow<SyncEvent> = emptyFlow(),
+    epoch: Long = 0,
+    initiallySyncCompleted: Boolean = true,
+    initialTimeline: Boolean = true,
 ) : ViewModel() {
     private val lease: PlanLease
 
@@ -90,6 +103,23 @@ class TripPageViewModel(
     val scrollCommands: Flow<ScrollCommand> = commands.receiveAsFlow()
     private val planFlow = MutableStateFlow<ReadyPlan?>(null)
     private var lastOutput: PipelineOutput? = null
+    private val outputFlow = MutableStateFlow<PipelineOutput?>(null)
+    private var hasLoaded = false
+    private val awaitingSync = MutableStateFlow(args.awaitingSync)
+    private val syncCompleted = MutableStateFlow(initiallySyncCompleted)
+    private val fetchModel = TripPageFetchModel(args.tripId, fetchDetail, makePath(), viewModelScope)
+    val online = fetchModel.online
+    private val _timeline = MutableStateFlow(initialTimeline)
+    val timeline: StateFlow<Boolean> = _timeline.asStateFlow()
+
+    fun toggleView() {
+        _timeline.value = !_timeline.value
+    }
+
+    fun retry() {
+        fetchModel.retry()
+    }
+
     private var offset = savedAnchor.offset
     private var opened = false
     private var firstOpen = true
@@ -145,8 +175,31 @@ class TripPageViewModel(
                     }
                     planFlow.value = output.plan
                     lastOutput = output
+                    hasLoaded = true
+                    if (output.trip != null) awaitingSync.value = false
+                    outputFlow.value = output
                     recompute()
                 }
+        }
+        viewModelScope.launch {
+            combine(fetchModel.online, fetchModel.fetch, awaitingSync, syncCompleted) { _, _, _, _ -> Unit }
+                .collect { recompute() }
+        }
+        viewModelScope.launch {
+            syncEvents.collect { event ->
+                if (event is SyncEvent.Finished && event.epoch == epoch && event.result.state == SyncState.Idle) {
+                    syncCompleted.value = true
+                }
+            }
+        }
+    }
+
+    suspend fun runFetch() {
+        fetchModel.start()
+        try {
+            awaitCancellation()
+        } finally {
+            fetchModel.stop()
         }
     }
 
@@ -154,17 +207,19 @@ class TripPageViewModel(
         val out = lastOutput ?: return
         val trip = out.trip
         val state =
-            TripPageState.resolve(
-                keepOffline = trip?.keepOffline ?: true,
+            TripPageInputs(
+                hasLoaded = hasLoaded,
+                recordPresent = trip != null,
+                keepOffline = trip?.keepOffline,
+                tombstoned = trip?.deletedAt != null || trip?.deletedLocally == true,
                 stored = out.plan != null,
                 noPlan = out.noPlan,
-                online = true,
-                fetch = TripPageFetch.Idle,
-                missingAfterSync = false,
-                tombstoned = trip?.deletedAt != null || trip?.deletedLocally == true,
-                awaitingSync = false,
-            )
-        _ui.value = TripPageUi(state, out.title, out.plan)
+                syncCompleted = syncCompleted.value,
+                awaitingSync = awaitingSync.value,
+                online = fetchModel.online.value,
+                fetch = fetchModel.fetch.value,
+            ).state()
+        _ui.value = TripPageUi(state, out.title, out.plan, out.page)
     }
 
     private suspend fun acceptPreparedPlan(
@@ -243,8 +298,9 @@ class TripPageViewModel(
 
     suspend fun runClock() {
         var lines: CopyLineFormatter? = null
-        combine(planFlow, clock.values()) { plan, now -> plan to now }.collect { (plan, now) ->
-            if (plan == null) {
+        combine(outputFlow, clock.values()) { output, now -> output to now }.collect { (output, now) ->
+            val plan = output?.plan
+            if (plan == null && output?.page?.card == null) {
                 clocks.apply(emptyMap())
                 summaryClock.apply(emptyList())
                 return@collect
@@ -252,14 +308,16 @@ class TripPageViewModel(
             val (dayValues, summaryValues) =
                 withContext(compute) {
                     val format = lines ?: formatter().also { lines = it }
-                    val options = CopyFormat(plan.language, plan.timeFormat, trip = plan.detail.trip)
-                    projectDayClocks(plan.layouts, now, format, options) to
+                    val options = CopyFormat(output.page.language, output.page.timeFormat, trip = plan?.detail?.trip)
+                    val from = plan?.detail?.trip?.from ?: output.page.card!!.from
+                    val to = plan?.detail?.trip?.to ?: output.page.card!!.to
+                    projectDayClocks(plan?.layouts.orEmpty(), now, format, options) to
                         dualClockValues(
-                            plan.detail.trip.from,
-                            plan.detail.trip.to,
+                            from,
+                            to,
                             now,
-                            activeZone(plan.detail.plan.days, now),
-                            false,
+                            plan?.let { activeZone(it.detail.plan.days, now) },
+                            plan == null,
                             format,
                             options,
                         )
@@ -285,6 +343,7 @@ class TripPageViewModel(
     }
 
     override fun onCleared() {
+        fetchModel.stop()
         lease.release()
         commands.close()
     }

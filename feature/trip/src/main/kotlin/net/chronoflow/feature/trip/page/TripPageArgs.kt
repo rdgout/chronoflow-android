@@ -5,6 +5,7 @@ data class TripPageArgs(
     val dayId: String? = null,
     val blockId: String? = null,
     val startAtSummary: Boolean = false,
+    val awaitingSync: Boolean = false,
 )
 
 data class ScrollCommand(

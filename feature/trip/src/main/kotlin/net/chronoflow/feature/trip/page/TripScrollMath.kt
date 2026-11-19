@@ -5,12 +5,15 @@ import net.chronoflow.core.plan.trippage.TripPageAnchor
 
 fun currentDay(
     visible: List<LazyListItemInfo>,
-    index: TripListIndex,
+    index: PageIndex,
     thresholdPx: Int,
 ): String? =
     visible
         .lastOrNull {
-            (it.contentType == "dayHeader" || it.contentType == "dayTimeline") && it.offset <= thresholdPx
+            (
+                it.contentType == "dayHeader" || it.contentType == "dayTimeline" ||
+                    it.contentType == "listRow" || it.contentType == "zoneRow"
+            ) && it.offset <= thresholdPx
         }?.let { index.dayAt(it.index) }
 
 fun headerBottomPx(

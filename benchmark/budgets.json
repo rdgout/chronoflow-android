@@ -383,6 +383,142 @@
       "all": {
         "min": 1
       }
+    },
+    {
+      "test": "listScroll",
+      "metric": "frameDurationCpuMs",
+      "stat": "P50",
+      "unit": "ms",
+      "reference": {
+        "aim": 3
+      },
+      "lowEnd": {
+        "aim": 6
+      },
+      "emulator": {
+        "report": true
+      }
+    },
+    {
+      "test": "listScroll",
+      "metric": "frameDurationCpuMs",
+      "stat": "P90",
+      "unit": "ms",
+      "reference": {
+        "aim": 5
+      },
+      "lowEnd": {
+        "aim": 10
+      },
+      "emulator": {
+        "report": true
+      }
+    },
+    {
+      "test": "listScroll",
+      "metric": "frameDurationCpuMs",
+      "stat": "P99",
+      "unit": "ms",
+      "reference": {
+        "aim": 8
+      },
+      "lowEnd": {
+        "aim": 16
+      },
+      "emulator": {
+        "report": true
+      }
+    },
+    {
+      "test": "listScroll",
+      "metric": "frameOverrunMs",
+      "stat": "P99",
+      "unit": "ms",
+      "signed": true,
+      "reference": {
+        "hard": 2,
+        "aim": 0
+      },
+      "lowEnd": {
+        "hard": 4,
+        "aim": 0
+      },
+      "emulator": {
+        "report": true
+      }
+    },
+    {
+      "test": "listScroll",
+      "metric": "jankPercent",
+      "stat": "each",
+      "unit": "%",
+      "derived": true,
+      "reference": {
+        "hard": 3,
+        "aim": 1
+      },
+      "lowEnd": {
+        "hard": 5,
+        "aim": 3
+      },
+      "emulator": {
+        "report": true
+      }
+    },
+    {
+      "test": "listScroll",
+      "metric": "hitchRatioMsPerS",
+      "stat": "each",
+      "unit": "ms/s",
+      "derived": true,
+      "reference": {
+        "hard": 5,
+        "aim": 1
+      },
+      "lowEnd": {
+        "hard": 5,
+        "aim": 2
+      },
+      "emulator": {
+        "report": true
+      }
+    },
+    {
+      "test": "listScroll",
+      "metric": "memoryRssAnonMaxKb",
+      "stat": "each",
+      "unit": "KiB",
+      "emulator": {
+        "hard": 153600
+      },
+      "reference": {
+        "hard": 153600,
+        "aim": 81920
+      },
+      "lowEnd": {
+        "hard": 153600,
+        "aim": 102400
+      }
+    },
+    {
+      "test": "listScroll",
+      "metric": "memoryRssAnonGrowthKb",
+      "stat": "single",
+      "unit": "KiB",
+      "derived": true,
+      "all": {
+        "warn": 40960
+      },
+      "signed": true
+    },
+    {
+      "test": "listScroll",
+      "metric": "frameCount",
+      "stat": "each",
+      "unit": "count",
+      "all": {
+        "min": 1
+      }
     }
   ],
   "timelinePage": "trip",
@@ -402,6 +538,9 @@
       "timelineDecodeMs",
       "timelinePrepareMs",
       "timelineTypefaceMs"
+    ],
+    "listScroll": [
+      "memoryHeapSizeMaxKb"
     ]
   },
   "launch": [

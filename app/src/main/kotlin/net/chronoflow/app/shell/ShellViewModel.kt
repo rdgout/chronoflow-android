@@ -27,6 +27,10 @@ internal class ShellViewModel(
         state = ShellNav.select(state, tab)
     }
 
+    fun leaveTripPage(tab: ShellTab) {
+        state = ShellNav.leaveTripPage(state, tab)
+    }
+
     fun push(route: Route) {
         state = ShellNav.push(state, route)
     }

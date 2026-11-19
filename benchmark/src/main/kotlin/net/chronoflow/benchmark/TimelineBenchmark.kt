@@ -17,7 +17,9 @@ import androidx.test.uiautomator.By
 import androidx.test.uiautomator.Direction
 import androidx.test.uiautomator.Until
 import net.chronoflow.core.plan.drawing.TimelineTraceNames
+import net.chronoflow.core.testing.BoundedProfileInput
 import net.chronoflow.core.testing.tiers.Perf
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -38,6 +40,11 @@ class TimelineBenchmark {
 
     private lateinit var pageBounds: Rect
     private var startDayIndex = -1
+    private var startBlock: String? = null
+
+    @Before fun clearInterruptedGesture() {
+        BoundedProfileInput().use { input -> input.step("cancel stale touch") { cancelStaleTouch() } }
+    }
 
     @Test
     fun timelineFirstFrame() =
@@ -117,6 +124,35 @@ class TimelineBenchmark {
             )
             check(endDayIndex in 35..50) { "15 gestures must end on day index 35..50: $startDayIndex -> $endDayIndex" }
             check(!device.hasObject(By.res("trip.plan.end"))) { "bounded-swipe-v3 reached the plan end" }
+        }
+
+    @Test
+    fun listScroll() =
+        rule.measureRepeated(
+            packageName = packageName,
+            metrics = listOf(FrameTimingMetric(), MemoryUsageMetric(MemoryUsageMetric.Mode.Max)),
+            iterations = 3,
+            compilationMode = compilation,
+            startupMode = null,
+            setupBlock = {
+                assertAnimatorsOn()
+                killProcess()
+                pressHome()
+                startActivityAndWait(large60Intent(packageName))
+                awaitPresented()
+                device.toggleTripView(list = true)
+                check(device.wait(Until.hasObject(By.res("trip.block.$LARGE60_OPENING_FIRST_BLOCK")), READY_WAIT_MS)) {
+                    "the opening list row never appeared"
+                }
+                val page = checkNotNull(device.findObject(By.res("trip.page")))
+                page.setGestureMargin(page.visibleBounds.width() / 5)
+                pageBounds = page.visibleBounds
+                startBlock = checkNotNull(device.topListBlock()) { "the opening list has no block rows" }
+            },
+        ) {
+            repeat(FLINGS) { device.swipeTimeline(pageBounds) }
+            val endBlock = checkNotNull(device.topListBlock()) { "the scrolled list has no block rows" }
+            check(endBlock != startBlock) { "the list did not advance after $FLINGS bounded-swipe-v3 gestures" }
         }
 
     @Test

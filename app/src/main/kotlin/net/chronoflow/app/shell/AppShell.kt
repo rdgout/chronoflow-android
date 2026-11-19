@@ -74,7 +74,13 @@ internal fun AppShell(
         settings = { render.value(Route.Settings) },
         page = { route ->
             if (route is Route.TripPage) {
-                TripPageRoute(route, { if (!holder.back()) onRootBack() }, { holder.select(ShellTab.Settings) })
+                TripPageRoute(
+                    route,
+                    { if (!holder.back()) onRootBack() },
+                    { holder.select(ShellTab.Settings) },
+                    onTrips = { holder.leaveTripPage(ShellTab.Trips) },
+                    onToday = { holder.leaveTripPage(ShellTab.Today) },
+                )
             } else {
                 render.value(route)
             }

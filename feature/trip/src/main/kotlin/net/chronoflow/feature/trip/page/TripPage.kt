@@ -32,6 +32,12 @@ import net.chronoflow.feature.trip.timeline.host.FirstTimelineFrameTrace
 sealed interface TripPageEvent {
     data object Back : TripPageEvent
 
+    data object Trips : TripPageEvent
+
+    data object Today : TripPageEvent
+
+    data object Retry : TripPageEvent
+
     data object Settings : TripPageEvent
 
     data object Legend : TripPageEvent
@@ -39,6 +45,8 @@ sealed interface TripPageEvent {
     data object Actions : TripPageEvent
 
     data object Refresh : TripPageEvent
+
+    data object ToggleView : TripPageEvent
 
     data object SaveAnchor : TripPageEvent
 
@@ -75,6 +83,8 @@ class TripPageScreenState(
     val canSettings: Boolean,
     val canLegend: Boolean,
     val canActions: Boolean,
+    val timeline: Boolean = true,
+    val canToday: Boolean = false,
 )
 
 @Suppress("ktlint:compose:vm-forwarding-check")
@@ -86,9 +96,20 @@ fun TripPage(
     onLegend: (() -> Unit)? = null,
     onActions: (() -> Unit)? = null,
     onRefreshResult: (SyncResult?) -> Unit = {},
+    onTrips: (() -> Unit)? = null,
+    onToday: (() -> Unit)? = null,
 ) {
-    val state = rememberTripPageScreenState(viewModel, onSettings != null, onLegend != null, onActions != null)
+    val state =
+        rememberTripPageScreenState(
+            viewModel,
+            onSettings != null,
+            onLegend != null,
+            onActions != null,
+            onToday != null,
+        )
     val scope = rememberCoroutineScope()
+    val trips = rememberUpdatedState(onTrips)
+    val today = rememberUpdatedState(onToday)
     val back = rememberUpdatedState(onBack)
     val settings = rememberUpdatedState(onSettings)
     val legend = rememberUpdatedState(onLegend)
@@ -98,6 +119,18 @@ fun TripPage(
         remember(viewModel, scope) {
             { event ->
                 when (event) {
+                    TripPageEvent.Trips -> {
+                        trips.value?.invoke()
+                    }
+
+                    TripPageEvent.Today -> {
+                        today.value?.invoke()
+                    }
+
+                    TripPageEvent.Retry -> {
+                        viewModel.retry()
+                    }
+
                     TripPageEvent.Back -> {
                         back.value()
                     }
@@ -116,6 +149,10 @@ fun TripPage(
 
                     TripPageEvent.Refresh -> {
                         scope.launch { refreshResult.value(viewModel.refresh()) }
+                    }
+
+                    TripPageEvent.ToggleView -> {
+                        viewModel.toggleView()
                     }
 
                     TripPageEvent.SaveAnchor -> {
@@ -149,16 +186,21 @@ internal fun rememberTripPageScreenState(
     canSettings: Boolean = false,
     canLegend: Boolean = false,
     canActions: Boolean = false,
+    canToday: Boolean = false,
 ): TripPageScreenState {
     val owner = LocalLifecycleOwner.current
     LaunchedEffect(viewModel, owner) {
-        owner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) { viewModel.runClock() }
+        owner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            launch { viewModel.runFetch() }
+            viewModel.runClock()
+        }
     }
     val language = if (LocalConfiguration.current.locales[0].language == "nl") Language.Nl else Language.En
     LaunchedEffect(viewModel, language) { viewModel.setLanguage(language) }
     val ui by viewModel.ui.collectAsStateWithLifecycle()
     val anchor by viewModel.anchor.collectAsStateWithLifecycle()
     val refresh by viewModel.refreshState.collectAsStateWithLifecycle()
+    val timeline by viewModel.timeline.collectAsStateWithLifecycle()
     val density = LocalDensity.current
     val listState =
         if (ui.state == TripPageState.Ready && ui.plan != null) {
@@ -167,6 +209,8 @@ internal fun rememberTripPageScreenState(
                 val target =
                     if (viewModel.consumeSummaryPosition()) {
                         0 to 0
+                    } else if (!timeline) {
+                        (opening.dayID?.let { ui.plan!!.listIndex.headerIndex(it) } ?: 0) to 0
                     } else {
                         restoreTarget(ui.plan!!.index, opening, with(density) { opening.offset.dp.roundToPx() })
                     }
@@ -191,5 +235,7 @@ internal fun rememberTripPageScreenState(
         canSettings,
         canLegend,
         canActions,
+        timeline,
+        canToday,
     )
 }

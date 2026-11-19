@@ -56,7 +56,7 @@ class NowLineTest(
         show()
         val node = hasContentDescription(description("08:00"))
         composeRule.onNode(node).assertDoesNotExist()
-        composeRule.runOnIdle { clock.value.value = NowLineValue(100.0, "08:00") }
+        composeRule.runOnIdle { clock.value.value = NowLineValue(100.0, "08:00", 0L) }
         composeRule.onNode(node).assertExists()
         composeRule.runOnIdle { clock.value.value = null }
         composeRule.onNode(node).assertDoesNotExist()
@@ -72,7 +72,7 @@ class NowLineTest(
 
     @Test fun itsTopIsTheOffsetMinusHalfItsHeight() {
         show()
-        composeRule.runOnIdle { clock.value.value = NowLineValue(100.0, "08:00") }
+        composeRule.runOnIdle { clock.value.value = NowLineValue(100.0, "08:00", 0L) }
         composeRule.waitForIdle()
         val node = composeRule.onNode(hasContentDescription(description("08:00"))).fetchSemanticsNode()
         val expected = 100.0 * case.profile.density - node.size.height / 2f

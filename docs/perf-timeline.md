@@ -435,3 +435,38 @@ Host evidence: the retargeted six-case `TimelineInvalidationTest` passes (suite 
 | Drawing bytes maximum, 360 / 411 / 841 dp | 11795 / 11795 / 14089 | bytes |
 
 The synthetic benchmark-checker tests now use Page `trip` for their matching-history fixtures and Page `host` for the isolation case. All 38 checker tests pass; no runtime threshold or history row was changed.
+
+## Phase 6c: list mode
+
+Measured by the orchestrator on 2026-11-19 with `make perf-timeline` and `make baseline-profile`. Pixel / emulator-5554, sdk_gphone64_arm64, API 36, host GPU, 60 Hz, en / light / font 1.0, benchmarkRelease, Partial(Require), large60, bounded-swipe-v3. These are emulator values, never device claims.
+
+**Timeline CPU band: missed, and the A/B attributes the miss to the environment, not to 6c.** Every 6c run missed the trip band (baseline P90/P99 4.9/6.4 ms):
+
+| Commit | timelineScroll CPU P50/P90/P99 ms | Main/Render P99 ms | Archive |
+|---|---|---|---|
+| ea8f3ef | 5.4/8.1/11.1 | 6.0/7.7 | `20261119T093129Z-ea8f3ef-…fwNugI` (the reviewer was running Gradle at the same time) |
+| 4b036c7 | 6.8/8.7/15.6, recheck 6.8/8.7/16.3 | 6.0/9.1, 6.1/9.4 | `20261119T095549Z-…pR7qS5`, `20261119T100443Z-…tnloBZ` |
+| e418883 (after an emulator restart) | 6.6/8.6/15.1, recheck 6.4/8.9/16.8 | 6.2/12.3, 5.8/9.6 | `20261119T111928Z-…zVACJX`, `20261119T112813Z-…tDhIvV` |
+
+Frames (~2,100), recompositions (571), builds and replays (40/40), placeholders (0) and GC (3) are unchanged from 6b. The trace analysis in `docs/perf-6c-review.md` finds the extra cost on the app's main thread and RenderThread, and also in the launcher and SurfaceFlinger. A matched A/B ran `TimelineBenchmark#timelineScroll` alone, back to back, between 12:06 and 12:18:
+
+| Run | CPU P50/P90/P99 ms |
+|---|---|
+| 6b (87e4d7a) | 6.4/8.9/16.6 |
+| 6c (e418883) | 6.6/8.7/11.9 |
+| 6b again | 6.4/8.6/13.4 |
+
+6b's own code, which measured 3.8/5.1/6.7 at 04:09, now reproduces the 6c numbers. The miss is therefore an environment change and not a 6c regression. The suspected cause is host GPU contention: the emulator uses `-gpu host`, and during these runs WindowServer and a Chrome GPU helper were using 30–45% CPU. That cause is an inference and has not been proven. No band row is recorded as PASS, and OQ-A291 holds the re-measure.
+
+**Other gates, at e418883:**
+- First frame: max 99.4 ms (gate 800).
+- RSS peak: 108.0 MiB.
+- Builds on main: 0.
+- Placeholders: 0.
+- Last day and end: reached.
+- The `listScroll` row (its first; it sets no band): CPU P50/P90/P99 5.8/8.2/11.4 ms; recheck 5.8/8.2/12.3; jank max 1.1 %; hitch max 2.8 ms/s; RSS peak 107.2 MiB (gate 150). These numbers were taken in the same slow environment, so they are not a list-mode baseline.
+
+**Profiles:** regenerated at 02c8db7 and committed in 3e3d449, with DayListRow coverage. `BaselineProfileFilesTest` passes.
+
+**Not run:** the separate StrictMode sweep (remote open, list, pull) and an independent capture review. The ready-list pixel smoke test logged zero IO violations.
+

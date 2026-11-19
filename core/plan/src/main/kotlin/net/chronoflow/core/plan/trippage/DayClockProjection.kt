@@ -11,6 +11,7 @@ import java.time.Instant
 data class NowLineValue(
     val offset: Double,
     val text: String,
+    val nowMs: Long,
 )
 
 /**
@@ -26,7 +27,7 @@ fun projectDayClocks(
     val result = HashMap<String, NowLineValue>()
     for ((id, layout) in layouts) {
         val offset = nowLineOffset(layout.day, now) ?: continue
-        result[id] = NowLineValue(offset, formatter.nowLabel(layout, now, format))
+        result[id] = NowLineValue(offset, formatter.nowLabel(layout, now, format), now.toEpochMilli())
     }
     return result
 }

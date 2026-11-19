@@ -41,6 +41,7 @@ class DayClockProjectionTest {
         val result = project(start(days[0]))
         assertThat(result.keys).isEqualTo(setOf(days[0].id))
         assertThat(result.getValue(days[0].id).offset).isEqualTo(0.0)
+        assertThat(result.getValue(days[0].id).nowMs).isEqualTo(start(days[0]).toEpochMilli())
     }
 
     @Test fun aMinuteLaterChangesOnlyThatDay() {
