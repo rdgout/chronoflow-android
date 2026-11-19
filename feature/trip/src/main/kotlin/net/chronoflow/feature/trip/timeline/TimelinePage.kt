@@ -39,6 +39,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -57,6 +58,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import net.chronoflow.core.designsystem.generated.CfColors
@@ -140,10 +142,34 @@ private fun ReadyPage(
     val prefetch = remember(viewModel) { viewModel::prefetchAround }
     val scope = rememberCoroutineScope()
     LaunchedEffect(listState) { onListState?.invoke(listState) }
+    val tagger = LocalTimelineJankTagger.current
+    if (tagger != null) {
+        val dayPositions =
+            remember(model.prepared) {
+                days.withIndex().associate { (position, day) ->
+                    day.id to position
+                }
+            }
+        LaunchedEffect(viewModel, tagger, dayPositions) {
+            viewModel.anchorDayId.filterNotNull().collect { id ->
+                dayPositions[id]?.let { tagger.onVisibleDay(it, "timeline") }
+            }
+        }
+    }
+    val scrolled = remember(listState, index) { mutableStateOf(false) }
+    val isScrolled = remember(scrolled) { { scrolled.value } }
     LaunchedEffect(listState, index, thresholdPx) {
-        snapshotFlow { index.currentDayIndex(listState.layoutInfo.visibleItemsInfo, thresholdPx) }
-            .distinctUntilChanged()
-            .collect { position -> if (position != null) viewModel.select(days[position].id) }
+        snapshotFlow {
+            val visible = listState.layoutInfo.visibleItemsInfo
+            val position = index.currentDayIndex(visible, thresholdPx)
+            val id = position?.let { days[it].id } ?: viewModel.anchorDayId.value
+            val pastThreshold = id != null && visible.any { it.index == index.dayIndex(id) && it.offset < thresholdPx }
+            position to pastThreshold
+        }.distinctUntilChanged()
+            .collect { (position, pastThreshold) ->
+                scrolled.value = pastThreshold
+                if (position != null) viewModel.select(days[position].id)
+            }
     }
 
     BoxWithConstraints(modifier.fillMaxSize()) {
@@ -186,7 +212,7 @@ private fun ReadyPage(
             contentWindowInsets = WindowInsets(0, 0, 0, 0),
             topBar = {
                 TopAppBar(
-                    title = { DayMenu(viewModel, model, listState, thresholdPx, colors, jump) },
+                    title = { DayMenu(viewModel, model, isScrolled, colors, jump) },
                     colors =
                         TopAppBarDefaults.topAppBarColors(
                             containerColor = colors.background,
@@ -249,6 +275,7 @@ private fun ReadyPage(
                         )
                     }
                 }
+                TimelinePresentedMarker(viewModel.firstFrame.presented, Modifier.align(Alignment.TopStart))
             }
         }
     }

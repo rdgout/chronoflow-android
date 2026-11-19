@@ -139,6 +139,24 @@ class TimelineInvalidationTest {
         assertTrue(first != second)
     }
 
+    @Test fun scrollingWithinThresholdDoesNotRecomposeDayMenu() {
+        start()
+        scrollBy(2f * composeRule.density.density)
+        settle()
+        val before = probe.snapshot()
+        repeat(20) { scrollBy(composeRule.density.density) }
+        settle()
+        val delta = probe.snapshot().delta(before)
+        assertEquals(
+            "DayMenu must not observe per-frame layoutInfo changes within the same threshold",
+            0,
+            delta.composed
+                .filterKeys { it.kind == Kind.ANCHOR }
+                .values
+                .sum(),
+        )
+    }
+
     @Test fun scrollingAndTicksInvalidateOnlyAffectedClockChildrenOnMinuteTick() {
         start()
         val before = probe.snapshot()

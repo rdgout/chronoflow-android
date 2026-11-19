@@ -15,8 +15,10 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.unit.LayoutDirection
+import net.chronoflow.app.perf.PerfJank
 import net.chronoflow.app.perf.TripPageEntry
 import net.chronoflow.core.ui.LocalSafeInsets
+import net.chronoflow.feature.trip.timeline.LocalTimelineJankTagger
 
 class MainActivity : ComponentActivity() {
     override fun attachBaseContext(newBase: Context) {
@@ -27,16 +29,19 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val entry = TripPageEntry.content(intent, (application as ChronoFlowApp).graph)
+        val jankTagger = PerfJank.tagger(this)
         setContent {
             CompositionLocalProvider(
                 LocalSafeInsets provides WindowInsets.safeDrawing,
                 LocalLayoutDirection provides LayoutDirection.Ltr,
+                LocalTimelineJankTagger provides jankTagger,
             ) {
                 Box(Modifier.fillMaxSize().semantics { testTagsAsResourceId = true }.testTag("app.root")) {
                     entry?.invoke()
                 }
             }
         }
+        PerfJank.install(this)
         window.decorView.viewTreeObserver.registerFrameCommitCallback {
             (application as ChronoFlowApp).launchPath.end()
         }

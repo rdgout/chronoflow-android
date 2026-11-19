@@ -70,6 +70,8 @@ class EmulatorTest(unittest.TestCase):
             "shell settings put secure show_ime_with_hard_keyboard 1",
             "shell settings put secure autofill_service null",
             "shell cmd uimode night no",
+            "shell settings put system font_scale 1.0",
+            "shell svc power stayon false",
             "shell input keyevent 82",
         ):
             self.assertIn("adb -s emulator-5554 " + expected, calls)

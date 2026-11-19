@@ -1,12 +1,299 @@
 {
   "schema": 1,
-  "labels": {"startup": "Startup", "timeline": "Timeline"},
+  "labels": {
+    "startup": "Startup",
+    "timeline": "Timeline"
+  },
   "startup": [
-    {"test": "startupCold", "metric": "timeToInitialDisplayMs", "stat": "median", "unit": "ms",
-     "reference": {"hard": 400}, "lowEnd": {"hard": 800}, "emulator": {"report": true}}
+    {
+      "test": "startupCold",
+      "metric": "timeToInitialDisplayMs",
+      "stat": "median",
+      "unit": "ms",
+      "reference": {
+        "hard": 400
+      },
+      "lowEnd": {
+        "hard": 800
+      },
+      "emulator": {
+        "report": true
+      }
+    }
   ],
   "timeline": [
-    {"test": "timelineFirstFrame", "metric": "timelineFirstFrameMs", "stat": "each", "unit": "ms",
-     "emulator": {"hard": 800}, "reference": {"hard": 800, "aim": 450}, "lowEnd": {"hard": 1500, "aim": 800}}
-  ]
+    {
+      "test": "timelineFirstFrame",
+      "metric": "timelineFirstFrameMs",
+      "stat": "each",
+      "unit": "ms",
+      "emulator": {
+        "hard": 800
+      },
+      "reference": {
+        "hard": 800,
+        "aim": 450
+      },
+      "lowEnd": {
+        "hard": 1500,
+        "aim": 800
+      }
+    },
+    {
+      "test": "timelineScroll",
+      "metric": "frameDurationCpuMs",
+      "stat": "P50",
+      "unit": "ms",
+      "reference": {
+        "aim": 3
+      },
+      "lowEnd": {
+        "aim": 6
+      },
+      "emulator": {
+        "report": true
+      }
+    },
+    {
+      "test": "timelineScroll",
+      "metric": "frameDurationCpuMs",
+      "stat": "P90",
+      "unit": "ms",
+      "reference": {
+        "aim": 5
+      },
+      "lowEnd": {
+        "aim": 10
+      },
+      "emulator": {
+        "band": true
+      }
+    },
+    {
+      "test": "timelineScroll",
+      "metric": "frameDurationCpuMs",
+      "stat": "P99",
+      "unit": "ms",
+      "reference": {
+        "aim": 8
+      },
+      "lowEnd": {
+        "aim": 16
+      },
+      "emulator": {
+        "band": true
+      }
+    },
+    {
+      "test": "timelineScroll",
+      "metric": "frameOverrunMs",
+      "stat": "P99",
+      "unit": "ms",
+      "signed": true,
+      "reference": {
+        "hard": 2,
+        "aim": 0
+      },
+      "lowEnd": {
+        "hard": 4,
+        "aim": 0
+      },
+      "emulator": {
+        "report": true
+      }
+    },
+    {
+      "test": "timelineScroll",
+      "metric": "jankPercent",
+      "stat": "each",
+      "unit": "%",
+      "derived": true,
+      "reference": {
+        "hard": 3,
+        "aim": 1
+      },
+      "lowEnd": {
+        "hard": 5,
+        "aim": 3
+      },
+      "emulator": {
+        "report": true
+      }
+    },
+    {
+      "test": "timelineScroll",
+      "metric": "hitchRatioMsPerS",
+      "stat": "each",
+      "unit": "ms/s",
+      "derived": true,
+      "reference": {
+        "hard": 5,
+        "aim": 1
+      },
+      "lowEnd": {
+        "hard": 5,
+        "aim": 2
+      },
+      "emulator": {
+        "report": true
+      }
+    },
+    {
+      "test": "timelineScroll",
+      "metric": "timelinePlaceholderCount",
+      "stat": "each",
+      "unit": "count",
+      "reference": {
+        "hard": 2,
+        "aim": 0
+      },
+      "lowEnd": {
+        "hard": 6,
+        "aim": 2
+      },
+      "emulator": {
+        "hard": 6
+      }
+    },
+    {
+      "test": "timelineScroll",
+      "metric": "timelineMainFrameMsP50",
+      "stat": "each",
+      "unit": "ms",
+      "reference": {
+        "aim": 2
+      },
+      "lowEnd": {
+        "aim": 2
+      },
+      "emulator": {
+        "report": true
+      }
+    },
+    {
+      "test": "timelineScroll",
+      "metric": "timelineMainFrameMsP99",
+      "stat": "each",
+      "unit": "ms",
+      "reference": {
+        "aim": 4
+      },
+      "lowEnd": {
+        "aim": 4
+      },
+      "emulator": {
+        "report": true
+      }
+    },
+    {
+      "test": "timelineScroll",
+      "metric": "timelineRenderThreadMsP99",
+      "stat": "each",
+      "unit": "ms",
+      "reference": {
+        "aim": 4
+      },
+      "lowEnd": {
+        "aim": 4
+      },
+      "emulator": {
+        "report": true
+      }
+    },
+    {
+      "test": "timelineScroll",
+      "metric": "timelineTargetsMaxMs",
+      "stat": "each",
+      "unit": "ms",
+      "reference": {
+        "report": true
+      },
+      "lowEnd": {
+        "aim": 1
+      },
+      "emulator": {
+        "report": true
+      }
+    },
+    {
+      "test": "timelineScroll",
+      "metric": "memoryRssAnonMaxKb",
+      "stat": "each",
+      "unit": "KiB",
+      "emulator": {
+        "hard": 153600
+      },
+      "reference": {
+        "hard": 153600,
+        "aim": 81920
+      },
+      "lowEnd": {
+        "hard": 153600,
+        "aim": 102400
+      }
+    },
+    {
+      "test": "timelineScroll",
+      "metric": "memoryRssAnonGrowthKb",
+      "stat": "single",
+      "unit": "KiB",
+      "derived": true,
+      "all": {
+        "warn": 40960
+      },
+      "signed": true
+    },
+    {
+      "test": "timelineScroll",
+      "metric": "timelineBuildOnMainCount",
+      "stat": "each",
+      "unit": "count",
+      "all": {
+        "hard": 0
+      }
+    },
+    {
+      "test": "timelineLastDay",
+      "metric": "frameCount",
+      "stat": "present",
+      "unit": "count"
+    },
+    {
+      "test": "timelineScroll",
+      "metric": "timelineBuildCount",
+      "stat": "each",
+      "unit": "count",
+      "all": {
+        "min": 1
+      }
+    },
+    {
+      "test": "timelineScroll",
+      "metric": "timelineReplayCount",
+      "stat": "each",
+      "unit": "count",
+      "all": {
+        "min": 1
+      }
+    }
+  ],
+  "timelinePage": "host",
+  "timelineReportOnly": {
+    "timelineScroll": [
+      "timelineScrollWindowMs",
+      "timelineRecomposeCount",
+      "timelineGcCount",
+      "timelineReplayMaxMs",
+      "frameCount",
+      "memoryHeapSizeMaxKb",
+      "timelinePlaceholderToReplayMaxMs",
+      "timelinePlaceholderUnreplayedCount"
+    ],
+    "timelineFirstFrame": [
+      "timeToInitialDisplayMs",
+      "timelineDecodeMs",
+      "timelinePrepareMs",
+      "timelineTypefaceMs"
+    ]
+  }
 }

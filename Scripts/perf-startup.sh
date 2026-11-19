@@ -5,12 +5,15 @@ set -u
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 ADB="${ADB:-${ANDROID_HOME:-/opt/homebrew/share/android-commandlinetools}/platform-tools/adb}"
-SERIAL="${ANDROID_SERIAL:-emulator-5554}"
+PERF_SUITE="perf-startup"
+source Scripts/perf-device.sh
+resolve_perf_device || exit $?
 GRADLEW="${GRADLEW:-./gradlew}"
 EMULATOR_SH="${EMULATOR_SH:-Scripts/emulator.sh}"
 CHECKER="${CHECK_BENCHMARKS:-python3 -I Scripts/check-benchmarks.py}"
 STATE_DIR="${CF_EMULATOR_STATE_DIR:-$ROOT/build/emulator}"
-RESULTS_DIR="benchmark/build/outputs/connected_android_test_additional_output"
+PERF_OUTPUT_DIR="${PERF_OUTPUT_DIR:-benchmark/build/outputs/connected_android_test_additional_output}"
+source Scripts/perf-archive.sh
 HISTORY="docs/perf-startup.md"
 
 dev() { "$ADB" -s "$SERIAL" "$@"; }
@@ -22,11 +25,7 @@ step() {
   fi
 }
 
-attached="$("$ADB" devices | grep -Ec '[[:space:]]device$' || true)"
-if [ "$attached" != 1 ]; then
-  echo "perf-startup: exactly one device must be attached, found $attached" >&2
-  exit 1
-fi
+
 
 IS_EMU=0
 for prop in ro.boot.qemu ro.kernel.qemu; do
@@ -46,9 +45,14 @@ else
   REFRESH_HZ=unknown
 fi
 
-rm -rf "$RESULTS_DIR"
-trap '"$EMULATOR_SH" prep-functional' EXIT
-"$EMULATOR_SH" prep-perf
+
+trap '"$EMULATOR_SH" prep-functional "$SERIAL"' EXIT
+"$EMULATOR_SH" prep-perf "$SERIAL"
+prep_status=$?
+if [ "$prep_status" != 0 ]; then
+  echo "perf-startup: prep-perf failed with status $prep_status" >&2
+  exit "$prep_status"
+fi
 scale="$(dev shell settings get global animator_duration_scale | tr -d '\r')"
 if [ "$scale" != 1 ] && [ "$scale" != 1.0 ]; then
   echo "perf-startup: animator_duration_scale is '$scale', not 1; a perf run with the scales off measures nothing" >&2
@@ -64,11 +68,13 @@ args=(
 if [ "$IS_EMU" = 1 ]; then
   args+=("-Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.suppressErrors=EMULATOR")
 fi
-step "$GRADLEW" --console=plain "${args[@]}"
-gradle_status=$?
-
 commit="$(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
 if [ -n "$(git status --porcelain 2>/dev/null | grep -v " $HISTORY\$" || true)" ]; then commit="$commit-dirty"; fi
+begin_perf_archive startup "light-${FONT_SCALE:-1.0}" "$commit" || exit 1
+step "$GRADLEW" --console=plain "${args[@]}"
+gradle_status=$?
+finish_perf_archive || exit 1
+
 font="$(dev shell settings get system font_scale | tr -d '\r')"
 case "$font" in null | "") font=1.0 ;; esac
 # shellcheck disable=SC2086

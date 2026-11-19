@@ -1,7 +1,9 @@
 package net.chronoflow.feature.trip.timeline.host
 
 import android.view.Choreographer
-import net.chronoflow.feature.trip.timeline.TimelineTraceNames
+import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
+import net.chronoflow.core.plan.drawing.TimelineTraceNames
 import net.chronoflow.feature.trip.timeline.TimelineTracer
 
 /**
@@ -13,13 +15,20 @@ class FirstTimelineFrameTrace(
     private val choreographer: () -> Choreographer = Choreographer::getInstance,
 ) {
     private var done = false
+    private val _presented = mutableStateOf(false)
+
+    /** Flips once, in the callback that ends the slice; the perf marker reads it (iOS `trip.timeline.presented`). */
+    val presented: State<Boolean> get() = _presented
 
     fun onReplay() {
         if (done) return
         done = true
         val frames = choreographer()
         frames.postFrameCallback {
-            frames.postFrameCallback { tracer.endAsync(TimelineTraceNames.FIRST_FRAME, COOKIE) }
+            frames.postFrameCallback {
+                tracer.endAsync(TimelineTraceNames.FIRST_FRAME, COOKIE)
+                _presented.value = true
+            }
         }
     }
 
