@@ -17,6 +17,7 @@
   - `TripPageViewModel` has no `hasLoaded` field yet. Set it after the first accepted source output; do not assume 6b supplied it.
   - `NowLineValue` and `projectDayClocks` live in `core/plan/…/trippage/DayClockProjection.kt`; `DayClock`/`DayClocks` live in `feature/trip/…/timeline/DayClock.kt`. Add the instant to the existing core value and update its callers.
   - `TimelineCategoryStyle` lives in `core/plan/…/drawing/`, with palette slots rather than Compose colours. Resolve those slots through the generated timeline palette.
+  - In the landed tree `trip.timeline.ready` belongs to each `TimelineTargets`, not to a page-level marker. Keep those timeline semantics unchanged and emit the promised readiness marker only in ready list mode. Its presence means ready page content, never which mode is showing (OQ-A288).
   - `Modifier.skyBackground(dark: Boolean)` requires the current theme argument; pass it rather than adding another wrapper.
   - The narrow trailing test checks that the two elements stack. Pinned iOS emits the priority tag before the status icon, so the tag is above the icon; the older test wording below reverses that order. Add the specified 18 dp status size and 2.5 stroke through the generated Android metric overlay.
   - Generated Plan strings live in `core/ui/src/main/res/values{,-nl}/strings_ios.xml`; the expected resource names in §8 exist.
