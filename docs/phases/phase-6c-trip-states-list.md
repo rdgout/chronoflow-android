@@ -12,6 +12,16 @@
   - `TripPagePriorityTag` was not ported by 6b. Port it here (the type spec `screenPriorityTag` and the opacity `priorityTagOpacity` exist).
   - 6b reads scroll state only through `snapshotFlow`, with synchronous `Snapshot.withoutReadObservation` seeds (1f7d790, 9c60131), guarded by `TimelineInvalidationTest#scrollingWithinOneDayDoesNotRecomposePageChrome`. List mode must keep that guard passing and must not read `LazyListState` in composition.
   - The 6b `trip` perf baseline is the 9c60131 row in `docs/perf-timeline.md`. OQ rows end at OQ-A271.
+- **Implementation preflight (2026-11-19):** additional landed seams and current instructions:
+  - `Route.TripPage.awaitingSync` already exists, and `ShellNav` already sets it for a saved trip. Add it only to `TripPageArgs` and forward the existing route value; preserve existing shell routing.
+  - `TripPageViewModel` has no `hasLoaded` field yet. Set it after the first accepted source output; do not assume 6b supplied it.
+  - `NowLineValue` and `projectDayClocks` live in `core/plan/…/trippage/DayClockProjection.kt`; `DayClock`/`DayClocks` live in `feature/trip/…/timeline/DayClock.kt`. Add the instant to the existing core value and update its callers.
+  - `TimelineCategoryStyle` lives in `core/plan/…/drawing/`, with palette slots rather than Compose colours. Resolve those slots through the generated timeline palette.
+  - Generated Plan strings live in `core/ui/src/main/res/values{,-nl}/strings_ios.xml`; the expected resource names in §8 exist.
+  - The current plan's standard acceptance overrides the older Cartesian guard matrix below: each board gets light guards at `small`/nl, `largeFont`/nl and `pixel8`/en; captures cover both themes. Wide/side-navigation guards belong to 6e. Parameter names must be unique.
+  - Screen tests check tags, structure, semantics and callbacks only; copy variants are asserted in JVM `ListRowsTests` and generated-string tests. Do not add `TripRowAlpha` or any test hook to `src/main`; prove dimming with captured pixels if needed.
+  - Fetch failures must also map the checked store/session/device exceptions and runtime/security failures the injected submit path can raise to `Failed`, with cancellation rethrown first (the user's 5b lesson).
+  - The user runs `make baseline-profile`, `make perf-timeline` and `make check`; implement their inputs and leave measured results pending. Run targeted checks per task, and `make quick` once at the end.
 - **Who builds on this phase:** 6d (step sheet opened from list rows), 6e (wide list column reuses the row composable and `ZoneChangeCard`; wide remote states reuse the state card, the phone skeleton and the remote summary; see `docs/phases/phase-6e-trip-wide.md` §2 row P5 and Task 5).
 
 Tags: **[F]** a fact verified in a source (path and line). **[R]** a rule this brief sets for Android. Paths are abbreviated as in plan.md: `feature/trip/…/X.kt` = `feature/trip/src/main/kotlin/net/chronoflow/feature/trip/X.kt`; `core/plan/…/X.kt` = `core/plan/src/main/kotlin/net/chronoflow/core/plan/X.kt`. iOS paths are relative to `/Users/rickgout/Sites/chronoflow-ios` and read at the pin: `git -C /Users/rickgout/Sites/chronoflow-ios show f391a1fa:<path>`. `PU/` = `Packages/ChronoFlowKit/Sources/PlanUI/`.
@@ -239,8 +249,8 @@ iOS `TripPagePathMonitor.swift` (whole, 29 lines) [F]: an actor wrapping a fresh
 **Files:** 6b's `TripPageViewModel`, 6b's `TripPlanPipeline`/`PipelineOutput` and `TripPageSource` (DB and fixture implementations), 6b's `TripPageArgs` and the `TripPage` route (6a), the ViewModel factory (Task 2's `makePath`), the debug-options holder that 6b uses for `CF_PLAN_TEST_POSITION`.
 
 **Behaviour**
-- **Route:** add `awaitingSync: Boolean = false` to the `TripPage` route and to 6b's `TripPageArgs`, and pass it to the ViewModel (iOS `TripPageRoute.awaitingSync`, `TripPageDestination.swift` l.19, l.81). Nothing sets it to `true` yet (§4).
-- **Source:** make sure 6b's `PipelineOutput` carries what `TripPageInputs` needs, plus the page data the states show. If 6b's output already has a field, reuse it (6b has `trip: TripRecord?`, `title`, `noPlan`, `plan`; the ViewModel already sets `hasLoaded`):
+- **Route:** reuse `TripPage.awaitingSync`, add `awaitingSync: Boolean = false` to 6b's `TripPageArgs`, and pass it to the ViewModel (iOS `TripPageRoute.awaitingSync`, `TripPageDestination.swift` l.19, l.81). Preserve the already-landed `ShellNav` caller that sets it to `true`.
+- **Source:** make sure 6b's `PipelineOutput` carries what `TripPageInputs` needs, plus the page data the states show. If 6b's output already has a field, reuse it (6b has `trip: TripRecord?`, `title`, `noPlan`, `plan`; add `hasLoaded` to the ViewModel):
   - `hasLoaded` (true after the first DB emission, iOS `TripPlanModel` l.82);
   - the record facts: `recordPresent`, `keepOffline`, `tombstoned` (`deletedAt != null || deletedLocally`);
   - `stored` and `noPlan` (`detail.plan.status == PlanStatus.NoPlan`, wire value `"no_plan"`);
@@ -301,7 +311,7 @@ iOS `TripPagePathMonitor.swift` (whole, 29 lines) [F]: an actor wrapping a fresh
   data class DayListRows(val dayId: String, val rows: List<ListRow>)
   object ListRows { fun build(plan: PreparedPlan, copy: PageCopy): List<DayListRows> }
   ```
-- `feature/trip/…/timeline/…/DayClocks.kt` (1d): add `val nowMs: Long` to `NowLineValue` and set it in `projectDayClocks` (`now.toEpochMilli()`). The value already changes on every tick (its offset moves), so this adds no writes; update 1d's tests that compare whole values.
+- `core/plan/…/trippage/DayClockProjection.kt` (1d): add `val nowMs: Long` to `NowLineValue` and set it in `projectDayClocks` (`now.toEpochMilli()`). The value already changes on every tick (its offset moves), so this adds no writes; update 1d's tests that compare whole values.
 
 **Rules** (iOS `DayListView.swift` l.47–60 [F])
 - One `DayListRows` per `PreparedDay`, rows in `day.blocks` order (all blocks: placed, markers and zone changes).
