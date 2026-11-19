@@ -642,6 +642,18 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-0c-3 | Should `CopyIndex` cover every key, or only an allowlist of runtime keys? | **Every emitted main key.** Ported models carry English keys as on iOS; the cost is one generated `when` per table and no allocation at load. | 0c, 5a–5d, 6d, 7, 9c–9d |
 | OQ-0c-4 | Where does the debug-only `Debug route: %@` live? The 4e brief (§5.8, OQ-4e-6, its release test) names it `app_debug_route` in `app/src/debug/res/values{,-nl}/`. | **`app_debug_route_x` in `core/ui/src/debug/res/values{,-nl}/strings_ios_debug.xml`**, generated (the lock name; `10` OQ-L8). 4e uses `net.chronoflow.core.ui.R.string.app_debug_route_x` from `app/src/debug` and its release test asserts that `net.chronoflow.core.ui.R.string` has no field `app_debug_route_x`. The orchestrator corrects the 3b brief (its `RoutePlaceholder` lives in `app/src/main` and says to find the name in `strings_ios.xml`: the debug text must move to `app/src/debug`, because main code cannot reference a debug-only resource), the 4e brief, and 9c's reference to "the 4e `app_debug_route` pattern", before 3b starts. | 3b, 4e, 9c |
 | OQ-0c-5 | Does AGP's generated locale config list only en and nl? | Expected yes. If AAR locales appear, set `androidResources.localeFilters` to `en`, `nl` in `:app` so the system per-app language list shows exactly en and nl (A17, `10 §9.9`) and Material components never show a third language; record the extra locales here and in `docs/l10n.md`. | 0c, 13 |
+| OQ-0d-1 | `number` becomes `Int` (32-bit) for generated types, while Swift `Int` is 64-bit | `Int`; no fixture value exceeds 2^31-1. Hand-written exceptions use `Long`: `SignedVerificationInput.expires`, `ApiPasskey.id`. | 0d, 4b |
+| OQ-0d-2 | Generated enum shape: sealed interface with `data object`s and `Unknown(raw)`, or an `enum class Known` nested in a sealed interface | Sealed interface with `data object`s (reads like Swift `.flight`). Revisit if `make size` warns. | 0d, 13 |
+| OQ-0d-3 | Redact secrets in `toString()` (Android-only; iOS has no equivalent) | Yes, `***`: passwords, session and reset tokens, guest secrets, signed-link hash and signature, 2FA proofs, challenge ids, TOTP secret, otpauth URL and recovery codes. | 0d |
+| OQ-0d-4 | A18 names a Gradle `contractsCheck` task | Only the `make contracts-check` target; no Gradle task. | 0d |
+| OQ-0d-5 | `plans/` and `trips/` fixtures were built by iOS at web `afd80dc0`, while the generator is pinned at `e36368ec` | Copy as is (iOS decodes them under the same pin); both pins are recorded in `fixtures/SOURCE.md`. | 0d |
+| OQ-0d-6 | `GET trips` envelope type | Hand-written `TripListResponse` in `TripContracts.kt` (iOS keeps an equivalent private type). | 0d, 4b |
+| OQ-0d-7 | Type the `ApiTripInput` string fields (`trip_end_kind`, `seat_window`, `bed_available_mode`, `transfer_mode`) as enums | No: they are `string` in TypeScript and `String` on iOS. | 0d |
+| OQ-0d-8 | The 0d "Hand-written DTOs" box lists "the settings sections", but iOS keeps `SettingsSection` beside `OutboxChange` and 4b owns it | `SettingsSection` and the PATCH `JsonObject` diffs land in 4b; 0d ticks the box once auth, account, passkey, wizard-input and error-envelope DTOs exist. | 0d, 4b |
+| OQ-0d-9 | `fixtures.sha256` is shared with 1a (`intl-cases.json`) and 1b (`mock-seed.json`) | One manifest; each script owns its own lines; `FixtureManifestTest` checks every line. | 0d, 1a, 1b |
+| OQ-0d-10 | The brief names `api/GuestTripReviewInput.kt`, but ktlint `filename` requires a file with one class to carry its name | `api/ApiGuestTripReviewInput.kt`. The test-only `contracts/PlanParts.kt` keeps its brief name with a file-level suppression of that rule. | 0d |
+| OQ-0d-11 | A TypeScript reference to a type outside the graph (`Array<string>`) raises `KeyError` in the iOS generator | `ValueError("unsupported type: ...")`, as the brief asks for every unsupported syntax. | 0d |
+| OQ-0d-12 | Is the guest draft token a secret? | Yes: it can claim a guest trip, so it is redacted from `toString` and logs and kept out of saved state like other secrets. | 0d |
 
 ## Tasks
 
@@ -919,7 +931,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 **Delivers.** Writes tools/contracts-gen/generate_kotlin.py, a Kotlin-emitting twin of the iOS generator that reads the web TypeScript types at e36368ec with the same roots, overrides and overlays. It adds the hand-written auth, account, passkey, wizard-input and error-envelope DTOs and the DataFailure type in :core:model. The iOS fixtures (account, auth, errors, S1–S6 plans, trips, wizard wire) are copied into :core:testing with a checksum manifest. Tests prove that every fixture decodes and that every request body encodes with the right keys.
 
 **Tasks**
-- [ ] **Generator** `tools/contracts-gen/generate_kotlin.py` (stdlib).
+- [x] **Generator** `tools/contracts-gen/generate_kotlin.py` (stdlib).
   - It reads `resources/js/types/App/**/index.ts` at `tools/web-pin.txt` through `git -C $WEB_REPO show`.
   - Roots: `ApiTripListItem`, `ApiTripDetail`, `ApiTripInput`, `ApiTripReview`, `ApiTripSaveResult`, `ApiTripInputSnapshot`, `ApiAirportSearchResults` and their enums.
   - It applies the iOS overrides and overlays, including `ScreeningQuestion = 'shift_work'`.
@@ -931,17 +943,17 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
     - `answer: Map<String, JsonPrimitive>`.
   - It has a `--check` mode.
   - Test: `tools/contracts-gen/test_generate_kotlin.py`; a planted TS change must fail `--check`.
-- [ ] **Hand-written DTOs** in `core/model/…/api/`: auth, account, the settings sections, passkeys, wizard input and the error envelope. `core/model/…/DataFailure.kt` mirrors the cases of iOS `DataFailure.swift`.
-- [ ] **ApiJson.** Decoding uses `Json { ignoreUnknownKeys = true; explicitNulls = false }`. Request encoders keep explicit nulls where null matters (check `status`), and PATCH diffs are `JsonObject`.
-- [ ] **Fixtures.**
+- [x] **Hand-written DTOs** in `core/model/…/api/`: auth, account, the settings sections, passkeys, wizard input and the error envelope. `core/model/…/DataFailure.kt` mirrors the cases of iOS `DataFailure.swift`.
+- [x] **ApiJson.** Decoding uses `Json { ignoreUnknownKeys = true; explicitNulls = false }`. Request encoders keep explicit nulls where null matters (check `status`), and PATCH diffs are `JsonObject`.
+- [x] **Fixtures.**
   - Copy iOS `Tests/DataAccessTests/Fixtures/{account,auth,errors,plans,trips,wizard}/*.json`, including S1–S6 and S6-RETURN-10N, into `core/testing/src/main/resources/fixtures/`.
   - `fixtures.sha256` records the pin, source path and hash of each; `FixtureManifestTest` checks them.
-- [ ] **Decode and encode tests** (`core/model/src/test`):
+- [x] **Decode and encode tests** (`core/model/src/test`):
   - every fixture decodes;
   - every request DTO encodes to exactly its fixture's key set (`review-request.json`, `save-request.json`, `guest-review-request.json`);
   - unknown enum values become `Unknown(raw)`;
   - `unknown-field.json` decodes.
-- [ ] **Make targets** `contracts` and `contracts-check`; the check is part of `generators-check`.
+- [x] **Make targets** `contracts` and `contracts-check`; the check is part of `generators-check`.
 
 **Acceptance**
 - The generated contracts are fresh, and every fixture decodes.
