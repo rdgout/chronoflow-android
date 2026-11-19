@@ -16,7 +16,7 @@ class LucideGlyphsTest {
                 .filter {
                     it.returnType == LucideGlyph::class.java
                 }.map { it.invoke(LucideGlyphs) as LucideGlyph }
-        assertEquals(37, glyphs.size)
+        assertEquals(41, glyphs.size)
         glyphs.forEach { glyph -> glyph.paths.forEach { PathParser().parsePathString(it.d) } }
         assertEquals(
             "M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z",
