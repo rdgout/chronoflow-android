@@ -101,6 +101,18 @@ fun noGlobalScope(scope: KoScope) {
     fail("noGlobalScope", violations)
 }
 
+private val multiProcessDataStoreRegex =
+    Regex("\\b(?:MultiProcessDataStoreFactory|createMultiProcessCoordinator|MultiProcessCoordinator)\\b")
+
+fun noMultiProcessDataStore(scope: KoScope) {
+    val violations =
+        scope
+            .moduleFiles()
+            .filter { multiProcessDataStoreRegex.containsMatchIn(it.text) }
+            .map { it.path }
+    fail("noMultiProcessDataStore", violations)
+}
+
 private val runBlockingRegex = Regex("\\brunBlocking\\b")
 
 fun noRunBlockingOutsideTests(scope: KoScope) {

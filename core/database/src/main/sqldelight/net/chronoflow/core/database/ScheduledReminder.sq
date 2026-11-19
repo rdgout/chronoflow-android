@@ -1,0 +1,12 @@
+CREATE TABLE scheduled_reminder (
+  identifier TEXT PRIMARY KEY NOT NULL,
+  request_code INTEGER NOT NULL UNIQUE,
+  send_at INTEGER NOT NULL,
+  title TEXT NOT NULL,
+  body TEXT NOT NULL,
+  trip_id TEXT NOT NULL,
+  block_id TEXT NOT NULL,
+  input_hash TEXT NOT NULL,
+  member_keys TEXT NOT NULL,
+  account_id TEXT
+);

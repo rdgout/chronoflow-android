@@ -10,7 +10,7 @@ import assertk.assertions.isTrue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
-import net.chronoflow.app.config.DeviceConfigFile
+import net.chronoflow.core.datastore.DeviceConfigFile
 import net.chronoflow.core.testing.tiers.Logic
 import org.junit.Test
 import org.junit.runner.RunWith

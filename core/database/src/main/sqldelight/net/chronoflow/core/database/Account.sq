@@ -1,0 +1,17 @@
+CREATE TABLE account (
+    id TEXT PRIMARY KEY NOT NULL, name TEXT NOT NULL, email TEXT NOT NULL,
+    has_verified_email INTEGER NOT NULL DEFAULT 1, synced_at TEXT,
+    walkthrough_seen INTEGER NOT NULL DEFAULT 0
+);
+
+selectAccount:
+SELECT * FROM account WHERE id = ?;
+
+updateAccount:
+UPDATE account SET name = ?, email = ?, has_verified_email = ?, synced_at = ?, walkthrough_seen = ? WHERE id = ?;
+
+insertAccount:
+INSERT INTO account (id, name, email, has_verified_email, synced_at, walkthrough_seen) VALUES (?, ?, ?, ?, ?, ?);
+
+changes:
+SELECT changes();
