@@ -100,6 +100,7 @@ class TripPageTestRig(
             TripPageEvent.ToggleView -> vm.toggleView()
             TripPageEvent.SaveAnchor -> vm.saveAnchor()
             is TripPageEvent.Block -> vm.selectBlock(event.id)
+            is TripPageEvent.Check -> vm.checkFromAccessibility(event.id, event.status)
             else -> Unit
         }
     }

@@ -2428,7 +2428,7 @@ Implementation commits (brief §7):
   - The sheet is part of the route key.
 - [x] **Legend sheet** (`PlanLegend`). Task 5: full steps legend and trip-page priority legend.
 - [x] **Trip actions sheet** (`TripActions`, `TripActionsNoPlan`). Task 8. Edit and Duplicate go to wizard seams until 9h, and are disabled offline or when the trip is not editable. There is no calendar, complete or delete.
-- [ ] **Accessibility and input.**
+- [x] **Accessibility and input.** Task 9.
   - TalkBack custom actions (Mark as done, Skip) on timeline targets and list rows, and a defined focus order.
   - Keyboard and D-pad traversal and activation.
   - No haptic on check-off.

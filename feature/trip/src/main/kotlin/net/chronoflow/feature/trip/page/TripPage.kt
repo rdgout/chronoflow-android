@@ -63,6 +63,11 @@ sealed interface TripPageEvent {
         val offsetDp: Double,
     ) : TripPageEvent
 
+    data class Check(
+        val id: String,
+        val status: net.chronoflow.core.model.contracts.CheckStatus?,
+    ) : TripPageEvent
+
     data class Block(
         val id: String,
     ) : TripPageEvent
@@ -173,13 +178,46 @@ fun TripPage(
                         viewModel.select(event.dayId, event.offsetDp)
                     }
 
+                    is TripPageEvent.Check -> {
+                        viewModel.checkFromAccessibility(event.id, event.status)
+                    }
+
                     is TripPageEvent.Block -> {
                         viewModel.selectBlock(event.id)
                     }
                 }
             }
         }
+    val announcer =
+        remember {
+            net.chronoflow.core.ui.plan
+                .PoliteAnnouncer()
+        }
+    val announcementCopy by rememberUpdatedState(
+        Triple(
+            androidx.compose.ui.res
+                .stringResource(net.chronoflow.core.ui.R.string.screens_done),
+            androidx.compose.ui.res
+                .stringResource(net.chronoflow.core.ui.R.string.screens_skipped),
+            androidx.compose.ui.res
+                .stringResource(net.chronoflow.core.ui.R.string.screens_check_off_undone),
+        ),
+    )
+    LaunchedEffect(viewModel) {
+        viewModel.announcements.collect { badge ->
+            val copy = announcementCopy
+            announcer.announce(
+                when (badge) {
+                    net.chronoflow.core.plan.step.StepBadge.Done -> copy.first
+                    net.chronoflow.core.plan.step.StepBadge.Skipped -> copy.second
+                    else -> copy.third
+                },
+            )
+        }
+    }
     TripPageScreen(state, onEvent)
+    net.chronoflow.core.ui.plan
+        .PoliteAnnouncerHost(announcer)
     net.chronoflow.feature.trip.step
         .TripPageSheets(viewModel, onWizard)
 }
