@@ -2,6 +2,16 @@
 
 Branch preflight: `feat/phase-6e-trip-wide`. Upstream names and all P1 metrics are present. The brief refresh records the day-tag owner and the allocation-free px pin adaptation. OQ-A305–OQ-A323 record the nineteen brief defaults; no new copy.
 
+## Review round 1 — finding 1
+
+Starting HEAD 2bf39214. The day-command collector retained its opening TripPageFrame across breakpoint changes. It now reads the current layout through rememberUpdatedState, beside the existing current geometry/appearance values.
+
+- Test first: `make targeted ONLY='feature:trip:TripPageResizeTest#listModeUnfoldThenJumpUsesTheWideTimelineIndex feature:trip:TripPageResizeTest#wideFoldThenToggleToListAndJumpUsesTheListIndex'` failed both cases before the fix (8 s Gradle wall): the unfolded target header was absent; the folded/list target was at y=365 instead of scroll top y=168.
+- These checks use S1 and assert that the list and timeline header indices differ. The initial S3 checks passed because its first day has exactly one list row, making both day-1 indices equal. The final tests use the existing window/container resize fixture without extra hooks.
+- After the fix, `make targeted ONLY='feature:trip:TripPageResizeTest'`: PASS, all 9 cases, 7.04 s host wall, no budget overruns.
+
+Red/green XML and timings: `build/test-results/phase-6e-review1/finding1/`. Profiles and docs/perf-timeline.md remain untouched.
+
 ## Task 1
 
 - `make targeted ONLY="core:testing-compose:WindowSizeFakeHostTest core:testing-compose:ProfileHostTest konsist:KonsistRulesTest#featureSizesComeFromTheWindow konsist:KonsistRulesTest#featureSizesComeFromTheWindowRejectsPlantedViolation"`: first run caught two fixture expectations (inherited top inset and fractional-density pixel rounding).

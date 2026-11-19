@@ -333,13 +333,14 @@ private fun ReadyTripPage(
         val compact = frame.compact
         val geometry = rememberUpdatedState(Triple(available, compact, density))
         val appearance = rememberUpdatedState(dark to reduceMotion)
+        val currentLayout = rememberUpdatedState(frame.layout)
         LaunchedEffect(state.commands, listState) {
             state.commands.collect { command ->
                 restoration.tracker.cancelRestoration()
                 restoration.job?.cancel()
                 restoration.job =
                     launch {
-                        if (!currentState.value.timeline && !frame.layout.isWide) {
+                        if (!currentState.value.timeline && !currentLayout.value.isWide) {
                             val replacement =
                                 snapshotFlow { currentState.value.ui.plan }.first {
                                     it?.layouts?.containsKey(command.dayId) == true

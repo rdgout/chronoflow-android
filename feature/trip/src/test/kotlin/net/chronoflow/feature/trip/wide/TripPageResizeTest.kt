@@ -14,6 +14,7 @@ import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.waitUntilExactlyOneExists
@@ -62,13 +63,14 @@ class TripPageResizeTest {
     private fun start(
         list: Boolean = false,
         summary: Boolean = false,
+        fixture: String = "S3",
     ) {
         val template =
             net.chronoflow.core.testing.LargeTimelineFixtures
-                .fixture("S3")
+                .fixture(fixture)
         val snapshot =
             net.chronoflow.feature.trip.page.FakeTripPageSource
-                .fixture("S3")
+                .fixture(fixture)
                 .snapshot.value
         val trip =
             checkNotNull(snapshot.trip).copy(
@@ -82,7 +84,7 @@ class TripPageResizeTest {
             )
         rig =
             TripPageTestRig(
-                "S3",
+                fixture,
                 initialTimeline = !list,
                 startAtSummary = summary,
                 initialSnapshot = snapshot.copy(trip = trip),
@@ -198,6 +200,33 @@ class TripPageResizeTest {
         assertEquals(top("trip.scroll"), top("trip.headerItem.$id"), 1f)
         compose.onNodeWithTag("trip.mode.list").assertExists()
         compose.onNodeWithTag("trip.viewToggle").assertExists()
+    }
+
+    @Test fun listModeUnfoldThenJumpUsesTheWideTimelineIndex() {
+        start(list = true, fixture = "S1")
+        resize(841)
+        val target =
+            rig.model.prepared.days[1]
+                .id
+        assertTrue(rig.model.listIndex.headerIndex(target) != rig.model.index.headerIndex(target))
+        compose.runOnIdle { rig.vm.jump(target) }
+        compose.waitForIdle()
+        assertEquals(top("trip.scroll"), top("trip.headerItem.$target"), 1f)
+    }
+
+    @Test fun wideFoldThenToggleToListAndJumpUsesTheListIndex() {
+        window.size = DpSize(841.dp, 914.dp)
+        start(fixture = "S1")
+        resize(411)
+        compose.onNodeWithTag("trip.viewToggle").performClick()
+        compose.waitForIdle()
+        val target =
+            rig.model.prepared.days[1]
+                .id
+        assertTrue(rig.model.listIndex.headerIndex(target) != rig.model.index.headerIndex(target))
+        compose.runOnIdle { rig.vm.jump(target) }
+        compose.waitForIdle()
+        assertEquals(top("trip.scroll"), top("trip.headerItem.$target"), 1f)
     }
 
     @Test fun legendAndTripActionsSurviveResize() {
