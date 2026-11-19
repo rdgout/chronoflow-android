@@ -7,8 +7,10 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import net.chronoflow.core.designsystem.theme.ChronoFlowTheme
 import net.chronoflow.core.model.contracts.CheckMark
 import net.chronoflow.core.model.contracts.CheckStatus
+import net.chronoflow.core.model.store.CheckMarkRecord
 import net.chronoflow.core.plan.checkIdentity
 import net.chronoflow.core.plan.generated.PlanMetrics
 import net.chronoflow.core.testing.DeviceProfiles
@@ -16,7 +18,7 @@ import net.chronoflow.core.testing.compose.ProfileHost
 import net.chronoflow.core.testing.compose.ProfileRule
 import net.chronoflow.core.testing.tiers.Logic
 import net.chronoflow.feature.trip.timeline.TimelineProbe.Kind
-import net.chronoflow.feature.trip.timeline.host.TimelineSourceInput
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -42,7 +44,7 @@ class TimelineInvalidationTest {
     @get:Rule val rules: RuleChain = RuleChain.outerRule(ProfileRule(DeviceProfiles.pixel8)).around(composeRule)
 
     private val probe = CountingTimelineProbe()
-    private val host = TimelineTestHost()
+    private lateinit var host: TimelineTestHost
     private var listState: LazyListState? = null
 
     private val thresholdPx: Int get() = with(composeRule.density) { PlanMetrics.compactHeaderHeight.sp.roundToPx() }
@@ -50,7 +52,15 @@ class TimelineInvalidationTest {
         host.model.prepared.days
             .map { it.id }
 
-    private fun start() {
+    @After fun close() {
+        if (::host.isInitialized) host.close()
+    }
+
+    private fun start(
+        summary: Boolean = false,
+        reduceMotion: Boolean = true,
+    ) {
+        host = TimelineTestHost(startAtSummary = summary)
         val density = composeRule.density
         host.prewarm(
             density,
@@ -60,7 +70,10 @@ class TimelineInvalidationTest {
         composeRule.setContent {
             CompositionLocalProvider(LocalTimelineProbe provides probe) {
                 ProfileHost(DeviceProfiles.pixel8) {
-                    TimelinePage(host.viewModel, onBlock = {}, onListState = { listState = it })
+                    ChronoFlowTheme(reduceMotion = reduceMotion) {
+                        host.Content()
+                        listState = host.listState
+                    }
                 }
             }
         }
@@ -80,7 +93,7 @@ class TimelineInvalidationTest {
     }
 
     private fun dayItemOffset(dayId: String): Int? {
-        val index = host.model.index.dayIndex(dayId)
+        val index = host.model.index.timelineIndex(dayId)
         return listState!!
             .layoutInfo.visibleItemsInfo
             .firstOrNull { it.index == index }
@@ -100,11 +113,27 @@ class TimelineInvalidationTest {
 
     @Test fun scrollingAndTicksInvalidateOnlyAffectedClockChildrenWhileScrolling() {
         start()
+        val header =
+            listState!!.layoutInfo.visibleItemsInfo.first {
+                it.index ==
+                    host.model.index.headerIndex(
+                        dayIds[0],
+                    )
+            }
+        scrollBy(header.size + 1f)
+        settle()
         val before = probe.snapshot()
         repeat(120) { scrollBy(composeRule.density.density) }
         settle()
         val afterDeltas = probe.snapshot().delta(before)
         assertNothingStaticMoved(before, afterDeltas)
+        assertEquals(
+            0,
+            afterDeltas.composed
+                .filterKeys { it.kind in setOf(Kind.PILLS, Kind.COMPACT) }
+                .values
+                .sum(),
+        )
         assertTrue(
             "the anchor menu flips once, not once per delta",
             afterDeltas.composed
@@ -128,7 +157,8 @@ class TimelineInvalidationTest {
             assertEquals("a day entering composes once", 1, delta.composed(Kind.STATIC, id))
             assertTrue("and draws at most once", delta.drew(Kind.STATIC, id) <= 1)
         }
-        assertEquals(second, host.viewModel.anchorDayId.value)
+        assertEquals(1, delta.composed(Kind.COMPACT, second))
+        assertEquals(second, host.vm.anchor.value.dayID)
         assertTrue(
             "positive control: the anchor change is observed by the menu",
             delta.composed
@@ -157,6 +187,45 @@ class TimelineInvalidationTest {
         )
     }
 
+    @Test fun scrollingWithinOneDayDoesNotRecomposePageChrome() {
+        start(reduceMotion = false)
+        val passes = composeRule.runOnIdle { CompositionPassProbe() }
+        try {
+            val header =
+                listState!!.layoutInfo.visibleItemsInfo.first {
+                    it.index ==
+                        host.model.index.headerIndex(
+                            dayIds[0],
+                        )
+                }
+            scrollBy(header.size + 1f)
+            settle()
+            assertTrue("positive control: crossing the header threshold schedules composition", passes.count > 0)
+            val before = probe.snapshot()
+            val beforePasses = passes.count
+
+            val offset = listState!!.firstVisibleItemScrollOffset
+            val anchor = host.vm.anchor.value
+            repeat(30) { scrollBy(composeRule.density.density) }
+            settle()
+            assertTrue("the measured scroll must move the list", listState!!.firstVisibleItemScrollOffset > offset)
+            assertEquals("the measured scroll stays within one day", anchor, host.vm.anchor.value)
+            assertEquals("within-day scrolling must not schedule composition passes", 0, passes.count - beforePasses)
+            val delta = probe.snapshot().delta(before)
+
+            assertNothingStaticMoved(before, delta)
+            assertEquals(
+                0,
+                delta.composed
+                    .filterKeys { it.kind in setOf(Kind.ANCHOR, Kind.COMPACT, Kind.PILLS) }
+                    .values
+                    .sum(),
+            )
+        } finally {
+            composeRule.runOnIdle { passes.close() }
+        }
+    }
+
     @Test fun scrollingAndTicksInvalidateOnlyAffectedClockChildrenOnMinuteTick() {
         start()
         val before = probe.snapshot()
@@ -164,6 +233,13 @@ class TimelineInvalidationTest {
         settle()
         val delta = probe.snapshot().delta(before)
         assertNothingStaticMoved(before, delta, listOf(Kind.STATIC, Kind.HEADER, Kind.TARGETS))
+        assertEquals(
+            0,
+            delta.composed
+                .filterKeys { it.kind == Kind.COMPACT || it.kind == Kind.ANCHOR }
+                .values
+                .sum(),
+        )
         assertEquals(1, delta.composed(Kind.CLOCK, dayIds[0]))
         assertEquals(
             "only one clock child",
@@ -187,7 +263,7 @@ class TimelineInvalidationTest {
             }
         composeRule.runOnIdle {
             listState!!.requestScrollToItem(
-                host.model.index.dayIndex(first.id),
+                host.model.index.timelineIndex(first.id),
                 heightPx - with(composeRule.density) { 300.dp.roundToPx() },
             )
         }
@@ -197,6 +273,13 @@ class TimelineInvalidationTest {
         settle()
         val delta = probe.snapshot().delta(before)
         assertNothingStaticMoved(before, delta, listOf(Kind.STATIC, Kind.HEADER, Kind.TARGETS))
+        assertEquals(
+            0,
+            delta.composed
+                .filterKeys { it.kind == Kind.COMPACT || it.kind == Kind.ANCHOR }
+                .values
+                .sum(),
+        )
         assertEquals(1, delta.composed(Kind.CLOCK, dayIds[0]))
         assertEquals(1, delta.composed(Kind.CLOCK, dayIds[1]))
         assertEquals(
@@ -230,12 +313,21 @@ class TimelineInvalidationTest {
         composeRule.runOnIdle { listState!!.requestScrollToItem(host.model.index.headerIndex(dayId)) }
         settle()
         val before = probe.snapshot()
-        host.inputs.value =
-            TimelineSourceInput(
-                host.bytes,
-                listOf(CheckMark(checkNotNull(block.block.checkKey), CheckStatus.Done, "")),
-                host.model.timeFormat,
-                emptyList(),
+        val key = checkNotNull(block.block.checkKey)
+        val snapshot = host.source.snapshot.value
+        host.source.snapshot.value =
+            snapshot.copy(
+                checks =
+                    snapshot.checks +
+                        CheckMarkRecord(
+                            snapshot.trip!!.id,
+                            snapshot.plan!!.inputHash,
+                            key.type.raw,
+                            key.localDate,
+                            key.ordinal,
+                            "done",
+                            "now",
+                        ),
             )
         settle()
         val delta = probe.snapshot().delta(before)
@@ -243,11 +335,37 @@ class TimelineInvalidationTest {
         val draws = delta.drew(Kind.STATIC, dayId)
         assertTrue("and redrawn once or twice, was $draws", draws in 1..2)
         assertEquals(0, delta.composed(Kind.CLOCK, dayId))
+        assertTrue(delta.composed(Kind.HEADER, dayId) <= 1)
         for (id in before.composedIds(Kind.STATIC) - dayId) {
             for (kind in listOf(Kind.STATIC, Kind.HEADER, Kind.CLOCK)) {
                 assertEquals("$kind composition of $id", 0, delta.composed(kind, id))
             }
             assertEquals("static draws of $id", 0, delta.drew(Kind.STATIC, id))
         }
+    }
+
+    @Test fun minuteTickRecomposesOnlyTheSummaryClock() {
+        start(summary = true)
+        val before = probe.snapshot()
+        host.clock.advance(host.dayStart(0).plusSeconds(60))
+        settle()
+        val delta = probe.snapshot().delta(before)
+        assertEquals(1, delta.composed(Kind.SUMMARY_CLOCK, "summary"))
+        assertNothingStaticMoved(before, delta, listOf(Kind.STATIC, Kind.HEADER, Kind.TARGETS))
+        assertEquals(
+            0,
+            delta.composed
+                .filterKeys { it.kind in setOf(Kind.PILLS, Kind.COMPACT, Kind.ANCHOR) }
+                .values
+                .sum(),
+        )
+        assertEquals(1, delta.composed(Kind.CLOCK, dayIds[0]))
+        assertEquals(
+            1,
+            delta.composed
+                .filterKeys { it.kind == Kind.CLOCK }
+                .values
+                .sum(),
+        )
     }
 }

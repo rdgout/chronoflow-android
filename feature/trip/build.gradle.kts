@@ -8,6 +8,7 @@ android {
 
 dependencies {
     implementation(project(":core:plan"))
+    implementation(project(":core:sync"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.compose.material3)
     implementation(libs.kotlinx.coroutines.core)

@@ -5,11 +5,13 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onRoot
+import net.chronoflow.core.designsystem.theme.ChronoFlowTheme
 import net.chronoflow.core.testing.DeviceProfiles
 import net.chronoflow.core.testing.compose.ProfileHost
 import net.chronoflow.core.testing.compose.ProfileRule
 import net.chronoflow.core.testing.tiers.Logic
 import net.chronoflow.feature.trip.timeline.TimelineProbe.Kind
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -49,7 +51,10 @@ class TimelineJankTaggerTest {
         composeRule.setContent {
             CompositionLocalProvider(LocalTimelineJankTagger provides tagger, LocalTimelineProbe provides probe) {
                 ProfileHost(DeviceProfiles.pixel8) {
-                    TimelinePage(host.viewModel, onBlock = {}, onListState = { listState = it })
+                    ChronoFlowTheme(reduceMotion = true) {
+                        host.Content()
+                        listState = host.listState
+                    }
                 }
             }
         }
@@ -58,7 +63,16 @@ class TimelineJankTaggerTest {
 
     private val openingIndex: Int get() =
         host.model.prepared.days
-            .indexOfFirst { it.id == host.model.openingDayId }
+            .indexOfFirst {
+                it.id ==
+                    host.detail.plan.days
+                        .first()
+                        .id
+            }
+
+    @After fun close() {
+        host.close()
+    }
 
     @Test fun reportsTheOpeningDayOnceAndNothingWhileScrollingInsideIt() {
         start()

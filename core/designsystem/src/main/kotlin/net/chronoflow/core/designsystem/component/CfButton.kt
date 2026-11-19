@@ -149,6 +149,7 @@ fun CfIconButton(
     style: CfButtonStyle = CfButtonStyle.Ghost,
     size: CfButtonSize = CfButtonSize.Touch,
     enabled: Boolean = true,
+    iconSize: Dp = AuthTokens.icon.dp,
 ) {
     val c = CfTheme.colors
     val shape = CfTheme.shapes.full
@@ -188,7 +189,7 @@ fun CfIconButton(
                 },
             ),
         contentAlignment = Alignment.Center,
-    ) { Icon(icon, contentDescription, Modifier.size(AuthTokens.icon.dp), tint = ink) }
+    ) { Icon(icon, contentDescription, Modifier.size(iconSize), tint = ink) }
 }
 
 @Composable

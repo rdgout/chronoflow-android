@@ -9,6 +9,7 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteractionsProvider
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performSemanticsAction
@@ -69,7 +70,9 @@ object Guards {
         useUnmergedTree: Boolean,
         safe: Rect? = null,
         minOverlap: Float = 0f,
+        scrollIntoView: Boolean = true,
     ): Rect {
+        if (!scrollIntoView) return node.boundsInRoot
         if (!hasScrollAncestor(node)) return node.boundsInRoot
         val interaction = rule.onNode(byId(node.id), useUnmergedTree)
         interaction.performScrollTo()
@@ -116,10 +119,11 @@ object Guards {
     fun assertTextFits(
         rule: SemanticsNodeInteractionsProvider,
         profile: DeviceProfile,
+        scrollIntoView: Boolean = true,
     ) {
         val (width, height) = windowPx(profile)
         for (node in rule.onAllNodes(hasText, useUnmergedTree = true).fetchSemanticsNodes()) {
-            val bounds = settledBounds(rule, node, useUnmergedTree = true)
+            val bounds = settledBounds(rule, node, useUnmergedTree = true, scrollIntoView = scrollIntoView)
             val horizontal = bounds.left >= -TOLERANCE && bounds.right <= width + TOLERANCE
             val vertical = bounds.top >= -TOLERANCE && bounds.bottom <= height + TOLERANCE
             if (!horizontal || !vertical) {
@@ -175,6 +179,7 @@ object Guards {
         rule: SemanticsNodeInteractionsProvider,
         profile: DeviceProfile,
         exemptTags: Set<String> = emptySet(),
+        scrollIntoView: Boolean = true,
     ) {
         val (width, height) = windowPx(profile)
         val d = profile.density
@@ -188,7 +193,15 @@ object Guards {
         for (node in rule.onAllNodes(interactive).fetchSemanticsNodes()) {
             if (isExempt(node, exemptTags)) continue
             val bounds =
-                settledBounds(rule, node, useUnmergedTree = false, safe = safe, minOverlap = MIN_OVERLAP_DP * d)
+                settledBounds(
+                    rule,
+                    node,
+                    useUnmergedTree = false,
+                    safe = safe,
+                    minOverlap = MIN_OVERLAP_DP * d,
+                    scrollIntoView = scrollIntoView,
+                )
+            if (!scrollIntoView && (bounds.width <= 0 || bounds.height <= 0)) continue
             val inside =
                 bounds.left >= safe.left - SAFE_AREA_ROUNDING_PX && bounds.top >= safe.top - SAFE_AREA_ROUNDING_PX &&
                     bounds.right <= safe.right + SAFE_AREA_ROUNDING_PX &&
@@ -268,8 +281,9 @@ object Guards {
         profile: DeviceProfile,
         minInkFraction: Float = 0.005f,
         minChannelDifference: Int = 16,
+        rootTag: String? = null,
     ) {
-        val image = rule.onRoot().captureToImage()
+        val image = (if (rootTag == null) rule.onRoot() else rule.onNodeWithTag(rootTag)).captureToImage()
         val (width, height) = windowPx(profile)
         if (abs(image.width - width.roundToInt()) > 1 || abs(image.height - height.roundToInt()) > 1) {
             throw AssertionError(
@@ -306,12 +320,14 @@ object Guards {
         profile: DeviceProfile,
         headingTags: Set<String>,
         exemptTags: Set<String> = emptySet(),
+        rootTag: String? = null,
+        scrollIntoView: Boolean = true,
     ) {
-        assertTextFits(rule, profile)
+        if (headingTags.isNotEmpty()) assertHeadings(rule, *headingTags.toTypedArray())
+        assertTextFits(rule, profile, scrollIntoView)
         assertTouchTargets(rule, profile, exemptTags = exemptTags)
-        assertInteractiveInSafeArea(rule, profile, exemptTags)
+        assertInteractiveInSafeArea(rule, profile, exemptTags, scrollIntoView)
         assertNoInteractiveOverlap(rule, exemptTags)
-        assertHeadings(rule, *headingTags.toTypedArray())
-        assertInk(rule, profile)
+        assertInk(rule, profile, rootTag = rootTag)
     }
 }

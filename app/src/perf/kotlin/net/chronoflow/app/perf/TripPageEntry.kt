@@ -7,6 +7,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
@@ -15,13 +16,19 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.withContext
 import net.chronoflow.app.AppGraph
 import net.chronoflow.core.model.contracts.Language
+import net.chronoflow.core.plan.CopyCatalogProvider
+import net.chronoflow.core.plan.CopyLineFormatter
 import net.chronoflow.core.plan.FixedPlanClock
 import net.chronoflow.core.plan.PlanClock
+import net.chronoflow.core.plan.PlanDecoder
+import net.chronoflow.core.plan.PlanPreparer
 import net.chronoflow.core.testing.LargeTimelineFixtures
+import net.chronoflow.feature.trip.page.DefaultTripPlanPipeline
+import net.chronoflow.feature.trip.page.TripPageArgs
+import net.chronoflow.feature.trip.page.TripPageViewModel
 import net.chronoflow.feature.trip.timeline.TextPaintMetrics
-import net.chronoflow.feature.trip.timeline.TimelinePage
 import net.chronoflow.feature.trip.timeline.TimelineTypefaces
-import net.chronoflow.feature.trip.timeline.host.TimelineHostViewModel
+import net.chronoflow.feature.trip.page.TripPage as RealTripPage
 
 /** `cf.trip-page=S1…S6|large30|large60` opens the timeline page from a fixture, in debug and the perf variants. */
 object TripPageEntry {
@@ -60,22 +67,29 @@ private fun TripPage(
     val language = if (LocalConfiguration.current.locales[0].language == "nl") Language.Nl else Language.En
     val appContext = LocalContext.current.applicationContext
     // A locale change recreates the activity but keeps the ViewModel store, and the language is a constructor argument.
-    val viewModel: TimelineHostViewModel =
+    val viewModel: TripPageViewModel =
         viewModel(
             key = "cf.trip-page:$name:${language.raw}",
             factory =
                 viewModelFactory {
                     initializer {
-                        TimelineHostViewModel(
-                            source = FixtureTimelineSource(fixture),
+                        val catalogs = CopyCatalogProvider(Dispatchers.IO)
+                        val decoder = PlanDecoder(Dispatchers.Default)
+                        val preparer = PlanPreparer(decoder, catalogs, Dispatchers.Default)
+                        TripPageViewModel(
+                            args = TripPageArgs("fixture-$name"),
+                            source = FixtureTripPageSource(name, fixture),
+                            pipeline = DefaultTripPlanPipeline(decoder, preparer),
+                            savedState = createSavedStateHandle(),
                             clock = clock,
                             language = language,
                             compute = Dispatchers.Default,
                             buildDispatcher = Dispatchers.Default.limitedParallelism(2),
                             metrics = { TextPaintMetrics(TimelineTypefaces.load(appContext)) },
+                            formatter = { CopyLineFormatter(catalogs.catalog()) },
                         )
                     }
                 },
         )
-    TimelinePage(viewModel, onBlock = { Log.d("CfTimeline", "block $it") })
+    RealTripPage(viewModel, onBack = {}, onSettings = null)
 }

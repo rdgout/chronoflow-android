@@ -43,6 +43,7 @@ class TestSeedSessionKeysTest(
                 "CF_MOCK_DELAY" -> seed.mockDelay
                 "CF_PLAN_TEST_ROUTE" -> seed.planRoute
                 "CF_PLAN_TEST_POSITION" -> seed.planSummary
+                "CF_PLAN_TEST_FREEZE_CLOCK" -> seed.freezePlanClock
                 "CF_PLAN_TEST_SHEET" -> seed.planSheet
                 "CF_SETTINGS_ROUTE" -> seed.settingsRoute
                 "CF_WIZARD_AUTO_OPEN" -> seed.wizardAutoOpen
@@ -79,6 +80,7 @@ class TestSeedSessionKeysTest(
                         false,
                     ),
                     Row("summary", "CF_PLAN_TEST_POSITION", "summary", true, true, false),
+                    Row("freeze", "CF_PLAN_TEST_FREEZE_CLOCK", "1", true, true, false),
                     Row("step", "CF_PLAN_TEST_SHEET", "step:block", true, TripSheet.Step("block"), false),
                     Row("settings", "CF_SETTINGS_ROUTE", "twoFactorSetup", true, "twoFactorSetup", false),
                     Row("wizard", "CF_WIZARD_AUTO_OPEN", "1", true, true, false),
@@ -87,7 +89,7 @@ class TestSeedSessionKeysTest(
 
             fun empty(key: String): Any? =
                 when (key) {
-                    "CF_AUTH_TEST_WALKTHROUGH_SEEN", "CF_AUTH_TEST_TERMS_PENDING", "CF_AUTH_TEST_UNVERIFIED", "CF_PLAN_TEST_POSITION", "CF_WIZARD_AUTO_OPEN" -> false
+                    "CF_AUTH_TEST_WALKTHROUGH_SEEN", "CF_AUTH_TEST_TERMS_PENDING", "CF_AUTH_TEST_UNVERIFIED", "CF_PLAN_TEST_POSITION", "CF_PLAN_TEST_FREEZE_CLOCK", "CF_WIZARD_AUTO_OPEN" -> false
                     "CF_MOCK_DELAY" -> Duration.ZERO
                     else -> null
                 }
@@ -122,6 +124,7 @@ class TestSeedSessionKeysTest(
                 }
             val extra =
                 listOf(
+                    Row("zero-freeze", "CF_PLAN_TEST_FREEZE_CLOCK", "0", true, false, true),
                     Row("twofactor", "CF_AUTH_TEST_SIGNED_IN", "twofactor", true, SeedAccount.TwoFactor, false),
                     Row("trips", "CF_PLAN_TEST_ROUTE", "trips", true, PlanRouteSeed.Trips, false),
                     Row("trip", "CF_PLAN_TEST_ROUTE", "trip:$TEST_ID", true, PlanRouteSeed.Trip(TEST_ID), false),

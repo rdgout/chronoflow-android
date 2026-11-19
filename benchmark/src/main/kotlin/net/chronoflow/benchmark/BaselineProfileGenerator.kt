@@ -40,6 +40,23 @@ class BaselineProfileGenerator {
             awaitPresented()
             val bounds = checkNotNull(device.findObject(By.res("trip.page"))).visibleBounds
             check(topDayIndex() == 0) { "large60 did not open on day 0" }
+            // Opening starts after the summary; reveal it so the new page chrome gets profile coverage too.
+            val x = bounds.left + bounds.width() / 2
+            check(
+                device.swipe(
+                    x,
+                    bounds.top + bounds.height() * 15 / 100,
+                    x,
+                    bounds.top + bounds.height() * 85 / 100,
+                    26,
+                ),
+            )
+            check(device.wait(Until.hasObject(By.res("trip.summary")), 5_000)) { "summary did not appear" }
+            checkNotNull(device.findObject(By.res("trip.dayMenu"))).click()
+            check(device.wait(Until.hasObject(By.res("trip.dayMenu.day.0")), 5_000))
+            checkNotNull(device.findObject(By.res("trip.dayMenu.day.0"))).click()
+            check(device.wait(Until.gone(By.res("trip.dayMenu.day.0")), 5_000))
+            check(topDayIndex() == 0) { "summary coverage did not return to day 0" }
             repeat(15) { device.swipeTimeline(bounds) }
             check(topDayIndex() in 35..50) { "15 gestures must end on day index 35..50" }
             check(!device.hasObject(By.res("trip.plan.end"))) { "bounded-swipe-v3 reached the plan end" }

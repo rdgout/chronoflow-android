@@ -15,7 +15,10 @@ class BaselineProfileFilesTest {
         val lines = File(dir, "baseline-prof.txt").readLines()
         listOf(
             "Lnet/chronoflow/app/MainActivity;",
-            "Lnet/chronoflow/feature/trip/timeline/TimelinePageKt;",
+            "Lnet/chronoflow/feature/trip/page/TripPageKt;",
+            "Lnet/chronoflow/feature/trip/page/TripPageScreenKt;",
+            "Lnet/chronoflow/feature/trip/page/DayHeaderKt;",
+            "Lnet/chronoflow/feature/trip/page/SummaryCardKt;",
             "Lnet/chronoflow/core/plan/drawing/DayDrawingBuilder;",
             "Lnet/chronoflow/feature/trip/timeline/DayDrawingReplayKt;",
         ).forEach { name -> assertTrue("$name is missing from baseline-prof.txt", lines.any { it.contains(name) }) }

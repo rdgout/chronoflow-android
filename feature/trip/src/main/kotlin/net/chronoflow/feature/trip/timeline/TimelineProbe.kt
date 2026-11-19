@@ -9,7 +9,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
  * target). Production holds only this interface and a null local; the counting implementation lives in `src/test`.
  */
 interface TimelineProbe {
-    enum class Kind { STATIC, CLOCK, TARGETS, HEADER, ANCHOR }
+    enum class Kind { STATIC, CLOCK, TARGETS, HEADER, ANCHOR, SUMMARY_CLOCK, PILLS, COMPACT }
 
     fun composed(
         kind: Kind,

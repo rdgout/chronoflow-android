@@ -41,6 +41,7 @@ data class TestSeed(
     val mockDelay: Duration = Duration.ZERO,
     val planRoute: PlanRouteSeed? = null,
     val planSummary: Boolean = false,
+    val freezePlanClock: Boolean = false,
     val planSheet: TripSheet? = null,
     val settingsRoute: String? = null,
     val wizardAutoOpen: Boolean = false,
@@ -130,6 +131,7 @@ data class TestSeed(
                     }
                 }
             val planSummary = parsed("CF_PLAN_TEST_POSITION") { if (it == "summary") true else null } ?: false
+            val freezePlanClock = parsed("CF_PLAN_TEST_FREEZE_CLOCK") { if (it == "1") true else null } ?: false
             val planSheet =
                 parsed("CF_PLAN_TEST_SHEET") { value ->
                     when {
@@ -183,6 +185,7 @@ data class TestSeed(
                 mockDelay = mockDelay.seconds,
                 planRoute = planRoute,
                 planSummary = planSummary,
+                freezePlanClock = freezePlanClock,
                 planSheet = planSheet,
                 settingsRoute = settingsRoute,
                 wizardAutoOpen = wizardAutoOpen,

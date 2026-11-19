@@ -96,3 +96,20 @@ fun CfBackButton(
         modifier,
     ) { Icon(MaterialSymbols.ArrowBack, contentDescription, tint = CfTheme.colors.foreground) }
 }
+
+@Composable
+fun CfCenterAlignedTopAppBar(
+    title: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+    navigationIcon: @Composable () -> Unit = {},
+    actions: @Composable RowScope.() -> Unit = {},
+) {
+    androidx.compose.material3.CenterAlignedTopAppBar(
+        title = title,
+        modifier = modifier,
+        navigationIcon = navigationIcon,
+        actions = actions,
+        windowInsets = LocalSafeInsets.current.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
+        colors = appBarColors(),
+    )
+}
