@@ -287,7 +287,6 @@ class TripPageViewModel(
     override fun onCleared() {
         lease.release()
         commands.close()
-        super.onCleared()
     }
 
     private companion object {

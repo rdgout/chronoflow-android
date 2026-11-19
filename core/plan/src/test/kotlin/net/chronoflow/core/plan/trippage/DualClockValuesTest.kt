@@ -1,3 +1,4 @@
+
 package net.chronoflow.core.plan.trippage
 
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -7,6 +8,7 @@ import net.chronoflow.core.model.contracts.Language
 import net.chronoflow.core.plan.CopyCatalog
 import net.chronoflow.core.plan.CopyFormat
 import net.chronoflow.core.plan.CopyLineFormatter
+import net.chronoflow.core.testing.LargeTimelineFixtures
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -52,4 +54,36 @@ class DualClockValuesTest {
     @Test fun outsideThePlanHasNoActiveZone() {
         assertNull(activeZone(emptyList(), now))
     }
+
+    @Test fun activeZonesHaveHalfOpenBounds() {
+        val original =
+            LargeTimelineFixtures
+                .fixture("S3")
+                .detail.plan.days[0]
+        val zone = original.zones.first()
+        val day =
+            original.copy(
+                zones =
+                    listOf(
+                        zone.copy(
+                            startUtc = now.minusSeconds(3600).toString(),
+                            endUtc = now.toString(),
+                            tz = from.zone,
+                        ),
+                        zone.copy(startUtc = now.toString(), endUtc = now.plusSeconds(3600).toString(), tz = to.zone),
+                    ),
+            )
+        assertEquals(from.zone, activeZone(listOf(day), now.minusSeconds(3600)))
+        assertEquals(to.zone, activeZone(listOf(day), now))
+        assertNull(activeZone(listOf(day), now.minusSeconds(3601)))
+        assertNull(activeZone(listOf(day), now.plusSeconds(3600)))
+    }
+
+    @Test fun missingCityUsesTheAirportCode() =
+        runTest(timeout = 60.seconds) {
+            val formatter = CopyLineFormatter(CopyCatalog.load(StandardTestDispatcher(testScheduler)))
+            val values =
+                dualClockValues(from.copy(city = null), to, now, null, false, formatter, CopyFormat(Language.En))
+            assertEquals("AMS", values[0].place)
+        }
 }

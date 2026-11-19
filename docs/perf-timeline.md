@@ -429,3 +429,16 @@ Record device/image, build type, commit, theme, language, font scale and refresh
 | Baseline / startup profile coverage | non-empty; TripPage, DayHeader, SummaryCard | pending |
 
 Host evidence: the retargeted six-case `TimelineInvalidationTest` passes (suite 3.628 s; individual maximum 2.804 s). Its sustained 120 × 1 dp scroll case takes 0.307 s, the summary minute case 0.090 s, and the perf presented-marker case 0.058 s. These are Robolectric test wall times, not timeline runtime metrics. The static drawing layer, off-main builder, clock isolation and all budget thresholds remain intact.
+
+`make timing` passes all six serial JVM gates in **11.62 s wall** (Gradle 11 s), MacBook-Pro-van-Rick.local / Apple silicon, JDK 21 test toolchain, `:core:plan:timingTest`, one worker. This is host evidence, with no emulator or device build. Decode/layout/preparation samples and drawing samples remain below their existing gates:
+
+| Host measurement | Mean / maximum or median | Unit |
+|---|---|---|
+| S3 decode/layout/preparation | 3.2 / 4.8 | ms |
+| large30 decode/layout/preparation | 5.0 / 5.5 | ms |
+| large60 decode/layout/preparation | 8.4 / 10.3 | ms |
+| Drawing total median, 360 / 411 / 841 dp | 1.5 / 0.8 / 1.6 | ms |
+| Largest day median, 360 / 411 / 841 dp | 0.07 / 0.05 / 0.05 | ms |
+| Drawing bytes maximum, 360 / 411 / 841 dp | 11795 / 11795 / 14089 | bytes |
+
+The synthetic benchmark-checker tests now use Page `trip` for their matching-history fixtures and Page `host` for the isolation case. All 38 checker tests pass; no runtime threshold or history row was changed.

@@ -1110,7 +1110,48 @@ Port of `TripPageView.toolbar`, `titleItem`, `dayMenuLabel` and `subtitle`:
 - Its captured log has no StrictMode violations. The global `adb -s emulator-5554 logcat -d | rg -c StrictMode` prints `6`: all six matches are older test start/finish names (`AppLaunchSmokeTest`, `DeviceConfigStrictModeTest`, `LaunchStrictModeTest`), not violations. The log was not cleared.
 - User rerun: `make targeted ONLY="app:TripPageSummarySeedTest"`. Keep `pixel` running.
 - Task 14 implements summary/menu coverage in the baseline journey and requires the four real-page descriptors after generation. Measurements and profile regeneration remain user-owned; `docs/perf-timeline.md` "Phase 6b" lists every pending number and exact commands. `BaselineProfileFilesTest` deliberately rejects the stale committed host profiles until `make baseline-profile` is run. The Perf checkbox stays open.
-- Full check and captures are recorded below as their owning tasks finish. No benchmark run is claimed here.
+- Task 15 harness adjustments (OQ-A270/A271): visible headings are checked before auto-scrolling guards; an empty visible-heading set is valid. The ink guard can select the exact main root. Static viewport checks avoid disposing their original lazy/chrome nodes by auto-scrolling; existing guard defaults are preserved. Native menu guards run after page guards, with menu structure/target/window-size checks; captures composite its separate window. These do not claim Robolectric system-bar evidence. The page-only guard fixture consumes the bottom safe inset at its parent, as the shell does; captures use the actual Cf navigation wrapper. A 280 dp English/Dutch summary case supplements the named profile matrix.
+- Task 15: all **64** parameterized board cases pass (the brief's 62 plus English/Dutch at 280 dp). The native menu checks every item's 52 dp minimum. The single capture invocation writes exactly **16 PNGs**, under `build/captures/`, including a composite of the native popup window. Summary, menu, Dutch end fallback and dark timeline captures were inspected. The shared guard's existing 16 self-tests pass; its two changed methods also pass after adding the static viewport positive/negative controls.
+- The three new `Cf*` wrappers have dedicated `TripChromeWrappersGuardsTest` cases on small/nl, largeFont/nl and pixel8/en. They pass; the previously failing `KonsistRulesTest.designSystemPrimitivesHaveGuards` also passes. The first wrapper-test compilation used a nonexistent `DpRect.height`; the bounds subtraction fixes it. A parameter-name filter for the final menu guards matched no tests; the owning class was selected instead, producing all 64 results.
+- Lint passes for app, trip, design system, UI and Compose testing, along with `verifyReleaseManifest`. Lint fixes remove the empty `super.onCleared()` call and create the perf entry's SavedStateHandle through `createSavedStateHandle()` in its factory. The final UI/testing lint, Spotless and debug androidTest compilation pass after the guard additions.
+- `make quick` was run **once**: **34.04 s wall**, 3121 JUnit results, 3119 passing and two failing, with no timing overruns. The missing-wrapper-guards failure is fixed and passes its focused check. The remaining failure is `BaselineProfileFilesTest.baselineProfileCoversTheStartupAndTimelinePaths`: `Lnet/chronoflow/feature/trip/page/TripPageKt; is missing from baseline-prof.txt`. Profiles were not edited by hand or regenerated. The quick command was not repeated.
+- Quick stops before its later recipes on failure. Those recipes were run separately: build-logic (37 passing), serial timing (six passing), and tooling. The tooling run found four checker-fixture failures after the Page switch; matching history now says `trip`, the other-page case says `host`, and all 38 checker tests pass. The other 90 script tests pass from the original invocation. Generator tests pass: contracts 25, localization 49, icons nine. The first direct contracts invocation omitted the environment that Make exports; supplying `IOS_REPO` and `WEB_REPO` fixes that invocation.
+- Host results and logs are archived under `build/phase6b-validation/`; the quick/capture/native/timing tiers include their JUnit files and `timings.json`. No benchmark run is claimed. Perf and Tests remain unticked until the explicitly deferred evidence is available. `make check`, `make perf`, `make perf-timeline`, `make baseline-profile`, and other emulator tiers were not run.
+
+Wall times below are Gradle-reported unless identified as tier wall time. Every required JVM/Robolectric class appears in the quick tier's timings; focused runs preceded it as each task landed.
+
+| Command / focused classes | Result | Wall time |
+|---|---|---|
+| `make targeted ONLY="core:plan:PlanPreferencesTest core:data:TripPlanObservationTest"` | 15 pass after the observation-order fix; the failing case was rerun alone | fix 2 s |
+| `make targeted ONLY="feature:trip:TripPageViewModelTest"` | model, cancellation, revision, lease and anchor cases pass; final class has 20 cases | 1 s |
+| `make targeted ONLY="feature:trip:TripListIndexTest feature:trip:TripScrollMathTest"` | 9 pass | 2 s |
+| `make targeted ONLY="core:plan:DualClockValuesTest feature:trip:SummaryCardTest"` | clock and summary cases pass; final clock class has six cases | 2 / 6 s |
+| `make targeted ONLY="feature:trip:DayNavigationTest"` | 3 pass | 6 s |
+| `make targeted ONLY="core:ui:StringParityTest#countsAreRecorded"` | pass | 2 s |
+| `make targeted ONLY="feature:trip:DayHeaderTest feature:trip:HeadingZoneLayoutTest feature:trip:LaneHeadingsTest"` | 7 pass | 4 s |
+| `make targeted ONLY="feature:trip:TripTopBarTest feature:trip:DayMenuScrollTest"` | 4 pass, including large60/day 50 | 5 s |
+| `make targeted ONLY="feature:trip:CompactHeaderTest"` | 3 pass | 5 s |
+| `make targeted ONLY="feature:trip:EndOfPlanCardTest feature:trip:HiddenStepsButtonTest"` | 3 pass | 5 s |
+| `make targeted ONLY="feature:trip:TripPageTest"` | 11 pass after selecting the offscreen menu item correctly | initial 7 s; method 6 s |
+| `make targeted ONLY="feature:trip:TimelineInvalidationTest feature:trip:TimelinePerfMarkersTest feature:trip:TimelineJankTaggerTest"` | all six invalidation cases, marker and JankStats cases pass | 5 s |
+| `make targeted ONLY="app:FixtureTripPageSourceTest app:Large60FixtureTripPageSourceTest app:PerfClockTest app:TestSeedSessionKeysTest app:TripPageViewModelFactoryTest"` | pass | 7 s |
+| `make targeted ONLY="app:TripPageViewModelFactoryTest"` | pass; lease clears with entry store | 5 s |
+| `make targeted ONLY="app:ReleaseReadinessTest"` | 11 pass | 4 s |
+| `make targeted ONLY="app:TripPageSummarySeedTest"` | original test fails its back expectation; corrected test awaits user | 15.19 s tier; 8.656 s test |
+| `./gradlew :benchmark:compileBenchmarkReleaseKotlin` | pass | 1 s |
+| `make targeted ONLY="feature:trip:TripPageBoardGuardTest"` | final 64 pass, slowest 2.351 s | 9.52 s tier |
+| `make captures ONLY=Plan,PlanScrolled,PlanTimelineTop,PlanDayMenu,PlanEnd,PlanEndNoText` | 16 captures pass, 228 unrelated cases skipped | 12.82 s tier |
+| `make timing` | 6 pass; numbers in `docs/perf-timeline.md` | 11.62 s tier |
+| App + touched-module Lint and release manifest | pass | final 12 s |
+| `make quick` | 3119 pass, two failures described above | 34.04 s tier |
+| Wrapper guards / one Konsist method / two changed guard self-tests | 3 / 1 / 2 pass | 7 / 4 / 6 s |
+| Build-logic recipe | 37 pass | 6.90 s tier |
+| `Scripts/test_scripts.sh` | 124 pass, four checker fixtures fail; checker-only rerun 38 pass | 16.929 s / 1.925 s test wall |
+| Contracts / localization / icon generator tests | 25 / 49 / 9 pass | 0.136 / 0.020 / 0.042 s test wall |
+
+The Kotlin daemon's attempt to write outside the sandbox reports `java.nio.file.FileSystemException: /Users/rickgout/Library/Application Support/kotlin/daemon/kotlin-daemon-client-tsmarker…tmp: Operation not permitted`; Gradle's fallback compilation succeeds. This did not block a build or test. No Gradle call stalled for three minutes; no daemon stop or emulator shutdown was performed.
+
+Auxiliary audit limits: `ps -eo pid,etime,command | rg 'Gradle Test Executor|GradleWorkerMain' | head -8` reports `zsh:1: operation not permitted: ps`. `git log --format='%h %G? %s' -15` produced no output during signature verification and was cancelled with Ctrl-C (exit 130); signature presence was checked from raw commit objects instead. The attempted process lookup `pkill -f '^git log --format=%h %G'` reports `sysmon request failed with error: sysmond service not found` and `pkill: Cannot get process list` (exit 3). This was a read-only audit command, not a test or signing failure. Each phase commit was created successfully with `git commit -S`; none was committed unsigned.
 
 ---
 

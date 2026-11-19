@@ -414,4 +414,17 @@ class TripPageViewModelTest {
                     .isEmpty(),
             )
         }
+
+    @Test fun zeroDaysHaveNoAnchorOrScrollCommand() =
+        runTest(timeout = 60.seconds) {
+            val rig = rig()
+            val detail = LargeTimelineFixtures.fixture("S3").detail
+            rig.replace(detail.copy(plan = detail.plan.copy(days = emptyList())))
+            runCurrent()
+            assertEquals(TripPageAnchor(), rig.vm.anchor.value)
+            assertEquals(emptyList<Any>(), rig.plan.prepared.days)
+            val commands = mutableListOf<ScrollCommand>()
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { rig.vm.scrollCommands.toList(commands) }
+            assertTrue(commands.isEmpty())
+        }
 }

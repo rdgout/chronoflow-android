@@ -20,6 +20,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import net.chronoflow.core.designsystem.semantics.ellipsizable
 import net.chronoflow.core.designsystem.theme.CfTheme
 import net.chronoflow.core.plan.PreparedDay
 import net.chronoflow.core.plan.generated.PlanMetrics
@@ -68,6 +69,7 @@ fun LaneHeadings(
                 Box(Modifier.size(PlanMetrics.dot.dp).background(laneColors[index], CircleShape))
                 Text(
                     stringResource(label),
+                    Modifier.ellipsizable(),
                     style = CfTheme.type.planLane,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,

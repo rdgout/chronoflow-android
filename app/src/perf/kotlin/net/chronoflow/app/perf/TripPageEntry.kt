@@ -7,7 +7,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
@@ -80,7 +80,7 @@ private fun TripPage(
                             args = TripPageArgs("fixture-$name"),
                             source = FixtureTripPageSource(name, fixture),
                             pipeline = DefaultTripPlanPipeline(decoder, preparer),
-                            savedState = SavedStateHandle(),
+                            savedState = createSavedStateHandle(),
                             clock = clock,
                             language = language,
                             compute = Dispatchers.Default,
