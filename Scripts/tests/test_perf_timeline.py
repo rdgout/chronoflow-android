@@ -1,3 +1,4 @@
+import os
 import unittest
 
 from helpers import SCRIPTS, run, temp_dir
@@ -12,6 +13,7 @@ case "$*" in
   *getprop*qemu*) echo "${FAKE_QEMU:-1}" ;;
   *persist.sys.locale*) echo "${FAKE_LOCALE:-en-US}" ;;
   *animator_duration_scale*) echo "${FAKE_SCALE:-1.0}" ;;
+  *logcat*) if [ -n "${FAKE_PROGRESS_FIFO:-}" ]; then echo ready > "$FAKE_PROGRESS_FIFO"; fi ;;
 esac
 """
 
@@ -177,7 +179,18 @@ class PerfTimelineTest(unittest.TestCase):
         result = self.perf(PERF_TIMELINE_DRY_RUN="1")
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("connectedBenchmarkReleaseAndroidTest", result.stdout)
+        self.assertIn("test_runner_progress.py --adb", result.stdout)
+        self.assertIn("--test-class net.chronoflow.benchmark.TimelineBenchmark --", result.stdout)
         self.assertEqual(self.calls("gradlew") + self.calls("checker"), [])
+        self.assertFalse(any(" logcat " in c for c in self.calls("adb")))
+
+    def test_progress_stream_targets_the_selected_device_and_test_runner(self):
+        fifo = self.tmp / "progress-ready"
+        os.mkfifo(fifo)
+        (self.tmp / "gradlew").write_text('#!/bin/bash\nread -r ready < "$FAKE_PROGRESS_FIFO"\n')
+        result = self.perf(FAKE_PROGRESS_FIFO=str(fifo))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("adb -s emulator-5554 logcat -T 1 -v brief -s TestRunner:I *:S", self.calls("adb"))
 
 
 if __name__ == "__main__":

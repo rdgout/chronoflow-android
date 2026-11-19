@@ -22,3 +22,27 @@ The root window seam uses LocalWindowInfo.containerSize, which reads current Act
 - The host wrapper held the device lock, ran prep-perf first, then reset the window and ran prep-functional in finally. Final `adb -s emulator-5554 shell wm size`: `Physical size: 1080x2400`. Pixel remains running. No baseline profile was regenerated.
 
 Evidence: `build/test-results/phase-6e-gate/fix2/`, including the original connected test log.
+
+## Fix 3 — quiet connected task trips the idle cap
+
+The five methods share one connected Gradle invocation, which emits no output between its start and completion. Their aggregate duration exceeds the tier's 600 s idle cap even though each method continues making progress. Scripts/perf-timeline.sh now wraps that same invocation with a TestRunner logcat stream. Only started/finished records for the exact TimelineBenchmark class are forwarded and flushed. There is no timer heartbeat; idle and total caps are unchanged. The monitor is terminated and reaped when Gradle succeeds, fails or is interrupted. Archives, band-miss reruns, checker arguments, device selection and window/functional cleanup retain their existing behavior. Dry-run prints the wrapper and its complete Gradle command without starting the stream.
+
+- `python3 -I -m unittest discover -s Scripts/tests -p 'test_perf_timeline.py' -v`: PASS, 17 tests in 4.362 s.
+- `python3 -I -m unittest discover -s Scripts/tests -p 'test_test_runner_progress.py' -v`: PASS, 5 tests in 0.913 s. Includes actual child-process cleanup after success/failure and a stalled-method integration test that is killed by the original idle cap despite its initial TestRunner event.
+
+The full device tier is left for the orchestrator: `make perf-timeline`. The single wide benchmark above was the only benchmark run in this gate round. Baseline profiles remain untouched; the orchestrator regenerates them.
+
+## Final verification
+
+- `make quick`, once: PASS, about 55 s overall. JVM/Robolectric: 3,595 cases, 31.78 s wall; build logic: 37 cases, 1.72 s wall; tooling: 247 cases (164 script, 25 contract, 49 localization, 9 icon), 19.745 s combined unittest wall; timing: 6 cases, 1.08 s wall. No budget overruns. This includes TimelineInvalidationTest and the existing timing gates.
+- `./gradlew :app:lintDebug :feature:trip:lintDebug`, once: PASS, 12 s Gradle wall.
+- `git diff --check`: PASS. No brief patches or OQ rows were needed in this round.
+
+Evidence for Fix 3 and final verification: `build/test-results/phase-6e-gate/fix3/`.
+
+Device follow-up commands for the orchestrator (not run here):
+
+```sh
+make baseline-profile
+make perf-timeline
+```
