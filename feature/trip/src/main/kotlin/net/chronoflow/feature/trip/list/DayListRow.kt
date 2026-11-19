@@ -55,6 +55,7 @@ fun DayListRow(
     modifier: Modifier = Modifier,
     actions: StepActions = StepActions.None,
     onCheck: (String, CheckStatus?) -> Unit = { _, _ -> },
+    selected: () -> Boolean = { false },
 ) {
     val labels = rememberCheckActionLabels()
     val checkActions =
@@ -92,7 +93,7 @@ fun DayListRow(
                 .fillMaxWidth()
                 .alpha(if (row.status != null) PlanMetrics.markedRowOpacity.toFloat() else 1f)
                 .background(colors.card, shape)
-                .tripOutline(colors.border, PlanMetrics.rowRadius.dp, row.optional)
+                .tripOutline(colors.border, PlanMetrics.rowRadius.dp, row.optional, selected, colors.dawn)
                 .cfClickable(onClick = { onBlock(row.blockId) }, focusShape = shape)
                 .testTag("trip.block.${row.blockId}")
                 .clearAndSetSemantics {

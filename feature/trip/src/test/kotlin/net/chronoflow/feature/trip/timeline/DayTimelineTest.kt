@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -83,6 +84,7 @@ class DayTimelineTest {
                 onBlock = { opened += it },
                 onFirstReplay = {},
                 prefetch = { _, _ -> },
+                modifier = Modifier.testTag("trip.day.${rig.day.id}"),
             )
         }
     }

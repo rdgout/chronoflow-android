@@ -12,3 +12,9 @@ Branch preflight: `feat/phase-6e-trip-wide`. Upstream names and all P1 metrics a
 ## Task 2
 
 `make targeted ONLY="feature:trip:TripPageFrameTest"`: PASS, 13 independent parameter cases, Gradle 4 s. Height is absent from the pure frame API. Narrow content floors the timeline width at zero. Task 1 app compilation also passed (4 s); `make format` passed (11 s).
+
+## Task 3
+
+`make targeted ONLY="feature:trip:WideDayRowTest feature:trip:WideDayRowBreakpointTest feature:trip:DayTimelineTest feature:trip:ListInvalidationTest"`: PASS, 13.64 s wall (Gradle 13 s), no budget overruns. Initial compilation needed the `DpRect.width` extension import. WideDayRowTest: 2 cases, 0.048 s; WideDayRowBreakpointTest: 4 cases, 0.12 s; DayTimelineTest: 6 cases, 0.165 s; ListInvalidationTest: 124 cases, 7.945 s. `make format`: PASS (11 s).
+
+The day tag moved from `DayTimeline` to `WideDayRow`; the standalone timeline test host supplies its own tag. Selection changes are read only from the cached border draw. Phone outline call sites retain the false default.

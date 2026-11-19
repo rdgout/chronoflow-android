@@ -1,8 +1,10 @@
 
 package net.chronoflow.feature.trip.page
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -47,6 +49,7 @@ import net.chronoflow.core.plan.trippage.TripPageLayout
 import net.chronoflow.core.plan.trippage.TripPageState
 import net.chronoflow.core.ui.R
 import net.chronoflow.core.ui.refresh.RefreshFeedbackCapsule
+import net.chronoflow.core.ui.window.LocalWindowSize
 import net.chronoflow.feature.trip.list.DayListRow
 import net.chronoflow.feature.trip.list.ZoneChangeCard
 import net.chronoflow.feature.trip.state.TripPageErrorPage
@@ -55,9 +58,10 @@ import net.chronoflow.feature.trip.timeline.DayTimeline
 import net.chronoflow.feature.trip.timeline.LocalTimelineJankTagger
 import net.chronoflow.feature.trip.timeline.TimelinePresentedMarker
 import net.chronoflow.feature.trip.timeline.TimelineResources
-import net.chronoflow.feature.trip.timeline.host.timelineAvailableWidthDp
 import net.chronoflow.feature.trip.timeline.host.timelineDrawingKey
 import net.chronoflow.feature.trip.timeline.recoverDrawingFailure
+import net.chronoflow.feature.trip.wide.TripPageFrame
+import net.chronoflow.feature.trip.wide.WideDayRow
 
 private class PageRestoration {
     var job: Job? = null
@@ -85,15 +89,21 @@ fun TripPageScreen(
         }
         return
     }
+    val windowWidth =
+        LocalWindowSize.current.width.value
+            .toDouble()
+    val wide = TripPageLayout.resolve(windowWidth).isWide
+    val renderedTimeline = state.timeline || wide
     val plan = state.ui.plan
     val listState = state.listState
     val showToggle =
-        when (state.ui.state) {
-            TripPageState.Ready, TripPageState.Loading, TripPageState.RemoteLoading -> true
-            else -> false
-        }
+        !wide &&
+            when (state.ui.state) {
+                TripPageState.Ready, TripPageState.Loading, TripPageState.RemoteLoading -> true
+                else -> false
+            }
     val dayId = state.anchor.dayID
-    val index = if (state.timeline) plan?.index else plan?.listIndex
+    val index = if (renderedTimeline) plan?.index else plan?.listIndex
     val restoration = remember(listState) { PageRestoration() }
     val header = if (dayId != null && plan?.layouts?.containsKey(dayId) == true) index?.headerIndex(dayId) else null
     var scrolled by remember(listState, header) {
@@ -189,14 +199,18 @@ private fun ReadyTripPage(
     val dark = CfTheme.colors.isDark
     val thresholdPx = with(density) { PlanMetrics.compactHeaderHeight.sp.roundToPx() }
     val fadePx = with(density) { PlanMetrics.compactFadeDistance.dp.toPx() }
-    val index: PageIndex = if (state.timeline) plan.index else plan.listIndex
+    val windowWidth =
+        LocalWindowSize.current.width.value
+            .toDouble()
+    val renderedTimeline = state.timeline || TripPageLayout.resolve(windowWidth).isWide
+    val index: PageIndex = if (renderedTimeline) plan.index else plan.listIndex
     val days = plan.prepared.days
     val anchorId = state.anchor.dayID
     val currentState = rememberUpdatedState(state)
     val currentEvent = rememberUpdatedState(onEvent)
 
     fun offsetDp(id: String): Double =
-        if (!state.timeline) {
+        if (!renderedTimeline) {
             0.0
         } else {
             with(density) {
@@ -219,9 +233,9 @@ private fun ReadyTripPage(
         }
     }
     val tagger = LocalTimelineJankTagger.current
-    LaunchedEffect(tagger, anchorId, days, state.timeline) {
+    LaunchedEffect(tagger, anchorId, days, renderedTimeline) {
         val position = days.indexOfFirst { it.id == anchorId }
-        if (position >= 0) tagger?.onVisibleDay(position, if (state.timeline) "timeline" else "list")
+        if (position >= 0) tagger?.onVisibleDay(position, if (renderedTimeline) "timeline" else "list")
     }
     val resources =
         remember(density.density, dark) {
@@ -249,9 +263,10 @@ private fun ReadyTripPage(
         val left = with(density) { safe.getLeft(this, direction).toDp() }
         val right = with(density) { safe.getRight(this, direction).toDp() }
         val bottom = with(density) { safe.getBottom(this).toDp() }
-        val gutter = TripPageLayout.resolve(width).gutter.dp
-        val available = timelineAvailableWidthDp(width, left.value.toDouble(), right.value.toDouble())
-        val compact = width < PlanMetrics.timelineLabelBreakpoint
+        val frame = TripPageFrame.resolve(windowWidth, width - left.value - right.value)
+        val gutter = frame.gutterDp.dp
+        val available = frame.timelineWidthDp
+        val compact = frame.compact
         val geometry = rememberUpdatedState(Triple(available, compact, density))
         val appearance = rememberUpdatedState(dark to reduceMotion)
         LaunchedEffect(state.commands, listState) {
@@ -259,7 +274,7 @@ private fun ReadyTripPage(
                 restoration.job?.cancel()
                 restoration.job =
                     launch {
-                        if (!currentState.value.timeline) {
+                        if (!currentState.value.timeline && !frame.layout.isWide) {
                             val replacement =
                                 snapshotFlow { currentState.value.ui.plan }.first {
                                     it?.layouts?.containsKey(command.dayId) == true
@@ -328,31 +343,73 @@ private fun ReadyTripPage(
                         Modifier.testTag("trip.headerItem.${day.id}").padding(top = PlanMetrics.sectionGap.dp),
                     ) { DayHeader(day, requestFocus = focusDay == day.id, onFocusRequest = focusHandled) }
                 }
-                if (state.timeline) {
+                if (renderedTimeline) {
                     item("t:${day.id}", "dayTimeline") {
-                        DayTimeline(
-                            day,
-                            plan.layouts.getValue(day.id),
-                            timelineDrawingKey(
-                                day.id,
-                                plan.prepared.revision,
-                                available,
-                                density,
-                                dark,
-                                compact,
-                                plan.language,
-                            ),
-                            position,
-                            available,
-                            state.repository,
-                            resources,
-                            state.clocks.clock(day.id),
-                            onBlock,
-                            onFirstReplay,
-                            state.prefetch,
-                            actions = day.checkActions,
-                            onCheck = onCheck,
-                            headings = { LaneHeadings(null) },
+                        WideDayRow(
+                            day.id,
+                            frame,
+                            timeline = {
+                                DayTimeline(
+                                    day,
+                                    plan.layouts.getValue(day.id),
+                                    timelineDrawingKey(
+                                        day.id,
+                                        plan.prepared.revision,
+                                        available,
+                                        density,
+                                        dark,
+                                        compact,
+                                        plan.language,
+                                    ),
+                                    position,
+                                    available,
+                                    state.repository,
+                                    resources,
+                                    state.clocks.clock(day.id),
+                                    onBlock,
+                                    onFirstReplay,
+                                    state.prefetch,
+                                    actions = day.checkActions,
+                                    onCheck = onCheck,
+                                    headings = { LaneHeadings(null) },
+                                )
+                            },
+                            list =
+                                if (frame.layout.isWide && plan.layouts.containsKey(day.id)) {
+                                    (
+                                        {
+                                            Column(
+                                                Modifier
+                                                    .testTag("trip.wide.list.${day.id}")
+                                                    .padding(top = PlanMetrics.rowGap.dp),
+                                                verticalArrangement = Arrangement.spacedBy(PlanMetrics.rowGap.dp),
+                                            ) {
+                                                plan.listRows[position].rows.forEach { row ->
+                                                    val selected =
+                                                        remember(row.blockId, state.selectedBlock) {
+                                                            { state.selectedBlock() == row.blockId }
+                                                        }
+                                                    if (row.zone) {
+                                                        ZoneChangeCard(row, onBlock, selected = selected)
+                                                    } else {
+                                                        DayListRow(
+                                                            row,
+                                                            state.clocks.clock(day.id),
+                                                            onBlock,
+                                                            selected = selected,
+                                                            actions =
+                                                                day.checkActions.byBlock[row.blockId]
+                                                                    ?: net.chronoflow.core.plan.step.StepActions.None,
+                                                            onCheck = onCheck,
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    )
+                                } else {
+                                    null
+                                },
                         )
                     }
                 } else {
@@ -426,16 +483,16 @@ private fun ReadyTripPage(
             visible,
             PaddingValues(start = gutter + left, end = gutter + right),
             Modifier.align(Alignment.TopStart),
-            timeline = state.timeline,
+            timeline = renderedTimeline,
         )
-        if (!state.timeline) {
+        if (!renderedTimeline) {
             Box(Modifier.size(PlanMetrics.border.dp).testTag("trip.timeline.ready"))
         }
         Box(
             Modifier
                 .size(
                     PlanMetrics.border.dp,
-                ).testTag(if (state.timeline) "trip.mode.timeline" else "trip.mode.list"),
+                ).testTag(if (renderedTimeline) "trip.mode.timeline" else "trip.mode.list"),
         )
         TimelinePresentedMarker(state.firstFrame.presented, Modifier.align(Alignment.TopStart))
     }

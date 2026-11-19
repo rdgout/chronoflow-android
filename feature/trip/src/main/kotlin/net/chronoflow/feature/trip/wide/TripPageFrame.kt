@@ -11,7 +11,10 @@ data class TripPageFrame(
     val timelineWidthDp: Double,
 ) {
     companion object {
-        fun resolve(windowWidthDp: Double, contentWidthDp: Double): TripPageFrame {
+        fun resolve(
+            windowWidthDp: Double,
+            contentWidthDp: Double,
+        ): TripPageFrame {
             val layout = TripPageLayout.resolve(windowWidthDp)
             val columns = layout.listWidth?.let { it + PlanMetrics.wideColumnGap } ?: 0.0
             return TripPageFrame(
