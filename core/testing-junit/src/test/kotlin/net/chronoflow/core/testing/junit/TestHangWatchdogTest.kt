@@ -55,6 +55,13 @@ class TestHangWatchdogTest {
         assertEquals("", File(directory, "worker.log").readText())
     }
 
+    @Test fun theFirstPlainJvmTestKeepsTheNormalCap() {
+        val directory = runWorker("first-jvm", 86)
+        val evidence = directory.listFiles()!!.single { it.name.startsWith("hang-") }.readText()
+        assertTrue(evidence.contains("[engine:watchdog-proof]/[test:firstJvmTest] exceeded 100ms"))
+        assertTrue(evidence.contains("java.util.concurrent.CountDownLatch.await"))
+    }
+
     @Test fun eachRobolectricSdkGetsItsOwnColdAllowance() {
         val directory = runWorker("sdk-switch", 0)
         assertFalse(directory.listFiles()!!.any { it.name.startsWith("hang-") })
@@ -137,6 +144,13 @@ internal object WatchdogProofWorker {
         }
         val mode = args.single()
         val listener = TestTimingListener()
+        if (mode == "first-jvm") {
+            val test = identifier("firstJvmTest")
+            listener.executionStarted(test)
+            CountDownLatch(1).await(200, TimeUnit.MILLISECONDS)
+            listener.executionFinished(test, TestExecutionResult.successful())
+            return
+        }
         if (mode == "jvm-then-robo" || mode == "sdk-switch") {
             val jvm = identifier("jvmTest")
             listener.executionStarted(jvm)
