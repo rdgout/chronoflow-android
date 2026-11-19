@@ -32,6 +32,11 @@ data class TodayInput(
 )
 
 object TodayReducer {
+    internal fun futureOptions(
+        input: TodayInput,
+        block: BlockView,
+    ): CopyFormat = CopyFormat(input.language, input.prefs.timeFormat, block.displayTz)
+
     fun reduce(input: TodayInput): TodayUiState {
         val trips = input.trips ?: return TodayUiState.Loading
         val formatter = input.formatter ?: return TodayUiState.Loading
@@ -51,8 +56,7 @@ object TodayReducer {
         if (hero.status == TripStatus.Upcoming) {
             val next =
                 view?.nextStep?.let { block ->
-                    val options =
-                        CopyFormat(input.language, input.prefs.timeFormat, block.displayTz, trip = detail.trip)
+                    val options = futureOptions(input, block)
                     NextStepUi(
                         block.id,
                         block.type,

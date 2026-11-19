@@ -31,7 +31,10 @@ class TodayViewModelTest {
     @Test fun cancelledRefreshStopsRefreshingWithoutFeedback() =
         check { rig ->
             rig.model.refresh { throw CancellationException("foreign") }
-            assertTrue(rig.model.refreshState.value.feedback.isEmpty())
+            assertTrue(
+                rig.model.refreshState.value.feedback
+                    .isEmpty(),
+            )
             assertFalse(rig.model.refreshState.value.refreshing)
         }
 

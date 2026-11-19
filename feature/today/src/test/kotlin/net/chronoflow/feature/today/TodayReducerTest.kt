@@ -5,6 +5,11 @@ import kotlinx.coroutines.test.runTest
 import net.chronoflow.core.model.contracts.BlockType
 import net.chronoflow.core.model.contracts.CheckMark
 import net.chronoflow.core.model.contracts.CheckStatus
+import net.chronoflow.core.model.contracts.CopyArg
+import net.chronoflow.core.model.contracts.CopyArgKind
+import net.chronoflow.core.model.contracts.CopyArgValue
+import net.chronoflow.core.model.contracts.CopyArgument
+import net.chronoflow.core.model.contracts.CopyLine
 import net.chronoflow.core.model.contracts.TripStatus
 import net.chronoflow.core.plan.trippage.PlanPreferences
 import org.junit.Assert.assertEquals
@@ -65,6 +70,27 @@ class TodayReducerTest {
             val state = TodayReducer.reduce(it.copy(trips = listOf(trip))) as TodayUiState.Future
             assertEquals(3, state.preparationDays)
             assertEquals(trip.planStartUtc, state.planStartUtc)
+        }
+
+    @Test fun futureInstantInAnotherZoneUsesNoAirportCityContext() =
+        check { input ->
+            val formatter = input.formatter!!
+            val detail = input.heroDetail!!
+            val arg = CopyArg("time", CopyArgKind.Instant, CopyArgValue.Text(todayNow.toString()), "America/New_York")
+            val block =
+                detail.plan.blocks.first().copy(
+                    displayTz = "Europe/Amsterdam",
+                    text = CopyLine(":time", listOf(CopyArgument.Standard(arg))),
+                )
+            val trip = detail.trip.copy(to = detail.trip.to.copy(city = "Queens", zone = "America/New_York"))
+            val futureDetail = detail.copy(trip = trip, plan = detail.plan.copy(blocks = listOf(block)))
+            val upcoming = todayTrip(status = TripStatus.Upcoming, start = todayNow.plusSeconds(86400))
+            val futureInput = input.copy(trips = listOf(upcoming), heroDetail = futureDetail)
+            val options = TodayReducer.futureOptions(futureInput, block)
+            assertNull(options.trip)
+            assertEquals("05:00 (New York)", formatter.formatArgument(arg, options.copy(annotateInstantZone = true)))
+            val state = TodayReducer.reduce(futureInput) as TodayUiState.Future
+            assertEquals("05:00", state.next!!.title)
         }
 
     @Test fun futurePlanStartFallsBackToDepartureZone() =
