@@ -28,6 +28,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -53,11 +55,15 @@ import net.chronoflow.core.model.config.AppLanguage
 import net.chronoflow.core.model.config.ConfigurationRules
 import net.chronoflow.core.model.config.LanguageChoice
 import net.chronoflow.core.model.contracts.Language
+import net.chronoflow.core.plan.CopyLineFormatter
 import net.chronoflow.core.sync.refresh.RefreshDebugProbe
 import net.chronoflow.core.sync.refresh.RefreshFeedbackState
 import net.chronoflow.core.ui.R
+import net.chronoflow.core.ui.clock.MinuteClock
 import net.chronoflow.core.ui.refresh.RefreshFeedbackCapsule
 import net.chronoflow.core.ui.shell.LocalTabReselect
+import net.chronoflow.core.ui.trip.TripCard
+import net.chronoflow.core.ui.trip.tripsStatusText
 import java.util.Locale
 
 @Composable
@@ -71,6 +77,9 @@ fun TripsScreen(
     LaunchedEffect(viewModel, language) { viewModel.setLanguage(language) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     val refreshState by viewModel.refreshState.collectAsStateWithLifecycle()
+    val now = viewModel.now.collectAsStateWithLifecycle()
+    val clock = remember(now) { MinuteClock(now) }
+    val formatter by viewModel.formatter.collectAsStateWithLifecycle()
     TripsContent(
         state,
         refreshState,
@@ -80,6 +89,8 @@ fun TripsScreen(
         onOpenTrip,
         onNewTrip,
         refreshProbe = viewModel.refreshProbe,
+        clock = clock,
+        formatter = formatter,
     )
 }
 
@@ -95,6 +106,8 @@ fun TripsContent(
     modifier: Modifier = Modifier,
     refreshProbe: RefreshDebugProbe = RefreshDebugProbe.None,
     listState: LazyListState = rememberLazyListState(),
+    clock: MinuteClock = remember { MinuteClock(mutableStateOf(java.time.Instant.EPOCH)) },
+    formatter: CopyLineFormatter? = null,
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val signal = LocalTabReselect.current
@@ -167,7 +180,14 @@ fun TripsContent(
                                 )
                             }
                             items(section.trips, key = { it.id }, contentType = { "trip" }) { card ->
-                                TripCard(card, { onOpenTrip(card.id) }, itemModifier, language)
+                                TripCard(
+                                    card,
+                                    { onOpenTrip(card.id) },
+                                    clock,
+                                    checkNotNull(formatter),
+                                    itemModifier,
+                                    language,
+                                )
                             }
                         }
                     }

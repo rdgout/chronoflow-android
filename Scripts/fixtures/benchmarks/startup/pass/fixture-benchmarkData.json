@@ -157,6 +157,46 @@
         }
       },
       "sampledMetrics": {}
+    },
+    {
+      "name": "startupColdSignedIn",
+      "className": "net.chronoflow.benchmark.StartupBenchmark",
+      "metrics": {
+        "timeToInitialDisplayMs": {
+          "minimum": 500.0,
+          "maximum": 500.0,
+          "median": 500.0,
+          "runs": [
+            500.0,
+            500.0,
+            500.0,
+            500.0,
+            500.0,
+            500.0,
+            500.0,
+            500.0,
+            500.0,
+            500.0
+          ]
+        },
+        "timeToFullDisplayMs": {
+          "minimum": 2200.0,
+          "maximum": 2200.0,
+          "median": 2200.0,
+          "runs": [
+            2200.0,
+            2200.0,
+            2200.0,
+            2200.0,
+            2200.0,
+            2200.0,
+            2200.0,
+            2200.0,
+            2200.0,
+            2200.0
+          ]
+        }
+      }
     }
   ]
 }

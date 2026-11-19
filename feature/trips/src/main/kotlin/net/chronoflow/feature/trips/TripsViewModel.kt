@@ -26,10 +26,12 @@ import kotlinx.serialization.SerializationException
 import net.chronoflow.core.model.contracts.Language
 import net.chronoflow.core.model.contracts.TripDetail
 import net.chronoflow.core.model.contracts.TripStatus
+import net.chronoflow.core.plan.CopyLineFormatter
 import net.chronoflow.core.plan.TripListValue
 import net.chronoflow.core.plan.tripDisplayStatus
 import net.chronoflow.core.plan.tripSections
 import net.chronoflow.core.sync.refresh.RefreshFeedbackModel
+import net.chronoflow.core.ui.trip.tripCardUi
 import java.time.Instant
 
 class TripsViewModel(
@@ -39,6 +41,10 @@ class TripsViewModel(
     private val feedback = RefreshFeedbackModel(viewModelScope, deps.refreshProbe)
     val refreshState = feedback.state
     val refreshProbe = deps.refreshProbe
+    private val ticks = deps.clock.values().shareIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), replay = 1)
+    val now = ticks.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), Instant.EPOCH)
+    private val _formatter = MutableStateFlow<CopyLineFormatter?>(null)
+    val formatter: kotlinx.coroutines.flow.StateFlow<CopyLineFormatter?> = _formatter
     val state =
         states()
             .flowOn(deps.worker)
@@ -64,9 +70,9 @@ class TripsViewModel(
 
     private fun states(): Flow<TripsUiState> =
         flow {
-            val formatter = deps.formatter()
+            val formatter = deps.formatter().also { _formatter.value = it }
             coroutineScope {
-                val now = deps.clock.values().stateIn(this)
+                val now = ticks.stateIn(this)
                 val decoded =
                     deps
                         .tripRecords()
@@ -126,7 +132,10 @@ class TripsViewModel(
                                                 value,
                                                 plans[value.card.id],
                                                 input.now,
-                                                input.preferences,
+                                                net.chronoflow.core.plan.trippage.PlanPreferences(
+                                                    input.preferences.timeFormat,
+                                                    input.preferences.hidden,
+                                                ),
                                                 currentLanguage,
                                                 formatter,
                                             )

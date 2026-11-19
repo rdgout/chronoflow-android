@@ -14,6 +14,7 @@ import java.time.Duration
 
 internal class CfTestArguments(
     @get:Input val tier: Provider<String>,
+    @get:Input val hangCapSeconds: Provider<String>,
     @get:Input val captureOnly: Provider<String>,
     @get:Internal val timingsDir: Provider<String>,
     @get:Internal val capturesDir: Provider<String>,
@@ -21,6 +22,7 @@ internal class CfTestArguments(
     override fun asArguments(): Iterable<String> =
         listOf(
             "-Dcf.tier=${tier.get()}",
+            "-Dcf.testHangCapSeconds=${hangCapSeconds.get()}",
             "-Dcf.captureOnly=${captureOnly.get()}",
             "-Dcf.timingsDir=${timingsDir.get()}",
             "-Dcf.capturesDir=${capturesDir.get()}",
@@ -34,6 +36,11 @@ internal fun Project.configureTestLauncher() {
     configureTestTimingOutputs()
     val toolchains = extensions.getByType<JavaToolchainService>()
     val requestedTier = providers.gradleProperty("cf.tier").orElse("quick")
+    val hangCapSeconds =
+        providers
+            .systemProperty("cf.testHangCapSeconds")
+            .orElse(providers.gradleProperty("cf.testHangCapSeconds"))
+            .orElse("60")
     val captureOnly = providers.gradleProperty("cf.captureOnly").orElse("")
     val capturesDir =
         rootProject.layout.buildDirectory
@@ -51,6 +58,7 @@ internal fun Project.configureTestLauncher() {
         jvmArgumentProviders.add(
             CfTestArguments(
                 tier = if (taskName == "timingTest") providers.provider { "timing" } else requestedTier,
+                hangCapSeconds = hangCapSeconds,
                 captureOnly = captureOnly,
                 timingsDir = timings.map { it.asFile.absolutePath },
                 capturesDir = capturesDir,

@@ -1,5 +1,6 @@
 package net.chronoflow.benchmark
 
+import android.content.Intent
 import androidx.benchmark.macro.BaselineProfileMode
 import androidx.benchmark.macro.CompilationMode
 import androidx.benchmark.macro.ExperimentalMetricApi
@@ -51,6 +52,24 @@ class StartupBenchmark {
             device.wait(Until.gone(By.res("welcome.signIn")), 900)
         }
 
+    @Test fun startupColdSignedIn() =
+        rule.measureRepeated(
+            packageName = packageName,
+            metrics = listOf(StartupTimingMetric()),
+            iterations = 10,
+            compilationMode = CompilationMode.Partial(BaselineProfileMode.Require),
+            startupMode = StartupMode.COLD,
+            setupBlock = { pressHome() },
+        ) {
+            startActivityAndWait(signedInStartupIntent(packageName))
+            check(device.wait(Until.gone(By.res("launch.opening")), 5_000)) { "launch overlay never closed" }
+            check(
+                device.wait(Until.hasObject(By.res("today.trip")), 5_000) || device.hasObject(By.res("today.empty")),
+            ) {
+                "Today content missing"
+            }
+        }
+
     @Test fun startupWarm() =
         rule.measureRepeated(
             packageName = packageName,
@@ -67,3 +86,12 @@ class StartupBenchmark {
             check(device.wait(Until.hasObject(By.res("welcome.wordmark")), 2000))
         }
 }
+
+internal fun signedInStartupIntent(packageName: String) =
+    Intent().apply {
+        setClassName(packageName, "net.chronoflow.app.MainActivity")
+        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+        putExtra("cf.session", "in")
+        putExtra("cf.stored", "yes")
+        putExtra("cf.gate", "app")
+    }

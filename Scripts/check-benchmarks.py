@@ -506,6 +506,33 @@ def write_history(args, code, outcomes, values, context):
         path.write_text("\n".join(lines) + "\n")
 
 
+def write_signed_in_history(args, code, context):
+    if not args.append:
+        return
+    benches, _ = load_benchmarks(args.results_dir, "startup")
+    bench = benches.get("startupColdSignedIn", {})
+    ttid = stat_values(bench, "timeToInitialDisplayMs", "median")
+    ttfd = stat_values(bench, "timeToFullDisplayMs", "median")
+    build = context.get("build", {})
+    row = "| " + " | ".join([
+        datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d"), args.commit,
+        args.device_class, build.get("model", "unknown"), str(build.get("version", {}).get("sdk", "unknown")),
+        args.refresh_hz, args.font_scale, args.theme, BUILD,
+        _fmt(ttid[0]) if ttid else "missing", _fmt(ttfd[0]) if ttfd else "missing",
+        "FixtureTodaySource", "FAIL" if code else "REPORT",
+    ]) + " |"
+    path = Path(args.history)
+    lines = path.read_text().splitlines()
+    heading = "## Signed-in Today startup"
+    if heading not in lines:
+        lines += ["", heading, "", "| Date | Commit | Class | Device | API | Hz | Font | Theme | Build | TTID median ms | TTFD median ms | Today source | Result |", "|" + "---|" * 13]
+    at = lines.index(heading) + 4
+    while at < len(lines) and lines[at].startswith("|"):
+        at += 1
+    lines.insert(at, row)
+    path.write_text("\n".join(lines) + "\n")
+
+
 def write_timeline_history(args, budgets, code, features, context, benches):
     rows = [timeline_row(args, budgets, code, features, context, benches)]
     if "timelineScrollWide" in benches:
@@ -585,6 +612,7 @@ def main(argv):
     code, outcomes, values, context = check(args, budgets)
     if args.history and args.suite == "startup" and values:
         write_history(args, code, outcomes, values, context)
+        write_signed_in_history(args, code, context)
     if args.history and args.suite == "launch" and args.append:
         write_launch_history(args, code, context)
     return code

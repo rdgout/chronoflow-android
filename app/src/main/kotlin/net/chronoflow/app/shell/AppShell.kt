@@ -43,7 +43,7 @@ internal fun AppShell(
         AppShellScaffold(
             holder,
             onRootBack = onRootBack,
-            today = { render.value(Route.Today) },
+            today = { TodayTab(graph, sessionGraph, holder) },
             trips = {
                 val session = sessionGraph
                 if (session == null) {

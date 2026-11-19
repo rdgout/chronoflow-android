@@ -43,6 +43,7 @@ import kotlin.time.Duration.Companion.seconds
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [36])
 class TripsContentTest {
+    private lateinit var formatter: CopyLineFormatter
     private val compose = createComposeRule()
 
     @get:Rule val rules: RuleChain = RuleChain.outerRule(ProfileRule(DeviceProfiles.pixel8)).around(compose)
@@ -52,7 +53,7 @@ class TripsContentTest {
         runTest(timeout = 60.seconds) {
             state =
                 TripsBoardFixture.content(
-                    CopyLineFormatter(CopyCatalog.load(StandardTestDispatcher(testScheduler))),
+                    CopyLineFormatter(CopyCatalog.load(StandardTestDispatcher(testScheduler))).also { formatter = it },
                     Language.En,
                 )
         }
@@ -73,7 +74,10 @@ class TripsContentTest {
         create: () -> Unit = {},
         refresh: () -> Unit = {},
     ) {
-        host { TripsContent(state, RefreshFeedbackState(), Language.En, refresh, {}, open, create) }
+        host {
+            TripsContent(state, RefreshFeedbackState(), Language.En, refresh, {
+            }, open, create, formatter = if (this::formatter.isInitialized) formatter else null)
+        }
     }
 
     @Test fun contentTagsAndCardSemantics() {
@@ -150,7 +154,17 @@ class TripsContentTest {
         val language = mutableStateOf<Language>(Language.En)
         host {
             CompositionLocalProvider(LocalTabReselect provides signal.intValue) {
-                TripsContent(content, RefreshFeedbackState(), language.value, {}, {}, {}, {}, listState = list)
+                TripsContent(
+                    content,
+                    RefreshFeedbackState(),
+                    language.value,
+                    {},
+                    {},
+                    {},
+                    {},
+                    listState = list,
+                    formatter = formatter,
+                )
             }
         }
         compose.onNodeWithTag("trips.list").performScrollToIndex(20)

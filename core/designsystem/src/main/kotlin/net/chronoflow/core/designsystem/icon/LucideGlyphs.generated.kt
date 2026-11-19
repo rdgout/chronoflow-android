@@ -130,6 +130,15 @@ object LucideGlyphs {
             ),
         )
 
+    val CircleCheckBig =
+        LucideGlyph(
+            "circle-check-big",
+            listOf(
+                LucidePath("M21.801 10A10 10 0 1 1 17 3.335", false),
+                LucidePath("m9 11 3 3L22 4", false),
+            ),
+        )
+
     val CloudSun =
         LucideGlyph(
             "cloud-sun",
@@ -189,6 +198,17 @@ object LucideGlyphs {
             listOf(
                 LucidePath("M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0", false),
                 LucidePath("M9 12a3 3 0 1 0 6 0a3 3 0 1 0-6 0Z", false),
+            ),
+        )
+
+    val EyeOff =
+        LucideGlyph(
+            "eye-off",
+            listOf(
+                LucidePath("M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49", false),
+                LucidePath("M14.084 14.158a3 3 0 0 1-4.242-4.242", false),
+                LucidePath("M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143", false),
+                LucidePath("m2 2 20 20", false),
             ),
         )
 

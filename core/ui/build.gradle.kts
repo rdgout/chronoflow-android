@@ -22,6 +22,7 @@ dependencies {
         exclude(group = "io.github.takahirom.roborazzi")
     }
     androidTestImplementation(libs.androidx.test.runner)
+    testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.junit4)
     testImplementation(libs.assertk)
     testImplementation(libs.robolectric)
