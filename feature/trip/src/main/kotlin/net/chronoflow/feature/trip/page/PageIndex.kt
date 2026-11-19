@@ -9,5 +9,9 @@ interface PageIndex {
 
     fun headerIndex(dayId: String): Int
 
+    fun timelineIndex(dayId: String): Int = headerIndex(dayId)
+
+    fun dayForKey(key: Any): String?
+
     fun dayAt(index: Int): String?
 }

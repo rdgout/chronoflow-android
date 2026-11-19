@@ -63,3 +63,7 @@ PNG files under `build/captures/`:
 - `PlanWide_board669_en_light.png`
 - `PlanWide_foldInner_en_light.png`
 - `PlanWide_landscapeSideNav_en_light.png`
+
+## Task 7
+
+`make targeted ONLY="feature:trip:TripScrollTrackerTest feature:trip:TripListIndexTest feature:trip:TripScrollMathTest feature:trip:ListModeIndexTest"`: PASS, 25 JVM cases (Gradle 5 s). Tracker 12 cases / 0.003 s; other class totals 0.001–0.216 s. The common index gains key-to-day lookup rather than parsing row ids, plus the timeline index seam. No display-link retry loop is ported. `make format`: PASS.

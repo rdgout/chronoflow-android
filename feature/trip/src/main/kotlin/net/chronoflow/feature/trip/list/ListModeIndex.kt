@@ -12,6 +12,7 @@ class ListModeIndex(
     override val days = 1
     private val headers = HashMap<String, Int>()
     private val positions = HashMap<String, Int>()
+    private val dayByKey = HashMap<Any, String>()
     private val dayByIndex: Array<String?>
     override val end: Int
     override val hidden: Int?
@@ -24,9 +25,11 @@ class ListModeIndex(
         ids.add(null)
         dayIds.forEach { id ->
             headers[id] = ids.size
+            dayByKey["h:$id"] = id
             ids.add(id)
             rowsByDay[id]?.rows?.forEach { row ->
                 positions[row.key] = ids.size
+                dayByKey[row.key] = id
                 ids.add(id)
             }
         }
@@ -39,6 +42,8 @@ class ListModeIndex(
     override fun headerIndex(dayId: String): Int = requireNotNull(headers[dayId])
 
     fun rowIndex(key: String): Int = requireNotNull(positions[key])
+
+    override fun dayForKey(key: Any): String? = dayByKey[key]
 
     override fun dayAt(index: Int): String? = dayByIndex.getOrNull(index)
 }
