@@ -107,6 +107,28 @@ internal fun tripPageViewModelFactory(
             epoch = session.snapshot.epoch,
             initiallySyncCompleted = false,
             initialTimeline = !LaunchPlatform.startTripInList,
+            isCurrent = { graph.sessionGraphs.current.value === session },
+            enqueueCheck = { change ->
+                val permit =
+                    graph.controller.mutationPermit(session.snapshot)
+                        ?: throw net.chronoflow.core.model.session
+                            .StaleSessionException()
+                withContext(graph.dispatchers.io) {
+                    session.outbox.enqueue(
+                        net.chronoflow.core.model.OutboxChange
+                            .CheckOff(change),
+                        permit = permit,
+                    )
+                }
+            },
+            reportCheckFailure = { error ->
+                if (net.chronoflow.app.BuildConfig.DEBUG) {
+                    android.util.Log.w(
+                        "CfTrip",
+                        "check-off not saved: ${error::class.simpleName}",
+                    )
+                }
+            },
         )
     }
 }

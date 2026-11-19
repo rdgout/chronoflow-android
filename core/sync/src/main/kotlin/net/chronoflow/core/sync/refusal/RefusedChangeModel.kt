@@ -14,7 +14,10 @@ class RefusedChangeModel {
 
     @Synchronized
     fun receive(result: SyncResult) {
-        result.refusals.lastOrNull { it.notice != null && it.id !in consumed }?.let { pending = it }
+        result.refusals
+            .lastOrNull { it.notice != null }
+            ?.takeIf { it.id !in consumed }
+            ?.let { pending = it }
         if (result.state != SyncState.Idle || result.retryAfter != null) return
         pending?.let { mutableVisible.value = it }
         pending = null

@@ -436,7 +436,7 @@ Tests (plain JVM in `feature/trip/src/test/…`, no Robolectric; they use 6b's f
   - A seed `Step(existing)` opens on the first Ready; `Step(missing)` → `sheet == null`.
   - A notification hash match opens once; after `dismissSheet()` and a new emission it does not reopen; a hash mismatch does not open.
   - `TripActions` without a card → null.
-- `CheckOffOutcomeTest` (the 422/429/408 cases from the plan). Put it next to 4d's `CheckOffReconcilerTests` in `:core:sync` tests, reusing their scripted `DataSource` and `SyncDatabase` fixtures (`grep -rn "class CheckOffReconcilerTests" core/`). Drive `SyncEngine` + `RefusedChangeModel`:
+- `CheckOffOutcomeTest` (the 422/429/408 cases from the plan). The landed `CheckOffReconcilerTests` and JDBC `SyncStore` are in `:core:data`; put this test beside them there (the JVM `:core:sync` cannot depend on Android data fixtures), reusing their scripted `DataSource` and `SyncDatabase` fixtures (`grep -rn "class CheckOffReconcilerTests" core/`). Drive `SyncEngine` + `RefusedChangeModel`:
   - `throttled429KeepsMarkAndShowsNoMessage` and `timeout408KeepsMarkAndShowsNoMessage`: the mark stays in the merged detail; `visible == null`.
   - `stale422PullsOnceRetriesOnceNoMessage`.
   - `nonStale422RefusesUndoesAndShowsMessage`: after the refusal and the next Idle pull, the mark is gone and `visible` is the `StepDone(type)` refusal.

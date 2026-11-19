@@ -37,6 +37,14 @@ class RefusedChangeModelTests {
         assertNull(model.visible.value)
     }
 
+    @Test fun replayDoesNotRevealAnOlderNotice() {
+        val latest = first.copy(id = "b")
+        model.receive(result(first, latest))
+        model.consume(latest.id)
+        model.receive(result(first, latest))
+        assertNull(model.visible.value)
+    }
+
     @Test fun clearResets() {
         model.receive(result(first))
         model.consume(first.id)
