@@ -582,3 +582,6 @@ Per user instruction, the ±25% comparison is pending the user's `make perf-time
 
 
 Phase 7 Task 2 JVM measurement (`make targeted ONLY="core:plan:TodayTests core:plan:TodayEdgeTests core:plan:TodayViewBudgetTest"`, local MacBook Pro, debug test compilation): large60 `todayView`, one warm-up and ten samples, min **0.7365 ms**, max **0.8724 ms**; every sample passes the **20 ms** budget. These are JVM numbers only. The final serial `make quick` timing tier also includes this guard.
+
+
+Phase 7 Task 6 invalidation proof (`make targeted ONLY="feature:today:TodayInvalidationTest"`, Robolectric API 36, debug tests, pixel8 width/test-only tall viewport): quiet minute = **0** SCREEN/HERO/PANEL/ROW recompositions, **1** per changed clock leaf (six leaves). Marked rows have no leaf. The plain-Instant row negative control records **1** ROW recomposition. Both cases pass; this is a JVM scope-count proof, not a device frame-time claim.
