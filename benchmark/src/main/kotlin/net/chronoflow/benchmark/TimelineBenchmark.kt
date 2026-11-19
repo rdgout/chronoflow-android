@@ -110,7 +110,6 @@ class TimelineBenchmark {
 
     @Test fun timelineScrollWide() {
         val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
-        device.executeShellCommand("wm size 1840x2208")
         try {
             rule.measureRepeated(
                 packageName = packageName,
@@ -120,6 +119,7 @@ class TimelineBenchmark {
                 startupMode = null,
                 setupBlock = {
                     assertAnimatorsOn()
+                    device.executeShellCommand("wm size 1840x2208")
                     killProcess()
                     pressHome()
                     startActivityAndWait(large60Intent(packageName))
