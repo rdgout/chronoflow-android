@@ -68,6 +68,7 @@ class EmulatorTest(unittest.TestCase):
             "shell settings put global transition_animation_scale 0",
             "shell settings put global animator_duration_scale 0",
             "shell settings put secure show_ime_with_hard_keyboard 1",
+            "shell settings put secure stylus_handwriting_enabled 0",
             "shell settings put secure autofill_service null",
             "shell cmd uimode night no",
             "shell settings put system font_scale 1.0",

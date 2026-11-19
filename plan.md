@@ -62,7 +62,7 @@ Yes, most of it. About two thirds of the iOS plan is platform-neutral, about a f
 | R17 | Trip page state: `PreparedPlan`, `TripPageState` (`resolve`, `openingDay`, `replacementAnchor`), `TripPageLayout`, wide list position | `Packages/ChronoFlowKit/Sources/PlanUI/TripPage/{PreparedPlan,TripPageState,TripPageLayout,TripScrollTracker}.swift` | `:core:plan` (state, layout math), `:feature:trip` (UI) | 1b, 6b, 6e |
 | R18 | Launch: `CubicBezier`, `LaunchLayout`, `FlightPath` (128 samples), `LaunchTimeline(+Ready,+Welcome)`, `StatusLineLayout`, `LaunchReadiness`, `LaunchCoordinator`, `LaunchClock` | `Packages/ChronoFlowKit/Sources/Launch/`, `Packages/ChronoFlowKit/Sources/AppCore/` | `:feature:launch` (pure parts are JVM-tested) | 3a, 3b |
 | R19 | Data layer: schema v1, transactions with epoch and permit, `SyncEngine`, outbox rules (`OutboxChange`), `SessionController` and its teardown order, `SessionGateRouter`, `DataSource` (25 methods), `MockDataSource`/`MockServerState`/`MockAppSeed` | `Sources/LocalStore`, `Sources/Sync`, `Sources/AppCore/{SessionController,SessionGateRouter,SessionMutationPermit,OutboxChange,DataSource,StorageNamespace}.swift`, `Sources/DataAccess/Mock/` | `:core:database`, `:core:sync`, `:core:network`, `:core:data-mock`, `:core:data` | 4a–4e |
-| R20 | Auth: `AuthLink` parsing, form rules, lockout wait | `Sources/AppCore/{AuthLink,LockoutWait}.swift`, `Sources/Auth/` | `:feature:auth` | 5a–5d |
+| R20 | Auth: `AuthLink` parsing, form rules, lockout wait | `Sources/AppCore/{AuthLink,LockoutWait}.swift`, `Sources/Auth/` | `:feature:auth` (`LockoutWait`: `:core:model`) | 5a–5d |
 | R21 | Wizard model: `WizardForm` … `MemberWizardStore`, `AirportSearchService`, `Generation/*`, guest claim and continuation | `Sources/TripWizard/{Model,Generation}/`, `Sources/AppCore/{GuestClaim,GuestSecretStore,GuestSessionContinuation}.swift` | `:core:wizard` | 9a, 9b, 11a, 11b |
 | R22 | Settings sync line and home state | `Sources/Settings/SettingsHomeState.swift:113-140` | `:feature:settings` | 10a |
 | R23 | Reminder engine, schedule, ledger, tap routing, first-trip offer | `Sources/Reminders/{ReminderSelection,ReminderSchedule,ReminderLedger,ReminderTap,FirstTripRemindersOffer}.swift` | `:core:reminders`, `:core:data` | 12a–12c |
@@ -469,7 +469,7 @@ Every screen scrolls when height-constrained. The minimum width is 280 dp; below
 - **Intent extras:** `cf.trip-page=S1…S6|large30|large60|<uuid>`, `cf.timeline-fixtures`, `cf.settings.theme`, `cf.settings.language`, `cf.reduceMotion`, `cf.freezeAt`, `cf.readyAt`, `cf.mainThreadStall`, `cf.holdSplash`, `cf.session`, `cf.gate`, `cf.stored`, `cf.readyDelay`, `cf.mode`.
 - **Launch diagnostics** (String extras, debug and perf only): `cf.session=in|signedIn|out|signedOut|never` (default native), `cf.gate=verify|terms|walkthrough|app` (default app), `cf.stored=yes|no|never` (default yes), `cf.readyDelay` in finite seconds `0…60` (default 0). Presence of any stub key injects `StubReadiness`; otherwise every variant uses `StoredDataReadiness` (OQ-A172). `cf.readyDelay` is an absolute time on the shared launch clock, not a second delay from collection.
 - **Fixed diagnostic endings:** `cf.mode=ready|slow|welcome` bypasses readiness. Ready/slow leave the route empty after removal; welcome publishes Welcome under the overlay, with a measured moon target and optional frozen intro. `cf.readyAt` is finite ms `0…60000`, default 4600, for slow mode. `cf.mainThreadStall` uses the same ms range and blocks from 300 ms after t0. Invalid values use the defaults. Release parsing and stalls are no-ops. `cf.freezeAt` still freezes a debug frame; `cf.holdSplash` remains debug only.
-- **Welcome seams:** `welcome.signIn` and `welcome.plan` open debug-only `route.signIn` / `route.guestWizard` placeholders using the existing debug route resource. Back returns to final Welcome without replaying its claimed intro. Release and perf use `InertWelcomeDestinations`.
+- **Welcome destinations:** `welcome.signIn` navigates to `Route.SignIn` in every build type through `RoutedWelcomeDestinations` (debug retains only the guest seam). `welcome.plan` opens the debug-only `route.guestWizard` seam until 11a. Back from Sign in returns to final Welcome without replaying its claimed intro.
 - **Welcome font gate:** while the overlay is active, compose Welcome when font warm-up completes or 1500 ms after the awaited first draw, whichever comes first. Without an overlay, compose immediately. The all-time debug StrictMode ChronoFlow disk/network counter covers the Welcome journey; the existing launch crash guard still ends at first commit.
 - **Entry point:** `net.chronoflow.debug.SeedReceiverActivity` (debug-exported, in `app/src/debug`) applies `TestSeeds.apply` (`13 §5`), then starts `MainActivity`.
 - **Mock accounts:** `demo@example.com` / `password`; `twofactor@example.com` / `password`, code `123456`, recovery `AbCdEf1234-GhIjKl5678`. Account ids `0199a3c0-0000-7000-8000-000000000000` / `…0001`; trips `…0001` (AMS→HND, active), `…0002` (AMS→JFK, upcoming).
@@ -763,6 +763,17 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A179 | (OQ-4e-15) Where can LaunchRoute map into navigation? | LaunchRoute.toRoute lives in :app because the launch type belongs to :feature:launch. Gate.toRoute stays in :core:navigation. | 4e |
 | OQ-A180 | (OQ-4e-16) Where do readiness tests that need LaunchCoordinator and shared session fakes live? | The four coordinator cases live in app/src/test/StoredDataReadinessLaunchTests with the Swift names. Session fakes live in :core:sync java-test-fixtures. | 4e, 5, 8 |
 | OQ-A181 | (OQ-4e-17) How do real graph tests run without AndroidKeyStore or a running Android main looper? | GraphOverrides accepts a sessionCipher and dispatchers; Robolectric uses SoftwareSessionCipher and a shared test scheduler for main, with actual IO dispatchers for disk under StrictMode. Keystore device coverage remains in 4a and the signed-in cold-launch smoke. | 4e |
+| OQ-A182 | (OQ-5a-1) The plan task says "The `LockoutWait` countdown" for Sign in, but iOS Sign in shows only the static "Too many attempts." banner; `LockoutWait` is used by Settings and the wizard. | iOS parity: port `LockoutWait` with its test; no countdown and no disabled submit on Sign in; keep `retryAfterSeconds` in the form state. Fix the plan wording. | 5a |
+| OQ-A183 | (OQ-5a-2) Plan R20 puts `LockoutWait` in `:feature:auth`, but 9f (`:feature:wizard`) and 10c (`:feature:settings`) need it, and features must not depend on each other. | `:core:model`, package `net.chronoflow.core.model.auth`, beside `AuthenticationMethod`. | 5a |
+| OQ-A184 | (OQ-5a-3) iOS moves VoiceOver focus to a banner-only failure; Compose has no public API to move TalkBack focus. | The live-region announcement (title + body) replaces it; the banner is brought into view. | 5a |
+| OQ-A185 | (OQ-5a-4) Visible control heights: the board's 40 dp buttons and 36 dp inputs vs iOS 44 pt. | Buttons keep the board's 40 dp visual (`Lg`) with a 48 dp target; fields use Phase 2's ≥ 48 dp box; link rows 48 dp. | 5a |
+| OQ-A186 | (OQ-5a-5) 4e's `RootContent` has no ViewModel entry decorator, so every `viewModel()` in a route is activity-scoped. 5c's brief expects `onCleared()` on leaving a route. | 5a keeps all state in the process-scoped `SignInModel` and cancels through `leave()`, so it does not depend on scoping. Recommend that 5c (or 6a) add `rememberViewModelStoreNavEntryDecorator()` to `RootContent` when it first needs entry-scoped ViewModels. | 5a |
+| OQ-A187 | (OQ-5a-6) `CfButton` requires a `loadingDescription` while loading; iOS has no loading copy. | Pass the button's own label; add no copy. | 5a |
+| OQ-A188 | (OQ-5a-7) Auth screens are single-entry root routes (4e), so back from Sign in to Welcome uses `BackHandler` and shows no predictive cross-screen preview. 5d's brief assumes a `[Welcome, SignIn, SignUp]` stack. | Accept for 5a. 5b–5d use the same explicit `SignInRouter` navigation (back from Forgot, Sign up and Two-factor → `navigate(Route.SignIn)`). A real auth back stack with predictive back is a later refactor with its own OQ. | 5a |
+| OQ-A189 | (OQ-5a-8) Autofill may bypass `InputTransformation`, so feedback may not clear when a provider fills a field. | Accept; feedback clears on the next keystroke. Record what the emulator shows in `docs/auth.md`. | 5a |
+| OQ-A190 | (OQ-5a-9) No board for the offline banner or for field errors on Sign in. | Offline: the user-approved RN copy on the AuthStates surface, title only. Field errors: the bundle `Field` error row (AuthStates: "Field problems stay under the field"). Both are captured under `auth/` and labelled as adaptations. | 5a |
+| OQ-A191 | (OQ-5a-10) iOS posts a one-shot VoiceOver announcement that is not a focus stop. Compose has no equivalent: a live region announces only on a content change of a persistent, non-empty node, so the announcer is a real node TalkBack can also reach. | The brand row's end 48 dp box carries the live region; after a failure it is a TalkBack stop between brand and heading that reads the last announcement. Record in `docs/auth.md` what TalkBack does on the `pixel` emulator (manual check, not a test). | 5a |
+| OQ-A192 | (OQ-5a-11) At the `AuthSignIn` reference frame (375 × 812 dp, density 3) the Forgot / Create account links measure 162.0 + 133.67 dp plus the 8 dp gap = 303.67 dp in a 303 dp card row, so the ported iOS `ViewThatFits` policy (`AuthLinkRow`) stacks them; the board and the iOS screenshot show one row. At `pixel8` (density 2.625) they fit (298.67 dp). The card grows 48 dp, and in the error states the footer moves below the fold at 375 × 812. | Keep the ported fit policy (no tolerance, no smaller text or gap); record it as an adaptation of `AuthSignIn` / `AuthSignInError`. Changing it needs a user decision. | 5a |
 | OQ-0a-22 | Native libraries in the bundle? | Allow only `libandroidx.graphics.path.so` (Compose graphics-path; excluding it breaks Path conversion below API 34); fail on any other `.so` | 0a, 13 |
 | OQ-0b-1 | Where does `PlanMetrics` live? `08 §3.1` lists it inside `CfDimens`, but its consumer `:core:plan` is a JVM module that cannot depend on `:core:designsystem` | `core/plan/…/generated/PlanMetrics.generated.kt` (Double, dp), as iOS keeps it in `PlanCore` | 0b, 1b, 1c |
 | OQ-0b-2 | Port all iOS TokenGen outputs now (Auth, Settings, Terms, Welcome, PlanUI, Press, LaunchPaint, TypeMetrics), or only colors, sky and type? | All of them now (the iOS files are exact goldens and Phases 2, 3a, 3c, 5a, 9 and 10 need them) | 0b |
@@ -1976,22 +1987,36 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 **Delivers.** Builds the shared auth shell on the plain sky (reference frame, insets, card, a 560 dp column on wide windows), the designed fields and banners including the offline banner, and the sign-in screen with validation, server field errors, lockout waits, autofill and IME handling. A successful sign-in hands over to the session gate. The passkey button and divider stay hidden behind the capability. One emulator journey signs in the demo account; everything else is tested on the JVM or in Robolectric.
 
 **Tasks**
-- [ ] **Auth shell** (`feature/auth/…/shell/`).
+
+Implementation commits (brief §7):
+- [x] T1 — LockoutWait and AuthenticationMethod.
+- [x] T2 — Form model and failure mapping.
+- [x] T3 — Navigation and layout math.
+- [x] T4 — Sign-in glyphs and field input hook.
+- [x] T5 — SignInModel.
+- [x] T6 — Auth shell.
+- [x] T7 — Sign-in screen and ViewModel.
+- [x] T8 — App wiring and accepted-session routing.
+- [x] T9 — Guards and board captures.
+- [x] T10 — Emulator journey and keyboard check.
+- [x] T11 — Docs.
+
+- [x] **Auth shell** (`feature/auth/…/shell/`).
   - The plain sky, with the values of "### Auth geometry, tokens and typography" plus the Android delta: insets `safeTop + 16`, 16 at the sides and 24 at the bottom; card padding 20, radius 26, gap 14.
   - A 560 dp column from 600 dp.
   - `auth.back`, and `auth.banner` for error, info and offline ("Needs a connection" / "Verbinding nodig").
-- [ ] **Fields.**
+- [x] **Fields.**
   - `CfTextFieldDecoration` with autofill `contentType` (Username, Password).
   - IME actions run email → password → Go.
   - `imePadding()` and `BringIntoViewRequester` keep the focused field and the primary button visible.
   - The password lives only in `TextFieldState` and is never saved.
-- [ ] **SignInViewModel**, porting `SignInModel` and `AuthFormModel`.
+- [x] **SignInViewModel**, porting `SignInModel` and `AuthFormModel`.
   - Validation, and the `05 §8.4` failure mapping to the banner or a field.
-  - The `LockoutWait` countdown.
+  - `LockoutWait` ported to `:core:model` (Sign in has no countdown; iOS shows the static locked banner).
   - Email-unverified goes to the verify route, and two-factor to the 5b route.
   - Success calls `SessionController.accept`, then the gate. Autofill commits only after success.
-- [ ] **Passkey entry.** The passkey button and divider exist but stay hidden while `PasskeyCapability` is false.
-- [ ] **Tests.**
+- [x] **Passkey entry.** The passkey button and divider exist but stay hidden while `PasskeyCapability` is false.
+- [x] **Tests.**
   - The ported iOS sign-in and form cases (JVM).
   - Guards for the `AuthSignIn`, `AuthSignInError` and `AuthStates` states.
   - On the emulator: one journey (a typed demo sign-in → the app root), and one IME check (the password field and submit stay visible with the keyboard up).
@@ -2000,6 +2025,8 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 **Acceptance**
 - The screens match the boards, and the journey takes under 10 s.
 - No secret appears in saved state.
+
+**Validation (2026-11-18):** the typed demo journey passes on `pixel` in 2.279 s with zero StrictMode IO violations. In the orchestrator-authorized follow-up, `SignInKeyboardTest` passes in 1.441 s (tier 5.49 s) with the original keyboard-size and geometry assertions. A verified finger tap still opened Gboard's `STYLUS` accessory mode; disabling stylus handwriting in functional device prep, without force-stopping Gboard, restored its full keyboard. App code and the keyboard test are unchanged. The original `make quick` invocation failed (22.64 s); its stale forced-sign-out tag and Konsist timing failures were corrected and checked in focused runs. The authorized complete `make quick` rerun **passes in 31.88 s**: 2,528 quick results, zero budget violations, 26 build-logic results, all 190 Python tooling tests, and six serial timing results. `make check`, browser board comparison and manual TalkBack/provider checks remain open (see `docs/auth.md`).
 
 ### Phase 5b: Two-factor and passkey sign-in (`feat/phase-5b-two-factor-passkeys`)
 

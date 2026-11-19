@@ -3,7 +3,9 @@
 package net.chronoflow.core.ui.designsystem
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.text.input.InputTransformation
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.clearText
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -36,6 +38,37 @@ import org.robolectric.annotation.GraphicsMode
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(sdk = [36], qualifiers = "w411dp-h914dp-420dpi")
 class CfTextFieldTest : PrimitiveTestFixture() {
+    @Test fun inputTransformationSeesUserInputAndNotProgrammaticClears() {
+        val state = TextFieldState()
+        val secure = TextFieldState()
+        val changes = mutableListOf<String>()
+        val transformation = InputTransformation { changes += asCharSequence().toString() }
+        host {
+            Column {
+                CfTextField(
+                    state,
+                    stringResource(R.string.auth_email),
+                    testTag = "field",
+                    inputTransformation = transformation,
+                )
+                CfSecureTextField(
+                    secure,
+                    stringResource(R.string.auth_password),
+                    testTag = "secret",
+                    inputTransformation = transformation,
+                )
+            }
+        }
+        compose.onNodeWithTag("field").performTextInput("sample")
+        compose.onNodeWithTag("secret").performTextInput("private")
+        compose.runOnIdle {
+            assertEquals(listOf("sample", "private"), changes)
+            state.clearText()
+            secure.clearText()
+            assertEquals(listOf("sample", "private"), changes)
+        }
+    }
+
     @Test fun fieldOwnsTheLabelErrorAndAutofillSemantics() {
         host {
             CfTextField(

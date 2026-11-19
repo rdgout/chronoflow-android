@@ -2,6 +2,7 @@ package net.chronoflow.app
 
 import android.content.Intent
 import androidx.compose.runtime.Composable
+import net.chronoflow.core.navigation.RootNavigator
 import net.chronoflow.debug.DebugLaunchOverrides
 import net.chronoflow.debug.DebugRouteLabel
 import net.chronoflow.feature.launch.LaunchController
@@ -9,8 +10,9 @@ import net.chronoflow.feature.launch.LaunchController
 internal object LaunchPlatform {
     fun mockSources(io: kotlinx.coroutines.CoroutineDispatcher): MockSources? = platformMockSources(io)
 
-    var welcomeDestinations: WelcomeDestinations = net.chronoflow.debug.DebugWelcomeDestinations()
-        private set
+    fun welcomeDestinations(navigator: RootNavigator): WelcomeDestinations =
+        net.chronoflow.debug.DebugWelcomeDestinations(navigator)
+
     val ioViolationSink: (Boolean, List<String>) -> Unit = net.chronoflow.debug.StrictModeViolationCounter::record
     val routeLabel: (@Composable (String) -> Unit)? = { DebugRouteLabel(it) }
     private var current: LaunchController? = null
@@ -46,7 +48,7 @@ internal object LaunchPlatform {
         check(BuildConfig.DEBUG)
         current?.onActivityDestroyed()
         current = newLaunchController(graph)
-        welcomeDestinations = net.chronoflow.debug.DebugWelcomeDestinations()
+        graph.welcomeDestinations.closeSeam()
     }
 }
 

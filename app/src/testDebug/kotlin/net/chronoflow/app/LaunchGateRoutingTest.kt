@@ -112,7 +112,7 @@ class LaunchGateRoutingTest {
             ) { graph ->
                 graph.controller.unauthorized(checkNotNull(graph.controller.activeSession()).epoch)
                 runCurrent()
-                compose.onNodeWithTag("route.signIn").assertExists()
+                compose.onNodeWithTag("sign-in.email").assertExists()
                 assertEquals(Route.SignIn, RouteProbe.state.route)
                 withContext(graph.dispatchers.io) {
                     assertTrue(File(graph.storageRoot(), "ChronoFlowMock/Accounts").listFiles()?.isEmpty() != false)

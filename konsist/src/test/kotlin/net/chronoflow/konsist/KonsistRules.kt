@@ -1,6 +1,8 @@
 package net.chronoflow.konsist
 
 import com.lemonappdev.konsist.api.container.KoScope
+import com.lemonappdev.konsist.api.provider.KoParentProvider
+import java.util.IdentityHashMap
 
 private const val ROOT = "net.chronoflow"
 
@@ -154,12 +156,26 @@ fun routesAreSerializable(scope: KoScope) {
 
     val declarations: List<com.lemonappdev.konsist.api.declaration.combined.KoClassAndInterfaceAndObjectDeclaration> =
         scope.classes() + scope.interfaces() + scope.objects()
+    // The library repeatedly expands shared ancestors for every descendant, including unrelated test hierarchies.
+    val memo = IdentityHashMap<KoParentProvider, Boolean>()
+
+    fun hasNavKeyParent(declaration: KoParentProvider): Boolean {
+        memo[declaration]?.let { return it }
+        memo[declaration] = false
+        val result =
+            declaration.hasParentWithName("NavKey", indirectParents = false) ||
+                declaration.parents(indirectParents = false).any { parent ->
+                    (parent.sourceDeclaration as? KoParentProvider)?.let(::hasNavKeyParent) == true
+                }
+        memo[declaration] = result
+        return result
+    }
     val violations =
         declarations
             .filter { moduleOf(it.path) != null }
             // Serializable declarations cannot violate the rule; avoid resolving their ancestry.
             .filterNot { it.hasAnnotationWithName("Serializable") }
-            .filter { it.hasParentWithName("NavKey", indirectParents = true) }
+            .filter(::hasNavKeyParent)
             .map { "${it.path}: ${it.name}" }
     fail("routesAreSerializable", violations)
 }
