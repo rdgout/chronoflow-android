@@ -59,6 +59,10 @@ data class PreparedDay(
     val dividerLabels: List<String>,
     val ticks: List<String>,
 ) {
+    val checkActions: net.chronoflow.core.plan.step.DayCheckActions =
+        net.chronoflow.core.plan.step
+            .checkActions(blocks)
+
     val id: String get() = day.id
 
     fun shownNotices(

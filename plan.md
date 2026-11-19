@@ -2403,6 +2403,7 @@ Implementation commits (brief §7):
 
 **Tasks**
 - [ ] **Step sheet** (`feature/trip/…/step/`, `ItemDetail`).
+  - [x] Task 1: pure step-sheet, check-action, legend-copy and trip-action models.
   - Priority, the Now badge, interval, time left, reasons and instructions.
   - Actionable steps get Mark as done, Skip and Undo, through the marks repository and the outbox.
   - A refused change shows a Snackbar; a step that is gone shows the `SheetStates` state.
