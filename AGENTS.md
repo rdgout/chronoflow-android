@@ -61,7 +61,7 @@ Write every new or changed test this way. These rules translate the iOS Tests ru
    - Logic → JVM unit tests.
    - Layout and geometry → Robolectric Compose tests.
    - Emulator → only for native controls, navigation, system UI, IME, permissions and system appearance/locale.
-   - Never test logic through a screen.
+   - Never test logic through a screen. Do not boot `MainActivity`, `AppGraph` or `SessionGraph`, or compose the app root, for logic a model, router, reducer or policy can test on the JVM.
    - **ViewModels carry the logic; screens stay thin** (user, 2026-11-16; iOS does the same with its `*Model` tests). A screen is a stateless `XScreen(state, onEvent)`; its ViewModel takes repositories, clock and dispatchers through its constructor. Test behaviour as JVM tests on the ViewModel's UI state (`runTest`, fake clock, fake repositories), never through Compose.
    - **Never assert copy on a screen.** No test checks that a string appears on screen (no `onNodeWithText`, `hasText`, `assertTextEquals`). Copy is covered by the string generator tests (en/nl parity) and the board captures. Screen tests find nodes by test tag and check structure only.
 2. **One emulator journey per feature, at most.** Every other emulator test seeds a state and checks one screen.
@@ -72,7 +72,7 @@ Write every new or changed test this way. These rules translate the iOS Tests ru
    - Wait with `composeTestRule.waitUntil(timeoutMillis) {…}` / `waitUntilExactlyOneExists(…)`. For UiAutomator, use `device.wait(Until.hasObject(By.res(..)), t)`.
    - **Never `Thread.sleep` / `SystemClock.sleep`.**
 5. **Budgets.**
-   - An emulator test < 10 s; a Robolectric test < 5 s; a JVM unit test < 1 s (except the declared perf-budget tests).
+   - An emulator test < 10 s; a JVM or warm Robolectric case < 1 s (except the declared perf-budget tests). Record the first sandbox cost per SDK and fork separately.
    - Hang caps (below): 60 s per test.
    - Split profile × language × size loops into one test per profile (JUnit `Parameterized` or `TestParameterInjector` is fine: each parameter is its own test case).
    - Needing more time is a design smell; fix the test.
