@@ -5,6 +5,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.Until
+import net.chronoflow.core.testing.BoundedProfileInput
 import net.chronoflow.core.testing.tiers.Perf
 import org.junit.Rule
 import org.junit.Test
@@ -21,51 +22,128 @@ class BaselineProfileGenerator {
     /** Whatever `MainActivity` shows first at this stack top; Phase 13 adds Today. */
     @Test
     fun startup() =
-        rule.collect(packageName, includeInStartupProfile = true) {
-            pressHome()
-            startActivityAndWait()
-            check(device.wait(Until.hasObject(By.res("launch.opening")), 5000))
-            check(device.wait(Until.gone(By.res("launch.opening")), 5000))
-            check(device.wait(Until.hasObject(By.res("welcome.wordmark")), 2000))
-            check(device.wait(Until.hasObject(By.res("welcome.signIn")), 1000))
-            // Keep collection open through the first process intro, whose final item lands after hand-off.
-            device.wait(Until.gone(By.res("welcome.signIn")), 900)
+        rule.collect(
+            packageName,
+            maxIterations = 5,
+            stableIterations = 3,
+            strictStability = true,
+            includeInStartupProfile = true,
+        ) {
+            BoundedProfileInput().use { input ->
+                input.step("startup home") { pressHome() }
+                input.step("startup launch") { startActivityAndWait() }
+                input.step("launch overlay appears") {
+                    check(device.wait(Until.hasObject(By.res("launch.opening")), 5000)) {
+                        "launch overlay never appeared"
+                    }
+                }
+                input.step("launch overlay closes") {
+                    check(device.wait(Until.gone(By.res("launch.opening")), 5000)) {
+                        "launch overlay never closed"
+                    }
+                }
+                input.step("welcome wordmark") {
+                    check(device.wait(Until.hasObject(By.res("welcome.wordmark")), 2000)) {
+                        "welcome wordmark missing"
+                    }
+                }
+                input.step("welcome sign in") {
+                    check(device.wait(Until.hasObject(By.res("welcome.signIn")), 1000)) {
+                        "welcome sign in missing"
+                    }
+                }
+                // Keep collection open through the intro's final animation; the sign-in button remains visible.
+                input.step("welcome intro completion") { device.wait(Until.gone(By.res("welcome.signIn")), 900) }
+            }
         }
 
     @Test
     fun timelineLarge60() =
-        rule.collect(packageName) {
-            pressHome()
-            startActivityAndWait(large60Intent(packageName))
-            awaitPresented()
-            val bounds = checkNotNull(device.findObject(By.res("trip.page"))).visibleBounds
-            check(topDayIndex() == 0) { "large60 did not open on day 0" }
-            // Opening starts after the summary; reveal it so the new page chrome gets profile coverage too.
-            val x = bounds.left + bounds.width() / 2
-            check(
-                device.swipe(
-                    x,
-                    bounds.top + bounds.height() * 15 / 100,
-                    x,
-                    bounds.top + bounds.height() * 85 / 100,
-                    26,
-                ),
-            )
-            check(device.wait(Until.hasObject(By.res("trip.summary")), 5_000)) { "summary did not appear" }
-            checkNotNull(device.findObject(By.res("trip.dayMenu"))).click()
-            check(device.wait(Until.hasObject(By.res("trip.dayMenu.day.0")), 5_000))
-            checkNotNull(device.findObject(By.res("trip.dayMenu.day.0"))).click()
-            check(device.wait(Until.gone(By.res("trip.dayMenu.day.0")), 5_000))
-            check(topDayIndex() == 0) { "summary coverage did not return to day 0" }
-            repeat(15) { device.swipeTimeline(bounds) }
-            check(topDayIndex() in 35..50) { "15 gestures must end on day index 35..50" }
-            check(!device.hasObject(By.res("trip.plan.end"))) { "bounded-swipe-v3 reached the plan end" }
-            device.toggleTripView(list = true)
-            val list = checkNotNull(device.findObject(By.res("trip.page")))
-            list.setGestureMargin(list.visibleBounds.width() / 5)
-            val listBounds = list.visibleBounds
-            repeat(3) { device.swipeTimeline(listBounds) }
-            device.toggleTripView(list = false)
-            check(device.wait(Until.hasObject(By.res("trip.timeline.ready")), 10_000))
+        rule.collect(packageName, maxIterations = 5, stableIterations = 3, strictStability = true) {
+            BoundedProfileInput().use { input ->
+                input.step("trip home") { pressHome() }
+                input.step("trip launch") { startActivityAndWait(large60Intent(packageName)) }
+                input.step("timeline presented") { awaitPresented() }
+                val bounds =
+                    input.step("trip bounds") {
+                        checkNotNull(device.findObject(By.res("trip.page"))) {
+                            "trip page missing"
+                        }.visibleBounds
+                    }
+                input.step("opening day") {
+                    check(topDayIndex() == 0) {
+                        "large60 did not open on day 0"
+                    }
+                }
+                // Opening starts after the summary; reveal it so the new page chrome gets profile coverage too.
+                val x = bounds.left + bounds.width() / 2
+                input.step("reveal summary") {
+                    check(
+                        device.swipe(
+                            x,
+                            bounds.top + bounds.height() * 15 / 100,
+                            x,
+                            bounds.top + bounds.height() * 85 / 100,
+                            26,
+                        ),
+                    ) { "summary swipe rejected" }
+                }
+                input.step("summary visible") {
+                    check(device.wait(Until.hasObject(By.res("trip.summary")), 5_000)) {
+                        "summary did not appear"
+                    }
+                }
+                input.step("open day menu") {
+                    checkNotNull(device.findObject(By.res("trip.dayMenu"))) {
+                        "day menu missing"
+                    }.click()
+                }
+                input.step("day menu visible") {
+                    check(device.wait(Until.hasObject(By.res("trip.dayMenu.day.0")), 5_000)) {
+                        "day menu did not open"
+                    }
+                }
+                input.step("select opening day") {
+                    checkNotNull(device.findObject(By.res("trip.dayMenu.day.0"))) {
+                        "day 0 missing"
+                    }.click()
+                }
+                input.step("day menu closed") {
+                    check(device.wait(Until.gone(By.res("trip.dayMenu.day.0")), 5_000)) {
+                        "day menu did not close"
+                    }
+                }
+                input.step("summary return day") {
+                    check(topDayIndex() == 0) { "summary coverage did not return to day 0" }
+                }
+                repeat(
+                    15,
+                ) { gesture -> input.step("timeline gesture ${gesture + 1}/15") { device.swipeTimeline(bounds) } }
+                input.step("timeline progress") {
+                    check(topDayIndex() in 35..50) { "15 gestures must end on day index 35..50" }
+                    check(!device.hasObject(By.res("trip.plan.end"))) {
+                        "bounded-swipe-v3 reached the plan end"
+                    }
+                }
+                input.step("open list") { device.toggleTripView(list = true) }
+                val listBounds =
+                    input.step("list bounds") {
+                        val list =
+                            checkNotNull(device.findObject(By.res("trip.page"))) {
+                                "list page missing"
+                            }
+                        list.setGestureMargin(list.visibleBounds.width() / 5)
+                        list.visibleBounds
+                    }
+                repeat(
+                    3,
+                ) { gesture -> input.step("list gesture ${gesture + 1}/3") { device.swipeTimeline(listBounds) } }
+                input.step("return to timeline") { device.toggleTripView(list = false) }
+                input.step("return timeline ready") {
+                    check(device.wait(Until.hasObject(By.res("trip.timeline.ready")), 10_000)) {
+                        "returned timeline never became ready"
+                    }
+                }
+            }
         }
 }
