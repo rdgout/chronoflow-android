@@ -1,47 +1,64 @@
 package net.chronoflow.feature.launch
 
-import androidx.compose.ui.test.junit4.v2.createComposeRule
-import net.chronoflow.core.testing.DeviceProfiles
-import net.chronoflow.core.testing.compose.ProfileRule
-import net.chronoflow.core.testing.tiers.Layout
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.runTest
+import net.chronoflow.core.model.launch.Gate
+import net.chronoflow.core.model.launch.LaunchReadiness
+import net.chronoflow.core.model.session.SessionPresence
+import net.chronoflow.feature.launch.model.LaunchCoordinator
+import net.chronoflow.feature.launch.model.LaunchEvent
+import net.chronoflow.feature.launch.model.LaunchHandOffTimeline
+import net.chronoflow.feature.launch.model.LaunchRect
+import net.chronoflow.feature.launch.model.LaunchState
 import net.chronoflow.feature.launch.model.LaunchRoute
+import net.chronoflow.feature.launch.model.LaunchSize
+import net.chronoflow.feature.launch.model.LaunchTimeline
+import net.chronoflow.feature.launch.model.ManualLaunchClock
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
-import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.RuleChain
-import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
-import org.robolectric.annotation.GraphicsMode
-import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
-@Layout
-@RunWith(RobolectricTestRunner::class)
-@Config(sdk = [36])
-@GraphicsMode(GraphicsMode.Mode.NATIVE)
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 class LaunchForcedExitTest {
-    private val compose = createComposeRule()
+    @Test fun unresolvedSessionForcesWelcomeAt8950() = checkForced(true, 8.950, LaunchRoute.Welcome)
 
-    @get:Rule val rules: RuleChain = RuleChain.outerRule(ProfileRule(DeviceProfiles.pixel8)).around(compose)
+    @Test fun unresolvedStoredDataForcesTodayAt8400() = checkForced(false, 8.400, LaunchRoute.Today)
 
-    @Test fun unresolvedSessionForcesWelcomeAt8950() = checkForced(true, 8950, LaunchRoute.Welcome)
+    private fun checkForced(session: Boolean, end: Double, route: LaunchRoute) =
+        runTest(timeout = 60.seconds) {
+            val clock = ManualLaunchClock()
+            var forced = 0
+            val source = object : LaunchReadiness {
+                override suspend fun session(): SessionPresence =
+                    if (session) awaitCancellation() else SessionPresence.SignedIn("a")
 
-    @Test fun unresolvedStoredDataForcesTodayAt8400() = checkForced(false, 8400, LaunchRoute.Today)
+                override suspend fun gate() = Gate.App
 
-    private fun checkForced(
-        session: Boolean,
-        end: Int,
-        route: LaunchRoute,
-    ) {
-        val host = LaunchEndingTestHost(compose, unresolvedSession = session, unresolvedData = !session)
-        compose.mainClock.advanceTimeBy(7900, ignoreFrameDuration = true)
-        host.clock.advance(7900.milliseconds)
-        compose.waitForIdle()
-        host.advanceTo(end + 8)
-        assertTrue(host.controller.handOffComplete)
-        assertEquals(route, host.controller.route)
-        assertTrue(requireNotNull(host.controller.handOffEndElapsedNanos) in end * 1_000_000L..(end + 8) * 1_000_000L)
-        assertEquals(if (session) 0 else 1, host.source.forced)
-    }
+                override suspend fun hasStoredData() = false
+
+                override suspend fun allowFirstLoad() { forced++ }
+            }
+            val coordinator = LaunchCoordinator(source, clock, false, LaunchState(fallbackTarget = LaunchRect(55.0, 76.0, 28.0, 28.0)), scope = backgroundScope) { _, _ -> }
+            coordinator.start()
+            runCurrent()
+            clock.advance(7.9.seconds)
+            runCurrent()
+            assertFalse(coordinator.state.didCommitExit)
+            clock.advance(8.seconds)
+            runCurrent()
+            assertTrue(coordinator.state.didCommitExit)
+            assertEquals(route, coordinator.state.route)
+            val timeline = LaunchHandOffTimeline.build(
+                LaunchTimeline.opening(LaunchSize(411.0, 914.0), false),
+                coordinator.state,
+            )
+            assertEquals(end, requireNotNull(LaunchHandOffTimeline.exitEndSeconds(timeline)), 1e-9)
+            assertEquals(if (session) 0 else 1, forced)
+            coordinator.send(LaunchEvent.ExitCompleted)
+            assertTrue(coordinator.state.isComplete)
+            coordinator.stop()
+        }
 }
