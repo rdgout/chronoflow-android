@@ -31,7 +31,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
@@ -138,7 +137,6 @@ fun DayHeader(
                 .heightIn(min = TripPageMetrics.moreHeight)
                 .minimumInteractiveComponentSize()
                 .clickable(role = Role.Button) { expanded = !expanded }
-                .semantics { stateDescription = more }
                 .testTag("trip.dayHeader.more.${day.id}"),
             contentAlignment = Alignment.Center,
         ) {

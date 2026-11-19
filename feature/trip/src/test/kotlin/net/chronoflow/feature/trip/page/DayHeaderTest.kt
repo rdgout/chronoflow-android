@@ -32,7 +32,13 @@ class DayHeaderTest : PageComponentTest() {
         compose.onNodeWithTag("trip.dayHeader.warnings.${day.id}").assertExists()
         compose.onNodeWithTag("trip.dayHeader.status.${day.id}").assertDoesNotExist()
         compose.onNodeWithTag("trip.dayHeader.notice.${day.id}.0").assertDoesNotExist()
-        compose.onNodeWithTag("trip.dayHeader.more.${day.id}").performClick()
+        compose
+            .onNodeWithTag("trip.dayHeader.more.${day.id}")
+            .assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.StateDescription))
+            .performClick()
+        compose
+            .onNodeWithTag("trip.dayHeader.more.${day.id}")
+            .assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.StateDescription))
         compose.onNodeWithTag("trip.dayHeader.status.${day.id}").assertExists()
         compose.onNodeWithTag("trip.dayHeader.summary.${day.id}").assertExists()
         compose.onNodeWithTag("trip.dayHeader.progress.${day.id}").assertExists()
