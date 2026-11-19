@@ -92,3 +92,24 @@ make: *** [quick] Error 1
 Diagnostic attachment (`/Library/Java/JavaVirtualMachines/zulu-17.jdk/Contents/Home/bin/jcmd 32236 Thread.print`) failed with `java.io.IOException: Operation not permitted`; `ps` also returned `operation not permitted: ps`. The active method cannot be established from completed results. The log is `/tmp/phase7-final-quick.log`, and the failed attachment output is `/tmp/phase7-quick-daemon-threads.log`.
 
 Per the user's instruction to stop on a hang, no hung test is retried and no further implementation/checks run. Task 8 is **uncommitted**, its plan box remains unchecked, and the final commit body is prepared at `/tmp/phase7-task8-commit.txt`. The remaining quick steps (build-logic tests, complete tooling suite, serial `make timing`) never started. Consequently the final serial preparation/drawing budget evidence is still missing. The new icon assertion correction also remains unverified. Eight signed commits cover the brief refresh and Tasks 1–7; no commit was rewritten after the next task began. No push occurred. Pixel was not stopped.
+
+## Fix round 0 — Task 8 and link recreation (2026-11-19)
+
+The earlier stop report above is historical. Task 8, including both icon-count corrections, is now committed as `ac474613`; its TTFD plan box is ticked. Performance/profile measurements remain explicitly deferred.
+
+One confirmation run, `TIER_TOTAL_TIMEOUT=60 TIER_IDLE_TIMEOUT=40 make targeted ONLY="app:LinkRecreationTest#signedInLinkOpensOnceAfterTheRealSignOutCompletes"`, reached `:app:testDebugUnitTest` and hit `run-tier: targeted stopped after 60 s (total cap)` (60.84 s command wall, Make exit 2 / tier exit 124). This confirms the specific method. No other method was run during confirmation.
+
+Removed that Activity test. Its pending-link, signed-out presence, reset-model identity and exactly-once assertions live in `AuthLinkRoutingTest.coldSignedInDefersUntilSignOutAndOpensOnce`; `warmSignedInKeepsTheLinkPending` already covers warm deferral. Real sign-out presence/ordering is independently covered by the JVM `core:sync` `SignOutTests`. Four Activity-only checks remain: recreation, Recents/history, onNewIntent's original intent and debug-secret forwarding. They seed signed out and drive real MainActivity lifecycle callbacks without attaching a Compose window. There are no screen assertions or UI waits.
+
+No production ticker bug was found or changed: TodayViewModel shares only `PlanClock.values()`, MinuteClock wraps State, and refresh has no perpetual ticker. SystemPlanClock's minute-boundary timer is the existing real-time clock implementation, cancelled when collection stops. The old fixture composed Today on its StandardTestDispatcher while running a live SystemPlanClock against a real wall clock, then used `runTest` automatic time advancement for sign-out. A perpetual external clock cannot become idle under that fixture. JVM model tests already use FakePlanClock; the remaining Activity tests never compose Today. Existing SystemPlanClock tests explicitly control wall time and bound/cancel collection.
+
+`make targeted ONLY="app:LinkRecreationTest app:AuthLinkRoutingTest"` passes all 12 cases, **16.86 s command wall** (includes a fresh daemon and compilation after the confirmation cap). Per-case LinkRecreationTest XML times:
+
+| Case | Seconds | Sandbox |
+|---|---:|---|
+| debugSeedCapturesInMemoryAndDoesNotForwardTheSecret | 2.167 | first API 36 cold sandbox |
+| historyRelaunchDoesNotCaptureTheLink | 0.061 | warm |
+| coldViewIsCapturedAndRecreationDoesNotReplayIt | 0.470 | warm |
+| warmViewKeepsTheLaunchIntentAndCapturesTheLinkOnce | 0.055 | warm |
+
+All warm Activity cases are below 1 s. The eight router JVM cases take 0.001–0.048 s each; the extended signed-in case takes 0.002 s.
