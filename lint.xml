@@ -4,6 +4,14 @@
     <issue id="GradleDependency" severity="ignore" />
     <issue id="NewerVersionAvailable" severity="ignore" />
     <issue id="AndroidGradlePluginVersion" severity="ignore" />
-    <!-- Phase 0b adds the launcher icon and removes this line (OQ-0a-5). -->
-    <issue id="MissingApplicationIcon" severity="ignore" />
+    <issue id="UnusedResources">
+        <!-- 0b: consumed in Phase 2 -->
+        <ignore path="**/res/font/*.ttf" />
+        <!-- 0b: consumed in Phase 3a -->
+        <ignore path="**/res/drawable-xxxhdpi/launch_moon.png" />
+        <ignore path="**/res/values/colors_launch.xml" />
+        <ignore path="**/res/values-night/colors_launch.xml" />
+        <!-- 0b: consumed in Phase 12b -->
+        <ignore path="**/res/drawable/ic_stat_moon.xml" />
+    </issue>
 </lint>

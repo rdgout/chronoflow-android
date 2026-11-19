@@ -1,0 +1,8 @@
+# ios-pin f391a1fac33eb0f0ea9e3f565206b91118e793d0
+# rsvg-convert version 2.63.4
+5c6f92500ea5f03edb16a74a9f41eb148f34668e1ef2ef5550316dfbce6d0066  Assets/moon/launch-moon-light.svg  -
+71909bcfffbf4283bc35604acad4cd7b431ec67e900687183ec73606aa033134  Assets/moon/launch-moon-dark.svg  -
+b7f1dc110035026c97b8b8d66051178e1c55a27aa11f564d9903c441dfca8f50  -  app/src/main/res/drawable-night-xxxhdpi/launch_moon.png
+a86464c3d31dd6fcca240f95dabbf1db6d9e6f645bf7892b70a0c44838d20ebf  -  app/src/main/res/drawable-xxxhdpi/launch_moon.png
+c17ac1f24e9de7c00efb4443ef040f8d4811e1b35a0d8f5b05c6210cd1f224e3  -  tools/assets/moon/launch-moon-dark.srgb.svg
+f25ec8ae712170ebd1531069a0d5e80f7fcb290f397afce43a86116e6743acc1  -  tools/assets/moon/launch-moon-light.srgb.svg
