@@ -30,11 +30,13 @@ import androidx.compose.ui.semantics.hideFromAccessibility
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.MutableCreationExtras
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import net.chronoflow.app.auth.SignInViewModelFactory
+import net.chronoflow.app.auth.SignUpViewModelFactory
 import net.chronoflow.app.auth.TwoFactorViewModelFactory
 import net.chronoflow.core.designsystem.effect.skyBackground
 import net.chronoflow.core.designsystem.layout.LocalSafeInsets
@@ -47,7 +49,10 @@ import net.chronoflow.feature.auth.forgot.ForgotPasswordRoute
 import net.chronoflow.feature.auth.reset.ResetPasswordRoute
 import net.chronoflow.feature.auth.shell.EmailAppLauncher
 import net.chronoflow.feature.auth.signin.SignInScreen
+import net.chronoflow.feature.auth.signup.CustomTabPolicyOpener
+import net.chronoflow.feature.auth.signup.SignUpRoute
 import net.chronoflow.feature.auth.twofactor.TwoFactorScreen
+import net.chronoflow.feature.auth.verify.VerifyEmailRoute
 import net.chronoflow.feature.launch.LaunchOverlay
 import net.chronoflow.feature.launch.model.LaunchRoute
 import net.chronoflow.feature.launch.welcome.WelcomeScreen
@@ -92,7 +97,8 @@ internal fun CfRoot(
                 displayedRoute == null || displayedRoute == Route.Welcome ||
                     (
                         displayedRoute == Route.SignIn || displayedRoute == Route.TwoFactor ||
-                            displayedRoute == Route.Forgot || displayedRoute is Route.Reset
+                            displayedRoute == Route.Forgot || displayedRoute is Route.Reset ||
+                            displayedRoute == Route.SignUp || displayedRoute == Route.Verify
                     )
             )
     SideEffect { onSystemBars(night, overlayShowing, onSky || launchSky) }
@@ -174,6 +180,35 @@ internal fun CfRoot(
                                                 MutableCreationExtras().apply { set(AppGraphKey, graph) }
                                             }
                                         TwoFactorScreen(viewModel(factory = TwoFactorViewModelFactory, extras = extras))
+                                    }
+
+                                    Route.Verify -> {
+                                        val coordinator = graph.auth.verification
+                                        val model by coordinator.model.collectAsStateWithLifecycle()
+                                        LaunchedEffect(coordinator) { coordinator.prepareVerification() }
+                                        val current = model
+                                        if (current == null) {
+                                            Box(Modifier.fillMaxSize().skyBackground(CfTheme.colors.isDark))
+                                        } else {
+                                            val context = LocalContext.current
+                                            val launcher = remember(context) { EmailAppLauncher(context) }
+                                            androidx.compose.runtime.key(
+                                                current,
+                                            ) { VerifyEmailRoute(current, launcher::open) }
+                                        }
+                                    }
+
+                                    Route.SignUp -> {
+                                        val extras =
+                                            remember(
+                                                graph,
+                                            ) { MutableCreationExtras().apply { set(AppGraphKey, graph) } }
+                                        val context = LocalContext.current
+                                        val opener = remember(context, night) { CustomTabPolicyOpener(context, night) }
+                                        SignUpRoute(
+                                            viewModel(factory = SignUpViewModelFactory, extras = extras),
+                                            opener,
+                                        )
                                     }
 
                                     Route.SignIn -> {

@@ -38,6 +38,8 @@ class ReleaseReadinessTest {
     }
 
     @Test fun sessionSeedCodeIsAbsent() {
+        missing("net.chronoflow.debug.MockVerificationMail")
+        missing("net.chronoflow.feature.auth.verify.VerifyCompositionProbe")
         missing("net.chronoflow.debug.MockSessionSeed")
         missing("net.chronoflow.debug.RouteProbe")
         missing("net.chronoflow.debug.DebugSeedRouting")

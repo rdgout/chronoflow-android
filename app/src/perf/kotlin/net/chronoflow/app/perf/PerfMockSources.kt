@@ -22,6 +22,16 @@ import kotlin.time.DurationUnit
 class PerfMockSources(
     private val io: CoroutineDispatcher,
 ) : MockSources {
+    override suspend fun latestVerificationLink(
+        source: DataSource,
+        context: net.chronoflow.feature.auth.model.VerificationContext,
+    ): net.chronoflow.core.model.api.SignedVerificationInput? =
+        (
+            (source as? MockDataSource)?.inbox()?.lastOrNull {
+                it is MockMail.Verification && it.to == context.email && it.input.id == context.accountId
+            } as? MockMail.Verification
+        )?.input
+
     override suspend fun latestResetLink(
         source: DataSource,
         email: String,

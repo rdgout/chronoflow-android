@@ -15,6 +15,7 @@ tracing = "2.0.5"
 profileinstaller = "1.4.1"
 metricsPerformance = "1.0.0"
 credentials = "1.6.0"
+browser = "1.10.0"
 sqldelight = "2.4.1"
 kotlinxSerialization = "1.13.0"
 coroutines = "1.11.0"
@@ -71,6 +72,7 @@ androidx-tracing-ktx = { module = "androidx.tracing:tracing-ktx", version.ref = 
 androidx-profileinstaller = { module = "androidx.profileinstaller:profileinstaller", version.ref = "profileinstaller" }
 androidx-metrics-performance = { module = "androidx.metrics:metrics-performance", version.ref = "metricsPerformance" }
 androidx-credentials = { module = "androidx.credentials:credentials", version.ref = "credentials" }
+androidx-browser = { module = "androidx.browser:browser", version.ref = "browser" }
 androidx-credentials-play-services-auth = { module = "androidx.credentials:credentials-play-services-auth", version.ref = "credentials" }
 
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerialization" }

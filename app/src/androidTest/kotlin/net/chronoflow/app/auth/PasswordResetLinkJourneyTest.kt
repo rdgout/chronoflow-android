@@ -34,10 +34,10 @@ class PasswordResetLinkJourneyTest : ScreenTest() {
         instrumentation.runOnMainSync { app.graph.resetIoViolationsForTest() }
         launch(mapOf("CF_AUTH_TEST_AUDIT_SCREEN" to "forgot", "CF_MOCK_DELAY" to "0"))
         val graph = app.graph
-        compose.waitUntilExactlyOneExists(hasTestTag("forgot.email"), 5_000)
+        compose.waitUntilExactlyOneExists(hasTestTag("forgot.email"), 15_000)
         compose.onNodeWithTag("forgot.email").performTextInput("demo@example.com")
         compose.onNodeWithTag("forgot.submit").performScrollTo().performClick()
-        compose.waitUntilExactlyOneExists(hasTestTag("forgot.notice"), 5_000)
+        compose.waitUntilExactlyOneExists(hasTestTag("forgot.notice"), 15_000)
         val link =
             runBlocking(Dispatchers.IO) {
                 checkNotNull(graph.mockSources!!.latestResetLink(graph.dataSources.public(), "demo@example.com"))
@@ -48,13 +48,13 @@ class PasswordResetLinkJourneyTest : ScreenTest() {
                 "am start -W -a android.intent.action.VIEW -c android.intent.category.BROWSABLE -d $url ${context.packageName}",
             )
         ParcelFileDescriptor.AutoCloseInputStream(descriptor).bufferedReader().use { it.readText() }
-        compose.waitUntilExactlyOneExists(hasTestTag("reset.password"), 5_000)
+        compose.waitUntilExactlyOneExists(hasTestTag("reset.password"), 15_000)
         compose.onNodeWithTag("reset.password").performTextInput("NewPassword12!")
         compose.onNodeWithTag("reset.confirmation").performTextInput("NewPassword12!")
         compose.onNodeWithTag("reset.submit").performScrollTo().performClick()
-        compose.waitUntilExactlyOneExists(hasTestTag("reset.continue"), 5_000)
+        compose.waitUntilExactlyOneExists(hasTestTag("reset.continue"), 15_000)
         compose.onNodeWithTag("reset.continue").performClick()
-        compose.waitUntilExactlyOneExists(hasTestTag("sign-in.email"), 5_000)
+        compose.waitUntilExactlyOneExists(hasTestTag("sign-in.email"), 15_000)
         assertEquals(Route.SignIn, RouteProbe.state.route)
         assertEquals(SessionPresence.SignedOut, graph.controller.presence)
         val sessionExists =

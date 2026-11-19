@@ -14,6 +14,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import net.chronoflow.app.auth.AuthServices
 import net.chronoflow.app.auth.LazyPublicDataSource
+import net.chronoflow.app.auth.VerificationSessionAdapter
 import net.chronoflow.app.auth.mockResetMail
 import net.chronoflow.app.links.AuthLinkDispatcher
 import net.chronoflow.app.links.AuthLinkRouting
@@ -55,10 +56,11 @@ import net.chronoflow.core.sync.session.SessionGateRouter
 import net.chronoflow.core.sync.session.SessionTeardown
 import net.chronoflow.core.sync.session.StoredDataReadiness
 import net.chronoflow.feature.auth.links.GuestResetLinkRouter
-import net.chronoflow.feature.auth.links.VerifyLinkReceiver
+import net.chronoflow.feature.auth.links.VerificationLinkInbox
 import net.chronoflow.feature.auth.model.SessionAcceptor
 import net.chronoflow.feature.auth.model.passkey.DeterministicAssertionProvider
 import net.chronoflow.feature.auth.model.passkey.SystemPasskeyAssertionProvider
+import net.chronoflow.feature.auth.verify.VerificationCoordinator
 import net.chronoflow.feature.launch.LaunchController
 import net.chronoflow.feature.launch.LaunchTrace
 import java.io.File
@@ -164,6 +166,22 @@ class AppGraph(
                 )
             },
             mockMail = mockResetMail(selection.source, mockSources, { dataSources.public() }) { auth.openReset(it) },
+            verificationFactory = {
+                VerificationCoordinator(
+                    VerificationSessionAdapter(this),
+                    VerificationLinkInbox(),
+                    rootNavigator,
+                    routeAccepted = { navigate, verification ->
+                        readiness.routeAcceptedSession({ navigate(it.toRoute()) }, verification)
+                    },
+                    clearSignInSecrets = { auth.signIn.clearSecrets() },
+                    verificationMail = LaunchPlatform.verificationMail(this),
+                    nowSeconds = { System.currentTimeMillis() / 1000.0 },
+                    scope = appScope,
+                    main = dispatchers.main,
+                    io = dispatchers.io,
+                )
+            },
             passkeyCapability = passkeyCapability,
             assertionProvider =
                 if (selection.source == DataSourceFactory.Source.Mock) {
@@ -183,8 +201,7 @@ class AppGraph(
             auth.openReset(it)
         }
     }
-    val verifyLinks: VerifyLinkReceiver by lazy { VerifyLinkReceiver {} }
-    val authLinkRouting: AuthLinkRouting by lazy { AuthLinkRouting(appScope, resetRouter, verifyLinks) }
+    val authLinkRouting: AuthLinkRouting by lazy { AuthLinkRouting(appScope, resetRouter, auth.verification) }
 
     val launchIntentHandler: LaunchIntentHandler by lazy { LaunchIntentHandler {} }
     private val syncLazy: Lazy<SessionSync> =
@@ -213,6 +230,11 @@ class AppGraph(
             )
         }
     val sessionSync: SessionSync by syncLazy
+
+    internal suspend fun stopSyncIfStarted() {
+        if (syncLazy.isInitialized()) sessionSync.stop()
+    }
+
     private val controllerLazy: Lazy<SessionController> =
         lazy {
             SessionController(
@@ -320,6 +342,7 @@ class AppGraph(
             authLinks.attach()
             if (!launchFinished) {
                 launchFinished = true
+                auth.verification
                 gateRouter.start()
                 LaunchPlatform.observeRoutes(this)
             }
@@ -339,17 +362,13 @@ class AppGraph(
     }
 
     suspend fun onVerify(epoch: Long) {
-        if (controller.activeSession()?.epoch == epoch &&
-            rootNavigator.state.value.route != Route.Verify
-        ) {
-            rootNavigator.navigate(Route.Verify)
-        }
+        auth.verification.onVerify(epoch)
     }
 
     suspend fun close() =
         withContext(NonCancellable) {
             if (routerLazy.isInitialized()) gateRouter.stop()
-            if (syncLazy.isInitialized()) sessionSync.stop()
+            stopSyncIfStarted()
             if (graphsLazy.isInitialized()) sessionGraphs.close()
             if (accountsLazy.isInitialized()) sessionAccounts.close()
             if (readinessLazy.isInitialized()) readiness.close()

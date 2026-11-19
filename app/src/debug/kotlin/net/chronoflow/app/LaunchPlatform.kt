@@ -18,6 +18,15 @@ internal object LaunchPlatform {
 
     fun mockSources(io: kotlinx.coroutines.CoroutineDispatcher): MockSources? = platformMockSources(io)
 
+    fun verificationMail(graph: AppGraph): net.chronoflow.feature.auth.verify.VerificationMail? =
+        if (graph.selection.source == net.chronoflow.core.network.DataSourceFactory.Source.Mock) {
+            graph.mockSources?.let {
+                net.chronoflow.debug.MockVerificationMail(it, { graph.dataSources.public() }, graph.dispatchers.io)
+            }
+        } else {
+            null
+        }
+
     fun welcomeDestinations(navigator: RootNavigator): WelcomeDestinations =
         net.chronoflow.debug.DebugWelcomeDestinations(navigator)
 

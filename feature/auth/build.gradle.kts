@@ -9,6 +9,7 @@ android {
 dependencies {
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.browser)
     testImplementation(project(":core:data-mock"))
     testImplementation(project(":core:testing"))
     testImplementation(project(":core:testing-compose"))

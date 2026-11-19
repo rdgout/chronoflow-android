@@ -156,6 +156,9 @@ class SignInModel(
         }
     }
 
+    fun makeSignUpModel(onBack: () -> Unit): SignUpModel =
+        SignUpModel(source, session, deviceIdentity, deviceName, accepted, onBack)
+
     fun prepareReset() {
         twoFactor.value?.cancel()
         mutableTwoFactor.value = null
