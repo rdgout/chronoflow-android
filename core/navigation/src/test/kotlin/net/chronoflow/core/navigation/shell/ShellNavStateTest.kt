@@ -2,6 +2,7 @@ package net.chronoflow.core.navigation.shell
 
 import net.chronoflow.core.navigation.Route
 import net.chronoflow.core.navigation.WizardMode
+import net.chronoflow.core.navigation.stateKey
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -118,10 +119,10 @@ class ShellNavStateTest {
     }
 
     @Test fun routesHoldNoSecret() {
-        assertEquals(
-            "TripPage(tripId=t1, dayId=null, blockId=null, awaitingSync=false, notificationInputHash=null, notificationToken=null, sheet=null)",
-            Route.TripPage("t1").toString(),
-        )
+        val route = Route.TripPage("t1", notificationInputHash = "private-hash", notificationToken = "private-token")
+        assertEquals(Route.TripPage("t1").stateKey(), route.toString())
+        assertFalse(route.toString().contains("private-hash"))
+        assertFalse(route.toString().contains("private-token"))
     }
 
     @Test fun tripErrorDestinationsClearBothTripPaths() {

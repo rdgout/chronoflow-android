@@ -45,12 +45,14 @@ class StepSheetContentTest {
     private val haptics = RecordingHaptics()
     private val calls = mutableListOf<CheckStatus?>()
     private var today = false
+    private val busyState = mutableStateOf(false)
 
     private fun content(busy: Boolean = false) {
+        busyState.value = busy
         compose.setContent {
             ChronoFlowTheme {
                 CompositionLocalProvider(LocalHaptics provides haptics) {
-                    StepSheetContent(state.value, busy, calls::add, { today = true })
+                    StepSheetContent(state.value, busyState.value, calls::add, { today = true })
                 }
             }
         }
@@ -116,6 +118,14 @@ class StepSheetContentTest {
         compose.mainClock.advanceTimeBy(500)
         compose.waitForIdle()
         assertEquals(before + 1, RefusedChangeDebug.presentedCount.get())
+    }
+
+    @Test fun busyStatusChangeWaitsForTheEnabledAction() {
+        content(true)
+        compose.runOnIdle { state.value = sheetState("done") }
+        compose.onNodeWithTag("step.undo").assertIsNotEnabled()
+        compose.runOnIdle { busyState.value = false }
+        compose.onNodeWithTag("step.undo").assertIsFocused()
     }
 
     @Test fun goneSeeTodayCallsBack() {

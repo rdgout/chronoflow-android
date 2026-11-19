@@ -109,7 +109,7 @@ internal fun tripPageViewModelFactory(
         TripPageViewModel(
             args,
             DbTripPageSource(session),
-            if (freezeClock) FixedPlanClock(Instant.now()) else graph.planClock,
+            if (freezeClock) FixedPlanClock(LaunchPlatform.frozenTripInstant ?: Instant.now()) else graph.planClock,
             session.tripPlanPipeline(compute, graph.copyCatalogs, graph.dispatchers.io),
             createSavedStateHandle(),
             language,

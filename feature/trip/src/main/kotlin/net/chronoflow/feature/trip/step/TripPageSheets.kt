@@ -6,6 +6,8 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
 import net.chronoflow.core.designsystem.system.CfModalBottomSheet
@@ -33,25 +35,29 @@ fun TripPageSheets(
     when (val selection = sheet) {
         is TripSheet.Step -> {
             if (state != null) {
-                CfModalBottomSheet(vm::dismissSheet, sheetState = sheetState) {
+                CfModalBottomSheet(vm::dismissSheet, Modifier.testTag("trip.sheet"), sheetState = sheetState) {
                     StepSheetContent(checkNotNull(state), busy, { vm.setCheck(selection.blockId, it) }, dismiss)
                 }
             }
         }
 
         TripSheet.Legend -> {
-            CfModalBottomSheet(vm::dismissSheet, sheetState = sheetState) { PriorityLegendContent(dismiss) }
+            CfModalBottomSheet(vm::dismissSheet, Modifier.testTag("trip.sheet"), sheetState = sheetState) {
+                PriorityLegendContent(dismiss)
+            }
         }
 
         TripSheet.StepsLegend -> {
-            CfModalBottomSheet(vm::dismissSheet, sheetState = sheetState) { LegendSheetContent(dismiss) }
+            CfModalBottomSheet(vm::dismissSheet, Modifier.testTag("trip.sheet"), sheetState = sheetState) {
+                LegendSheetContent(dismiss)
+            }
         }
 
         TripSheet.TripActions -> {
             actions?.let { ui ->
                 val actionState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
                 val close: () -> Unit = { scope.launch { actionState.hide() }.invokeOnCompletion { vm.dismissSheet() } }
-                CfModalBottomSheet(vm::dismissSheet, sheetState = actionState) {
+                CfModalBottomSheet(vm::dismissSheet, Modifier.testTag("trip.sheet"), sheetState = actionState) {
                     net.chronoflow.feature.trip.actions.TripActionsContent(ui, { action ->
                         if (ui.availability.enabled(action)) {
                             scope.launch {

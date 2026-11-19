@@ -73,12 +73,14 @@ private fun TripPage(
             factory =
                 viewModelFactory {
                     initializer {
+                        val source = FixtureTripPageSource(name, fixture)
                         val catalogs = CopyCatalogProvider(Dispatchers.IO)
                         val decoder = PlanDecoder(Dispatchers.Default)
                         val preparer = PlanPreparer(decoder, catalogs, Dispatchers.Default)
                         TripPageViewModel(
                             args = TripPageArgs("fixture-$name"),
-                            source = FixtureTripPageSource(name, fixture),
+                            source = source,
+                            enqueueCheck = source::enqueueCheck,
                             pipeline = DefaultTripPlanPipeline(decoder, preparer, catalogs, Dispatchers.IO),
                             savedState = createSavedStateHandle(),
                             clock = clock,

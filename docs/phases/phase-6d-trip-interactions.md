@@ -532,7 +532,7 @@ Files:
 - `app/src/androidTest/…/trip/TripPageStepTest.kt` (`@Smoke`, extends `ScreenTest`; port of `AppUITests/TripPageStepTests.testTripBlockActionsAndListReopen`). Seeds: `CF_PLAN_TEST_ROUTE=trip:0199a3c0-0000-7000-8000-000000000002`, `CF_PLAN_TEST_FREEZE_CLOCK=1` (or 6b's equivalent), and a fixed `CF_AUTH_TEST_ID`.
   1. Wait for `trip.timeline.ready`; `performSemanticsAction(OnClick)` on `trip.block.caffeine-caffeine_serving-29864460` (the visible tap path is covered by 1d's `tapResolvesTile`).
   2. `step.sheet` → click `step.done` → wait for `step.undo` → click → wait for `step.done` → click `step.skip` → wait for `step.undo`.
-  3. Press back (`Espresso.pressBack()`) → `step.sheet` is gone.
+  3. Press back (`UiDevice.pressBack()`; Espresso is absent from the landed v2 Compose test dependencies) → `step.sheet` is gone.
   4. Toggle to list, click that block's row → `step.sheet` with `step.undo`.
   5. **Restart:** `scenario.close()`, then `launch(sameSeeds)` with the same `CF_AUTH_TEST_ID` → open the block → `step.undo` exists (the skip survived through the outbox and DB). If 4e's seeding resets the account DB on every launch, drop step 5, rely on Task 6's `CheckOffRestartTest`, and record it in the PR.
   
@@ -545,7 +545,7 @@ Files:
 ## 7. Acceptance criteria
 
 1. `make check` passes. It includes every new `@Logic`, `@Layout` and plain JVM test, and the `@Smoke` `TripPageStepTest` on `pixel`. Each test is within budget in `build/test-results/*/timings.json`.
-2. `make targeted ONLY=":core:plan:StepSheetStateTest :core:plan:TripActionsTests :core:sync:RefusedChangeModelTests :core:sync:CheckOffOutcomeTest :core:data:CheckOffRestartTest :feature:trip:StepCheckTest :feature:trip:TripPageSelectionTest :feature:trip:TripPageSheetRouteTest :feature:trip:TimelineInvalidationTest"` passes.
+2. `make targeted ONLY="core:plan:StepSheetStateTest core:plan:TripActionsTests core:sync:RefusedChangeModelTests core:data:CheckOffOutcomeTest core:data:CheckOffRestartTest feature:trip:StepCheckTest feature:trip:TripPageSelectionTest app:TripPageSheetRouteTest feature:trip:TimelineInvalidationTest"` passes. This uses the landed `:core:data` outcome fixture and the actual `:app` navigation decorators.
 3. **Mark, Skip and Undo survive an app restart through the outbox**: `CheckOffRestartTest` passes, and `TripPageStepTest` step 5 passes (or its recorded fallback).
 4. **TalkBack offers the custom actions**: `TimelineTargetActionsTest` and `DayListRowActionsTest` pass. Also do one manual TalkBack pass on `pixel` (Actions menu on a block shows "Mark as done" and "Skip"; after Mark as done, "Done" is spoken) and note it in the PR.
 5. **The sheets match their boards**: `make captures ONLY=ItemDetail,PlanLegend,SheetStates,TripActions,TripActionsNoPlan` and `make captures DEVICE=1 ONLY=…` write the PNGs listed in Tasks 4, 5, 8 and 10. Review them side by side with the boards and list every deliberate difference (§8 checklist) in the PR.
@@ -596,3 +596,10 @@ These thirteen defaults are recorded in plan.md as OQ-A292–OQ-A304.
 | OQ-6d-11 | The step-gone capture needs a debug path | `CF_PLAN_TEST_FORCE_GONE=1` only if it is a one-line debug branch; otherwise the Robolectric capture of Task 4 is the evidence |
 | OQ-6d-12 | The emulator journey's restart step depends on 4e seeding keeping the account DB across a relaunch | Keep it if it does; otherwise the JDBC `CheckOffRestartTest` is the evidence, recorded in the PR |
 | OQ-6d-13 | Keyboard focus on invisible timeline targets adds one focus node per block | **Accept.** Re-check `TimelineInvalidationTest`, the compose report and `make perf-timeline`; if a gate fails, make targets focusable only when `LocalInputModeManager.inputMode == Keyboard` and record it |
+
+
+## 10. Results (2026-11-19)
+
+Implementation and all named Android test classes are complete. Detailed commands, wall times, source-name adaptations, fixture fallbacks and capture differences are recorded in [the validation report](../phase-6d-validation.md). All eleven JVM and six pixel PNGs were produced in one run per capture tier. Pixel's single step journey passes in 4.792 s with zero StrictMode IO violations. All 220 layout cases and the serial six timing gates pass. The single quick recipe stopped on the older toString expectation; its corrected focused case and every remaining recipe stage pass individually. Quick was not rerun. Lint passes after remembering a test fixture's state. The Python icon-count check is updated to 41 as well as LucideGlyphsTest.
+
+The current release Compose report keeps DayTimeline and TimelineTargets restartable/skippable with all parameters stable. [Phase 6d host metrics and the reserved commands](../perf-timeline.md#phase-6d--interactions-2026-11-19) list the evidence and pending user measurements. No perf, baseline-profile or make check run was performed. Manual TalkBack remains pending. Profiles need regeneration after the changed method signatures and added bounded step-sheet journey.

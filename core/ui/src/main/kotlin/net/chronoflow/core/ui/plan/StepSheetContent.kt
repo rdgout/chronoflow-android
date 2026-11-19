@@ -49,6 +49,7 @@ import net.chronoflow.core.designsystem.icon.imageVector
 import net.chronoflow.core.designsystem.theme.CfTheme
 import net.chronoflow.core.designsystem.theme.tnum
 import net.chronoflow.core.model.contracts.CheckStatus
+import net.chronoflow.core.plan.generated.PlanMetrics
 import net.chronoflow.core.plan.step.StepActions
 import net.chronoflow.core.plan.step.StepBadge
 import net.chronoflow.core.plan.step.StepSheetState
@@ -89,6 +90,7 @@ private fun StepContent(
     val announcer = LocalPoliteAnnouncer.current
     val mark = state.badge?.takeIf { it != StepBadge.Now }
     var previous by remember { mutableStateOf(state.blockId to mark) }
+    var pendingFocus by remember { mutableStateOf<StepActions?>(null) }
     val announcement =
         stringResource(
             when (mark) {
@@ -97,11 +99,17 @@ private fun StepContent(
                 else -> R.string.screens_check_off_undone
             },
         )
-    LaunchedEffect(state.blockId, mark) {
+    LaunchedEffect(state.blockId, mark, busy) {
         if (previous.first == state.blockId && previous.second != mark) {
             announcer?.announce(announcement)
-            if (state.actions == StepActions.Marked) undoFocus.requestFocus()
-            if (state.actions == StepActions.Open) doneFocus.requestFocus()
+            pendingFocus = state.actions
+        } else if (previous.first != state.blockId) {
+            pendingFocus = null
+        }
+        if (!busy) {
+            if (pendingFocus == StepActions.Marked) undoFocus.requestFocus()
+            if (pendingFocus == StepActions.Open) doneFocus.requestFocus()
+            pendingFocus = null
         }
         previous = state.blockId to mark
     }
@@ -120,7 +128,10 @@ private fun StepContent(
         Row(horizontalArrangement = Arrangement.spacedBy(PlanUITokens.space3.dp), verticalAlignment = Alignment.Top) {
             CategorySwatch(state.type)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(PlanUITokens.space1.dp)) {
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(PlanUITokens.space2.dp)) {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(PlanUITokens.space2.dp),
+                    verticalArrangement = Arrangement.spacedBy(PlanUITokens.space2.dp),
+                ) {
                     PriorityTag(planScreenText(state.priorityKey))
                     state.badge?.let { badge ->
                         CfBadge(
@@ -240,7 +251,7 @@ private fun StepButtons(
     SubcomposeLayout { constraints ->
         val gap = PlanUITokens.space2.dp.roundToPx()
         val padding = (PlanUITokens.space6 * 2).dp.roundToPx()
-        val icon = (AuthTokens.icon + AuthTokens.fieldGap).dp.roundToPx()
+        val icon = (PlanMetrics.icon + AuthTokens.fieldGap).dp.roundToPx()
         val skipWidth =
             subcompose(
                 "skip-label",
@@ -273,6 +284,7 @@ private fun StepButtons(
                                 true
                         },
                         leadingIcon = LucideGlyphs.Check.imageVector(2.5f),
+                        leadingIconSize = PlanMetrics.icon.dp,
                         size = CfButtonSize.Lg,
                         enabled = !busy,
                         fillWidth = true,

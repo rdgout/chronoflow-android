@@ -28,7 +28,7 @@ class RefusedChangeTextTest {
         return result
     }
 
-    @Test fun englishStep() {
+    @Test fun serverRefusalProducesTheDrawnMessage() {
         assertEquals(
             "Couldn't save \"Avoid bright light\" as done, so we undid it.",
             resolve(SyncRefusalNotice.StepDone(BlockType.AvoidLight)),

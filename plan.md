@@ -2432,7 +2432,7 @@ Implementation commits (brief §7):
   - TalkBack custom actions (Mark as done, Skip) on timeline targets and list rows, and a defined focus order.
   - Keyboard and D-pad traversal and activation.
   - No haptic on check-off.
-- [ ] **Tests.**
+- [x] **Tests.** Task 10: journey, captures, guards, release checks and benchmark/profile inputs.
   - The ported 17a and 17c cases: mark, undo, refusal, and the 422/429/408 handling.
   - Guards for each sheet state.
   - One emulator journey: open a step → Done → Undo.
@@ -2440,6 +2440,8 @@ Implementation commits (brief §7):
 **Acceptance**
 - Mark, Skip and Undo survive an app restart through the outbox.
 - TalkBack offers the custom actions, and the sheets match their boards.
+
+**Validation (2026-11-19).** All ten implementation tasks are complete. The single pixel journey passes in 4.792 s with zero StrictMode IO violations; six device and eleven JVM captures were produced once per capture tier. All 220 layout cases, new logic tests, release seed/counter checks, lint and six serial timing gates pass. The one `make quick` invocation stopped on the older route diagnostic-string expectation; its focused correction and all remaining recipe stages pass individually without rerunning quick. OQ-A292–OQ-A304 record the brief defaults. [Commands, results, wall times and deviations](docs/phase-6d-validation.md) and [host metrics](docs/perf-timeline.md#phase-6d--interactions-2026-11-19) retain the evidence. Per user instruction, perf, regenerated profiles, full `make check` and the manual TalkBack pass remain pending with the user. Pixel remains running.
 
 ### Phase 6e: Wide and foldable trip page (`feat/phase-6e-trip-wide`)
 

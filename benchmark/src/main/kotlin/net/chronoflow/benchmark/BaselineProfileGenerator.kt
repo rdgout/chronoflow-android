@@ -146,6 +146,39 @@ class BaselineProfileGenerator {
                 input.step("summary return day") {
                     check(topDayIndex() == 0) { "summary coverage did not return to day 0" }
                 }
+                input.step("open step sheet") {
+                    checkNotNull(device.findObject(By.res("trip.block.$LARGE60_OPENING_FIRST_BLOCK"))) {
+                        "opening checkable block missing"
+                    }.click()
+                }
+                input.step("expand native step sheet") {
+                    check(device.wait(Until.hasObject(By.res("trip.sheet")), 5_000)) { "native sheet missing" }
+                    val sheet = checkNotNull(device.findObject(By.res("trip.sheet"))).visibleBounds
+                    check(
+                        device.swipe(
+                            sheet.centerX(),
+                            sheet.top + sheet.width() / 16,
+                            sheet.centerX(),
+                            sheet.top / 10,
+                            26,
+                        ),
+                    ) { "sheet expansion swipe rejected" }
+                }
+                input.step("step actions ready") {
+                    check(device.wait(Until.hasObject(By.res("step.done")), 5_000)) { "step actions missing" }
+                }
+                input.step("mark step") { checkNotNull(device.findObject(By.res("step.done"))).click() }
+                input.step("undo ready") {
+                    check(device.wait(Until.hasObject(By.res("step.undo")), 5_000)) { "check-off did not land" }
+                }
+                input.step("undo step") { checkNotNull(device.findObject(By.res("step.undo"))).click() }
+                input.step("undo landed") {
+                    check(device.wait(Until.hasObject(By.res("step.done")), 5_000)) { "undo did not land" }
+                }
+                input.step("close step") { device.pressBack() }
+                input.step("step closed") {
+                    check(device.wait(Until.gone(By.res("step.sheet")), 5_000)) { "step sheet stayed open" }
+                }
                 repeat(
                     3,
                 ) { gesture -> input.step("timeline gesture ${gesture + 1}/3") { device.swipeTimeline(bounds) } }

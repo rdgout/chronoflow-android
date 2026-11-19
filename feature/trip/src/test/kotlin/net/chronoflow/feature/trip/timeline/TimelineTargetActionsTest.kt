@@ -3,6 +3,7 @@ package net.chronoflow.feature.trip.timeline
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.semantics.SemanticsActions
@@ -42,7 +43,7 @@ class TimelineTargetActionsTest {
             ChronoFlowTheme {
                 Box(Modifier.size(411.dp, 800.dp)) {
                     TimelineTargets(
-                        mutableStateOf(rig.reference),
+                        remember { mutableStateOf(rig.reference) },
                         rig.day.id,
                         opened::add,
                         actions = DayCheckActions(if (action == StepActions.None) emptyMap() else mapOf(id to action)),

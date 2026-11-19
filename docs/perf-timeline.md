@@ -470,3 +470,49 @@ Frames (~2,100), recompositions (571), builds and replays (40/40), placeholders 
 
 **Not run:** the separate StrictMode sweep (remote open, list, pull) and an independent capture review. The ready-list pixel smoke test logged zero IO violations.
 
+
+
+## Phase 6d — interactions (2026-11-19)
+
+Host evidence: MacBook-Pro-van-Rick.local, macOS 27.2.1, JDK 17 Gradle / JDK 21 test toolchain, JVM budget build and debug Robolectric native graphics. Command: `make timing`, serial after the remaining quick checks. Six gates pass, 2.30 s tier wall (2.35 s shell wall). These are host measurements, not emulator or device claims.
+
+| Preparation fixture | Mean ms | Maximum ms of ten samples | Gate ms per sample |
+|---|---:|---:|---:|
+| S3 | 2.8 | 4.3 | 40 |
+| large30 | 4.1 | 4.7 | 100 |
+| large60 | 6.5 | 7.9 | 200 |
+
+| large60 width dp | Largest day median ms | Largest day maximum ms (report only) | Total median ms | Largest drawing bytes |
+|---|---:|---:|---:|---:|
+| 360 | 0.07 | 0.10 | 0.8 | 11,795 |
+| 411 | 0.04 | 0.05 | 0.6 | 11,795 |
+| 841 | 0.05 | 0.14 | 1.3 | 14,089 |
+
+Drawing gates remain median ≤1 ms per day, total median ≤5 ms per width, ≤512 KiB per drawing. XML and raw sample output: `build/phase6d-review/timing/` and `core/plan/build/test-results/timingTest/`.
+
+The button and custom-action check-off guards both pass. Only day k rebuilds its static layer and targets; the unchanged visible days have zero static/target/clock/header changes. Day k has one static composition, 1–2 draws and 1–2 target compositions: check actions can arrive before the asynchronous replacement drawing. The clock stays unchanged. The list guard proves a scroll moves within one day with zero row/chrome compositions and zero composition passes; its header-crossing positive control observes composition. The original timeline scroll guard stays green.
+
+`./gradlew :feature:trip:compileReleaseKotlin -PcomposeReports=true` passes (4 s Gradle wall). Release report excerpts, with every listed parameter marked `stable`:
+
+```text
+restartable skippable ... fun net.chronoflow.feature.trip.timeline.DayTimeline(
+  stable day: PreparedDay
+  stable layout: DayLayout
+  stable key: DayDrawingKey
+  stable actions: DayCheckActions?
+  stable onCheck: Function2<String, CheckStatus?, Unit>?
+  ... all other parameters stable
+)
+restartable skippable ... fun net.chronoflow.feature.trip.timeline.TimelineTargets(
+  stable drawing: State<DayDrawing?>
+  stable dayId: String
+  stable onBlock: Function1<String, Unit>
+  stable modifier: Modifier?
+  stable actions: DayCheckActions?
+  stable onCheck: Function2<String, CheckStatus?, Unit>?
+)
+```
+
+The baseline journey now opens a checkable block, expands the native sheet, checks it, undoes it and closes it using bounded structural-tag waits. The perf-only source feeds pending checks through the real decoder. Its JVM test passes. The timeline/list measurement workloads and checker thresholds are unchanged.
+
+**Reserved for the user, as requested:** run `make baseline-profile`, then `make perf-timeline` on the final stack top. Profiles were not regenerated here. Record the first-frame time, timeline/list CPU P50/P90/P99 and CPU band against the last three trip rows, overruns, jank, hitch ratio, placeholders, main-thread build count, main/RenderThread frame times, target composition maximum, first-frame breakdown, last-day result, RSS and growth. List every ±25% FLAGGED line with its cause; flags alone do not fail. OQ-A291 remains applicable. No new emulator perf row or device claim is made by this phase; `make perf`, `make perf-timeline`, `make baseline-profile` and `make check` were not run.
