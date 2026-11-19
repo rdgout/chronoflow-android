@@ -2,12 +2,14 @@
 
 package net.chronoflow.feature.today
 
+import androidx.activity.compose.ReportDrawnWhen
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
@@ -29,6 +31,8 @@ fun TodayRoute(
     val language = if (resolved == AppLanguage.Nl) Language.Nl else Language.En
     LaunchedEffect(viewModel, language) { viewModel.setLanguage(language) }
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val drawingState = rememberUpdatedState(state)
+    ReportDrawnWhen(remember(viewModel) { { drawingState.value !is TodayUiState.Loading } })
     val selection by viewModel.stepSheet.collectAsStateWithLifecycle()
     val sheet by viewModel.stepSheetState.collectAsStateWithLifecycle()
     val busy by viewModel.changingCheck.collectAsStateWithLifecycle()

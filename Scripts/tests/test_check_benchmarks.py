@@ -139,12 +139,45 @@ class CheckBenchmarksTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("FLAGGED", result.stdout)
         after = history.read_text().splitlines()
-        self.assertEqual(len(after), len(before) + 1)
-        added = [line for line in after if line not in before]
+        start, end = load_checker().history_rows(after)
+        added = [line for line in after[start:end] if line not in before]
         self.assertEqual(len(added), 1)
         self.assertEqual(len(added[0].strip("|").split("|")), 12)
         self.assertEqual(after.index(added[0]), 7)
         self.assertEqual(added[0].strip("|").split("|")[10].strip().split("/")[0], "512.3")
+
+    def signed_in_variant(self, mutate):
+        root = temp_dir(self)
+        fixture = next((FIXTURES / "startup/pass").glob("*.json"))
+        data = json.loads(fixture.read_text())
+        bench = next(b for b in data["benchmarks"] if b["name"] == "startupColdSignedIn")
+        mutate(bench["metrics"])
+        (root / fixture.name).write_text(json.dumps(data))
+        return root
+
+    def test_signed_in_missing_ttfd_fails(self):
+        root = self.signed_in_variant(lambda metrics: metrics.pop("timeToFullDisplayMs"))
+        result = check("--suite", "startup", "--device-class", "emulator", "--results-dir", str(root))
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("startupColdSignedIn timeToFullDisplayMs is missing", result.stderr)
+
+    def test_signed_in_nonfinite_ttfd_fails(self):
+        root = self.signed_in_variant(lambda metrics: metrics["timeToFullDisplayMs"].update(median=float("nan")))
+        result = check("--suite", "startup", "--device-class", "emulator", "--results-dir", str(root))
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("startupColdSignedIn timeToFullDisplayMs median=nan ms FAIL", result.stdout)
+
+    def test_signed_in_history_records_both_metrics_and_source(self):
+        root = temp_dir(self)
+        history = root / "perf-startup.md"
+        shutil.copyfile(FIXTURES / "history" / "perf-startup.md", history)
+        result = check("--suite", "startup", "--device-class", "emulator", "--results-dir", str(FIXTURES / "startup/pass"),
+                       "--history", str(history), "--append", "--refresh-hz", "60", "--commit", "deadbee")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        lines = history.read_text().splitlines()
+        row = load_checker().cells(lines[lines.index("## Signed-in Today startup") + 4])
+        self.assertEqual(row[1:6], ["deadbee", "emulator", "sdk_gphone64_arm64", "36", "60"])
+        self.assertEqual(row[9:], ["500.0", "2200.0", "FixtureTodaySource", "REPORT"])
 
     def test_launch_requires_every_iteration_to_animate_at_least_75_frames(self):
         result = check("--suite", "launch", "--device-class", "emulator", "--results-dir", str(FIXTURES / "launch/frame-count-74"))

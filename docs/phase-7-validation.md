@@ -47,3 +47,48 @@ The sheet integration and two added JVM refresh-policy cases pass (2.957 s for t
 `make targeted ONLY="feature:today:TodayControlTests#testEachRowStateKeepsOneLargeTapTargetAtXXLarge"` passes in 6.50 s wall after removing an unnecessary member-function import (first compile: 2.56 s). All three Dutch rows at the capped large font have one clickable node, height ≥56 dp and 16 dp gutters.
 
 `make targeted ONLY="app:TodayTests"` passes on **pixel AVD / Android 16** in 9.72 s command wall, including build/install. The result XML records **4.323 s** for the test; it enforces <10 s and asserts **0** debug main-thread IO violations. It launches seeded into Today, opens the trip twice, and returns through system Back and an actual predictive edge swipe, checking the Today structural tag and debug route probe after each return. This was the only executed emulator journey. An earlier command stopped before execution on the absent Espresso import (3.19 s); the existing UiAutomator system-Back API resolved it without adding a dependency. The landed 6a tree has no edge helper, so the new helper is Android-test-only and derives coordinates from the display. Pixel remains running.
+
+## Task 8
+
+`make targeted ONLY="feature:today:TodayFullyDrawnTest app:FixtureTodaySourceTest app:ReleaseReadinessTest#releaseShipsNoPerfCode"` passes all eight cases. The two reporter cases take 2.806 s together, the five fixture/gate cases 0.188 s, and release exclusion 0.002 s. The three Gradle invocations report 7 s, 4 s and 7 s respectively (release tier wall 7.34 s). They prove both reporter orderings, a usable selected/detail source, Done/Undo, strict perf-stub selection and classpath exclusion.
+
+`python3 -I -m unittest discover -s Scripts/tests -p test_check_benchmarks.py` passes 56 cases in 2.650 s. The initial new history-table assertion used the wrong row index (56 cases, 2.826 s); correcting that index resolved it. Missing and non-finite signed-in TTFD cases fail for the real reason, and a synthetic history append records TTID, TTFD, device/API/Hz and source. Synthetic numbers never enter performance history.
+
+`./gradlew :benchmark:compileBenchmarkReleaseKotlin :app:compileBenchmarkReleaseKotlin` passes in 3.14 s wall; neither benchmark nor profile collection was executed. `make format` passes (11.05 s for the final Task 8 format run). The root reporter remains unchanged; merged code confirms Today is composed under the overlay before its exit completes. The explicit deferred commands and requested measurements are in `docs/perf-startup.md`.
+
+## Brief refresh and open questions
+
+The signed Task 0 refresh corrects four mechanical assumptions: `PlanClock.values()` has no `now()`; Compose card models and formatting stay together in core UI with core preferences; CheckOffWriter preserves the landed trip-page enqueue callback; and standard acceptance #5 supplies the reduced geometry matrix. Task commits also record the landed targeted-selector syntax, app-owned dispatcher type, CategorySwatch argument order, separate 390 × 844 capture frame, suspending mutation-permit provider, app-host test location, missing predictive-back helper and absent Espresso dependency. Each resolution preserves earlier-phase behaviour. There is one brief-refresh commit; later notes are in their task commits.
+
+Added OQ-A324–OQ-A336 (13 rows): shared formatter home, Today budget, board differences, shared primitives, omitted glass icon, Settings destination, refresh, sheet survival, perf fixture, retention, native progress, wizard seam and the unresolved JVM title ink. No Android-only copy was needed. The highest row is A336; A68 remains unused.
+
+## Final validation — stopped on a hang
+
+- App, Today, My trips and trip-page Lint plus `verifyReleaseManifest` pass: `./gradlew :app:lintDebug :feature:today:lintDebug :feature:trips:lintDebug :feature:trip:lintDebug :app:verifyReleaseManifest`, **25.30 s wall**. A subsequent small Task 8 change keeps the source-readiness reporter stable across the source appearing; that exact edit has not had another Lint pass.
+- The layout tier ran once for `:app`, `:core:ui`, `:core:designsystem`, `:feature:today`, `:feature:trips`, `:feature:trip`, using `Scripts/run-tier.sh layout` with those modules' result/timing globs and `./gradlew <module>:testDebugUnitTest … -Pcf.tier=layout`. **698 cases pass, 38.67 s command wall** (38.60 s tier). Counts: app 72, core UI 257, design system 7, Today 40, My trips 18, trip page 304. No failed cases or timing budgets.
+- `make quick` ran **once**, and failed/stalled: **188.64 s command wall**, exit 2 from Make. Its first failure was `LucideGlyphsTest#everyBoardPathParsesAndVectorsAreCached`: `expected:<41> but was:<43>`. Both the Kotlin and Python generator count assertions are now corrected to 43 in the working tree; this correction has not been rerun.
+- The same quick run then stopped producing app test results with `:app:testDebugUnitTest` active. Its in-progress binary stopped growing at 17:47:57 UTC. No per-process timing JSON was produced for the app, so this tier is a failure. After the Gradle call stalled past three minutes, `./gradlew --stop` ran once (**0.27 s wall**), with exact output:
+
+```text
+Stopping Daemon(s)
+1 Daemon stopped
+```
+
+The quick command ended with:
+
+```text
+> Task :app:testDebugUnitTest
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Gradle build daemon has been stopped: stop command received
+
+run-tier: app/build/cf-timings/testDebugUnitTest wrote no timing files
+run-tier: app/build/cf-timings/testDebugUnitTest has no matching passed stamp; rerun to measure it
+make: *** [quick] Error 1
+```
+
+Diagnostic attachment (`/Library/Java/JavaVirtualMachines/zulu-17.jdk/Contents/Home/bin/jcmd 32236 Thread.print`) failed with `java.io.IOException: Operation not permitted`; `ps` also returned `operation not permitted: ps`. The active method cannot be established from completed results. The log is `/tmp/phase7-final-quick.log`, and the failed attachment output is `/tmp/phase7-quick-daemon-threads.log`.
+
+Per the user's instruction to stop on a hang, no hung test is retried and no further implementation/checks run. Task 8 is **uncommitted**, its plan box remains unchecked, and the final commit body is prepared at `/tmp/phase7-task8-commit.txt`. The remaining quick steps (build-logic tests, complete tooling suite, serial `make timing`) never started. Consequently the final serial preparation/drawing budget evidence is still missing. The new icon assertion correction also remains unverified. Eight signed commits cover the brief refresh and Tasks 1–7; no commit was rewritten after the next task began. No push occurred. Pixel was not stopped.

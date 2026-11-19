@@ -127,6 +127,36 @@
         "min": 3199,
         "hard": 3217.6666655555555
       }
+    },
+    {
+      "test": "startupColdSignedIn",
+      "metric": "timeToInitialDisplayMs",
+      "stat": "median",
+      "unit": "ms",
+      "reference": {
+        "report": true
+      },
+      "lowEnd": {
+        "report": true
+      },
+      "emulator": {
+        "report": true
+      }
+    },
+    {
+      "test": "startupColdSignedIn",
+      "metric": "timeToFullDisplayMs",
+      "stat": "median",
+      "unit": "ms",
+      "reference": {
+        "report": true
+      },
+      "lowEnd": {
+        "report": true
+      },
+      "emulator": {
+        "report": true
+      }
     }
   ],
   "timeline": [

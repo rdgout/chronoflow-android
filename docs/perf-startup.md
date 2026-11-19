@@ -266,3 +266,19 @@ Phase 5b Task 3, 2026-11-18; `make size`, release AAB, bundletool arm64-v8a / xx
 | After dependencies | Task 3 working tree committed as `4e9dda3` | `Bundle size: 2445635 bytes (2.45 MB), arm64-v8a/xxhdpi/en: OK` | 37 s |
 
 Delta: 136,619 bytes. Both runs stay below the 8 MB warning and pass the native-library gate. Neither Credential Manager AAR contains a `.so`; no native-library exclusion or allow-list change was added. The Play-services consumer keep rule and the app's broader guard appear in the merged release R8 configuration. Original logs are retained in `build/phase5b-validation/size-before.log` and `size-after.log`. No startup/perf/profile run was performed in Phase 5b.
+
+## Phase 7 — Today (2026-11-19)
+
+`TodayRoute` adds a stable `ReportDrawnWhen` predicate: first non-Loading content **and** 3b's unchanged root hand-off predicate must both finish. `CfRoot` composes `RootContent` below the overlay, and `LaunchController` publishes its route at exit commit, before overlay teardown. The two ordering cases pass with a real FullyDrawnReporter.
+
+`StartupBenchmark.startupColdSignedIn` uses ten cold iterations, `CompilationMode.Partial(BaselineProfileMode.Require)` and `StartupTimingMetric`. It launches with `cf.session=in cf.stored=yes cf.gate=app` and waits on structural Today tags. With no real session, only the explicitly signed-in **perf** app stub selects `FixtureTodaySource`; it prepares MockAppSeed at device time on the injected worker. Debug native sessions and release builds cannot select it. The startup profile journey now reaches the first Today content.
+
+Measurements and profile regeneration are deferred by the user's explicit Phase 7 instruction. No timing is invented and existing profile artifacts are left intact. Run on the already-running **pixel AVD, API 36**, retaining the measured refresh rate and **benchmarkRelease** build label:
+
+```sh
+make baseline-profile
+make perf
+make perf-timeline
+```
+
+`make perf` checks that signed-in TTID and TTFD are present and finite, then appends both medians and the source (`FixtureTodaySource`) in the signed-in table. The existing signed-out startup checks also run because the Today report changes the signed-in launch path. `make perf-timeline` supplies Task 1's ±25% comparison after sharing the check-off writer and trip card. Record those results in this file and `docs/perf-timeline.md`; emulator numbers are reports, never device claims.

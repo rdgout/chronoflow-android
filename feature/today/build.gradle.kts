@@ -7,6 +7,7 @@ android {
 }
 
 dependencies {
+    implementation(libs.androidx.activity.compose)
     implementation(project(":core:plan"))
     implementation(project(":core:sync"))
     implementation(libs.kotlinx.coroutines.core)

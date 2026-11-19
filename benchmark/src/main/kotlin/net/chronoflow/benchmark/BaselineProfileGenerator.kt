@@ -55,14 +55,14 @@ class BaselineProfileGenerator {
         }
     }
 
-    /** Whatever `MainActivity` shows first at this stack top; Phase 13 adds Today. */
+    /** Collect the signed-in launch through the first Today content. */
     @Test
     fun startup() =
         collectProfile(startup = true) {
             BoundedProfileInput(journeyTimeoutMillis = budget.journeyTimeoutMillis).use { input ->
                 input.step("cancel stale touch") { cancelStaleTouch() }
                 input.step("startup home") { pressHome() }
-                input.step("startup launch") { startActivityAndWait() }
+                input.step("startup launch") { startActivityAndWait(signedInStartupIntent(packageName)) }
                 input.step("launch overlay appears") {
                     check(device.wait(Until.hasObject(By.res("launch.opening")), 5000)) {
                         "launch overlay never appeared"
@@ -73,18 +73,14 @@ class BaselineProfileGenerator {
                         "launch overlay never closed"
                     }
                 }
-                input.step("welcome wordmark") {
-                    check(device.wait(Until.hasObject(By.res("welcome.wordmark")), 2000)) {
-                        "welcome wordmark missing"
+                input.step("Today content") {
+                    check(
+                        device.wait(Until.hasObject(By.res("today.trip")), 5_000) ||
+                            device.hasObject(By.res("today.empty")),
+                    ) {
+                        "Today content missing"
                     }
                 }
-                input.step("welcome sign in") {
-                    check(device.wait(Until.hasObject(By.res("welcome.signIn")), 1000)) {
-                        "welcome sign in missing"
-                    }
-                }
-                // Keep collection open through the intro's final animation; the sign-in button remains visible.
-                input.step("welcome intro completion") { device.wait(Until.gone(By.res("welcome.signIn")), 900) }
             }
         }
 

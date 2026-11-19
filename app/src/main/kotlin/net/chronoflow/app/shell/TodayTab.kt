@@ -1,10 +1,12 @@
 package net.chronoflow.app.shell
 
+import androidx.activity.compose.ReportDrawnWhen
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
@@ -15,6 +17,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import net.chronoflow.app.AppGraph
 import net.chronoflow.app.LaunchPlatform
 import net.chronoflow.app.SessionGraph
+import net.chronoflow.app.platformTodaySource
 import net.chronoflow.app.today.DbTodaySource
 import net.chronoflow.core.model.contracts.Language
 import net.chronoflow.core.model.contracts.TimeFormat
@@ -41,17 +44,25 @@ internal fun TodayTab(
     holder: ShellViewModel,
 ) {
     Box(Modifier.fillMaxSize().testTag("route.today")) {
-        if (session == null) {
+        val source =
+            remember(graph, session) {
+                if (session == null) {
+                    platformTodaySource(graph)
+                } else {
+                    DbTodaySource(session, graph.dispatchers.io, PlanDecoder(graph.dispatchers.default)) {
+                        graph.controller.mutationPermit(session.snapshot) ?: throw StaleSessionException()
+                    }
+                }
+            }
+        val sourceReady = rememberUpdatedState(source != null)
+        ReportDrawnWhen(remember { { sourceReady.value } })
+        if (source == null) {
             val clock = remember { MinuteClock(mutableStateOf(Instant.EPOCH)) }
             val language = if (LocalConfiguration.current.locales[0].language == "nl") Language.Nl else Language.En
             TodayScreen(TodayUiState.Loading, clock, language, null, TimeFormat.Value24, todayActions(holder) {}, {})
         } else {
             val dependencies =
-                remember(graph, session) {
-                    val source =
-                        DbTodaySource(session, graph.dispatchers.io, PlanDecoder(graph.dispatchers.default)) {
-                            graph.controller.mutationPermit(session.snapshot) ?: throw StaleSessionException()
-                        }
+                remember(graph, session, source) {
                     TodayDependencies(
                         source,
                         graph.planClock,
@@ -71,7 +82,7 @@ internal fun TodayTab(
             val model: TodayViewModel = viewModel(factory = TodayViewModel.Factory, extras = extras)
             val actions =
                 remember(model, holder, session) {
-                    todayActions(holder) { model.refresh { session.sync.refreshNow() } }
+                    todayActions(holder) { model.refresh { session?.sync?.refreshNow() } }
                 }
             TodayRoute(model, actions)
         }

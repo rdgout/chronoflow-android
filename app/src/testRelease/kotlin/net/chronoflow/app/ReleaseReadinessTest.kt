@@ -102,6 +102,8 @@ class ReleaseReadinessTest {
 
     @Test
     fun releaseShipsNoPerfCode() {
+        missing("net.chronoflow.app.perf.today.FixtureTodaySource")
+        missing("net.chronoflow.app.perf.StubReadinessFactory")
         missing("net.chronoflow.app.perf.PerfEntry")
         missing("net.chronoflow.app.perf.FixtureTripPageSource")
         assertThat(BuildConfig.PERF_ENTRY).isFalse()

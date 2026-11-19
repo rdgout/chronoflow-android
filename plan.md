@@ -2532,7 +2532,7 @@ Implementation commits (brief §7):
   - Row states keep done and skipped steps in place (`TodayRowStates`). Tapping a row opens 6d's step sheet over Today (Mark as done, Skip, Undo, through the outbox); tapping the hero card opens `TripPage(tripId)` without a block (OQ-A44).
   - The minute clock is read only in leaf composables.
   - From 600 dp, cards are at most 640 dp wide.
-- [ ] **TTFD.** `reportFullyDrawn()` fires after the first Today content frame on a signed-in launch.
+- [x] **TTFD.** `reportFullyDrawn()` fires after the first Today content frame on a signed-in launch.
 - [x] **Tests.**
   - Guards for each state.
   - An invalidation probe: a minute tick recomposes only the leaf.
