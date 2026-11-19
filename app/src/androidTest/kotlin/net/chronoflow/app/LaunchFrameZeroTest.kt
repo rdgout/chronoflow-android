@@ -2,6 +2,7 @@ package net.chronoflow.app
 
 import android.content.res.Configuration
 import android.graphics.Bitmap
+import androidx.compose.ui.test.ComposeTimeoutException
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.runner.lifecycle.ActivityLifecycleCallback
 import androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry
@@ -74,9 +75,17 @@ class LaunchFrameZeroTest : ScreenTest() {
         val controller = graph.launch
         runBlocking { withTimeout(5000) { controller.awaitOverlayPlaced() } }
         instrumentation.runOnMainSync { assertTrue(controller.holdsSystemSplash()) }
-        val system = checkNotNull(instrumentation.uiAutomation.takeScreenshot())
-        instrumentation.runOnMainSync { controller.splashHeld = false }
         val device = UiDevice.getInstance(instrumentation)
+        val sky =
+            instrumentation.targetContext
+                .createConfigurationContext(
+                    Configuration(instrumentation.targetContext.resources.configuration).apply {
+                        uiMode = (uiMode and Configuration.UI_MODE_NIGHT_MASK.inv()) or
+                            if (dark) Configuration.UI_MODE_NIGHT_YES else Configuration.UI_MODE_NIGHT_NO
+                    },
+                ).getColor(R.color.launch_sky_top)
+        val system = awaitSystemSplash(device, sky)
+        instrumentation.runOnMainSync { controller.splashHeld = false }
         assertTrue(
             "system splash never handed over to launch.opening",
             device.wait(Until.hasObject(By.res("launch.opening")), 5000),
@@ -99,14 +108,6 @@ class LaunchFrameZeroTest : ScreenTest() {
         val x = device.displayWidth / 2
         val y = device.displayHeight / 2
         assertTrue("centre pixel differs", difference(system.getPixel(x, y), overlay.getPixel(x, y)) <= 2)
-        val sky =
-            instrumentation.targetContext
-                .createConfigurationContext(
-                    Configuration(instrumentation.targetContext.resources.configuration).apply {
-                        uiMode = (uiMode and Configuration.UI_MODE_NIGHT_MASK.inv()) or
-                            if (dark) Configuration.UI_MODE_NIGHT_YES else Configuration.UI_MODE_NIGHT_NO
-                    },
-                ).getColor(R.color.launch_sky_top)
         assertMoonCircle(system, overlay, x, y, 96 * density, sky)
         val band = (24 * density).roundToInt()
         for (bitmap in listOf(system, overlay)) {
@@ -115,6 +116,34 @@ class LaunchFrameZeroTest : ScreenTest() {
                 assertTrue("right sky band differs", difference(sky, bitmap.getPixel(bitmap.width - 1 - edgeX, y)) <= 1)
             }
         }
+    }
+
+    private fun awaitSystemSplash(
+        device: UiDevice,
+        sky: Int,
+    ): Bitmap {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val foreground = By.pkg(instrumentation.targetContext.packageName).depth(0)
+        var system: Bitmap? = null
+        try {
+            // In-process splash state can precede the window's first composited frame.
+            waitFor(5000) {
+                if (!device.hasObject(foreground)) return@waitFor false
+                val frame = instrumentation.uiAutomation.takeScreenshot() ?: return@waitFor false
+                val y = frame.height / 2
+                val visible =
+                    difference(sky, frame.getPixel(0, y)) <= 1 &&
+                        difference(sky, frame.getPixel(frame.width - 1, y)) <= 1
+                if (visible) system = frame else frame.recycle()
+                visible
+            }
+        } catch (timeout: ComposeTimeoutException) {
+            throw AssertionError(
+                "system splash for ${instrumentation.targetContext.packageName} was not composited with launch sky within 5000 ms",
+                timeout,
+            )
+        }
+        return checkNotNull(system)
     }
 
     private fun assertMoonCircle(

@@ -11,6 +11,44 @@ fun addPerfSources(variant: Variant) {
 }
 
 androidComponents {
+    onVariants { variant ->
+        val source =
+            when (val type = variant.buildType) {
+                "debug" -> {
+                    providers.gradleProperty("cf.dataSource").orElse("mock").map { value ->
+                        if (value !in setOf("mock", "api")) {
+                            throw GradleException("cf.dataSource must be mock or api, was $value")
+                        }
+                        value
+                    }
+                }
+
+                "release" -> {
+                    providers.provider { "api" }
+                }
+
+                "benchmarkRelease", "nonMinifiedRelease" -> {
+                    providers.provider { "mock" }
+                }
+
+                else -> {
+                    throw GradleException("No DATA_SOURCE rule for build type $type")
+                }
+            }
+        val baseUrl =
+            if (variant.buildType == "debug") {
+                providers.gradleProperty("cf.apiBaseUrl").orElse("https://api.chronoflow.net/v1").map { value ->
+                    if ('"' in value || '\\' in value) {
+                        throw GradleException("cf.apiBaseUrl must not contain quotes or backslashes")
+                    }
+                    value
+                }
+            } else {
+                providers.provider { "https://api.chronoflow.net/v1" }
+            }
+        variant.buildConfigFields?.put("DATA_SOURCE", source.map { BuildConfigField("String", "\"$it\"", null) })
+        variant.buildConfigFields?.put("API_BASE_URL", baseUrl.map { BuildConfigField("String", "\"$it\"", null) })
+    }
     // The release source set is also compiled into the two perf variants, so the release stub lives in its own folder.
     onVariants(selector().withBuildType("release")) {
         it.sources.kotlin?.addStaticSourceDirectory("src/releaseNoPerf/kotlin")

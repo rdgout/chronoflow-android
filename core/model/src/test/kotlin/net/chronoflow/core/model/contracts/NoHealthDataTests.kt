@@ -5,6 +5,7 @@ import assertk.assertions.containsExactly
 import assertk.assertions.hasSize
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
+import assertk.assertions.isInstanceOf
 import assertk.assertions.isNull
 import assertk.assertions.isSameInstanceAs
 import kotlinx.serialization.json.JsonArray
@@ -147,5 +148,36 @@ class NoHealthDataTests {
         val encoded = ApiJson.response.parseToJsonElement(text) as JsonObject
         assertThat(encoded["profile"])
             .isEqualTo(obj("exclude_caffeine" to yes, "flight_movement_breaks" to no, "shift_work" to no))
+    }
+
+    @Test fun patchAllowsOnlyNeutralPreferencesAndRequiresBooleans() {
+        net.chronoflow.core.model.api.SettingsPatchValidation.validate(
+            net.chronoflow.core.model.SettingsSection.BodyClock,
+            obj("exclude_caffeine" to yes, "flight_movement_breaks" to no),
+        )
+        rejectsPatch("bipolar", no)
+        rejectsPatch("eye_disease", no)
+        rejectsPatch("pregnancy", no)
+        rejectsPatch("vte", no)
+        rejectsPatch("sleep_phase_disorder", no)
+        rejectsPatch("oral_contraception", no)
+        rejectsPatch("caffeine_ruled_out", no)
+        rejectsPatch("exclude_caffeine", JsonNull)
+        rejectsPatch("exclude_caffeine", JsonPrimitive("true"))
+        rejectsPatch("flight_movement_breaks", JsonNull)
+        rejectsPatch("flight_movement_breaks", JsonPrimitive("true"))
+    }
+
+    private fun rejectsPatch(
+        key: String,
+        value: JsonElement,
+    ) {
+        assertk
+            .assertFailure {
+                net.chronoflow.core.model.api.SettingsPatchValidation.validate(
+                    net.chronoflow.core.model.SettingsSection.BodyClock,
+                    obj(key to value),
+                )
+            }.isInstanceOf(net.chronoflow.core.model.DataFailure.Validation::class)
     }
 }

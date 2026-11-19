@@ -713,6 +713,25 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A129 | (4a-17) iOS `DeviceIdentityStore` shares one in-flight task, so concurrent callers see the same error; a `Mutex` makes each waiting caller retry in turn. | `Mutex`; the observable contract (one write, no caching of a failure) is the same. | 4a |
 | OQ-A130 | (4a-18) Should `:core:model` stay free of `kotlinx.coroutines`? 4d needs `SyncEpoch.check()` to see coroutine cancellation. | Keep the existing `api(libs.kotlinx.coroutines.core)` in `:core:model`; Konsist rule 2 forbids only `android.*` and Compose there. | 4a |
 | OQ-A131 | DataStore 1.3.0 bundles `libdatastore_shared_counter.so`, but all app stores are single-process. Exclude it? | Exclude `**/libdatastore_shared_counter.so` from app JNI packaging while stores remain single-process. Konsist forbids `MultiProcessDataStoreFactory`, `createMultiProcessCoordinator` and `MultiProcessCoordinator`; introducing multi-process storage requires revisiting the exclusion before using that factory. Keep OQ-0a-22's native-library allow-list unchanged. | 4a |
+| OQ-A132 | (4b-5) `DataSource.send` needs `OutboxChange` in 4b, but 0d's hand-off gives `OutboxChange`/`CheckOffChange` to 4d. | 4b adds the in-memory types (only `ProfileChange` is `@Serializable`, because it is a request body); 4d adds the storage codec (including `@Serializable` on `CheckOffChange`, status omitted when null, 4d OQ-4d-3) and the outbox round-trip test. | 4b |
+| OQ-A133 | (4b-1) Where do `TripWizardErrors` and `SettingsPatchValidation` live (iOS: `DataAccess`)? | `:core:model` package `api`, so the mock, auth and wizard modules use them without OkHttp. | 4b |
+| OQ-A134 | (4b-2) iOS sends a `..` path segment as `%2E%2E`; OkHttp resolves `.`/`..` and their `%2E` forms as dot segments. | Refuse `.` and `..` segments with `Server(null)` before sending (ids are UUIDs in practice); otherwise encode exactly as iOS, `.` → `%2E`. | 4b |
+| OQ-A135 | (4b-9) `DataSourceFactory.testing` (iOS forces mock under tests). | Port the parameter; 4e passes `false` in the app (instrumented tests run the debug build, which defaults to mock). | 4b |
+| OQ-A136 | (4b-7) A 401 or 403 without a decodable envelope maps to `Server(status)` on iOS, so it never wipes or gates. | Keep iOS parity; 4d decides retry/refusal from the status. | 4b |
+| OQ-A137 | (4b-11) `Retry-After` header grammar: Swift `Double()` also accepts exponents. | Digits with an optional fraction, then RFC 1123 date, then 60 s. | 4b |
+| OQ-A138 | (4b-3) OkHttp retries some failed connections silently; iOS makes exactly one attempt ("no automatic retry"). | `retryOnConnectionFailure(false)`. | 4b |
+| OQ-A139 | (4b-4) A bearer token with characters OkHttp rejects in a header. | `Unauthorized(401)` without sending. | 4b |
+| OQ-A140 | (4b-10) A 204 that carries a body: iOS gives `Server(204)`; OkHttp may raise a protocol error first. OkHttp also uses `ProtocolException` for a body cut short by a dropped connection. | A `ProtocolException` raised before a `Response` exists → `Server(null)`; any `IOException` while reading the body, `ProtocolException` included → `Offline` (iOS: transport failure → offline). The 204 test accepts any `Server`. | 4b |
+| OQ-A141 | (4b-12) User-Agent: OkHttp sends `okhttp/5.5.1`. | Keep the default; it carries no personal data. | 4b |
+| OQ-A142 | (4b-14) Plan A6 says per-call `withTimeout`; iOS races the request against an injectable `sleep`. | Race against an injectable `ApiDeadline` (default `delay`): same semantics (the deadline cancels the OkHttp call and yields `Offline`; the caller's cancellation stays cancellation), and tests never wait on wall time. | 4b |
+| OQ-A143 | (4b-15) plan.md 4b "ApiClient" lists "the device id" among the request headers, but `03 §2`, iOS `APIClient.swift:68-76` and the web API (no controller reads such a header at `e36368ec`) have no device-id header; `device_id` is a body key of login, passkey login and register. | No device-id header (iOS parity); `device_id` only in those bodies. `headersAreExact` asserts no header name contains `device`. | 4b |
+| OQ-A144 | (4b-8) `DataSourceParityTests` compare mock and API. | Port all of it in 4c, which has the mock; 4b ports only API-only cases. | 4b |
+| OQ-A145 | (4b-6) Can a release build be pointed at another server or the mock? | No: `release` is fixed to `api` at `https://api.chronoflow.net/v1` (A6); only debug reads `-Pcf.dataSource` / `-Pcf.apiBaseUrl`. | 4b |
+| OQ-A146 | (4b-13) Which data source do the perf variants (`benchmarkRelease`, `nonMinifiedRelease`) use? A6 says only "release is always api". | `mock`, fixed: they carry `:core:data-mock` and measure seeded data (4c OQ-4c-4), and iOS's Perf configuration inherits `CHRONOFLOW_DATA_SOURCE = mock` (`Config/Base.xcconfig`). Not overridable. | 4b |
+| OQ-A147 | Can an injected OkHttp authenticator or proxy authenticator retry with credentials? | Clear both to `Authenticator.NONE`, matching iOS's nil credential storage. A public 401 makes exactly one unauthenticated request even with an injected authenticator; the injected client remains unchanged. | 4b |
+| OQ-A148 | Does removing OkHttp 5.5.1's `PlatformInitializer` require manual context initialization? | Remove its manifest metadata under A21/OQ-A47. The cached Android sources show it stores the application context and forces `Platform.get()`; context is used only by `AssetPublicSuffixList`, reached by cookie parsing and `HttpUrl.topPrivateDomain()`. Our client uses `NO_COOKIES` and neither API, so no explicit initialization is needed. Android TLS, trust managers, logging and cleartext policy still initialize lazily during the first client build on IO. Robolectric proves construction on Android without the initializer or context. Before adding a context-dependent API, provide `OkHttp.initialize(applicationContext)` at that same lazy IO boundary; never in `Application.onCreate`. | 4b |
+| OQ-A149 | Can OkHttp retry a 503 response despite `retryOnConnectionFailure(false)`? | Strip `Retry-After` only from 503 responses with the sole internal network interceptor, installed after clearing injected interceptors. OkHttp 5.5.1 retries 503 with `Retry-After: 0` independently of the connection-retry flag; removing that header preserves the original `Server(503)` and one request. Leave 429 headers untouched for throttling. | 4b |
+| OQ-A150 | Stale pooled connections after idle, sleep or network changes? | Keep a dedicated `ConnectionPool(5, 300, SECONDS)`, the default five idle connections and 300 s keep-alive, below Cloudflare's 400 s client-side limit for HTTP/1.1 and HTTP/2 (enabled by default). The real tier is Cloudflare → nginx → Caddy/FrankenPHP, with no Node tier. OkHttp measures pool idle with `System.nanoTime()` (awake time), so a short cap cannot cover deep sleep. 4e awaits the suspending `ApiClient.evictIdleConnections()` as ON_START step 0 to cover sleep and network changes while backgrounded. It reads the volatile already-built client reference, does nothing if unbuilt, and never takes the initialization Mutex. It closes idle sockets inside `withContext(io)`: TLS close can send `close_notify` and must never run on main (review round 3). Keep retries off (OQ-A138/A149); the user may revisit. | 4b, 4e |
 | OQ-0a-22 | Native libraries in the bundle? | Allow only `libandroidx.graphics.path.so` (Compose graphics-path; excluding it breaks Path conversion below API 34); fail on any other `.so` | 0a, 13 |
 | OQ-0b-1 | Where does `PlanMetrics` live? `08 §3.1` lists it inside `CfDimens`, but its consumer `:core:plan` is a JVM module that cannot depend on `:core:designsystem` | `core/plan/…/generated/PlanMetrics.generated.kt` (Double, dp), as iOS keeps it in `PlanCore` | 0b, 1b, 1c |
 | OQ-0b-2 | Port all iOS TokenGen outputs now (Auth, Settings, Terms, Welcome, PlanUI, Press, LaunchPaint, TypeMetrics), or only colors, sky and type? | All of them now (the iOS files are exact goldens and Phases 2, 3a, 3c, 5a, 9 and 10 need them) | 0b |
@@ -1720,22 +1739,22 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 **Delivers.** Implements the DataSource contract (25 methods) and its OkHttp ApiDataSource: no redirects, no cookies, no cache, per-call timeouts (15 s; 90 s for generation, save and register; 3 s for logout), origin checks and HTTPS-only release builds. It maps the error envelope and status codes to DataFailure, including field errors, throttling with retry-after and email-unverified. Deny-by-default MockWebServer tests pin every endpoint's method, path, body keys and decoding.
 
 **Tasks**
-- [ ] **DataSource interface** (`core/model/…/DataSource.kt`): the 25 iOS methods as suspend functions. An expected failure surfaces as `DataFailure`, never as a raw `IOException`.
-- [ ] **ApiClient** (`core/network/…`).
+- [x] **DataSource interface** (`core/model/…/DataSource.kt`): the 25 iOS methods as suspend functions. An expected failure surfaces as `DataFailure`, never as a raw `IOException`.
+- [x] **ApiClient** (`core/network/…`).
   - OkHttp per A6: no redirects, no cookies, no cache.
   - The base URL and the HTTPS rule come from `:app`.
-  - Headers per `03 §2`: the bearer token, `Accept: application/json` and the device id; no `Accept-Language`.
-  - Per-call `withTimeout`:
+  - Headers per `03 §2`: the bearer token, `Accept: application/json`; no device-id header and no `Accept-Language` (OQ-4b-15).
+  - Per-call cancellable `ApiDeadline` race (OQ-4b-14):
     - 15 s by default;
     - 90 s for `POST trips`, `POST trips/review`, `POST trips/{id}/review`, `PUT trips/{id}`, `POST guest/trips/review` and `POST auth/register`;
     - 3 s for logout.
   - Every response's origin is checked.
-- [ ] **ApiDataSource:** all 25 methods, using the 0d DTOs and `ApiJson`.
-- [ ] **ApiErrorMapper** (`03 §3–§4`).
+- [x] **ApiDataSource:** all 25 methods, using the 0d DTOs and `ApiJson`.
+- [x] **ApiErrorMapper** (`03 §3–§4`).
   - The error envelope maps to `DataFailure`: validation with its field errors, throttling with `retry-after` from the header or the body, a 403 with `email_unverified`, and 401, 404, 405, 409, 413, 5xx and 503.
   - Timeouts and I/O errors become `Offline`.
   - Each of the 13 `errors/*.json` fixtures maps to one expected case.
-- [ ] **MockWebServer suite** (`core/network/src/test`, mockwebserver3, deny-by-default dispatcher).
+- [x] **MockWebServer suite** (`core/network/src/test`, mockwebserver3, deny-by-default dispatcher).
   - It pins the method, path, query, body keys and decoding of all 25 methods.
   - Redirects are not followed, `Set-Cookie` is ignored, timeouts become `Offline`, and a response from another origin is rejected.
 
