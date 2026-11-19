@@ -2,7 +2,7 @@ package net.chronoflow.app.trip
 
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.onNodeWithTag
@@ -57,7 +57,7 @@ class TripPageSummarySeedTest : ScreenTest() {
         val scroll = compose.onNodeWithTag("trip.scroll").getUnclippedBoundsInRoot()
         assertTrue(abs(summary.top.value - scroll.top.value) <= 1f)
         compose.onNodeWithTag("trip.dayMenu").assertExists()
-        compose.onNodeWithTag("trip.legend").assertIsNotEnabled()
+        compose.onNodeWithTag("trip.legend").assertIsEnabled()
         instrumentation.runOnMainSync { assertEquals(0, app.graph.ioViolationsForTest) }
         val device = UiDevice.getInstance(instrumentation)
         device.pressBack()

@@ -93,7 +93,7 @@ fun TripPage(
     viewModel: TripPageViewModel,
     onBack: () -> Unit,
     onSettings: (() -> Unit)?,
-    onLegend: (() -> Unit)? = null,
+    onLegend: (() -> Unit)? = viewModel::openLegend,
     onActions: (() -> Unit)? = null,
     onRefreshResult: (SyncResult?) -> Unit = {},
     onTrips: (() -> Unit)? = null,
@@ -178,6 +178,8 @@ fun TripPage(
             }
         }
     TripPageScreen(state, onEvent)
+    net.chronoflow.feature.trip.step
+        .TripPageSheets(viewModel)
 }
 
 @Composable

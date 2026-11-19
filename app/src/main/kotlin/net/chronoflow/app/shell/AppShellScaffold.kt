@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -119,7 +120,20 @@ internal fun AppShellScaffold(
                 LocalViewModelStoreOwner provides holder.owner(state.selected),
             ) {
                 saveable.SaveableStateProvider(state.selected.name) {
-                    NavDisplay(entries = entries.getValue(state.selected), onBack = onBack)
+                    androidx.compose.material3.Scaffold(
+                        containerColor = CfTheme.colors.background,
+                        contentWindowInsets =
+                            androidx.compose.foundation.layout
+                                .WindowInsets(0, 0, 0, 0),
+                        snackbarHost = {
+                            net.chronoflow.core.ui.plan
+                                .RefusedChangeFeedback()
+                        },
+                    ) { padding ->
+                        Box(Modifier.fillMaxSize().padding(padding)) {
+                            NavDisplay(entries = entries.getValue(state.selected), onBack = onBack)
+                        }
+                    }
                 }
             }
         }
@@ -143,7 +157,8 @@ private fun rememberTabEntries(
     val entries =
         remember(stack) {
             stack.mapIndexed { index, route ->
-                NavEntry(route, contentKey = "$index:${route.stateKey()}") { currentContent.value(it) }
+                val identity = if (route is Route.TripPage) route.copy(sheet = null).stateKey() else route.stateKey()
+                NavEntry(route, contentKey = "$index:$identity") { currentContent.value(it) }
             }
         }
     val parent = checkNotNull(LocalViewModelStoreOwner.current) as? HasDefaultViewModelProviderFactory

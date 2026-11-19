@@ -145,7 +145,7 @@ If a named deliverable differs mechanically, adapt its name to the landed tree a
 - [F, plan] "Sheets are part of the route key (`sheet = Step(blockId) | Legend | TripActions | …`), so they reopen after recreation."
 - Extend `TripSheet` (4e, `:core:navigation`) with one case: `@Serializable data object StepsLegend : TripSheet`. This is the full `PlanLegend` legend, used by the seed. `Legend` stays the trip-page PriorityKey sheet (OQ-6d-1).
 - **The open sheet is `TripPageViewModel.sheet: StateFlow<TripSheet?>`**, initialised from the route's `sheet`. Every change is written back into the route key in place: the entry calls `onRouteChange(route.copy(sheet = s))`, which does `stack[stack.lastIndexOf(route)] = new`.
-- **The entry's content key ignores `sheet`**: register the entry with `clazzContentKey = { it.copy(sheet = null, notificationToken = null).toString() }` (Nav3 `entry<T>(clazzContentKey = …)`). Dropping `notificationToken` too keeps it out of the saved-state `Bundle`, which the saveable-state decorator keys by `contentKey` (4e §5 [F, navigation3 1.2.1]). Then the saveable-state and ViewModel-store decorators keep the same entry, so the ViewModel, the `LazyListState` and the anchor survive a sheet opening or closing. [verify against navigation3 1.2.1: both decorators key by `contentKey`.] Task 7's `TripPageSheetRouteTest` proves it. If it fails, use OQ-6d-2's fallback.
+- **The entry's content key ignores `sheet`**: key the shell `NavEntry` with `route.copy(sheet = null).stateKey()`. The landed `stateKey()` already excludes notification fields. Mark the notification token transient and redact `TripPage.toString()` so serialization and diagnostics cannot persist it. Dropping `notificationToken` too keeps it out of the saved-state `Bundle`, which the saveable-state decorator keys by `contentKey` (4e §5 [F, navigation3 1.2.1]). Then the saveable-state and ViewModel-store decorators keep the same entry, so the ViewModel, the `LazyListState` and the anchor survive a sheet opening or closing. [verify against navigation3 1.2.1: both decorators key by `contentKey`.] Task 7's `TripPageSheetRouteTest` proves it. If it fails, use OQ-6d-2's fallback.
 - Never put the notification token into a sheet or `SavedStateHandle`. `TripSheet` holds only ids.
 
 ### 5.3 Refused changes [F `RefusedChangeModel.swift`, `RefusedChangeFeedback.swift`; R for presentation]
@@ -465,7 +465,7 @@ Tests (`@Logic`, `pixel8`, fixture-backed source):
   - `legendButtonOpensPriorityLegend`: `trip.legend` → `legend.priorities` exists; `legend.close` dismisses.
   - `doneThenUndoInSheet`: `step.done` → `step.undo` appears (fake outbox applied synchronously) → click → `step.done` returns.
   - `noHapticOnCheckOff` with `RecordingHaptics`.
-- `TripPageSheetRouteTest`: open a step → the stack top equals `route.copy(sheet = Step(id))`; the `TripPageViewModel` instance is the same (`===`) as before; `LazyListState.firstVisibleItemIndex` is unchanged; dismiss → the stack top has `sheet == null`. **If this fails, apply OQ-6d-2's fallback and record it.**
+- `TripPageSheetRouteTest` (in `:app`, exercising the actual shell decorators): open a step → the stack top equals `route.copy(sheet = Step(id))`; the `TripPageViewModel` instance is the same (`===`) as before; `LazyListState.firstVisibleItemIndex` is unchanged; dismiss → the stack top has `sheet == null`. **If this fails, apply OQ-6d-2's fallback and record it.**
 - Re-run `TimelineInvalidationTest` unchanged; it must still pass.
 
 ### Task 8. Trip actions sheet
@@ -578,6 +578,8 @@ Files:
 ---
 
 ## 9. Open questions (proceed on the default)
+
+These thirteen defaults are recorded in plan.md as OQ-A292–OQ-A304.
 
 | ID | Question | Default |
 |---|---|---|
