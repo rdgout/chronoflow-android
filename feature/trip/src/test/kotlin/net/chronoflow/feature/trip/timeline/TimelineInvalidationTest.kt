@@ -133,7 +133,10 @@ class TimelineInvalidationTest {
     }
 
     private fun wideScrollDeltas(count: Int) {
-        repeat(count) { scrollBy(composeRule.density.density) }
+        repeat(count) {
+            composeRule.runOnUiThread { listState!!.dispatchRawDelta(composeRule.density.density) }
+            composeRule.mainClock.advanceTimeByFrame()
+        }
     }
 
     @Test fun wideScrollInvalidatesNoStaticLayerOrRow() {
@@ -146,6 +149,7 @@ class TimelineInvalidationTest {
         }
         settle()
         val passes = composeRule.runOnIdle { CompositionPassProbe() }
+        composeRule.mainClock.autoAdvance = false
         try {
             val before = probe.snapshot()
             val beforePasses = passes.count
@@ -158,6 +162,7 @@ class TimelineInvalidationTest {
             assertWidePin()
             wideScrollDeltas(40)
             assertWidePin()
+            composeRule.mainClock.autoAdvance = true
             settle()
             val delta = probe.snapshot().delta(before)
             assertNothingStaticMoved(before, delta)
@@ -203,6 +208,7 @@ class TimelineInvalidationTest {
                     .sum() >= 1,
             )
         } finally {
+            composeRule.mainClock.autoAdvance = true
             composeRule.runOnIdle { passes.close() }
         }
     }

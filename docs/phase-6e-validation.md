@@ -12,6 +12,18 @@ Starting HEAD 2bf39214. The day-command collector retained its opening TripPageF
 
 Red/green XML and timings: `build/test-results/phase-6e-review1/finding1/`. Profiles and docs/perf-timeline.md remain untouched.
 
+## Review round 1 — finding 2 / OQ-A311
+
+The wide invalidation guard now disables mainClock.autoAdvance, dispatches each raw delta on the UI thread and advances exactly one frame. Its four pin assertions follow the final delta in each group without settling or advancing another frame. The original settled invalidation/day-boundary checks run afterwards, and finally always restores automatic advancement.
+
+- `make targeted ONLY='feature:trip:TimelineInvalidationTest#wideScrollInvalidatesNoStaticLayerOrRow'` with the tightened test and unchanged production pin: PASS (6 s Gradle wall, 2.949 s test time).
+- Negative control: a temporary placement fault explicitly deferred the pin offset through frame callbacks. The same command failed the first pin assertion, y=392 versus compact-band bottom y=395 (5 s Gradle wall). A simpler measure-time offset variant passed and was not used as proof of lag sensitivity. Both mutations were removed in finally; no hooks or product changes remain from this finding.
+- Restored production source, `make targeted ONLY='feature:trip:TimelineInvalidationTest'`: PASS, all 12 cases, 7.57 s host wall, no budget overruns. Static/clock/targets/header/list/row invalidation and the within-day composition budget remain green.
+
+OQ-A311 result: retain the per-item pin implementation; the hosted first-frame check passes and rejects an explicitly delayed offset. The page-overlay fallback is unnecessary for this evidence. This is not emulator visual or Perfetto evidence.
+
+Mutation XML and restored-source results: `build/test-results/phase-6e-review1/finding2/`.
+
 ## Task 1
 
 - `make targeted ONLY="core:testing-compose:WindowSizeFakeHostTest core:testing-compose:ProfileHostTest konsist:KonsistRulesTest#featureSizesComeFromTheWindow konsist:KonsistRulesTest#featureSizesComeFromTheWindowRejectsPlantedViolation"`: first run caught two fixture expectations (inherited top inset and fractional-density pixel rounding).
