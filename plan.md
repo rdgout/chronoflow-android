@@ -2301,7 +2301,7 @@ Implementation commits (brief §7):
   - It holds a retention lease while the page is open.
   - The anchor `(dayId, offsetInDay)` goes into `SavedStateHandle`, for configuration changes only.
 - [ ] **Page chrome**, per `Plan`, `PlanScrolled` and `PlanTimelineTop`: the top bar, summary card, designed sticky `DayHeader`, the compact header line on scroll, lane headings, the `NowLine` placement, the day menu and pills (`PlanDayMenu`), and jumps.
-- [ ] **End of plan.** The end card (`PlanEnd`, `PlanEndNoText`) and the hidden-steps notice.
+- [x] **End of plan.** The end card (`PlanEnd`, `PlanEndNoText`) and the hidden-steps notice.
 - [ ] **Opening position.** `openingDay`, and the summary-position seed `CF_PLAN_TEST_POSITION=summary`.
 - [ ] **Perf.**
   - The perf entry now opens this page instead of the 1d host.
