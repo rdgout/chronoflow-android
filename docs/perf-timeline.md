@@ -68,6 +68,7 @@ make baseline-profile                      # regenerates the committed profiles
 | 2026-11-17 | 8b5db6a-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | host | benchmarkRelease, Partial(Require), bounded-swipe-v3 | 66.8/84.0 | 2.2/9.1/57.8 | 27.9/81.9 | 65.2 | 9.8/28.4 | 209.1/604.3 | 0 | 4.3 | 102.9 | -1.7 | 56 | 3 | ok | ok | INVALID (busy host; CPU BAND) |
 | 2026-11-17 | 8b5db6a-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | host | benchmarkRelease, Partial(Require), bounded-swipe-v3 | 156.4/226.1 | 2.4/11.5/113.1 | 48.0/165.3 | 150.8 | 12.0/22.6 | 372.7/970.8 | 0 | 1.4 | 102.7 | -1.7 | 56 | 3 | ok | ok | INVALID (busy host; CPU BAND) |
 | 2026-11-17 | 3a3a442 | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | host | benchmarkRelease, Partial(Require), bounded-swipe-v3 | 67.6/85.0 | 3.3/4.3/5.7 | 2.2/4.8 | -8.1 | 0.0/0.0 | 0.0/0.0 | 0 | 0.8 | 105.6 | -0.2 | 55 | 3 | ok | ok | PASS |
+| 2026-11-19 | 984736e | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | trip | benchmarkRelease, Partial(Require), bounded-swipe-v3 | 99.3/105.3 | 3.8/4.7/6.1 | 2.7/4.3 | -5.3 | 0.0/0.0 | 0.0/0.0 | 0 | 0.5 | 107.2 | -0.1 | 6346 | 4 | ok | ok | PASS |
 
 `-dirty` marks a run made with uncommitted changes (here the regenerated baseline profile, committed right after).
 
