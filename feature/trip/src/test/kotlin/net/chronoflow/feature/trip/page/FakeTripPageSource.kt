@@ -6,6 +6,7 @@ import net.chronoflow.core.model.store.TripPlanSnapshot
 import net.chronoflow.core.model.store.TripRecord
 import net.chronoflow.core.plan.trippage.PlanPreferences
 import net.chronoflow.core.sync.PlanRetention
+import net.chronoflow.core.sync.SyncResult
 import net.chronoflow.core.testing.LargeTimelineFixtures
 
 class FakeTripPageSource(
@@ -16,6 +17,7 @@ class FakeTripPageSource(
     val retention = PlanRetention()
     var holds = 0
         private set
+    var refreshResult: SyncResult? = null
     var refreshes = 0
         private set
     val releases: Int get() = holds - retention.withHeldPlans { it.size }
@@ -26,8 +28,9 @@ class FakeTripPageSource(
 
     override fun hold(tripId: String) = retention.hold(tripId).also { holds++ }
 
-    override suspend fun refresh() {
+    override suspend fun refresh(): SyncResult? {
         refreshes++
+        return refreshResult
     }
 
     companion object {

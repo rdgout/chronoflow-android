@@ -12,7 +12,5 @@ class DbTripPageSource(
 
     override fun hold(tripId: String) = session.sync.retention.hold(tripId)
 
-    override suspend fun refresh() {
-        session.sync.refreshNow()
-    }
+    override suspend fun refresh() = session.sync.refreshNow()
 }

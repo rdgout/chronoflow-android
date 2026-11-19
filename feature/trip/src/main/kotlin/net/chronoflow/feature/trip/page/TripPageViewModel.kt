@@ -37,6 +37,9 @@ import net.chronoflow.core.plan.trippage.openingDay
 import net.chronoflow.core.plan.trippage.projectDayClocks
 import net.chronoflow.core.plan.trippage.replacementAnchor
 import net.chronoflow.core.sync.PlanLease
+import net.chronoflow.core.sync.SyncResult
+import net.chronoflow.core.sync.refresh.RefreshDebugProbe
+import net.chronoflow.core.sync.refresh.RefreshFeedbackModel
 import net.chronoflow.feature.trip.timeline.DayClocks
 import net.chronoflow.feature.trip.timeline.DrawingRequest
 import net.chronoflow.feature.trip.timeline.TimelineDrawingRepository
@@ -65,6 +68,7 @@ class TripPageViewModel(
     cache: DayDrawingCache = DayDrawingCache(),
     private val formatter: suspend () -> CopyLineFormatter,
     private val tracer: TimelineTracer = TimelineTracer.Android,
+    val refreshProbe: RefreshDebugProbe = RefreshDebugProbe.None,
 ) : ViewModel() {
     private val lease: PlanLease
 
@@ -90,6 +94,13 @@ class TripPageViewModel(
     private var opened = false
     private var firstOpen = true
     private val firstMetrics = AtomicBoolean(true)
+    private val feedback = RefreshFeedbackModel(viewModelScope, refreshProbe)
+    val refreshState = feedback.state
+
+    fun dismissFeedback(id: Long) {
+        feedback.dismiss(id)
+    }
+
     val clocks = DayClocks()
     val summaryClock = SummaryClockState()
     val firstFrame = FirstTimelineFrameTrace(tracer)
@@ -224,8 +235,10 @@ class TripPageViewModel(
         languageFlow.value = language
     }
 
-    suspend fun refresh() {
-        source.refresh()
+    suspend fun refresh(): SyncResult? {
+        var result: SyncResult? = null
+        feedback.refresh { source.refresh().also { result = it } }?.join()
+        return result
     }
 
     suspend fun runClock() {

@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.Flow
 import net.chronoflow.core.model.store.TripPlanSnapshot
 import net.chronoflow.core.plan.trippage.PlanPreferences
 import net.chronoflow.core.sync.PlanLease
+import net.chronoflow.core.sync.SyncResult
 
 interface TripPageSource {
     fun snapshots(tripId: String): Flow<TripPlanSnapshot>
@@ -12,5 +13,5 @@ interface TripPageSource {
 
     fun hold(tripId: String): PlanLease
 
-    suspend fun refresh()
+    suspend fun refresh(): SyncResult?
 }

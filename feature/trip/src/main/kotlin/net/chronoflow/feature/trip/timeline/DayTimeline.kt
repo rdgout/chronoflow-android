@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -54,6 +55,7 @@ fun DayTimeline(
     onFirstReplay: () -> Unit,
     prefetch: (dayIndex: Int, key: DayDrawingKey) -> Unit,
     modifier: Modifier = Modifier,
+    headings: @Composable () -> Unit = {},
 ) {
     val probe = LocalTimelineProbe.current
     SideEffect { probe?.composed(TimelineProbe.Kind.STATIC, day.id) }
@@ -118,10 +120,13 @@ fun DayTimeline(
                 isTraversalGroup = true
             }.testTag("trip.day.$dayId"),
     ) {
-        Box(Modifier.size(geometry.width.dp, layout.height.dp)) {
-            Spacer(Modifier.matchParentSize().then(staticLayer).then(taps))
-            NowLine(clock, dayId, geometry.width)
-            TimelineTargets(drawing, dayId, onBlock, Modifier.matchParentSize())
+        Column {
+            headings()
+            Box(Modifier.size(geometry.width.dp, layout.height.dp)) {
+                Spacer(Modifier.matchParentSize().then(staticLayer).then(taps))
+                NowLine(clock, dayId, geometry.width)
+                TimelineTargets(drawing, dayId, onBlock, Modifier.matchParentSize())
+            }
         }
     }
 }

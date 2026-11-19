@@ -34,6 +34,8 @@ import net.chronoflow.core.plan.planDate
 import net.chronoflow.core.plan.trippage.PlanPreferences
 import net.chronoflow.core.plan.trippage.TripPageAnchor
 import net.chronoflow.core.plan.trippage.TripPageState
+import net.chronoflow.core.sync.SyncResult
+import net.chronoflow.core.sync.SyncState
 import net.chronoflow.core.testing.FakePlanClock
 import net.chronoflow.core.testing.FakeTextMetrics
 import net.chronoflow.core.testing.LargeTimelineFixtures
@@ -393,6 +395,22 @@ class TripPageViewModelTest {
             runCurrent()
             assertTrue(
                 rig.vm.summaryClock.values
+                    .isEmpty(),
+            )
+        }
+
+    @Test fun refreshPreservesTheResultAndSharedFeedback() =
+        runTest(timeout = 60.seconds) {
+            val rig = rig()
+            runCurrent()
+            val result = SyncResult(SyncState.Idle, pendingCount = 0)
+            rig.source.refreshResult = result
+            assertEquals(result, rig.vm.refresh())
+            assertEquals(1, rig.source.refreshes)
+            assertEquals(false, rig.vm.refreshState.value.refreshing)
+            assertEquals(
+                false,
+                rig.vm.refreshState.value.feedback
                     .isEmpty(),
             )
         }
