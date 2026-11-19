@@ -72,6 +72,8 @@ make baseline-profile                      # regenerates the committed profiles
 | 2026-11-19 | 9c60131 | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | trip | benchmarkRelease, Partial(Require), bounded-swipe-v3 | 82.7/100.0 | 3.8/5.1/6.7 | 3.0/4.7 | -4.6 | 0.0/0.0 | 0.0/0.0 | 0 | 0.4 | 106.9 | 0.2 | 571 | 3 | ok | ok | PASS |
 | 2026-11-19 | d61c3ac | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | trip | benchmarkRelease, Partial(Require), bounded-swipe-v3 | 98.9/100.2 | 3.7/4.8/6.6 | 2.8/4.6 | -5.5 | 0.0/0.0 | 0.0/0.0 | 0 | 0.5 | 108.1 | 0.1 | 571 | 3 | ok | ok | PASS |
 | 2026-11-19 | b869739 | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | trip | benchmarkRelease, Partial(Require), bounded-swipe-v3 | 83.3/84.1 | 3.7/4.8/6.7 | 3.0/4.7 | -4.6 | 0.1/0.1 | 0.1/0.3 | 0 | 0.5 | 108.2 | 0.1 | 571 | 3 | ok | ok | PASS |
+| 2026-11-19 | e61c4550 | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | trip | benchmarkRelease, Partial(Require), bounded-swipe-v3 | 99.5/100.2 | 3.6/4.9/6.6 | 2.9/4.8 | -5.0 | 0.0/0.0 | 0.0/0.0 | 0 | 0.6 | 108.1 | -0.0 | 571 | 3 | ok | ok | PASS |
+| 2026-11-19 | e61c4550 | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | trip-wide | benchmarkRelease, Partial(Require), bounded-swipe-v3 | n/a/n/a | 3.6/4.5/6.4 | 3.4/5.1 | -5.8 | 0.0/0.0 | 0.0/0.0 | 0 | 0.7 | 107.7 | -0.1 | 513 | 5 | ok | — | PASS |
 
 `-dirty` marks a run made with uncommitted changes (here the regenerated baseline profile, committed right after).
 
@@ -546,7 +548,22 @@ Record the measured commit, actual refresh rate, font scale 1.0, theme and `benc
 
 Required evidence for timelineFirstFrame, timelineScroll, timelineLastDay, listScroll and timelineScrollWide: first-frame duration where applicable; raw frameDurationCpuMs P50/P90/P99, frameOverrunMs P99, jank %, hitch ratio, placeholder episodes where applicable, builds on main, replay/target times, recomposition/GC counts and peak anonymous RSS. Raw JSON and Perfetto traces are archived by the existing runner. Record each ±25% phone trend flag against the last three matching PASS rows with its cause; the flag itself is not a gate. Phone first-frame, RSS, placeholder, build-on-main and CPU-band gates still apply.
 
-Still pending with the user: inspect the wide Perfetto trace and a screen recording of three flings for one-frame pin lag (Task 4/OQ-A311); record actual CPU, RSS and first-frame numbers; commit regenerated profiles; and perform the debug StrictMode smoke launch:
+**Emulator runs (orchestrator, 2026-11-19, `make perf-timeline`, pixel, `-gpu host`):**
+
+| Commit | Run | First frame mean/max ms | CPU P50/P90/P99 ms | Main/RT P99 ms | RSS max MiB | Result |
+|---|---|---:|---:|---:|---:|---|
+| 4dfa6642 | trip (phone) | 99.5/100.9 | 3.7/4.8/6.5 | 3.0/4.7 | 108.1 | PASS |
+| 4dfa6642 | trip-wide (`wm size 1840x2208`, 701 dp) | n/a | 3.6/4.5/6.4 | 3.4/4.9 | 108.0 | PASS |
+| e61c4550 | trip (phone) | 99.5/100.2 | 3.6/4.9/6.6 | 2.9/4.8 | 108.1 | PASS |
+| e61c4550 | trip-wide | n/a | 3.6/4.5/6.4 | 3.4/5.1 | 107.7 | PASS |
+
+`listScroll` CPU P99 was 6.0 ms in both runs. The 4dfa6642 run flagged `timelineReplayMaxMs 0.5 -> 0.9 (+80%)` (a trend flag, not a gate). The review found no code cause (the per-day replay path is unchanged), and the e61c4550 run measured 0.6 ms, so it was emulator noise. Zero placeholders, zero main-thread builds.
+
+**Profiles:** regenerated with the wide journey and committed in 4dfa6642. The round-1 fixes after it change no startup or journey path.
+
+**Pin lag (OQ-A311):** the wide invalidation guard now advances exactly one frame after each scroll delta (fad7add9). It passes, and a deliberately frame-delayed offset fails it by 3 px. The Perfetto and screen-recording inspection was not done; the one-frame guard stands in for it.
+
+**StrictMode smoke** (debug build, the large60 trip, two swipes; the commands below): 0 StrictMode lines.
 
 ```sh
 adb -s emulator-5554 logcat -c
@@ -554,4 +571,4 @@ adb -s emulator-5554 shell am start -n net.chronoflow.app.native.debug/net.chron
 adb -s emulator-5554 logcat -d | grep -c StrictMode
 ```
 
-The expected StrictMode count is 0; it has not been measured in this phase. T2 fold driving is on request only; see `docs/device-matrix.md`.
+T2 fold driving is on request only; see `docs/device-matrix.md`.
