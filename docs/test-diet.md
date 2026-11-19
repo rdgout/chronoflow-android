@@ -76,7 +76,7 @@ Decisions across the 50 audited classes: **27 shrink, 17 keep, 3 delete duplicat
 | `TestSeedsApplyTest` | 0.005–0.021 | keep | Android seed hooks recreate the test directory, apply device configuration and forward intent flags. Keep the real hook/graph integration, no Activity. |
 | `ReleaseReadinessTest` | 0.000–0.046 | keep | Classpath/reflective release boundary only (listed for completeness); never creates MainActivity or AppGraph. |
 | `ReleaseSeedExtrasTest` | 0.654 | shrink | Call the real release Intent override boundary and assert no mock source directly; classpath exclusion tests cover absence of all seed writers. Remove the indirect Activity/directory check. |
-| `LaunchForcedExitTest` | 0.099–0.152 | move to JVM | Coordinator deadlines/force count and generated timeline exit endpoints on JVM, without advancing hundreds of UI frames. Real overlay teardown remains in LaunchReadyExitRenderTest. |
+| `LaunchForcedExitTest` | 0.099–0.152 | move to JVM | Controller/readiness/frame-loop deadlines and force count without an Activity, composition or rasterization. Review round 1 keeps stored data genuinely unknown and tests real controller completion; native overlay teardown remains in LaunchReadyExitRenderTest. |
 | `FlightPathStrokeTest` | 0.016 | keep | Android native PathMeasure matches the sampled flight path; keep the framework geometry check. Its large first result was sandbox initialization. |
 | `PasskeyAnchorTest` | 1.439 | shrink | Identity/weak-reference ownership only. Construct two Activity handles without starting their lifecycle or windows; retain every assertion. |
 
@@ -101,7 +101,7 @@ These are assertion mappings, not claims that lower layers render a screen. Kept
 | ResetRecreationTest done-continue → SignIn | `OpenResetTest#resetSuccessNeverAcceptsOrRoutesASession` calls real reset success and `backToSignIn`; the locale/secret saved-state test and done-state system back remain. |
 | RootContentConstructionTest bridge + gate router choose Today, advance one revision, construct Today once | New `LaunchConnectionTests#coldLaunchBridgeAndGateRouterSelectTheSameToday` covers actual bridge/router emissions. `RootContentConstructionTest#gateRevisionKeepsTheCurrentTodaySubtree` independently proves Nav3 remembers one subtree across that revision. Existing incoming-route construction check stays. |
 | CfRootHandOffTest Terms exists after hand-off; Welcome exists and overlay is gone | `LaunchSessionBridgeTest#signedInTermsRoutesToTerms`, `RootContentTest#termsRendersOneTaggedRoot`; retained `WelcomeHandOffTest#teardownMakesWelcomeAccessibleAndReportsFullyDrawnOnce` covers real Welcome/overlay teardown. The retained signed-in case still checks hidden→accessible semantics and overlay removal around a tagged child. |
-| LaunchForcedExitTest forced route/count, completion and 8.400/8.950 endpoints | Same two names now use real LaunchCoordinator with ManualLaunchClock, generated LaunchHandOffTimeline exit endpoints, and ExitCompleted reducer state. They check no early commit at 7.9 s, the 8 s commit, exact endpoint, force count and completion. `LaunchReadyExitRenderTest#readyFadesAndLeavesOnTheFirstFrameAt1900` / `LaunchReduceMotionEndingTest#reduceMotionFadesWithoutScalingAtReadiness` retain the real render→controller completion bridge. |
+| LaunchForcedExitTest forced route/count, completion and 8.400/8.950 endpoints | Review round 1 uses the real LaunchController with ManualLaunchClock and runLaunchOpening. Stored data never emits, no status starts at 2 s, no early exit commits at 7.9 s, readiness forces at 8 s, and the real frame-loop callback completes the controller at 8.400/8.950 s. No Activity or composition is involved. `LaunchReadyExitRenderTest#readyFadesAndLeavesOnTheFirstFrameAt1900` / `LaunchReduceMotionEndingTest#reduceMotionFadesWithoutScalingAtReadiness` retain the real render→controller completion bridge. |
 | ReleaseSeedExtrasTest no test/mock directories after receiving extras | Direct `LaunchPlatform.overrides(realIntent) == LaunchOverrides.None` and `mockSources == null` replace the indirect directory observation. `ReleaseReadinessTest#releaseShipsNoSeedCode`, `#sessionSeedCodeIsAbsent`, `#mockDataSourceIsAbsent` prove the code which can create those directories is absent. No Activity is needed for the release policy. |
 | Removed incidental graph construction in resource/layout tests | Every original assertion is retained, with `Application` instead of `ChronoFlowApp`. `AppGraphConstructionTest` retains guarded files/no-backup access and StrictMode death; the removed directory listing inspected a different Application from the guarded graph. |
 
@@ -227,8 +227,36 @@ The former Today-only guard is replaced by a Konsist rule over `app/src/test*`, 
 
 Proofs: planting a fully-qualified AppGraph construction in a real feature test source made the project guard fail. Eleven parameterized planted controls cover graph construction, MainActivity launch, ActivityScenario launch and root composition across app/feature/core test, testDebug, testRelease and testFixtures. Disabling the rule made all eleven rejection proofs fail. Each mutation was restored and the complete targeted guard and classifier suites passed. Evidence: `build/test-diet-review-1/mutation-{project-boundary,disabled-boundary-rule,five-second-budget}*`.
 
+LaunchForcedExitTest now drives LaunchController and its real frame-loop exit callback, without composing an overlay or booting an Activity. Both `hasStoredData()` and `storedDataUpdates()` remain suspended; assertions at 2 s require a null stored-data value and no status. The test checks forced readiness at 8 s, stays active at 8.399/8.949 s, and completes at the exact 8.400/8.950 s frame with the controller timestamp, route and overlay state. Robolectric supplies the controller's Android Rect type; no pixels, fonts or window are built.
+
+Mutating the fixture back to `emit(false)` fails the unknown-data test at its null-state assertion. Disabling LaunchController's completion assignment fails both controller cases. Both mutations were restored; the targeted controller cases passed with an existing lifecycle test warming SDK 36 first. Evidence: `build/test-diet-review-1/mutation-{known-absent-data,controller-exit}*` and `forced-exit-restored.log`.
+
 Fixture refinement after the quick run: the test now creates the real AppGraph with a plain Android Application, software cipher, zero mock delay and an isolated temporary root. It accepts the real demo API session through `graph.controller.accept`; background sync is disabled because account teardown does not need the UI seeder's full trip/plan pull. All real teardown callbacks remain intact and all four wiring mutations were rerun and rejected. Final targeted warm XML times: unauthorized 0.545 s, voluntary 0.132 s, with SDK 36 warmed by AppGraphConstructionTest. The temporary store is removed after graph close.
 
 Enforcement refinements after quick: candidate files are cheaply filtered by the protected identifiers before requesting only top-level/non-local Konsist declarations. This preserves nested-body checks while avoiding unrelated/nested declaration traversal; the project rule fell from 1.782 s under quick contention to 0.089 s targeted. The planted project violation and all eleven negative proofs were rerun after the optimization.
 
 The listener also now recognizes an SDK marker before trailing JUnit parameters (`case[36][unauthorized=true]` → SDK 36), preventing a second `default` cold allowance in an already-warm SDK. The new parser test fails against the old end-only regex; the restored classifier and full watchdog suites pass. The first plain JVM cap, per-SDK cold allowance and 1,000 ms warm budget remain unchanged.
+
+### Review round 1 validation
+
+| Check | Result |
+|---|---|
+| Real graph sign-out, final targeted warm cases | unauthorized 0.545 s; voluntary 0.132 s; both pass |
+| Konsist project rule / planted cases | project 0.089 s; eleven rejection cases pass (0.000–0.279 s) |
+| Classifier and watchdog proofs | 8 classifier and 8 watchdog cases pass; all deliberate mutations rejected |
+| Controller forced exits, warm cases | unknown stored data 0.020 s; unknown session 0.011 s; both pass |
+| `make quick`, exactly once | 38.519 s; Gradle assertions/build pass, tier gate exits 3 (make exits 2) on timing overruns |
+| Remaining quick steps after the timing failure | build-logic targeted suite, tooling scripts and serial timing tier pass |
+| Touched-module layout tier, exactly once | 170 cases pass; 12.943 s; no warm case over 1 s |
+| Final Spotless | pass |
+
+Warm Robolectric overruns from the quick run, retained for follow-up (no budget increase or exemption):
+
+| Class#method | Measured warm time | Disposition |
+|---|---:|---|
+| `ProcessDeathRestoreTest#processDeathDropsTheRegistryAndClaimsAColdOverlay` | 1.009 s | Existing real saved-state/splash lifecycle check retained; no coverage-reducing shortcut. |
+| `RootThemeTest#activityProvidesReduceMotionAndPreloadsOnlyAfterItsFrameCommit` | 1.318 s | Existing real frame-commit/font-IO/window check retained; no trivial reduction identified. |
+
+The quick run also measured the original graph fixture's first parameter at 1.995 s and mislabeled it `default` SDK warm-up. SDK 36 was already initialized in that fork, so this is recorded rather than accepted as another cold exemption. The fixture and SDK parsing refinements above address that issue; the current graph cases are both classified SDK 36, budget 1,000 ms, status `ok`. The initial new Konsist rule's 1.782 s JVM overrun was likewise fixed and verified targeted. Quick was not rerun.
+
+There were no unexpected hangs and no relaxed budgets. The initial guard compilation error and formatter long-line errors were corrected before quick. Logs, comparison XML and mutation evidence are retained in `build/test-diet-review-1/`; the original quick timing report is copied to `quick-timings.json`, and final targeted XML to `targeted-final/`. No application production behavior changed.
