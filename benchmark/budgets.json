@@ -519,6 +519,293 @@
       "all": {
         "min": 1
       }
+    },
+    {
+      "test": "timelineScrollWide",
+      "metric": "frameDurationCpuMs",
+      "stat": "P50",
+      "unit": "ms",
+      "reference": {
+        "aim": 3,
+        "status": "open: device only"
+      },
+      "lowEnd": {
+        "aim": 6,
+        "status": "open: device only"
+      },
+      "emulator": {
+        "report": true
+      }
+    },
+    {
+      "test": "timelineScrollWide",
+      "metric": "frameDurationCpuMs",
+      "stat": "P90",
+      "unit": "ms",
+      "reference": {
+        "aim": 5,
+        "status": "open: device only"
+      },
+      "lowEnd": {
+        "aim": 10,
+        "status": "open: device only"
+      },
+      "emulator": {
+        "report": true
+      }
+    },
+    {
+      "test": "timelineScrollWide",
+      "metric": "frameDurationCpuMs",
+      "stat": "P99",
+      "unit": "ms",
+      "reference": {
+        "aim": 8,
+        "status": "open: device only"
+      },
+      "lowEnd": {
+        "aim": 16,
+        "status": "open: device only"
+      },
+      "emulator": {
+        "report": true
+      }
+    },
+    {
+      "test": "timelineScrollWide",
+      "metric": "frameOverrunMs",
+      "stat": "P99",
+      "unit": "ms",
+      "signed": true,
+      "reference": {
+        "hard": 2,
+        "aim": 0,
+        "status": "open: device only"
+      },
+      "lowEnd": {
+        "hard": 4,
+        "aim": 0,
+        "status": "open: device only"
+      },
+      "emulator": {
+        "report": true
+      }
+    },
+    {
+      "test": "timelineScrollWide",
+      "metric": "jankPercent",
+      "stat": "each",
+      "unit": "%",
+      "derived": true,
+      "reference": {
+        "hard": 3,
+        "aim": 1,
+        "status": "open: device only"
+      },
+      "lowEnd": {
+        "hard": 5,
+        "aim": 3,
+        "status": "open: device only"
+      },
+      "emulator": {
+        "report": true
+      }
+    },
+    {
+      "test": "timelineScrollWide",
+      "metric": "hitchRatioMsPerS",
+      "stat": "each",
+      "unit": "ms/s",
+      "derived": true,
+      "reference": {
+        "hard": 5,
+        "aim": 1,
+        "status": "open: device only"
+      },
+      "lowEnd": {
+        "hard": 5,
+        "aim": 2,
+        "status": "open: device only"
+      },
+      "emulator": {
+        "report": true
+      }
+    },
+    {
+      "test": "timelineScrollWide",
+      "metric": "timelinePlaceholderCount",
+      "stat": "each",
+      "unit": "count",
+      "reference": {
+        "hard": 2,
+        "aim": 0,
+        "status": "open: device only"
+      },
+      "lowEnd": {
+        "hard": 6,
+        "aim": 2,
+        "status": "open: device only"
+      },
+      "emulator": {
+        "report": true
+      }
+    },
+    {
+      "test": "timelineScrollWide",
+      "metric": "timelineMainFrameMsP50",
+      "stat": "each",
+      "unit": "ms",
+      "reference": {
+        "aim": 2,
+        "status": "open: device only"
+      },
+      "lowEnd": {
+        "aim": 2,
+        "status": "open: device only"
+      },
+      "emulator": {
+        "report": true
+      }
+    },
+    {
+      "test": "timelineScrollWide",
+      "metric": "timelineMainFrameMsP99",
+      "stat": "each",
+      "unit": "ms",
+      "reference": {
+        "aim": 4,
+        "status": "open: device only"
+      },
+      "lowEnd": {
+        "aim": 4,
+        "status": "open: device only"
+      },
+      "emulator": {
+        "report": true
+      }
+    },
+    {
+      "test": "timelineScrollWide",
+      "metric": "timelineRenderThreadMsP99",
+      "stat": "each",
+      "unit": "ms",
+      "reference": {
+        "aim": 4,
+        "status": "open: device only"
+      },
+      "lowEnd": {
+        "aim": 4,
+        "status": "open: device only"
+      },
+      "emulator": {
+        "report": true
+      }
+    },
+    {
+      "test": "timelineScrollWide",
+      "metric": "timelineTargetsMaxMs",
+      "stat": "each",
+      "unit": "ms",
+      "reference": {
+        "report": true,
+        "status": "open: device only"
+      },
+      "lowEnd": {
+        "aim": 1,
+        "status": "open: device only"
+      },
+      "emulator": {
+        "report": true
+      }
+    },
+    {
+      "test": "timelineScrollWide",
+      "metric": "memoryRssAnonMaxKb",
+      "stat": "each",
+      "unit": "KiB",
+      "emulator": {
+        "hard": 153600
+      },
+      "reference": {
+        "hard": 153600,
+        "aim": 81920,
+        "status": "open: device only"
+      },
+      "lowEnd": {
+        "hard": 153600,
+        "aim": 102400,
+        "status": "open: device only"
+      }
+    },
+    {
+      "test": "timelineScrollWide",
+      "metric": "memoryRssAnonGrowthKb",
+      "stat": "single",
+      "unit": "KiB",
+      "derived": true,
+      "signed": true,
+      "reference": {
+        "warn": 40960,
+        "status": "open: device only"
+      },
+      "lowEnd": {
+        "warn": 40960,
+        "status": "open: device only"
+      },
+      "emulator": {
+        "report": true
+      }
+    },
+    {
+      "test": "timelineScrollWide",
+      "metric": "timelineBuildOnMainCount",
+      "stat": "each",
+      "unit": "count",
+      "reference": {
+        "hard": 0,
+        "status": "open: device only"
+      },
+      "lowEnd": {
+        "hard": 0,
+        "status": "open: device only"
+      },
+      "emulator": {
+        "report": true
+      }
+    },
+    {
+      "test": "timelineScrollWide",
+      "metric": "timelineBuildCount",
+      "stat": "each",
+      "unit": "count",
+      "reference": {
+        "min": 1,
+        "status": "open: device only"
+      },
+      "lowEnd": {
+        "min": 1,
+        "status": "open: device only"
+      },
+      "emulator": {
+        "report": true
+      }
+    },
+    {
+      "test": "timelineScrollWide",
+      "metric": "timelineReplayCount",
+      "stat": "each",
+      "unit": "count",
+      "reference": {
+        "min": 1,
+        "status": "open: device only"
+      },
+      "lowEnd": {
+        "min": 1,
+        "status": "open: device only"
+      },
+      "emulator": {
+        "report": true
+      }
     }
   ],
   "timelinePage": "trip",
@@ -541,6 +828,16 @@
     ],
     "listScroll": [
       "memoryHeapSizeMaxKb"
+    ],
+    "timelineScrollWide": [
+      "timelineScrollWindowMs",
+      "timelineRecomposeCount",
+      "timelineGcCount",
+      "timelineReplayMaxMs",
+      "frameCount",
+      "memoryHeapSizeMaxKb",
+      "timelinePlaceholderToReplayMaxMs",
+      "timelinePlaceholderUnreplayedCount"
     ]
   },
   "launch": [
@@ -592,5 +889,6 @@
       }
     }
   ],
-  "welcomeEmulatorRefreshHz": 60.000004
+  "welcomeEmulatorRefreshHz": 60.000004,
+  "timelineWidePage": "trip-wide"
 }

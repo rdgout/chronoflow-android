@@ -81,3 +81,12 @@ PNG files under `build/captures/`:
 - `make targeted ONLY="feature:trip:TimelineInvalidationTest#wideScrollInvalidatesNoStaticLayerOrRow"`: PASS (Gradle 7 s); zero composition passes within day, zero per-key static/header/clock/targets/list/row changes, positive anchor/compact update across the boundary.
 - Planted a temporary layoutInfo read in WideDayRow composition: the same command failed as required (`no composition during within-day scroll: {} expected:<0> but was:<240>`, Gradle 5 s). The mutation was removed in a finally block and its failing XML archived at `build/test-results/phase-6e/task9/planted-composition-read.xml`.
 - Restored-source rerun of that method: PASS (Gradle 5 s, test 2.833 s including Robolectric warm-up). Existing phone assertions remain unchanged; the host now gives each width an explicit in-place fake inside a larger root. Wide prewarm keys use the actual timeline column. `make format`: PASS (13 s).
+
+## Task 10
+
+- `./gradlew :benchmark:compileBenchmarkReleaseKotlin`: PASS (2 s), compiling both benchmark and profile generator changes.
+- `python3 -I -m unittest discover -s Scripts/tests -p test_check_benchmarks.py`: PASS, 53 tests / 2.454 s, including required wide results, RSS failure, missing report metric, incomplete iterations and independent wide history/report-only CPU values.
+- `python3 -I -m unittest discover -s Scripts/tests -p test_perf_timeline.py`: PASS, 16 fixture tests / 3.716 s. These use fake adb/Gradle and never access the emulator. The failure cleanup test verifies size reset before functional prep.
+- `python3 -I -m unittest discover -s Scripts/tests -p test_perf_startup.py`: PASS, 8 fake runner tests / 1.976 s.
+- `bash -n Scripts/perf-timeline.sh Scripts/baseline-profile.sh`: PASS. `make format`: PASS (11 s).
+- Deferred by explicit user instruction: `make baseline-profile`, `make perf-timeline`, the three-fling screen recording/Perfetto pin-lag inspection and the StrictMode debug smoke count. Exact commands and every requested metric are listed in the Phase 6e entry of `docs/perf-timeline.md`. No performance numbers or regenerated-profile claim is made.

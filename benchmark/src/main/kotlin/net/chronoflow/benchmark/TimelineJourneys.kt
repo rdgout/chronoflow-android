@@ -98,6 +98,17 @@ fun MacrobenchmarkScope.awaitPresented() {
     }
 }
 
+val large60OpeningWideListTag: String by lazy {
+    "trip.wide.list.${LargeTimelineFixtures.large60.detail.plan.days.first().id}"
+}
+
+fun MacrobenchmarkScope.awaitWidePresented() {
+    awaitPresented()
+    check(device.wait(Until.hasObject(By.res(large60OpeningWideListTag)), READY_WAIT_MS)) {
+        "$large60OpeningWideListTag never appeared"
+    }
+}
+
 /** A perf run with the animator scales off measures nothing (04 section 15, risk 8). */
 fun MacrobenchmarkScope.assertAnimatorsOn() {
     val scale = device.executeShellCommand("settings get global animator_duration_scale").trim()

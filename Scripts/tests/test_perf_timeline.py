@@ -148,6 +148,15 @@ class PerfTimelineTest(unittest.TestCase):
         self.assertEqual(len(self.calls("checker")), 1)
         self.assertTrue(self.calls("emulator.sh")[-1].startswith("emulator.sh prep-functional emulator-5554"))
 
+    def test_window_size_is_reset_before_functional_prep_even_after_failure(self):
+        result = self.perf(FAKE_GRADLE_EXIT="3")
+        self.assertEqual(result.returncode, 3)
+        calls = self.log.read_text().splitlines()
+        reset = "adb -s emulator-5554 shell wm size reset"
+        self.assertIn(reset, calls)
+        prep = next(c for c in calls if c.startswith("emulator.sh prep-functional"))
+        self.assertLess(calls.index(reset), calls.index(prep))
+
     def test_a_band_miss_reruns_once(self):
         result = self.perf(FAKE_CHECK_EXITS="4 0")
         self.assertEqual(result.returncode, 0, result.stderr)

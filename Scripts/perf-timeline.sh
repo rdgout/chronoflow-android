@@ -59,7 +59,11 @@ case "$(dev shell getprop persist.sys.locale | tr -d '\r')" in
     ;;
 esac
 
-trap '"$EMULATOR_SH" prep-functional "$SERIAL"' EXIT
+cleanup() {
+  dev shell wm size reset
+  "$EMULATOR_SH" prep-functional "$SERIAL"
+}
+trap cleanup EXIT
 "$EMULATOR_SH" prep-perf "$SERIAL"
 prep_status=$?
 if [ "$prep_status" != 0 ]; then

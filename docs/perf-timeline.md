@@ -527,3 +527,31 @@ The baseline journey now opens a checkable block, expands the native sheet, chec
 Both runs sit inside the trip CPU band, next to the 9c60131 row (3.8/5.1/6.7), with zero placeholders, zero main-thread builds and RSS growth under 0.2 MiB. No ±25% FLAGGED line. These are the first in-band `listScroll` numbers. They close OQ-A291: on a quiet host the 6c-and-later stack measures like 6b, so the 6c misses were environmental.
 
 **Profiles:** `make baseline-profile` first failed at "native sheet missing", because the sheet window did not export its test tags. After 6028332 the profiles regenerate in about 4 min; they are committed in b869739.
+
+## Phase 6e — wide and foldable page (2026-11-19)
+
+Implementation adds `TimelineBenchmark.timelineScrollWide`: 15 bounded flings × 3 iterations on large60 at `wm size 1840x2208` (about 701×841 dp at 420 dpi), using the same frame/memory/trace metrics as phone timeline scroll. Readiness checks use structural resource ids with bounded waits. The wide profile journey covers list selection, the step sheet, scrolling and a resize back to phone. Finally/@After cleanup, runner cleanup and the Makefile's trap reset the window; runner cleanup restores functional animator scales. The Makefile trap runs within the device lock.
+
+No emulator performance run or profile generation was performed, per user instruction. No Phase 6e timing, RSS, refresh-rate or jank result is claimed. Existing profile files remain from the prior measured stack until the following user-run regeneration. JVM invalidation proof: 120 within-day deltas schedule zero composition passes; the deliberate composition-read mutation schedules 240 and fails. Source/replay architecture stays A12 (no saveLayer, blur or TextMeasurer; NowLine owns the timeline clock).
+
+User-run commands, with `pixel` already running (`-gpu host`, API 36):
+
+```sh
+export ANDROID_HOME=/opt/homebrew/share/android-commandlinetools
+make baseline-profile
+make perf-timeline
+```
+
+Record the measured commit, actual refresh rate, font scale 1.0, theme and `benchmarkRelease` build. The checker retains phone Page `trip` and appends wide Page `trip-wide`; the wide page cannot enter phone CPU baselines. Wide emulator RSS is gated at 150 MiB; other wide values report, while missing metrics or iterations fail. Physical-device rows keep the phone values and remain open: device only (OQ-A22).
+
+Required evidence for timelineFirstFrame, timelineScroll, timelineLastDay, listScroll and timelineScrollWide: first-frame duration where applicable; raw frameDurationCpuMs P50/P90/P99, frameOverrunMs P99, jank %, hitch ratio, placeholder episodes where applicable, builds on main, replay/target times, recomposition/GC counts and peak anonymous RSS. Raw JSON and Perfetto traces are archived by the existing runner. Record each ±25% phone trend flag against the last three matching PASS rows with its cause; the flag itself is not a gate. Phone first-frame, RSS, placeholder, build-on-main and CPU-band gates still apply.
+
+Still pending with the user: inspect the wide Perfetto trace and a screen recording of three flings for one-frame pin lag (Task 4/OQ-A311); record actual CPU, RSS and first-frame numbers; commit regenerated profiles; and perform the debug StrictMode smoke launch:
+
+```sh
+adb -s emulator-5554 logcat -c
+adb -s emulator-5554 shell am start -n net.chronoflow.app.native.debug/net.chronoflow.app.MainActivity --es cf.trip-page large60 --es cf.freezeAt 2026-10-13T08:00:00Z
+adb -s emulator-5554 logcat -d | grep -c StrictMode
+```
+
+The expected StrictMode count is 0; it has not been measured in this phase. T2 fold driving is on request only; see `docs/device-matrix.md`.

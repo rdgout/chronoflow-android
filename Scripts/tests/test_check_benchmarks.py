@@ -331,7 +331,7 @@ class TimelineCheckTest(unittest.TestCase):
         self.assertIn("Timeline trend: firstFrameMedianMs 400.0 -> 520.0 (+30%) FLAGGED", result.stdout)
         after = history.read_text().splitlines()
         added = [line for line in after if line not in before]
-        self.assertEqual(len(added), 1)
+        self.assertEqual(len(added), 2)
         self.assertEqual(len(added[0].strip("|").split("|")), 26)
         self.assertEqual(after.index(added[0]), len(before))
 
@@ -343,7 +343,7 @@ class TimelineCheckTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         lines = history.read_text().splitlines()
         self.assertIn(TIMELINE_HEADER, lines)
-        self.assertEqual([len(l.strip("|").split("|")) for l in lines if l.startswith("| 20")], [26])
+        self.assertEqual([len(l.strip("|").split("|")) for l in lines if l.startswith("| 20")], [26, 26])
 
     def band_fixture(self, p99, rss=None):
         def mutate(b, _):
@@ -397,6 +397,48 @@ class TimelineCheckTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn("Timeline trend: placeholderMax 0.0 -> 2.0 (+2.0) FLAGGED", result.stdout)
         self.assertIn("Timeline trend: gcMax 0.0 -> 1.0 (+1.0) FLAGGED", result.stdout)
+
+    def test_missing_wide_scroll_fails(self):
+        def missing(_, data):
+            data["benchmarks"] = [b for b in data["benchmarks"] if b["name"] != "timelineScrollWide"]
+        result = timeline_check(self.variant(missing), row_dir=temp_dir(self))
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("timelineScrollWide is absent", result.stderr)
+
+    def test_wide_scroll_peak_rss_is_gated(self):
+        def rss(b, _):
+            b["timelineScrollWide"]["metrics"]["memoryRssAnonMaxKb"]["runs"][0] = 153601
+        result = timeline_check(self.variant(rss), row_dir=temp_dir(self))
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("timelineScrollWide memoryRssAnonMaxKb", result.stdout)
+        self.assertIn("FAIL", result.stdout)
+
+    def test_wide_scroll_requires_report_only_metrics(self):
+        def missing(b, _):
+            del b["timelineScrollWide"]["metrics"]["timelineRecomposeCount"]
+        result = timeline_check(self.variant(missing), row_dir=temp_dir(self))
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("timelineScrollWide timelineRecomposeCount is missing", result.stderr)
+
+    def test_wide_scroll_requires_all_three_iterations(self):
+        def missing(b, _):
+            b["timelineScrollWide"]["metrics"]["memoryRssAnonMaxKb"]["runs"] = [70000, 71000]
+        result = timeline_check(self.variant(missing), row_dir=temp_dir(self))
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("timelineScrollWide memoryRssAnonMaxKb needs all three iterations", result.stderr)
+
+    def test_wide_cpu_cost_is_report_only_and_has_its_own_page(self):
+        def slow(b, _):
+            b["timelineScrollWide"]["sampledMetrics"]["frameDurationCpuMs"]["P99"] = 1000
+        root = temp_dir(self)
+        result = timeline_check(self.variant(slow), history=self.history([history_row()]), row_dir=root)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertNotIn("BAND", result.stdout)
+        rows = (root / "row.md").read_text().splitlines()
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(rows[0].strip("|").split("|")[9].strip(), "trip")
+        self.assertEqual(rows[1].strip("|").split("|")[9].strip(), "trip-wide")
+        self.assertIn("1000.0", rows[1])
 
     def test_missing_list_scroll_fails(self):
         result = timeline_check(
