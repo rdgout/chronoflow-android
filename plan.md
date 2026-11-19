@@ -524,6 +524,7 @@ Every screen scrolls when height-constrained. The minimum width is 280 dp; below
 | Welcome interactive | 2550 ms ± 1 frame | same | functional | `intro` trace | 3c |
 | Last intro item | 3200 ms ± 1 frame | same | functional | `intro` trace | 3c |
 | TTFD | Hand-off end + ≤ 2 frames | same | report | `StartupTimingMetric.timeToFullDisplayMs` via `reportFullyDrawn()` | 3b, 7 |
+| Today view, JVM | large60 ≤ 20 ms per sample, 1 warm-up then 10 samples | — | — | `TodayViewBudgetTest` (`@TimingGate`, serial `make timing`), `System.nanoTime` | 7 |
 | Plan preparation (decode + layout + prepare), JVM | S3 ≤ 40 ms, large30 ≤ 100, large60 ≤ 200, every one of 10 samples after 3 warm-ups | — | — | `TimelinePreparationBudgetTest` (`@TimingGate`, the serial `make timing` tier), `System.nanoTime`, same limits for every build type | 1b |
 | `DayDrawing` build | median of 5 passes ≤ 1 ms per day and ≤ 5 ms per width for large60, ≤ 512 KiB per drawing at 360/411/841 dp | — | — | JVM `@TimingGate` test with the fake `TextMetrics` (serial `make timing`, 3 warm-up passes; the max is reported, never gated); Robolectric test with real `TextPaint` | 1c |
 | Drawing cache | ≤ 4 MiB, ≤ 8 entries | — | — | Unit test | 1c |
@@ -907,6 +908,7 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A322 | Wide skeleton day bar radius: board 18 (`PlanRemoteWide.dc.html:55`), iOS `rowRadius` 22 (`WidePlanSkeleton.swift:23`). (6e OQ-18) | **22** (iOS). | 6e |
 | OQ-A323 | Phone list mode outline: the original brief expected one in 6d, but landed 6d deferred it to 6e; iOS passes no `selectedBlockID` to the phone `DayListView` (`TripDayRow.swift:135`). (6e OQ-19) | **Keep 6d's phone behaviour (no outline)**; add the selected outline only to the wide column (iOS). | 6e |
 | OQ-A324 | The shared card's pure formatter returns Compose-annotated `TripCardUi`/`NextStepUi`; placing it in JVM `:core:plan` would invert the module graph. | Keep models and formatter together in `:core:ui` `ui.trip`, accepting core `PlanPreferences`. My trips keeps its existing preference decoder. | 7 |
+| OQ-A325 | The Today view budget is Android-only (7 OQ-7-9). | Gate every large60 sample at ≤ 20 ms after one warm-up; run it in the existing serial `@TimingGate` tier. | 7 |
 | OQ-0a-22 | Native libraries in the bundle? | Allow only `libandroidx.graphics.path.so` (Compose graphics-path; excluding it breaks Path conversion below API 34); fail on any other `.so` | 0a, 13 |
 | OQ-0b-1 | Where does `PlanMetrics` live? `08 §3.1` lists it inside `CfDimens`, but its consumer `:core:plan` is a JVM module that cannot depend on `:core:designsystem` | `core/plan/…/generated/PlanMetrics.generated.kt` (Double, dp), as iOS keeps it in `PlanCore` | 0b, 1b, 1c |
 | OQ-0b-2 | Port all iOS TokenGen outputs now (Auth, Settings, Terms, Welcome, PlanUI, Press, LaunchPaint, TypeMetrics), or only colors, sky and type? | All of them now (the iOS files are exact goldens and Phases 2, 3a, 3c, 5a, 9 and 10 need them) | 0b |
@@ -2512,7 +2514,7 @@ Implementation commits (brief §7):
 **Delivers.** Ports the Today logic (trip selection, display status, current step, the next four steps, the next step and minutes-until rules). It builds the Today tab in its five states with the hero card, the Right now and Up next panels, and row states that keep done and skipped steps in place. Tapping a row opens the step sheet over Today, where check-offs go through the outbox; the hero card opens the trip page (OQ-A44). The minute clock is read only in leaf composables, and wide windows center the cards at 640 dp.
 
 **Tasks**
-- [ ] **Today.kt** (`:core:plan`): trip selection, display status, the current step, the next four steps, the next step and minutes-until. Port the iOS Today cases.
+- [x] **Today.kt** (`:core:plan`): trip selection, display status, the current step, the next four steps, the next step and minutes-until. Port the iOS Today cases.
 - [ ] **Today tab** (`feature/today/…`).
   - States: active, empty, future, loading and completed.
   - The hero card, Right now and Up next.

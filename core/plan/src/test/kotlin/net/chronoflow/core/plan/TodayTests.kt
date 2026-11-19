@@ -11,6 +11,30 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class TodayTests {
+    @Test fun todaySelectionUsesActiveEndThenUpcomingStartAndStableIdentity() {
+        val detail = tripDetail()
+        val now = planDate(detail.plan.days[0].startUtc)!!
+        val card = todayRecoveryCard(detail)
+
+        fun trip(
+            id: String,
+            start: Long,
+            end: Long,
+        ) = TripListValue(
+            card.copy(id = id),
+            now.plusSeconds(start).toString(),
+            now.plusSeconds(end).toString(),
+            net.chronoflow.core.model.contracts.TripStatus.Upcoming,
+        )
+        val a = trip("a", -60, 60)
+        val b = trip("b", -60, 120)
+        val future = trip("future", 240, 600)
+        assertEquals("a", selectTodayTrip(listOf(future, b, a), now)?.card?.id)
+        assertEquals("b", selectTodayTrip(listOf(b, a), now.plusSeconds(60))?.card?.id)
+        assertEquals("future", selectTodayTrip(listOf(a, future), now.plusSeconds(60))?.card?.id)
+        assertEquals("b", lastEndedTrip(listOf(a, b), now.plusSeconds(180))?.card?.id)
+    }
+
     @Test fun todaySeparatesCurrentAndFourUpcomingAndDoesNotHideTheNextImportantStep() {
         val original = tripDetail()
         val detail = original.copy(plan = original.plan.copy(blocks = original.plan.blocks.sortedBy { it.startUtc }))
