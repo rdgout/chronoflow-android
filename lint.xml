@@ -4,6 +4,8 @@
     <issue id="GradleDependency" severity="ignore" />
     <issue id="NewerVersionAvailable" severity="ignore" />
     <issue id="AndroidGradlePluginVersion" severity="ignore" />
+    <!-- 0e: the app convention sets bundle.language.enableSplit = false, so every locale ships in the base split. -->
+    <issue id="AppBundleLocaleChanges" severity="ignore" />
     <!-- 0c: no visible string without its Dutch twin. -->
     <issue id="MissingTranslation" severity="error" />
     <issue id="ExtraTranslation" severity="error" />

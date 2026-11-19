@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "labels": {"startup": "Startup", "timeline": "Timeline"},
+  "startup": [
+    {"test": "startupCold", "metric": "timeToInitialDisplayMs", "stat": "median", "unit": "ms",
+     "reference": {"hard": 400}, "lowEnd": {"hard": 800}, "emulator": {"report": true}}
+  ],
+  "timeline": [
+    {"test": "timelineFirstFrame", "metric": "timelineFirstFrameMs", "stat": "each", "unit": "ms",
+     "emulator": {"hard": 800}, "reference": {"hard": 800, "aim": 450}, "lowEnd": {"hard": 1500, "aim": 800}}
+  ]
+}

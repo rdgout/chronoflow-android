@@ -24,25 +24,35 @@ def load_device_lock():
     return module
 
 
+BUDGETS = {"jvm": 1000, "robolectric": 5000, "robolectricWarmup": 20000, "emulator": 10000}
+
+
 def parse_args(argv):
     if "--" not in argv:
-        raise SystemExit("usage: run-tier.sh <tier> [--device] --results <glob> [--results <glob>] -- <command...>")
+        raise SystemExit(
+            "usage: run-tier.sh <tier> [--device] [--emulator] --results <glob> [--timings <glob>] -- <command...>"
+        )
     split = argv.index("--")
     head, command = argv[:split], argv[split + 1 :]
-    tier, device, results = None, False, []
+    tier, device, results, timings, emulator = None, False, [], [], False
     i = 0
     while i < len(head):
         if head[i] == "--device":
             device = True
+        elif head[i] == "--emulator":
+            emulator = True
         elif head[i] == "--results":
             i += 1
             results.append(head[i])
+        elif head[i] == "--timings":
+            i += 1
+            timings.append(head[i])
         elif tier is None:
             tier = head[i]
         i += 1
     if tier is None or not command:
         raise SystemExit("run-tier: a tier name and a command are required")
-    return tier, device, results, command
+    return tier, device, results, command, timings, emulator
 
 
 def collect(root, out_dir, patterns):
@@ -79,6 +89,48 @@ def collect(root, out_dir, patterns):
     return files, tests
 
 
+def collect_timings(root, patterns):
+    files, entries = [], []
+    for pattern in patterns:
+        for match in sorted(glob.glob(str(root / pattern), recursive=True)):
+            path = Path(match)
+            if not path.is_file():
+                continue
+            files.append(path)
+            try:
+                data = json.loads(path.read_text())
+            except (OSError, ValueError):
+                continue
+            entries.extend(data.get("tests", []))
+    return files, entries
+
+
+def _bare(method):
+    return method.split("[", 1)[0]
+
+
+def budget_checks(tests, listener_entries, emulator):
+    """Returns (checks, unbudgeted) for the run: listener entries, or one emulator entry per XML testcase."""
+    if emulator:
+        checks = []
+        for test in tests:
+            ms = int(round(test["seconds"] * 1000))
+            status = "over" if ms > BUDGETS["emulator"] else "ok"
+            checks.append(
+                {"class": test["class"], "method": test["name"], "kind": "emulator", "sdk": "default",
+                 "ms": ms, "budgetMs": BUDGETS["emulator"], "status": status}
+            )
+        return checks, []
+    known = {(e["class"], e["method"]) for e in listener_entries}
+    known |= {(e["class"], _bare(e["method"])) for e in listener_entries}
+    unbudgeted = sorted(
+        "%s#%s" % (t["class"], t["name"])
+        for t in tests
+        if (t["class"], t["name"]) not in known and (t["class"], _bare(t["name"])) not in known
+    )
+    return list(listener_entries), unbudgeted
+
+
 def save_logcat(out_dir):
     android_home = os.environ.get("ANDROID_HOME", "/opt/homebrew/share/android-commandlinetools")
     adb = os.environ.get("ADB", os.path.join(android_home, "platform-tools", "adb"))
@@ -91,7 +143,7 @@ def save_logcat(out_dir):
 
 
 def main(argv):
-    tier, device, patterns, command = parse_args(argv)
+    tier, device, patterns, command, timing_patterns, emulator = parse_args(argv)
     root = Path(os.environ.get("RUN_TIER_ROOT") or SCRIPTS.parent).resolve()
     idle_cap = float(os.environ.get("TIER_IDLE_TIMEOUT", "600"))
     total_cap = float(os.environ.get("TIER_TOTAL_TIMEOUT", "3600"))
@@ -180,20 +232,29 @@ def main(argv):
     else:
         exit_code = code if code >= 0 else 128 - code
     files, tests = collect(root, out_dir, patterns)
-    (out_dir / "timings.json").write_text(
-        json.dumps(
-            {
-                "tier": tier,
-                "command": command,
-                "started": started,
-                "wallSeconds": round(wall, 2),
-                "exitCode": exit_code,
-                "tests": tests,
-            },
-            indent=2,
+    timing_files, listener_entries = collect_timings(root, timing_patterns)
+    checks, unbudgeted = budget_checks(tests, listener_entries, emulator)
+    over = [c for c in checks if c["status"] == "over"]
+    report = {
+        "tier": tier,
+        "command": command,
+        "started": started,
+        "wallSeconds": round(wall, 2),
+        "exitCode": exit_code,
+        "tests": tests,
+        "budgets": BUDGETS,
+        "budgetChecks": checks,
+        "overBudget": len(over),
+        "slowest": sorted(checks, key=lambda c: c["ms"], reverse=True)[:10],
+    }
+    if unbudgeted:
+        report["unbudgeted"] = unbudgeted
+    (out_dir / "timings.json").write_text(json.dumps(report, indent=2) + "\n")
+    for c in over:
+        print(
+            "run-tier: over budget: %s %s#%s %d ms > %d ms" % (c["kind"], c["class"], c["method"], c["ms"], c["budgetMs"]),
+            file=sys.stderr,
         )
-        + "\n"
-    )
     if exit_code != 0 and os.environ.get("TEST_DIAGNOSTICS") == "1" and tier.startswith(("smoke", "emu")):
         save_logcat(out_dir)
     if lock_fd is not None:
@@ -201,6 +262,14 @@ def main(argv):
     if exit_code == 0 and not files:
         print("run-tier: %s produced no result files" % tier, file=sys.stderr)
         return 2
+    if exit_code == 0 and timing_patterns and files and not timing_files:
+        print("run-tier: %s wrote no timing files" % tier, file=sys.stderr)
+        return 2
+    if exit_code == 0 and timing_patterns and unbudgeted:
+        print("run-tier: %s ran tests without a timing entry: %s" % (tier, ", ".join(unbudgeted)), file=sys.stderr)
+        return 2
+    if exit_code == 0 and over:
+        return 3
     return exit_code
 
 

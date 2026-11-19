@@ -1,0 +1,94 @@
+import os
+import unittest
+
+from helpers import SCRIPTS, run, temp_dir
+
+PERF = str(SCRIPTS / "perf-startup.sh")
+
+ADB = r"""#!/bin/bash
+echo "adb $*" >> "$FAKE_LOG"
+case "$*" in
+  devices*) printf 'List of devices attached\nemulator-5554\tdevice\n' ;;
+  *getprop*qemu*) echo "${FAKE_QEMU:-1}" ;;
+  *animator_duration_scale*) echo "${FAKE_SCALE:-1.0}" ;;
+  *font_scale*) echo 1.0 ;;
+esac
+"""
+
+
+class PerfStartupTest(unittest.TestCase):
+    def setUp(self):
+        self.tmp = temp_dir(self)
+        self.log = self.tmp / "calls.log"
+        self.log.write_text("")
+        self.state = self.tmp / "state"
+        self.state.mkdir()
+        (self.state / "gpu-mode").write_text("host\n")
+        self.stubs = {
+            "adb": ADB,
+            "gradlew": '#!/bin/bash\necho "gradlew $*" >> "$FAKE_LOG"\nexit "${FAKE_GRADLE_EXIT:-0}"\n',
+            "emulator.sh": '#!/bin/bash\necho "emulator.sh $*" >> "$FAKE_LOG"\n',
+            "checker": '#!/bin/bash\necho "checker $*" >> "$FAKE_LOG"\nexit "${FAKE_CHECK_EXIT:-0}"\n',
+        }
+        for name, body in self.stubs.items():
+            path = self.tmp / name
+            path.write_text(body)
+            path.chmod(0o755)
+
+    def perf(self, **extra):
+        env = {
+            "ADB": str(self.tmp / "adb"),
+            "GRADLEW": str(self.tmp / "gradlew"),
+            "EMULATOR_SH": str(self.tmp / "emulator.sh"),
+            "CHECK_BENCHMARKS": str(self.tmp / "checker"),
+            "CF_EMULATOR_STATE_DIR": str(self.state),
+            "FAKE_LOG": str(self.log),
+        }
+        env.update(extra)
+        return run([PERF], env, timeout=30)
+
+    def calls(self):
+        return self.log.read_text().splitlines()
+
+    def test_suppress_errors_only_on_an_emulator(self):
+        self.assertEqual(self.perf(FAKE_QEMU="1").returncode, 0)
+        gradle = [c for c in self.calls() if c.startswith("gradlew")]
+        self.assertIn("androidx.benchmark.suppressErrors=EMULATOR", gradle[0])
+        self.log.write_text("")
+        self.assertEqual(self.perf(FAKE_QEMU="0").returncode, 0)
+        gradle = [c for c in self.calls() if c.startswith("gradlew")]
+        self.assertNotIn("suppressErrors", gradle[0])
+        self.assertIn("--device-class reference", [c for c in self.calls() if c.startswith("checker")][0])
+
+    def test_checker_runs_after_a_gradle_failure(self):
+        result = self.perf(FAKE_GRADLE_EXIT="3")
+        self.assertEqual(result.returncode, 3)
+        self.assertTrue(any(c.startswith("checker") for c in self.calls()))
+
+    def test_trap_restores_the_scales_after_a_failure(self):
+        self.perf(FAKE_GRADLE_EXIT="3")
+        calls = self.calls()
+        self.assertIn("emulator.sh prep-perf", calls)
+        self.assertEqual(calls[-1], "emulator.sh prep-functional")
+
+    def test_a_non_host_gpu_on_an_emulator_refuses(self):
+        (self.state / "gpu-mode").write_text("swiftshader_indirect\n")
+        result = self.perf()
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("-gpu host", result.stderr)
+        self.assertFalse(any(c.startswith("gradlew") for c in self.calls()))
+
+    def test_animator_scales_of_zero_stop_the_run(self):
+        result = self.perf(FAKE_SCALE="0.0")
+        self.assertEqual(result.returncode, 1)
+        self.assertFalse(any(c.startswith("gradlew") for c in self.calls()))
+
+    def test_dry_run_prints_the_commands_without_running_them(self):
+        result = self.perf(PERF_STARTUP_DRY_RUN="1")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("connectedBenchmarkReleaseAndroidTest", result.stdout)
+        self.assertFalse(any(c.startswith(("gradlew", "checker")) for c in self.calls()))
+
+
+if __name__ == "__main__":
+    unittest.main()

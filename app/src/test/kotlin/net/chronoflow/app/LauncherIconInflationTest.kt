@@ -5,12 +5,14 @@ import androidx.core.content.res.ResourcesCompat
 import assertk.assertThat
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
+import net.chronoflow.core.testing.tiers.Logic
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 
+@Logic
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [36])
 class LauncherIconInflationTest {

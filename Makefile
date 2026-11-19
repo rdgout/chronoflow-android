@@ -9,7 +9,12 @@ WEB_REPO ?= /Users/rickgout/Sites/chronoflow-new
 export IOS_REPO WEB_REPO
 GRADLE := ./gradlew --console=plain
 RUN_TIER := Scripts/run-tier.sh
-JVM_MODULES := core:model core:plan core:sync core:reminders core:wizard core:network core:data-mock core:testing konsist tools:tokengen
+JVM_MODULES := core:model core:plan core:sync core:reminders core:wizard core:network core:data-mock core:testing core:testing-junit konsist tools:tokengen
+TIMING_MODULES :=
+RESULTS_DEBUG := --results '*/build/test-results/testDebugUnitTest/*.xml' --results '*/*/build/test-results/testDebugUnitTest/*.xml'
+TIMINGS_DEBUG := --timings '*/build/cf-timings/testDebugUnitTest/*.json' --timings '*/*/build/cf-timings/testDebugUnitTest/*.json'
+RESULTS_JVM := --results 'konsist/build/test-results/test/*.xml' --results 'core/*/build/test-results/test/*.xml' --results 'tools/*/build/test-results/test/*.xml'
+TIMINGS_JVM := --timings 'konsist/build/cf-timings/test/*.json' --timings 'core/*/build/cf-timings/test/*.json' --timings 'tools/*/build/cf-timings/test/*.json'
 SMOKE := net.chronoflow.core.testing.tiers.Smoke
 SMOKE_TASK := :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.annotation=$(SMOKE)
 GENERATORS :=
@@ -26,21 +31,29 @@ GENERATOR_CHECKS += strings-check
 GENERATOR_CHECKS += plan-copy-check
 GENERATOR_CHECKS += contracts-check
 
-.PHONY: quick check test format lint targeted generate generators-check size emu emu-down emu-clean avd-create matrix du
+.PHONY: quick check test timing format lint targeted generate generators-check size emu emu-down emu-clean avd-create matrix du
 .PHONY: plan-copy-check strings-check tokens tokens-check fonts fonts-check icons assets assets-check strings plan-copy contracts contracts-check snapshots captures perf perf-timeline baseline-profile
 
 quick:
-	$(RUN_TIER) quick --results '*/build/test-results/test/*.xml' --results '*/*/build/test-results/test/*.xml' --results 'build-logic/convention/build/test-results/test/*.xml' -- $(GRADLE) spotlessCheck $(JVM_MODULES:%=:%:test) :build-logic:convention:test
+	$(RUN_TIER) quick $(RESULTS_JVM) $(RESULTS_DEBUG) $(TIMINGS_JVM) $(TIMINGS_DEBUG) -- $(GRADLE) spotlessCheck $(JVM_MODULES:%=:%:test) testDebugUnitTest -Pcf.tier=quick
+	$(RUN_TIER) build-logic --results 'build-logic/convention/build/test-results/test/*.xml' -- $(GRADLE) :build-logic:convention:test
 	Scripts/test_scripts.sh
+	$(MAKE) timing
 
 check: quick
-	$(RUN_TIER) check --results 'app/build/test-results/**/*.xml' -- $(GRADLE) :app:lintDebug :app:testDebugUnitTest :app:testReleaseUnitTest :app:verifyReleaseManifest :app:analyzeReleaseR8Config
+	$(RUN_TIER) check --results 'app/build/test-results/testReleaseUnitTest/*.xml' --timings 'app/build/cf-timings/testReleaseUnitTest/*.json' -- $(GRADLE) :app:lintDebug :app:testReleaseUnitTest -Pcf.tier=quick :app:verifyReleaseManifest :app:analyzeReleaseR8Config
+	$(RUN_TIER) layout $(RESULTS_DEBUG) $(TIMINGS_DEBUG) -- $(GRADLE) testDebugUnitTest -Pcf.tier=layout
 	$(MAKE) generators-check
 	Scripts/emulator.sh ensure
-	$(RUN_TIER) smoke --device --results 'app/build/outputs/androidTest-results/connected/**/*.xml' -- $(GRADLE) $(SMOKE_TASK)
+	$(RUN_TIER) smoke --device --emulator --results 'app/build/outputs/androidTest-results/connected/**/*.xml' -- $(GRADLE) $(SMOKE_TASK)
 
 test:
-	$(GRADLE) test
+	$(RUN_TIER) test $(RESULTS_JVM) $(RESULTS_DEBUG) $(TIMINGS_JVM) $(TIMINGS_DEBUG) -- $(GRADLE) $(JVM_MODULES:%=:%:test) testDebugUnitTest :app:testReleaseUnitTest -Pcf.tier=test
+	$(MAKE) timing
+
+timing:
+	@if [ -z "$(strip $(TIMING_MODULES))" ]; then echo "timing: no timing tests yet (1b adds them)"; else \
+	  $(RUN_TIER) timing --results '*/build/test-results/timingTest/*.xml' --results '*/*/build/test-results/timingTest/*.xml' --timings '*/build/cf-timings/timingTest/*.json' --timings '*/*/build/cf-timings/timingTest/*.json' -- $(GRADLE) $(TIMING_MODULES:%=:%:timingTest) --max-workers=1; fi
 
 format:
 	$(GRADLE) spotlessApply
@@ -133,8 +146,18 @@ contracts-check:
 	python3 -I tools/contracts-gen/copy_fixtures.py --ios-repo "$(IOS_REPO)" --check
 	python3 -I tools/contracts-gen/generate_kotlin.py --web-repo "$(WEB_REPO)" --check
 
-snapshots captures perf:
-	@echo "make $@: lands in Phase 0e (feat/phase-0e-test-harness)" >&2; exit 1
+perf:
+	$(RUN_TIER) perf --device --results 'benchmark/build/outputs/androidTest-results/connected/**/*.xml' -- Scripts/perf-startup.sh
+
+snapshots:
+	$(RUN_TIER) snapshots $(RESULTS_DEBUG) $(TIMINGS_DEBUG) -- $(GRADLE) $(if $(SNAPSHOT_RECORD),recordRoborazziDebug,verifyRoborazziDebug) -Pcf.tier=snapshot
+
+captures:
+	@if [ -n "$(DEVICE)" ]; then echo "make captures DEVICE=1 arrives in Phase 2 (feat/phase-2-design-system)" >&2; exit 1; fi
+	rm -rf build/captures
+	$(RUN_TIER) captures $(RESULTS_DEBUG) $(TIMINGS_DEBUG) -- $(GRADLE) testDebugUnitTest --rerun -Pcf.tier=capture -Pcf.captureOnly=$(ONLY)
+	@n=$$(find build/captures -name '*.png' 2>/dev/null | wc -l | tr -d ' '); echo "captures: $$n PNGs in build/captures"; \
+	  if [ "$$n" = 0 ] && [ -z "$(ONLY)" ]; then echo "captures: no PNGs written" >&2; exit 1; fi
 
 perf-timeline baseline-profile:
 	@echo "make $@: lands in Phase 1e (feat/phase-1e-timeline-perf)" >&2; exit 1

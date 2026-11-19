@@ -13,20 +13,28 @@ class SpotlessConventionPlugin : Plugin<Project> {
             val composeRules = libs.library("compose-rules-ktlint").get().let { "${it.group}:${it.name}:${it.version}" }
             extensions.configure<SpotlessExtension> {
                 kotlin {
-                    target("**/*.kt")
+                    // A pruned file tree: scanning build directories races with compile tasks writing into them.
+                    target(
+                        fileTree(projectDir) {
+                            include("**/*.kt")
+                            exclude("**/build/**", "**/.gradle/**", "**/.kotlin/**", "_design/**", "docs/**")
+                        },
+                    )
                     targetExclude(
-                        "**/build/**",
                         "**/generated/**",
                         "**/*.generated.kt",
                         "konsist/src/test/resources/**",
-                        "_design/**",
-                        "docs/**",
                     )
                     ktlint(ktlintVersion).customRuleSets(listOf(composeRules))
                 }
                 kotlinGradle {
-                    target("**/*.kts")
-                    targetExclude("**/build/**", "konsist/src/test/resources/**")
+                    target(
+                        fileTree(projectDir) {
+                            include("**/*.kts")
+                            exclude("**/build/**", "**/.gradle/**", "**/.kotlin/**", "_design/**", "docs/**")
+                        },
+                    )
+                    targetExclude("konsist/src/test/resources/**")
                     ktlint(ktlintVersion)
                 }
             }

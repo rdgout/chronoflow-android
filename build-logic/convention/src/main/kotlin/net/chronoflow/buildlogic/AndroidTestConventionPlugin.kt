@@ -9,6 +9,7 @@ class AndroidTestConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) =
         with(target) {
             pluginManager.apply("com.android.test")
+            pluginManager.apply("androidx.baselineprofile")
             configureKotlin()
             extensions.configure<TestExtension> {
                 compileSdk = 37

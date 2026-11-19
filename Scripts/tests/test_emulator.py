@@ -43,6 +43,8 @@ class EmulatorTest(unittest.TestCase):
             "CF_DEVICE_LOCK": str(self.tmp / "lock"),
             "CF_DEVICE_LOCK_HELD": "",
             "FAKE_DEVICES": "",
+            "CF_EMULATOR_POLL": "0.1",
+            "CF_EMULATOR_STATE_DIR": str(self.tmp / "state"),
         }
 
     def calls(self):
@@ -71,6 +73,11 @@ class EmulatorTest(unittest.TestCase):
             "shell input keyevent 82",
         ):
             self.assertIn("adb -s emulator-5554 " + expected, calls)
+
+    def test_cold_boot_records_the_gpu_mode(self):
+        result = run([EMULATOR_SH, "ensure"], self.env, timeout=20)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual((self.tmp / "state" / "gpu-mode").read_text().strip(), "host")
 
     def test_ensure_fails_fast_when_the_emulator_dies_at_start(self):
         (self.bin / "emulator").write_text(SHIM % "echo boom; exit 1")
