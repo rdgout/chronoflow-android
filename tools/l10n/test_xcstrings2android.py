@@ -355,5 +355,43 @@ class MainTest(unittest.TestCase):
             self.assertIn("run make strings", err.getvalue())
 
 
+class PageCopyTest(unittest.TestCase):
+    def test_entries_plurals_and_missing_en(self):
+        en_missing = {"localizations": {"nl": {"stringUnit": {"state": "translated", "value": "Hoi"}}}}
+        catalogs = {PLAN: cat(**{"Hi": en_missing, "%lld notes": plural("%lld note", "%lld notes", "%lld n", "%lld ns"), "Go": single("Go", "Ga")})}
+        doc = json.loads(g.page_copy(catalogs, "f391a1fac33eb0f0ea9e3f565206b91118e793d0"))
+        self.assertEqual(list(doc["entries"]), ["%lld notes", "Go", "Hi"])
+        self.assertEqual(doc["entries"]["Hi"], {"en": "Hi", "nl": "Hoi"})
+        self.assertEqual(doc["entries"]["%lld notes"]["en"], {"one": "%lld note", "other": "%lld notes"})
+        self.assertEqual(doc["pin"], "f391a1fa")
+
+    def test_missing_nl_fails(self):
+        bad = {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "x"}}}}
+        with self.assertRaises(g.GenError):
+            g.page_copy({PLAN: cat(k=bad)}, "0" * 40)
+
+    def test_committed_table_matches_the_catalog_shape(self):
+        doc = json.loads((g.REPO / g.PAGE_COPY_PATH).read_text(encoding="utf-8"))
+        entries = doc["entries"]
+        self.assertEqual(len(entries), 104)
+        self.assertEqual(sorted(k for k, v in entries.items() if isinstance(v["en"], dict)), ["%lld notes", "%lld warnings"])
+        for key, value in entries.items():
+            self.assertEqual(set(value), {"en", "nl"}, key)
+            if not isinstance(value["en"], dict):
+                self.assertEqual(value["en"].count("%@"), value["nl"].count("%@"), key)
+
+    def test_check_detects_a_planted_edit(self):
+        catalogs = {PLAN: cat(Go=single("Go", "Ga"))}
+        read = lambda ios, pin: catalogs
+        with tempfile.TemporaryDirectory() as tmp:
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(g.main(["--root", tmp, "--pin", "0" * 40], read=read), 0)
+            self.assertEqual(g.main(["--root", tmp, "--pin", "0" * 40, "--check"], read=read), 0)
+            target = Path(tmp) / g.PAGE_COPY_PATH
+            target.write_bytes(target.read_bytes().replace(b"Ga", b"Gb"))
+            with contextlib.redirect_stderr(io.StringIO()):
+                self.assertEqual(g.main(["--root", tmp, "--pin", "0" * 40, "--check"], read=read), 1)
+
+
 if __name__ == "__main__":
     unittest.main()

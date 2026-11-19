@@ -626,6 +626,8 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A45 | Release while the timeline scroll rows are still "open: device only"? | No: the pre-upload checklist in `docs/play.md` needs one passing `DEVICE_CLASS=reference make perf-timeline` (120 Hz) and one passing `DEVICE_CLASS=lowEnd make perf-timeline` before the first production upload, or the user's waiver recorded here. Phases 13 and 14 may still close with device rows open | 13, 14 |
 | OQ-A46 | Compose `TimelineTargets` (20–40 semantics nodes per day) always, or only while accessibility is on? (research `04` OQ-T25) | Always: UiAutomator, Macrobenchmark, Switch Access and Voice Access need them. If a low-end run shows `timelineTargetsMaxMs` above 1 ms, compose them only while `AccessibilityManager.isEnabled` (observed as state; UiAutomation counts as enabled) | 1d, 1e, 13 |
 | OQ-A47 | App Startup initializers other than ProcessLifecycle and ProfileInstaller (for example EmojiCompat, merged by Compose text) | Remove them (AGENTS "Performance"). Compose then draws emoji with the phone's own font, so emoji newer than that font show as boxes on old phones. 3a records the inventory and the measured saving | 3a, 13 |
+| OQ-A48 | The JVM preparation budgets (S3 40 ms, large30 100 ms, large60 200 ms) sit 5 to 25 times above the first measurements (means 3, 4.5, 7 ms). Tighten them? | No: keep the iOS limits (iOS `plan.md:1734`); measured numbers live in `docs/perf-timeline.md` | 1b, 1e |
+| OQ-A49 | `tools/fixtures/extract_mock_seed.py` has no Python unit test | Covered by `make mock-seed-check` (in `generators-check`) and `MockTripTemplatesTest`; 4c adds a Python test when `MockAppSeed` lands | 1b, 4c |
 | OQ-0a-22 | Native libraries in the bundle? | Allow only `libandroidx.graphics.path.so` (Compose graphics-path; excluding it breaks Path conversion below API 34); fail on any other `.so` | 0a, 13 |
 | OQ-0b-1 | Where does `PlanMetrics` live? `08 §3.1` lists it inside `CfDimens`, but its consumer `:core:plan` is a JVM module that cannot depend on `:core:designsystem` | `core/plan/…/generated/PlanMetrics.generated.kt` (Double, dp), as iOS keeps it in `PlanCore` | 0b, 1b, 1c |
 | OQ-0b-2 | Port all iOS TokenGen outputs now (Auth, Settings, Terms, Welcome, PlanUI, Press, LaunchPaint, TypeMetrics), or only colors, sky and type? | All of them now (the iOS files are exact goldens and Phases 2, 3a, 3c, 5a, 9 and 10 need them) | 0b |
@@ -1126,28 +1128,28 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 **Delivers.** Ports the timeline geometry exactly: day bucketing, layoutDay, packLane, ticks, zones, the now position, accessibility geometry with traversal order, and hit frames of at least 48 dp. It adds PlanPreparer and PreparedPlan with per-input caching and stable day identity, and the trip-page state math (resolve, openingDay, replacementAnchor, wide list widths). The large30/large60 generator in :core:testing reproduces the iOS ids, hashes and labels. JVM budget tests hold plan preparation to 40, 100 and 200 ms for S3, large30 and large60 on every sample.
 
 **Tasks**
-- [ ] **Timeline.kt.**
+- [x] **Timeline.kt.**
   - Bucketing (`04 §2.5`).
   - `layoutDay` (`§2.6`): the skip rules; a marker's top is exactTop + 12, de-overlapped by 24 dp; tile height is `min(dayHeight, max(24, …))`; a tile is tiny at ≤ 56; `continuesBefore` and `continuesAfter`.
   - `packLane` (`§2.7`).
   - Zones, ticks, now, overnight flights, multi-timezone days and DST (`§2.8–§2.11`).
-- [ ] **TimelineGeometry.kt** (`§2.12`).
+- [x] **TimelineGeometry.kt** (`§2.12`).
   - `width = max(minWidth, available)` and `laneWidth = (width − 44)/4 − 4`; columns; tile x and width.
   - Hit frames are at least 48 × 48 dp (iOS uses 44 pt), centred and clamped. Marker and zone-change targets follow `§2.12` and `§5` with the same minimum.
   - When `minWidth > available`, the day scrolls horizontally.
-- [ ] **Labels and accessibility geometry.** `TimelineLabels.kt` and `TimelineAccessibilityGeometry.kt`: labels, traversal order, and accessibility labels joined as in `§2.13`.
-- [ ] **PlanPreparer.kt and PreparedPlan.kt.**
+- [x] **Labels and accessibility geometry.** `TimelineLabels.kt` and `TimelineAccessibilityGeometry.kt`: labels, traversal order, and accessibility labels joined as in `§2.13`.
+- [x] **PlanPreparer.kt and PreparedPlan.kt.**
   - `revision = inputHash|detailVersion`, cached per input, with stable day ids.
   - Blocks ordered by `startUtc`, then id.
   - Progress, notices, the zone instruction and the comparison copy.
-- [ ] **Trip-page state** (`core/plan/…/trippage/`): `TripPageState.resolve`, `openingDay`, `replacementAnchor`, and `TripPageLayout` (list column 280 dp from 600 dp, 320 dp from 900 dp).
-- [ ] **Large fixtures:** `core/testing/…/LargeTimelineFixtures.kt`, per `04 §12`.
+- [x] **Trip-page state** (`core/plan/…/trippage/`): `TripPageState.resolve`, `openingDay`, `replacementAnchor`, and `TripPageLayout` (list column 280 dp from 600 dp, 320 dp from 900 dp).
+- [x] **Large fixtures:** `core/testing/…/LargeTimelineFixtures.kt`, per `04 §12`.
   - The S3 six-day cycle with the `-tour-<i>` suffix, plus the S1 caffeine overlay with `-caffeine-day-<i>`.
   - Trip id `0199a3c0-0000-7000-8000-0000000000<count>`; hash = SHA-256 of `timeline-<count>-S3-prefix6-S1-caffeine-v2`.
   - `LargeTimelineFixtureTests` asserts:
     - the `§12` invariants: total height 54,000 dp for 60 days, last label "Day 2 · Tue 8 Dec", ≥ 3 zones, ≥ count/6 zone changes, each lane ≥ count blocks, one overnight flight, contiguous days, every copy key resolves;
     - ids and hashes equal to the iOS values.
-- [ ] **Budget and geometry tests.**
+- [x] **Budget and geometry tests.**
   - `TimelinePreparationBudgetTest` (`@TimingGate`, run serially by `make timing`) times decode + layout + index + prepare. After three warm-ups, each of 10 samples must stay within S3 ≤ 40 ms, large30 ≤ 100 ms and large60 ≤ 200 ms.
   - `TimelineGeometryProfilesTest`: every target is ≥ 48 dp and inside bounds at content widths 288, 358 and 637 dp and at every profile width.
   - The ported iOS timeline invariants.
