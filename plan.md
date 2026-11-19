@@ -2485,7 +2485,7 @@ Implementation commits (brief §7):
   - the remote states (`PlanRemoteWide`, `PlanRemoteWideOffline`);
   - `WidePlanSkeleton`.
 - [x] **In-place size changes** (A8 `configChanges`). Folding, unfolding, rotating and resizing keep `(dayId, offsetInDay)` and any open sheet. Port `TripScrollTracker`.
-- [ ] **Tests.**
+- [x] **Tests.**
   - Robolectric width changes 411 → 841 → 411 dp keep the anchor.
   - Guards at `foldInner` and `landscapeSideNav`.
   - The `fold` AVD check runs only on request (T2).
@@ -2493,6 +2493,8 @@ Implementation commits (brief §7):
 **Acceptance**
 - The anchor and any open sheet survive every size change without recreating the activity.
 - The wide page matches the six `PlanWide*` and `PlanRemoteWide*` boards.
+
+**Validation (2026-11-19).** All eleven implementation tasks are complete. The single `make quick` pass succeeds in 55.37 s; app/trip lint passes in 34.60 s. All 29 wide layout cases and 17 board captures passed; resize tests retain day/offset, node identity and sheets. The wide scroll guard schedules zero composition passes for 120 deltas, and rejects a planted composition read with 240 passes. OQ-A305–OQ-A323 record the brief defaults. [Commands, wall times, brief patches and deferred checks](docs/phase-6e-validation.md), [pending perf/profile measurements](docs/perf-timeline.md#phase-6e--wide-and-foldable-page-2026-11-19) and the [on-request fold procedure](docs/device-matrix.md#fold-check-on-request) retain the evidence. Per user instruction, real perf/profile generation, full `make check`, debug StrictMode smoke measurement and T2 fold driving remain with the user. Pixel remains running.
 
 ### Phase 7: Today (`feat/phase-7-today`)
 

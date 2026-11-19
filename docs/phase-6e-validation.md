@@ -90,3 +90,24 @@ PNG files under `build/captures/`:
 - `python3 -I -m unittest discover -s Scripts/tests -p test_perf_startup.py`: PASS, 8 fake runner tests / 1.976 s.
 - `bash -n Scripts/perf-timeline.sh Scripts/baseline-profile.sh`: PASS. `make format`: PASS (11 s).
 - Deferred by explicit user instruction: `make baseline-profile`, `make perf-timeline`, the three-fling screen recording/Perfetto pin-lag inspection and the StrictMode debug smoke count. Exact commands and every requested metric are listed in the Phase 6e entry of `docs/perf-timeline.md`. No performance numbers or regenerated-profile claim is made.
+
+## Task 11 and final checks
+
+- `bash -n Scripts/fold-check.sh` and `python3 -m py_compile Scripts/fold_check.py`: PASS. The fold script was **not run**. It is on request only and is not wired into quick/check/matrix.
+- `python3 -I -m unittest discover -s Scripts/tests -p test_fold_check.py`: PASS, 14 parser tests / 0.004 s. Fixtures reject a missing sheet, changed/far-away day, unchanged width mode, absent activity identity and unknown device states. Tests also cover stable block selection and duplicate relaunch event counting, with no adb access.
+- Brief refresh in this task: replace invalid `CF_AUTH_TEST_ID=fold-check` with canonical UUID `019a56e0-0000-7000-8000-00000000006e`; keep the landed parser unchanged. A preparatory seed observes the opening day before the actual sheet-seeded fold journey. All-window dumps use `--windows` so sheet and page can be checked together.
+- `./gradlew :app:lintDebug :feature:trip:lintDebug`: PASS, 34.60 s wall (Gradle 34 s), warnings treated as errors.
+- `make quick`: PASS **once**, 55.37 s wall. The quick tier records 3595 passing cases, zero budget overruns; build logic has 37 passing cached cases; serial timing has 6 passing cached gates. All requested new classes appear in `build/test-results/quick/timings.json`. The tooling stage passes 158 + 25 + 49 + 9 tests (20.395 s combined test time). Existing first-sandbox warm-ups use their declared 20 s cap.
+- New warmed case maxima: TripPageFrameTest/TripScrollTrackerTest/WidePinSourceTest ≤0.001 s; window helper 0.071 s; wide row 0.023 s; pin/font 0.027 s; remote 0.024 s; menu 0.044 s; manifest 0.006 s; resize 0.058 s; invalidation 0.183 s.
+- The ready-plan invariant filters out any day lacking a DayLayout in `preparePlan`; no missing-layout day reaches the shared row. No earlier-phase fallback behavior was changed.
+
+No real emulator tier was run in this phase; the brief adds no ordinary pixel emulator class. Perf/profile/T2 commands were explicitly deferred by the user. No new dependency or native library was added. `pixel` was left running; no emulator was stopped, resized or wiped by the agent. No push, merge, rebase or history rewrite occurred after a subsequent task started. The preflight docs commit was re-signed before Task 1 began; each task then has its own signed commit.
+
+One optional host diagnostic was sandbox-blocked:
+
+```text
+$ ps -axo pid,etime,command | rg 'git log|gpg --|gpg-agent'
+zsh:1: operation not permitted: ps
+```
+
+Every implementation commit was created successfully with `git commit -S`; commit objects were also inspected for `gpgsig -----BEGIN PGP SIGNATURE-----`. The untracked later-phase briefs supplied with the checkout remain untouched.
