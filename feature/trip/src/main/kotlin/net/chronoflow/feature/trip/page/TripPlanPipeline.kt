@@ -30,6 +30,8 @@ import net.chronoflow.core.plan.clockShiftText
 import net.chronoflow.core.plan.drawing.TimelineTraceNames
 import net.chronoflow.core.plan.localDate
 import net.chronoflow.core.plan.tripMetaText
+import net.chronoflow.core.plan.trippage.DayListRows
+import net.chronoflow.core.plan.trippage.ListRows
 import net.chronoflow.core.plan.trippage.PlanPreferences
 import net.chronoflow.feature.trip.timeline.TimelineTracer
 import java.io.IOException
@@ -49,6 +51,7 @@ class ReadyPlan(
     val timeFormat: TimeFormat,
     val language: Language,
     val hasHiddenSteps: Boolean,
+    val listRows: List<DayListRows>,
 )
 
 @Immutable
@@ -138,6 +141,7 @@ class DefaultTripPlanPipeline(
                         preferences.timeFormat,
                         input.language,
                         hidden.isNotEmpty(),
+                        ListRows.build(prepared, pageCopy(input.language)),
                     )
                 }
             val from = detail.trip.from
@@ -212,8 +216,7 @@ class DefaultTripPlanPipeline(
                     null
                 }
             }
-        val table = pageTable ?: withContext(io) { PageCopyTable.load() }.also { pageTable = it }
-        val copy = PageCopy(input.language, table)
+        val copy = pageCopy(input.language)
         val flights =
             detail
                 ?.trip
@@ -251,6 +254,11 @@ class DefaultTripPlanPipeline(
             language = input.language,
             timeFormat = input.preferences.timeFormat,
         )
+    }
+
+    private suspend fun pageCopy(language: Language): PageCopy {
+        val table = pageTable ?: withContext(io) { PageCopyTable.load() }.also { pageTable = it }
+        return PageCopy(language, table)
     }
 
     private suspend fun cardTitle(trip: TripRecord?): TripTitleParts? {
