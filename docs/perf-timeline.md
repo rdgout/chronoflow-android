@@ -74,6 +74,8 @@ make baseline-profile                      # regenerates the committed profiles
 | 2026-11-19 | b869739 | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | trip | benchmarkRelease, Partial(Require), bounded-swipe-v3 | 83.3/84.1 | 3.7/4.8/6.7 | 3.0/4.7 | -4.6 | 0.1/0.1 | 0.1/0.3 | 0 | 0.5 | 108.2 | 0.1 | 571 | 3 | ok | ok | PASS |
 | 2026-11-19 | e61c4550 | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | trip | benchmarkRelease, Partial(Require), bounded-swipe-v3 | 99.5/100.2 | 3.6/4.9/6.6 | 2.9/4.8 | -5.0 | 0.0/0.0 | 0.0/0.0 | 0 | 0.6 | 108.1 | -0.0 | 571 | 3 | ok | ok | PASS |
 | 2026-11-19 | e61c4550 | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | trip-wide | benchmarkRelease, Partial(Require), bounded-swipe-v3 | n/a/n/a | 3.6/4.5/6.4 | 3.4/5.1 | -5.8 | 0.0/0.0 | 0.0/0.0 | 0 | 0.7 | 107.7 | -0.1 | 513 | 5 | ok | — | PASS |
+| 2026-11-19 | 8edb8455 | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | trip | benchmarkRelease, Partial(Require), bounded-swipe-v3 | 98.1/99.8 | 3.5/4.6/6.5 | 2.8/4.7 | -5.1 | 0.1/0.2 | 0.1/0.4 | 0 | 0.7 | 109.1 | 0.4 | 571 | 3 | ok | ok | PASS |
+| 2026-11-19 | 8edb8455 | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | trip-wide | benchmarkRelease, Partial(Require), bounded-swipe-v3 | n/a/n/a | 3.5/4.4/7.2 | 4.5/12.6 | -5.5 | 0.5/1.4 | 2.2/6.5 | 0 | 0.3 | 108.3 | 0.9 | 527 | 5 | ok | — | PASS |
 
 `-dirty` marks a run made with uncommitted changes (here the regenerated baseline profile, committed right after).
 
@@ -578,7 +580,9 @@ T2 fold driving is on request only; see `docs/device-matrix.md`.
 
 Task 1 moves the trip card to `:core:ui` and delegates the trip page's enqueue path to `CheckOffWriter`; busy, refusal and cancellation handling stay in the trip ViewModel. The targeted run passes all 12 `TimelineInvalidationTest` and 124 `ListInvalidationTest` cases. Drawing, replay, `NowLine` and per-frame code are unchanged.
 
-Per user instruction, the ±25% comparison is pending the user's `make perf-timeline` run on `pixel`, API 36, animator scales 1, `benchmarkRelease`. Compare with the matching phone/wide PASS baselines above; record raw metrics and explain any trend flag. No emulator performance claim is made here.
+Results (`make perf-timeline`, `pixel` AVD, API 36, 60 Hz, animator scales 1, `benchmarkRelease`, Partial(Require), host on AC power and quiet, 8edb8455 + regenerated profiles 96736893): frame CPU P50/P99 **3.5/6.5 ms** timeline (6e e61c4550: 3.6/6.6), **3.4/6.0 ms** list (6.0), **3.5/7.2 ms** wide (6.4). All PASS, within ±25% of the 6e baselines. Trend flags are reports: replay max 0.5→0.7→0.3 ms (noise around a sub-ms value), main-frame P99 3.4→4.5 ms and render-thread P99 5.1→12.6 ms on one scenario; frame CPU P99 stays in budget, so this is recorded to watch in the next timeline phase, not a regression claim.
+
+Invalid runs, discarded: earlier the same evening the host ran on battery in Low Power Mode (`pmset powermode 1`). Every scenario doubled (timeline P99 13–16 ms), and the unchanged 6e top e61c4550 measured 13.3 ms on the same host, so those rows were not recorded. Emulator numbers are reports, never device claims.
 
 
 Phase 7 Task 2 JVM measurement (`make targeted ONLY="core:plan:TodayTests core:plan:TodayEdgeTests core:plan:TodayViewBudgetTest"`, local MacBook Pro, debug test compilation): large60 `todayView`, one warm-up and ten samples, min **0.7365 ms**, max **0.8724 ms**; every sample passes the **20 ms** budget. These are JVM numbers only. The final serial `make quick` timing tier also includes this guard.

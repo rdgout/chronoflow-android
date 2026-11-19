@@ -34,6 +34,7 @@ The reference and low-end gates stay open until a device exists (OQ-A22).
 | 2026-11-18 | 88cad27-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | benchmarkRelease, Partial(Require) | 107.3/98.9/114.5 | PASS |
 | 2026-11-19 | c3192ed-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | benchmarkRelease, Partial(Require) | 125.0/112.3/145.4 | PASS |
 | 2026-11-19 | c3192ed-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | benchmarkRelease, Partial(Require) | 131.0/116.0/143.7 | PASS |
+| 2026-11-19 | 8edb8455-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | benchmarkRelease, Partial(Require) | 129.4/119.2/146.3 | PASS |
 
 Device rows: open: device only (OQ-A22).
 
@@ -99,6 +100,7 @@ Every mandated validation command was executed; there is no unrun tier to substi
 | 2026-11-18 | 88cad27-dirty | emulator | sdk_gphone64_arm64 | 60 | benchmarkRelease, Partial(Require) | 40.3 | 12.3 | 191.0 | 99.8/100.0 | PASS |
 | 2026-11-19 | c3192ed-dirty | emulator | sdk_gphone64_arm64 | 60 | benchmarkRelease, Partial(Require) | 47.5 | 10.8 | 191.0 | 98.2/100.0 | PASS |
 | 2026-11-19 | c3192ed-dirty | emulator | sdk_gphone64_arm64 | 60 | benchmarkRelease, Partial(Require) | 51.4 | 16.1 | 190.0 | 98.4/100.0 | PASS |
+| 2026-11-19 | 8edb8455-dirty | emulator | sdk_gphone64_arm64 | 60 | benchmarkRelease, Partial(Require) | 51.1 | 36.5 | 173.0 | 99.1/100.0 | PASS |
 
 ## Phase 3a: startup measurements
 
@@ -273,12 +275,10 @@ Delta: 136,619 bytes. Both runs stay below the 8 MB warning and pass the native-
 
 `StartupBenchmark.startupColdSignedIn` uses ten cold iterations, `CompilationMode.Partial(BaselineProfileMode.Require)` and `StartupTimingMetric`. It launches with `cf.session=in cf.stored=yes cf.gate=app` and waits on structural Today tags. With no real session, only the explicitly signed-in **perf** app stub selects `FixtureTodaySource`; it prepares MockAppSeed at device time on the injected worker. Debug native sessions and release builds cannot select it. The startup profile journey now reaches the first Today content.
 
-Measurements and profile regeneration are deferred by the user's explicit Phase 7 instruction. No timing is invented and existing profile artifacts are left intact. Run on the already-running **pixel AVD, API 36**, retaining the measured refresh rate and **benchmarkRelease** build label:
+Results on `pixel` AVD, API 36, `benchmarkRelease`, host on AC power (`make baseline-profile` → 96736893, then `make perf`): signed-in cold TTID median **128.1 ms**, TTFD median **2062.9 ms** (FixtureTodaySource). Signed-out cold TTID **129.4 ms**, TTFD **2711.3 ms**, warm TTID **39.5 ms**; every welcome/intro hard bound passes. A run in Low Power Mode on battery missed `welcomeInteractiveMs` once by 0.7 ms and was discarded. Emulator numbers are reports, never device claims.
 
-```sh
-make baseline-profile
-make perf
-make perf-timeline
-```
+## Signed-in Today startup
 
-`make perf` checks that signed-in TTID and TTFD are present and finite, then appends both medians and the source (`FixtureTodaySource`) in the signed-in table. The existing signed-out startup checks also run because the Today report changes the signed-in launch path. `make perf-timeline` supplies Task 1's ±25% comparison after sharing the check-off writer and trip card. Record those results in this file and `docs/perf-timeline.md`; emulator numbers are reports, never device claims.
+| Date | Commit | Class | Device | API | Hz | Font | Theme | Build | TTID median ms | TTFD median ms | Today source | Result |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 2026-11-19 | 8edb8455-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | 1.0 | light | benchmarkRelease, Partial(Require) | 128.1 | 2062.9 | FixtureTodaySource | REPORT |
