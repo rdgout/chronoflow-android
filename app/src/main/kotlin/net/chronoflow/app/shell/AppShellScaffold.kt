@@ -18,8 +18,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.HasDefaultViewModelProviderFactory
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.CreationExtras
-import androidx.lifecycle.viewmodel.compose.rememberViewModelStoreProvider
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
+import androidx.lifecycle.viewmodel.compose.rememberViewModelStoreProvider
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.rememberDecoratedNavEntries
@@ -147,11 +147,13 @@ private fun rememberTabEntries(
             }
         }
     val parent = checkNotNull(LocalViewModelStoreOwner.current) as? HasDefaultViewModelProviderFactory
-    val provider = rememberViewModelStoreProvider(
-        holder.owner(tab),
-        defaultCreationExtras = parent?.defaultViewModelCreationExtras ?: CreationExtras.Empty,
-        defaultFactory = parent?.defaultViewModelProviderFactory ?: remember { ViewModelProvider.NewInstanceFactory() },
-    )
+    val factory = parent?.defaultViewModelProviderFactory ?: remember { ViewModelProvider.NewInstanceFactory() }
+    val provider =
+        rememberViewModelStoreProvider(
+            holder.owner(tab),
+            defaultCreationExtras = parent?.defaultViewModelCreationExtras ?: CreationExtras.Empty,
+            defaultFactory = factory,
+        )
     return rememberDecoratedNavEntries(
         entries,
         listOf(
