@@ -7,8 +7,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import net.chronoflow.core.designsystem.layout.LocalSafeInsets
 import net.chronoflow.core.testing.DeviceProfile
-import net.chronoflow.core.ui.LocalSafeInsets
 
 /** Provides the profile's insets through the same local the root fills from `WindowInsets.safeDrawing`. */
 @Composable

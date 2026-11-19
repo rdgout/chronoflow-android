@@ -63,8 +63,34 @@ make baseline-profile                      # regenerates the committed profiles
 | 2026-11-17 | ee26f55-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.3 | light | host | benchmarkRelease, Partial(Require) | 84.3/102.5 | 3.2/4.0/5.1 | 1.9/4.6 | -7.4 | 0.0/0.0 | 0.0/0.0 | 0 | 0.4 | 103.5 | -0.2 | 1404 | 9 | ok | ok | PASS |
 | 2026-11-17 | ce5cb8d | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | host | benchmarkRelease, Partial(Require), bounded-swipe-v2 | 123.9/135.8 | 6.3/7.8/10.6 | 3.5/9.6 | -3.5 | 0.2/0.5 | 0.5/1.5 | 0 | 0.7 | 103.0 | 1.1 | 9 | 1 | ok | ok | SUPERSEDED (too short: day 9) |
 | 2026-11-17 | 2164c68 | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | host | benchmarkRelease, Partial(Require), bounded-swipe-v3 | 99.4/108.8 | 4.3/7.2/10.2 | 4.3/9.3 | -3.8 | 0.3/0.6 | 0.9/1.4 | 0 | 0.8 | 101.8 | 44.5 | 56 | 3 | ok | ok | PASS |
+| 2026-11-17 | bfa817f-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | host | benchmarkRelease, Partial(Require), bounded-swipe-v3 | 88.8/97.5 | 3.3/6.5/8.8 | 3.7/7.5 | -5.6 | 0.1/0.2 | 0.1/0.2 | 0 | 2.9 | 103.2 | -1.6 | 56 | 3 | ok | ok | PASS |
+| 2026-11-17 | bf61469-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | host | benchmarkRelease, Partial(Require), bounded-swipe-v3 | 85.6/108.2 | 3.4/4.4/6.0 | 2.2/4.9 | -5.6 | 0.0/0.0 | 0.0/0.0 | 0 | 0.6 | 103.5 | -1.5 | 56 | 3 | ok | ok | PASS |
 
 `-dirty` marks a run made with uncommitted changes (here the regenerated baseline profile, committed right after).
+
+### Phase 2 review round 1: purpose-specific marker metric
+
+2026-11-17, `make perf-timeline`, one invocation, exit 0; **307.53 s wall**. pixel / emulator-5554, API 36, 60 Hz, host GPU, en/light/font 1.0; benchmarkRelease, Partial(Require), large60, bounded-swipe-v3. Measured source bf61469 with the pending gallery/documentation changes and untracked later briefs (`-dirty`). The marker remains exactly 1 dp; its metric now belongs to TimelinePresentedMarkerMetrics instead of AuthTokens. No timeline algorithm or workload changed.
+
+First-frame median/max **85.6/108.2 ms**; CPU P50/P90/P99 **3.4/4.4/6.0 ms**; main/render P99 **2.2/4.9 ms**; zero placeholders and builds on main; RSS peak **103.5 MiB**, growth **-1.5 MiB**; 44 worker builds/replays per scroll iteration; replay max **0.6 ms**; recomposition/GC maxima **56/3**; scroll and last-day gates passed. The CPU band passed. Report-only trend flags are improvements over the prior matching medians, not physical-device claims or causal attribution to this constant-name change. The appended run row and local archive retain JSON/XML/traces; exact console output is `build/phase2-r1-perf-timeline.log`.
+
+### Phase 2 theme validation
+
+2026-11-17, `make perf-timeline`, one invocation and no retry, exit 0; **289.96 s wall**. pixel / emulator-5554, API 36, host GPU, 60 Hz, en, light, font 1.0, benchmarkRelease, Partial(Require), large60, bounded-swipe-v3. Measured source bfa817f; dirty documentation/references/untracked briefs were present. Archive: `build/perf/timeline/20261117T075222Z-bfa817f-dirty-light-1.0-bounded-swipe-v3.Qea4LS/` (row, log, timing JSON, result XML, benchmark JSON and traces). Emulator regression evidence only.
+
+| Metric | Phase 2 | Prior matching v3 run | Result |
+|---|---|---|---|
+| First frame median / max | 88.8 / 97.5 ms | 99.4 / 108.8 | all ten <= 800 ms |
+| CPU P50 / P90 / P99 | 3.3 / 6.5 / 8.8 ms | 4.3 / 7.2 / 10.2 | P90/P99 band passed |
+| Peak RSS anon | 103.2 MiB | 101.8 | <= 150 MiB |
+| RSS growth | -1.6 MiB | +44.5 | below warning |
+| Main builds / placeholders | 0 / 0 | 0 / 0 | passed each iteration |
+| Worker builds / replays | 44 / 44 each | 44 / 44 each | passed activity gate |
+| Replay maximum | 2.9 ms | 0.8 | **+262% flagged**, report-only emulator trend |
+| Recompositions / GC maxima | 56 / 3 | 56 / 3 | report-only |
+| Scroll / last day | ok / ok | ok / ok | passed |
+
+The root now provides ChronoFlowTheme, Reduce Motion and post-first-frame font warm-up. The only timeline source edit replaces the presented marker's literal 1 dp with the generated `AuthTokens.borderWidth` (also 1 dp), to satisfy the new boundary rule. There is no builder/replay/workload algorithm change. The replay trend is retained without a causal claim; the brief's >1 ms B' trigger belongs to low-end physical-device results, which this is not. The checker consumes the actual traces; no extra full-composition trace or dark/large-font benchmark was run in Phase 2.
 
 ### Clean R1, forty-day workload (v3)
 

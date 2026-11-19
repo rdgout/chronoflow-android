@@ -1,6 +1,7 @@
 package net.chronoflow.app
 
 import androidx.compose.ui.test.hasTestTag
+import androidx.test.platform.app.InstrumentationRegistry
 import net.chronoflow.app.testing.ScreenTest
 import net.chronoflow.core.testing.tiers.Smoke
 import org.junit.Assert.assertEquals
@@ -21,8 +22,8 @@ class ScreenTestHarnessTest : ScreenTest() {
                     .language
         }
         assertEquals("nl", language)
-        var directory: File? = null
-        scenario.onActivity { directory = File(it.filesDir, "uitests/${seed.testId}") }
-        assertTrue(directory?.isDirectory == true)
+        val directory =
+            File(InstrumentationRegistry.getInstrumentation().targetContext.filesDir, "uitests/${seed.testId}")
+        assertTrue(directory.isDirectory)
     }
 }

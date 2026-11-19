@@ -19,8 +19,10 @@ internal fun TimelinePresentedMarker(
     presented: State<Boolean>,
     modifier: Modifier = Modifier,
 ) {
-    Box(modifier.size(1.dp).testTag(if (presented.value) PRESENTED_TAG else OPENING_TAG))
+    Box(modifier.size(PRESENTED_MARKER_SIZE_DP.dp).testTag(if (presented.value) PRESENTED_TAG else OPENING_TAG))
 }
 
 internal const val OPENING_TAG = "trip.timeline.opening"
 internal const val PRESENTED_TAG = "trip.timeline.presented"
+
+private const val PRESENTED_MARKER_SIZE_DP = 1f

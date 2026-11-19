@@ -5,6 +5,7 @@ import assertk.assertFailure
 import assertk.assertions.messageContains
 import com.lemonappdev.konsist.api.Konsist
 import com.lemonappdev.konsist.api.container.KoScope
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class KonsistRulesTest {
@@ -150,4 +151,103 @@ class KonsistRulesTest {
 
     @Test fun noDefaultLocaleZoneOrClockInLogicAllowsControl() =
         noDefaultLocaleZoneOrClockInLogic(allowed("noDefaultLocaleZoneOrClockInLogic"))
+
+    @Test fun noMaterialColorSchemeOutsideDesignSystem() = noMaterialColorSchemeOutsideDesignSystem(projectScope)
+
+    @Test fun noMaterialColorSchemeOutsideDesignSystemRejectsPlantedViolation() {
+        assertFailure {
+            noMaterialColorSchemeOutsideDesignSystem(violations("noMaterialColorSchemeOutsideDesignSystem"))
+        }.messageContains("noMaterialColorSchemeOutsideDesignSystem violated")
+    }
+
+    @Test fun noMaterialColorSchemeOutsideDesignSystemAllowsControl() =
+        noMaterialColorSchemeOutsideDesignSystem(allowed("noMaterialColorSchemeOutsideDesignSystem"))
+
+    @Test fun noRawColorsOutsideDesignSystem() = noRawColorsOutsideDesignSystem(projectScope)
+
+    @Test fun noRawColorsOutsideDesignSystemRejectsPlantedViolation() {
+        assertFailure {
+            noRawColorsOutsideDesignSystem(violations("noRawColorsOutsideDesignSystem"))
+        }.messageContains("noRawColorsOutsideDesignSystem violated")
+    }
+
+    @Test fun noRawColorsOutsideDesignSystemAllowsControl() =
+        noRawColorsOutsideDesignSystem(allowed("noRawColorsOutsideDesignSystem"))
+
+    @Test fun featureDpLiteralsComeFromBoardMetrics() = featureDpLiteralsComeFromBoardMetrics(projectScope)
+
+    @Test fun featureDpLiteralsComeFromBoardMetricsRejectsPlantedViolation() {
+        assertFailure {
+            featureDpLiteralsComeFromBoardMetrics(violations("featureDpLiteralsComeFromBoardMetrics"))
+        }.messageContains("featureDpLiteralsComeFromBoardMetrics violated")
+    }
+
+    @Test fun featureDpLiteralsComeFromBoardMetricsAllowsControl() =
+        featureDpLiteralsComeFromBoardMetrics(allowed("featureDpLiteralsComeFromBoardMetrics"))
+
+    @Test fun boardMetricsNamesExist() = boardMetricsNamesExist(projectScope)
+
+    @Test fun boardMetricsNamesExistRejectsPlantedViolation() {
+        assertFailure {
+            boardMetricsNamesExist(violations("boardMetricsNamesExist"))
+        }.messageContains("boardMetricsNamesExist violated")
+    }
+
+    @Test fun boardMetricsNamesExistAllowsControl() = boardMetricsNamesExist(allowed("boardMetricsNamesExist"))
+
+    @Test fun noMaterialIconsLibrary() = noMaterialIconsLibrary(projectScope)
+
+    @Test fun noMaterialIconsLibraryRejectsPlantedViolation() {
+        assertFailure {
+            noMaterialIconsLibrary(violations("noMaterialIconsLibrary"))
+        }.messageContains("noMaterialIconsLibrary violated")
+    }
+
+    @Test fun noMaterialIconsLibraryAllowsControl() = noMaterialIconsLibrary(allowed("noMaterialIconsLibrary"))
+
+    @Test fun secureFieldStateIsNeverSaved() = secureFieldStateIsNeverSaved(projectScope)
+
+    @Test fun secureFieldStateIsNeverSavedRejectsPlantedViolation() {
+        assertFailure {
+            secureFieldStateIsNeverSaved(violations("secureFieldStateIsNeverSaved"))
+        }.messageContains("secureFieldStateIsNeverSaved violated")
+    }
+
+    @Test fun secureFieldStateIsNeverSavedAllowsControl() =
+        secureFieldStateIsNeverSaved(allowed("secureFieldStateIsNeverSaved"))
+
+    @Test fun designSystemPrimitivesHaveGuards() = designSystemPrimitivesHaveGuards(projectScope)
+
+    @Test fun designSystemPrimitivesHaveGuardsRejectsPlantedViolation() {
+        assertFailure {
+            designSystemPrimitivesHaveGuards(
+                violations("designSystemPrimitivesHaveGuards"),
+                java.io.File("build/no-guards"),
+            )
+        }.messageContains("designSystemPrimitivesHaveGuards violated")
+    }
+
+    @Test fun designSystemPrimitivesHaveGuardsRejectsCommentOnlyCoverage() {
+        val guards =
+            java.io.File(
+                projectRoot(),
+                "konsist/src/test/resources/violations/designSystemPrimitivesHaveGuards/guards",
+            )
+        val fixture = java.io.File(guards, "CommentOnlyGuardsTest.kt")
+        assertTrue("Missing comment-only guard fixture: $fixture", fixture.isFile)
+        assertTrue("Missing planted call mention", fixture.readText().contains("CfOrphan()"))
+        assertFailure {
+            designSystemPrimitivesHaveGuards(violations("designSystemPrimitivesHaveGuards"), guards)
+        }.messageContains("CfOrphan")
+    }
+
+    @Test fun designSystemPrimitivesHaveGuardsAllowsExecutableCoverage() {
+        val guards =
+            java.io.File(
+                projectRoot(),
+                "konsist/src/test/resources/allowed/designSystemPrimitivesHaveGuards/guards",
+            )
+        assertTrue("Missing executable guard fixture", java.io.File(guards, "ExecutableGuardsTest.kt").isFile)
+        designSystemPrimitivesHaveGuards(allowed("designSystemPrimitivesHaveGuards"), guards)
+    }
 }

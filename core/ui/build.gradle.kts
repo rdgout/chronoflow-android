@@ -7,10 +7,18 @@ android {
 }
 
 dependencies {
+    api(project(":core:designsystem"))
     api(libs.compose.runtime)
     api(libs.compose.ui)
     api(libs.compose.foundation)
 
+    debugImplementation(libs.compose.ui.test.manifest)
+    testImplementation(project(":core:testing-compose"))
+    androidTestImplementation(project(":core:testing-compose")) {
+        exclude(group = "org.robolectric")
+        exclude(group = "io.github.takahirom.roborazzi")
+    }
+    androidTestImplementation(libs.androidx.test.runner)
     testImplementation(libs.junit4)
     testImplementation(libs.assertk)
     testImplementation(libs.robolectric)
