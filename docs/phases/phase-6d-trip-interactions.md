@@ -11,6 +11,8 @@ Tags: **[F]** is a fact verified in source (path and line at the pin). **[R]** i
 
 ---
 
+- **Execution refresh (2026-11-19):** work in the main checkout, one task at a time. `TripPageViewModel` and `ScrollCommand` live under `feature/trip/…/page/`; `SessionGraph.epoch` is a `Long`, with `sync` (not `sessionSync`) and `SessionController.mutationPermit(snapshot)` (suspending; acquire it for the captured snapshot before enqueue). `DayCheckActions` is a pure JVM model: use the Compose stability configuration rather than importing `@Immutable` into `:core:plan` (A3). Screen-test copy assertions below are superseded by AGENTS.md and the user: use tags and structural assertions, with exact copy checked through resource resolution. Each of the ten commits adds its own completion checkbox under the matching Phase 6d plan task. Perf/profile runs and `make check` stay with the user.
+
 - **Stack check (2026-11-19, against 3788143, the 6c top):** the §4 items exist. Deltas:
   - There is no `entry<Route.TripPage>`. The shell renders the trip page through its `page(route)` slot (`app/…/shell/AppShell.kt:76`; `CfRoot.kt:227` routes `is Route.TripPage` into the shell).
   - The legend button `trip.legend` lives in 6b's `SummaryCard.kt`, and `onLegend` is threaded through `TripPage.kt`.
@@ -122,7 +124,7 @@ Run these and adapt names (not behaviour) to what exists. Record each adaptation
 11. `grep -rn "selectedStepId\|fun selectBlock\|onLegend\|onActions" feature/trip`: 6b's `selectedStepId: StateFlow<String?>` and `selectBlock(id)` (6b l.297, l.344), and the nullable `onLegend`/`onActions` callbacks 6b/6c left `null` for 6d. Task 6 folds them into `sheet`.
 12. `grep -rn "data class ScrollCommand\|fun jump(" feature/trip`: 6b's jump path (`ScrollCommand(dayId, offset, animated)`), for focus after a jump (Task 9).
 
-If any 6a–6c deliverable named here is missing, stop and report it rather than building it in 6d.
+If a named deliverable differs mechanically, adapt its name to the landed tree and record it. Stop only when every resolution changes earlier-phase behaviour or contradicts pinned iOS, plan.md or AGENTS.md (user, 2026-11-19).
 
 ---
 
@@ -279,7 +281,7 @@ Files:
   - `reasons` = `detail.timeline.blockReasons.firstOrNull { it.blockId == block.id }?.lines`, each through `formatter.format(line, options)`, or empty.
   - `instructions` = for a `note` block, `params.note.lines`; else `[block.text] + listOfNotNull(block.secondaryText)`. Each is formatted.
   - `actions` = `None` unless `key != null` (i.e. `block.actionable && block.checkKey != null`); then `Marked` if `mark != null`, else `Open`.
-- `core/plan/…/step/CheckActions.kt`: `data class DayCheckActions(val byBlock: Map<String, StepActions>)` and `fun checkActions(day: PreparedDay): DayCheckActions`, from each `PreparedBlock` (`actionable`, `checkKey != null`, `status`). Make it `@Immutable`, and add it to `stability_config.conf` if it is passed to a skippable composable (Task 9). Compute it in the preparer next to the day, so an unchanged day keeps the same instance.
+- `core/plan/…/step/CheckActions.kt`: `data class DayCheckActions(val byBlock: Map<String, StepActions>)` and `fun checkActions(day: PreparedDay): DayCheckActions`, from each `PreparedBlock` (`actionable`, `checkKey != null`, `status`). Keep this JVM model free of Compose (A3), and declare it immutable in `stability_config.conf` if it is passed to a skippable composable (Task 9). Compute it in the preparer next to the day, so an unchanged day keeps the same instance.
 - `core/plan/…/step/LegendCopy.kt` [F `LegendCopy.swift`, `LegendSheet.swift`]: `val legendGroups: List<Pair<String, List<BlockType>>>` = Sleep `[sleep, nap, rest]`; Light `[seek_light, light_ok, light_neutral, avoid_light]`; Caffeine `[caffeine_serving, caffeine_routine, caffeine_ok, no_caffeine]`; Travel `[flight, layover, transfer, movement_break, zone_change, note]`. Also `fun legendDescription(type): String` (iOS keys, §5.6) and `fun priorityDescription(priority): String` (core "Your plan depends on this step.", recommended "Helps your clock shift as planned.", optional "Nice if you can.", default "Good to know, nothing to do.").
 - `core/plan/…/actions/TripActions.kt` [F `TripActionsState.swift`]:
   ```kotlin
@@ -319,7 +321,7 @@ Tests (plain JVM, `core/plan/src/test/…`):
 
 Files:
 - `core/sync/…/refusal/RefusedChangeModel.kt`: `class RefusedChangeModel { val visible: StateFlow<SyncRefusal?>; fun receive(result: SyncResult); fun consume(id: String); fun clear() }`, per §5.3. It is thread-safe: guard with a `Mutex` or update `MutableStateFlow` atomically; `receive` is called from the collector only.
-- `app/…/SessionGraph.kt`: `val refusedChanges = RefusedChangeModel()` and in `scope`: `sessionSync.events().filterIsInstance<SyncEvent.Finished>().filter { it.epoch == epoch.generation }.collect { refusedChanges.receive(it.result) }`.
+- `app/…/SessionGraph.kt`: `val refusedChanges = RefusedChangeModel()` and in `scope`: `sessionSync.events().filterIsInstance<SyncEvent.Finished>().filter { it.epoch == epoch }.collect { refusedChanges.receive(it.result) }`.
 
 Tests (plain JVM, `core/sync/src/test/…`), `RefusedChangeModelTests` (port of `RefusedChangeTests.serverRefusalProducesTheDrawnMessage` minus the text, which is Task 3):
 - `failedWithRetryShowsNothingThenIdleExposes`: `Failed`, `retryAfter = 1.0`, one `StepDone` refusal → `visible == null`; then `Idle`, `retryAfter = null`, no refusals → `visible` is that refusal.
