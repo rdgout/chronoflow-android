@@ -47,6 +47,10 @@ import net.chronoflow.core.plan.step.StepSheetState
 import net.chronoflow.core.plan.step.stepSheetState
 import net.chronoflow.core.plan.tripDisplayStatus
 import net.chronoflow.core.plan.trippage.PlanPreferences
+import net.chronoflow.core.sync.SyncResult
+import net.chronoflow.core.sync.SyncState
+import net.chronoflow.core.sync.refresh.RefreshDebugProbe
+import net.chronoflow.core.sync.refresh.RefreshFeedbackModel
 import net.chronoflow.feature.today.data.TodaySource
 import java.io.IOException
 import java.security.GeneralSecurityException
@@ -58,7 +62,25 @@ class TodayViewModel(
     formatter: suspend () -> CopyLineFormatter,
     worker: CoroutineDispatcher,
     main: CoroutineDispatcher,
+    val refreshProbe: RefreshDebugProbe = RefreshDebugProbe.None,
 ) : ViewModel(CoroutineScope(SupervisorJob() + main)) {
+    private val feedback = RefreshFeedbackModel(viewModelScope, refreshProbe)
+    val refreshState = feedback.state
+
+    suspend fun refresh(action: suspend () -> SyncResult?) {
+        feedback
+            .refresh {
+                try {
+                    action()
+                } catch (error: CancellationException) {
+                    if (!currentCoroutineContext().isActive) throw error
+                    SyncResult(SyncState.Failed, pendingCount = 0)
+                }
+            }?.join()
+    }
+
+    fun dismissFeedback(id: Long) = feedback.dismiss(id)
+
     private val sharing = SharingStarted.WhileSubscribed(5_000)
     private val ticks = clock.values().shareIn(viewModelScope, sharing, replay = 1)
     val now = ticks.stateIn(viewModelScope, sharing, Instant.EPOCH)
@@ -220,7 +242,7 @@ class TodayViewModel(
             viewModelFactory {
                 initializer {
                     val deps = checkNotNull(this[TodayDependenciesKey])
-                    TodayViewModel(deps.source, deps.clock, deps.formatter, deps.worker, deps.main)
+                    TodayViewModel(deps.source, deps.clock, deps.formatter, deps.worker, deps.main, deps.refreshProbe)
                 }
             }
     }
@@ -232,6 +254,7 @@ data class TodayDependencies(
     val formatter: suspend () -> CopyLineFormatter,
     val worker: CoroutineDispatcher,
     val main: CoroutineDispatcher,
+    val refreshProbe: RefreshDebugProbe = RefreshDebugProbe.None,
 )
 
 object TodayDependenciesKey : CreationExtras.Key<TodayDependencies>

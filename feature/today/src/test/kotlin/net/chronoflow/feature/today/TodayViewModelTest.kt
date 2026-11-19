@@ -28,6 +28,32 @@ import java.io.IOException
 import kotlin.time.Duration.Companion.seconds
 
 class TodayViewModelTest {
+    @Test fun refreshClassifiesForeignCancellation() =
+        check { rig ->
+            rig.model.refresh { throw CancellationException("foreign") }
+            assertEquals(
+                net.chronoflow.core.sync.refresh.RefreshFeedbackKey.SomethingWentWrong,
+                rig.model.refreshState.value.feedback
+                    .single()
+                    .key,
+            )
+            assertFalse(rig.model.refreshState.value.refreshing)
+        }
+
+    @Test fun refreshKeepsTheExistingResultCapsulePolicy() =
+        check { rig ->
+            rig.model.refresh {
+                net.chronoflow.core.sync
+                    .SyncResult(net.chronoflow.core.sync.SyncState.Idle, 0)
+            }
+            assertEquals(
+                net.chronoflow.core.sync.refresh.RefreshFeedbackKey.UpToDate,
+                rig.model.refreshState.value.feedback
+                    .single()
+                    .key,
+            )
+        }
+
     @Test fun formatterFailureKeepsLoading() =
         runTest(timeout = 60.seconds) {
             val dispatcher = StandardTestDispatcher(testScheduler)

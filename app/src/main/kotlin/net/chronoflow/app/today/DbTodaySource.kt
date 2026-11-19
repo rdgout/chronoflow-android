@@ -18,7 +18,7 @@ class DbTodaySource(
     private val session: SessionGraph,
     private val io: CoroutineDispatcher,
     private val decoder: PlanDecoder,
-    private val mutationPermit: () -> SessionMutationPermit,
+    private val mutationPermit: suspend () -> SessionMutationPermit,
 ) : TodaySource {
     override fun synced() =
         session.accounts

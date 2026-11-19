@@ -2526,7 +2526,7 @@ Implementation commits (brief §7):
 
 **Tasks**
 - [x] **Today.kt** (`:core:plan`): trip selection, display status, the current step, the next four steps, the next step and minutes-until. Port the iOS Today cases.
-- [ ] **Today tab** (`feature/today/…`).
+- [x] **Today tab** (`feature/today/…`).
   - States: active, empty, future, loading and completed.
   - The hero card, Right now and Up next.
   - Row states keep done and skipped steps in place (`TodayRowStates`). Tapping a row opens 6d's step sheet over Today (Mark as done, Skip, Undo, through the outbox); tapping the hero card opens `TripPage(tripId)` without a block (OQ-A44).
