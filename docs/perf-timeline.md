@@ -436,31 +436,37 @@ Host evidence: the retargeted six-case `TimelineInvalidationTest` passes (suite 
 
 The synthetic benchmark-checker tests now use Page `trip` for their matching-history fixtures and Page `host` for the isolation case. All 38 checker tests pass; no runtime threshold or history row was changed.
 
-## Phase 6c: list mode — measurement pending
+## Phase 6c: list mode
 
-2026-11-19, `feat/phase-6c-trip-states-list`. The `listScroll` benchmark and the profile journey extension are implemented. Per the user's instruction, this worker did **not** run `make baseline-profile`, `make perf-timeline`, `make perf` or `make check`. There are no new device measurements, trend conclusions or regenerated profile files in this phase's implementation commit.
+Measured by the orchestrator on 2026-11-19 with `make perf-timeline` and `make baseline-profile`. Pixel / emulator-5554, sdk_gphone64_arm64, API 36, host GPU, 60 Hz, en / light / font 1.0, benchmarkRelease, Partial(Require), large60, bounded-swipe-v3. These are emulator values, never device claims.
 
-`listScroll` launches large60 afresh for each of three iterations, using `benchmarkRelease` and `Partial(Require)`. Setup waits for the presented timeline, toggles to list and waits for the exact opening row. The measured workload copies the existing **bounded-swipe-v3** helper: 15 calls, five fixed drags per call. It sets the page's gesture margin to width/5 and asserts that the top visible block changes. This resolves the brief's older “flings” wording without changing `timelineScroll` (OQ-A290). The profile journey adds a list toggle, three helper calls and a toggle back.
+**Timeline CPU band: missed, and the A/B attributes the miss to the environment, not to 6c.** Every 6c run missed the trip band (baseline P90/P99 4.9/6.4 ms):
 
-The checker requires all four tests, three nonempty list iterations and finite metrics. List budgets copy the existing frame and memory budgets, without drawing/placeholder metrics: emulator frame costs report only, peak anonymous RSS ≤ 150 MiB gates, and growth > 40 MiB warns. Physical-device gates remain separate. Synthetic fixture tests are not runtime performance evidence. The timeline history's existing 26-column format and CPU baseline are preserved; record list values separately from its timelineScroll values.
+| Commit | timelineScroll CPU P50/P90/P99 ms | Main/Render P99 ms | Archive |
+|---|---|---|---|
+| ea8f3ef | 5.4/8.1/11.1 | 6.0/7.7 | `20261119T093129Z-ea8f3ef-…fwNugI` (the reviewer was running Gradle at the same time) |
+| 4b036c7 | 6.8/8.7/15.6, recheck 6.8/8.7/16.3 | 6.0/9.1, 6.1/9.4 | `20261119T095549Z-…pR7qS5`, `20261119T100443Z-…tnloBZ` |
+| e418883 (after an emulator restart) | 6.6/8.6/15.1, recheck 6.4/8.9/16.8 | 6.2/12.3, 5.8/9.6 | `20261119T111928Z-…zVACJX`, `20261119T112813Z-…tDhIvV` |
 
-Host validation on MacBook-Pro-van-Rick.local, Apple silicon, JDK 21 test toolchain: `make timing` passes six serial JVM gates in **3.03 s wall** (Gradle 2 s), one worker. S3 preparation mean/max is **2.9/4.0 ms**, large30 **4.7/5.8 ms**, large60 **6.2/8.5 ms**. Drawing total medians at 360/411/841 dp are **0.8/0.5/1.3 ms**, largest-day medians **0.07/0.05/0.06 ms**, and maximum bytes **11795/11795/14089**. The final quick's seven `TimelineInvalidationTest` cases pass (0.346 s total), as do 124 independently named list invalidation cases (6.412 s total). None of these values measures emulator scrolling. Benchmark compilation plus app/trip lint pass (36 s); all 48 checker tests pass in the focused run (2.406 s).
+Frames (~2,100), recompositions (571), builds and replays (40/40), placeholders (0) and GC (3) are unchanged from 6b. The trace analysis in `docs/perf-6c-review.md` finds the extra cost on the app's main thread and RenderThread, and also in the launcher and SurfaceFlinger. A matched A/B ran `TimelineBenchmark#timelineScroll` alone, back to back, between 12:06 and 12:18:
 
-The orchestrator runs these exact commands on the quiet host, in this order:
+| Run | CPU P50/P90/P99 ms |
+|---|---|
+| 6b (87e4d7a) | 6.4/8.9/16.6 |
+| 6c (e418883) | 6.6/8.7/11.9 |
+| 6b again | 6.4/8.6/13.4 |
 
-```sh
-make baseline-profile
-make perf-timeline
-make check
-```
+6b's own code, which measured 3.8/5.1/6.7 at 04:09, now reproduces the 6c numbers. The miss is therefore an environment change and not a 6c regression. The suspected cause is host GPU contention: the emulator uses `-gpu host`, and during these runs WindowServer and a Chrome GPU helper were using 30–45% CPU. That cause is an inference and has not been proven. No band row is recorded as PASS, and OQ-A291 holds the re-measure.
 
-Commit the regenerated baseline/startup profiles with list-row coverage. Record the following per-benchmark rows with the measured commit, date, device/model/API/Hz/GPU, locale/theme/font scale, build type, compilation mode, command, archive and wall time:
+**Other gates, at e418883:**
+- First frame: max 99.4 ms (gate 800).
+- RSS peak: 108.0 MiB.
+- Builds on main: 0.
+- Placeholders: 0.
+- Last day and end: reached.
+- The `listScroll` row (its first; it sets no band): CPU P50/P90/P99 5.8/8.2/11.4 ms; recheck 5.8/8.2/12.3; jank max 1.1 %; hitch max 2.8 ms/s; RSS peak 107.2 MiB (gate 150). These numbers were taken in the same slow environment, so they are not a list-mode baseline.
 
-| Benchmark | Measurements still required | Status |
-|---|---|---|
-| `timelineFirstFrame` | First frame per iteration (max ≤ 800 ms), TTID, decode/preparation/typeface | Not run |
-| `timelineScroll` | CPU P50/P90/P99 and trip CPU band; main/RenderThread P99; overrun P99, jank/hitch; builds on main, placeholders, replays, recompositions/GC; RSS peak/growth; final day/end assertions | Not run |
-| `timelineLastDay` | Last-day and plan-end reachability; reported frame values | Not run |
-| `listScroll` | CPU P50/P90/P99, overrun P99, jank/hitch per iteration, frame count, anonymous RSS peak/growth, heap and row-progress assertion | Not run |
+**Profiles:** regenerated at 02c8db7 and committed in 3e3d449, with DayListRow coverage. `BaselineProfileFilesTest` passes.
 
-Explain each checker `FLAGGED` trend with its evidence; trend flags do not fail. Emulator values remain emulator evidence. The separate remote-open/list/pull debug StrictMode sweep and independent capture review are also pending; the ready-list pixel smoke's zero IO violations does not establish those other journeys.
+**Not run:** the separate StrictMode sweep (remote open, list, pull) and an independent capture review. The ready-list pixel smoke test logged zero IO violations.
+
