@@ -37,6 +37,7 @@ class TwoFactorJourneyTest : ScreenTest() {
                 .text,
         )
         assertEquals(Route.TwoFactor, RouteProbe.state.route)
+        waitForImeToSettle("two-factor.submit")
         compose.onNodeWithTag("two-factor.submit").performScrollTo().performClick()
         waitFor(5_000) { RouteProbe.state.route == Route.Today }
         compose.onNodeWithTag("two-factor.code").assertDoesNotExist()

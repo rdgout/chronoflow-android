@@ -1,9 +1,16 @@
 package net.chronoflow.app.testing
 
 import android.content.Intent
+import android.view.Choreographer
+import android.view.View
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsAnimationCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
 import kotlinx.coroutines.Dispatchers
@@ -15,6 +22,7 @@ import net.chronoflow.debug.UITestTimeline
 import org.junit.After
 import org.junit.Rule
 import java.util.UUID
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Base for emulator tests that seed a state and check one screen. It launches seeded (never through a form) and
@@ -64,6 +72,70 @@ abstract class ScreenTest {
         timeoutMillis: Long = 5_000,
         condition: () -> Boolean,
     ) = compose.waitUntil(timeoutMillis, condition)
+
+    protected fun waitForImeToSettle(submitTag: String) {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val submit = compose.onNodeWithTag(submitTag).fetchSemanticsNode()
+        val settled = AtomicBoolean(false)
+        lateinit var decor: View
+        lateinit var frames: Choreographer
+        var imeAnimating = false
+        var previousBounds: Rect? = null
+        val animations =
+            object : WindowInsetsAnimationCompat.Callback(DISPATCH_MODE_CONTINUE_ON_SUBTREE) {
+                override fun onPrepare(animation: WindowInsetsAnimationCompat) {
+                    if (animation.typeMask and WindowInsetsCompat.Type.ime() != 0) {
+                        imeAnimating = true
+                        settled.set(false)
+                        previousBounds = null
+                    }
+                }
+
+                override fun onProgress(
+                    insets: WindowInsetsCompat,
+                    runningAnimations: MutableList<WindowInsetsAnimationCompat>,
+                ): WindowInsetsCompat {
+                    imeAnimating = runningAnimations.any { it.typeMask and WindowInsetsCompat.Type.ime() != 0 }
+                    if (imeAnimating) settled.set(false)
+                    return insets
+                }
+
+                override fun onEnd(animation: WindowInsetsAnimationCompat) {
+                    if (animation.typeMask and WindowInsetsCompat.Type.ime() != 0) imeAnimating = false
+                }
+            }
+        val sample =
+            object : Choreographer.FrameCallback {
+                override fun doFrame(frameTimeNanos: Long) {
+                    val insets = ViewCompat.getRootWindowInsets(decor)
+                    val shown =
+                        insets?.isVisible(WindowInsetsCompat.Type.ime()) == true &&
+                            insets.getInsets(WindowInsetsCompat.Type.ime()).bottom > 0
+                    val bounds = submit.boundsInRoot
+                    if (shown && !imeAnimating && bounds == previousBounds) {
+                        settled.set(true)
+                    } else {
+                        settled.set(false)
+                        previousBounds = if (shown && !imeAnimating) bounds else null
+                    }
+                    frames.postFrameCallback(this)
+                }
+            }
+        checkNotNull(scenario).onActivity { activity ->
+            decor = activity.window.decorView
+            frames = Choreographer.getInstance()
+            ViewCompat.setWindowInsetsAnimationCallback(decor, animations)
+            frames.postFrameCallback(sample)
+        }
+        try {
+            compose.waitUntil(5_000) { settled.get() }
+        } finally {
+            instrumentation.runOnMainSync {
+                frames.removeFrameCallback(sample)
+                ViewCompat.setWindowInsetsAnimationCallback(decor, null)
+            }
+        }
+    }
 
     @After
     fun closeScenarioAndResetConfiguration() {
