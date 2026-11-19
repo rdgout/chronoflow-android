@@ -4,9 +4,15 @@ plugins {
 
 android {
     namespace = "net.chronoflow.feature.launch"
+    testFixtures { enable = true }
 }
 
 dependencies {
+    implementation(libs.androidx.core.splashscreen)
+    testFixturesImplementation(libs.kotlinx.coroutines.core)
+    testFixturesImplementation(platform(libs.compose.bom))
+    testFixturesImplementation(libs.compose.runtime)
+    implementation(project(":core:model"))
     implementation(libs.kotlinx.coroutines.core)
     testImplementation(project(":core:testing"))
     testImplementation(project(":core:testing-compose"))

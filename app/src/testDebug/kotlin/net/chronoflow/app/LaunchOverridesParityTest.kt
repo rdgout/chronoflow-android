@@ -24,4 +24,9 @@ class LaunchOverridesParityTest {
         assertEquals(seed.freezeAtMs?.milliseconds, overrides.freezeAt)
         assertEquals(seed.profile == UiTestProfile.Screen, overrides.skipOverlay)
     }
+
+    @Test fun debugRouteLabelExistsOnTheDebugClasspath() {
+        org.junit.Assert.assertNotNull(Class.forName("net.chronoflow.debug.DebugRouteLabel"))
+        org.junit.Assert.assertNotNull(LaunchPlatform.routeLabel)
+    }
 }

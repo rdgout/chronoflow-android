@@ -115,6 +115,46 @@ class LaunchFrameSamplerTests {
         assertTrue(out.moonY < 422)
     }
 
+    @Test fun settledAfterIsInfiniteWhileDotsRepeat() {
+        val t = LaunchTimeline.opening(LaunchSize(390.0, 844.0), false).withStatus(kotlin.time.Duration.ZERO)
+        assertEquals(Double.POSITIVE_INFINITY, LaunchFrameSampler(t).settledAfterSeconds, 0.0)
+    }
+
+    @Test fun sampleIntoStatusAllocatesNothing() {
+        val sampler =
+            LaunchFrameSampler(
+                LaunchTimeline.opening(LaunchSize(390.0, 844.0), false).withStatus(kotlin.time.Duration.ZERO),
+            )
+        val out = LaunchFrame()
+        val bean = ManagementFactory.getThreadMXBean() as ThreadMXBean
+        bean.isThreadAllocatedMemoryEnabled = true
+        val id = Thread.currentThread().threadId()
+        sampleStatusFrames(sampler, out, 20_000)
+        val extraBytes = LongArray(5)
+        for (round in extraBytes.indices) {
+            val baselineStart = bean.getThreadAllocatedBytes(id)
+            val baselineEnd = bean.getThreadAllocatedBytes(id)
+            val start = bean.getThreadAllocatedBytes(id)
+            sampleStatusFrames(sampler, out, 10_000)
+            val end = bean.getThreadAllocatedBytes(id)
+            extraBytes[round] = end - start - (baselineEnd - baselineStart)
+        }
+        assertTrue("allocated ${extraBytes.contentToString()} bytes beyond empty baseline", extraBytes.min() <= 0L)
+        assertTrue(out.statusOpacity > 0 && out.statusDotOpacity.all { it > 0 })
+    }
+
+    private fun sampleStatusFrames(
+        sampler: LaunchFrameSampler,
+        out: LaunchFrame,
+        count: Int,
+    ) {
+        var i = 0
+        while (i < count) {
+            sampler.sampleInto(2.0 + i.toDouble() / count * 3.0, out)
+            i++
+        }
+    }
+
     private fun sampleFrames(
         sampler: LaunchFrameSampler,
         out: LaunchFrame,

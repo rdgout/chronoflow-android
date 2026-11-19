@@ -1,5 +1,6 @@
 package net.chronoflow.app
 
+import androidx.activity.compose.ReportDrawnWhen
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
@@ -30,6 +31,7 @@ import net.chronoflow.core.designsystem.theme.CfTheme
 import net.chronoflow.core.designsystem.theme.ChronoFlowTheme
 import net.chronoflow.core.designsystem.theme.warmFontsAfterFirstFrame
 import net.chronoflow.feature.launch.LaunchOverlay
+import net.chronoflow.feature.launch.model.LaunchRoute
 import net.chronoflow.feature.trip.timeline.LocalTimelineJankTagger
 import net.chronoflow.feature.trip.timeline.TimelineJankTagger
 
@@ -42,7 +44,7 @@ internal fun CfRoot(
     jankTagger: TimelineJankTagger?,
     onSky: Boolean = false,
     onSystemBars: (Boolean, Boolean, Boolean) -> Unit = { _, _, _ -> },
-    content: @Composable () -> Unit,
+    content: (@Composable () -> Unit)? = null,
 ) {
     val resolver = LocalFontFamilyResolver.current
     LaunchedEffect(resolver) {
@@ -50,8 +52,10 @@ internal fun CfRoot(
         warmFontsAfterFirstFrame(firstCommit, { graph.fontPreloader.preload(resolver, it) }, Dispatchers.IO)
     }
     val night = isSystemInDarkTheme()
-    val overlayShowing = claimed && graph.launch.overlayShowing
-    SideEffect { onSystemBars(night, overlayShowing, onSky) }
+    val overlayShowing = graph.launch.overlayActive
+    val welcome = content == null && graph.launch.route == LaunchRoute.Welcome
+    SideEffect { onSystemBars(night, overlayShowing, onSky || welcome) }
+    ReportDrawnWhen { !graph.launch.overlayActive && graph.launch.route != null }
     ChronoFlowTheme(darkTheme = night, reduceMotion = reduceMotion) {
         CompositionLocalProvider(
             LocalSafeInsets provides WindowInsets.safeDrawing,
@@ -73,7 +77,15 @@ internal fun CfRoot(
                 if (contentReady) {
                     Box(
                         if (overlayShowing) Modifier.semantics { hideFromAccessibility() } else Modifier,
-                    ) { content() }
+                    ) {
+                        if (content !=
+                            null
+                        ) {
+                            content()
+                        } else {
+                            graph.launch.route?.let { RoutePlaceholder(it, LaunchPlatform.routeLabel) }
+                        }
+                    }
                 }
                 if (overlayShowing) LaunchOverlay(graph.launch)
             }

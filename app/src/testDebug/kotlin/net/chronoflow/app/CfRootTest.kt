@@ -45,7 +45,7 @@ class CfRootTest {
         compose.mainClock.autoAdvance = false
         val app = ApplicationProvider.getApplicationContext<Application>()
         val launch =
-            newLaunchController().apply {
+            newLaunchController(AppGraph(app)).apply {
                 captureAppearance(app.resources.configuration)
                 captureReduceMotion(false, null)
                 claimOverlay(LaunchOverrides.None)
@@ -70,7 +70,7 @@ class CfRootTest {
     @Test fun skippedOverlayComposesAccessibleContentOnTheFirstFrame() {
         compose.mainClock.autoAdvance = false
         val app = ApplicationProvider.getApplicationContext<Application>()
-        val launch = newLaunchController().apply { claimOverlay(LaunchOverrides(skipOverlay = true)) }
+        val launch = newLaunchController(AppGraph(app)).apply { claimOverlay(LaunchOverrides(skipOverlay = true)) }
         val graph = AppGraph(app, launchProvider = { launch })
         compose.setContent {
             CfRoot(
@@ -118,7 +118,7 @@ class CfRootTest {
         try {
             val window = controller.get().window
             val bars = WindowCompat.getInsetsController(window, window.decorView)
-            assertEquals(!night, bars.isAppearanceLightStatusBars)
+            assertFalse(bars.isAppearanceLightStatusBars)
             assertEquals(!night, bars.isAppearanceLightNavigationBars)
         } finally {
             controller.close()

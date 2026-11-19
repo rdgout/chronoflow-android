@@ -10,6 +10,8 @@ tasks.withType<KotlinCompilationTask<*>>().configureEach {
 }
 
 dependencies {
+    api(libs.kotlinx.coroutines.core)
+    testImplementation(libs.kotlinx.coroutines.test)
     api(libs.kotlinx.serialization.json)
     testImplementation(project(":core:testing"))
 }

@@ -27,6 +27,30 @@ class CheckBenchmarksTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("Startup metric: startupCold timeToInitialDisplayMs median=512.3 ms REPORT", result.stdout)
 
+    def test_warm_start_has_its_own_reference_budget(self):
+        root = temp_dir(self)
+        fixture = next((FIXTURES / "startup/pass").glob("*.json"))
+        data = json.loads(fixture.read_text())
+        data["benchmarks"][1]["metrics"]["timeToInitialDisplayMs"] = {
+            "median": 201.0, "minimum": 201.0, "maximum": 201.0, "runs": [201.0] * 10,
+        }
+        (root / fixture.name).write_text(json.dumps(data))
+        result = check("--suite", "startup", "--device-class", "reference", "--results-dir", str(root))
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertIn("startupWarm timeToInitialDisplayMs median=201.0 ms hard=200 FAIL", result.stdout)
+
+    def test_missing_hand_off_metrics_fail_even_when_report_only(self):
+        for metric in ["timeToFullDisplayMs", "readyFirstMs", "exitFirstMs"]:
+            with self.subTest(metric=metric):
+                root = temp_dir(self)
+                fixture = next((FIXTURES / "startup/pass").glob("*.json"))
+                data = json.loads(fixture.read_text())
+                del data["benchmarks"][0]["metrics"][metric]
+                (root / fixture.name).write_text(json.dumps(data))
+                result = check("--suite", "startup", "--device-class", "emulator", "--results-dir", str(root))
+                self.assertEqual(result.returncode, 1, result.stderr)
+                self.assertIn(metric + " is missing", result.stderr)
+
     def test_missing_ttid_fails_naming_the_metric(self):
         result = check(
             "--suite", "startup", "--device-class", "emulator", "--results-dir", str(FIXTURES / "startup/missing-ttid")
@@ -96,6 +120,7 @@ class CheckBenchmarksTest(unittest.TestCase):
         self.assertEqual(len(added), 1)
         self.assertEqual(len(added[0].strip("|").split("|")), 12)
         self.assertEqual(after.index(added[0]), 7)
+        self.assertEqual(added[0].strip("|").split("|")[10].strip().split("/")[0], "512.3")
 
     def test_launch_requires_every_iteration_to_animate_at_least_75_frames(self):
         result = check("--suite", "launch", "--device-class", "emulator", "--results-dir", str(FIXTURES / "launch/frame-count-74"))
