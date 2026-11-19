@@ -72,6 +72,7 @@ dependencies {
     implementation(libs.compose.ui)
     implementation(libs.compose.foundation)
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.core.splashscreen)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.profileinstaller)
     baselineProfile(project(":benchmark"))
@@ -91,6 +92,10 @@ dependencies {
     androidTestImplementation(libs.androidx.uiautomator)
     androidTestImplementation(libs.assertk)
     androidTestImplementation(project(":core:testing"))
+    androidTestImplementation(project(":core:testing-compose")) {
+        exclude(group = "org.robolectric")
+        exclude(group = "io.github.takahirom.roborazzi")
+    }
 }
 
 // The baseline profile plugin adds these build types after this script runs, so their configurations appear late.

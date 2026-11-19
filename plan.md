@@ -466,7 +466,7 @@ Every screen scrolls when height-constrained. The minimum width is 280 dp; below
 ### Android spec: seeds and test hooks (debug only)
 
 - **Seed names** are identical to iOS (`12 §2`): `CF_AUTH_TEST_ID`, `CF_UI_TEST_PROFILE=screen|launch`, `CF_AUTH_TEST_SIGNED_IN=demo|twofactor`, `CF_AUTH_TEST_WALKTHROUGH_SEEN`, `CF_AUTH_TEST_AUDIT_SCREEN`/`STATE`, `CF_PLAN_TEST_ROUTE=trips|trip:<id>[:list]`, `CF_PLAN_TEST_POSITION=summary`, `CF_PLAN_TEST_SHEET=step:<id>|legend`, `CF_SETTINGS_ROUTE`, `CF_WIZARD_AUTO_OPEN`, `CF_WIZARD_BOARD_CAPTURE`, `CF_MOCK_DELAY` (default 0).
-- **Intent extras:** `cf.trip-page=S1…S6|large30|large60|<uuid>`, `cf.timeline-fixtures`, `cf.settings.theme`, `cf.settings.language`, `cf.reduceMotion`, `cf.freezeAt`, `cf.readyAt`, `cf.mainThreadStall`.
+- **Intent extras:** `cf.trip-page=S1…S6|large30|large60|<uuid>`, `cf.timeline-fixtures`, `cf.settings.theme`, `cf.settings.language`, `cf.reduceMotion`, `cf.freezeAt`, `cf.readyAt`, `cf.mainThreadStall`, `cf.holdSplash`.
 - **Entry point:** `net.chronoflow.debug.SeedReceiverActivity` (debug-exported, in `app/src/debug`) applies `TestSeeds.apply` (`13 §5`), then starts `MainActivity`.
 - **Mock accounts:** `demo@example.com` / `password`; `twofactor@example.com` / `password`, code `123456`, recovery `AbCdEf1234-GhIjKl5678`. Account ids `0199a3c0-0000-7000-8000-000000000000` / `…0001`; trips `…0001` (AMS→HND, active), `…0002` (AMS→JFK, upcoming).
 - **Release readiness:** `testReleaseUnitTest` asserts that `Class.forName("net.chronoflow.debug.SeedReceiverActivity")` throws and that the mock never seeds.
@@ -645,7 +645,22 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A64 | Native Material calendar cells can round one physical pixel below 48 dp, while segments share borders and clock-dial hit rectangles overlap | Preserve Material controls. Allow one physical pixel of native-calendar rounding; keep native window placement and circular targets under Material; verify native rendering on the emulator and retain whole-display system-chrome review in Phase 14; keep strict guards for designed controls | 2, 14 |
 | OQ-A65 | The brief combines a 32 dp Small button with 20 dp text and 8 dp vertical padding, which makes 36 dp | Follow the bundle's 32 dp Small visual height with 6 dp vertical padding and a separate 48 dp target; other button sizes retain 8 dp padding and text can wrap | 2 |
 | OQ-A66 | Phase 2 cold start is 95.8 ms: +8.0% against 0e 88.7 ms (Partial UseIfAvailable), +0.8% against M1 95.0 ms (Partial Require). Which baseline should future theme comparisons use? | Use M1's 95.0 ms with Partial(Require) as the like-for-like reference (user, Phase 2 review round 1). Phase 2's 95.8 ms is +0.8% and passes the 5% limit. Retain the older 0e result as history; Phase 3a measures the real launch overlay separately | 2, 3a, 13 |
-| OQ-A67 | Who sets system-bar icon appearance after the Phase 3a hand-off? Research 08 row 24 says themed surfaces follow the theme; review currently observes white status-bar icons on the light background. | Phase 3a sets light theme → dark status-bar icons, dark theme → light icons through enableEdgeToEdge; retain row 24's light icons on sky screens | 3a |
+| OQ-A67 | Who sets system-bar icon appearance after the Phase 3a hand-off? Research 08 row 24 says themed surfaces follow the theme; review currently observes white status-bar icons on the light background. | Resolved by Phase 3a Task 7b: light theme → dark status-bar icons, dark theme → light icons through enableEdgeToEdge; sky screens retain light icons. Review round 1: CfRoot paints CfTheme.colors.background behind content (generated CfLightColors/CfDarkColors.background, from theme.css --background and Trips.dc.html:24); the navy window background remains for splash handover | 3a |
+| OQ-A69 | (3a-1) What does the app show after the opening until 3b lands? | The overlay holds the 1500 ms frame, stops its frame loop, hides and shields the content. Work on the app with `CF_UI_TEST_PROFILE=screen`. | 3a |
+| OQ-A70 | (3a-2) Activity recreated within the process during or after the splash (locale or font-scale change) in 3a. | No overlay and no keep condition on the new activity (D14 minimal); 3b adds the 300 ms fade and decides whether a recreated activity resumes a running overlay at its wall-clock position. | 3a |
+| OQ-A71 | (3a-3) Navigation-bar icon color on the sky (`05` OQ A9). | From the sky's bottom per captured appearance: light → dark icons (`SystemBarStyle.light`), dark → light icons; contrast enforcement off; verify on the Task 11 recording. | 3a |
+| OQ-A72 | (3a-4) Android-only debug hook `cf.holdSplash` for the parity screenshot. | Add it as a `TestSeed` field, debug only, listed in "Android spec: seeds and test hooks"; the in-process test releases it through `LaunchController.splashHeld`, so no exported receiver exists; release has no `TestSeed` (`ReleaseReadinessTest`). | 3a |
+| OQ-A73 | (3a-5) Wordmark vector source. | Generated once from the Fraunces 400 opsz32 TTF with HarfBuzz `hb-view` 15.1.0 (kerning) plus CoreText-style tracking; committed with a hash manifest. Fallback if `hb-view` output proves unusable: build the path at runtime off the main thread with `Paint.getTextPath` before 1000 ms. | 3a |
+| OQ-A74 | (3a-6) Parity tolerances. | Centres ±1 px; centre pixel ≤ 2/255; in the 192 dp circle, flat pixels ≥ 99.5% within 4/255 and none > 16/255; edge pixels (3 × 3 channel span > 32 in either screenshot) unbounded per pixel; distance-weighted ink centroids within 0.5 px. | 3a |
+| OQ-A75 | (3a-7) `TraceSectionMetric` and async sections. | Async `first-commit`; fallback a `TraceMetric` query, recorded. | 3a |
+| OQ-A76 | (3a-8) Moon decode on the main thread during the first composition. | Keep it in composition, traced as `cf.launch.moonDecode`. If it takes > 16 ms on the `pixel` emulator, start the decode on `Dispatchers.IO` at the top of `onCreate` and join it in the first composition; record the numbers. | 3a |
+| OQ-A77 | (3a-9) Sky banding in dark. | Compose gradient draw; if the Task 11 frames show bands, draw the sky through `drawIntoCanvas` with a native `Paint` that has `isDither = true` and the same shader. | 3a |
+| OQ-A78 | (3a-10) API 29–30 parity (compat splash). | Not in `make check`; run `LaunchFrameZeroTest` on the `api29` T2 AVD on request; accept ± a few px until then. | 3a |
+| OQ-A79 | (3a-11) Does the status text scale with font scale (affects `LaunchStatusFitTest`)? | Yes, in sp up to the 1.3 cap, like iOS Dynamic Type up to xxLarge; 3b confirms when it draws the line. | 3a |
+| OQ-A80 | (3a-12) Theme names and files: plan says `Theme.App.Starting` / `Theme.App` in `values{,-night}/themes.xml`. | The tree's `Theme.ChronoFlow` stays; add `Theme.ChronoFlow.Starting` in `values/themes.xml` (+ `-v33`); the existing `values-night/themes.xml` repeats the `Theme.ChronoFlow` items (a style in `values-night` replaces the one in `values`); night colors and the night moon come from the `-night` color and drawable resources. | 3a |
+| OQ-A81 | (3a-13) Instrumented tests share one process, but the overlay is once per process. | Debug-checked `AppGraph.resetLaunchForTest()` gives each launch-profile `@Smoke` test a fresh `LaunchController`; traces are not re-armed. Later phases may reuse the hook. | 3a |
+| OQ-A82 | (3a-14) `TimelinePresentedMarker` uses `PRESENTED_MARKER_SIZE_DP.dp`, which the extended dp rule (Task 8b) would flag. | Rewrite it as a 1 px layout node, no exemption; `make perf-timeline` once to prove the benchmark still finds it. Fallback: one documented file exemption in the rule. | 3a |
+| OQ-A83 | Launch sun on windows shorter than 667 dp | Keep iOS geometry unchanged; no sun-visibility rule below 667 dp. Shorter windows retain moon/wordmark containment and finite-value guards | 3a |
 | OQ-0a-22 | Native libraries in the bundle? | Allow only `libandroidx.graphics.path.so` (Compose graphics-path; excluding it breaks Path conversion below API 34); fail on any other `.so` | 0a, 13 |
 | OQ-0b-1 | Where does `PlanMetrics` live? `08 §3.1` lists it inside `CfDimens`, but its consumer `:core:plan` is a JVM module that cannot depend on `:core:designsystem` | `core/plan/…/generated/PlanMetrics.generated.kt` (Double, dp), as iOS keeps it in `PlanCore` | 0b, 1b, 1c |
 | OQ-0b-2 | Port all iOS TokenGen outputs now (Auth, Settings, Terms, Welcome, PlanUI, Press, LaunchPaint, TypeMetrics), or only colors, sky and type? | All of them now (the iOS files are exact goldens and Phases 2, 3a, 3c, 5a, 9 and 10 need them) | 0b |
@@ -1420,21 +1435,24 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 **Delivers.** Implements the Android 12+ system splash (sky color, 288 dp launch_moon) and the Compose launch overlay whose frame 0 equals the system splash pixel for pixel. It ports CubicBezier, LaunchLayout, FlightPath and the LaunchTimeline opening as pure Kotlin with the iOS reference values, and draws the scene in one Canvas on a wall clock with no per-frame allocation, radial gradients instead of blur and a vector wordmark. It wires the activity order (installSplashScreen, the keep condition released on layout, edge-to-edge), Reduce Motion, accessibility, the launch and first-commit traces, and the cold-start and launch-jank benchmarks.
 
 **Tasks**
-- [ ] **Splash theme** (`app/src/main/res/values{,-night}/themes.xml`). `Theme.App.Starting` sets:
+- [x] **Splash theme** (`app/src/main/res/values{,-night}/themes.xml`). `Theme.App.Starting` sets:
   - `windowSplashScreenBackground` = `@color/launch_sky_top` (`#1F285A`, night `#06091C`);
   - `windowSplashScreenAnimatedIcon` = `@drawable/launch_moon`;
   - `windowSplashScreenBehavior` = `icon_preferred`;
   - `postSplashScreenTheme`, whose `windowBackground` is the sky top.
 
   API 29–30 go through core-splashscreen (OQ-A23).
-- [ ] **Activity order** (`MainActivity.kt`):
+- [x] **Activity order** (`MainActivity.kt`):
   1. `installSplashScreen()`, then `super.onCreate()`;
   2. the process-death check (a stub until 3b);
   3. `enableEdgeToEdge(SystemBarStyle.dark(TRANSPARENT))` and `isNavigationBarContrastEnforced = false`;
   4. `setContent { CfRoot() }`;
   5. `setKeepOnScreenCondition { !launch.overlayPlaced }`, where `overlayPlaced` is set from `Modifier.onPlaced` and never from a draw;
   6. `setOnExitAnimationListener { it.remove() }`.
-- [ ] **Pure ports** (`feature/launch/…/model/`, JVM-tested):
+- [x] **Bezier and clock** (3a Task 1): port the easing algorithm and injectable clocks; guard model imports.
+- [x] **Layout and flight path** (3a Task 2): port centred geometry, arc-length lookup and status spacing.
+- [x] **Wordmark vector** (3a Task 4): generate hash-checked Fraunces outlines with the iOS advance and tracking.
+- [x] **Pure ports** (`feature/launch/…/model/`, JVM-tested):
   - `CubicBezier`;
   - `LaunchLayout`, for any w × h, with the composition `h − k → h/2 + (422 − k)`;
   - `FlightPath`: 128 samples, strokeEnd by arc length;
@@ -1443,27 +1461,32 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - `LaunchClock`.
 
   Port the iOS `Tests/LaunchTests` cases with the same reference values.
-- [ ] **LaunchOverlay** (`feature/launch/…/LaunchOverlay.kt`).
+- [x] **LaunchOverlay** (`feature/launch/…/LaunchOverlay.kt`).
   - One `Canvas`, driven through `withFrameNanos` by a wall clock that starts at `t0` (`System.nanoTime` at the first draw).
   - Paths, brushes and paints are built once per size. Radial gradients replace blur, the wordmark is a vector path, and the sky comes from `CfSky`.
   - Reduce Motion follows "### Reduce Motion".
   - Semantics: a single node, "ChronoFlow is opening", with `paneTitle`. App content is hidden with `hideFromAccessibility()` until the hand-off ends.
-- [ ] **Frame-0 parity.** `LaunchFrameZeroTest` (`@Smoke`, emulator): in light and dark, the overlay moon's rect equals the system `iconView` bounds within 1 px, and the centre pixel matches.
-- [ ] **Traces and benchmarks.**
+- [x] **Konsist numeric dp/sp constants** (3a Task 8b): reject unapproved numeric constants; keep the timeline marker at one physical pixel.
+- [x] **System-bar icons (OQ-A67).** Apply themed icon styles on theme and overlay changes; retain light status icons on sky.
+- [x] **Frame-0 parity.** `LaunchFrameZeroTest` (`@Smoke`, emulator): in light and dark, the 192 dp system `iconView` and 288 dp frame-0 moon canvas are concentric within 1 px and centred on the display; the centre and visible-circle pixels match.
+- [x] **Traces and benchmarks.**
   - Traces `launch` (async, from process start) and `first-commit` (the first overlay draw).
   - The signed-out cold `StartupBenchmark` now measures the overlay.
   - `LaunchJankBenchmark`: cold start, a 3.5 s capture, `FrameTimingMetric`.
   - `TraceSectionMetric("first-commit")`.
   - Budget rows in `budgets.json`.
-  - App Startup: keep `ProcessLifecycleInitializer` and `ProfileInstallerInitializer` (A21), record each one's cost from a cold-start trace in `docs/perf-startup.md`, remove every other merged initializer (for example `EmojiCompatInitializer`) with `tools:node="remove"`, and add the `STARTUP_INITIALIZER` rule to `verifyReleaseManifest` (OQ-A47).
-- [ ] **Guards.** `LaunchTimeline.sample(t)` frames at 0, 0.3, 1.0 and 1.5 s at every profile, in light and dark: the moon stays inside the window, and the status line inside `safeDrawing`.
-- [ ] **StrictMode.** `penaltyDeath` for disk reads on the launch path; `LaunchStrictModeTest` (emulator) survives a cold launch.
+  - [x] App Startup: keep `ProcessLifecycleInitializer` and `ProfileInstallerInitializer` (A21), record each one's cost from a cold-start trace in `docs/perf-startup.md`, remove every other merged initializer (for example `EmojiCompatInitializer`) with `tools:node="remove"`, and add the `STARTUP_INITIALIZER` rule to `verifyReleaseManifest` (OQ-A47).
+- [x] **Guards.** `LaunchTimeline.sample(t)` frames at 0, 0.3, 1.0 and 1.5 s at every profile, in light and dark: the moon stays inside the window, and the status line inside `safeDrawing`.
+- [x] **StrictMode.** `penaltyDeath` for disk reads on the launch path; `LaunchStrictModeTest` (emulator) survives a cold launch.
 
 **Acceptance**
 - Frame 0 matches the system splash in light and dark.
 - The first animated change comes at 300 ms ± 1 frame (JVM).
 - A 60 fps `adb shell screenrecord`, reviewed frame by frame, shows no flash.
 - `first-commit` and the cold TTID are recorded in `docs/perf-startup.md`.
+
+**Validation (2026-11-17):** The final targeted allocation test, `make quick` and `make check` pass. The allocation guard uses the orchestrator-approved five-round minimum rule to ignore one-time VM costs while retaining a zero-allocation steady-state requirement. The required `make perf-timeline` found the 1 px marker and completed its functional cases, but the orchestrator declared its timings **INVALID for judgement** because the host was busy with other builds and simulators. Its CPU band check failed both measurements; no timeline-performance conclusion is drawn from them.
+
 
 ### Phase 3b: Readiness reducer, endings and process policy (`feat/phase-3b-launch-readiness`)
 

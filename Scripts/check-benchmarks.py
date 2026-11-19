@@ -19,7 +19,7 @@ RAW_KEYS = {
     "timelineFirstFrameMs": "timelineFirstFrameFirstMs",
 }
 SIGNED_RAW = {"frameOverrunMs"}
-CLASS_SUFFIX = {"startup": ".StartupBenchmark", "timeline": ".TimelineBenchmark"}
+CLASS_SUFFIX = {"startup": ".StartupBenchmark", "timeline": ".TimelineBenchmark", "launch": ".LaunchJankBenchmark"}
 TIMELINE_HEADER = (
     "| Date | Commit | Class | Device | API | Hz | GPU | Font | Theme | Page | Build | First frame ms med/max | "
     "CPU P50/P90/P99 ms | Main/Render P99 ms | Overrun P99 ms | Jank % mean/max | Hitch ms/s mean/max | "
@@ -128,15 +128,18 @@ def check(args, budgets):
             print("%s metric: test %s is absent from the results" % (label, entry["test"]), file=sys.stderr)
             failed = True
             continue
-        raw_key = RAW_KEYS[entry["metric"]]
-        vals = stat_values(bench, raw_key, entry["stat"])
+        raw_key = RAW_KEYS.get(entry["metric"], entry["metric"])
+        if entry.get("derived"):
+            vals, _ = derived_values(entry, bench, args.refresh_hz)
+        else:
+            vals = stat_values(bench, raw_key, entry["stat"])
         if vals is None:
             print(
                 "%s metric: %s %s is missing (%s)" % (label, entry["test"], entry["metric"], raw_key), file=sys.stderr
             )
             failed = True
             continue
-        bad = invalid_runs(bench, raw_key)
+        bad = invalid_runs(bench, raw_key, signed=bool(entry.get("signed")))
         if bad:
             print(
                 "%s metric: %s %s has invalid runs %s FAIL (non-finite or negative)"
@@ -147,10 +150,10 @@ def check(args, budgets):
             continue
         gate = entry.get(args.device_class)
         for value in vals:
-            outcome, why = judge(value, gate)
+            outcome, why = judge(value, gate, signed=bool(entry.get("signed")))
             suffix = ""
             if gate and not gate.get("report"):
-                suffix = " hard=%s" % gate["hard"] + (" aim=%s" % gate["aim"] if "aim" in gate else "")
+                suffix = (" hard=%s" % gate["hard"]) if "hard" in gate else _suffix(gate)
             shown = "%.1f" % value if isinstance(value, (int, float)) and math.isfinite(value) else str(value)
             print(
                 "%s metric: %s %s %s=%s %s%s %s%s"
@@ -159,7 +162,7 @@ def check(args, budgets):
             )
             outcomes.append(outcome)
             failed = failed or outcome == "FAIL"
-        if args.suite == "startup":
+        if args.suite == "startup" and raw_key == "timeToInitialDisplayMs":
             metrics = bench.get("metrics", {}).get(raw_key, {})
             values = {k: metrics.get(k) for k in ("median", "minimum", "maximum")}
     return (1 if failed else 0), outcomes, values, context
@@ -521,6 +524,34 @@ def write_timeline_history(args, budgets, code, features, context, benches):
     path.write_text("\n".join(lines) + "\n")
 
 
+def write_launch_history(args, code, context):
+    benches, _ = load_benchmarks(args.results_dir, "launch")
+    bench = benches.get("launchCold", {})
+    startup, _ = load_benchmarks(args.results_dir, "startup")
+    first = stat_values(startup.get("startupCold", {}), "first-commitFirstMs", "median")
+    overrun = stat_values(bench, "frameOverrunMs", "P99")
+    counts = stat_values(bench, "frameCount", "each")
+    jank, _ = derived_values({"metric": "jankPercent"}, bench, args.refresh_hz)
+    row = "| " + " | ".join([
+        datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d"), args.commit,
+        args.device_class, context.get("build", {}).get("model", "unknown"), args.refresh_hz,
+        BUILD, _fmt(first[0]) if first else "missing", _fmt(overrun[0]) if overrun else "missing",
+        _fmt(min(counts)) if counts else "missing",
+        "/".join((_fmt(statistics.mean(jank)), _fmt(max(jank)))) if jank else "missing",
+        "FAIL" if code else "PASS",
+    ]) + " |"
+    path = Path(args.history)
+    lines = path.read_text().splitlines()
+    heading = "## Launch metrics"
+    if heading not in lines:
+        lines += ["", heading, "", "| Date | Commit | Class | Device | Hz | Build | First commit median ms | Overrun P99 ms | Frame count min | Jank % mean/max | Result |", "|" + "---|" * 11]
+    at = lines.index(heading) + 4
+    while at < len(lines) and lines[at].startswith("|"):
+        at += 1
+    lines.insert(at, row)
+    path.write_text("\n".join(lines) + "\n")
+
+
 def main(argv):
     parser = argparse.ArgumentParser(prog="check-benchmarks.py")
     parser.add_argument("--suite", required=True, choices=sorted(CLASS_SUFFIX))
@@ -545,6 +576,8 @@ def main(argv):
     code, outcomes, values, context = check(args, budgets)
     if args.history and args.suite == "startup" and values:
         write_history(args, code, outcomes, values, context)
+    if args.history and args.suite == "launch" and args.append:
+        write_launch_history(args, code, context)
     return code
 
 

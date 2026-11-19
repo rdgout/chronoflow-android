@@ -123,7 +123,7 @@ icons:
 	python3 -I tools/assets/build_assets.py icons
 
 assets:
-	python3 -I tools/assets/build_assets.py icons moon
+	python3 -I tools/assets/build_assets.py icons moon wordmark
 
 assets-check:
 	python3 -I tools/assets/build_assets.py check

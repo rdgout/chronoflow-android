@@ -86,7 +86,7 @@ Permissions: `INTERNET`, `ACCESS_NETWORK_STATE`, `net.chronoflow.app.native.DYNA
 
 `androidx.startup.InitializationProvider` meta-data entries: `androidx.emoji2.text.EmojiCompatInitializer`, `androidx.lifecycle.ProcessLifecycleInitializer`, `androidx.profileinstaller.ProfileInstallerInitializer`.
 
-Other library components: `androidx.profileinstaller.ProfileInstallReceiver` (exported, guarded by `android.permission.DUMP`); `<uses-library>` entries `androidx.window.extensions` and `androidx.window.sidecar`. Nothing was removed (Phase 3a keeps the lifecycle and profile installer entries and drops the rest).
+Other library components: `androidx.profileinstaller.ProfileInstallReceiver` (exported, guarded by `android.permission.DUMP`); `<uses-library>` entries `androidx.window.extensions` and `androidx.window.sidecar`. Phase 3a removes EmojiCompatInitializer through tools:node="remove"; only the lifecycle and profile installer entries remain. verifyReleaseManifest rejects any other androidx.startup initializer. Their measured costs are recorded in docs/perf-startup.md.
 
 ## 8. Deviations and open questions
 

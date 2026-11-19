@@ -1,3 +1,13 @@
 <resources>
-    <style name="Theme.ChronoFlow" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.ChronoFlow" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/launch_sky_top</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+
+    <style name="Theme.ChronoFlow.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/launch_sky_top</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/launch_moon</item>
+        <item name="postSplashScreenTheme">@style/Theme.ChronoFlow</item>
+    </style>
 </resources>

@@ -271,7 +271,7 @@ def run_check(root):
 
 
 def main(argv, root=ROOT):
-    commands = [arg for arg in argv if arg in ("icons", "moon", "check")]
+    commands = [arg for arg in argv if arg in ("icons", "moon", "wordmark", "check")]
     if not commands or "check" in commands and len(commands) > 1:
         print("usage: build_assets.py [icons [--out DIR]] [moon] | check", file=sys.stderr)
         return 2
@@ -283,6 +283,11 @@ def main(argv, root=ROOT):
                 run_icons(root, out if out.is_absolute() else root / out)
             elif command == "moon":
                 run_moon(root)
+            elif command == "wordmark":
+                spec = importlib.util.spec_from_file_location("wordmark", ROOT / "tools/assets/wordmark.py")
+                module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(module)
+                module.run(root)
             else:
                 status = run_check(root)
         return status

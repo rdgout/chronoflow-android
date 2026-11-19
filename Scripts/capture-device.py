@@ -18,9 +18,10 @@ def main(only):
         return 1
     target = ROOT / 'build/captures/device'
     shutil.rmtree(target, ignore_errors=True)
-    output = ROOT / 'core/ui/build/outputs/connected_android_test_additional_output'
+    module = 'app' if only.startswith('SplashScreen') else 'core/ui'
+    output = ROOT / module / 'build/outputs/connected_android_test_additional_output'
     shutil.rmtree(output, ignore_errors=True)
-    command = ['./gradlew', '--console=plain', ':core:ui:connectedDebugAndroidTest',
+    command = ['./gradlew', '--console=plain', ':' + module.replace('/', ':') + ':connectedDebugAndroidTest',
                '-Pandroid.testInstrumentationRunnerArguments.annotation=net.chronoflow.core.testing.tiers.Capture',
                '-Pandroid.testInstrumentationRunnerArguments.timeout_msec=60000']
     if only:

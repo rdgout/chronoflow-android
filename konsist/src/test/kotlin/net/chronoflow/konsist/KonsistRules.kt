@@ -67,6 +67,18 @@ fun jvmCoreModulesImportNoAndroidOrCompose(scope: KoScope) {
     fail("jvmCoreModulesImportNoAndroidOrCompose", violations)
 }
 
+fun launchModelImportsNoAndroid(scope: KoScope) {
+    val violations =
+        scope.files
+            .filter { it.packagee?.name == "net.chronoflow.feature.launch.model" }
+            .flatMap { file ->
+                file.imports
+                    .filter { it.name.startsWith("android.") || it.name.startsWith("androidx.") }
+                    .map { "${file.path}: ${it.name}" }
+            }
+    fail("launchModelImportsNoAndroid", violations)
+}
+
 fun onlyAppImportsFeatures(scope: KoScope) {
     val violations =
         scope
@@ -227,6 +239,7 @@ private val insetsImportRegex =
 private fun mayReadWindowInsets(path: String): Boolean {
     val normalized = path.replace('\\', '/')
     return normalized.endsWith("app/src/main/kotlin/net/chronoflow/app/MainActivity.kt") ||
+        normalized.endsWith("app/src/main/kotlin/net/chronoflow/app/CfRoot.kt") ||
         normalized.contains("/core/testing-compose/") ||
         normalized.contains("/src/androidTest")
 }

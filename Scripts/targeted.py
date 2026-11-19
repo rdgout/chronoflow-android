@@ -92,8 +92,11 @@ def plan(selectors):
             tests = []
             for item in items:
                 tests += ["--tests", item]
+            reports = ["--results", results]
+            if module != "build-logic:convention":
+                reports += ["--timings", timings]
             commands.append(
-                ["Scripts/run-tier.sh", "targeted", "--results", results, "--timings", timings, "--"]
+                ["Scripts/run-tier.sh", "targeted"] + reports + ["--"]
                 + GRADLE
                 + [gradle_path + task, "-Pcf.tier=targeted"]
                 + tests

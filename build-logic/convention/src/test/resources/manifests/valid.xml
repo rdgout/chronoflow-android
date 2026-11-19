@@ -20,5 +20,9 @@
             android:name="androidx.profileinstaller.ProfileInstallReceiver"
             android:exported="true"
             android:permission="android.permission.DUMP" />
+        <provider android:name="androidx.startup.InitializationProvider" android:authorities="net.chronoflow.app.native.androidx-startup">
+            <meta-data android:name="androidx.lifecycle.ProcessLifecycleInitializer" android:value="androidx.startup" />
+            <meta-data android:name="androidx.profileinstaller.ProfileInstallerInitializer" android:value="androidx.startup" />
+        </provider>
     </application>
 </manifest>

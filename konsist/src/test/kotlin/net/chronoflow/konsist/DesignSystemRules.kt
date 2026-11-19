@@ -72,22 +72,47 @@ fun noRawColorsOutsideDesignSystem(scope: KoScope) {
 
 fun featureDpLiteralsComeFromBoardMetrics(scope: KoScope) {
     val literal = Regex("""(?<![\w.])(\d+(?:\.\d+)?)\.(dp|sp)\b""")
+    val usage = Regex("""\.\s*(dp|sp)\b""")
+    val declaration =
+        Regex(
+            """\bval\s+(\w+)\s*(?::\s*(?:kotlin\.)?(?:Int|Float|Double))?\s*=\s*""" +
+                """([+\-]?(?:\d[\d_]*(?:\.\d[\d_]*)?|\.\d[\d_]*)(?:[fF])?)(?=\s*(?:$|[;\r\n}]))""",
+            RegexOption.MULTILINE,
+        )
     val features =
         scope.designSources().filter {
             moduleOf(it.path)?.startsWith("feature/") == true || moduleOf(it.path) == "core/ui"
         }
     val bad =
-        features.filter { literal.containsMatchIn(it.text) }.flatMap { file ->
+        features.filter { usage.containsMatchIn(it.text) }.flatMap { file ->
             var text = file.text
             file
                 .objects()
-                .filter { it.name.endsWith("Metrics") && it.hasAnnotationWithName("BoardMetrics") }
+                .filter { it.hasAnnotationWithName("BoardMetrics") }
                 .forEach { text = text.replace(it.text, "") }
-            literal
-                .findAll(text)
-                .filter { it.groupValues[1].toDouble() != 0.0 }
-                .map { "${file.path}: ${it.value}" }
-                .toList()
+            val code = codeOnly(text)
+            val literals =
+                literal
+                    .findAll(code)
+                    .filter { it.groupValues[1].toDouble() != 0.0 }
+                    .map { "${file.path}: ${it.value}" }
+                    .toList()
+            val constants =
+                declaration
+                    .findAll(code)
+                    .filter {
+                        it.groupValues[2]
+                            .replace("_", "")
+                            .removeSuffix("f")
+                            .removeSuffix("F")
+                            .toDouble() != 0.0
+                    }.flatMap { match ->
+                        val name = Regex.escape(match.groupValues[1])
+                        Regex("""\b$name\s*(?:\.\s*to(?:Float|Int)\s*\(\s*\))?\.\s*(dp|sp)\b""")
+                            .findAll(code)
+                            .map { "${file.path}: ${it.value}" }
+                    }.toList()
+            literals + constants
         }
     checkDesignRule("featureDpLiteralsComeFromBoardMetrics", bad)
 }

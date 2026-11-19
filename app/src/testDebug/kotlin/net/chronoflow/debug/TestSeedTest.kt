@@ -100,4 +100,18 @@ class TestSeedTest {
         assertThat(result.testId).isNull()
         assertThat(result.raw).isEmpty()
     }
+
+    @Test fun holdSplashUsesTheUngatedBooleanSeedParser() {
+        for ((raw, expected) in listOf(
+            "true" to true,
+            "1" to true,
+            "false" to false,
+            "0" to false,
+            "yes" to null,
+            "" to null,
+        )) {
+            org.junit.Assert.assertEquals(expected, TestSeed.parse(mapOf("cf.holdSplash" to raw)).holdSplash)
+        }
+        org.junit.Assert.assertNull(TestSeed.parse(emptyMap()).holdSplash)
+    }
 }
