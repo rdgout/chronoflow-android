@@ -8,14 +8,23 @@ import kotlinx.coroutines.test.runTest
 import net.chronoflow.app.AppDispatchers
 import net.chronoflow.core.model.DataFailure
 import net.chronoflow.core.model.DataSource
+import net.chronoflow.core.model.api.ApiPasskeyChallenge
+import net.chronoflow.core.model.api.ApiPasskeyLoginInput
+import net.chronoflow.core.model.api.ApiPasskeyRequestOptions
 import net.chronoflow.core.model.api.PasswordSignInInput
+import net.chronoflow.core.model.api.SessionResult
 import net.chronoflow.core.model.api.SignInResult
+import net.chronoflow.core.model.api.UserVerification
+import net.chronoflow.core.model.passkey.PasskeyCapability
+import net.chronoflow.core.model.passkey.PasskeyFailure
 import net.chronoflow.core.navigation.RootNavigator
 import net.chronoflow.core.navigation.Route
 import net.chronoflow.core.sync.session.sessionResult
 import net.chronoflow.core.testing.sync.ScriptedSource
+import net.chronoflow.feature.auth.model.AuthBannerKind
 import net.chronoflow.feature.auth.model.SecretField
 import net.chronoflow.feature.auth.model.SessionAcceptor
+import net.chronoflow.feature.auth.model.passkey.DeterministicAssertionProvider
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -92,6 +101,56 @@ class AuthServicesTest {
     }
 
     class Ownership {
+        @Test fun unavailablePasskeyShowsTheServerBannerWithoutAcceptingASession() =
+            runTest(timeout = 60.seconds) {
+                val dispatcher = StandardTestDispatcher(testScheduler)
+                var accepted = 0
+                var assertions = 0
+                var logins = 0
+                val source =
+                    object : DataSource by ScriptedSource() {
+                        override suspend fun passkeyOptions() =
+                            ApiPasskeyChallenge(
+                                "challenge",
+                                ApiPasskeyRequestOptions(
+                                    "YQ",
+                                    "app.chronoflow.net",
+                                    60_000,
+                                    UserVerification.Required,
+                                    emptyList(),
+                                ),
+                            )
+
+                        override suspend fun passkeyLogin(input: ApiPasskeyLoginInput): SessionResult {
+                            logins++
+                            return sessionResult()
+                        }
+                    }
+                val services =
+                    AuthServices(
+                        RootNavigator(),
+                        backgroundScope,
+                        AppDispatchers(dispatcher, dispatcher, dispatcher),
+                        source,
+                        SessionAcceptor { accepted++ },
+                        { "0199a3c0-0000-7000-8000-000000000001" },
+                        { "test" },
+                        { error("unavailable passkey routed") },
+                        passkeyCapability = PasskeyCapability(true),
+                        assertionProvider =
+                            DeterministicAssertionProvider {
+                                assertions++
+                                throw PasskeyFailure.Unavailable
+                            },
+                    )
+                services.signIn.editEmail("demo@example.com")
+                services.signIn.submitPasskey(ServiceSecret())
+                assertEquals(AuthBannerKind.Server, services.signIn.form.state.value.banner)
+                assertEquals(0, accepted)
+                assertEquals(1, assertions)
+                assertEquals(0, logins)
+            }
+
         @Test fun backToSignInOnlyLeavesTwoFactor() =
             runTest(timeout = 60.seconds) {
                 val dispatcher = StandardTestDispatcher(testScheduler)

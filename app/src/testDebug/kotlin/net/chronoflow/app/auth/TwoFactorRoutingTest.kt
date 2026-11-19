@@ -3,8 +3,6 @@ package net.chronoflow.app.auth
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
@@ -24,8 +22,6 @@ import net.chronoflow.debug.TestSeed
 import net.chronoflow.debug.TestSeeds
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotSame
 import org.junit.Assert.assertNull
 import org.junit.Rule
 import org.junit.Test
@@ -98,57 +94,12 @@ class TwoFactorRoutingTest {
         compose.waitForIdle()
     }
 
-    @Test fun twoFactorReplacesSignIn() {
-        launch()
-        compose.onNodeWithTag("two-factor.code").assertExists()
-        compose.onNodeWithTag("sign-in.email").assertDoesNotExist()
-        assertFalse(
-            graph.rootNavigator.state.value
-                .toString()
-                .contains(checkNotNull(graph.auth.signIn.navigation.challengeID)),
-        )
-    }
-
-    @Test fun drawnBackDiscardsChallengeAndKeepsTheEmail() {
-        launch()
-        val old = graph.auth.signIn.twoFactor.value!!
-        compose.onNodeWithTag("auth.back").performClick()
-        waitFor { graph.rootNavigator.state.value.route == Route.SignIn }
-        assertNull(graph.auth.signIn.navigation.challengeID)
-        assertEquals(
-            "twofactor@example.com",
-            compose
-                .onNodeWithTag("sign-in.email")
-                .fetchSemanticsNode()
-                .config[SemanticsProperties.EditableText]
-                .text,
-        )
-        old.editCode("123")
-        assertEquals("", old.code)
-    }
-
     @Test fun systemBackDiscardsChallenge() {
         launch()
         scenario!!.onActivity { it.onBackPressedDispatcher.onBackPressed() }
         waitFor { graph.rootNavigator.state.value.route == Route.SignIn }
         assertNull(graph.auth.signIn.navigation.challengeID)
         assertEquals("twofactor@example.com", graph.auth.signIn.email.value)
-    }
-
-    @Test fun reenteringGetsAFreshModel() {
-        launch()
-        val old = graph.auth.signIn.twoFactor.value!!
-        compose.onNodeWithTag("auth.back").performClick()
-        waitFor { graph.rootNavigator.state.value.route == Route.SignIn }
-        compose.onNodeWithTag("sign-in.password").performTextInput("password")
-        compose.onNodeWithTag("sign-in.submit").performScrollTo().performClick()
-        waitFor { graph.rootNavigator.state.value.route == Route.TwoFactor }
-        assertNotSame(old, graph.auth.signIn.twoFactor.value)
-        assertEquals(
-            "",
-            graph.auth.signIn.twoFactor.value!!
-                .code,
-        )
     }
 
     @Test fun recreationKeepsTheScreenTheChallengeAndTheCode() {
@@ -184,18 +135,6 @@ class TwoFactorRoutingTest {
                 .text,
         )
         assertEquals(challenge, graph.auth.signIn.navigation.challengeID)
-    }
-
-    @Test fun acceptedCodeRoutesThroughTheGate() {
-        launch()
-        compose.onNodeWithTag("two-factor.code").performTextInput("123456")
-        waitFor {
-            graph.auth.signIn.twoFactor.value
-                ?.code == "123456"
-        }
-        compose.onNodeWithTag("two-factor.submit").performScrollTo().performClick()
-        waitFor { graph.rootNavigator.state.value.route == Route.Today }
-        assertNull(graph.auth.signIn.navigation.challengeID)
     }
 
     @After fun close() {

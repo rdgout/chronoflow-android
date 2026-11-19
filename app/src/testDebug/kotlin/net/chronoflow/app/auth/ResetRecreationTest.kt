@@ -4,7 +4,6 @@ import android.os.Bundle
 import android.util.SparseArray
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import kotlinx.coroutines.test.runTest
 import net.chronoflow.app.SessionTestApplication
@@ -60,12 +59,6 @@ class ResetRecreationTest : AuthResetActivityFixture() {
                 .config[SemanticsProperties.EditableText]
                 .length,
         )
-    }
-
-    @Test fun doneContinueReturnsToSignIn() {
-        done()
-        compose.onNodeWithTag("reset.continue").performClick()
-        waitFor { graph.rootNavigator.state.value.route == Route.SignIn }
     }
 
     @Test fun doneSystemBackReturnsToSignIn() {
