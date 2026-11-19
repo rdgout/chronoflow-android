@@ -29,3 +29,37 @@ The watchdog checks RuntimeMXBean input arguments for JDWP and does not arm in t
 Two new proof-worker tests fail before the change (4.09 s command wall): a JVM running a real loopback JDWP agent is incorrectly halted with exit 86, and the first test is halted before it can finish cold initialization. With the fix, the debug child survives past its cap; a 100 ms configured cap lets the first child test finish its 200 ms warm-up and then correctly halts the second test at 100 ms. The existing halt/evidence and cancellation proofs remain green.
 
 `make targeted ONLY="core:testing-junit:TestHangWatchdogTest"` passes all five cases (3.84 s wall). XML seconds: cancellation 0.369; configuration 0.000; real JDWP 0.763; normal halt/evidence 0.248; cold-then-warm cap 0.455. Logs: `/tmp/phase7-r1-4-{red,green}.log`.
+
+## 5. Navigation test boundary
+
+Moved Settings, past trips and wizard-create assertions to plain JVM TodayActionsTest using the actual todayActions/ShellViewModel/ShellNav. The screen test now uses a plain Application and the real shell only; it retains hero tap plus system Back, with no AppGraph, RootContent or route-probe bootstrap. A cheap JVM architecture guard fails before this move because the screen suite boots AppGraph; it also enforces that this suite keeps only the hero/Back boundary. The action behavior was already correct, so the failing regression checks the misplaced test boundary rather than inventing a behavioral failure.
+
+`make targeted ONLY="konsist:TodayTestBoundaryTest"` fails first with `Today action logic must not boot AppGraph` (5.59 s wall). After the move, the final touched-only command passes **38 cases**, **19.88 s wall**:
+
+```sh
+make targeted ONLY="feature:today:TodayViewModelTest feature:today:TodayReducerTest app:TodaySessionModelTest app:TodayActionsTest app:TodayNavigationTest core:testing-junit:TestHangWatchdogTest konsist:TodayTestBoundaryTest"
+```
+
+The remaining screen case takes 4.119 s on the cold targeted sandbox. The warm case times from the final quick run's copied XML are:
+
+| Case | Seconds |
+|---|---:|
+| TodayNavigationTest.heroPushesOnTodayAndSystemBackReturns | 0.136 |
+| TodayActionsTest.pastTripsSelectsTheMyTripsRoot | 0.003 |
+| TodayActionsTest.settingsSelectsItsTabAndKeepsTheTodayStack | 0.001 |
+| TodayActionsTest.createOpensTheWizardOverlay | 0.000 |
+| TodaySessionModelTest.aNewSessionEpochReplacesTheModelAndUsesItsCurrentMutationPermit | 0.030 |
+| TodayTestBoundaryTest.todayNavigationKeepsOnlyTheHeroBackScreenBoundary | 0.005 |
+
+## Final quick run
+
+`make quick` ran **once**, **54.59 s command wall** (54.51 s tier), Make exit 2 / tier exit 3. All **3,691** assertion cases pass; **no hang files** were produced. The tier fails on four timing overruns in untouched tests:
+
+| Untouched case | Measured ms | Budget ms |
+|---|---:|---:|
+| HapticsRulesTest.noHapticsInLaunchRejectsPlantedViolation | 1,114 | 1,000 |
+| MockSeedRefreshTests.restoresTenDayOldSeedWithoutLosingUserStateCurrentAnchor | 1,104 | 1,000 |
+| ProfileFixtureCoverageTest.firstSixDayTourCoversEveryLarge60RowStyle | 1,090 | 1,000 |
+| LaunchGateRoutingTest.pendingTermsLaunchesTerms | 6,062 | 5,000 |
+
+Per the user's existing instruction for untouched timing overruns, there is no retry. The subsequent build-logic, tooling and serial timing steps did not start in this quick run. The focused watchdog proof was already green; no full layout, emulator, performance or profile tier was run in this review round. Evidence: `/tmp/phase7-r1-targeted.log`, `/tmp/phase7-r1-quick.log`, `build/test-results/quick/timings.json` and its copied `junit/` XMLs (the tier invalidates original task outputs when timing fails).
