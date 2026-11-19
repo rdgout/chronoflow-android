@@ -4362,7 +4362,7 @@ SPLandroidx/compose/runtime/snapshots/Snapshot;->dispose()V
 SPLandroidx/compose/runtime/snapshots/Snapshot;->getDisposed$runtime()Z
 SPLandroidx/compose/runtime/snapshots/Snapshot;->getInvalid$runtime()Landroidx/compose/runtime/snapshots/SnapshotIdSet;
 SPLandroidx/compose/runtime/snapshots/Snapshot;->getSnapshotId()J
-SPLandroidx/compose/runtime/snapshots/Snapshot;->makeCurrent()Landroidx/compose/runtime/snapshots/Snapshot;
+HSPLandroidx/compose/runtime/snapshots/Snapshot;->makeCurrent()Landroidx/compose/runtime/snapshots/Snapshot;
 SPLandroidx/compose/runtime/snapshots/Snapshot;->releasePinnedSnapshotLocked$runtime()V
 SPLandroidx/compose/runtime/snapshots/Snapshot;->releasePinnedSnapshotsForCloseLocked$runtime()V
 SPLandroidx/compose/runtime/snapshots/Snapshot;->restoreCurrent(Landroidx/compose/runtime/snapshots/Snapshot;)V
@@ -13410,7 +13410,7 @@ SPLkotlinx/coroutines/flow/StateFlowSlot;-><init>()V
 SPLkotlinx/coroutines/flow/StateFlowSlot;->access$get_state$p(Lkotlinx/coroutines/flow/StateFlowSlot;)Ljava/util/concurrent/atomic/AtomicReference;
 SPLkotlinx/coroutines/flow/StateFlowSlot;->allocateLocked(Ljava/lang/Object;)Z
 SPLkotlinx/coroutines/flow/StateFlowSlot;->allocateLocked(Lkotlinx/coroutines/flow/StateFlowImpl;)Z
-SPLkotlinx/coroutines/flow/StateFlowSlot;->awaitPending(Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+HSPLkotlinx/coroutines/flow/StateFlowSlot;->awaitPending(Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 SPLkotlinx/coroutines/flow/StateFlowSlot;->makePending()V
 SPLkotlinx/coroutines/flow/StateFlowSlot;->takePending()Z
 Lkotlinx/coroutines/flow/ThrowingCollector;
