@@ -44,11 +44,11 @@ class WarmLaunchIntentTest {
             try {
                 val plain =
                     Intent(app, MainActivity::class.java)
-                        .putExtra("cf.mode", "ready")
-                        .putExtra("cf.freezeAt", "2300")
+                        .putExtra("CF_AUTH_TEST_ID", "0199a3c0-0000-7000-8000-000000000000")
+                        .putExtra("CF_UI_TEST_PROFILE", "screen")
                 ActivityScenario.launch<MainActivity>(plain).use {
                     graph.finishLaunch()
-                    graph.rootNavigator.navigate(Route.Today)
+                    graph.rootNavigator.navigate(Route.Terms)
                 }
                 val incoming =
                     Intent(app, MainActivity::class.java).apply {
@@ -67,7 +67,7 @@ class WarmLaunchIntentTest {
                     graph.finishLaunch()
                     runCurrent()
                     assertNull("warm activity intent was left buffered", graph.pendingLaunchIntents.consume())
-                    assertEquals(Route.Today, graph.rootNavigator.state.value.route)
+                    assertEquals(Route.Terms, graph.rootNavigator.state.value.route)
                 }
                 if (reminder) {
                     ActivityScenario.launch<MainActivity>(incoming).use { checkHandoff() }

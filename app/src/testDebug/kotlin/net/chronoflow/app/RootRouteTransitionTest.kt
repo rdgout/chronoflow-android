@@ -16,7 +16,7 @@ import org.robolectric.annotation.GraphicsMode
 /** Android-only regression for Nav3's default transition overlapping root destinations. */
 @Layout
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [36], application = SessionTestApplication::class)
+@Config(sdk = [36], application = android.app.Application::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class RootRouteTransitionTest {
     @get:Rule val compose = createComposeRule()
