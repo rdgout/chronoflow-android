@@ -147,9 +147,9 @@ class BaselineProfileGenerator {
                     check(topDayIndex() == 0) { "summary coverage did not return to day 0" }
                 }
                 input.step("open step sheet") {
-                    checkNotNull(device.findObject(By.res("trip.block.$LARGE60_OPENING_FIRST_BLOCK"))) {
-                        "opening checkable block missing"
-                    }.click()
+                    val target = By.res("trip.block.$LARGE60_OPENING_FIRST_BLOCK").clickable(true)
+                    check(device.wait(Until.hasObject(target), 5_000)) { "opening checkable click target missing" }
+                    checkNotNull(device.findObject(target)).click()
                 }
                 input.step("expand native step sheet") {
                     check(device.wait(Until.hasObject(By.res("trip.sheet")), 5_000)) { "native sheet missing" }
