@@ -579,3 +579,6 @@ T2 fold driving is on request only; see `docs/device-matrix.md`.
 Task 1 moves the trip card to `:core:ui` and delegates the trip page's enqueue path to `CheckOffWriter`; busy, refusal and cancellation handling stay in the trip ViewModel. The targeted run passes all 12 `TimelineInvalidationTest` and 124 `ListInvalidationTest` cases. Drawing, replay, `NowLine` and per-frame code are unchanged.
 
 Per user instruction, the ±25% comparison is pending the user's `make perf-timeline` run on `pixel`, API 36, animator scales 1, `benchmarkRelease`. Compare with the matching phone/wide PASS baselines above; record raw metrics and explain any trend flag. No emulator performance claim is made here.
+
+
+Phase 7 Task 2 JVM measurement (`make targeted ONLY="core:plan:TodayTests core:plan:TodayEdgeTests core:plan:TodayViewBudgetTest"`, local MacBook Pro, debug test compilation): large60 `todayView`, one warm-up and ten samples, min **0.7365 ms**, max **0.8724 ms**; every sample passes the **20 ms** budget. These are JVM numbers only. The final serial `make quick` timing tier also includes this guard.
