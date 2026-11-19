@@ -108,4 +108,29 @@ class ViewToggleTest : PageComponentTest() {
         start()
         compose.onNodeWithTag("trip.viewToggle").assertIsEnabled()
     }
+
+    @Test fun replacementWithNewDayIdsRestoresHeaderInList() {
+        val host = start(timeline = false)
+        val detail = host.model.detail
+        val old = host.vm.anchor.value.dayID
+        val row = host.model.listRows[1].rows[1]
+        compose.runOnIdle { host.listState!!.requestScrollToItem(host.model.listIndex.rowIndex(row.key), 20) }
+        compose.waitForIdle()
+        compose.runOnIdle {
+            host.replace(
+                detail.copy(
+                    plan =
+                        detail.plan.copy(
+                            days =
+                                detail.plan.days.map {
+                                    if (it.id == old) it.copy(id = "replacement-day") else it
+                                },
+                        ),
+                ),
+            )
+        }
+        compose.waitForIdle()
+        assertEquals(host.model.listIndex.headerIndex("replacement-day"), host.listState!!.firstVisibleItemIndex)
+        assertEquals(0, host.listState!!.firstVisibleItemScrollOffset)
+    }
 }

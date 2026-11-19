@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import net.chronoflow.core.designsystem.layout.LocalSafeInsets
@@ -247,11 +248,15 @@ private fun ReadyTripPage(
                 restoration.job?.cancel()
                 restoration.job =
                     launch {
-                        val latest = currentState.value.ui.plan ?: return@launch
                         if (!currentState.value.timeline) {
-                            listState.requestScrollToItem(latest.listIndex.headerIndex(command.dayId), 0)
+                            val replacement =
+                                snapshotFlow { currentState.value.ui.plan }.first {
+                                    it?.layouts?.containsKey(command.dayId) == true
+                                } ?: return@launch
+                            listState.requestScrollToItem(replacement.listIndex.headerIndex(command.dayId), 0)
                             return@launch
                         }
+                        val latest = currentState.value.ui.plan ?: return@launch
                         val day = latest.prepared.days.firstOrNull { it.id == command.dayId } ?: return@launch
                         val (availableWidth, compactWidth, currentDensity) = geometry.value
                         val (isDark, instant) = appearance.value
