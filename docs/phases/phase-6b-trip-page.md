@@ -8,6 +8,9 @@
   - Root and tab entry content keys come from the secret-free `Route.stateKey()`, which already covers `TripPage`. Never add `notificationInputHash` or `notificationToken` to a key, a Bundle or a SavedStateHandle.
   - Shell back handlers fall through to the root finish (A8) when nothing is handled.
   - Emulator tests: the `ScreenTest` base hides the IME before launch and before close; `waitForImeToSettle` exists.
+  - Repeated preflight: `TimelineInvalidationTest` already has five methods, including `scrollingWithinThresholdDoesNotRecomposeDayMenu`; retain all five and add the summary-clock case (six total). The capture matrix totals 16 PNGs, not 14.
+  - `PlanDecoder.detail(snapshot)` returns `TripDetail?`; the non-null-plan branch checks its result. `PlanPreparer.evict(tripID)` evicts both preparation and decode caches. `PlanMetrics` are numeric generated values converted with `.dp`/`.sp` at the UI boundary.
+  - Task 3 references types assigned to Tasks 4 and 5. Land the index and clock value/state declarations with Task 3 so its commit compiles; Tasks 4 and 5 complete their algorithms, UI and dedicated tests. No earlier-phase behaviour changes.
   - OQ rows end at OQ-A247. Signed-out cold TTID is now 125–131 ms (OQ-A247). 6b is a timeline change, so the orchestrator runs `make perf-timeline` and `make baseline-profile`.
 - **Depends on:** 6a (tab shell, My trips, `CfPullToRefreshBox`, the `TripPage` placeholder) and 1e (benchmarks, budgets, baseline profile). Through them: 0a–0e, 1a–1d, 2, 4a–4e. **Wave:** 9. **Milestone:** M3.
 - **Plan entry:** `plan.md` "### Phase 6b: Trip page: data pipeline and timeline mode" (l.1898–1941). This brief expands that entry. Where they differ, `plan.md` wins; report the difference.
@@ -49,7 +52,7 @@ Run these checks first. If an item is missing, **stop and report it to the orche
 | # | Must exist | From | How to check |
 |---|---|---|---|
 | P1 | `TimelinePage`, `TimelineHostViewModel`, `TimelineSource`, `TimelineListIndex`, `FirstTimelineFrameTrace`, `DayTimeline`, `NowLine`, `TimelineTargets`, `TimelineDrawingRepository`, `DayClocks`, `TimelineProbe` (+ `LocalTimelineProbe`) in `:feature:trip` | 1d | `grep -rn "class TimelineHostViewModel\|fun TimelinePage\|enum class Kind" feature/trip/src/main` |
-| P2 | `TimelineTestHost`, `TimelineInvalidationTest` (4 methods), `CountingTimelineProbe`, `TimelinePageTest`, `TimelinePageGuardTest`, `TimelinePerfMarkersTest` | 1d, 1e | `grep -rln "TimelineTestHost" feature/trip/src/test` |
+| P2 | `TimelineTestHost`, `TimelineInvalidationTest` (5 methods), `CountingTimelineProbe`, `TimelinePageTest`, `TimelinePageGuardTest`, `TimelinePerfMarkersTest` | 1d, 1e | `grep -rln "TimelineTestHost" feature/trip/src/test` |
 | P3 | Perf entry `app/src/perf/kotlin/net/chronoflow/app/perf/{FixtureTimelineSource,TripPageEntry}.kt`, the release stub, `PerfClockTest`, `FixtureTimelineSourceTest` | 1d | `ls app/src/perf/kotlin/net/chronoflow/app/perf/` |
 | P4 | `TimelineBenchmark` (`timelineFirstFrame`, `timelineScroll`, `timelineLastDay`), `make perf-timeline`, `make baseline-profile`, `docs/perf-timeline.md` with a "Phase 1e" result row | 1e | `grep -n "Phase 1e" docs/perf-timeline.md` |
 | P5 | `PlanPreparer`, `PreparedPlan`, `PreparedDay`, `TripPageState`, `TripPageFetch`, `TripPageAnchor`, `openingDay`, `replacementAnchor`, `TripPageLayout`, `LargeTimelineFixtures` | 1b | `grep -rn "fun openingDay\|fun replacementAnchor" core/plan` |
@@ -876,7 +879,7 @@ Port of `TripPageView.toolbar`, `titleItem`, `dayMenuLabel` and `subtitle`:
   - `LocalTimelineProbe provides probe`;
   - the snapshot/delta helpers.
   - The opening position is day 0's header (index 2), so `summary` and `days` are not composed.
-- `TimelineInvalidationTest`: keep the four method names and the 1d assertions. Then extend each:
+- `TimelineInvalidationTest`: keep the five method names and the 1d assertions. Then extend each:
 
 | Method | Added assertions |
 |---|---|
@@ -1010,7 +1013,7 @@ Port of `TripPageView.toolbar`, `titleItem`, `dayMenuLabel` and `subtitle`:
 
 1. `make quick` passes in < 60 s warm and runs:
    - the JVM tests `PlanPreferencesTest`, `TripPlanObservationTest`, `TripPageViewModelTest`, `TripListIndexTest`, `TripScrollMathTest`, `DualClockValuesTest`, `FixtureTripPageSourceTest`, `PerfClockTest`;
-   - the `@Logic` Robolectric tests `SummaryCardTest`, `DayNavigationTest`, `DayHeaderTest`, `HeadingZoneLayoutTest`, `LaneHeadingsTest`, `TripTopBarTest`, `DayMenuScrollTest`, `CompactHeaderTest`, `EndOfPlanCardTest`, `HiddenStepsButtonTest`, `TripPageTest`, `TimelineInvalidationTest` (5 methods), `TimelinePerfMarkersTest`, `TripPageViewModelFactoryTest`.
+   - the `@Logic` Robolectric tests `SummaryCardTest`, `DayNavigationTest`, `DayHeaderTest`, `HeadingZoneLayoutTest`, `LaneHeadingsTest`, `TripTopBarTest`, `DayMenuScrollTest`, `CompactHeaderTest`, `EndOfPlanCardTest`, `HiddenStepsButtonTest`, `TripPageTest`, `TimelineInvalidationTest` (6 methods), `TimelinePerfMarkersTest`, `TripPageViewModelFactoryTest`.
    - Each class is visible in `build/test-results/quick/…/timings.json`.
 2. `make targeted ONLY=":feature:trip:TimelineInvalidationTest"` passes, each method < 5 s.
 3. `make check` passes with `pixel` booted. That includes Lint (warnings as errors), Konsist (no raw dp outside tokens and `TripPageMetrics`; `:feature:trip` depends on no feature module), `testReleaseUnitTest` (no fixture class in release), `TripPageBoardGuardTest` (all cases) and `TripPageSummarySeedTest`.
@@ -1021,7 +1024,7 @@ Port of `TripPageView.toolbar`, `titleItem`, `dayMenuLabel` and `subtitle`:
    - builds on main = 0, at most 6 placeholders per iteration, and the CPU band (none yet: this run starts the Page `trip` baseline); `FLAGGED` lines are listed in the commit body;
    - results are in `docs/perf-timeline.md` "Phase 6b".
 6. `make baseline-profile` is regenerated and committed.
-7. `make captures ONLY=…` writes 14 PNGs: `Plan_pixel8_{en,nl}_{light,dark}`, `PlanScrolled_pixel8_{en,nl}_{light,dark}`, and `PlanTimelineTop`, `PlanDayMenu`, `PlanEnd`, `PlanEndNoText` `_pixel8_{en,nl}_light`. They match the boards except for the deltas listed in Appendix C.
+7. `make captures ONLY=…` writes 16 PNGs: `Plan_pixel8_{en,nl}_{light,dark}`, `PlanScrolled_pixel8_{en,nl}_{light,dark}`, and `PlanTimelineTop`, `PlanDayMenu`, `PlanEnd`, `PlanEndNoText` `_pixel8_{en,nl}_light`. They match the boards except for the deltas listed in Appendix C.
 8. On `pixel`:
    - a debug build with the seeds of `TripPageSummarySeedTest` opens at the summary;
    - from My trips, opening the active mock trip lands on the opening day's header;
@@ -1068,7 +1071,7 @@ Port of `TripPageView.toolbar`, `titleItem`, `dayMenuLabel` and `subtitle`:
 
 **Tests**
 - [ ] Each test is at the cheapest tier, has a name as listed, and stays within its time budget. There is no `Thread.sleep`.
-- [ ] The invalidation test has 5 methods with the added kinds. The guards cover every listed board state × profile × language.
+- [ ] The invalidation test has 6 methods with the added kinds. The guards cover every listed board state × profile × language.
 - [ ] The removed 1d tests are replaced, not just deleted.
 - [ ] Commits follow Conventional Commits with lower-case imperative subjects and no trailers. There is one commit per task.
 
