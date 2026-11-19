@@ -68,6 +68,10 @@ fun TripTopBar(
     onPickDay: (Int) -> Unit,
     onActions: (() -> Unit)?,
     modifier: Modifier = Modifier,
+    timeline: Boolean = true,
+    showToggle: Boolean = false,
+    toggleEnabled: Boolean = false,
+    onToggle: () -> Unit = {},
 ) {
     CfCenterAlignedTopAppBar(
         title = { DayMenuAnchor(title, prepared, ready, anchorDay, headerScrolled, onPickDay) },
@@ -80,6 +84,15 @@ fun TripTopBar(
             )
         },
         actions = {
+            if (showToggle) {
+                CfIconButton(
+                    if (timeline) MaterialSymbols.ViewAgenda else MaterialSymbols.ViewTimeline,
+                    stringResource(if (timeline) R.string.plan_show_as_list else R.string.plan_show_as_timeline),
+                    onToggle,
+                    Modifier.testTag("trip.viewToggle"),
+                    enabled = toggleEnabled,
+                )
+            }
             CfIconButton(
                 MaterialSymbols.MoreVert,
                 stringResource(R.string.plan_trip_actions),

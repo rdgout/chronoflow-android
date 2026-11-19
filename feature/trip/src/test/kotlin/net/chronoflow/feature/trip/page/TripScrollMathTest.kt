@@ -57,4 +57,18 @@ class TripScrollMathTest {
         assertEquals(2 to 0, restoreTarget(index, TripPageAnchor("a"), 0))
         assertEquals(3 to 120, restoreTarget(index, TripPageAnchor("a"), 120))
     }
+
+    @Test fun listRowsAndZoneRowsContributeTheirDay() {
+        val rows = net.chronoflow.feature.trip.list.ListTestRows.days
+        val index =
+            net.chronoflow.feature.trip.list
+                .ListModeIndex(rows.map { it.dayId }, rows, false)
+        val first = rows[0]
+        val second = rows[1]
+        assertEquals(second.dayId, currentDay(listOf(Item(index.headerIndex(second.dayId), 0)), index, 36))
+        val row = Item(index.rowIndex(first.rows[0].key), -10, contentType = "listRow")
+        val header = Item(index.headerIndex(second.dayId), 200)
+        assertEquals(first.dayId, currentDay(listOf(row, header), index, 36))
+        assertEquals(first.dayId, currentDay(listOf(row.copy(contentType = "zoneRow"), header), index, 36))
+    }
 }

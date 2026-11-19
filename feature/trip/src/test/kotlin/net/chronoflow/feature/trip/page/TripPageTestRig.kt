@@ -36,6 +36,7 @@ class TripPageTestRig(
     clockStart: Instant? = null,
     startAtSummary: Boolean = false,
     val language: Language = Language.En,
+    initialTimeline: Boolean = true,
     metrics: suspend () -> TextMetrics = { FakeTextMetrics() },
 ) {
     val detail = LargeTimelineFixtures.fixture(fixture).detail
@@ -70,6 +71,7 @@ class TripPageTestRig(
                         cache,
                         { CopyLineFormatter(catalogs.catalog()) },
                         TimelineTracer.None,
+                        initialTimeline = initialTimeline,
                     )
                 }
             },
@@ -83,14 +85,37 @@ class TripPageTestRig(
         when (event) {
             is TripPageEvent.Jump -> vm.jump(event.dayId)
             is TripPageEvent.Select -> vm.select(event.dayId, event.offsetDp)
+            TripPageEvent.ToggleView -> vm.toggleView()
             TripPageEvent.SaveAnchor -> vm.saveAnchor()
             is TripPageEvent.Block -> vm.selectBlock(event.id)
             else -> Unit
         }
     }
 
-    @Composable fun Content() {
-        val state = rememberTripPageScreenState(vm)
+    @Composable fun Content(pageState: net.chronoflow.core.plan.trippage.TripPageState? = null) {
+        val base = rememberTripPageScreenState(vm)
+        val state =
+            if (pageState == null) {
+                base
+            } else {
+                TripPageScreenState(
+                    base.ui.copy(state = pageState),
+                    base.anchor,
+                    base.listState.takeIf { pageState == net.chronoflow.core.plan.trippage.TripPageState.Ready },
+                    base.clocks,
+                    base.summaryClock,
+                    base.repository,
+                    base.firstFrame,
+                    base.commands,
+                    base.prefetch,
+                    base.refresh,
+                    base.refreshProbe,
+                    base.canSettings,
+                    base.canLegend,
+                    base.canActions,
+                    base.timeline,
+                )
+            }
         listState = state.listState
         screenState = state
         TripPageScreen(state, events)

@@ -33,6 +33,7 @@ import net.chronoflow.core.plan.tripMetaText
 import net.chronoflow.core.plan.trippage.DayListRows
 import net.chronoflow.core.plan.trippage.ListRows
 import net.chronoflow.core.plan.trippage.PlanPreferences
+import net.chronoflow.feature.trip.list.ListModeIndex
 import net.chronoflow.feature.trip.timeline.TimelineTracer
 import java.io.IOException
 
@@ -52,6 +53,7 @@ class ReadyPlan(
     val language: Language,
     val hasHiddenSteps: Boolean,
     val listRows: List<DayListRows>,
+    val listIndex: ListModeIndex,
 )
 
 @Immutable
@@ -133,6 +135,7 @@ class DefaultTripPlanPipeline(
                             marks,
                             snapshot.pendingChecks,
                         )
+                    val rows = ListRows.build(prepared, pageCopy(input.language))
                     ReadyPlan(
                         detail,
                         prepared,
@@ -141,7 +144,8 @@ class DefaultTripPlanPipeline(
                         preferences.timeFormat,
                         input.language,
                         hidden.isNotEmpty(),
-                        ListRows.build(prepared, pageCopy(input.language)),
+                        rows,
+                        ListModeIndex(prepared.days.map { it.id }, rows, hidden.isNotEmpty()),
                     )
                 }
             val from = detail.trip.from

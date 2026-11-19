@@ -40,6 +40,8 @@ sealed interface TripPageEvent {
 
     data object Refresh : TripPageEvent
 
+    data object ToggleView : TripPageEvent
+
     data object SaveAnchor : TripPageEvent
 
     data class DismissFeedback(
@@ -75,6 +77,7 @@ class TripPageScreenState(
     val canSettings: Boolean,
     val canLegend: Boolean,
     val canActions: Boolean,
+    val timeline: Boolean = true,
 )
 
 @Suppress("ktlint:compose:vm-forwarding-check")
@@ -118,6 +121,10 @@ fun TripPage(
                         scope.launch { refreshResult.value(viewModel.refresh()) }
                     }
 
+                    TripPageEvent.ToggleView -> {
+                        viewModel.toggleView()
+                    }
+
                     TripPageEvent.SaveAnchor -> {
                         viewModel.saveAnchor()
                     }
@@ -159,6 +166,7 @@ internal fun rememberTripPageScreenState(
     val ui by viewModel.ui.collectAsStateWithLifecycle()
     val anchor by viewModel.anchor.collectAsStateWithLifecycle()
     val refresh by viewModel.refreshState.collectAsStateWithLifecycle()
+    val timeline by viewModel.timeline.collectAsStateWithLifecycle()
     val density = LocalDensity.current
     val listState =
         if (ui.state == TripPageState.Ready && ui.plan != null) {
@@ -167,6 +175,8 @@ internal fun rememberTripPageScreenState(
                 val target =
                     if (viewModel.consumeSummaryPosition()) {
                         0 to 0
+                    } else if (!timeline) {
+                        (opening.dayID?.let { ui.plan!!.listIndex.headerIndex(it) } ?: 0) to 0
                     } else {
                         restoreTarget(ui.plan!!.index, opening, with(density) { opening.offset.dp.roundToPx() })
                     }
@@ -191,5 +201,6 @@ internal fun rememberTripPageScreenState(
         canSettings,
         canLegend,
         canActions,
+        timeline,
     )
 }

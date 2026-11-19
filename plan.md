@@ -2361,7 +2361,7 @@ Implementation commits (brief §7):
 **Delivers.** Adds list mode with the view toggle (not persisted), list rows and zone rows. It adds every non-ready state of the trip page: loading, no plan, plan not on this phone (fetch, loading, offline), not found and server error. A trip that is not on the phone uses ErrorNotFound, as on iOS. Tests cover state resolution on the JVM and each state with seeded guards.
 
 **Tasks**
-- [ ] **List mode**, porting `DayListView`.
+- [x] **List mode**, porting `DayListView`.
   - List rows (`TripDayRow`) and zone rows.
   - A view toggle, not persisted; the anchor is kept when toggling.
 - [ ] **States:**
