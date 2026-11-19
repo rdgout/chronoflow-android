@@ -27,7 +27,7 @@ internal fun storeProjectRoot(): File {
 
 @Logic
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [36])
+@Config(sdk = [36], application = android.app.Application::class)
 class BackupRulesTest {
     private val context = ApplicationProvider.getApplicationContext<Context>()
 

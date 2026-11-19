@@ -58,7 +58,7 @@ import java.time.Instant
 
 @Logic
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [36])
+@Config(sdk = [36], application = android.app.Application::class)
 class ShellRecreationTest {
     @get:Rule val compose = createEmptyComposeRule()
 

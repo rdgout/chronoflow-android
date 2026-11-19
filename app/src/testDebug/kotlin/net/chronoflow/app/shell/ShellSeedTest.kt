@@ -25,12 +25,13 @@ class ShellSeedTest {
 
     private fun launch(route: String = "trips") {
         DebugShellStart.reset()
-        DebugSeedRouting.current = TestSeed.parse(
-            mapOf(
-                TestSeed.TEST_ID_KEY to "0199a3c0-0000-7000-8000-000000000000",
-                "CF_PLAN_TEST_ROUTE" to route,
-            ),
-        )
+        DebugSeedRouting.current =
+            TestSeed.parse(
+                mapOf(
+                    TestSeed.TEST_ID_KEY to "0199a3c0-0000-7000-8000-000000000000",
+                    "CF_PLAN_TEST_ROUTE" to route,
+                ),
+            )
         LaunchPlatform.shellStart()?.let(holder::seed)
     }
 
