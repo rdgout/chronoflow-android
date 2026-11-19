@@ -6,6 +6,8 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -26,15 +28,34 @@ import java.io.IOException
 import java.security.GeneralSecurityException
 import kotlin.time.Duration.Companion.seconds
 
-class FakePath : SyncPathMonitoring {
-    val values = Channel<Boolean>(Channel.UNLIMITED)
+class FakePath(
+    private val beforeStop: suspend () -> Unit = {},
+) : SyncPathMonitoring {
+    var values = Channel<Boolean>(Channel.UNLIMITED)
+        private set
     var stopped = false
+    var collectors = 0
+        private set
+    var starts = 0
+        private set
 
-    override fun updates() = values.receiveAsFlow()
+    override fun updates() =
+        flow {
+            stopped = false
+            starts++
+            collectors++
+            try {
+                emitAll(values.receiveAsFlow())
+            } finally {
+                collectors--
+            }
+        }
 
     override suspend fun stop() {
+        beforeStop()
         stopped = true
         values.close()
+        values = Channel(Channel.UNLIMITED)
     }
 }
 
@@ -248,5 +269,31 @@ class TripPageFetchTests {
             gate.complete(Unit)
             runCurrent()
             assertEquals(TripPageFetch.Loading, model.fetch.value)
+        }
+
+    @Test fun immediateRestartWaitsForPathStop() =
+        runTest(timeout = 60.seconds) {
+            val stopGate = CompletableDeferred<Unit>()
+            val path = FakePath { stopGate.await() }
+            var requests = 0
+            val model = TripPageFetchModel("trip", { requests++ }, path, backgroundScope)
+            model.start()
+            runCurrent()
+            model.stop()
+            model.start()
+            runCurrent()
+            assertEquals(2, requests)
+            assertEquals(1, path.starts)
+            assertEquals(0, path.collectors)
+            stopGate.complete(Unit)
+            runCurrent()
+            assertEquals(2, path.starts)
+            assertEquals(1, path.collectors)
+            assertFalse(path.stopped)
+            assertEquals(TripPageFetch.Loaded, model.fetch.value)
+            model.stop()
+            runCurrent()
+            assertTrue(path.stopped)
+            assertEquals(0, path.collectors)
         }
 }

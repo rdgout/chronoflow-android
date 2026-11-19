@@ -9,7 +9,9 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.resetMain
@@ -60,6 +62,7 @@ class TripPageViewModelStateTest {
         events: MutableSharedFlow<SyncEvent> = MutableSharedFlow(replay = 1),
         path: SyncPathMonitoring? = null,
         timeline: Boolean = true,
+        startFetch: Boolean = true,
         fetch: suspend (String) -> Unit = {},
     ): Rig {
         val dispatcher = StandardTestDispatcher(testScheduler)
@@ -96,6 +99,7 @@ class TripPageViewModelStateTest {
                     }
                 },
             )[TripPageViewModel::class.java]
+        if (startFetch) backgroundScope.launch { vm.runFetch() }
         return Rig(vm, source, saved)
     }
 
@@ -258,5 +262,52 @@ class TripPageViewModelStateTest {
                     .let { it.copy(trip = it.trip!!.copy(deletedLocally = true)) }
             runCurrent()
             assertEquals(TripPageState.NotFound, rig.vm.ui.value.state)
+        }
+
+    @Test fun fetchLifecycleWaitsForThePageToStart() =
+        runTest(timeout = 60.seconds) {
+            val path = FakePath()
+            var requests = 0
+            val rig = rig(remote(), path = path, startFetch = false, fetch = { requests++ })
+            runCurrent()
+            assertEquals(0, requests)
+            assertEquals(0, path.collectors)
+            assertEquals(TripPageState.RemoteLoading, rig.vm.ui.value.state)
+        }
+
+    @Test fun returningToThePageRefetchesTheMissingPlanAndRestartsItsPath() =
+        runTest(timeout = 60.seconds) {
+            val path = FakePath()
+            var requests = 0
+            val rig =
+                rig(remote(), path = path, startFetch = false, fetch = {
+                    requests++
+                    if (requests == 1) CompletableDeferred<Unit>().await()
+                })
+            val first = backgroundScope.launch { rig.vm.runFetch() }
+            runCurrent()
+            assertEquals(1, requests)
+            assertEquals(1, path.collectors)
+            assertEquals(TripPageState.RemoteLoading, rig.vm.ui.value.state)
+            first.cancelAndJoin()
+            runCurrent()
+            assertTrue(path.stopped)
+            assertEquals(0, path.collectors)
+            path.values.trySend(false)
+            runCurrent()
+            assertEquals(1, requests)
+            val second = backgroundScope.launch { rig.vm.runFetch() }
+            runCurrent()
+            assertEquals(TripPageState.RemoteOffline, rig.vm.ui.value.state)
+            assertEquals(1, requests)
+            assertEquals(1, path.collectors)
+            path.values.send(true)
+            runCurrent()
+            assertEquals(2, requests)
+            assertEquals(TripPageState.RemoteLoading, rig.vm.ui.value.state)
+            second.cancelAndJoin()
+            runCurrent()
+            assertTrue(path.stopped)
+            assertEquals(0, path.collectors)
         }
 }

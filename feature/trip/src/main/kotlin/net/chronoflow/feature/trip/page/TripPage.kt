@@ -190,7 +190,10 @@ internal fun rememberTripPageScreenState(
 ): TripPageScreenState {
     val owner = LocalLifecycleOwner.current
     LaunchedEffect(viewModel, owner) {
-        owner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) { viewModel.runClock() }
+        owner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            launch { viewModel.runFetch() }
+            viewModel.runClock()
+        }
     }
     val language = if (LocalConfiguration.current.locales[0].language == "nl") Language.Nl else Language.En
     LaunchedEffect(viewModel, language) { viewModel.setLanguage(language) }

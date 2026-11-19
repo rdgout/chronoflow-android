@@ -35,6 +35,7 @@ class TripPageFetchModel(
     private var reconnectPending = false
     private var pathJob: Job? = null
     private var fetchJob: Job? = null
+    private var stopJob: Job? = null
 
     fun setOnline(value: Boolean) {
         val old = _online.value
@@ -48,8 +49,10 @@ class TripPageFetchModel(
         if (started) return
         started = true
         if (path != null) {
+            val previousStop = stopJob
             pathJob =
                 scope.launch(start = CoroutineStart.UNDISPATCHED) {
+                    previousStop?.join()
                     path.updates().collect { setOnline(it) }
                 }
         }
@@ -113,12 +116,21 @@ class TripPageFetchModel(
     }
 
     fun stop() {
-        pathJob?.cancel()
+        val stoppingPath = pathJob
+        stoppingPath?.cancel()
         pathJob = null
         fetchJob?.cancel()
         fetchJob = null
         reconnectPending = false
         started = false
-        scope.launch(start = CoroutineStart.UNDISPATCHED) { withContext(NonCancellable) { path?.stop() } }
+        val previousStop = stopJob
+        stopJob =
+            scope.launch(start = CoroutineStart.UNDISPATCHED) {
+                withContext(NonCancellable) {
+                    previousStop?.join()
+                    stoppingPath?.join()
+                    path?.stop()
+                }
+            }
     }
 }
