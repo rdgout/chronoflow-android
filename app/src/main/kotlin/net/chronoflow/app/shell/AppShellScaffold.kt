@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -127,7 +128,9 @@ internal fun AppShellScaffold(
                                 .WindowInsets(0, 0, 0, 0),
                         snackbarHost = {
                             net.chronoflow.core.ui.plan
-                                .RefusedChangeFeedback()
+                                .RefusedChangeFeedback(
+                                    Modifier.windowInsetsPadding(contentInsets.only(WindowInsetsSides.Bottom)),
+                                )
                         },
                     ) { padding ->
                         Box(Modifier.fillMaxSize().padding(padding)) {
