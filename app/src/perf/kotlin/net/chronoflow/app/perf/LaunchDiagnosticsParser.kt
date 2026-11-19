@@ -5,6 +5,8 @@ import net.chronoflow.app.StubConfig
 import net.chronoflow.app.StubSession
 import net.chronoflow.app.StubStored
 import net.chronoflow.core.model.launch.Gate
+import net.chronoflow.core.model.launch.LaunchReadiness
+import net.chronoflow.core.model.launch.SignedOutReadiness
 import net.chronoflow.feature.launch.LaunchMode
 import net.chronoflow.feature.launch.LaunchOverrides
 import kotlin.time.Duration
@@ -61,14 +63,17 @@ object LaunchDiagnosticsParser {
         )
     }
 
-    fun overrides(extras: Map<String, String>): LaunchOverrides {
+    fun overrides(
+        extras: Map<String, String>,
+        nativeReadiness: LaunchReadiness = SignedOutReadiness,
+    ): LaunchOverrides {
         val diagnostics = parse(extras)
         return LaunchOverrides(
             mode = diagnostics.mode,
             readyAt = diagnostics.readyAt,
             mainThreadStall = diagnostics.mainThreadStall,
             reduceMotion = diagnostics.reduceMotion,
-            readiness = diagnostics.stub?.let { config -> { clock -> StubReadiness(config, clock) } },
+            readiness = diagnostics.stub?.let { config -> { clock -> StubReadiness(config, clock, nativeReadiness) } },
         )
     }
 }

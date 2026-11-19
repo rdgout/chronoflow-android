@@ -10,7 +10,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.flow
 import net.chronoflow.core.model.launch.Gate
 import net.chronoflow.core.model.launch.LaunchReadiness
-import net.chronoflow.core.model.launch.SessionPresence
+import net.chronoflow.core.model.session.SessionPresence
 import net.chronoflow.feature.launch.model.ManualLaunchClock
 import kotlin.time.Duration.Companion.milliseconds
 

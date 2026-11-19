@@ -5,7 +5,7 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import net.chronoflow.core.model.launch.Gate
 import net.chronoflow.core.model.launch.LaunchReadiness
-import net.chronoflow.core.model.launch.SessionPresence
+import net.chronoflow.core.model.session.SessionPresence
 import net.chronoflow.core.testing.tiers.Logic
 import net.chronoflow.feature.launch.model.LaunchSize
 import net.chronoflow.feature.launch.model.ManualLaunchClock

@@ -135,6 +135,7 @@ Worker, 2026-11-17, same host as section 4 (Apple M4 Max). Every command ran in 
 - JUnit Platform 5.14.4 with the Vintage engine (`junit-bom` 5.14.4; never 6.x). The `PostDiscoveryFilter` and the timing listener in `:core:testing-junit` register through `META-INF/services` and work under the AGP unit-test tasks, so the fallback (`@Category`) was not needed.
 - Proof: `./gradlew :core:ui:testDebugUnitTest -Pcf.tier=layout` runs no class (`core/ui/build/test-results/testDebugUnitTest/` has no XML, `core/ui/build/cf-timings/testDebugUnitTest/<pid>.json` has an empty `tests` list). `./gradlew :core:testing-compose:testDebugUnitTest -Pcf.tier=quick` runs the `@Logic` classes and no `@Layout` class, and writes `core/testing-compose/build/cf-timings/testDebugUnitTest/<pid>.json`.
 - `Test.failOnNoDiscoveredTests` exists in Gradle 9.9.1 and is set to `false` in `TestLauncher.kt`; a tier with no classes in a module passes, and run-tier still fails on missing XML or timing files (exit 2).
+- Parameterized row names must be unique. The navigation tables repeat route names across variants; use `@Parameterized.Parameters(name = "{index}: {0}")`, following the indexed cases in database/datastore tests. With duplicate names, Vintage cannot satisfy every exclusion and leaves synthetic `Gradle Test Run` cases without method timing sources. The navigation module already receives the filter/listener through the Android-library convention; adding a tier annotation or changing its module type is unnecessary.
 - `core:ui` tests (`CopyIndexResolutionTest`, `DebugRouteResolutionTest`) are `@Logic`, so `make quick` and `make test` run them through the unqualified `testDebugUnitTest`.
 - `make quick` runs `:build-logic:convention:test` as its own tier call (`build-logic`), because that included build runs outside the conventions and writes no timing file (OQ-0e-23).
 - `make test` runs `$(JVM_MODULES:%=:%:test) testDebugUnitTest :app:testReleaseUnitTest -Pcf.tier=test` and passes (499 budgeted tests, 0 over budget). `ConfigurationPolicyTest` also runs in the release unit-test task there without a problem; a bare `./gradlew test` was not tried (it would add the perf variants' unit tests).
@@ -317,3 +318,36 @@ Five slowest mock cases from the final JVM timing report:
 Results: `build/test-results/quick/`, `build/test-results/build-logic/`, `build/test-results/timing/`, `core/data-mock/build/test-results/test/` and `core/data-mock/build/cf-timings/test/`. The release XML is under `app/build/test-results/testReleaseUnitTest/`.
 
 The phase intentionally leaves `make check` (including the pixel emulator tier) to the user. No `make perf`, `make perf-timeline`, `make baseline-profile`, emulator tier or T2 AVD was run. The APK and JVM probes completed in the sandbox; no requested command remains blocked.
+
+## Phase 4e release inspection (2026-11-18)
+
+`make targeted ONLY="app:ReleaseReadinessTest"` passed (6 s reported Gradle time), including session-seed class absence and native session restoration. The isolated `app:ReleaseSeedExtrasTest` passed (4 s). `./gradlew :app:verifyReleaseManifest :app:assembleRelease` passed (31 s).
+
+```sh
+JAVA_HOME=/Library/Java/JavaVirtualMachines/zulu-17.jdk/Contents/Home \
+  "$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer" dex packages \
+  app/build/outputs/apk/release/app-release-unsigned.apk | grep -c datamock
+```
+
+Output: `0` (grep exits 1 for no matches). The APK's only native library basename is the existing OQ-0a-22 allow-list entry `libandroidx.graphics.path.so`, across arm64-v8a, armeabi-v7a, x86 and x86_64. No new `.so` was introduced. No device or performance tier was run for this inspection.
+
+
+## Phase 4e signed-in seed and validation
+
+Start a fresh process-isolated debug seed with the iOS account and gate keys:
+
+```sh
+adb shell am start -n net.chronoflow.app.native.debug/net.chronoflow.debug.SeedReceiverActivity \
+  --es CF_AUTH_TEST_ID "$(uuidgen | tr A-Z a-z)" --es CF_AUTH_TEST_SIGNED_IN demo --es CF_AUTH_TEST_WALKTHROUGH_SEEN 1
+```
+
+Seeded roots are selected for the current process only. Reseed after process death. Add `--es CF_UI_TEST_PROFILE launch` for the real splash/readiness path; `screen` is the default seeded profile. Unverified and pending-terms gates use `CF_AUTH_TEST_UNVERIFIED=1` and `CF_AUTH_TEST_TERMS_PENDING=1`.
+
+The only Phase 4e device test is run through the targeted runner's device lock:
+
+```sh
+Scripts/emulator.sh prep-functional emulator-5554
+make targeted ONLY="app:SignedInColdLaunchSmokeTest"
+```
+
+The initial sandbox attempts could not see the emulator: preparation returned `adb: device 'emulator-5554' not found`, and the compiled smoke run failed with `No connected devices!` (7.42 s wall). The user subsequently reported a passing `make check`, including `SignedInColdLaunchSmokeTest.signedInColdLaunchReachesToday` in **3.4 s** on **pixel** (review round 1, 2026-11-18). This supersedes the pending smoke status. Full validation, diagnostic history and delegated performance measurements are recorded in [Phase 4e results](phase-4e-results.md).

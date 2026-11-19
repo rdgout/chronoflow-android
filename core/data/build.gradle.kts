@@ -7,6 +7,8 @@ android {
 }
 
 dependencies {
+    implementation(project(":core:datastore"))
+    testImplementation(testFixtures(project(":core:sync")))
     testImplementation(project(":core:database-testing"))
     api(project(":core:plan"))
     api(project(":core:sync"))

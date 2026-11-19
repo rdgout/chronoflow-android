@@ -8,6 +8,7 @@ android {
 }
 
 dependencies {
+    implementation(project(":core:navigation"))
     implementation(libs.androidx.core.splashscreen)
     testFixturesImplementation(libs.kotlinx.coroutines.core)
     testFixturesImplementation(platform(libs.compose.bom))

@@ -2,6 +2,7 @@ package net.chronoflow.app
 
 import android.animation.ValueAnimator
 import android.content.Context
+import android.content.Intent
 import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
@@ -17,6 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.launch
 import net.chronoflow.app.perf.PerfJank
 import net.chronoflow.app.perf.TripPageEntry
 import net.chronoflow.core.designsystem.theme.ReduceMotion
@@ -27,6 +29,12 @@ class MainActivity : ComponentActivity() {
     private var reduceMotion by mutableStateOf(false)
     private val firstCommit = CompletableDeferred<Unit>()
     private lateinit var launch: LaunchController
+
+    override val defaultViewModelCreationExtras: androidx.lifecycle.viewmodel.CreationExtras
+        get() =
+            androidx.lifecycle.viewmodel.MutableCreationExtras(super.defaultViewModelCreationExtras).apply {
+                set(AppGraphKey, (application as ChronoFlowApp).graph)
+            }
 
     override fun onResume() {
         super.onResume()
@@ -42,7 +50,12 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         val graph = (application as ChronoFlowApp).graph
         launch = graph.launch
-        val overrides = LaunchPlatform.overrides(intent)
+        val freshLaunch =
+            savedInstanceState == null && (intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) == 0
+        if (freshLaunch) {
+            graph.pendingLaunchIntents.capture(intent)
+        }
+        val overrides = LaunchPlatform.overrides(intent, graph)
         val kind = launch.onActivityCreated(savedInstanceState, overrides.skipOverlay, overrides)
         val splash = installSplashScreen()
         super.onCreate(if (kind == LaunchKind.ProcessDeathRestore) null else savedInstanceState)
@@ -79,9 +92,17 @@ class MainActivity : ComponentActivity() {
             firstCommit.complete(Unit)
             launch.onFrameCommitted(claimed)
             (application as ChronoFlowApp).launchPath.end()
+            if (freshLaunch) graph.appScope.launch { LaunchPlatform.routeScreen(graph, intent) }
         }
         splash.setKeepOnScreenCondition { launch.holdsSystemSplash() }
         splash.setOnExitAnimationListener { provider -> launch.onSystemSplashExit(provider, kind) }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        val graph = (application as ChronoFlowApp).graph
+        graph.pendingLaunchIntents.capture(intent)
+        graph.appScope.launch { graph.handlePendingLaunchIntents() }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {

@@ -2,16 +2,9 @@ package net.chronoflow.core.model.launch
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import net.chronoflow.core.model.session.SessionPresence
 
 enum class LaunchEnding { Welcome, App }
-
-sealed interface SessionPresence {
-    data class SignedIn(
-        val accountId: String,
-    ) : SessionPresence
-
-    data object SignedOut : SessionPresence
-}
 
 enum class Gate(
     val rawValue: String,

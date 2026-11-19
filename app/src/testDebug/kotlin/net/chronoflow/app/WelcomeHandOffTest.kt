@@ -118,9 +118,9 @@ class WelcomeHandOffTest(
                         StubConfig(session = StubSession.SignedOut),
                         shared,
                     ) {
-                        override suspend fun session(): net.chronoflow.core.model.launch.SessionPresence {
+                        override suspend fun session(): net.chronoflow.core.model.session.SessionPresence {
                             shared.sleepUntil(10.milliseconds)
-                            return net.chronoflow.core.model.launch.SessionPresence.SignedOut
+                            return net.chronoflow.core.model.session.SessionPresence.SignedOut
                         }
                     }
                 },

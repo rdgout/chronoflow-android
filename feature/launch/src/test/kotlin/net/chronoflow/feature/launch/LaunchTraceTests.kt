@@ -6,6 +6,27 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class LaunchTraceTests {
+    @Test fun sessionCookieStartsAfterFirstCommitAndEndsOnce() {
+        val events = mutableListOf<String>()
+        val trace =
+            LaunchTraceSession(
+                begin = { name, cookie -> events += "begin:$name:$cookie" },
+                end = { name, cookie -> events += "end:$name:$cookie" },
+            )
+        val controller =
+            LaunchController(
+                moon = { error("trace lifecycle does not decode a moon") },
+                tracing = trace,
+                onFirstCommit = { trace.beginSession() },
+            )
+        trace.beginFirstCommit()
+        controller.onFrameCommitted(false)
+        controller.onFrameCommitted(false)
+        trace.endSession()
+        trace.endSession()
+        assertEquals(listOf("begin:first-commit:2", "end:first-commit:2", "begin:session:5", "end:session:5"), events)
+    }
+
     @Test fun skippedOverlayClosesBothTracesAtFirstFrameCommit() {
         val tracer = FakeTracer()
         val controller = controller(tracer)

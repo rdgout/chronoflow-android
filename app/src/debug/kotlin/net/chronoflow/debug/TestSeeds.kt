@@ -9,11 +9,24 @@ import android.os.Build
 import android.os.LocaleList
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
+import net.chronoflow.app.AppDispatchers
+import net.chronoflow.app.ChronoFlowApp
+import net.chronoflow.app.GraphOverrides
 import net.chronoflow.app.MainActivity
+import net.chronoflow.app.MockSeedFlags
+import net.chronoflow.app.perf.PerfMockSources
+import net.chronoflow.core.database.AndroidAccountDriverFactory
+import net.chronoflow.core.datastore.AndroidKeystoreSessionCipher
 import net.chronoflow.core.datastore.DevicePreferences
+import net.chronoflow.core.datastore.KeystoreSessionStore
+import net.chronoflow.core.datastore.SessionCipher
+import net.chronoflow.core.model.DataSource
 import net.chronoflow.core.model.config.LanguageChoice
 import net.chronoflow.core.model.config.ThemeChoice
+import net.chronoflow.core.model.session.StorageNamespace
+import net.chronoflow.core.model.session.readStoredSession
 import java.io.File
+import kotlin.time.Duration
 
 object TestSeeds {
     @SuppressLint("NewApi")
@@ -22,12 +35,30 @@ object TestSeeds {
         seed: TestSeed,
         io: CoroutineDispatcher,
         sdkInt: Int = Build.VERSION.SDK_INT,
+        sessionCipher: SessionCipher? = null,
+        dispatchers: AppDispatchers? = null,
     ) = withContext(io) {
         UITestTimeline.record("seed-begin", seed)
         if (seed.testId != null) {
+            val app = context.applicationContext as ChronoFlowApp
             val dir = File(context.filesDir, "uitests/${seed.testId}")
-            dir.deleteRecursively()
-            dir.mkdirs()
+            val alias = "ChronoFlowMock.uitest.${seed.testId}"
+            val cipher = sessionCipher ?: AndroidKeystoreSessionCipher()
+            val overrides =
+                GraphOverrides(
+                    dir,
+                    seed.mockDelay,
+                    alias,
+                    MockSeedFlags(seed.unverified, seed.walkthroughSeen, seed.termsPending),
+                    cipher,
+                    dispatchers,
+                )
+            DebugAppHooks.resetGraph(app, overrides)
+            val credentials = KeystoreSessionStore(File(dir, "ChronoFlowMock/session.bin"), alias, cipher, io)
+            val source = sourceForSeed(dir, overrides, io) { credentials.readStoredSession()?.token }
+            SeedRunner(dir, credentials, AndroidAccountDriverFactory(context), source, io)
+                .reseed(seed.signedIn, seed.testId)
+            DebugSeedRouting.current = seed
         }
         seed.language?.let { language ->
             DevicePreferences.shared(context).setLanguage(language, sdkInt)
@@ -54,6 +85,13 @@ object TestSeeds {
             UITestTimeline.record("seed-ignored", seed, "keys=${seed.ignoredKeys.sorted().joinToString(",")}")
         }
     }
+
+    internal fun sourceForSeed(
+        root: File,
+        overrides: GraphOverrides,
+        io: CoroutineDispatcher,
+        bearer: suspend () -> String?,
+    ): DataSource = PerfMockSources(io).dataSource(root, overrides.copy(mockDelay = Duration.ZERO), bearer)
 
     /** An explicit intent that restarts [MainActivity], so attachBaseContext applies the seeded configuration. */
     fun forwardIntent(

@@ -22,6 +22,7 @@ import net.chronoflow.core.model.api.AccountSecurityChange
 import net.chronoflow.core.model.api.AccountSecurityResult
 import net.chronoflow.core.model.session.StoredSession
 import net.chronoflow.core.model.session.SyncEpoch
+import net.chronoflow.core.sync.session.SessionController
 import java.util.UUID
 
 class SessionSync(
@@ -45,6 +46,15 @@ class SessionSync(
     private var generation = 0L
     private var retryContext: Pair<Long, SyncRetryState>? = null
     private var attachedEpoch: Long? = null
+
+    suspend fun requestStart(
+        controller: SessionController,
+        epoch: Long,
+    ) {
+        val current = controller.activeSession()
+        if (current == null || current.epoch != epoch) return
+        scope.launch { start(current.session, epoch) }
+    }
 
     suspend fun start(
         session: StoredSession,

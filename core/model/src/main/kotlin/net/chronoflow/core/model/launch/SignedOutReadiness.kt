@@ -1,5 +1,7 @@
 package net.chronoflow.core.model.launch
 
+import net.chronoflow.core.model.session.SessionPresence
+
 object SignedOutReadiness : LaunchReadiness {
     override suspend fun session(): SessionPresence = SessionPresence.SignedOut
 
