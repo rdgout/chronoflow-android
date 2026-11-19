@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -60,12 +61,17 @@ import net.chronoflow.feature.trip.timeline.TimelineResources
 import net.chronoflow.feature.trip.timeline.host.timelineDrawingKey
 import net.chronoflow.feature.trip.timeline.recoverDrawingFailure
 import net.chronoflow.feature.trip.wide.TripPageFrame
+import net.chronoflow.feature.trip.wide.TripScrollTracker
 import net.chronoflow.feature.trip.wide.WideDayRow
 import net.chronoflow.feature.trip.wide.WideListRows
 import net.chronoflow.feature.trip.wide.WidePinSource
+import kotlin.math.roundToInt
 
 private class PageRestoration {
     var job: Job? = null
+    val tracker = TripScrollTracker()
+    var previousIndex: PageIndex? = null
+    var thresholdPx: Int = 0
 }
 
 @Composable
@@ -149,6 +155,7 @@ fun TripPageScreen(
                 toggleEnabled = state.ui.state == TripPageState.Ready && plan != null,
                 onToggle = {
                     restoration.job?.cancel()
+                    restoration.tracker.cancelRestoration()
                     onEvent(TripPageEvent.ToggleView)
                     if (dayId != null && plan != null && listState != null) {
                         val next: PageIndex = if (state.timeline) plan.listIndex else plan.index
@@ -206,6 +213,38 @@ private fun ReadyTripPage(
             .toDouble()
     val renderedTimeline = state.timeline || TripPageLayout.resolve(windowWidth).isWide
     val index: PageIndex = if (renderedTimeline) plan.index else plan.listIndex
+    val sizeKey =
+        TripScrollTracker.SizeKey(
+            windowWidth.roundToInt(),
+            density.density,
+            TripPageLayout.resolve(windowWidth),
+            renderedTimeline,
+        )
+    SideEffect {
+        Snapshot.withoutReadObservation {
+            val info = listState.layoutInfo
+            val samples = info.visibleItemsInfo.map { TripScrollTracker.ItemSample(it.key, it.contentType, it.offset) }
+            val restore =
+                restoration.tracker.onSize(
+                    sizeKey,
+                    samples,
+                    info.viewportStartOffset,
+                    restoration.previousIndex ?: index,
+                    index,
+                    restoration.thresholdPx.takeIf { it > 0 } ?: thresholdPx,
+                    listState.isScrollInProgress,
+                )
+            restoration.previousIndex = index
+            restoration.thresholdPx = thresholdPx
+            if (restore != null) {
+                listState.requestScrollToItem(restore.index, restore.offsetPx)
+                restoration.tracker.lastCaptured?.let { captured ->
+                    onEvent(TripPageEvent.Select(captured.dayId, if (captured.onHeader) 0.0 else captured.offsetDp))
+                    onEvent(TripPageEvent.SaveAnchor)
+                }
+            }
+        }
+    }
     val days = plan.prepared.days
     val anchorId = state.anchor.dayID
     val currentState = rememberUpdatedState(state)
@@ -291,6 +330,7 @@ private fun ReadyTripPage(
         val appearance = rememberUpdatedState(dark to reduceMotion)
         LaunchedEffect(state.commands, listState) {
             state.commands.collect { command ->
+                restoration.tracker.cancelRestoration()
                 restoration.job?.cancel()
                 restoration.job =
                     launch {

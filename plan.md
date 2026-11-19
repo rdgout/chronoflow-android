@@ -2484,7 +2484,7 @@ Implementation commits (brief §7):
   - the wide day menu (`PlanWideDayMenu`);
   - the remote states (`PlanRemoteWide`, `PlanRemoteWideOffline`);
   - `WidePlanSkeleton`.
-- [ ] **In-place size changes** (A8 `configChanges`). Folding, unfolding, rotating and resizing keep `(dayId, offsetInDay)` and any open sheet. Port `TripScrollTracker`.
+- [x] **In-place size changes** (A8 `configChanges`). Folding, unfolding, rotating and resizing keep `(dayId, offsetInDay)` and any open sheet. Port `TripScrollTracker`.
 - [ ] **Tests.**
   - Robolectric width changes 411 → 841 → 411 dp keep the anchor.
   - Guards at `foldInner` and `landscapeSideNav`.

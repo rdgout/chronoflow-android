@@ -42,6 +42,7 @@ class TripPageTestRig(
     fetchDetail: suspend (String) -> Unit = {},
     makePath: () -> net.chronoflow.core.sync.SyncPathMonitoring? = { null },
     applyChecks: Boolean = false,
+    val savedState: SavedStateHandle = SavedStateHandle(),
 ) {
     val detail = LargeTimelineFixtures.fixture(fixture).detail
     val source = initialSnapshot?.let { FakeTripPageSource(it) } ?: FakeTripPageSource.fixture(fixture)
@@ -67,7 +68,7 @@ class TripPageTestRig(
                             Dispatchers.Unconfined,
                             TimelineTracer.None,
                         ) {},
-                        SavedStateHandle(),
+                        savedState,
                         language,
                         Dispatchers.Unconfined,
                         Dispatchers.Unconfined,

@@ -67,3 +67,10 @@ PNG files under `build/captures/`:
 ## Task 7
 
 `make targeted ONLY="feature:trip:TripScrollTrackerTest feature:trip:TripListIndexTest feature:trip:TripScrollMathTest feature:trip:ListModeIndexTest"`: PASS, 25 JVM cases (Gradle 5 s). Tracker 12 cases / 0.003 s; other class totals 0.001–0.216 s. The common index gains key-to-day lookup rather than parsing row ids, plus the timeline index seam. No display-link retry loop is ported. `make format`: PASS.
+
+## Task 8
+
+- `make targeted ONLY="feature:trip:TripPageResizeTest app:MainActivityConfigChangesTest"`: six of seven resize methods PASS (Gradle 8 s); trip-actions had no card in the generic fixture (`{}`).
+- `make targeted ONLY="feature:trip:TripPageResizeTest#legendAndTripActionsSurviveResize app:MainActivityConfigChangesTest"`: PASS (Gradle 6 s + 4 s). The test now seeds the S3 card. Manifest flags include every A8 in-place change and exclude locale/fontScale/layoutDirection; production manifest unchanged.
+- `make targeted ONLY="app:RootContentConstructionTest"`: PASS (Gradle 19 s) after providing the root's new LocalWindowSize in the test host. `make format`: PASS (12 s).
+- Hosted resize evidence covers 411 → 841 → 411, exact day top (±1 px), saved offset (<1 dp), scroll/day semantics identity, step/legend/actions survival, phone-list preference and day-top restoration, density conversion, summary position, and accepted negative requestScrollToItem offsets. The root test viewport is 1000×1100 dp so the 841×914 dp fake still fits after the 2.625 → 3.0 density increase; qualifiers never change mid-test.
