@@ -282,7 +282,7 @@ def check_timeline(args, budgets):
     failed = False
     band_missed = False
     features = {}
-    for test in ("timelineFirstFrame", "timelineScroll", "timelineLastDay", "listScroll"):
+    for test in ("timelineFirstFrame", "timelineScroll", "timelineLastDay", "listScroll", "timelineScrollWide"):
         if test not in benches:
             print("%s metric: test %s is absent from the results" % (label, test), file=sys.stderr)
             failed = True
@@ -326,6 +326,9 @@ def check_timeline(args, budgets):
             failed = True
         if test == "listScroll" and metric in ("memoryRssAnonMaxKb", "frameCount", "jankPercent", "hitchRatioMsPerS") and len(vals) != 3:
             print("%s metric: listScroll %s needs all three iterations" % (label, metric), file=sys.stderr)
+            failed = True
+        if test == "timelineScrollWide" and stat == "each" and len(vals) != 3:
+            print("%s metric: timelineScrollWide %s needs all three iterations" % (label, metric), file=sys.stderr)
             failed = True
         gate = timeline_gate(entry, args.device_class)
         feature = None
@@ -373,7 +376,7 @@ def check_timeline(args, budgets):
     return (1 if failed else 0), features, context, benches
 
 
-def timeline_row(args, budgets, code, features, context, benches):
+def timeline_row(args, budgets, code, features, context, benches, test="timelineScroll", page=None):
     def got(test, metric, stat):
         return features.get((test, metric, stat))
 
@@ -386,27 +389,27 @@ def timeline_row(args, budgets, code, features, context, benches):
     def single(v, fmt="%.1f"):
         return fmt % v if v is not None else "n/a"
 
-    ff = got("timelineFirstFrame", "timelineFirstFrameMs", "each")
+    ff = got("timelineFirstFrame", "timelineFirstFrameMs", "each") if test == "timelineScroll" else None
     ff_med = one(ff, statistics.median)
     ff_max = one(ff, max)
-    cpu = [one(got("timelineScroll", "frameDurationCpuMs", s), lambda v: v[0]) for s in ("P50", "P90", "P99")]
-    main99 = one(got("timelineScroll", "timelineMainFrameMsP99", "each"), max)
-    render99 = one(got("timelineScroll", "timelineRenderThreadMsP99", "each"), max)
-    overrun = one(got("timelineScroll", "frameOverrunMs", "P99"), lambda v: v[0])
-    jank = got("timelineScroll", "jankPercent", "each")
-    hitch = got("timelineScroll", "hitchRatioMsPerS", "each")
-    placeholder = one(got("timelineScroll", "timelinePlaceholderCount", "each"), max)
-    replay = one(got("timelineScroll", "timelineReplayMaxMs", "each"), max)
-    rss = one(got("timelineScroll", "memoryRssAnonMaxKb", "each"), lambda v: max(v) / 1024.0)
-    growth = one(got("timelineScroll", "memoryRssAnonGrowthKb", "single"), lambda v: v[0] / 1024.0)
-    recompose = one(got("timelineScroll", "timelineRecomposeCount", "each"), max)
-    gc = one(got("timelineScroll", "timelineGcCount", "each"), max)
+    cpu = [one(got(test, "frameDurationCpuMs", s), lambda v: v[0]) for s in ("P50", "P90", "P99")]
+    main99 = one(got(test, "timelineMainFrameMsP99", "each"), max)
+    render99 = one(got(test, "timelineRenderThreadMsP99", "each"), max)
+    overrun = one(got(test, "frameOverrunMs", "P99"), lambda v: v[0])
+    jank = got(test, "jankPercent", "each")
+    hitch = got(test, "hitchRatioMsPerS", "each")
+    placeholder = one(got(test, "timelinePlaceholderCount", "each"), max)
+    replay = one(got(test, "timelineReplayMaxMs", "each"), max)
+    rss = one(got(test, "memoryRssAnonMaxKb", "each"), lambda v: max(v) / 1024.0)
+    growth = one(got(test, "memoryRssAnonGrowthKb", "single"), lambda v: v[0] / 1024.0)
+    recompose = one(got(test, "timelineRecomposeCount", "each"), max)
+    gc = one(got(test, "timelineGcCount", "each"), max)
     build = context.get("build", {}) if isinstance(context, dict) else {}
     result = "FAIL" if code == 1 else ("BAND" if code == 4 else "PASS")
     columns = [
         datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d"),
         args.commit, args.device_class, build.get("model", "unknown"), str(build.get("version", {}).get("sdk", "unknown")),
-        args.refresh_hz, args.gpu, args.font_scale, args.theme, budgets.get("timelinePage", "host"), TIMELINE_BUILD,
+        args.refresh_hz, args.gpu, args.font_scale, args.theme, page or budgets.get("timelinePage", "host"), TIMELINE_BUILD,
         pair(ff_med, ff_max),
         "/".join(single(v) for v in cpu),
         pair(main99, render99),
@@ -419,8 +422,8 @@ def timeline_row(args, budgets, code, features, context, benches):
         single(growth),
         single(recompose, "%d"),
         single(gc, "%d"),
-        "ok" if "timelineScroll" in benches else "missing",
-        "ok" if "timelineLastDay" in benches else "missing",
+        "ok" if test in benches else "missing",
+        ("ok" if "timelineLastDay" in benches else "missing") if test == "timelineScroll" else "—",
         result,
     ]
     return "| " + " | ".join(columns) + " |"
@@ -504,22 +507,25 @@ def write_history(args, code, outcomes, values, context):
 
 
 def write_timeline_history(args, budgets, code, features, context, benches):
-    row = timeline_row(args, budgets, code, features, context, benches)
-    page = budgets.get("timelinePage", "host")
-    timeline_trend(row, timeline_baseline(args.history, args, page))
+    rows = [timeline_row(args, budgets, code, features, context, benches)]
+    if "timelineScrollWide" in benches:
+        rows.append(timeline_row(args, budgets, code, features, context, benches,
+                                 test="timelineScrollWide", page=budgets.get("timelineWidePage", "trip-wide")))
+    for row in rows:
+        timeline_trend(row, timeline_baseline(args.history, args, cells(row)[9]))
     row_file = Path(args.row_file)
     row_file.parent.mkdir(parents=True, exist_ok=True)
-    row_file.write_text(row + "\n")
+    row_file.write_text("\n".join(rows) + "\n")
     if not (args.append and args.history):
         return
     path = Path(args.history)
     lines = path.read_text().splitlines() if path.exists() else []
     if any(l.startswith("| Date |") for l in lines):
         _, end = history_rows(lines)
-        lines.insert(end, row)
+        lines[end:end] = rows
     else:
         at = next((i for i, l in enumerate(lines) if l.strip() == "## Runs"), None)
-        table = [TIMELINE_HEADER, "|" + "---|" * 26, row]
+        table = [TIMELINE_HEADER, "|" + "---|" * 26] + rows
         if at is None:
             lines += ["", "## Runs", ""] + table
         else:

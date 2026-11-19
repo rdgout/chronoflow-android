@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -36,18 +37,25 @@ fun TripPageStateCard(
     text: String,
     titleTag: String,
     modifier: Modifier = Modifier,
+    wide: Boolean = false,
     actions: @Composable ColumnScope.() -> Unit,
 ) {
     Column(
         modifier
             .fillMaxWidth()
             .tripOutline(CfTheme.colors.border, PlanMetrics.cardRadius.dp, true)
-            .padding(PlanMetrics.cardPadding.dp),
+            .padding(
+                horizontal = if (wide) PlanMetrics.wideGutter.dp else PlanMetrics.cardPadding.dp,
+                vertical = if (wide) PlanMetrics.wideRemotePadding.dp else PlanMetrics.cardPadding.dp,
+            ),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(PlanMetrics.sectionGap.dp),
     ) {
         Box(
-            Modifier.size(PlanMetrics.touch.dp).background(CfTheme.colors.muted, CircleShape),
+            Modifier
+                .size(
+                    if (wide) PlanMetrics.wideRemoteIcon.dp else PlanMetrics.touch.dp,
+                ).background(CfTheme.colors.muted, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             Icon(icon.imageVector(), null, tint = iconTint)
@@ -63,7 +71,7 @@ fun TripPageStateCard(
         )
         Text(
             text,
-            Modifier.fillMaxWidth(),
+            if (wide) Modifier.widthIn(max = PlanMetrics.wideRemoteBodyWidth.dp) else Modifier.fillMaxWidth(),
             style = CfTheme.type.authBody,
             color = CfTheme.colors.mutedForeground,
             textAlign = TextAlign.Center,

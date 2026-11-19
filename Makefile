@@ -179,7 +179,15 @@ else
 endif
 
 perf-timeline:
-	$(RUN_TIER) perf-timeline --device --results 'benchmark/build/outputs/androidTest-results/connected/benchmarkRelease/**/*.xml' -- Scripts/perf-timeline.sh
+	$(RUN_TIER) perf-timeline --device --results 'benchmark/build/outputs/androidTest-results/connected/benchmarkRelease/**/*.xml' -- bash -c ' \
+	  reset_window() { \
+	    local adb_cmd="$${ADB:-$${ANDROID_HOME}/platform-tools/adb}"; \
+	    if [ -n "$${ANDROID_SERIAL:-}" ]; then \
+	      "$$adb_cmd" -s "$$ANDROID_SERIAL" shell wm size reset; \
+	    else "$$adb_cmd" shell wm size reset; fi; \
+	  }; \
+	  trap reset_window EXIT; \
+	  Scripts/perf-timeline.sh'
 
 baseline-profile: export TIER_IDLE_TIMEOUT := 1200
 baseline-profile:

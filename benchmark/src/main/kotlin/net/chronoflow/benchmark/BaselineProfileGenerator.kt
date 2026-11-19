@@ -6,10 +6,12 @@ import androidx.benchmark.macro.junit4.BaselineProfileRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
+import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
 import net.chronoflow.core.testing.BoundedProfileInput
 import net.chronoflow.core.testing.ProfileCollectionBudget
 import net.chronoflow.core.testing.tiers.Perf
+import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -85,6 +87,57 @@ class BaselineProfileGenerator {
                 input.step("welcome intro completion") { device.wait(Until.gone(By.res("welcome.signIn")), 900) }
             }
         }
+
+    @After fun restoreWindowSize() {
+        UiDevice.getInstance(InstrumentationRegistry.getInstrumentation()).executeShellCommand("wm size reset")
+    }
+
+    @Test fun timelineWide() {
+        val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+        device.executeShellCommand("wm size 1840x2208")
+        try {
+            collectProfile {
+                BoundedProfileInput(journeyTimeoutMillis = budget.journeyTimeoutMillis).use { input ->
+                    input.step("wide window") { device.executeShellCommand("wm size 1840x2208") }
+                    input.step("wide home") { pressHome() }
+                    input.step("wide launch") { startActivityAndWait(large60Intent(packageName)) }
+                    input.step("wide presented") { awaitWidePresented() }
+                    input.step("wide open step") {
+                        val list =
+                            checkNotNull(device.findObject(By.res(large60OpeningWideListTag))) {
+                                "opening wide list missing"
+                            }
+                        checkNotNull(list.findObject(By.res("trip.block.$LARGE60_OPENING_FIRST_BLOCK"))) {
+                            "opening wide row missing"
+                        }.click()
+                    }
+                    input.step("wide step presented") {
+                        check(device.wait(Until.hasObject(By.res("step.sheet")), 5_000)) { "wide step missing" }
+                    }
+                    input.step("wide close step") { device.pressBack() }
+                    input.step("wide step closed") {
+                        check(device.wait(Until.gone(By.res("step.sheet")), 5_000)) { "wide step stayed open" }
+                    }
+                    val bounds =
+                        input.step("wide page bounds") {
+                            checkNotNull(device.findObject(By.res("trip.page"))) { "wide page missing" }.visibleBounds
+                        }
+                    repeat(3) { gesture ->
+                        input.step("wide gesture ${gesture + 1}/3") { device.swipeTimeline(bounds) }
+                    }
+                    input.step("wide progress") { check(topDayIndex() > 0) { "wide profile did not scroll" } }
+                    input.step("restore phone window") { device.executeShellCommand("wm size reset") }
+                    input.step("phone toggle returns") {
+                        check(device.wait(Until.hasObject(By.res("trip.viewToggle")), 5_000)) {
+                            "phone toggle missing after resize"
+                        }
+                    }
+                }
+            }
+        } finally {
+            device.executeShellCommand("wm size reset")
+        }
+    }
 
     @Test
     fun timelineLarge60() =

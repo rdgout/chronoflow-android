@@ -10,6 +10,13 @@ import org.junit.BeforeClass
 import org.junit.Test
 
 class KonsistRulesTest {
+    @Test fun featureSizesComeFromTheWindow() = featureSizesComeFromTheWindow(projectScope)
+
+    @Test fun featureSizesComeFromTheWindowRejectsPlantedViolation() {
+        assertFailure { featureSizesComeFromTheWindow(violations("featureSizesComeFromTheWindow")) }
+            .messageContains("featureSizesComeFromTheWindow violated")
+    }
+
     @Test fun noWorkManagerOutsideReminders() = noWorkManagerOutsideReminders(projectScope)
 
     @Test fun noWorkManagerOutsideRemindersRejectsPlantedViolation() {

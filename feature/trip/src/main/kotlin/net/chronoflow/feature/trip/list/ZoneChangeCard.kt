@@ -42,6 +42,7 @@ fun ZoneChangeCard(
     row: ListRow,
     onBlock: (String) -> Unit,
     modifier: Modifier = Modifier,
+    selected: () -> Boolean = { false },
 ) {
     val colors = CfTheme.colors
     val shape = RoundedCornerShape(PlanMetrics.cardRadius.dp)
@@ -52,6 +53,7 @@ fun ZoneChangeCard(
             .fillMaxWidth()
             .clip(shape)
             .skyBackground(colors === CfDarkColors)
+            .tripOutline(colors.border, PlanMetrics.cardRadius.dp, false, selected, colors.dawn, selectionOnly = true)
             .cfClickable(onClick = { onBlock(row.blockId) }, focusShape = shape)
             .testTag("trip.zone.${row.blockId}")
             .clearAndSetSemantics {

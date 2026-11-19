@@ -120,7 +120,7 @@ fun DayTimeline(
             .semantics {
                 contentDescription = description
                 isTraversalGroup = true
-            }.testTag("trip.day.$dayId"),
+            },
     ) {
         Column {
             headings()

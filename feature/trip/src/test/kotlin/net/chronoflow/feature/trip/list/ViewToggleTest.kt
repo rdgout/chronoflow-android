@@ -1,8 +1,10 @@
 package net.chronoflow.feature.trip.list
 
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import net.chronoflow.core.plan.planDate
@@ -31,11 +33,12 @@ class ViewToggleTest : PageComponentTest() {
     private fun start(
         timeline: Boolean = true,
         state: TripPageState? = null,
+        fixture: String = "S3",
     ): TripPageTestRig {
-        val detail = LargeTimelineFixtures.fixture("S3").detail
+        val detail = LargeTimelineFixtures.fixture(fixture).detail
         val host =
             TripPageTestRig(
-                "S3",
+                fixture,
                 checkNotNull(planDate(detail.plan.days[1].startUtc)).plusSeconds(7200),
                 initialTimeline = timeline,
             )
@@ -75,6 +78,16 @@ class ViewToggleTest : PageComponentTest() {
         compose.onNodeWithTag("trip.mode.timeline").assertExists()
         compose.onNodeWithTag("trip.mode.list").assertDoesNotExist()
         compose.onNodeWithTag("trip.day.${day.dayId}").assertExists()
+        headerAtTop(host, false)
+    }
+
+    @Test fun seededListTogglesToTheSameDayTimeline() {
+        val host = start(timeline = false, fixture = "S1")
+        val day = host.model.prepared.days[1]
+        compose.onAllNodesWithTag("trip.day.${day.id}").assertCountEquals(0)
+        compose.onNodeWithTag("trip.viewToggle").performClick()
+        compose.waitForIdle()
+        compose.onAllNodesWithTag("trip.day.${day.id}").assertCountEquals(1)
         headerAtTop(host, false)
     }
 

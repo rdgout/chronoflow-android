@@ -1,6 +1,6 @@
 #!/bin/bash
 # Runs TimelineBenchmark on the connected device and checks it with check-benchmarks.py.
-# PERF_TIMELINE_DRY_RUN=1 prints the Gradle and checker commands instead of running them.
+# PERF_TIMELINE_DRY_RUN=1 prints the progress stream, Gradle and checker commands instead of running them.
 # THEME=light|dark and FONT_SCALE=<x> pick the configuration; DEVICE_CLASS=reference|lowEnd applies on a physical device.
 # PERF_GRADLE_ARGS adds Gradle words; PERF_NO_APPEND=1 keeps the row out of the history.
 set -u
@@ -59,7 +59,11 @@ case "$(dev shell getprop persist.sys.locale | tr -d '\r')" in
     ;;
 esac
 
-trap '"$EMULATOR_SH" prep-functional "$SERIAL"' EXIT
+cleanup() {
+  dev shell wm size reset
+  "$EMULATOR_SH" prep-functional "$SERIAL"
+}
+trap cleanup EXIT
 "$EMULATOR_SH" prep-perf "$SERIAL"
 prep_status=$?
 if [ "$prep_status" != 0 ]; then
@@ -94,7 +98,8 @@ if [ -z "${PERF_NO_APPEND:-}" ]; then checker_args+=(--append); fi
 
 run_once() {
   begin_perf_archive timeline "$THEME-$FONT_SCALE-bounded-swipe-v3" "$commit" || exit 1
-  step "$GRADLEW" --console=plain "${args[@]}"
+  step python3 -I Scripts/test_runner_progress.py --adb "$ADB" --serial "$SERIAL" \
+    --test-class net.chronoflow.benchmark.TimelineBenchmark -- "$GRADLEW" --console=plain "${args[@]}"
   gradle_status=$?
   finish_perf_archive || exit 1
   # shellcheck disable=SC2086
