@@ -1,0 +1,21 @@
+{
+  "version": "0.511.0",
+  "glyphs": {
+    "armchair": {"source": "bundle"},
+    "arrow-left-right": {"source": "bundle"},
+    "bed": {"source": "bundle"},
+    "check": {"source": "bundle"},
+    "cloud-sun": {"source": "bundle"},
+    "coffee": {"source": "bundle"},
+    "footprints": {"source": "bundle"},
+    "glasses": {"source": "bundle"},
+    "globe": {"source": "bundle"},
+    "info": {"source": "bundle"},
+    "lamp": {"source": "bundle"},
+    "moon": {"source": "bundle"},
+    "plane": {"source": "bundle"},
+    "skip-forward": {"source": "bundle"},
+    "sun": {"source": "bundle"},
+    "timer": {"source": "bundle"}
+  }
+}
