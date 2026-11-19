@@ -175,6 +175,8 @@ class AppShellTest {
         host()
         lateinit var callback: NavigationEventHandler<*>
         compose.runOnIdle {
+            // navigationevent 1.1.1 has no callback capture API. Inspect the installed handler to reproduce
+            // a stale registration without adding a production test hook.
             val processor = ReflectionHelpers.getField<Any>(activity.navigationEventDispatcher, "sharedProcessor")
             val callbacks =
                 ReflectionHelpers.getField<ArrayDeque<NavigationEventHandler<*>>>(
