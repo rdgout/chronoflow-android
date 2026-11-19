@@ -2411,7 +2411,7 @@ Implementation commits (brief §7):
   - Actionable steps get Mark as done, Skip and Undo, through the marks repository and the outbox.
   - A refused change shows a Snackbar; a step that is gone shows the `SheetStates` state.
   - The sheet is part of the route key.
-- [ ] **Legend sheet** (`PlanLegend`).
+- [x] **Legend sheet** (`PlanLegend`). Task 5: full steps legend and trip-page priority legend.
 - [ ] **Trip actions sheet** (`TripActions`, `TripActionsNoPlan`). Edit and Duplicate go to wizard seams until 9h, and are disabled offline or when the trip is not editable. There is no calendar, complete or delete.
 - [ ] **Accessibility and input.**
   - TalkBack custom actions (Mark as done, Skip) on timeline targets and list rows, and a defined focus order.
