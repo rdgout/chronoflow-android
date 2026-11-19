@@ -1,19 +1,28 @@
+@file:OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+
 package net.chronoflow.core.data.repository
 
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import net.chronoflow.core.data.store.StoreApplication
 import net.chronoflow.core.data.store.encoded
 import net.chronoflow.core.database.AccountDatabase
 import net.chronoflow.core.database.AccountSql
 import net.chronoflow.core.database.store.deleteTrip
 import net.chronoflow.core.database.store.fetchCheckMarks
+import net.chronoflow.core.database.store.fetchPendingOutbox
 import net.chronoflow.core.database.store.fetchPlanVersion
 import net.chronoflow.core.database.store.fetchTrip
 import net.chronoflow.core.database.store.fetchTrips
 import net.chronoflow.core.database.store.saveCheckMark
 import net.chronoflow.core.database.store.savePlanVersion
 import net.chronoflow.core.database.store.saveTrip
+import net.chronoflow.core.model.CheckOffChange
 import net.chronoflow.core.model.DataFailure
+import net.chronoflow.core.model.OutboxChange
 import net.chronoflow.core.model.api.ApiJson
 import net.chronoflow.core.model.contracts.AdaptationView
 import net.chronoflow.core.model.contracts.TripCardView
@@ -21,8 +30,10 @@ import net.chronoflow.core.model.contracts.TripDetailResponse
 import net.chronoflow.core.model.contracts.TripListItem
 import net.chronoflow.core.model.contracts.TripStatus
 import net.chronoflow.core.model.store.CheckMarkRecord
+import net.chronoflow.core.model.store.LocalMutationFailure
 import net.chronoflow.core.model.store.OutboxPayload
 import net.chronoflow.core.model.store.PlanVersionRecord
+import net.chronoflow.core.model.store.TripPlanSnapshot
 import net.chronoflow.core.model.store.TripRecord
 
 class TripRepository(
@@ -31,6 +42,32 @@ class TripRepository(
     suspend fun trips(): List<TripRecord> = database.read { it.fetchTrips() }
 
     fun values(): Flow<List<TripRecord>> = database.observe("trips") { it.fetchTrips() }
+
+    fun tripValue(tripId: String): Flow<TripRecord?> =
+        database.observe("trips") { it.fetchTrip(tripId) }.distinctUntilChanged()
+
+    private fun pendingCheckOffs(tripId: String): Flow<List<CheckOffChange>> =
+        database.observe("outbox") { sql ->
+            sql.fetchPendingOutbox().mapNotNull { row ->
+                val change =
+                    try {
+                        OutboxPayload.change(row)
+                    } catch (_: LocalMutationFailure) {
+                        null
+                    }
+                (change as? OutboxChange.CheckOff)?.change?.takeIf { it.tripID == tripId }
+            }
+        }
+
+    fun detailValues(tripId: String): Flow<TripPlanSnapshot> =
+        tripValue(tripId)
+            .flatMapLatest { trip ->
+                val hash = trip?.currentInputHash
+                val plan = if (hash == null) flowOf(null) else planValues(tripId, hash)
+                combine(plan, checkValues(tripId, hash ?: ""), pendingCheckOffs(tripId)) { p, c, o ->
+                    TripPlanSnapshot(trip = trip, plan = p, checks = c, pendingChecks = o)
+                }
+            }.distinctUntilChanged()
 
     suspend fun upsert(trip: TripRecord) = database.write { it.saveTrip(trip) }
 

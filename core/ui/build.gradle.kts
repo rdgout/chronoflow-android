@@ -8,6 +8,9 @@ android {
 
 dependencies {
     api(project(":core:designsystem"))
+    implementation(project(":core:plan"))
+    implementation(project(":core:sync"))
+    implementation(libs.kotlinx.coroutines.core)
     api(libs.compose.runtime)
     api(libs.compose.ui)
     api(libs.compose.foundation)

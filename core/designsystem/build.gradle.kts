@@ -10,6 +10,11 @@ dependencies {
     debugImplementation(libs.compose.ui.test.manifest)
     api(libs.compose.foundation)
     api(libs.compose.material3)
+    api(libs.compose.material3.adaptive.navigation.suite)
+    constraints {
+        // Standalone chrome tests and Lint must resolve the same Lifecycle pin as the app.
+        implementation(libs.androidx.lifecycle.runtime.compose)
+    }
     implementation(libs.kotlinx.coroutines.core)
     testImplementation(project(":core:testing"))
     testImplementation(libs.compose.ui.test.junit4)

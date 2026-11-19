@@ -814,6 +814,22 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A229 | (OQ-5d-16) iOS `AuthConsent.attributedText` appends the plain prefix before checking the tag, so an unknown tag after plain text duplicates that prefix (`AuthConsent.swift:26-29`). The shipped copy has only `<terms>` and `<privacy>`. | Do not port the duplication: append the prefix only once the tag is known (§5.3). No visible difference with the real copy. | 5d |
 | OQ-A230 | (OQ-5d-17) The layout-only target guard rejects native inline consent links, whose layout follows the 12/16 paragraph; enclosing rectangles of wrapped links can also overlap. | Check Compose's expanded 48 dp touch bounds and annotated character regions only for its native `LinkTestMarker` nodes, with positive and negative harness controls; keep the strict layout-size rule for ordinary controls. Preserve the two inline policy spans and board typography. | 5d |
 | OQ-A231 | (OQ-5d-18) The 411 × 914 dp profile at density 2.625 produces a fractional theoretical bottom edge; Android's measured window rounds to pixels, placing a valid control 0.75 px beyond that edge. | Allow one physical pixel only in safe-area edge comparisons. Retain the other guard tolerances and the negative inset/overlap controls. | 5d |
+| OQ-A232 | (OQ-6a-1) The plan says "the shell matches `Main`", but `B/Main.dc.html` is the Welcome board, and no Android shell board exists (`reqSystemChrome`). | Build per the Material mapping (plan l.418, OQ-A3/A4). Accept by `AppShellTest` and the captures of the Trips screen. Ask the designer for an Android tab-bar board (OQ-A42) | 6a |
+| OQ-A233 | (OQ-6a-2) The plan's dependency list for 6a names only 4e and 2, but 6a needs 1a, 1c, 1d, 4c and 4d. | These earlier phases are all in the single-lane stack. Treat them as preconditions; stop if one is missing | 6a |
+| OQ-A234 | (OQ-6a-3) How a feature ViewModel gets session services without seeing `AppGraph` in `:app` (A4 says "read the graph from `CreationExtras`"). | A feature-owned `TripsDependencies` interface and a `CreationExtras.Key`. `:app` puts the implementation into the extras when it calls `viewModel()`. If 5a already established a different shared convention in code, follow it and note it in the KDoc | 6a |
+| OQ-A235 | (OQ-6a-4) Reselect on iOS (UIKit) pops to root **or**, at root, scrolls to the top. The plan says "pops it to the root and scrolls to the top". | System rule: depth > 1 pops (no scroll); at the root it scrolls to the top and expands the title | 6a |
+| OQ-A236 | (OQ-6a-5) Card look where the board and the iOS app differ. | **Board:** Upcoming badge `Outline` (iOS `Secondary`); a check icon on the Completed badge; `softShadow` on non-completed cards; `MetaChip` around the flight number (iOS plain text); a dashed-line plane connector (iOS SF airplane); uppercase eyebrow (iOS screenshot not uppercased); next-row padding 10/12 (iOS 12). **iOS:** title style `screenBodyLg` with no extra weight, sizes from tokens. Record any other difference in the capture review | 6a |
+| OQ-A237 | (OQ-6a-6) The board draws a 44 dp glass logo at the top left and a Fraunces large title. | iOS parity: no logo, and a system-font `CfLargeTopAppBar` (07 §2.2, user 2026-11-10) | 6a |
+| OQ-A238 | (OQ-6a-7) `trip:<uuid>` seeds push onto the **Today** stack (iOS), while a card tap pushes onto My trips. | Keep iOS parity for seeds. Notification taps (12b) and the wizard save use the Trips stack (`fromRoot`, `wizardSaved`) | 6a |
+| OQ-A239 | (OQ-6a-8) Capsule enter/exit timing: iOS uses `.animation(.default)` (system spring). | `tween(350)` slide plus fade; fade only under Reduce Motion, 350 ms | 6a |
+| OQ-A240 | (OQ-6a-9) iOS 26 minimizes the tab bar on scroll down (`AppTabs.swift:101`, `tabBarMinimizeBehavior(.onScrollDown)`), but the Android plan says "never hidden on scroll". | The bar and rail are never hidden (plan 6a, Material guidance for `NavigationSuiteScaffold`). `AppShellTest.barNeverHidesOnScroll` guards it | 6a |
+| OQ-A241 | (OQ-6a-10) iOS exposes the refresh counter as hidden `refresh.debug.count/outcome/presented` nodes, gated by the seed `CF_REFRESH_TEST_COUNTER=1` (`PlanRefreshFeedback.swift:64–85`). The Android seed table (plan "seeds and test hooks", 4e T11) has no such key. | An in-process `DebugRefreshProbe` object, always on in debug and absent in release. The `@Smoke` test reads it in process (AGENTS Tests 8). No hidden nodes, so the accessibility tree stays clean. Add the seed only if a later out-of-process (UiAutomator-only) test needs it | 6a |
+| OQ-A242 | (OQ-6a-11) The 6b brief (Task 1) also adds `TripPlanSnapshot.trip` and `TripRepository.detailValues`. 6a needs them first, for the Next row. | 6a owns both and builds them in the 6b shape (§5.3). 6b's Task 1 finds them and only verifies them. The 6a T13 doc commit adds one line to the 6a "Results" saying so; it does not edit the 6b brief | 6a |
+| OQ-A243 | (OQ-6a-12) The 6d brief also plans `core/ui/…/plan/CategorySwatch.kt` (`net.chronoflow.core.ui.plan`, signature `small: Boolean = false`), but 6a needs the swatch first, for the Next row. | 6a owns it at that path and package, with the iOS shape `size: CategorySwatchSize` (iOS `CategorySwatch.Size`; ported code keeps Swift names). 6d finds it and reuses it (its own brief says to use earlier names). T13 adds one line to the 6a "Results"; it does not edit the 6d brief | 6a |
+| OQ-A244 | (OQ-6a-13) 1a assigns `Today.swift` to Phase 7, and the Phase 7 brief also ports `todayView`, `calendarDaysUntil` and the two `TodayTests` cases, but 6a needs `todayView(...).nextStep` for the Next row (`TripsScreen.swift:77–81`). | 6a ports the whole file and the two tests (§5.2, T2). Phase 7 finds `Today.kt` and extends it (`selectTodayTrip`, `lastEndedTrip`) instead of porting it again. T13 records this in the 6a "Results" | 6a |
+| OQ-A245 | (OQ-6a-14) The plan's 6a "Tests" item puts predictive back on the emulator, while AGENTS "Tests" asks for the cheapest tier. | Predictive back start/progress/cancel is proven in Robolectric (`AppShellTest.predictiveBackCancelKeepsThePage`, `dispatchOnBackStarted`); the one emulator journey (T12) covers system back across tabs, reselect and pull to refresh. Add an emulator predictive-back gesture only if the Robolectric check turns out unable to fail for the real reason (AGENTS Tests 6) | 6a |
+| OQ-A246 | Review 6a M1: should the selected shell tab and full pushed stacks be restored after process death as well as configuration recreation? | Keep shell state and tab ViewModelStores in the parent entry's ViewModel for locale/font-scale recreation. After process death cold-launch to Today, as the state-survival spec requires; do not serialize notification secrets or the shell's route objects | 6a |
+| OQ-A247 | Signed-out cold TTID drifted from 107 ms (4e) to 125–131 ms by 6a, and `first-commit` from 40 to 51 ms, with fresh profiles (docs/perf-startup.md "Phase 6a session"). Bisect and tune now, or in Phase 13? | Leave it to Phase 13's release perf pass: the median is far inside the ≤ 400 ms target and the metric is report-only. Phase 13 traces the launch path, starting with the 5c launch-intent capture and the 5d eager verification collector. | 6a |
 | OQ-0a-22 | Native libraries in the bundle? | Allow only `libandroidx.graphics.path.so` (Compose graphics-path; excluding it breaks Path conversion below API 34); fail on any other `.so` | 0a, 13 |
 | OQ-0b-1 | Where does `PlanMetrics` live? `08 §3.1` lists it inside `CfDimens`, but its consumer `:core:plan` is a JVM module that cannot depend on `:core:designsystem` | `core/plan/…/generated/PlanMetrics.generated.kt` (Double, dp), as iOS keeps it in `PlanCore` | 0b, 1b, 1c |
 | OQ-0b-2 | Port all iOS TokenGen outputs now (Auth, Settings, Terms, Welcome, PlanUI, Press, LaunchPaint, TypeMetrics), or only colors, sky and type? | All of them now (the iOS files are exact goldens and Phases 2, 3a, 3c, 5a, 9 and 10 need them) | 0b |
@@ -2215,20 +2231,20 @@ Implementation commits (brief §7):
 **Delivers.** Adds the three-tab shell with NavigationSuiteScaffold (a bar below 600 dp, a rail from 600 dp, never hidden on scroll), one back stack per tab, reselect-to-root and the back rules. It builds My trips with its sections, cards, empty and loading states and the New trip entry, and pull to refresh with the designed result capsule. Today and Settings show debug route seams until Phases 7 and 10a.
 
 **Tasks**
-- [ ] **Shell** (`app/…/shell/AppShell.kt`).
+- [x] **Shell** (`app/…/shell/AppShell.kt`).
   - `NavigationSuiteScaffold`: a bar below 600 dp and a rail from 600 dp. The bar never hides.
   - Tabs: Today, My trips and Settings, with Material Symbols per OQ-A4 and the tint per OQ-A3.
   - One Nav3 back stack per tab. Reselecting a tab pops it to its root and scrolls to the top. Back from a non-Today root goes to Today, then exits.
-- [ ] **My trips** (`feature/trips/…`).
+- [x] **My trips** (`feature/trips/…`).
   - `TripsViewModel` over the trips flow, with the sections and sort order of iOS 15b.
   - Cards, `TripsEmpty`, and a `TripsLoading` skeleton.
   - New trip goes to a wizard seam until 9c. A card opens `TripPage(tripId)`, a placeholder until 6b.
-- [ ] **Pull to refresh.**
+- [x] **Pull to refresh.**
   - `CfPullToRefreshBox` calls `refreshNow`.
   - The designed capsule shows at the top inset with its copy for about 2 s, and fades instead with Reduce Motion.
   - Test tag `refresh.feedback`, plus a debug "was presented" counter.
-- [ ] **Seams.** The Today and Settings tabs show debug seams until 7 and 10a.
-- [ ] **Tests.**
+- [x] **Seams.** The Today and Settings tabs show debug seams until 7 and 10a.
+- [x] **Tests.**
   - ViewModel cases: sections, sorting, empty.
   - Guards for `Trips`, `TripsEmpty` and `TripsLoading` at `pixel8` (bar) and `foldInner` (rail).
   - On the emulator: system and predictive back across tabs, tab reselect, and pull to refresh through the counter.
@@ -2236,6 +2252,8 @@ Implementation commits (brief §7):
 **Acceptance**
 - The back rules and reselect behave as in iOS 15a.
 - My trips matches `Trips`, `TripsEmpty` and `TripsLoading`, and the shell matches `Main`.
+
+**Validation (2026-11-19):** all five task boxes are complete. The 18 Trips layout guards, six board captures, seeded shell tests, predictive-back progress/cancel and tab ViewModel lifetime tests pass. The single pixel journey passes in 5.442 s with the StrictMode IO counter at 0; all 142 release tests, required Lint and the manifest/native-library gates pass. The arm64/xxhdpi/en bundle is 2.87 MB. The one final `make quick` invocation stops on a string-count assertion; that assertion is corrected and passes its focused rerun, and quick's remaining build-logic/tooling/timing steps pass individually. Quick is not rerun under the user's once-only limit. OQ-A232–OQ-A245, API adjustments, capture differences and raw evidence are recorded in the brief's Results. Full `make check`, profiles and external capture review remain with the orchestrator.
 
 ### Phase 6b: Trip page: data pipeline and timeline mode (`feat/phase-6b-trip-page`)
 

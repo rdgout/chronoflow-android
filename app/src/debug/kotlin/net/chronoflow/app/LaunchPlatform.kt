@@ -8,6 +8,9 @@ import net.chronoflow.debug.DebugRouteLabel
 import net.chronoflow.feature.launch.LaunchController
 
 internal object LaunchPlatform {
+    val shellStart: () -> net.chronoflow.core.navigation.shell.ShellStart? = net.chronoflow.debug.DebugShellStart::take
+    val refreshProbe: net.chronoflow.core.sync.refresh.RefreshDebugProbe = net.chronoflow.debug.DebugRefreshProbe
+
     val passkeyCapability: net.chronoflow.core.model.passkey.PasskeyCapability
         get() =
             net.chronoflow.core.model.passkey.PasskeyCapability(

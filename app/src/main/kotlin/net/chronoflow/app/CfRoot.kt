@@ -38,6 +38,7 @@ import kotlinx.coroutines.Dispatchers
 import net.chronoflow.app.auth.SignInViewModelFactory
 import net.chronoflow.app.auth.SignUpViewModelFactory
 import net.chronoflow.app.auth.TwoFactorViewModelFactory
+import net.chronoflow.app.shell.AppShell
 import net.chronoflow.core.designsystem.effect.skyBackground
 import net.chronoflow.core.designsystem.layout.LocalSafeInsets
 import net.chronoflow.core.designsystem.theme.CfTheme
@@ -75,6 +76,7 @@ internal fun CfRoot(
     val root by graph.rootNavigator.state.collectAsState()
     val displayedRoute = root.route ?: graph.launch.route?.toRoute()
     val activity = LocalActivity.current
+    val onRootBack: () -> Unit = { activity?.finish() }
     LaunchedEffect(graph, graph.launch.overlayActive, displayedRoute) {
         if (!graph.launch.overlayActive && displayedRoute != null) graph.finishLaunch()
     }
@@ -134,7 +136,7 @@ internal fun CfRoot(
                         } else {
                             RootContent(
                                 RootState(displayedRoute, root.revision),
-                                onBack = { activity?.finish() },
+                                onBack = onRootBack,
                             ) { route ->
                                 when (route) {
                                     Route.Welcome -> {
@@ -220,6 +222,10 @@ internal fun CfRoot(
                                             viewModel(factory = SignInViewModelFactory, extras = extras),
                                             graph.auth.router,
                                         )
+                                    }
+
+                                    Route.Today, Route.Trips, Route.Settings, is Route.TripPage, is Route.Wizard -> {
+                                        AppShell(route, onRootBack) { RoutePlaceholder(it, LaunchPlatform.routeLabel) }
                                     }
 
                                     else -> {
