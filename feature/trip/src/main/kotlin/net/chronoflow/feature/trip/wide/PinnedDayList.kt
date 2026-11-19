@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
@@ -17,6 +18,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import net.chronoflow.core.plan.generated.PlanMetrics
+import net.chronoflow.feature.trip.timeline.LocalTimelineProbe
+import net.chronoflow.feature.trip.timeline.TimelineProbe
 
 private class ContentHeight {
     var width = -1
@@ -31,6 +34,8 @@ fun PinnedDayList(
     modifier: Modifier = Modifier,
     revision: Any? = rows,
 ) {
+    val probe = LocalTimelineProbe.current
+    SideEffect { probe?.composed(TimelineProbe.Kind.LIST, dayId) }
     val density = LocalDensity.current
     val content = remember(dayId, revision, density) { ContentHeight() }
     val itemKey = remember(dayId) { "t:$dayId" }

@@ -9,13 +9,14 @@ import net.chronoflow.core.plan.step.StepActions
 import net.chronoflow.core.plan.trippage.DayListRows
 import net.chronoflow.feature.trip.list.DayListRow
 import net.chronoflow.feature.trip.list.ZoneChangeCard
-import net.chronoflow.feature.trip.page.TripPageScreenState
+import net.chronoflow.feature.trip.timeline.DayClock
 
 @Composable
 internal fun WideListRows(
     day: PreparedDay,
     rows: DayListRows,
-    state: TripPageScreenState,
+    clock: DayClock?,
+    selectedBlock: () -> String?,
     pin: WidePinSource,
     onBlock: (String) -> Unit,
     onCheck: (String, CheckStatus?) -> Unit,
@@ -23,13 +24,13 @@ internal fun WideListRows(
 ) {
     PinnedDayList(day.id, pin = pin, modifier = modifier, revision = rows, rows = {
         rows.rows.forEach { row ->
-            val selected = remember(row.blockId, state.selectedBlock) { { state.selectedBlock() == row.blockId } }
+            val selected = remember(row.blockId, selectedBlock) { { selectedBlock() == row.blockId } }
             if (row.zone) {
                 ZoneChangeCard(row, onBlock, selected = selected)
             } else {
                 DayListRow(
                     row,
-                    state.clocks.clock(day.id),
+                    clock,
                     onBlock,
                     actions = day.checkActions.byBlock[row.blockId] ?: StepActions.None,
                     onCheck = onCheck,

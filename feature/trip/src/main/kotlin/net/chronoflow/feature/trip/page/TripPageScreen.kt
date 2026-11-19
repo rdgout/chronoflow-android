@@ -297,6 +297,8 @@ private fun ReadyTripPage(
                 onEvent(TripPageEvent.Check(id, status))
             }
         }
+    val clocks = state.clocks
+    val selectedBlock = state.selectedBlock
     val onFirstReplay = remember(state.firstFrame) { state.firstFrame::onReplay }
     val onBlock = remember(onEvent) { { id: String -> onEvent(TripPageEvent.Block(id)) } }
     val stickyTop =
@@ -322,7 +324,10 @@ private fun ReadyTripPage(
         val left = with(density) { safe.getLeft(this, direction).toDp() }
         val right = with(density) { safe.getRight(this, direction).toDp() }
         val bottom = with(density) { safe.getBottom(this).toDp() }
-        val frame = TripPageFrame.resolve(windowWidth, width - left.value - right.value)
+        val frame =
+            remember(windowWidth, width, left, right) {
+                TripPageFrame.resolve(windowWidth, width - left.value - right.value)
+            }
         val gutter = frame.gutterDp.dp
         val available = frame.timelineWidthDp
         val compact = frame.compact
@@ -442,7 +447,17 @@ private fun ReadyTripPage(
                             },
                             list =
                                 if (frame.layout.isWide && plan.layouts.containsKey(day.id)) {
-                                    { WideListRows(day, plan.listRows[position], state, pin, onBlock, onCheck) }
+                                    {
+                                        WideListRows(
+                                            day,
+                                            plan.listRows[position],
+                                            clocks.clock(day.id),
+                                            selectedBlock,
+                                            pin,
+                                            onBlock,
+                                            onCheck,
+                                        )
+                                    }
                                 } else {
                                     null
                                 },

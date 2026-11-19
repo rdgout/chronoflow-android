@@ -27,7 +27,6 @@ import net.chronoflow.core.testing.FakeTextMetrics
 import net.chronoflow.core.testing.LargeTimelineFixtures
 import net.chronoflow.feature.trip.timeline.TimelineTestPlans
 import net.chronoflow.feature.trip.timeline.TimelineTracer
-import net.chronoflow.feature.trip.timeline.host.timelineAvailableWidthDp
 import net.chronoflow.feature.trip.timeline.host.timelineDrawingKey
 import java.time.Instant
 
@@ -175,7 +174,12 @@ class TripPageTestRig(
         safeLeft: Double = 0.0,
         safeRight: Double = 0.0,
     ) {
-        val available = timelineAvailableWidthDp(windowDp, safeLeft, safeRight)
+        val available =
+            net.chronoflow.feature.trip.wide.TripPageFrame
+                .resolve(
+                    windowDp,
+                    windowDp - safeLeft - safeRight,
+                ).timelineWidthDp
         for (day in model.prepared.days) {
             val key =
                 timelineDrawingKey(
