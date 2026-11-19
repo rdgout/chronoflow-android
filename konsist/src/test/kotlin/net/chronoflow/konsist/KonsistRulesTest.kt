@@ -154,6 +154,15 @@ class KonsistRulesTest {
         assertFailure { testingNotInMain(violations("testingNotInMain")) }.messageContains("UsesFixtures.kt")
     }
 
+    @Test fun testingNotInMainAllowsMockFixtures() = testingNotInMain(allowed("testingNotInMain"))
+
+    @Test fun testingNotInMainRejectsUnrelatedMockMainImports() {
+        assertFailure { testingNotInMain(violations("testingNotInMainMock")) }.all {
+            messageContains("Unrelated.kt")
+            messageContains("MockAppSeed.kt: net.chronoflow.core.testing.DeviceProfiles")
+        }
+    }
+
     private companion object {
         val projectScope: KoScope by lazy { projectScope() }
     }
@@ -318,4 +327,16 @@ class KonsistRulesTest {
         assertFailure { noHttpLoggingInterceptor(violations("noHttpLoggingInterceptor")) }
             .messageContains("noHttpLoggingInterceptor violated")
     }
+
+    @Test fun onlyDebugAndPerfImportTheMock() = onlyDebugAndPerfImportTheMock(projectScope)
+
+    @Test fun onlyDebugAndPerfImportTheMockRejectsPlantedViolation() {
+        assertFailure { onlyDebugAndPerfImportTheMock(violations("onlyDebugAndPerfImportTheMock")) }.all {
+            messageContains("app/src/main/kotlin/net/chronoflow/app/UsesMock.kt")
+            messageContains("feature/today/src/main/kotlin/net/chronoflow/feature/today/UsesMock.kt")
+        }
+    }
+
+    @Test fun onlyDebugAndPerfImportTheMockAllowsControl() =
+        onlyDebugAndPerfImportTheMock(allowed("onlyDebugAndPerfImportTheMock"))
 }

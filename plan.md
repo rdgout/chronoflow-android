@@ -732,6 +732,22 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A148 | Does removing OkHttp 5.5.1's `PlatformInitializer` require manual context initialization? | Remove its manifest metadata under A21/OQ-A47. The cached Android sources show it stores the application context and forces `Platform.get()`; context is used only by `AssetPublicSuffixList`, reached by cookie parsing and `HttpUrl.topPrivateDomain()`. Our client uses `NO_COOKIES` and neither API, so no explicit initialization is needed. Android TLS, trust managers, logging and cleartext policy still initialize lazily during the first client build on IO. Robolectric proves construction on Android without the initializer or context. Before adding a context-dependent API, provide `OkHttp.initialize(applicationContext)` at that same lazy IO boundary; never in `Application.onCreate`. | 4b |
 | OQ-A149 | Can OkHttp retry a 503 response despite `retryOnConnectionFailure(false)`? | Strip `Retry-After` only from 503 responses with the sole internal network interceptor, installed after clearing injected interceptors. OkHttp 5.5.1 retries 503 with `Retry-After: 0` independently of the connection-retry flag; removing that header preserves the original `Server(503)` and one request. Leave 429 headers untouched for throttling. | 4b |
 | OQ-A150 | Stale pooled connections after idle, sleep or network changes? | Keep a dedicated `ConnectionPool(5, 300, SECONDS)`, the default five idle connections and 300 s keep-alive, below Cloudflare's 400 s client-side limit for HTTP/1.1 and HTTP/2 (enabled by default). The real tier is Cloudflare → nginx → Caddy/FrankenPHP, with no Node tier. OkHttp measures pool idle with `System.nanoTime()` (awake time), so a short cap cannot cover deep sleep. 4e awaits the suspending `ApiClient.evictIdleConnections()` as ON_START step 0 to cover sleep and network changes while backgrounded. It reads the volatile already-built client reference, does nothing if unbuilt, and never takes the initialization Mutex. It closes idle sockets inside `withContext(io)`: TLS close can send `close_notify` and must never run on main (review round 3). Keep retries off (OQ-A138/A149); the user may revisit. | 4b, 4e |
+| OQ-A151 | May the debug/perf mock main sources reuse 1b’s fixture helpers despite `testingNotInMain`? | Allow only `Fixtures`, `Template` and `LargeTimelineFixtures` in `MockAppSeed.kt`, `Template` in `MockTripFixtures.kt`, and `MockTripTemplates`/`Template` in `MockTripGeneration.kt`, within `core/data-mock/src/main`. Keep every other existing boundary and prove both allowed and rejected imports with controls. | 4c |
+| OQ-A152 | (4c-3) How does ordinary mock latency differ from seeded runs? | Follow iOS: clamp the default random delay to 0.3–0.8 s; 4e supplies `MockLatency.exact(CF_MOCK_DELAY)` for seeded runs (default 0). JVM tests inject recording sleep or virtual time. | 4c, 4e |
+| OQ-A153 | (4c-5) Does MockMethod have 26 cases as research 02 says? | No: iOS at the pin and landed DataSource each have 25 methods. ApiClient’s lifecycle eviction hook adds no mock case. | 4c |
+| OQ-A154 | (4c-12) How are API 29 JDK calls enforced in the JVM mock module? | Review the ART API surface and grep for newer JDK calls; no desugaring or Animal Sniffer dependency. Keep the existing standalone lint plugin; it has no Android minSdk model. | 4c |
+| OQ-A155 | (4c-6) Must the mock state JSON be byte-compatible with iOS? | No. Keep the Swift property names and schema 2 with required non-optional fields; allow nullable optional additions. Android reseeds incompatible state in debug. Claims accept legacy plaintext only on decode and always write a hash. | 4c |
+| OQ-A156 | (4c-2) Does mock seeding also depend on 1b? | Yes, already landed: reuse top-level Template, memoized MockTripTemplates, mock-seed.json and LargeTimelineFixtures; do not duplicate the fixture generator. | 4c |
+| OQ-A157 | (4c-4) How do perf variants select demo seeding? | MockDataSource takes debugAppSeed, default true; 4e passes false in perf. Like iOS Perf without DEBUG, that path restores state or starts empty unless given an explicit seed. | 4c, 4e |
+| OQ-A158 | (4c-9) Can fixture decoding exceed the JVM case budget? | Memoize decoded fixtures per JVM and warm them in BeforeClass. Keep every test below 1 s with no PerfBudget exemption; report any miss. | 4c |
+| OQ-A159 | (4c-10) Which zone defines the daily seed anchor? | Inject ZoneId, defaulting to the device zone at production entry signatures only. Tests pin Europe/Amsterdam. Rebase calendar days in each card’s origin zone. | 4c |
+| OQ-A160 | (4c-11) Rename demo passkeys for Android? | Keep iPhone 16 and MacBook Pro for pinned iOS parity; the mock never ships in release. Revisit if the designer changes capture data. | 4c |
+| OQ-A161 | (4c-7) Must resend and verify use rate windows? | Port iOS exactly: forgot and the other named limiters use windows; resend has a 60 s resendAvailableAt bound; verify has no separate window. | 4c |
+| OQ-A162 | (4c-8) Are preparatory contracts missing after 4b? | Rechecked against the landed tree: all required contracts and helpers exist. Reuse their exact types and signatures; no earlier-phase behavior changes or preparatory contract commit. | 4c |
+| OQ-A163 | (4c-14) Should MockClock and scenario helpers be shared with later modules now? | Keep them in data-mock/src/test. A consumer phase may move them to a java-test-fixtures source set; never duplicate them into another module. | 4c, 4d, 5, 9 |
+| OQ-A164 | (4c-15) How do string limits and password classes retain Swift Unicode semantics? | Apply one shared BreakIterator(Locale.ROOT) grapheme counter to every Swift String.count limit, including passwords, passkey names/challenges/assertions/claim fields and airport queries. Classify password code points with Character.getType; use codePointCount only for Swift unicodeScalars.count (device and sign-up names). Verify emoji and decomposed accents at limits, Ä as uppercase, and rejection of all-uppercase passwords. | 4c |
+| OQ-A165 | (4c-1) Split guest mock review and registration claim into 11a/11b? | Port the full intertwined MockDataSource now, including sign-in/passkey claim replay and guest registration. 11a/11b verify the mock and retain their UI/API work. | 4c, 11a, 11b |
+| OQ-A166 | (4c-13) Should 4e repeat mock-class release lookups? | No: 4c adds mockDataSourceIsAbsent for MockDataSource, MockAppSeed, MockServerState and MockScenarioValues. 4e retains its other release-readiness assertions and reuses this proof. | 4c, 4e |
 | OQ-0a-22 | Native libraries in the bundle? | Allow only `libandroidx.graphics.path.so` (Compose graphics-path; excluding it breaks Path conversion below API 34); fail on any other `.so` | 0a, 13 |
 | OQ-0b-1 | Where does `PlanMetrics` live? `08 §3.1` lists it inside `CfDimens`, but its consumer `:core:plan` is a JVM module that cannot depend on `:core:designsystem` | `core/plan/…/generated/PlanMetrics.generated.kt` (Double, dp), as iOS keeps it in `PlanCore` | 0b, 1b, 1c |
 | OQ-0b-2 | Port all iOS TokenGen outputs now (Auth, Settings, Terms, Welcome, PlanUI, Press, LaunchPaint, TypeMetrics), or only colors, sky and type? | All of them now (the iOS files are exact goldens and Phases 2, 3a, 3c, 5a, 9 and 10 need them) | 0b |
@@ -1781,20 +1797,20 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 **Delivers.** Ports the mock server: MockDataSource with injectable latency (zero in tests), a one-shot failNext for every method, offline mode, rate windows and a link inbox; MockServerState schema 2 persisted under the mock namespace; and MockAppSeed with the demo and two-factor accounts, seven rebased trips and large30/large60. It is a debug and perf-only dependency, and release-readiness tests prove it never ships. The iOS mock tests are ported.
 
 **Tasks**
-- [ ] **MockDataSource** (`core/data-mock/…`, JVM). It implements `DataSource`, with:
+- [x] **MockDataSource** (`core/data-mock/…`, JVM). It implements `DataSource`, with:
   - latency from `CF_MOCK_DELAY`, default 0;
   - `failNext(method, failure)`;
   - an offline switch;
   - rate windows for forgot, resend and verify on the injected clock;
   - a link inbox for reset and verify links.
-- [ ] **MockServerState**, schema 2, at `noBackupFilesDir/ChronoFlowMock/Server/state.json`: atomic writes, a tolerant read, and a reset on a schema mismatch.
-- [ ] **MockAppSeed.**
+- [x] **MockServerState**, schema 2, at `noBackupFilesDir/ChronoFlowMock/Server/state.json`: atomic writes, a tolerant read, and a reset on a schema mismatch.
+- [x] **MockAppSeed.**
   - Accounts: `demo@example.com` / `password`, and `twofactor@example.com` / `password` with code `123456` and recovery code `AbCdEf1234-GhIjKl5678`.
   - Account ids `0199a3c0-0000-7000-8000-000000000000` and `…0001`.
   - Seven trips rebased to the seed clock: S1–S6 and S6-RETURN-10N.
   - large30 and large60 from 1b.
-- [ ] **Wiring.** The mock is a `debugImplementation` and perf-variant dependency only. `ReleaseReadinessTest` asserts that no mock class is on the release classpath.
-- [ ] **Ported tests.** Port the iOS mock tests (the `MockScenarios` and `MockScenarioValues` cases) with the same names.
+- [x] **Wiring.** The mock is a `debugImplementation` and perf-variant dependency only. `ReleaseReadinessTest` asserts that no mock class is on the release classpath.
+- [x] **Ported tests.** Port the iOS mock tests (the `MockScenarios` and `MockScenarioValues` cases) with the same names.
 
 **Acceptance**
 - The ported cases pass.
@@ -2790,7 +2806,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - Entered from Welcome's Plan my trip.
   - The guest variants: `WizardWhereGuest`, `WizardOutboundGuest`, `WizardOutboundPastGuest`, `WizardCheckingGuest`, `WizardFineTuneGuest`, `WizardReadyGuest`, `WizardReadyGuestFree` and `WizardDiscardGuest`.
   - Questions are excluded for guests, per 9e.
-- [ ] **Guest review endpoint.** `POST guest/trips/review` (90 s) in `ApiDataSource` and in the mock (iOS 18b, 18c).
+- [ ] **Guest review endpoint.** `POST guest/trips/review` (90 s) in `ApiDataSource` and in the mock (iOS 18b, 18c; mock side ported in 4c, OQ-A165).
 - [ ] **GuestSecretStore:** Keystore alias `<ns>.guest` plus a DataStore key (06 OQ 12). The guest draft file is `noBackupFilesDir/<ns>/guest-wizard.json` (18f).
 - [ ] **Discard and recovery.** Discard returns to Welcome. The guest draft is recovered quietly after the Welcome intro (OQ 17, 18m).
 - [ ] **Tests.** The ported 18b–18h and 18k–18m cases, plus guards for every guest board and its DarkNL wrapper.
@@ -2822,7 +2838,7 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 
 **Tasks**
 - [ ] **Guest sign-up sheet** (`GuestSignup`, `GuestSignupFailed`, `GuestSignupRetry`, `GuestSignupReview`) over guest Ready, with a 520 dp column on wide windows; plus `GuestExcluded`.
-- [ ] **Claim**, porting `GuestClaim`.
+- [ ] **Claim**, porting `GuestClaim` (mock side ported in 4c, OQ-A165).
   - Register with the claim.
   - Claim on sign-in and on passkey sign-in (18i).
   - Consume `GuestSessionContinuation` after verification, so the claimed trip opens (18j; iOS `AppTabs.swift:341–369`).

@@ -13,6 +13,14 @@ class ReleaseReadinessTest {
     }
 
     @Test
+    fun mockDataSourceIsAbsent() {
+        missing("net.chronoflow.core.datamock.MockDataSource")
+        missing("net.chronoflow.core.datamock.MockAppSeed")
+        missing("net.chronoflow.core.datamock.MockServerState")
+        missing("net.chronoflow.core.datamock.MockScenarioValues")
+    }
+
+    @Test
     fun releaseShipsNoSeedCode() {
         listOf("SeedReceiverActivity", "TestSeeds", "TestSeed", "UITestTimeline").forEach {
             missing("net.chronoflow.debug.$it")
