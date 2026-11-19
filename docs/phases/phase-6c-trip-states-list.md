@@ -631,7 +631,7 @@ The "7 days" in the offline copy is fixed copy; the server's `mobile_prefetch_da
 
 ## Implementation results (2026-11-19)
 
-- Preflight branch matched. Existing untracked later-phase briefs were left untouched. Mechanical deltas and safe resolutions are recorded in the preflight bullets above and their signed docs commits. OQ-A272–OQ-A287 carry this brief's defaults; OQ-A288 resolves readiness semantics and OQ-A289 resolves the skeleton ink threshold.
+- Preflight branch matched. Existing untracked later-phase briefs were left untouched. Mechanical deltas and safe resolutions are recorded in the preflight bullets above and their signed docs commits. OQ-A272–OQ-A287 carry this brief's defaults; OQ-A288 resolves readiness semantics, OQ-A289 resolves the skeleton ink threshold and OQ-A290 preserves the landed benchmark workload.
 - The fetch/model, list values, rows, view toggle, state pages and shell destinations pass targeted checks. The cross-midnight key test was proven with a failing mutation and then restored. A late failure after fetch cancellation preserves Loading. Replacing day ids in list mode waits for the published replacement index and restores its header at offset zero.
 - List invalidation: 124 independently named cases, 8.355 s total, max 2.920 s. The 7 existing timeline invalidation cases pass, including `scrollingWithinOneDayDoesNotRecomposePageChrome`. These are JVM/Compose results, not emulator performance claims.
 - State structure: 14 cases pass (4.217 s total, max 3.058 s). Copy variants are checked on the JVM; screen tests use tags, structure, accessibility semantics and callbacks.
@@ -640,3 +640,26 @@ The "7 days" in the offline copy is fixed copy; the server's `mobile_prefetch_da
 - `make targeted ONLY="app:TripListSmokeTest"`: **PASS on pixel**, 2.440 s test / 10.85 s tier wall; the app's StrictMode IO counter is **0**. The journey seeds directly into list mode and toggles to the same day's timeline. It selects among three hardcoded first-row tags for the rebased mock's possible opening days; it never scans tag prefixes. Pixel remains running.
 - Evidence is archived under `build/phase6c-validation/` (layout, shared guard controls, captures and pixel results). `make captures` was run once, with the ten named boards and the six existing timeline board names in ONLY.
 - Performance/profile commands and the full commit gate remain explicitly deferred to the user: `make baseline-profile`, `make perf-timeline`, `make check`. No output or measurements are fabricated for commands not run. The separate remote-open/list/pull StrictMode manual pass is not claimed by the ready-list smoke journey.
+- Task 9 implements `listScroll`, its frame/memory budgets, required-test/iteration checks and the profile journey extension. All **48 benchmark-checker tests pass** (2.406 s focused run). The large60 opening-row assertion passes against the actual fixture (0.243 s focused test). `:benchmark:compileBenchmarkReleaseKotlin :app:lintDebug :feature:trip:lintDebug` passes in **36 s** with JDK 17, Android SDK configured and the Kotlin compiler in-process.
+- The **single** `make quick` invocation passes its **3,312 JVM/Robolectric cases** (32.40 s tier wall, 0 overruns) and **37 build-logic cases** (1.97 s). Its tooling suites pass 138 script cases (17.024 s), 25 contract cases (0.110 s), 49 localization cases (0.018 s), then 8 of 9 icon cases (0.032 s). It stops at `test_manifest_names_all_generate`, which still expects 35 glyphs instead of 37. A separate signed fix updates that count; the failed method passes (0.013 s). Quick was not repeated. No other tooling suite remained after that final method's suite.
+- The remaining `make timing` recipe passes **all six gates**, 3.03 s tier wall. Host measurements are in `docs/perf-timeline.md`; these are JVM budgets, not emulator measurements. Evidence from the final checks is archived under `build/phase6c-validation/final/`.
+
+Final quick results for every named host class (seconds are test wall time; all pass):
+
+| Class | Cases | Total s | Maximum s |
+|---|---:|---:|---:|
+| `TripPageInputsTests` | 4 | 0.001 | 0.001 |
+| `TripPageFetchTests` | 8 | 0.005 | 0.002 |
+| `TripPageViewModelStateTest` | 10 | 0.080 | 0.037 |
+| `ListRowsTests` | 5 | 0.072 | 0.056 |
+| `ListModeIndexTest` | 3 | 0.191 | 0.118 |
+| `TripScrollMathTest` | 7 | 0.001 | 0.001 |
+| `DayListRowTest` | 5 | 4.473 | 4.107 |
+| `ZoneChangeCardTest` | 2 | 0.030 | 0.017 |
+| `ViewToggleTest` | 10 | 0.290 | 0.054 |
+| `ListInvalidationTest` | 124 | 6.412 | 0.615 |
+| `TripPageStatesTest` | 14 | 0.304 | 0.037 |
+| `TimelineInvalidationTest` | 7 | 0.346 | 0.066 |
+| `TripPageTests` | 4 | 0.087 | 0.061 |
+| `TripPageStateTests` | 1 | 0.006 | 0.006 |
+| `Large60FixtureTripPageSourceTest` | 2 | 0.101 | 0.082 |

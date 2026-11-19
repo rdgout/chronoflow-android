@@ -2374,8 +2374,10 @@ Implementation commits (brief §7):
   - server error (`ErrorServer`).
 
   A `TripPagePathMonitor` port supplies the offline hint.
-- [ ] **List benchmark.** `listScroll`: 15 flings over the 740 large60 rows, with the `timelineScroll` metrics and budgets.
+- [x] **List benchmark.** `listScroll`: 15 bounded-swipe-v3 calls over the 740 large60 rows, with the frame/memory metrics and budgets from `timelineScroll` (OQ-A290). Profile journey and checker requirements are implemented; the user runs profile generation and emulator measurement.
 - [x] **Tests.** The `TripPageState.resolve` cases, and guards for each state.
+
+**Validation (2026-11-19).** Targeted logic/structure tests, 40 new guards and 64 timeline guards pass; 52 board captures were produced once; pixel `TripListSmokeTest` passes in 2.440 s with zero StrictMode IO violations. App/trip lint and benchmark compilation pass. The single final `make quick` passed 3,312 JVM/Robolectric tests and stopped on a stale icon-count assertion; that assertion was corrected and its focused test passes. All other tooling cases passed, and the remaining six serial timing gates pass separately. Performance numbers, regenerated profiles, `make check`, independent capture review and the remote-open/list/pull StrictMode sweep remain pending with the user. The brief and `docs/perf-timeline.md` contain the evidence and exact handoff commands.
 
 **Acceptance**
 - `listScroll` meets the timeline emulator gates.

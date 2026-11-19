@@ -435,3 +435,32 @@ Host evidence: the retargeted six-case `TimelineInvalidationTest` passes (suite 
 | Drawing bytes maximum, 360 / 411 / 841 dp | 11795 / 11795 / 14089 | bytes |
 
 The synthetic benchmark-checker tests now use Page `trip` for their matching-history fixtures and Page `host` for the isolation case. All 38 checker tests pass; no runtime threshold or history row was changed.
+
+## Phase 6c: list mode — measurement pending
+
+2026-11-19, `feat/phase-6c-trip-states-list`. The `listScroll` benchmark and the profile journey extension are implemented. Per the user's instruction, this worker did **not** run `make baseline-profile`, `make perf-timeline`, `make perf` or `make check`. There are no new device measurements, trend conclusions or regenerated profile files in this phase's implementation commit.
+
+`listScroll` launches large60 afresh for each of three iterations, using `benchmarkRelease` and `Partial(Require)`. Setup waits for the presented timeline, toggles to list and waits for the exact opening row. The measured workload copies the existing **bounded-swipe-v3** helper: 15 calls, five fixed drags per call. It sets the page's gesture margin to width/5 and asserts that the top visible block changes. This resolves the brief's older “flings” wording without changing `timelineScroll` (OQ-A290). The profile journey adds a list toggle, three helper calls and a toggle back.
+
+The checker requires all four tests, three nonempty list iterations and finite metrics. List budgets copy the existing frame and memory budgets, without drawing/placeholder metrics: emulator frame costs report only, peak anonymous RSS ≤ 150 MiB gates, and growth > 40 MiB warns. Physical-device gates remain separate. Synthetic fixture tests are not runtime performance evidence. The timeline history's existing 26-column format and CPU baseline are preserved; record list values separately from its timelineScroll values.
+
+Host validation on MacBook-Pro-van-Rick.local, Apple silicon, JDK 21 test toolchain: `make timing` passes six serial JVM gates in **3.03 s wall** (Gradle 2 s), one worker. S3 preparation mean/max is **2.9/4.0 ms**, large30 **4.7/5.8 ms**, large60 **6.2/8.5 ms**. Drawing total medians at 360/411/841 dp are **0.8/0.5/1.3 ms**, largest-day medians **0.07/0.05/0.06 ms**, and maximum bytes **11795/11795/14089**. The final quick's seven `TimelineInvalidationTest` cases pass (0.346 s total), as do 124 independently named list invalidation cases (6.412 s total). None of these values measures emulator scrolling. Benchmark compilation plus app/trip lint pass (36 s); all 48 checker tests pass in the focused run (2.406 s).
+
+The orchestrator runs these exact commands on the quiet host, in this order:
+
+```sh
+make baseline-profile
+make perf-timeline
+make check
+```
+
+Commit the regenerated baseline/startup profiles with list-row coverage. Record the following per-benchmark rows with the measured commit, date, device/model/API/Hz/GPU, locale/theme/font scale, build type, compilation mode, command, archive and wall time:
+
+| Benchmark | Measurements still required | Status |
+|---|---|---|
+| `timelineFirstFrame` | First frame per iteration (max ≤ 800 ms), TTID, decode/preparation/typeface | Not run |
+| `timelineScroll` | CPU P50/P90/P99 and trip CPU band; main/RenderThread P99; overrun P99, jank/hitch; builds on main, placeholders, replays, recompositions/GC; RSS peak/growth; final day/end assertions | Not run |
+| `timelineLastDay` | Last-day and plan-end reachability; reported frame values | Not run |
+| `listScroll` | CPU P50/P90/P99, overrun P99, jank/hitch per iteration, frame count, anonymous RSS peak/growth, heap and row-progress assertion | Not run |
+
+Explain each checker `FLAGGED` trend with its evidence; trend flags do not fail. Emulator values remain emulator evidence. The separate remote-open/list/pull debug StrictMode sweep and independent capture review are also pending; the ready-list pixel smoke's zero IO violations does not establish those other journeys.

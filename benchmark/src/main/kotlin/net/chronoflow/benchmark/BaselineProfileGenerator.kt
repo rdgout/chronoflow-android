@@ -60,5 +60,14 @@ class BaselineProfileGenerator {
             repeat(15) { device.swipeTimeline(bounds) }
             check(topDayIndex() in 35..50) { "15 gestures must end on day index 35..50" }
             check(!device.hasObject(By.res("trip.plan.end"))) { "bounded-swipe-v3 reached the plan end" }
+            checkNotNull(device.findObject(By.res("trip.viewToggle"))).click()
+            check(device.wait(Until.hasObject(By.res("trip.viewToggle").desc("Show as timeline")), 5_000))
+            val list = checkNotNull(device.findObject(By.res("trip.page")))
+            list.setGestureMargin(list.visibleBounds.width() / 5)
+            val listBounds = list.visibleBounds
+            repeat(3) { device.swipeTimeline(listBounds) }
+            checkNotNull(device.findObject(By.res("trip.viewToggle"))).click()
+            check(device.wait(Until.hasObject(By.res("trip.viewToggle").desc("Show as list")), 5_000))
+            check(device.wait(Until.hasObject(By.res("trip.timeline.ready")), 10_000))
         }
 }

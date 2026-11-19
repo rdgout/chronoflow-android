@@ -15,6 +15,15 @@ const val FREEZE_AT = "2026-10-13T08:00:00Z"
 /** The last day of large60 (1b golden). */
 const val LAST_DAY_TAG = "trip.day.day-29871120-tour-9"
 
+const val LARGE60_OPENING_FIRST_BLOCK = "caffeine-no_caffeine-29866935-caffeine-day-0"
+
+private val listBlockTags = Pattern.compile("trip\\.block\\..*")
+
+fun UiDevice.topListBlock(): String? =
+    findObjects(By.res(listBlockTags))
+        .minByOrNull { it.visibleBounds.top }
+        ?.resourceName
+
 private const val READY_WAIT_MS = 10_000L
 
 private val large60DayTags by lazy {

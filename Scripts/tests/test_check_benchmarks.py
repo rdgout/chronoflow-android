@@ -398,6 +398,81 @@ class TimelineCheckTest(unittest.TestCase):
         self.assertIn("Timeline trend: placeholderMax 0.0 -> 2.0 (+2.0) FLAGGED", result.stdout)
         self.assertIn("Timeline trend: gcMax 0.0 -> 1.0 (+1.0) FLAGGED", result.stdout)
 
+    def test_missing_list_scroll_fails(self):
+        result = timeline_check(
+            self.variant(lambda b, d: d["benchmarks"].remove(b["listScroll"])), row_dir=temp_dir(self)
+        )
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("test listScroll is absent", result.stderr)
+
+    def test_list_scroll_reports_frames_and_memory_without_drawing_metrics(self):
+        result = timeline_check(TIMELINE / "pass", row_dir=temp_dir(self))
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("listScroll frameDurationCpuMs P99", result.stdout)
+        self.assertIn("listScroll memoryRssAnonMaxKb each", result.stdout)
+        self.assertIn("listScroll frameCount each", result.stdout)
+        self.assertNotIn("listScroll timelineBuild", result.stdout)
+        self.assertNotIn("listScroll timelinePlaceholder", result.stdout)
+
+    def test_list_scroll_peak_rss_gate(self):
+        def rss(b, _):
+            b["listScroll"]["metrics"]["memoryRssAnonMaxKb"]["runs"][1] = 153601.0
+        result = timeline_check(self.variant(rss), row_dir=temp_dir(self))
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("listScroll memoryRssAnonMaxKb each=153601.0 KiB [hard=153600] FAIL", result.stdout)
+
+    def test_list_scroll_requires_all_three_iterations(self):
+        def incomplete(b, _):
+            b["listScroll"]["metrics"]["memoryRssAnonMaxKb"]["runs"].pop()
+        result = timeline_check(self.variant(incomplete), row_dir=temp_dir(self))
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("listScroll memoryRssAnonMaxKb needs all three iterations", result.stderr)
+
+    def test_list_scroll_empty_frame_iteration_fails(self):
+        def empty(b, _):
+            b["listScroll"]["sampledMetrics"]["frameOverrunMs"]["runs"][1] = []
+        result = timeline_check(self.variant(empty), row_dir=temp_dir(self))
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("listScroll jankPercent frameOverrunMs has an empty iteration", result.stderr)
+
+    def test_list_scroll_zero_frame_count_fails(self):
+        def empty(b, _):
+            b["listScroll"]["metrics"]["frameCount"]["runs"][1] = 0
+        result = timeline_check(self.variant(empty), row_dir=temp_dir(self))
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("listScroll frameCount each=0.0 count [min=1] FAIL", result.stdout)
+
+    def test_list_scroll_emulator_frame_costs_are_report_only(self):
+        def expensive(b, _):
+            b["listScroll"]["sampledMetrics"]["frameDurationCpuMs"]["P90"] = 1000.0
+            b["listScroll"]["sampledMetrics"]["frameDurationCpuMs"]["P99"] = 2000.0
+            b["listScroll"]["sampledMetrics"]["frameOverrunMs"]["P99"] = 1000.0
+        result = timeline_check(self.variant(expensive), history=self.history([history_row()]), row_dir=temp_dir(self))
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("listScroll frameDurationCpuMs P99=2000.0 ms REPORT", result.stdout)
+        self.assertIn("listScroll frameOverrunMs P99=1000.0 ms REPORT", result.stdout)
+
+    def test_list_scroll_reference_frame_overrun_gate(self):
+        def expensive(b, _):
+            b["listScroll"]["sampledMetrics"]["frameOverrunMs"]["P99"] = 2.1
+        result = timeline_check(self.variant(expensive), device_class="reference", row_dir=temp_dir(self))
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn("listScroll frameOverrunMs P99=2.1 ms [hard=2 aim=0] FAIL", result.stdout)
+
+    def test_list_scroll_low_end_frame_overrun_gate(self):
+        def expensive(b, _):
+            b["listScroll"]["sampledMetrics"]["frameOverrunMs"]["P99"] = 4.1
+        result = timeline_check(self.variant(expensive), device_class="lowEnd", row_dir=temp_dir(self))
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn("listScroll frameOverrunMs P99=4.1 ms [hard=4 aim=0] FAIL", result.stdout)
+
+    def test_list_scroll_nonfinite_rss_fails(self):
+        def invalid(b, _):
+            b["listScroll"]["metrics"]["memoryRssAnonMaxKb"]["runs"][1] = float("nan")
+        result = timeline_check(self.variant(invalid), row_dir=temp_dir(self))
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("listScroll memoryRssAnonMaxKb has invalid runs", result.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()
