@@ -24,3 +24,10 @@ The day tag moved from `DayTimeline` to `WideDayRow`; the standalone timeline te
 - `make targeted ONLY="feature:trip:WidePinSourceTest feature:trip:PinnedDayListTest feature:trip:PinnedDayListFontScaleTest feature:trip:WideDayRowTest feature:trip:WideDayRowBreakpointTest"`: 13/14 PASS (Gradle 7 s). The font-cap assertion exposed platform `sp.toDp()` producing 36.19 dp instead of the fixed linear 46.8 dp required by the brief.
 - `make targeted ONLY="feature:trip:PinnedDayListFontScaleTest#bandHeightFollowsTheFontScale"`: PASS (Gradle 5 s; test 2.171 s including Robolectric warm-up) after using generated dp metrics × the existing capped fontScale for both band and pin. This adaptation is recorded in the brief; phone scaling and threshold are unchanged.
 - `make format`: PASS (11 s). The no-lag Perfetto/three-fling recording remains with the user’s deferred wide benchmark. Pin formula tests cover negative viewport start, bottom inset, invisible day, density conversion and cached result identity.
+
+## Task 5
+
+- `make targeted ONLY="feature:trip:WideRemoteStatesTest feature:trip:TripPageStatesTest core:ui:CfCircularProgressGuardsTest"`: the feature run passed 18/22 cases (Gradle 7 s); four wide edge assertions exposed pixel rounding. The second module did not run after this failure.
+- `make targeted ONLY="feature:trip:WideRemoteStatesTest#remoteLoadingUsesTheWideSkeleton feature:trip:WideRemoteStatesTest#remoteOfflineCardSpansTheGutter"`: PASS (four en/nl cases, Gradle 6 s). The skeleton timeline now fills remaining width so rounded gutters cannot shrink the fixed list column; offline edges compare against measured viewport and rounded padding, within 0.5 px.
+- `make targeted ONLY="core:ui:CfCircularProgressGuardsTest"`: PASS (Gradle 12 s). The new wrapper delegates to the M3 system spinner.
+- Screen tests check the downloading semantics structure; they do not assert copy (user/AGENTS takes precedence over the brief's copy assertion). Existing generated en/nl resources supply every label. Wide page bottom padding retains iOS's 16 dp; side gutters are 20 dp.

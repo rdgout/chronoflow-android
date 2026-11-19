@@ -340,7 +340,13 @@ private fun ReadyTripPage(
         LazyColumn(
             state = listState,
             modifier = Modifier.fillMaxSize().testTag("trip.scroll"),
-            contentPadding = PaddingValues(start = gutter + left, end = gutter + right, bottom = gutter + bottom),
+            contentPadding =
+                PaddingValues(
+                    start = gutter + left,
+                    end = gutter + right,
+                    bottom =
+                        PlanMetrics.gutter.dp + bottom,
+                ),
         ) {
             item("summary", "summary") {
                 SummaryCard(
