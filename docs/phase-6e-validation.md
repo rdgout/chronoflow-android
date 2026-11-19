@@ -31,3 +31,35 @@ The day tag moved from `DayTimeline` to `WideDayRow`; the standalone timeline te
 - `make targeted ONLY="feature:trip:WideRemoteStatesTest#remoteLoadingUsesTheWideSkeleton feature:trip:WideRemoteStatesTest#remoteOfflineCardSpansTheGutter"`: PASS (four en/nl cases, Gradle 6 s). The skeleton timeline now fills remaining width so rounded gutters cannot shrink the fixed list column; offline edges compare against measured viewport and rounded padding, within 0.5 px.
 - `make targeted ONLY="core:ui:CfCircularProgressGuardsTest"`: PASS (Gradle 12 s). The new wrapper delegates to the M3 system spinner.
 - Screen tests check the downloading semantics structure; they do not assert copy (user/AGENTS takes precedence over the brief's copy assertion). Existing generated en/nl resources supply every label. Wide page bottom padding retains iOS's 16 dp; side gutters are 20 dp.
+
+## Task 6
+
+- `make targeted ONLY="feature:trip:DayMenuWideTest feature:trip:TripPageWideGuardTest"`: menu and 27/29 layout cases initially passed (Gradle 8 s). Compile preparation corrected the ComposeContentTestRule import (the rule factory is in v2, its interface is in junit4).
+- `make targeted ONLY="core:testing-compose:GuardsSelfTest#scopedGuardsIgnoreTheScrimAndStillRejectUnsafeContent feature:trip:TripPageWideGuardTest#widePageFitsAndKeepsItsWindowPolicy"`: scoped guard control PASS (5 s); the full-window ink assumption then rejected the two cropped sheet images. The safe-area control has a non-zero top inset and deliberately rejects an unsafe control.
+- `make targeted ONLY="feature:trip:TripPageWideGuardTest#widePageFitsAndKeepsItsWindowPolicy"`: PASS, all 29 independent guard cases (Gradle 10 s). Sheet interactivity is scoped to its content, keeping the native dismiss scrim outside content geometry checks. Ink uses the full-page root. Step cap and centring are checked on the real sheet. Ready cases explicitly guard the right inset and gutter, including landscape's non-zero 48 dp edge.
+- A requested parameter-suffix filter produced `No tests found for given includes`; the supported method filter above ran the affected method instead.
+- `make captures ONLY=PlanWide,PlanRemoteWide`: PASS, exactly once, 17 PNGs (Gradle 13 s, capture cases 2.109 s total). `make format`: PASS (11 s). No stored references.
+
+Local visual review inspected all 17 outputs against the six boards' HTML and the iOS defaults. Board differences retained by the brief: all PlanWide variants use 40 dp/hour, no Steps label, iOS spacing and compact title/lanes, generated fixture copy/times/dates, IATA title and M3 chrome. PlanWideDayMenu_title captures the title with the menu closed; DayMenuWideTest separately opens and selects the native menu. PlanRemoteWide uses the 22 dp iOS bar radius, static fills and the M3 spinner. PlanRemoteWideOffline uses generated catalog copy and the known S2 fixture summary. The inherited screen fixture leaves page action callbacks disabled; actual TripPage supplies them. Independent visual acceptance remains with the user.
+
+The brief's menu geometry assertion now uses `trip.headerItem.<id>` (outer lazy item), rather than the padded `trip.dayHeader.<id>` title. OQ-A323's wording now reflects the Stack check: landed phone rows have no selection outline.
+
+PNG files under `build/captures/`:
+
+- `PlanRemoteWideOffline_board669-xxl_nl_dark.png`
+- `PlanRemoteWideOffline_board669_en_dark.png`
+- `PlanRemoteWideOffline_board669_en_light.png`
+- `PlanRemoteWideOffline_board669_nl_dark.png`
+- `PlanRemoteWideOffline_board669_nl_light.png`
+- `PlanRemoteWide_board669-xxl_nl_dark.png`
+- `PlanRemoteWide_board669_en_dark.png`
+- `PlanRemoteWide_board669_en_light.png`
+- `PlanRemoteWide_board669_nl_dark.png`
+- `PlanRemoteWide_board669_nl_light.png`
+- `PlanWideDark_board669_en_dark.png`
+- `PlanWideDayMenu_title_board669_en_light.png`
+- `PlanWideScrolled_board669_en_light.png`
+- `PlanWide_board669-xxl_nl_light.png`
+- `PlanWide_board669_en_light.png`
+- `PlanWide_foldInner_en_light.png`
+- `PlanWide_landscapeSideNav_en_light.png`

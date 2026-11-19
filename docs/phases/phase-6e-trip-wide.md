@@ -321,7 +321,7 @@ Plus: a content width smaller than the gutters gives `timelineWidthDp == 0.0`, n
 
 Also in this class: `noHorizontalPageOverflow` at `board669` and `foldInner` (iOS l.197: content width ≤ viewport): the `trip.day.<dayId>` node has no `HorizontalScrollAxisRange`; and `sheetIsCappedOnWide`: at `foldInner`, after `vm.openStep(<first block id>)`, the `step.sheet` node is ≤ 640 dp wide and horizontally centred ± 1 px (window policy table). Sheet states open through `vm.openStep(id)` / `vm.openLegend()` (6d); their guard heading tags are 6d's.
 
-**`DayMenuWideTest`** (`@Logic`): at fake 841, scrolled: clicking `trip.dayMenu` shows `trip.dayMenu.day.0` and the current day's item is `selected` (6b's M3 `DropdownMenu`, OQ-6e-16); picking day 1 scrolls so `trip.dayHeader.<day1>` (6b's header tag on the `h:` item) top = `trip.scroll` top ± 1 px after `waitForIdle()`.
+**`DayMenuWideTest`** (`@Logic`): at fake 841, scrolled: clicking `trip.dayMenu` shows `trip.dayMenu.day.0` and the current day's item is `selected` (6b's M3 `DropdownMenu`, OQ-6e-16); picking day 1 scrolls so `trip.headerItem.<day1>` (6b's outer `h:` item tag; `trip.dayHeader` is its padded title) top = `trip.scroll` top ± 1 px after `waitForIdle()`.
 
 Run `make captures ONLY=PlanWide,PlanRemoteWide` and list the written PNGs in the commit body. Do not record stored references.
 
@@ -500,7 +500,7 @@ Keep the 1d and 6b phone rows unchanged and passing. The wide variant uses 6b's 
 | OQ-6e-16 | Day menu on wide: the board draws a glass panel titled "Go to day" and labels it the system menu (Compose `DropdownMenu` on Android, `PlanWide.dc.html:180`); iOS shows the native menu titled "Go to a day". | **6b's M3 `DropdownMenu`**, "Go to a day" (OQ-T9). |
 | OQ-6e-17 | Negative restore offsets (a header item just below the top) need `requestScrollToItem` with a negative offset. | Use it if supported [verify]; else clamp at 0 as iOS does (`max(0, −minY)`), a shift of at most 36 sp. |
 | OQ-6e-18 | Wide skeleton day bar radius: board 18 (`PlanRemoteWide.dc.html:55`), iOS `rowRadius` 22 (`WidePlanSkeleton.swift:23`). | **22** (iOS). |
-| OQ-6e-19 | Phone list mode outline: 6d outlines the selected list row on phone; iOS passes no `selectedBlockID` to the phone `DayListView` (`TripDayRow.swift:135`), so iOS outlines only on wide. | **Keep 6d's phone behaviour** in this phase (not 6e's scope); 6e only adds the wide column. Raise it for 6d's owner. |
+| OQ-6e-19 | Phone list mode outline: the original brief expected one in 6d, but landed 6d deferred it to 6e; iOS passes no `selectedBlockID` to the phone `DayListView` (`TripDayRow.swift:135`). | **Keep 6d's phone behaviour (no outline)**; add the selected outline only to the wide column (iOS). |
 
 ---
 

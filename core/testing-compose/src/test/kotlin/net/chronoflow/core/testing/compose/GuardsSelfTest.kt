@@ -57,6 +57,26 @@ class GuardsSelfTest {
     @get:Rule val rules: RuleChain =
         RuleChain.outerRule(ProfileRule(profile, AppLanguage.En)).around(composeRule)
 
+    @Test fun scopedGuardsIgnoreTheScrimAndStillRejectUnsafeContent() {
+        composeRule.setContent {
+            ProfileHost(profile) {
+                Box(Modifier.fillMaxSize()) {
+                    Box(Modifier.fillMaxSize().clickable {})
+                    Box(Modifier.offset(y = 24.dp).testTag("guard.scope.good")) {
+                        Box(Modifier.size(48.dp).clickable {})
+                    }
+                    Box(Modifier.testTag("guard.scope.bad")) {
+                        Box(Modifier.size(48.dp).clickable {})
+                    }
+                }
+            }
+        }
+        Guards.assertInteractiveInSafeArea(composeRule, profile, rootTag = "guard.scope.good")
+        Guards.assertNoInteractiveOverlap(composeRule, rootTag = "guard.scope.good")
+        assertFailure { Guards.assertInteractiveInSafeArea(composeRule, profile, rootTag = "guard.scope.bad") }
+            .isInstanceOf(AssertionError::class)
+    }
+
     private val headings = setOf("guard.good.title")
 
     @Composable

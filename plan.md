@@ -905,7 +905,7 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A320 | Day menu on wide: the board draws a glass panel titled "Go to day" and labels it the system menu (Compose `DropdownMenu` on Android, `PlanWide.dc.html:180`); iOS shows the native menu titled "Go to a day". (6e OQ-16) | **6b's M3 `DropdownMenu`**, "Go to a day" (OQ-T9). | 6e |
 | OQ-A321 | Negative restore offsets (a header item just below the top) need `requestScrollToItem` with a negative offset. (6e OQ-17) | Use it if supported [verify]; else clamp at 0 as iOS does (`max(0, −minY)`), a shift of at most 36 sp. | 6e |
 | OQ-A322 | Wide skeleton day bar radius: board 18 (`PlanRemoteWide.dc.html:55`), iOS `rowRadius` 22 (`WidePlanSkeleton.swift:23`). (6e OQ-18) | **22** (iOS). | 6e |
-| OQ-A323 | Phone list mode outline: 6d outlines the selected list row on phone; iOS passes no `selectedBlockID` to the phone `DayListView` (`TripDayRow.swift:135`), so iOS outlines only on wide. (6e OQ-19) | **Keep 6d's phone behaviour** in this phase (not 6e's scope); 6e only adds the wide column. Raise it for 6d's owner. | 6e |
+| OQ-A323 | Phone list mode outline: the original brief expected one in 6d, but landed 6d deferred it to 6e; iOS passes no `selectedBlockID` to the phone `DayListView` (`TripDayRow.swift:135`). (6e OQ-19) | **Keep 6d's phone behaviour (no outline)**; add the selected outline only to the wide column (iOS). | 6e |
 | OQ-0a-22 | Native libraries in the bundle? | Allow only `libandroidx.graphics.path.so` (Compose graphics-path; excluding it breaks Path conversion below API 34); fail on any other `.so` | 0a, 13 |
 | OQ-0b-1 | Where does `PlanMetrics` live? `08 §3.1` lists it inside `CfDimens`, but its consumer `:core:plan` is a JVM module that cannot depend on `:core:designsystem` | `core/plan/…/generated/PlanMetrics.generated.kt` (Double, dp), as iOS keeps it in `PlanCore` | 0b, 1b, 1c |
 | OQ-0b-2 | Port all iOS TokenGen outputs now (Auth, Settings, Terms, Welcome, PlanUI, Press, LaunchPaint, TypeMetrics), or only colors, sky and type? | All of them now (the iOS files are exact goldens and Phases 2, 3a, 3c, 5a, 9 and 10 need them) | 0b |
@@ -2479,7 +2479,7 @@ Implementation commits (brief §7):
 **Delivers.** Adds the side-by-side trip page from 600 dp (a 280 dp list column, 320 dp from 900 dp, no view toggle) and its remote states. Folding, unfolding, rotating and resizing keep the anchor (day and offset in the day) and any open sheet without recreating the activity. Tests use window-size fakes and the foldInner and landscapeSideNav profiles; the fold AVD check runs on request.
 
 **Tasks**
-- [ ] **Wide layout** (`TripPageLayout`). From 600 dp:
+- [x] **Wide layout** (`TripPageLayout`). From 600 dp:
   - a 280 dp list column (320 dp from 900 dp) beside the timeline, with no view toggle;
   - the wide day menu (`PlanWideDayMenu`);
   - the remote states (`PlanRemoteWide`, `PlanRemoteWideOffline`);

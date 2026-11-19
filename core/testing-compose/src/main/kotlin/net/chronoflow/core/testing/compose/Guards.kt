@@ -175,11 +175,19 @@ object Guards {
         }
     }
 
+    private fun withinTag(
+        node: SemanticsNode,
+        tag: String?,
+    ): Boolean =
+        tag == null ||
+            (sequenceOf(node) + ancestors(node)).any { it.config.getOrNull(SemanticsProperties.TestTag) == tag }
+
     fun assertInteractiveInSafeArea(
         rule: SemanticsNodeInteractionsProvider,
         profile: DeviceProfile,
         exemptTags: Set<String> = emptySet(),
         scrollIntoView: Boolean = true,
+        rootTag: String? = null,
     ) {
         val (width, height) = windowPx(profile)
         val d = profile.density
@@ -191,7 +199,7 @@ object Guards {
                 height - profile.insets.bottom * d,
             )
         for (node in rule.onAllNodes(interactive).fetchSemanticsNodes()) {
-            if (isExempt(node, exemptTags)) continue
+            if (isExempt(node, exemptTags) || !withinTag(node, rootTag)) continue
             val bounds =
                 settledBounds(
                     rule,
@@ -217,8 +225,13 @@ object Guards {
     fun assertNoInteractiveOverlap(
         rule: SemanticsNodeInteractionsProvider,
         exemptTags: Set<String> = emptySet(),
+        rootTag: String? = null,
     ) {
-        val nodes = rule.onAllNodes(interactive).fetchSemanticsNodes().filterNot { isExempt(it, exemptTags) }
+        val nodes =
+            rule.onAllNodes(interactive).fetchSemanticsNodes().filter {
+                !isExempt(it, exemptTags) &&
+                    withinTag(it, rootTag)
+            }
         for (i in nodes.indices) {
             for (j in i + 1 until nodes.size) {
                 val a = nodes[i]
@@ -323,12 +336,13 @@ object Guards {
         rootTag: String? = null,
         scrollIntoView: Boolean = true,
         inkChannelDifference: Int = 16,
+        interactiveRootTag: String? = null,
     ) {
         if (headingTags.isNotEmpty()) assertHeadings(rule, *headingTags.toTypedArray())
         assertTextFits(rule, profile, scrollIntoView)
         assertTouchTargets(rule, profile, exemptTags = exemptTags)
-        assertInteractiveInSafeArea(rule, profile, exemptTags, scrollIntoView)
-        assertNoInteractiveOverlap(rule, exemptTags)
+        assertInteractiveInSafeArea(rule, profile, exemptTags, scrollIntoView, interactiveRootTag)
+        assertNoInteractiveOverlap(rule, exemptTags, interactiveRootTag)
         assertInk(rule, profile, minChannelDifference = inkChannelDifference, rootTag = rootTag)
     }
 }
