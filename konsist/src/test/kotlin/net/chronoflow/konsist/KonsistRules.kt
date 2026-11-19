@@ -416,3 +416,37 @@ fun onlyDebugAndPerfImportTheMock(scope: KoScope) {
             }
     fail("onlyDebugAndPerfImportTheMock", violations)
 }
+
+fun databaseTestingIsTestOnly(scope: KoScope) {
+    val violations =
+        scope
+            .moduleFiles()
+            .filter { it.module != "core/database-testing" && it.sourceSet != null && !isTestSourceSet(it.sourceSet) }
+            .flatMap { file ->
+                file.imports.importsFrom("net.chronoflow.core.database.testing").map { "${file.path}: $it" }
+            }
+    fail("databaseTestingIsTestOnly", violations)
+}
+
+fun noWorkManagerOutsideReminders(scope: KoScope) {
+    val prefix = "net.chronoflow.core.data.reminders"
+    val violations =
+        scope.files
+            .filter { file ->
+                val name = file.packagee?.name
+                name != prefix && name?.startsWith("$prefix.") != true
+            }.flatMap { file ->
+                file.imports
+                    .filter { it.name == "androidx.work" || it.name.startsWith("androidx.work.") }
+                    .map { "${file.path}: ${it.name}" }
+            }
+    fail("noWorkManagerOutsideReminders", violations)
+}
+
+fun noFlowDebounceInSync(scope: KoScope) {
+    val violations =
+        scope.files.filter { moduleOf(it.path) == "core/sync" }.flatMap { file ->
+            file.imports.filter { it.name == "kotlinx.coroutines.flow.debounce" }.map { "${file.path}: ${it.name}" }
+        }
+    fail("noFlowDebounceInSync", violations)
+}

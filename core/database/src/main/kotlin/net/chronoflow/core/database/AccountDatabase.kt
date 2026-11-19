@@ -18,6 +18,7 @@ import net.chronoflow.core.model.AccountID
 import net.chronoflow.core.model.session.SessionMutationPermit
 import net.chronoflow.core.model.session.StorageNamespace
 import net.chronoflow.core.model.session.SyncEpoch
+import net.chronoflow.core.model.store.StoreFailure
 import java.io.File
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.read

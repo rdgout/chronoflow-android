@@ -3,3 +3,27 @@ CREATE TABLE check_marks (
     ordinal INTEGER NOT NULL, status TEXT NOT NULL, marked_at TEXT NOT NULL,
     PRIMARY KEY (trip_id, input_hash, type, local_date, ordinal)
 );
+
+selectCheckMarks:
+SELECT * FROM check_marks WHERE trip_id = ? AND input_hash = ? ORDER BY type, local_date, ordinal;
+
+selectCheckMark:
+SELECT * FROM check_marks WHERE trip_id = ? AND input_hash = ? AND type = ? AND local_date = ? AND ordinal = ?;
+
+updateCheckMark:
+UPDATE check_marks SET status = ?, marked_at = ? WHERE trip_id = ? AND input_hash = ? AND type = ? AND local_date = ? AND ordinal = ?;
+
+insertCheckMark:
+INSERT INTO check_marks (trip_id, input_hash, type, local_date, ordinal, status, marked_at) VALUES (?, ?, ?, ?, ?, ?, ?);
+
+deleteCheckMark:
+DELETE FROM check_marks WHERE trip_id = ? AND input_hash = ? AND type = ? AND local_date = ? AND ordinal = ?;
+
+deleteCheckMarksOfPlan:
+DELETE FROM check_marks WHERE trip_id = ? AND input_hash = ?;
+
+deleteCheckMarksOfTrip:
+DELETE FROM check_marks WHERE trip_id = ?;
+
+deleteCheckMarkIfNotNewer:
+DELETE FROM check_marks WHERE trip_id = ? AND input_hash = ? AND type = ? AND local_date = ? AND ordinal = ? AND marked_at <= ?;

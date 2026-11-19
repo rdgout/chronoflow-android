@@ -2,6 +2,7 @@ package net.chronoflow.core.database
 
 import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.db.SqlDriver
+import net.chronoflow.core.model.store.StoreFailure
 import java.io.File
 
 /** Opens, configures and migrates without deleting or replacing an existing database. Caller must run on IO. */
@@ -9,7 +10,7 @@ fun interface AccountDriverFactory {
     fun open(file: File): SqlDriver
 }
 
-internal fun SqlDriver.checkConfiguration() {
+fun SqlDriver.checkConfiguration() {
     val foreignKeys =
         executeQuery(null, "PRAGMA foreign_keys", { c ->
             QueryResult.Value(if (c.next().value) c.getLong(0) else null)

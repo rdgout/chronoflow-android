@@ -7,7 +7,17 @@ android {
 }
 
 dependencies {
+    testImplementation(project(":core:database-testing"))
     api(project(":core:plan"))
+    api(project(":core:sync"))
+    api(project(":core:database"))
+    implementation(libs.kotlinx.serialization.json)
+    testImplementation(libs.assertk)
+    testImplementation(libs.turbine)
+    testImplementation(libs.sqldelight.sqlite.driver)
+    testImplementation(project(":core:network"))
+    testImplementation(project(":core:data-mock"))
+    testImplementation(libs.okhttp.mockwebserver3)
     implementation(libs.androidx.core.ktx)
     implementation(libs.kotlinx.coroutines.core)
 

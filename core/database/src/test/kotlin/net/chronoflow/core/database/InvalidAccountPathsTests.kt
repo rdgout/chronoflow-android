@@ -5,6 +5,7 @@ import kotlinx.coroutines.test.runTest
 import net.chronoflow.core.database.testing.JdbcAccountDriverFactory
 import net.chronoflow.core.database.testing.TestRoots
 import net.chronoflow.core.database.testing.accountA
+import net.chronoflow.core.model.store.StoreFailure
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.fail
