@@ -509,7 +509,7 @@ sealed interface NextLabel { data object Now; data class In(val duration: String
 
 ### T10. Three-tab shell (`feat(app): add the three-tab shell`) [ticks "Shell" and "Seams"]
 - Files: `…/app/shell/AppShell.kt` (`AppShell(root: Route, onRootBack: () -> Unit)` wiring the graph), `AppShellScaffold.kt` (stateless slots: `today`, `trips`, `settings`, `page: @Composable (Route) -> Unit`, `overlay`), `ShellViewModel.kt`, `TabViewModelStoreOwner.kt`, and the `RootContent` change: `Today`, `Trips`, `Settings`, `TripPage` and `Wizard` render `AppShell(root = route, onRootBack = onRootBack)` inside the existing `key(revision)`, with the initial state `fromRoot(route)` (§5.6).
-- `AppShell(root: Route, placeholder: @Composable (Route) -> Unit)`. `RootContent` passes its existing `{ RoutePlaceholder(it, label) }` (§5.7 "Seams").
+- `AppShell(root: Route, onRootBack: () -> Unit, placeholder: @Composable (Route) -> Unit)`. `RootContent` passes its existing `{ RoutePlaceholder(it, label) }` (§5.7 "Seams").
 - In this task the Trips tab root renders `placeholder(Route.Trips)` (`route.trips`). T11 replaces it.
 - **Tests** (Robolectric `@Logic`, `AppShellTest`, on `AppShellScaffold` with fake slot content: a `LazyColumn` of 50 items tagged `test.list.<tab>` plus a button that calls `openTrip("t1")`):
   - `barBelow600`: at `pixel8` the bar tag exists and the rail does not;
