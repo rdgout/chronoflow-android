@@ -2374,7 +2374,7 @@ Implementation commits (brief §7):
 
   A `TripPagePathMonitor` port supplies the offline hint.
 - [ ] **List benchmark.** `listScroll`: 15 flings over the 740 large60 rows, with the `timelineScroll` metrics and budgets.
-- [ ] **Tests.** The `TripPageState.resolve` cases, and guards for each state.
+- [x] **Tests.** The `TripPageState.resolve` cases, and guards for each state.
 
 **Acceptance**
 - `listScroll` meets the timeline emulator gates.
