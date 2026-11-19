@@ -17,6 +17,8 @@
   - `TripPageViewModel` has no `hasLoaded` field yet. Set it after the first accepted source output; do not assume 6b supplied it.
   - `NowLineValue` and `projectDayClocks` live in `core/plan/…/trippage/DayClockProjection.kt`; `DayClock`/`DayClocks` live in `feature/trip/…/timeline/DayClock.kt`. Add the instant to the existing core value and update its callers.
   - `TimelineCategoryStyle` lives in `core/plan/…/drawing/`, with palette slots rather than Compose colours. Resolve those slots through the generated timeline palette.
+  - `Modifier.skyBackground(dark: Boolean)` requires the current theme argument; pass it rather than adding another wrapper.
+  - The narrow trailing test checks that the two elements stack. Pinned iOS emits the priority tag before the status icon, so the tag is above the icon; the older test wording below reverses that order. Add the specified 18 dp status size and 2.5 stroke through the generated Android metric overlay.
   - Generated Plan strings live in `core/ui/src/main/res/values{,-nl}/strings_ios.xml`; the expected resource names in §8 exist.
   - The current plan's standard acceptance overrides the older Cartesian guard matrix below: each board gets light guards at `small`/nl, `largeFont`/nl and `pixel8`/en; captures cover both themes. Wide/side-navigation guards belong to 6e. Parameter names must be unique.
   - Screen tests check tags, structure, semantics and callbacks only; copy variants are asserted in JVM `ListRowsTests` and generated-string tests. Do not add `TripRowAlpha` or any test hook to `src/main`; prove dimming with captured pixels if needed.
