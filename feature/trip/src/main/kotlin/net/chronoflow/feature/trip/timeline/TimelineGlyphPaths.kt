@@ -49,7 +49,7 @@ internal object TimelineGlyphPaths {
     private fun parse(glyph: LucideGlyph): Array<Path> =
         Array(glyph.paths.size) { PathParser.createPathFromPathData(glyph.paths[it].d) }
 
-    private fun source(glyph: TimelineGlyph): LucideGlyph =
+    internal fun source(glyph: TimelineGlyph): LucideGlyph =
         when (glyph) {
             TimelineGlyph.MOON -> LucideGlyphs.Moon
             TimelineGlyph.BED -> LucideGlyphs.Bed

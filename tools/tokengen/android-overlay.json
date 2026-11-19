@@ -3,6 +3,14 @@
     "minTouchTarget": {
       "value": 48,
       "replaces": "PlanMetrics.touch (44 pt) as the minimum hit target, 04 OQ-T5, plan A10"
+    },
+    "listStatusIcon": {
+      "value": 18,
+      "replaces": "DayListView trailing status glyph size, phase 6c Task 5"
+    },
+    "listStatusStroke": {
+      "value": 2.5,
+      "replaces": "DayListView trailing status glyph stroke, phase 6c Task 5"
     }
   }
 }
