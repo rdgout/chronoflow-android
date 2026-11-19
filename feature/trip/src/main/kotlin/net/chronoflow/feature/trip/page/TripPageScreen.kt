@@ -1,10 +1,8 @@
 
 package net.chronoflow.feature.trip.page
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -25,6 +23,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
@@ -62,6 +61,8 @@ import net.chronoflow.feature.trip.timeline.host.timelineDrawingKey
 import net.chronoflow.feature.trip.timeline.recoverDrawingFailure
 import net.chronoflow.feature.trip.wide.TripPageFrame
 import net.chronoflow.feature.trip.wide.WideDayRow
+import net.chronoflow.feature.trip.wide.WideListRows
+import net.chronoflow.feature.trip.wide.WidePinSource
 
 private class PageRestoration {
     var job: Job? = null
@@ -192,6 +193,7 @@ private fun ReadyTripPage(
     onEvent: (TripPageEvent) -> Unit,
 ) {
     val listState = checkNotNull(state.listState)
+    val pin = remember(listState) { WidePinSource(listState) }
     val density = LocalDensity.current
     val safe = LocalSafeInsets.current
     val direction = LocalLayoutDirection.current
@@ -258,7 +260,25 @@ private fun ReadyTripPage(
         }
     val onFirstReplay = remember(state.firstFrame) { state.firstFrame::onReplay }
     val onBlock = remember(onEvent) { { id: String -> onEvent(TripPageEvent.Block(id)) } }
-    BoxWithConstraints(Modifier.fillMaxSize().testTag("trip.page")) {
+    val stickyTop =
+        with(density) {
+            maxOf(
+                (PlanMetrics.compactHeaderHeight.dp * fontScale).roundToPx(),
+                (
+                    (PlanMetrics.planListTitleLineHeight + PlanMetrics.planLaneLineHeight).dp * fontScale +
+                        PlanMetrics.smallGap.dp
+                ).roundToPx(),
+            )
+        }
+    BoxWithConstraints(
+        Modifier.fillMaxSize().testTag("trip.page").layout { measurable, constraints ->
+            pin.stickyTopPx = stickyTop
+            pin.bottomInsetPx = safe.getBottom(this)
+            pin.maxHeightPx = PlanMetrics.wideListMaxHeight.dp.roundToPx()
+            val child = measurable.measure(constraints)
+            layout(child.width, child.height) { child.placeRelative(0, 0) }
+        },
+    ) {
         val width = maxWidth.value.toDouble()
         val left = with(density) { safe.getLeft(this, direction).toDp() }
         val right = with(density) { safe.getRight(this, direction).toDp() }
@@ -376,37 +396,7 @@ private fun ReadyTripPage(
                             },
                             list =
                                 if (frame.layout.isWide && plan.layouts.containsKey(day.id)) {
-                                    (
-                                        {
-                                            Column(
-                                                Modifier
-                                                    .testTag("trip.wide.list.${day.id}")
-                                                    .padding(top = PlanMetrics.rowGap.dp),
-                                                verticalArrangement = Arrangement.spacedBy(PlanMetrics.rowGap.dp),
-                                            ) {
-                                                plan.listRows[position].rows.forEach { row ->
-                                                    val selected =
-                                                        remember(row.blockId, state.selectedBlock) {
-                                                            { state.selectedBlock() == row.blockId }
-                                                        }
-                                                    if (row.zone) {
-                                                        ZoneChangeCard(row, onBlock, selected = selected)
-                                                    } else {
-                                                        DayListRow(
-                                                            row,
-                                                            state.clocks.clock(day.id),
-                                                            onBlock,
-                                                            selected = selected,
-                                                            actions =
-                                                                day.checkActions.byBlock[row.blockId]
-                                                                    ?: net.chronoflow.core.plan.step.StepActions.None,
-                                                            onCheck = onCheck,
-                                                        )
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    )
+                                    { WideListRows(day, plan.listRows[position], state, pin, onBlock, onCheck) }
                                 } else {
                                     null
                                 },
@@ -484,6 +474,7 @@ private fun ReadyTripPage(
             PaddingValues(start = gutter + left, end = gutter + right),
             Modifier.align(Alignment.TopStart),
             timeline = renderedTimeline,
+            wide = frame.takeIf { it.layout.isWide },
         )
         if (!renderedTimeline) {
             Box(Modifier.size(PlanMetrics.border.dp).testTag("trip.timeline.ready"))

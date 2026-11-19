@@ -18,3 +18,9 @@ Branch preflight: `feat/phase-6e-trip-wide`. Upstream names and all P1 metrics a
 `make targeted ONLY="feature:trip:WideDayRowTest feature:trip:WideDayRowBreakpointTest feature:trip:DayTimelineTest feature:trip:ListInvalidationTest"`: PASS, 13.64 s wall (Gradle 13 s), no budget overruns. Initial compilation needed the `DpRect.width` extension import. WideDayRowTest: 2 cases, 0.048 s; WideDayRowBreakpointTest: 4 cases, 0.12 s; DayTimelineTest: 6 cases, 0.165 s; ListInvalidationTest: 124 cases, 7.945 s. `make format`: PASS (11 s).
 
 The day tag moved from `DayTimeline` to `WideDayRow`; the standalone timeline test host supplies its own tag. Selection changes are read only from the cached border draw. Phone outline call sites retain the false default.
+
+## Task 4
+
+- `make targeted ONLY="feature:trip:WidePinSourceTest feature:trip:PinnedDayListTest feature:trip:PinnedDayListFontScaleTest feature:trip:WideDayRowTest feature:trip:WideDayRowBreakpointTest"`: 13/14 PASS (Gradle 7 s). The font-cap assertion exposed platform `sp.toDp()` producing 36.19 dp instead of the fixed linear 46.8 dp required by the brief.
+- `make targeted ONLY="feature:trip:PinnedDayListFontScaleTest#bandHeightFollowsTheFontScale"`: PASS (Gradle 5 s; test 2.171 s including Robolectric warm-up) after using generated dp metrics × the existing capped fontScale for both band and pin. This adaptation is recorded in the brief; phone scaling and threshold are unchanged.
+- `make format`: PASS (11 s). The no-lag Perfetto/three-fling recording remains with the user’s deferred wide benchmark. Pin formula tests cover negative viewport start, bottom inset, invisible day, density conversion and cached result identity.

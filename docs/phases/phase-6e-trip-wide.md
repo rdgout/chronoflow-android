@@ -17,6 +17,7 @@
   - OQ rows in `plan.md` end at OQ-A304; this phase's open questions start at OQ-A305.
   - **Implementation preflight (2026-11-19):** `DayTimeline` owns `trip.day.<id>` on its outer `Box` and accepts `headings`; there is no enclosing tagged item `Column`. Task 3 moves only that tag to `WideDayRow`, keeping the existing timeline and heading subtree in its first child at every width.
   - **Pin units/allocation:** 1b's immutable `TripWideListPosition` takes dp and caps at the generated 700 dp value. Task 4 keeps that public port unchanged and uses a cached mutable `WidePinPosition` in px, with a density-scaled max height, for the allocation-free layout/placement path; JVM tests compare its results with the 1b formula after unit conversion.
+  - **Task 4 font-scale verification:** fixed band geometry uses generated dp metrics multiplied by the already-capped `LocalDensity.fontScale` (36 × 1.3 = 46.8 dp), shared by band height and pin. Platform `sp.toDp()` did not yield the specified fixed linear band in the hosted test. Phone typography and its existing 36 sp current-day threshold stay unchanged.
 
 Tags: **[F]** fact verified in a source (path:line). **[R]** a rule this brief sets for Android. Paths: `feature/trip/…/X.kt` = `feature/trip/src/main/kotlin/net/chronoflow/feature/trip/X.kt`; `core/plan/…/X.kt` = `core/plan/src/main/kotlin/net/chronoflow/core/plan/X.kt`; iOS paths are relative to `/Users/rickgout/Sites/chronoflow-ios` and are read at the pin with `git -C /Users/rickgout/Sites/chronoflow-ios show f391a1fa:<path>`.
 
