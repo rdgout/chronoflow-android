@@ -23,6 +23,15 @@ object ShellNav {
             else -> state.copy(scrollToTop = state.scrollToTop + (tab to ((state.scrollToTop[tab] ?: 0) + 1)))
         }
 
+    fun leaveTripPage(
+        state: ShellNavState,
+        tab: ShellTab,
+    ): ShellNavState =
+        state.copy(
+            selected = tab,
+            stacks = state.stacks + (ShellTab.Today to listOf(Route.Today)) + (ShellTab.Trips to listOf(Route.Trips)),
+        )
+
     fun push(
         state: ShellNavState,
         route: Route,

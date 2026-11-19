@@ -108,4 +108,8 @@ object PlanMetrics {
     const val listStatusIcon: Double = 18.0
     // Android overlay: replaces DayListView trailing status glyph stroke, phase 6c Task 5
     const val listStatusStroke: Double = 2.5
+    // Android overlay: replaces ErrorNotFound and ErrorServer button horizontal inset, phase 6c Task 7
+    const val errorPageHorizontal: Double = 24.0
+    // Android overlay: replaces ErrorNotFound and ErrorServer button bottom inset, phase 6c Task 7
+    const val errorPageBottom: Double = 48.0
 }

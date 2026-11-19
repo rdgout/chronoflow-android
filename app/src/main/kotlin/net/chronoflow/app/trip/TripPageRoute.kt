@@ -35,6 +35,7 @@ import net.chronoflow.core.ui.R
 import net.chronoflow.feature.trip.page.TripPage
 import net.chronoflow.feature.trip.page.TripPageArgs
 import net.chronoflow.feature.trip.page.TripPageViewModel
+import net.chronoflow.feature.trip.state.TripPageLoadingBar
 import net.chronoflow.feature.trip.timeline.TextPaintMetrics
 import net.chronoflow.feature.trip.timeline.TimelineTypefaces
 import java.time.Instant
@@ -45,15 +46,14 @@ fun TripPageRoute(
     onBack: () -> Unit,
     onSettings: () -> Unit,
     modifier: Modifier = Modifier,
+    onTrips: (() -> Unit)? = null,
+    onToday: (() -> Unit)? = null,
 ) {
     val appContext = LocalContext.current.applicationContext
     val graph = (appContext as ChronoFlowApp).graph
     val session by graph.sessionGraphs.current.collectAsStateWithLifecycle()
     if (session == null) {
-        val loading = stringResource(R.string.plan_loading_your_plan)
-        Box(modifier.fillMaxSize().testTag("route.tripPage")) {
-            Box(Modifier.fillMaxSize().semantics { contentDescription = loading }.testTag("trip.timeline.preparing"))
-        }
+        TripPageLoadingBar(onBack, modifier.testTag("route.tripPage"))
         return
     }
     val language = if (LocalConfiguration.current.locales[0].language == "nl") Language.Nl else Language.En
@@ -66,7 +66,13 @@ fun TripPageRoute(
     val factory =
         remember(args, appContext, language, freeze) { tripPageViewModelFactory(args, appContext, language, freeze) }
     Box(modifier.fillMaxSize().testTag("route.tripPage")) {
-        TripPage(viewModel(key = "trip:${route.tripId}", factory = factory), onBack, onSettings)
+        TripPage(
+            viewModel(key = "trip:${route.tripId}", factory = factory),
+            onBack,
+            onSettings,
+            onTrips = onTrips,
+            onToday = onToday,
+        )
     }
 }
 

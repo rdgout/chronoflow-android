@@ -4,10 +4,12 @@ package net.chronoflow.feature.trip.state
 
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import net.chronoflow.core.model.DataFailure
 import net.chronoflow.core.model.device.DeviceIdentityFailure
 import net.chronoflow.core.model.session.SessionFailure
@@ -204,5 +206,23 @@ class TripPageFetchTests {
             runCurrent()
             assertEquals(TripPageFetch.Loading, model.fetch.value)
             model.stop()
+        }
+
+    @Test fun stopIgnoresFailureFromNonCancellableFetch() =
+        runTest(timeout = 60.seconds) {
+            val gate = CompletableDeferred<Unit>()
+            val model =
+                TripPageFetchModel("trip", {
+                    withContext(NonCancellable) {
+                        gate.await()
+                        throw DataFailure.Offline
+                    }
+                }, null, backgroundScope)
+            model.start()
+            runCurrent()
+            model.stop()
+            gate.complete(Unit)
+            runCurrent()
+            assertEquals(TripPageFetch.Loading, model.fetch.value)
         }
 }

@@ -72,6 +72,7 @@ class TripPageFetchModel(
                 } catch (cancelled: CancellationException) {
                     throw cancelled
                 } catch (failure: DataFailure) {
+                    currentCoroutineContext().ensureActive()
                     _fetch.value =
                         when {
                             failure == DataFailure.Offline -> TripPageFetch.Offline
@@ -79,16 +80,22 @@ class TripPageFetchModel(
                             else -> TripPageFetch.Failed
                         }
                 } catch (_: SessionFailure) {
+                    currentCoroutineContext().ensureActive()
                     _fetch.value = TripPageFetch.Failed
                 } catch (_: DeviceIdentityFailure) {
+                    currentCoroutineContext().ensureActive()
                     _fetch.value = TripPageFetch.Failed
                 } catch (_: StoreFailure) {
+                    currentCoroutineContext().ensureActive()
                     _fetch.value = TripPageFetch.Failed
                 } catch (_: IOException) {
+                    currentCoroutineContext().ensureActive()
                     _fetch.value = TripPageFetch.Failed
                 } catch (_: GeneralSecurityException) {
+                    currentCoroutineContext().ensureActive()
                     _fetch.value = TripPageFetch.Failed
                 } catch (_: RuntimeException) {
+                    currentCoroutineContext().ensureActive()
                     _fetch.value = TripPageFetch.Failed
                 } finally {
                     if (currentCoroutineContext().isActive) {

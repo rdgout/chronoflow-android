@@ -32,6 +32,12 @@ import net.chronoflow.feature.trip.timeline.host.FirstTimelineFrameTrace
 sealed interface TripPageEvent {
     data object Back : TripPageEvent
 
+    data object Trips : TripPageEvent
+
+    data object Today : TripPageEvent
+
+    data object Retry : TripPageEvent
+
     data object Settings : TripPageEvent
 
     data object Legend : TripPageEvent
@@ -78,6 +84,7 @@ class TripPageScreenState(
     val canLegend: Boolean,
     val canActions: Boolean,
     val timeline: Boolean = true,
+    val canToday: Boolean = false,
 )
 
 @Suppress("ktlint:compose:vm-forwarding-check")
@@ -89,9 +96,20 @@ fun TripPage(
     onLegend: (() -> Unit)? = null,
     onActions: (() -> Unit)? = null,
     onRefreshResult: (SyncResult?) -> Unit = {},
+    onTrips: (() -> Unit)? = null,
+    onToday: (() -> Unit)? = null,
 ) {
-    val state = rememberTripPageScreenState(viewModel, onSettings != null, onLegend != null, onActions != null)
+    val state =
+        rememberTripPageScreenState(
+            viewModel,
+            onSettings != null,
+            onLegend != null,
+            onActions != null,
+            onToday != null,
+        )
     val scope = rememberCoroutineScope()
+    val trips = rememberUpdatedState(onTrips)
+    val today = rememberUpdatedState(onToday)
     val back = rememberUpdatedState(onBack)
     val settings = rememberUpdatedState(onSettings)
     val legend = rememberUpdatedState(onLegend)
@@ -101,6 +119,18 @@ fun TripPage(
         remember(viewModel, scope) {
             { event ->
                 when (event) {
+                    TripPageEvent.Trips -> {
+                        trips.value?.invoke()
+                    }
+
+                    TripPageEvent.Today -> {
+                        today.value?.invoke()
+                    }
+
+                    TripPageEvent.Retry -> {
+                        viewModel.retry()
+                    }
+
                     TripPageEvent.Back -> {
                         back.value()
                     }
@@ -156,6 +186,7 @@ internal fun rememberTripPageScreenState(
     canSettings: Boolean = false,
     canLegend: Boolean = false,
     canActions: Boolean = false,
+    canToday: Boolean = false,
 ): TripPageScreenState {
     val owner = LocalLifecycleOwner.current
     LaunchedEffect(viewModel, owner) {
@@ -202,5 +233,6 @@ internal fun rememberTripPageScreenState(
         canLegend,
         canActions,
         timeline,
+        canToday,
     )
 }

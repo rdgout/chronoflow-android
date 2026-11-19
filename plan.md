@@ -2364,7 +2364,7 @@ Implementation commits (brief §7):
 - [x] **List mode**, porting `DayListView`.
   - List rows (`TripDayRow`) and zone rows.
   - A view toggle, not persisted; the anchor is kept when toggling.
-- [ ] **States:**
+- [x] **States:**
   - loading (`PlanLoading`, with `TripPageLoadingBar`);
   - no plan (`PlanNoPlan`);
   - plan not on this phone (`PlanRemote`, `PlanRemoteLoadingNL`, `PlanRemoteOffline`, `PlanRemoteOfflineNL`), with the fetch action;

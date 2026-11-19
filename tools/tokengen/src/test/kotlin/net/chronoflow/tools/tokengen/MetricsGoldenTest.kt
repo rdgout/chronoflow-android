@@ -60,7 +60,13 @@ class MetricsGoldenTest {
     fun overlayValuesAreEmitted() {
         val plan = planTokens(repoRoot)
         assertEquals(
-            mapOf("minTouchTarget" to 48.0, "listStatusIcon" to 18.0, "listStatusStroke" to 2.5),
+            mapOf(
+                "minTouchTarget" to 48.0,
+                "listStatusIcon" to 18.0,
+                "listStatusStroke" to 2.5,
+                "errorPageHorizontal" to 24.0,
+                "errorPageBottom" to 48.0,
+            ),
             plan.overlay.associate { it.name to it.value },
         )
         assertEquals(44.0, plan.metrics.first { it.name == "touch" }.value, 0.0)

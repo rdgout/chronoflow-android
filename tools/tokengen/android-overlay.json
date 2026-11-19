@@ -11,6 +11,14 @@
     "listStatusStroke": {
       "value": 2.5,
       "replaces": "DayListView trailing status glyph stroke, phase 6c Task 5"
+    },
+    "errorPageHorizontal": {
+      "value": 24,
+      "replaces": "ErrorNotFound and ErrorServer button horizontal inset, phase 6c Task 7"
+    },
+    "errorPageBottom": {
+      "value": 48,
+      "replaces": "ErrorNotFound and ErrorServer button bottom inset, phase 6c Task 7"
     }
   }
 }

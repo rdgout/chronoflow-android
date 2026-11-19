@@ -38,9 +38,12 @@ class TripPageTestRig(
     val language: Language = Language.En,
     initialTimeline: Boolean = true,
     metrics: suspend () -> TextMetrics = { FakeTextMetrics() },
+    initialSnapshot: net.chronoflow.core.model.store.TripPlanSnapshot? = null,
+    fetchDetail: suspend (String) -> Unit = {},
+    makePath: () -> net.chronoflow.core.sync.SyncPathMonitoring? = { null },
 ) {
     val detail = LargeTimelineFixtures.fixture(fixture).detail
-    val source = FakeTripPageSource.fixture(fixture)
+    val source = initialSnapshot?.let { FakeTripPageSource(it) } ?: FakeTripPageSource.fixture(fixture)
     val clock = FakePlanClock(clockStart ?: checkNotNull(planDate(detail.plan.days[0].startUtc)))
     val cache = DayDrawingCache(maxBytes = 64L * 1024 * 1024, maxEntries = 64)
     private val decoder = PlanDecoder(Dispatchers.Unconfined)
@@ -72,6 +75,8 @@ class TripPageTestRig(
                         { CopyLineFormatter(catalogs.catalog()) },
                         TimelineTracer.None,
                         initialTimeline = initialTimeline,
+                        fetchDetail = fetchDetail,
+                        makePath = makePath,
                     )
                 }
             },
@@ -92,8 +97,12 @@ class TripPageTestRig(
         }
     }
 
-    @Composable fun Content(pageState: net.chronoflow.core.plan.trippage.TripPageState? = null) {
-        val base = rememberTripPageScreenState(vm)
+    @Composable fun Content(
+        pageState: net.chronoflow.core.plan.trippage.TripPageState? = null,
+        onEvent: ((TripPageEvent) -> Unit)? = null,
+        canToday: Boolean = false,
+    ) {
+        val base = rememberTripPageScreenState(vm, canToday = canToday)
         val state =
             if (pageState == null) {
                 base
@@ -118,7 +127,7 @@ class TripPageTestRig(
             }
         listState = state.listState
         screenState = state
-        TripPageScreen(state, events)
+        TripPageScreen(state, onEvent ?: events)
     }
 
     fun dayStart(position: Int): Instant =

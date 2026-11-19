@@ -48,6 +48,8 @@ import net.chronoflow.core.ui.R
 import net.chronoflow.core.ui.refresh.RefreshFeedbackCapsule
 import net.chronoflow.feature.trip.list.DayListRow
 import net.chronoflow.feature.trip.list.ZoneChangeCard
+import net.chronoflow.feature.trip.state.TripPageErrorPage
+import net.chronoflow.feature.trip.state.TripPageStates
 import net.chronoflow.feature.trip.timeline.DayTimeline
 import net.chronoflow.feature.trip.timeline.LocalTimelineJankTagger
 import net.chronoflow.feature.trip.timeline.TimelinePresentedMarker
@@ -66,6 +68,22 @@ fun TripPageScreen(
     onEvent: (TripPageEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    if (state.ui.state == TripPageState.NotFound || state.ui.state == TripPageState.Server) {
+        Box(modifier.fillMaxSize()) {
+            TripPageErrorPage(
+                state.ui.state,
+                state.refresh.refreshing,
+                { onEvent(TripPageEvent.Refresh) },
+                { onEvent(TripPageEvent.Back) },
+                { onEvent(if (state.ui.state == TripPageState.NotFound) TripPageEvent.Trips else TripPageEvent.Retry) },
+                if (state.canToday) ({ onEvent(TripPageEvent.Today) }) else null,
+            )
+            RefreshFeedbackCapsule(state.refresh, {
+                onEvent(TripPageEvent.DismissFeedback(it))
+            }, state.refreshProbe, Modifier.align(Alignment.TopCenter))
+        }
+        return
+    }
     val plan = state.ui.plan
     val listState = state.listState
     val showToggle =
@@ -130,14 +148,14 @@ fun TripPageScreen(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         containerColor = CfTheme.colors.background,
     ) { inner ->
-        if (plan == null || listState == null) {
-            val description = stringResource(R.string.plan_loading_your_plan)
-            Box(Modifier.fillMaxSize().padding(inner).testTag("trip.page")) {
-                Box(
-                    Modifier.fillMaxSize().semantics { contentDescription = description }.testTag(
-                        "trip.timeline.preparing",
-                    ),
-                )
+        if (state.ui.state != TripPageState.Ready || plan == null || listState == null) {
+            CfPullToRefreshBox(state.refresh.refreshing, {
+                onEvent(TripPageEvent.Refresh)
+            }, Modifier.fillMaxSize().padding(inner)) {
+                TripPageStates(state, onEvent)
+                RefreshFeedbackCapsule(state.refresh, {
+                    onEvent(TripPageEvent.DismissFeedback(it))
+                }, state.refreshProbe, Modifier.align(Alignment.TopCenter))
             }
         } else {
             CfPullToRefreshBox(state.refresh.refreshing, {

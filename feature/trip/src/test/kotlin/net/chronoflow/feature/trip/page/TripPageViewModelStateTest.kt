@@ -223,4 +223,40 @@ class TripPageViewModelStateTest {
         runTest(timeout = 60.seconds) {
             assertFalse(rig(timeline = false).vm.timeline.value)
         }
+
+    @Test fun retryWhileOfflineDoesNotRequestAndAnOfflineFailureCanRetry() =
+        runTest(timeout = 60.seconds) {
+            val path = FakePath()
+            path.values.trySend(false)
+            var requests = 0
+            val rig =
+                rig(remote(), path = path, fetch = {
+                    requests++
+                    if (requests == 1) throw DataFailure.Offline
+                })
+            runCurrent()
+            rig.vm.retry()
+            runCurrent()
+            assertEquals(0, requests)
+            path.values.send(true)
+            runCurrent()
+            assertEquals(1, requests)
+            assertEquals(TripPageState.RemoteOffline, rig.vm.ui.value.state)
+            rig.vm.retry()
+            runCurrent()
+            assertEquals(2, requests)
+            assertEquals(TripPageState.RemoteLoading, rig.vm.ui.value.state)
+        }
+
+    @Test fun tombstoneWhileReadyBecomesNotFound() =
+        runTest(timeout = 60.seconds) {
+            val rig = rig()
+            runCurrent()
+            assertEquals(TripPageState.Ready, rig.vm.ui.value.state)
+            rig.source.snapshot.value =
+                rig.source.snapshot.value
+                    .let { it.copy(trip = it.trip!!.copy(deletedLocally = true)) }
+            runCurrent()
+            assertEquals(TripPageState.NotFound, rig.vm.ui.value.state)
+        }
 }
