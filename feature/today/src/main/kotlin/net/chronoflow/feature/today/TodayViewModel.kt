@@ -48,7 +48,6 @@ import net.chronoflow.core.plan.step.stepSheetState
 import net.chronoflow.core.plan.tripDisplayStatus
 import net.chronoflow.core.plan.trippage.PlanPreferences
 import net.chronoflow.core.sync.SyncResult
-import net.chronoflow.core.sync.SyncState
 import net.chronoflow.core.sync.refresh.RefreshDebugProbe
 import net.chronoflow.core.sync.refresh.RefreshFeedbackModel
 import net.chronoflow.feature.today.data.TodaySource
@@ -68,15 +67,7 @@ class TodayViewModel(
     val refreshState = feedback.state
 
     suspend fun refresh(action: suspend () -> SyncResult?) {
-        feedback
-            .refresh {
-                try {
-                    action()
-                } catch (error: CancellationException) {
-                    if (!currentCoroutineContext().isActive) throw error
-                    SyncResult(SyncState.Failed, pendingCount = 0)
-                }
-            }?.join()
+        feedback.refresh(action = action)?.join()
     }
 
     fun dismissFeedback(id: Long) = feedback.dismiss(id)

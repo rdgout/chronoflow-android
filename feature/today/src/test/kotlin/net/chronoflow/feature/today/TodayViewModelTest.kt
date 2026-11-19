@@ -28,15 +28,10 @@ import java.io.IOException
 import kotlin.time.Duration.Companion.seconds
 
 class TodayViewModelTest {
-    @Test fun refreshClassifiesForeignCancellation() =
+    @Test fun cancelledRefreshStopsRefreshingWithoutFeedback() =
         check { rig ->
             rig.model.refresh { throw CancellationException("foreign") }
-            assertEquals(
-                net.chronoflow.core.sync.refresh.RefreshFeedbackKey.SomethingWentWrong,
-                rig.model.refreshState.value.feedback
-                    .single()
-                    .key,
-            )
+            assertTrue(rig.model.refreshState.value.feedback.isEmpty())
             assertFalse(rig.model.refreshState.value.refreshing)
         }
 
