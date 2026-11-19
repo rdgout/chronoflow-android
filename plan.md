@@ -1083,20 +1083,20 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 **Delivers.** Ports the non-geometry half of iOS PlanCore into the JVM module :core:plan. It covers plan-detail decoding from raw bytes, CopyCatalog over plan_copy.json with an explicit Language, CopyLineFormatter with fixed month and weekday tables and the 12/24-hour rules, check keys and mark merging, optional and hidden-step logic, and the plan clock. All dates use java.time with cached zone rules and formatters. The iOS test cases (44 intl goldens, caffeine tables, key resolution) are ported and pass on the JVM. It adds no UI.
 
 **Tasks**
-- [ ] **Plan decoding.** `core/plan/…/PlanDecoder.kt` decodes plan-detail bytes into the 0d contracts, with tolerant enums. It keeps the raw bytes for `plan_versions.detail`. Test: S1–S6 decode.
-- [ ] **CopyCatalog.kt.**
+- [x] **Plan decoding.** `core/plan/…/PlanDecoder.kt` decodes plan-detail bytes into the 0d contracts, with tolerant enums. It keeps the raw bytes for `plan_versions.detail`. Test: S1–S6 decode.
+- [x] **CopyCatalog.kt.**
   - It loads `plan_copy.json` once, lazily and off the main thread.
   - It resolves keys with an explicit `Language`, including the `CopyArg` and `CaffeineCopyArg` arguments and the caffeine tables.
   - Test: the ported `CopyCatalogTests`.
-- [ ] **CopyLineFormatter.kt.** Fixed month and weekday tables (A17), the 12/24 h rule from the account `timeFormat`, the U+2212 minus, and durations. Test: the 44 cases of `intl-cases.json`, copied to `core/testing/…/fixtures/intl-cases.json` with its hash.
-- [ ] **CheckState, PlanLogic and PlanClock.**
+- [x] **CopyLineFormatter.kt.** Fixed month and weekday tables (A17), the 12/24 h rule from the account `timeFormat`, the U+2212 minus, and durations. Test: the 44 cases of `intl-cases.json`, copied to `core/testing/…/fixtures/intl-cases.json` with its hash.
+- [x] **CheckState, PlanLogic and PlanClock.**
   - `CheckState.kt`: check keys, and mark merging with pending marks.
   - `PlanLogic.kt`: optional and hidden steps; `show_optional_items` is never sent.
   - `PlanClock.kt`: an interface, with `FakePlanClock` in `:core:testing`.
-- [ ] **Time hygiene.**
+- [x] **Time hygiene.**
   - A `ZoneRules` cache and cached `DateTimeFormatter`s.
   - A Konsist rule forbids `Locale.getDefault`, `TimeZone.getDefault`, `ZoneId.systemDefault` and `System.currentTimeMillis` in `:core:plan`, `:core:sync`, `:core:reminders` and `:core:wizard`.
-- [ ] **Ported tests.** Port every non-geometry case of iOS `Tests/PlanCoreTests`, with the Swift names; geometry follows in 1b.
+- [x] **Ported tests.** Port every non-geometry case of iOS `Tests/PlanCoreTests`, with the Swift names; geometry follows in 1b.
 
 **Acceptance**
 - Every ported case passes in `make quick`.
