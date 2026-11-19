@@ -13,6 +13,6 @@ class ChronoFlowApp : Application() {
     override fun onCreate() {
         if (BuildConfig.DEBUG) DebugStrictMode.install(this, launchPath)
         super.onCreate()
-        graph = AppGraph()
+        graph = AppGraph(this)
     }
 }

@@ -11,6 +11,11 @@ fun addPerfSources(variant: Variant) {
 }
 
 androidComponents {
+    // The release source set is also compiled into the two perf variants, so the release stub lives in its own folder.
+    onVariants(selector().withBuildType("release")) {
+        it.sources.kotlin?.addStaticSourceDirectory("src/releaseNoPerf/kotlin")
+    }
+    onVariants(selector().withBuildType("debug")) { it.sources.kotlin?.addStaticSourceDirectory("src/perf/kotlin") }
     onVariants(selector().withBuildType("benchmarkRelease")) { addPerfSources(it) }
     onVariants(selector().withBuildType("nonMinifiedRelease")) { addPerfSources(it) }
 }
@@ -55,11 +60,13 @@ dependencies {
     implementation(project(":core:navigation"))
     implementation(project(":core:ui"))
     debugImplementation(project(":core:data-mock"))
+    debugImplementation(project(":core:testing"))
 
     implementation(libs.androidx.activity.compose)
     implementation(libs.compose.ui)
     implementation(libs.compose.foundation)
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.profileinstaller)
     implementation(libs.kotlinx.coroutines.android)
 
@@ -81,3 +88,6 @@ dependencies {
 configurations
     .matching { it.name == "benchmarkReleaseImplementation" || it.name == "nonMinifiedReleaseImplementation" }
     .configureEach { project.dependencies.add(name, project(":core:data-mock")) }
+configurations
+    .matching { it.name == "benchmarkReleaseImplementation" || it.name == "nonMinifiedReleaseImplementation" }
+    .configureEach { project.dependencies.add(name, project(":core:testing")) }
