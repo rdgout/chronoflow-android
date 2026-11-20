@@ -15,6 +15,7 @@ internal fun WizardBackHandling(
     state: WizardUiState,
     onEvent: (WizardEvent) -> Unit,
 ) {
+    BackHandler(enabled = state.step == WizardStepKey.Calculating) {}
     BackHandler(enabled = state.step == WizardStepKey.Where && state.sheet == null && !state.discardDialogVisible) {
         onEvent(WizardEvent.RequestClose)
     }

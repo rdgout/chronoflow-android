@@ -47,10 +47,12 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -75,6 +77,7 @@ import net.chronoflow.core.ui.R
 import net.chronoflow.core.wizard.model.MemberWizardStep
 import net.chronoflow.feature.wizard.TripWizardViewModel
 import net.chronoflow.feature.wizard.answers.WizardAnswerSheetHost
+import net.chronoflow.feature.wizard.calculating.WizardCalculatingStep
 import net.chronoflow.feature.wizard.checking.CheckingOutcome
 import net.chronoflow.feature.wizard.checking.WizardCheckingStep
 import net.chronoflow.feature.wizard.components.rememberServerCopy
@@ -409,7 +412,7 @@ internal fun WizardStepHost(
                     )
                 }
             },
-        onBack = { onEvent(WizardEvent.Back) },
+        onBack = { if (state.step != WizardStepKey.Calculating) onEvent(WizardEvent.Back) },
         modifier = modifier,
         transitionSpec = {
             if (reduce) {
@@ -452,10 +455,10 @@ private fun WizardStepContent(
     val times = state.times
     val titleCopy =
         where?.title ?: times?.title ?: state.returnChoice?.title ?: state.sleep?.title ?: state.excluded?.title
-            ?: state.checking?.title ?: state.fineTune?.title ?: state.ready?.title
+            ?: state.checking?.title ?: state.fineTune?.title ?: state.ready?.title ?: state.calculating?.title
     val subtitleCopy =
         where?.subtitle ?: times?.subtitle ?: state.sleep?.subtitle ?: state.checking?.subtitle
-            ?: state.fineTune?.subtitle
+            ?: state.fineTune?.subtitle ?: state.calculating?.subtitle
     val serverCopy = rememberServerCopy(copyFormatter)
     val title = titleCopy?.resolve() ?: state.question?.let { serverCopy(it.title) }
     val heading: @Composable () -> Unit = {
@@ -477,6 +480,7 @@ private fun WizardStepContent(
                 if (title != null) {
                     heading()
                     when {
+                        state.calculating != null -> WizardCalculatingStep(state.calculating)
                         state.ready != null -> WizardReadyStep(state.ready, copyFormatter, onEvent)
                         state.checking != null -> WizardCheckingStep(state.checking)
                         state.sleep != null -> WizardSleepStep(state.sleep, onEvent, copyFormatter)
@@ -522,7 +526,10 @@ private fun WizardStepHeading(
                 .testTag("wizard.title")
                 .focusRequester(titleFocus)
                 .focusable()
-                .semantics { heading() },
+                .semantics {
+                    heading()
+                    if (key == WizardStepKey.Calculating) liveRegion = LiveRegionMode.Polite
+                },
             color = CfTheme.colors.foreground,
             style =
                 CfTheme.type.style(
