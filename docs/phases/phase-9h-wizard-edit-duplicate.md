@@ -206,6 +206,10 @@ OQ-9h-10 is already resolved and is not appended.
 
 This phase adds **wiring, the edit/duplicate variants of existing screens, seeds and tests**. The edit and duplicate *model* is already ported: 9a has `loadTrip`, `clearDuplicateDates`, `inputFingerprint`, `hasChanges`, `isEditing`, `checkingTitle`, `acceptSourceReload`, `SourceChange`, `sourceChangeSummary`; 9b has `MemberWizardStore.startTrip`, the edit source refresh (`refreshSource`, one re-review on a revision mismatch), `reviewTripEdit`, `PUT` through `updateTrip`, and all 5 iOS `TripWizardActionsTests` (1 in 9a, 4 in 9b). **Do not re-port or duplicate those model tests.** If a model rule below is missing from 9a/9b, port it into `:core:wizard` with its iOS test in a separate `fix(wizard): …` commit that names the Swift line, and report it.
 
+### Review round 1 override (2026-11-20)
+
+The orchestrator’s finding 3 permits replacing the sheet directly with the wizard overlay. Consume a prepared wizard request, dismiss the sheet route and invoke `onWizard` without any intervening suspension. This supersedes R3/§5.1’s recommendation to await `sheetState.hide()`: cancellation during that animation can lose a consumed request. Keep `Flow<WizardMode>` and the preparer seam.
+
 ---
 
 ## 1. Goal

@@ -3019,7 +3019,7 @@ Implementation commits:
 - Edit uses the source revision, and a changed-elsewhere trip shows `WizardEditChanged`.
 - Duplicate starts with empty dates.
 
-**Verification (2026-11-20):** Phase 9h tests, the 1,150 touched-module layout cases, 185 release cases and the pixel edit journey pass. The single `make quick` run remains red on the unchanged timeline presentation-marker guard; it passes in isolation without code changes. Tooling and serial timing stages pass separately. See `docs/wizard.md` for the open gate and capture hand-off.
+**Verification (2026-11-20, review round 1):** All review findings are addressed. The unchanged timeline marker test passes five consecutive loaded executions and the single final `make quick`; 5,097 measured cases have zero budget overruns. Quick takes 71.281 s on this worker, above the 60 s warm target. All 1,150 touched-module layout cases, touched-module lint and the pixel edit journey (4.828 s) pass; both ReturnWeb captures are refreshed. The earlier 185 release cases remain the Phase 9h release evidence. See `docs/wizard.md` for the publication-race evidence, named board differences and host follow-up commands.
 
 ### Phase 10a: Settings home, sign-out and account pages (`feat/phase-10a-settings-home`)
 

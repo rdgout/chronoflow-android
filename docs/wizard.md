@@ -1356,11 +1356,11 @@ The save-lock why-comment now identifies `BoxWithConstraints` as the component t
 
 ### Preparation, recovery and navigation
 
-`:feature:trip` depends on the `TripWizardPreparer` interface, without a wizard feature/core dependency. `TripPageViewModel.startAction` rechecks the card flags and connectivity, prevents a second request, clears the previous failure and publishes busy state. The rows and Cancel are disabled while preparing. The native sheet rejects drag, scrim and back dismissal while busy. A successful request waits for the idle state to reach composition, hides the sheet, clears its route, and then opens `WizardMode.Edit` or `Duplicate`.
+`:feature:trip` depends on the `TripWizardPreparer` interface, without a wizard feature/core dependency. `TripPageViewModel.startAction` rechecks the card flags and connectivity, prevents a second request, clears the previous failure and publishes busy state. The rows and Cancel are disabled while preparing. The native sheet rejects drag, scrim and back dismissal while busy. A successful request clears the sheet route and opens `WizardMode.Edit` or `Duplicate` in the same uninterrupted collector callback. The wizard overlay replaces the native sheet; there is no suspending hide between consuming the request and opening the wizard, so recreation cannot lose the hand-off. The page observes only whether actions exist; busy changes stay inside the actions sheet.
 
-`WizardLauncher.prepare` runs `startTrip` on the injected IO dispatcher. An open/pending overlay or missing session is ignored. Offline maps to the connection copy for both actions; other failures use the edit server copy or duplicate-specific copy. Cancellation of the caller propagates; foreign cancellation maps to failure. The declared session, data, device identity, store, recovery, I/O, security and runtime exceptions are covered. No generation service is started by the preparer.
+`WizardLauncher` is retained by the shell ViewModel and shared with the trip ViewModel across recreation. Its pending guard resets on actual overlay changes, rather than on a new composition. `WizardLauncher.prepare` runs `startTrip` on the injected IO dispatcher. An open/pending overlay or missing session is ignored. Offline maps to the connection copy for both actions; other failures use the edit server copy or duplicate-specific copy. Cancellation of the caller propagates; foreign cancellation maps to failure. The declared session, data, device identity, store, recovery, I/O, security and runtime exceptions are covered. No generation service is started by the preparer.
 
-Failures use a `CfSnackbarHost` inside the native sheet window, with `trip.actions.failure` and the debug-only presentation counter. Reopening the sheet or starting another action clears the failure. The release counter implementation has no `failurePresented` field.
+Failures use a `CfSnackbarHost` inside the native sheet window, with `trip.actions.failure` and the debug-only presentation counter. Each failed attempt creates a distinct consumable event retained by the trip ViewModel. Its atomic claim survives recreation, preventing replay while allowing an identical later failure to present again. Reopening the sheet or starting another action clears the failure. The release counter implementation has no `failurePresented` field.
 
 The wizard recovers a prepared Edit only for the requested trip id. Duplicate accepts only a copied draft without an edit context. Otherwise it falls back to `startTrip`; failure closes quietly through the existing `WizardExit.Trips`. R2's generic warning log is retained, without an exception message. Create entry is unchanged.
 
@@ -1400,17 +1400,17 @@ The one `make captures` invocation produced 32 PNGs: the following 27 wizard cap
 | Capture names (each `.png`) | Recorded board differences / review context |
 |---|---|
 | WizardEdit, WizardEditDarkNL | Disabled Update; pinned seed clears the profile, so Sleep is empty instead of the board's sample times. Runtime uses the stored body-clock fallback. |
-| WizardEditChanged, WizardEditChangedDarkNL | Pinned baseline already has a return, so EditNote replaces the board's EditReturnNote (OQ-A455). Source-change sentence and return date use catalog copy. |
+| WizardEditChanged, WizardEditChangedDarkNL | Pinned baseline already has a return, so EditNote replaces the board's EditReturnNote (OQ-A455). Source-change sentence and return date use catalog copy. The summary uses the iOS seed `summary.line.key` ending “Your trip home is planned too.” rather than the board’s “and back again after your flight home.” |
 | WizardEditNoReturn, WizardEditNoReturnDarkNL | NoRefund then EditNote; source baseline has a return while the current form is one way. |
-| WizardEditReturn | Added return and EditReturnNote; no DarkNL wrapper exists. |
-| WizardEditReturnNoCredits, WizardEditReturnNoCreditsDarkNL | Close only; the board's website purchase action is omitted under A14. |
+| WizardEditReturn | Added return and EditReturnNote; no DarkNL wrapper exists. Its iOS seed `summary.line.key` ends “Your trip home is planned too.”; the board ends “and back again after your flight home.” |
+| WizardEditReturnNoCredits, WizardEditReturnNoCreditsDarkNL | Close only; the board's website purchase action is omitted under A14. Its iOS seed `summary.line.key` ends “Your trip home is planned too.” rather than the board’s “and back again after your flight home.” |
 | WizardEditWeb, WizardEditWebDarkNL | Nine-night end and stay-end summary; the pinned seat change makes this edit changed. |
-| WizardReturnWeb, WizardReturnWebDarkNL | Edit context follows the board, unlike the pinned iOS seed; selected web card and 45% progress. Back follows the model to Times, rather than the board link to Ready (OQ-A458). |
+| WizardReturnWeb, WizardReturnWebDarkNL | Edit context follows the board, unlike the pinned iOS seed; selected web card with the generated dawnText check at `space5` (other cards retain muted `space4` chevrons), and 45% progress. Review round 1 re-captures both boards after correcting the chevron and compares the host renders. Native text metrics wrap the web hint differently; the Dutch catalog also omits the board’s comma after “zo”. The earlier toolbar-chip difference remains. Back follows the model to Times, rather than the board link to Ready (OQ-A458). |
 | WizardCheckingEdit, WizardCheckingEditDarkNL | 100% initial floor, edit title, deterministic native spinner frame. |
 | WizardCheckOfflineEdit, WizardCheckOfflineEditDarkNL | Edit failure body, no back chevron. |
 | WizardCheckServerEdit, WizardCheckServerEditDarkNL | Edit failure body, no back chevron. |
 | WizardExcludedEdit, WizardExcludedEditDarkNL | Server shift-work reason without the board's doctor line; replaces the pinned seed's under-18 reason (OQ-A456). |
-| WizardDiscardEdit, WizardDiscardEditDarkNL | Native M3 dialog; Dutch confirmation is Wijzigingen verwijderen from the catalog. Native button arrangement replaces the board's custom vertical arrangement. |
+| WizardDiscardEdit, WizardDiscardEditDarkNL | Native M3 dialog; Dutch confirmation is Wijzigingen verwijderen from the catalog. Native button arrangement replaces the board's custom vertical arrangement. The underlying summary uses the iOS seed `summary.line.key` ending “Your trip home is planned too.” rather than the board’s “and back again after your flight home.” |
 | WizardDuplicate, WizardDuplicateDarkNL | Empty dates, copied-route subtitle, disabled Continue and no back chevron. |
 | WizardEditSaveOffline_noBoard, WizardEditSaveServer_noBoard | Edit save-failure bodies in 9g's existing banner layout; no designer boards. |
 | TripActionsBusy_noBoard_pixel8_en_light | Native sheet; rows/Cancel disabled, no spinner; no designer board. |
@@ -1428,9 +1428,9 @@ The two existing `TripActionsContentTest` seam tests now inject a successful pre
 
 The one emulator journey, `TripEditJourneyTest.editFromActionsSavesAndOpensTheTripPage`, passed on pixel API 36 in **4.799 s** on its single run. It launched seeded at the upcoming trip's actions sheet, proved the untouched Update disabled, changed preparation through slider semantics, saved and landed on the trip page with My trips selected. StrictMode I/O violations and the refused-change presentation counter both stayed at zero. Pixel remains running.
 
-The Phase 9h questions occupy OQ-A450–OQ-A460, excluding resolved OQ-9h-10; OQ-A461 records the progress settlement. Copy uses existing generated English/Dutch resources throughout, with no Android-only additions. The singular nights catalog limitation remains OQ-A459. The only added dependencies are test-only `:core:testing-junit`; no runtime dependency, native library, initializer or manifest entry was added. No timeline file changed. Perf, profile, full `make check` and other emulator tiers were not run, as instructed; wizard profiles remain Phase 13.
+The Phase 9h questions occupy OQ-A450–OQ-A460, excluding resolved OQ-9h-10; OQ-A461 records the progress settlement. Copy uses existing generated English/Dutch resources throughout, with no Android-only additions. The singular nights catalog limitation remains OQ-A459. The only added dependencies are test-only `:core:testing-junit`; no runtime dependency, native library, initializer or manifest entry was added. The initial implementation changed no timeline file. Review round 1 changes the presentation marker’s semantics read; its two-frame trace, drawing and clock paths stay the same. Perf, profile and full `make check` remain host-run commands as instructed; wizard profiles remain Phase 13.
 
-### Validation record and open gate
+### Initial validation record (superseded by review round 1 below)
 
 Measured command wall times below are from the worker's monotonic clock; JVM/emulator results are not physical-device performance claims.
 
@@ -1452,7 +1452,7 @@ Measured command wall times below are from the worker's monotonic clock; JVM/emu
 | `Scripts/test_scripts.sh` / remaining tooling cases | Scripts 170 pass, contracts 25 pass, l10n 49 pass, icons 11 pass; see environment correction below | 19.863 s initial call, then 0.150 / 0.093 / 0.130 s |
 | `make timing` | All seven serial JVM timing cases pass, including the timeline preparation/drawing budgets | 4.654 s |
 
-The aggregate quick gate remains **red**. Its only failed test is unchanged `TimelinePerfMarkersTest.theMarkerFlipsTwoFramesAfterTheFirstRealReplay[36]`, with:
+The initial aggregate quick gate was **red**. Its only failed test is unchanged `TimelinePerfMarkersTest.theMarkerFlipsTwoFramesAfterTheFirstRealReplay[36]`, with:
 
 ```text
 Failed: assertExists.
@@ -1460,8 +1460,34 @@ Reason: Expected exactly '1' node but could not find any node that satisfies:
 (TestTag = 'trip.timeline.presented')
 ```
 
-The failure took 0.036 s, so it is not a timing-budget overrun. It passed unchanged in the single-method isolation run. The guard drives the native main looper for two fixed 16 ms intervals, while the production marker uses two Choreographer callbacks. This suggests a suite/frame-scheduling dependency, but the cause is not established. No timeline code or marker assertion was changed to hide it, and `make quick` was not rerun. Full evidence remains in `build/test-results/quick/`, with the isolated result in `build/test-results/targeted/`. All Phase 9h cases and the existing 9a/9b/9g suites passed in the quick result, as did the unchanged timeline invalidation guards.
+The failure took 0.036 s, so it is not a timing-budget overrun. It passed unchanged in the single-method isolation run. The guard drives the native main looper for two fixed 16 ms intervals, while the production marker uses two Choreographer callbacks. At that point the cause was not established; review round 1 below records the reproduced publication race and fix. No timeline code or marker assertion was changed to hide it, and `make quick` was not rerun. Full evidence remains in `build/test-results/quick/`, with the isolated result in `build/test-results/targeted/`. All Phase 9h cases and the existing 9a/9b/9g suites passed in the quick result, as did the unchanged timeline invalidation guards.
 
 Because quick stopped at that test task, its later build-logic, tooling and serial timing stages were run separately. Invoking `Scripts/test_scripts.sh` directly first omitted Make's `IOS_REPO` / `WEB_REPO` exports, so the contracts parity method failed with `set IOS_REPO and WEB_REPO to run the iOS parity test (make exports them)`. With those exports restored, only that method was rerun, followed by the two tooling suites the script had not reached. All passed. No production or test source fix was needed for that environment error.
 
-No command was blocked by adb or the emulator sandbox. No perf/profile tier, full check, extra emulator journey or push was attempted. Host board comparison remains pending as described in the capture table.
+No command was blocked by adb or the emulator sandbox. No perf/profile tier, full check, extra emulator journey or push was attempted. The initial board comparison was handed to the host; review round 1 addresses its findings below.
+
+
+### Review round 1: resolved findings and validation
+
+The loaded suite reproduced the marker failure with `presented == true` after both native frame callbacks, while semantics still exposed `trip.timeline.opening`. Diagnostic uptime values were replay 310 ms, first callback 325 ms, second callback 340 ms, assertion 372 ms. The marker’s tag depended on a later recomposition. Reading the flag inside the semantics lambda publishes it without that extra composition. The two-frame trace and the existing test’s frames, waits and assertions are unchanged. `TripPageTestRig` renders `TripPageScreen` directly, so the new `TripPage` busy collection was a separate invalidation issue, not evidence of a delayed first real replay. Temporary diagnostics were removed. Detailed evidence and host performance follow-up are in [perf-timeline.md](perf-timeline.md#phase-9h-review-round-1-marker-publication-2026-11-20).
+
+The page now observes only whether actions exist; the full action state is collected inside its open sheet. The real-page busy-toggle guard failed with 16 composition passes before the fixes and records zero afterward. The wizard hand-off no longer suspends after consuming its request: a paused native animation and removal of the sheet composition still open exactly one wizard. Failure events claim presentation once across composition recreation; the counter proves that an identical later event presents again. The launcher lives in the retained shell ViewModel, and a retained-owner test keeps its pending guard shared across shell rebinding. Duplicate now has the same quiet fallback-load-failure coverage as Edit.
+
+`ApiClientTransportTests` previously used real loopback sockets for disconnect/truncation and an ephemeral port for refused connections. The host’s one-off disconnect failure was not reproduced separately; its external scheduling dependency is removed. Scripted socket streams exercise the real OkHttp codec, while injected connect/DNS errors cover the other cases. All four still require `DataFailure.Offline`; request bytes and one transport attempt prove the failure originates at the intended stage. No network production code changed.
+
+| Review validation | Result | Command wall time |
+|---|---|---|
+| Five consecutive loaded marker runs | 5/5 pass; unchanged marker case 2.714 / 3.340 / 3.191 / 2.865 / 2.749 s, each a cold SDK case | 20.438 / 21.262 / 18.513 / 26.438 / 26.013 s |
+| `make targeted ONLY=feature:trip:TimelineInvalidationTest` | 13 pass; new busy case 0.091 s | 7.923 s |
+| `make captures ONLY=WizardReturnWeb` (once) | Two PNGs regenerated and compared with host board renders; the output directory now holds these two captures | 18.951 s |
+| App/trip/wizard layout tier (once) | 1,150 pass: 70 / 304 / 776 | 35.418 s |
+| `./gradlew --console=plain :app:lintDebug :feature:trip:lintDebug :feature:wizard:lintDebug` (once) | Pass | 16.765 s |
+| `make targeted ONLY=app:TripEditJourneyTest` (once) | Pixel API 36 journey passes in 4.828 s; StrictMode/refusal checks pass | 12.522 s |
+| `make format` (final) | Pass | 17.883 s |
+| `make quick` (once) | Pass: 5,268 XML cases including 171 skipped; 5,097 measured, zero budget overruns/hangs; 37 build-logic and 255 tooling cases, seven serial timing cases pass | **71.281 s**, above the 60 s warm target |
+
+The final quick marker takes 0.031 s; the new busy guard takes 0.041 s; the repeated-failure counter case takes 0.302 s. The first Robolectric SDK case in the trip fork costs 6.152 s and is recorded separately as a cold warm-up. The four deterministic transport cases take 0.011 / 0.004 / 0.004 / 0.003 s. Quick’s main Gradle stage reports 46 s and the Scripts suite 19.798 s; the aggregate wall time is reported as measured and was not retried.
+
+Five-run evidence is archived in `/private/tmp/9h-review-proof/review-loaded-1` through `review-loaded-5`. The original failure with temporary diagnostics is `/private/tmp/9h-review-marker-diagnostic.xml`. Gate results are in `build/test-results/quick`, `phase-9h-review-layout`, `targeted-emu` and `timing`; the complete command/wall-time report is `/private/tmp/phase-9h-review-1-report.md`.
+
+The brief records the orchestrator’s direct-overlay hand-off override; no new OQ row or Android-only copy is needed. Host-only follow-up remains `make check`, `make perf-timeline` and `make baseline-profile`; none was run here. No required command was blocked by the sandbox. Pixel remains running. No runtime dependency, native library or launch-path change was added.
