@@ -24,11 +24,14 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.createFontFamilyResolver
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runCurrent
@@ -156,6 +159,72 @@ class RootThemeTest {
                 }
             }
         }
+
+    @Config(application = Application::class)
+    @Test
+    fun cfRootForwardsMotionAndFirstCommit() {
+        compose.mainClock.autoAdvance = false
+        assertCfRootBindings(reduceMotion = true)
+        assertCfRootBindings(reduceMotion = false)
+    }
+
+    private fun assertCfRootBindings(reduceMotion: Boolean) {
+        val main = StandardTestDispatcher()
+        val io = StandardTestDispatcher(main.scheduler)
+        val preloader = RecordingFontPreloader().apply { expectedDispatcher = io }
+        val launchScope = CoroutineScope(SupervisorJob() + main)
+        val launch = LaunchController(moon = { error("root wiring test loads no images") }, scope = launchScope)
+        val graph =
+            AppGraph(
+                RuntimeEnvironment.getApplication(),
+                preloader,
+                launchProvider = { launch },
+                overrides = GraphOverrides(dispatchers = AppDispatchers(main = main, io = io)),
+            )
+        val host = Robolectric.buildActivity(ComponentActivity::class.java).setup()
+        val firstCommit = CompletableDeferred<Unit>()
+        var observed: Boolean? = null
+        try {
+            host.get().setContent {
+                CfRoot(
+                    graph,
+                    false,
+                    reduceMotion,
+                    firstCommit,
+                    null,
+                    destinations = RoutedWelcomeDestinations(graph.rootNavigator),
+                ) {
+                    val current = LocalReduceMotion.current
+                    SideEffect { observed = current }
+                }
+            }
+            compose.mainClock.advanceTimeByFrame()
+            compose.mainClock.advanceTimeByFrame()
+            io.scheduler.runCurrent()
+            compose.runOnIdle {
+                assertEquals(reduceMotion, observed)
+                assertEquals(0, preloader.calls.get())
+                firstCommit.complete(Unit)
+            }
+            compose.waitForIdle()
+            io.scheduler.runCurrent()
+            compose.runOnIdle {
+                assertEquals(4, preloader.calls.get())
+                assertTrue(launch.fontsReady)
+            }
+        } finally {
+            try {
+                host.pause().stop().destroy()
+            } finally {
+                runTest(main, timeout = 60.seconds) {
+                    withContext(NonCancellable) {
+                        graph.closeAndJoinForTest()
+                        launchScope.coroutineContext.job.cancelAndJoin()
+                    }
+                }
+            }
+        }
+    }
 
     @Test fun activityRefreshesTheSystemMotionSettingWhenResumed() {
         val app = RuntimeEnvironment.getApplication() as RecordingApplication
