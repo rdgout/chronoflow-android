@@ -2827,6 +2827,7 @@ Implementation commits (brief §7):
 **Delivers.** Builds the sleep step: usual bedtime and wake time with 5-minute rounding, and the free-day times sheet. It builds the only remaining questions, age band and shift work, including the large-text variant, and the excluded states for guests, saved shift-work answers and edits. Retired health questions are never built.
 
 **Tasks**
+- [x] **Clock rounding**: nearest five minutes with midnight wrap; untouched and unchanged confirms write nothing (9e Task 1).
 - [ ] **Sleep** (`WizardSleep`).
   - Usual bedtime and wake time use the M3 `TimePicker` in a sheet, rounded to 5 min on Done (OQ-A8, `PickerTime`).
   - The free-day times sheet (`WizardSheetFreeSleep`).
