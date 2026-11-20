@@ -209,6 +209,17 @@ internal fun CfRoot(
                                         )
                                     }
 
+                                    is Route.Walkthrough -> {
+                                        LaunchedEffect(route.replay) {
+                                            if (route.replay && BuildConfig.DEBUG) {
+                                                android.util.Log.w("ChronoFlow", "root walkthrough replay")
+                                            }
+                                        }
+                                        net.chronoflow.app.onboarding.WalkthroughEntry(graph, route.replay) {
+                                            graph.rootNavigator.navigate(Route.Settings)
+                                        }
+                                    }
+
                                     Route.SignIn -> {
                                         val extras =
                                             remember(

@@ -2563,7 +2563,7 @@ Implementation commits (brief §7):
 **Delivers.** Builds the three walkthrough pages. Skip and Done commit locally and enqueue the walkthrough change without waiting for sync; the first run ends on Today, and the replay variant returns to its caller. The phase builds the terms-update gate with its accept and failed states and the policy pages in a Custom Tab, with the gate order terms before walkthrough.
 
 **Tasks**
-- [ ] **Walkthrough** (`feature/onboarding/…`).
+- [x] **Walkthrough** (`feature/onboarding/…`).
   - Three pages.
   - Skip and Done commit locally and enqueue the walkthrough change without waiting for sync.
   - The first run ends on Today. `Walkthrough(replay = true)` returns to its caller (`WalkthroughReplay`).
