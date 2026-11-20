@@ -45,7 +45,7 @@ class WizardCompletionBoardSeedTest(
                     },
                     draft.state.step,
                 )
-                assertEquals(JsonPrimitive("1.5"), draft.state.savedProfile?.get("blueBlockerMdfd"))
+                assertEquals(JsonPrimitive(1.5), draft.state.savedProfile?.get("blueBlockerMdfd"))
                 assertEquals(draft.inputFingerprint, draft.state.checkedInput)
                 assertEquals(draft.form.identity, draft.state.review!!.identity)
                 assertEquals(WizardBoardCaptureSeed.now, draft.state.reviewedAt)

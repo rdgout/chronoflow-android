@@ -226,15 +226,7 @@ internal object WizardCompletionBoardSeed {
                     "freeDayWake" to JsonPrimitive("09:00"),
                     "lightDevice" to JsonPrimitive("box"),
                     "blueBlockers" to JsonPrimitive("rated"),
-                    "blueBlockerMdfd" to
-                        when {
-                            board == "WizardSheetBlueError" -> JsonPrimitive(12)
-
-                            board.startsWith("WizardReady") || board.startsWith("WizardSave") ||
-                                board == "WizardCalculating" -> JsonPrimitive("1.5")
-
-                            else -> JsonPrimitive(1.5)
-                        },
+                    "blueBlockerMdfd" to if (board == "WizardSheetBlueError") JsonPrimitive(12) else JsonPrimitive(1.5),
                     "caffeineHabit" to JsonPrimitive("cups"),
                     "cupsFilterCoffee" to JsonPrimitive(if (board == "WizardSheetDrinksError") 0 else 2),
                 ) + if (board == "WizardSheetFreeSleep") state.savedProfile.orEmpty() else emptyMap(),
