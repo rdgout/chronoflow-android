@@ -103,7 +103,7 @@ class RootThemeTest {
 
     @Config(application = Application::class)
     @Test
-    fun rootProvidesReduceMotionAndUsesTheSuppliedFontBarrier() =
+    fun themeContentProvidesReduceMotionAndUsesTheSuppliedFontBarrier() =
         runTest(timeout = 60.seconds) {
             var checkpoint = System.nanoTime()
 
@@ -123,6 +123,12 @@ class RootThemeTest {
             val recomposing = backgroundScope.launch(frameClock) { recomposer.runRecomposeAndApplyChanges() }
             val completed = CompletableDeferred<Unit>()
             val commit = ObservedCommit(completed)
+            val graph = object : RootThemeGraph {
+                override val fontPreloader = preloader
+                override val dispatchers = AppDispatchers(main = StandardTestDispatcher(testScheduler), io = dispatcher)
+                override val launch = launch
+            }
+            val inputs = graph.rootThemeInputs(true, commit)
             var motion = false
             mark("runtime-fixture")
             try {
@@ -131,7 +137,7 @@ class RootThemeTest {
                         LocalFontFamilyResolver provides resolver,
                         LocalHapticFeedback provides NoHapticFeedback,
                     ) {
-                        RootThemeContent(false, true, commit, preloader, dispatcher, launch::markFontsReady) {
+                        RootThemeContent(false, inputs) {
                             val current = LocalReduceMotion.current
                             SideEffect { motion = current }
                         }

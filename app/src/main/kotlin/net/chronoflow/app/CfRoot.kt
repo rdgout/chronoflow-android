@@ -86,14 +86,7 @@ internal fun CfRoot(
     }
     BackHandler(enabled = seam != null) { destinations.closeSeam() }
     val night = isSystemInDarkTheme()
-    RootThemeContent(
-        night,
-        reduceMotion,
-        firstCommit,
-        graph.fontPreloader,
-        graph.dispatchers.io,
-        graph.launch::markFontsReady,
-    ) {
+    RootThemeContent(night, graph.rootThemeInputs(reduceMotion, firstCommit)) {
         val overlayShowing = graph.launch.overlayActive
         // Skipped overlays wait for first commit before readiness can select a route.
         val launchSky =
