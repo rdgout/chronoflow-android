@@ -86,6 +86,7 @@ fun CfTimePickerDialog(
     confirmTestTag: String = "cf.time.confirm",
     dismissTestTag: String = "cf.time.dismiss",
     modifier: Modifier = Modifier,
+    confirmEnabled: Boolean = true,
 ) {
     val c = CfTheme.colors
     val parentScheme = MaterialTheme.colorScheme
@@ -95,7 +96,7 @@ fun CfTimePickerDialog(
         TimePickerDialog(
             onDismissRequest = onDismiss,
             modifier = modifier.semantics { testTagsAsResourceId = true },
-            confirmButton = { DialogAction(CfDialogAction(confirmLabel, onConfirm), confirmTestTag) },
+            confirmButton = { DialogAction(CfDialogAction(confirmLabel, onConfirm), confirmTestTag, confirmEnabled) },
             dismissButton = { DialogAction(CfDialogAction(dismissLabel, onDismiss), dismissTestTag) },
             title = {
                 Column {
