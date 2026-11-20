@@ -352,9 +352,7 @@ class TripWizardViewModel(
                     }
                 }
 
-                else -> {
-                    Unit
-                }
+                else -> {}
             }
         } finally {
             continuing = false

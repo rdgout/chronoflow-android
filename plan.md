@@ -2769,18 +2769,18 @@ Implementation commits (brief §7):
 **Delivers.** Builds the outbound and flight-home times steps. Separate date and time pills open a DatePickerDialog bounded to the airport's wall dates and a time dialog in which only Done writes; the steps add flight-time, connection and overnight chips, errors, three-flight scrolling with a fixed Continue, and the past-arrival banner. It builds the Coming back? choice. Pickers follow the phone's 12/24-hour setting while displayed values follow the app.
 
 **Tasks**
-- [ ] **Outbound and flight-home times** (`WizardOutbound*`, `WizardReturnFlight*`).
+- [x] **Outbound and flight-home times** (`WizardOutbound*`, `WizardReturnFlight*`).
   - [x] Half-entered values and recovery (9d Task 1).
   - [x] Debug board drafts and variant checks (9d Task 4).
   - [x] Supporting text, confirm state and window tags on the shared picker wrappers (9d Task 3).
   - [x] Separate date and time pills.
-  - `CfDatePickerDialog` is bounded to the airport's wall dates. In the time dialog only Done writes, at minute precision.
+  - [x] `CfDatePickerDialog` is bounded to the airport's wall dates. In the time dialog only Done writes, at minute precision.
   - [x] Flight-time, connection and overnight chips.
   - [x] Errors (`WizardOutboundErrors`, `WizardOutboundTwoErrors`).
   - [x] Three flights scroll under a fixed Continue (`WizardOutboundThree`).
   - [x] The past-arrival banner (`WizardOutboundPast`, `WizardReturnFlightPast`).
 - [ ] **Coming back?** (`WizardReturn*`): it auto-advances after 250 ms, and taps are ignored while it is pending.
-- [ ] **Picker formats.** Pickers follow `DateFormat.is24HourFormat`, displayed values follow the account `timeFormat`, and the dialogs use the app language (OQ 46, `PickerDateTime`).
+- [x] **Picker formats.** Pickers follow `DateFormat.is24HourFormat`, displayed values follow the account `timeFormat`, and the dialogs use the app language (OQ 46, `PickerDateTime`).
 - [ ] **Tests.**
   - [x] Date and time bounds on the JVM (9d Task 2).
   - Guards for each board.
