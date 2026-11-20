@@ -94,16 +94,24 @@ internal fun WizardBusyControl(
                         horizontalArrangement = Arrangement.spacedBy(PlanUITokens.space2.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text(
-                            text,
+                        Box(
                             Modifier
                                 .weight(1f)
                                 .heightIn(min = WizardMetrics.sheetRowMinHeight.dp)
                                 .cfClickable({ open(i) }, role = Role.Button)
                                 .testTag("wizard.answer.busy-range.$i"),
-                            color = CfTheme.colors.foreground,
-                            style = CfTheme.type.style(CfTypeScale.wizardSearchName).copy(fontFeatureSettings = "tnum"),
-                        )
+                            contentAlignment = Alignment.CenterStart,
+                        ) {
+                            Text(
+                                text,
+                                color = CfTheme.colors.foreground,
+                                style =
+                                    CfTheme.type
+                                        .style(
+                                            CfTypeScale.wizardSearchName,
+                                        ).copy(fontFeatureSettings = "tnum"),
+                            )
+                        }
                         val description = WizardCopy("Remove {{range}}", mapOf("range" to text)).resolve()
                         Box(
                             Modifier
