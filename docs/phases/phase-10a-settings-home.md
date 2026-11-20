@@ -88,6 +88,8 @@ Checked with `git grep` and file reads at HEAD `c7818ff0` (stack top = 9h). **Th
 
 **R7. Glyphs (Task 1).** `tools/icons/lucide.json` has 50 glyphs. These already exist, so skip them: `check`, `globe`, `loader-circle` and `moon` (bundle); `chevron-right` (board SetHome); **`cloud-upload`** (board PlanRemote) and **`cloud-off`** (board Wizard). Add only `cloud-check`, `user`, `shield`, `sliders-horizontal` and `credit-card`; each `first` string occurs once in `SetHome.dc.html`. `LucideGlyphsTest` (`core/designsystem/src/test/kotlin/net/chronoflow/core/designsystem/LucideGlyphsTest.kt:19`) goes from 50 to **55**. `make vectors` and `make vectors-check` exist.
 
+**R7a. Repeated check (2026-11-21).** `tools/icons/test_generate_icons.py:test_manifest_names_all_generate` also asserts the manifest count (50). Task 1 must raise that Python assertion to 55 alongside `LucideGlyphsTest`; otherwise `make generators-check` fails after adding the five glyphs. This changes only the generator guard.
+
 **R8. Strings.** Every name in §5.11 is in `tools/l10n/names.lock.json`, and so are `settings_password_passkeys_two_factor` and `auth_back`. No Android-only copy is expected. If one turns out to be needed, it goes into `tools/l10n/android-only.json` (`entries`, `{{name}}` placeholders, `replaces: []`) and into plan.md "Android-only copy awaiting approval". Composables read copy with `stringResource`/`pluralStringResource` or `LocalResources.current`; `Text` receives resources only.
 
 **R9. Conventions that override the body.**
@@ -403,7 +405,7 @@ Key Dutch checks: "Instellingen", "2 min geleden gesynchroniseerd", "Nog 3 vrage
   - `"shield": {"source": "board", "board": "SetHome", "first": "M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"}`
   - `"sliders-horizontal": {"source": "board", "board": "SetHome", "first": "<line x1=\"21\" x2=\"14\" y1=\"4\" y2=\"4\">"}` (9 children)
   - `"credit-card": {"source": "board", "board": "SetHome", "first": "<rect width=\"20\" height=\"14\" x=\"2\" y=\"5\" rx=\"2\">"}` (2 children)
-- Run `make vectors`, commit the regenerated `LucideGlyphs.generated.kt`, and raise the glyph count in `LucideGlyphsTest` by the number added (read the merged assertion first; *[Refresh]* 50 → 55). `make generators-check` passes.
+- Run `make vectors`, commit the regenerated `LucideGlyphs.generated.kt`, and raise the glyph count in `LucideGlyphsTest` and `tools/icons/test_generate_icons.py:test_manifest_names_all_generate` by the number added (read the merged assertions first; *[Refresh]* 50 → 55; R7a). `make generators-check` passes.
 - `…/ds/component/CfButton.kt` *[Refresh; there is no `button/CfButtonStyle.kt`]*: add `GhostDestructive` to `CfButtonStyle` (transparent container, `destructive` content, pressed overlay as `Ghost`). Update the colour mapping and its guard test.
 - Tests: extend `core/designsystem/src/test/kotlin/net/chronoflow/core/designsystem/CfButtonTest.kt` with GhostDestructive in light and dark; `designSystemPrimitivesHaveGuards` stays green.
 
