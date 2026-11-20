@@ -37,7 +37,12 @@ internal fun TestScope.boardState(
     try {
         val presentation = WizardBoardCaptureSeed.presentation(board)
         val active = TripWizardUiState.Active(model.snapshots.value, model.progress, model.navigationPath)
-        val ui = WizardUiState.from(active, dialog = presentation.discardDialogVisible)
+        val ui =
+            WizardUiState.from(
+                active,
+                dialog = presentation.discardDialogVisible,
+                now = WizardBoardCaptureSeed.now,
+            )
         val sheet = ui.sheet
         val results =
             sheet

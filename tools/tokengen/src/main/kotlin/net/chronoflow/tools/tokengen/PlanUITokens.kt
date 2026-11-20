@@ -78,7 +78,7 @@ fun planUITokens(root: Path): TokenSet {
         }
     }
     val base = TokenSet(metrics, styles)
-    return TokenSet(metrics, styles + wizardStyles(base))
+    return TokenSet(metrics, styles + wizardStyles(base) + wizardPickerStyle(root))
 }
 
 private fun wizardStyles(ui: TokenSet): List<TypeEntry> {
@@ -138,4 +138,14 @@ private fun wizardStyles(ui: TokenSet): List<TypeEntry> {
         styleOf("wizardChoice", "Figtree600", "wizardChoiceFontSize", "wizardChoiceLineHeight"),
         styleOf("wizardRoute", "Figtree600", "wizardRouteFontSize", "wizardRouteLineHeight"),
     )
+}
+
+private fun wizardPickerStyle(root: Path): TypeEntry {
+    val ios = firstCapture("""\.ios \{([^}]+)\}""", root.design("theme.css"))
+    if (!ios.contains("system-ui")) throw GenerationError("Wizard pill no longer uses the platform font")
+    val tracking = firstCapture("""letter-spacing:\s*(-?[\d.]+)em""", ios).toDouble()
+    val pill = firstCapture("""const PILL = '([^']+)'""", root.design("Wizard.dc.html"))
+    val size = firstCapture("""font-size:\s*([\d.]+)px""", pill).toDouble()
+    val line = firstCapture("""line-height:\s*([\d.]+)px""", pill).toDouble()
+    return TypeEntry("wizardPicker", "System400", size, line, tracking * size)
 }

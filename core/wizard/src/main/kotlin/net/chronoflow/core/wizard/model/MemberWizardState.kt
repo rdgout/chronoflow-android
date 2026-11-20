@@ -3,6 +3,7 @@
 package net.chronoflow.core.wizard.model
 
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
@@ -86,6 +87,8 @@ data class MemberWizardState(
     val copiedRoute: String? = null,
     val snapshotStayEnd: ApiStayEnd? = null,
     val sourceChange: WizardPresentation.SourceChange? = null,
+    @SerialName("pendingDateTimes")
+    val pendingDateTimes: Map<String, WizardPendingDateTime> = emptyMap(),
 ) {
     fun discardRetiredValues(): MemberWizardState =
         copy(

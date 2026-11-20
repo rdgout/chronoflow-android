@@ -9,9 +9,12 @@ import androidx.compose.runtime.State
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.text.font.FontFamily
+import androidx.lifecycle.ProcessLifecycleOwner
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import net.chronoflow.core.designsystem.theme.LocalReduceMotion
@@ -33,6 +36,7 @@ import org.robolectric.util.ReflectionHelpers
 import org.robolectric.util.ReflectionHelpers.ClassParameter
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.coroutines.ContinuationInterceptor
 import kotlin.time.Duration.Companion.seconds
 
 @OptIn(ExperimentalTestApi::class)
@@ -82,6 +86,10 @@ class RootThemeTest {
     @Test fun rootProvidesReduceMotionAndUsesTheSuppliedFontBarrier() {
         compose.mainClock.autoAdvance = false
         val app = RuntimeEnvironment.getApplication() as RecordingApplication
+        app.preloader.expectedDispatcher = app.ioDispatcher
+        assertFalse(app.graph.launch.overlayActive)
+        // Advancing font work must not also start the unrelated session foreground pipeline.
+        ProcessLifecycleOwner.get().lifecycle.removeObserver(app.graph.activation)
         val host = Robolectric.buildActivity(ComponentActivity::class.java).setup()
         val completed = CompletableDeferred<Unit>()
         val commit = ObservedCommit(completed)
@@ -95,14 +103,19 @@ class RootThemeTest {
             }
             compose.mainClock.advanceTimeByFrame()
             compose.mainClock.advanceTimeByFrame()
-            compose.waitUntil(5000) { commit.awaited.get() }
+            app.ioDispatcher.scheduler.runCurrent()
             compose.runOnIdle {
-                assertTrue(motion)
                 assertEquals(0, app.preloader.calls.get())
+                assertTrue(commit.awaited.get())
+                assertTrue(motion)
                 completed.complete(Unit)
             }
-            compose.waitUntil(5000) { app.preloader.calls.get() == 4 }
-            compose.runOnIdle { assertTrue(app.graph.launch.fontsReady) }
+            compose.waitForIdle()
+            app.ioDispatcher.scheduler.runCurrent()
+            compose.runOnIdle {
+                assertEquals(4, app.preloader.calls.get())
+                assertTrue(app.graph.launch.fontsReady)
+            }
         } finally {
             host.pause().stop().destroy()
             app.graph.appScope.cancel()
@@ -158,19 +171,32 @@ class RootThemeTest {
     class RecordingApplication : ChronoFlowApp() {
         val preloader = RecordingFontPreloader()
         val mainDispatcher = StandardTestDispatcher()
+        val ioDispatcher = StandardTestDispatcher(mainDispatcher.scheduler)
+        private val controller by lazy { newLaunchController(graph) }
 
         override fun createGraph(): AppGraph =
-            AppGraph(this, preloader, overrides = GraphOverrides(dispatchers = AppDispatchers(main = mainDispatcher)))
+            AppGraph(
+                this,
+                preloader,
+                launchProvider = { controller },
+                overrides = GraphOverrides(dispatchers = AppDispatchers(main = mainDispatcher, io = ioDispatcher)),
+            )
     }
 
     class RecordingFontPreloader : FontPreloader {
         val calls = AtomicInteger()
+        var expectedDispatcher: CoroutineDispatcher? = null
 
         override suspend fun preload(
             resolver: FontFamily.Resolver,
             family: FontFamily,
         ) {
-            assertNotEquals(Looper.getMainLooper(), Looper.myLooper())
+            val expected = expectedDispatcher
+            if (expected == null) {
+                assertNotEquals(Looper.getMainLooper(), Looper.myLooper())
+            } else {
+                assertEquals(expected, currentCoroutineContext()[ContinuationInterceptor])
+            }
             calls.incrementAndGet()
         }
     }

@@ -1,6 +1,7 @@
 package net.chronoflow.core.wizard.model
 
 import net.chronoflow.core.model.contracts.Language
+import net.chronoflow.core.model.contracts.TimeFormat
 import java.time.DateTimeException
 import java.time.Instant
 import java.time.LocalDateTime
@@ -127,17 +128,11 @@ object WizardDateTime {
         value ?: return null
         val date = date(value) ?: return value
         val weekday = format(date, WizardDateTemplate.EEE, language)
-        if (!twelveHour) return "$weekday ${two(date.hour)}:${two(date.minute)}"
-        val hour = (date.hour % 12).let { if (it == 0) 12 else it }
-        val nl = language == Language.Nl
-        val period =
-            when {
-                nl && date.hour < 12 -> "a.m."
-                nl -> "p.m."
-                date.hour < 12 -> "AM"
-                else -> "PM"
-            }
-        return "$weekday ${if (nl) two(hour) else hour.toString()}:${two(date.minute)} $period"
+        return "$weekday ${WizardDateFormat.time(
+            "${two(date.hour)}:${two(date.minute)}",
+            if (twelveHour) TimeFormat.Value12 else TimeFormat.Value24,
+            language,
+        )}"
     }
 
     fun format(

@@ -2,7 +2,10 @@ package net.chronoflow.feature.wizard
 
 import androidx.lifecycle.viewmodel.CreationExtras
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import net.chronoflow.core.model.DataSource
+import net.chronoflow.core.model.contracts.TimeFormat
 import net.chronoflow.core.wizard.generation.TripGenerationService
 import net.chronoflow.core.wizard.model.AirportSearchService
 import net.chronoflow.core.wizard.model.MemberWizardDraft
@@ -17,6 +20,7 @@ interface TripWizardDependencies {
     val source: DataSource
     val now: () -> Instant
     val writerScope: CoroutineScope
+    val timeFormat: Flow<TimeFormat> get() = flowOf(TimeFormat.Value24)
     val checkingClock: WizardCheckingClock get() = WizardCheckingClock.continuous
 
     suspend fun start(): MemberWizardDraft

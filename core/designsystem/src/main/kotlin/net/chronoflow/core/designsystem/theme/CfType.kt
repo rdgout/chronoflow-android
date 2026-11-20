@@ -35,6 +35,7 @@ val Fraunces48 =
 
 fun CfFace.fontFamily(): FontFamily =
     when (this) {
+        CfFace.System400 -> FontFamily.Default
         CfFace.Figtree400, CfFace.Figtree500, CfFace.Figtree600, CfFace.Figtree700 -> Figtree
         CfFace.Fraunces400Opsz20, CfFace.Fraunces500Opsz20 -> Fraunces20
         CfFace.Fraunces400Opsz32, CfFace.Fraunces500Opsz32 -> Fraunces32
@@ -43,6 +44,7 @@ fun CfFace.fontFamily(): FontFamily =
 
 fun CfFace.fontWeight(): FontWeight =
     when (this) {
+        CfFace.System400,
         CfFace.Figtree400,
         CfFace.Fraunces400Opsz20,
         CfFace.Fraunces400Opsz32,
