@@ -15,7 +15,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import net.chronoflow.app.ChronoFlowApp
 import net.chronoflow.app.LaunchPlatform
 import net.chronoflow.app.trip.TripPageRoute
-import net.chronoflow.app.wizard.WizardLauncher
 import net.chronoflow.core.model.contracts.Language
 import net.chronoflow.core.navigation.Route
 import net.chronoflow.core.navigation.shell.ShellTab
@@ -37,11 +36,7 @@ internal fun AppShell(
     val render = rememberUpdatedState(placeholder)
     val holder = rememberShellViewModel(root)
     val wizardDependencies = sessionGraph?.wizard
-    val launcher =
-        remember(holder, wizardDependencies, graph.dispatchers.io) {
-            WizardLauncher({ holder.state.overlay }, holder::push, wizardDependencies, graph.dispatchers.io)
-        }
-    LaunchedEffect(holder.state.overlay) { launcher.overlayChanged() }
+    val launcher = holder.wizardLauncher(wizardDependencies, graph.dispatchers.io)
     val wizardLocale = rememberUpdatedState(LocalConfiguration.current.locales[0])
     LaunchedEffect(sessionGraph?.epoch) {
         val epoch = sessionGraph?.epoch ?: return@LaunchedEffect

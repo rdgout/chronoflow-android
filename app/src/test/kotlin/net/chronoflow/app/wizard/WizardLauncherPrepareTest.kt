@@ -26,6 +26,14 @@ import net.chronoflow.core.wizard.model.RecoveryRejected
 import net.chronoflow.core.wizard.model.TripWizardAction
 import net.chronoflow.feature.trip.actions.TripWizardPrepareOutcome
 import net.chronoflow.feature.wizard.TripWizardDependencies
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import net.chronoflow.app.shell.ShellViewModel
+import net.chronoflow.core.navigation.shell.ShellNav
+import org.junit.Assert.assertSame
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -177,6 +185,42 @@ class WizardLauncherPrepareTest {
                 )
             launcher.open()
             assertEquals(TripWizardPrepareOutcome.Ignored, launcher.prepare("t", TripAction.Edit))
+        }
+
+    @Test fun pendingGuardSurvivesRecreatingTheShellBinding() =
+        runTest(timeout = 60.seconds) {
+            val retained = ViewModelStore()
+            val factory = viewModelFactory { initializer { ShellViewModel(ShellNav.initial()) } }
+            val io = StandardTestDispatcher(testScheduler)
+            val gate = CompletableDeferred<Unit>()
+            var calls = 0
+            val deps = prepareDependencies { _, _ ->
+                calls++
+                gate.await()
+                MemberWizardDraft()
+            }
+            try {
+                val firstOwner = ViewModelProvider.create(retained, factory)[ShellViewModel::class.java]
+                val capturedByTrip = firstOwner.wizardLauncher(deps, io)
+                val pending = launch { capturedByTrip.prepare("t", TripAction.Edit) }
+                runCurrent()
+                val recreatedOwner = ViewModelProvider.create(retained, factory)[ShellViewModel::class.java]
+                val recreatedBinding = recreatedOwner.wizardLauncher(deps, io)
+                assertSame(capturedByTrip, recreatedBinding)
+                recreatedBinding.open()
+                assertNull(recreatedOwner.state.overlay)
+                assertEquals(TripWizardPrepareOutcome.Ignored, recreatedBinding.prepare("t", TripAction.Duplicate))
+                assertEquals(1, calls)
+                gate.complete(Unit)
+                pending.join()
+                recreatedBinding.open()
+                assertEquals(Route.Wizard(WizardMode.Create), recreatedOwner.state.overlay)
+                recreatedOwner.back()
+                recreatedBinding.open()
+                assertEquals(Route.Wizard(WizardMode.Create), recreatedOwner.state.overlay)
+            } finally {
+                retained.clear()
+            }
         }
 
     @Test fun noSessionIsIgnored() =
