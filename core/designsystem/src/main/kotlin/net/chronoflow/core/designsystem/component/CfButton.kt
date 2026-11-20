@@ -76,6 +76,7 @@ fun CfButton(
     textStyle: TextStyle = CfTheme.type.authLabel,
     contentPadding: PaddingValues? = null,
     leadingIconSize: Dp = AuthTokens.icon.dp,
+    disabledAlpha: Float = AuthTokens.disabledOpacity,
 ) {
     require(!loading || loadingDescription != null) { "A loading button needs a localized loadingDescription" }
     val c = CfTheme.colors
@@ -113,7 +114,7 @@ fun CfButton(
                 .minimumInteractiveComponentSize()
                 .then(if (fillWidth) Modifier.fillMaxWidth() else Modifier)
                 .heightIn(min = if (minHeight == Dp.Unspecified) metrics.height.dp else minHeight)
-                .alpha(if (active) 1f else AuthTokens.disabledOpacity)
+                .alpha(if (active) 1f else disabledAlpha)
                 .cfClickable(onClick, enabled = active, focusShape = shape)
                 .semantics {
                     if (!active) disabled()

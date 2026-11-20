@@ -42,6 +42,7 @@ import net.chronoflow.core.wizard.model.popNavigation
 import net.chronoflow.core.wizard.model.progress
 import net.chronoflow.core.wizard.model.resumeChecking
 import net.chronoflow.core.wizard.model.resumeCompletion
+import net.chronoflow.core.wizard.model.showsBack
 import net.chronoflow.feature.wizard.shell.WizardEvent
 import net.chronoflow.feature.wizard.shell.WizardExit
 import net.chronoflow.feature.wizard.shell.WizardStepKey
@@ -70,7 +71,17 @@ class TripWizardViewModel(
     val state: StateFlow<TripWizardUiState> = mutableState.asStateFlow()
     val uiState =
         combine(state, closing, discardDialogVisible) { value, closing, dialog ->
-            (value as? TripWizardUiState.Active)?.let { WizardUiState.from(it, closing, dialog) }
+            (value as? TripWizardUiState.Active)?.let {
+                WizardUiState.from(it, closing, dialog).let { ui ->
+                    ui.copy(
+                        chrome =
+                            ui.chrome.copy(
+                                showBack =
+                                    wizard?.showsBack == true,
+                            ),
+                    )
+                }
+            }
         }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
     val chrome = uiState.map { it?.chrome }.distinctUntilChanged().stateIn(viewModelScope, SharingStarted.Eagerly, null)
     val where = uiState.map { it?.where }.distinctUntilChanged().stateIn(viewModelScope, SharingStarted.Eagerly, null)
