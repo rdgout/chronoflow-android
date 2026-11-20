@@ -118,6 +118,29 @@ class TripWizardViewModelAnswerSheetTest {
             }
         }
 
+    @Test fun malformedAnswerMapsTheSerializationFailureToAnError() =
+        runTest(timeout = 60.seconds) {
+            val path = "outbound.legs"
+            val prompt = freeDayPrompt(target = ReviewPromptTarget.Trip, fields = listOf(path))
+            withWizard(configure = { draft = freeDayDraft(prompt) }) { fixture ->
+                runCurrent()
+                fixture.model.onEvent(WizardEvent.UpdateAnswer(path, JsonPrimitive("invalid")))
+                fixture.model.onEvent(WizardEvent.AnswerDone)
+                runCurrent()
+                assertEquals(
+                    "Choose one of the available options.",
+                    fixture.model.uiState.value!!
+                        .answerSheet!!
+                        .state.error
+                        ?.key,
+                )
+                assertNotNull(
+                    fixture.model.wizard!!
+                        .draft.state.promptSheetID,
+                )
+            }
+        }
+
     @Test fun cancelLeavesTheProfileUnchanged() =
         runTest(timeout = 60.seconds) {
             withWizard(configure = { draft = freeDayDraft() }) { fixture ->

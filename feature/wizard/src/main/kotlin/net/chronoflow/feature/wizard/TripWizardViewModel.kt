@@ -753,6 +753,8 @@ class TripWizardViewModel(
                 mutableAnswer.value = answer.copy(error = FieldMessage("Choose one of the available options."))
             } catch (_: DataFailure) {
                 mutableAnswer.value = answer.copy(error = FieldMessage("Choose one of the available options."))
+            } catch (_: RuntimeException) {
+                mutableAnswer.value = answer.copy(error = FieldMessage("Choose one of the available options."))
             } finally {
                 answering = false
             }
