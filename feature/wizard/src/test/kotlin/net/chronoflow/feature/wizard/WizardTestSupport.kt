@@ -85,6 +85,7 @@ internal class FakeWizardDependencies(
     override var now = { wall.now }
     val checking = CheckingTestClock(scope.testScheduler)
     override val checkingClock = checking.clock
+    override var uiOverride: net.chronoflow.feature.wizard.shell.WizardUiOverride? = null
     override val writerScope =
         CoroutineScope(
             scope.backgroundScope.coroutineContext +

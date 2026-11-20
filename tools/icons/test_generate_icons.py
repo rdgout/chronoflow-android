@@ -35,6 +35,16 @@ class GenerateIconsTest(unittest.TestCase):
     def test_moon_is_the_board_version(self):
         self.assertEqual(g.nodes(BUNDLE, 'moon'), [('M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z', False)])
 
+    def test_clock_selector_distinguishes_it_from_the_alert_circle(self):
+        entry = json.loads(g.MANIFEST.read_text())['glyphs']['clock']
+        paths = g.board_nodes('clock', entry)
+        self.assertEqual(len(paths), 2)
+        self.assertEqual(paths[1], ('M12 6v6l4 2', False))
+
+    def test_star_retains_the_board_fill(self):
+        entry = json.loads(g.MANIFEST.read_text())['glyphs']['star']
+        self.assertTrue(g.board_nodes('star', entry)[0][1])
+
     def test_two_runs_are_byte_identical(self):
         self.assertEqual(g.generate(), g.generate())
 
@@ -45,7 +55,7 @@ class GenerateIconsTest(unittest.TestCase):
 
     def test_manifest_names_all_generate(self):
         names = json.loads(g.MANIFEST.read_text())['glyphs']
-        self.assertEqual(len(names), 47)
+        self.assertEqual(len(names), 50)
         text = g.generate()
         for name in names:
             self.assertIn(f'"{name}"', text)

@@ -40,6 +40,8 @@ internal fun WizardTimeRow(
     onClick: () -> Unit,
     tag: String,
     minHeight: Dp = WizardMetrics.timeRowMinHeight.dp,
+    enabled: Boolean = true,
+    labelStyle: androidx.compose.ui.text.TextStyle? = null,
 ) {
     val language = Language.of(LocalConfiguration.current.locales[0].language)
     val formatted =
@@ -55,7 +57,7 @@ internal fun WizardTimeRow(
             .fillMaxWidth()
             .heightIn(min = minHeight)
             .testTag(tag)
-            .cfClickable(onClick, role = Role.Button)
+            .cfClickable(onClick, role = Role.Button, enabled = enabled)
             .semantics(mergeDescendants = true) {
                 contentDescription = text
                 stateDescription = formatted ?: empty
@@ -72,7 +74,7 @@ internal fun WizardTimeRow(
             text,
             Modifier.weight(1f),
             color = CfTheme.colors.foreground,
-            style = CfTheme.type.style(CfTypeScale.wizardRow),
+            style = labelStyle ?: CfTheme.type.style(CfTypeScale.wizardRow),
         )
         Text(
             formatted ?: WizardCopy("Time").resolve(),

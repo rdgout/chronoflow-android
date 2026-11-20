@@ -30,11 +30,12 @@ import net.chronoflow.core.designsystem.generated.PlanUITokens
 import net.chronoflow.core.designsystem.theme.CfTheme
 import net.chronoflow.core.model.contracts.Language
 import net.chronoflow.core.model.contracts.TimeFormat
+import net.chronoflow.core.plan.CopyLineFormatter
 import net.chronoflow.core.wizard.model.WizardDateFormat
+import net.chronoflow.feature.wizard.components.fieldCopy
 import net.chronoflow.feature.wizard.shell.WizardMetrics
 import net.chronoflow.feature.wizard.ui.WizardCopy
 import net.chronoflow.feature.wizard.ui.resolve
-import net.chronoflow.feature.wizard.ui.wizardCopy
 
 enum class WizardPickerKind { Date, Time }
 
@@ -43,6 +44,7 @@ internal fun WizardDateTimeRow(
     field: WizardDateTimeFieldUi,
     timeFormat: TimeFormat,
     onPick: (WizardDateTimeFieldUi, WizardPickerKind) -> Unit,
+    copyFormatter: CopyLineFormatter? = null,
 ) {
     val language = Language.of(LocalConfiguration.current.locales[0].language)
     val dateFormat = remember(language) { { date: String -> WizardDateFormat.datePill(date, language) } }
@@ -69,8 +71,20 @@ internal fun WizardDateTimeRow(
                     style = CfTheme.type.style(CfTypeScale.wizardHint),
                 )
             }
-            WizardDateTimePill(field, WizardPickerKind.Date, date, spoken) { onPick(field, WizardPickerKind.Date) }
-            WizardDateTimePill(field, WizardPickerKind.Time, time, time) { onPick(field, WizardPickerKind.Time) }
+            WizardDateTimePill(
+                field,
+                WizardPickerKind.Date,
+                date,
+                spoken,
+                copyFormatter,
+            ) { onPick(field, WizardPickerKind.Date) }
+            WizardDateTimePill(
+                field,
+                WizardPickerKind.Time,
+                time,
+                time,
+                copyFormatter,
+            ) { onPick(field, WizardPickerKind.Time) }
         },
         modifier =
             Modifier
@@ -129,11 +143,12 @@ private fun WizardDateTimePill(
     kind: WizardPickerKind,
     text: String?,
     spoken: String?,
+    copyFormatter: CopyLineFormatter?,
     onClick: () -> Unit,
 ) {
     val date = kind == WizardPickerKind.Date
     val shape = RoundedCornerShape(WizardMetrics.pillRadius.dp)
-    val failure = if (date) field.error?.wizardCopy()?.resolve() else null
+    val failure = if (date) field.error?.let { fieldCopy(it, copyFormatter) } else null
     val description =
         WizardCopy(
             when {

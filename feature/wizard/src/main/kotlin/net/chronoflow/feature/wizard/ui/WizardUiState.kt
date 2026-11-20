@@ -262,16 +262,29 @@ data class WizardChromeUi(
     val secondaryClose: Boolean = false,
     val primaryPlain: Boolean = false,
     val closeEnabled: Boolean = true,
+    val primaryLabel: WizardCopy? = null,
+    val primaryBusy: Boolean = false,
+    val secondaryRequestsClose: Boolean = false,
 ) {
     companion object {
         fun from(
             active: TripWizardUiState.Active,
             closing: Boolean = false,
+            checking: net.chronoflow.feature.wizard.checking.WizardCheckingUi? = null,
+            fineTune: net.chronoflow.feature.wizard.finetune.WizardFineTuneUi? = null,
         ): WizardChromeUi {
             val step = active.wizard.draft.state.step
             val where = step == MemberWizardStep.whereTo || step == MemberWizardStep.returnRoute
             val complete =
                 when (step) {
+                    MemberWizardStep.fineTune -> {
+                        !active.wizard.reviewing
+                    }
+
+                    MemberWizardStep.checking -> {
+                        checking?.failure != null && checking.retrySeconds == 0
+                    }
+
                     MemberWizardStep.excluded -> {
                         true
                     }
@@ -296,7 +309,8 @@ data class WizardChromeUi(
                 }
             return WizardChromeUi(
                 if (active.wizard.draft.state.edit == null) NavTitle.NewTrip else NavTitle.EditTrip,
-                active.path.isNotEmpty(),
+                active.path.isNotEmpty() &&
+                    (step != MemberWizardStep.checking || (checking?.failure != null && !active.isEditing)),
                 step != MemberWizardStep.calculating,
                 active.progress.toFloat(),
                 (
@@ -304,6 +318,8 @@ data class WizardChromeUi(
                         100
                 ).toInt(),
                 when (step) {
+                    MemberWizardStep.checking -> if (checking?.failure != null) "checking" else null
+                    MemberWizardStep.fineTune -> "fine-tune"
                     MemberWizardStep.whereTo -> "where"
                     MemberWizardStep.returnRoute -> "return-route"
                     MemberWizardStep.sleep -> "sleep"
@@ -314,7 +330,10 @@ data class WizardChromeUi(
                 },
                 complete && !closing && !active.wizard.persistenceFailed && !active.wizard.reviewing,
                 complete,
-                secondaryClose = step == MemberWizardStep.excluded,
+                secondaryClose = step == MemberWizardStep.excluded || checking?.failure != null,
+                secondaryRequestsClose = step == MemberWizardStep.checking,
+                primaryLabel = checking?.button ?: fineTune?.button,
+                primaryBusy = fineTune?.reviewing == true,
                 primaryPlain = step == MemberWizardStep.excluded,
                 closeEnabled = !closing,
                 footerHint =
@@ -440,6 +459,12 @@ data class WizardUiState(
     val answerSheet: WizardAnswerSheetUi? = null,
     val question: WizardQuestionUi? = null,
     val excluded: WizardExcludedUi? = null,
+    val checking: net.chronoflow.feature.wizard.checking.WizardCheckingUi? = null,
+    val fineTune: net.chronoflow.feature.wizard.finetune.WizardFineTuneUi? = null,
+    val cue: net.chronoflow.feature.wizard.checking.WizardHapticCue? = null,
+    val discardMessage: WizardCopy = WizardCopy("What you entered is not saved."),
+    val discardTitle: WizardCopy = WizardCopy("Discard this trip?"),
+    val discardConfirmLabel: WizardCopy = WizardCopy("Discard"),
 ) {
     companion object {
         fun from(
@@ -452,7 +477,17 @@ data class WizardUiState(
             picker: WizardPicker? = null,
             openTime: String? = null,
             answerSheet: WizardAnswerSheetState? = null,
+            uiOverride: net.chronoflow.feature.wizard.shell.WizardUiOverride? = null,
         ): WizardUiState {
+            val effective =
+                active.copy(
+                    wizard =
+                        active.wizard.copy(
+                            checking = uiOverride?.checking ?: active.wizard.checking,
+                            retrySeconds = uiOverride?.retrySeconds ?: active.wizard.retrySeconds,
+                            reviewing = uiOverride?.reviewing ?: active.wizard.reviewing,
+                        ),
+                )
             val draft = active.wizard.draft
             val key =
                 WizardStepKey(
@@ -465,13 +500,40 @@ data class WizardUiState(
                         null
                     },
                 )
+            val checking =
+                net.chronoflow.feature.wizard.checking.WizardCheckingUi
+                    .from(effective)
+            val fineTune =
+                net.chronoflow.feature.wizard.finetune.WizardFineTuneUi
+                    .from(effective, timeFormat, openTime)
             return WizardUiState(
-                WizardChromeUi.from(active, closing),
+                WizardChromeUi.from(effective, closing, checking, fineTune),
                 key,
                 if (key == WizardStepKey.Where || key == WizardStepKey.ReturnRoute) WhereUi.from(draft) else null,
                 AirportSheetUi.from(draft),
                 dialog,
                 active.path.map(WizardStepKey::from),
+                checking = checking,
+                fineTune = fineTune,
+                cue = active.cue,
+                discardTitle = WizardCopy(if (active.isEditing) "Discard your changes?" else "Discard this trip?"),
+                discardConfirmLabel = WizardCopy(if (active.isEditing) "Discard changes" else "Discard"),
+                discardMessage =
+                    WizardCopy(
+                        when {
+                            active.isEditing -> {
+                                "Your trip stays as it was."
+                            }
+
+                            draft.state.mode == WizardMode.guest -> {
+                                "What you entered is not saved. You go back to the welcome screen."
+                            }
+
+                            else -> {
+                                "What you entered is not saved."
+                            }
+                        },
+                    ),
                 times =
                     if (key == WizardStepKey.Outbound || key == WizardStepKey.ReturnFlight) {
                         WizardTimesUi.from(
@@ -491,14 +553,8 @@ data class WizardUiState(
                             sheet.prompt.id == draft.state.promptSheetID &&
                                 sheet.prompt.kind in SUPPORTED_SHEET_KINDS && sheet.prompt in active.optionalPrompts
                         }?.let { sheet ->
-                            WizardAnswerSheetUi(
-                                sheet,
-                                timeFormat,
-                                openTime
-                                    ?.takeIf {
-                                        it in setOf("free_day_bed", "free_day_wake")
-                                    }?.let { WizardTimeSheetUi(it, sheet.values[it].clockString()) },
-                            )
+                            net.chronoflow.feature.wizard.answers
+                                .answerSheetUi(sheet, draft, timeFormat, now, openTime)
                         },
                 excluded =
                     if (key == WizardStepKey.Excluded) {

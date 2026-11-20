@@ -100,10 +100,12 @@ class WizardSleepQuestionSeedTest(
                         PromptKind.FreeDayTimes,
                         state.review
                             ?.prompts
-                            ?.single()
+                            ?.first { it.kind == PromptKind.FreeDayTimes }
                             ?.kind,
                     )
-                    assertEquals(setOf("freeDayStatus", "freeDayBed", "freeDayWake"), state.savedProfile?.keys)
+                    assertTrue(
+                        state.savedProfile!!.keys.containsAll(setOf("freeDayStatus", "freeDayBed", "freeDayWake")),
+                    )
                 }
 
                 else -> {

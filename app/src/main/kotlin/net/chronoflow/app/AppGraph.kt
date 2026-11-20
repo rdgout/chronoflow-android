@@ -68,11 +68,11 @@ import java.io.File
 
 class AppGraph(
     private val app: Application,
-    val fontPreloader: FontPreloader = ResourceFontPreloader,
+    override val fontPreloader: FontPreloader = ResourceFontPreloader,
     private val launchProvider: (() -> LaunchController)? = null,
     val overrides: GraphOverrides = GraphOverrides.None,
     private val suppliedDispatchers: AppDispatchers = AppDispatchers(),
-) {
+) : RootThemeGraph {
     private val wizardOverrides by lazy {
         net.chronoflow.app.wizard
             .WizardStartOverrides()
@@ -92,11 +92,11 @@ class AppGraph(
             { LaunchPlatform.wizardBoardCapture },
         )
     }
-    val dispatchers by lazy { overrides.dispatchers ?: suppliedDispatchers }
+    override val dispatchers by lazy { overrides.dispatchers ?: suppliedDispatchers }
     val appScope by lazy { CoroutineScope(SupervisorJob() + dispatchers.main) }
     internal val launchScope get() = appScope
     internal val processToken = "${Process.myPid()}:${Process.getStartElapsedRealtime()}"
-    val launch: LaunchController get() = launchProvider?.invoke() ?: LaunchPlatform.controller(this)
+    override val launch: LaunchController get() = launchProvider?.invoke() ?: LaunchPlatform.controller(this)
     val copyCatalogs: net.chronoflow.core.plan.CopyCatalogProvider by lazy {
         net.chronoflow.core.plan
             .CopyCatalogProvider(dispatchers.io)

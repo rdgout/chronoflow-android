@@ -1,11 +1,11 @@
 package net.chronoflow.feature.onboarding.terms
 
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.LocalActivity
+import androidx.activity.compose.setContent
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
-import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -14,38 +14,56 @@ import net.chronoflow.core.model.api.AccountPolicies
 import net.chronoflow.core.testing.DeviceProfiles
 import net.chronoflow.core.testing.compose.ProfileHost
 import net.chronoflow.core.testing.compose.ProfileRule
+import net.chronoflow.core.testing.junit.measureClassWarmup
 import net.chronoflow.core.testing.tiers.Logic
+import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Before
+import org.junit.BeforeClass
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.RuleChain
 import org.junit.runner.RunWith
+import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
+import org.robolectric.android.controller.ActivityController
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 
 @Logic
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [36])
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
 class TermsScreenTest {
-    private val compose = createComposeRule()
+    private val compose = createEmptyComposeRule()
 
     @get:Rule val rules: RuleChain = RuleChain.outerRule(ProfileRule(DeviceProfiles.pixel8)).around(compose)
+
     private lateinit var activity: ComponentActivity
+    private lateinit var host: ActivityController<ComponentActivity>
+
+    @Before fun createHost() {
+        host = Robolectric.buildActivity(ComponentActivity::class.java).setup()
+        activity = host.get()
+    }
+
+    @After fun closeHost() {
+        host.pause().stop().destroy()
+    }
 
     private fun show(
         state: TermsUiState,
         onEvent: (TermsEvent) -> Unit = {},
     ) {
-        compose.setContent {
+        activity.setContent {
             ProfileHost(DeviceProfiles.pixel8) {
                 ChronoFlowTheme(reduceMotion = true) {
-                    val current = LocalActivity.current as ComponentActivity
-                    SideEffect { activity = current }
                     TermsScreen(state, onEvent)
                 }
             }
         }
+        compose.waitForIdle()
     }
 
     @Test fun policyRowOpensTheTermsCustomTab() {
@@ -71,7 +89,7 @@ class TermsScreenTest {
         var count = -1
         var stay: () -> Unit = {}
         var event: TermsEvent? = null
-        compose.setContent {
+        activity.setContent {
             ProfileHost(DeviceProfiles.pixel8) {
                 ChronoFlowTheme(reduceMotion = true) {
                     TermsScreen(TermsUiState(pendingSignOutCount = 1), { event = it }, signOutConfirmation = {
@@ -87,10 +105,29 @@ class TermsScreenTest {
                 }
             }
         }
+        compose.waitForIdle()
         compose.runOnIdle {
             assertEquals(1, count)
             stay()
             assertEquals(TermsEvent.Stay, event)
+        }
+    }
+
+    companion object {
+        private val fixtureReady by lazy {
+            measureClassWarmup(TermsScreenTest::class.java, 36, "native-font-runtime") {
+                // In Robolectric 4.18, NATIVE alone leaves Typeface's font-map lock null during BeforeClass.
+                org.robolectric.nativeruntime.DefaultNativeRuntimeLoader
+                    .injectAndLoad()
+                android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.NORMAL)
+            }
+        }
+
+        @BeforeClass
+        @JvmStatic
+        fun warmFixtureOncePerJvm() {
+            // Load the native text runtime before the first case resolves its screen fonts.
+            fixtureReady
         }
     }
 }

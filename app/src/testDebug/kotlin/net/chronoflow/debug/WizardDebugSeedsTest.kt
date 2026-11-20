@@ -110,4 +110,18 @@ class WizardDebugSeedsTest {
         assertFalse(prepared.open)
         assertNull(prepared.override)
     }
+
+    @Test fun completionBoardInstallsTheFrozenClockAndUiOverride() =
+        runTest(timeout = 60.seconds) {
+            val prepared = WizardDebugSeeds().prepare(seed(board = "WizardCheckThrottle"), 1, Locale.ENGLISH)
+            val deps = checkNotNull(prepared.override).dependencies(Dependencies(this))
+            assertTrue(prepared.open)
+            assertEquals(42, deps.uiOverride?.retrySeconds)
+            assertEquals(2, deps.uiOverride?.checking?.ticks)
+            org.junit.Assert.assertSame(
+                net.chronoflow.feature.wizard.debug.FrozenCheckingClock.clock,
+                deps.checkingClock,
+            )
+            assertEquals(0L, deps.checkingClock.nowMillis())
+        }
 }

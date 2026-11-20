@@ -133,6 +133,8 @@ def board_nodes(name, entry, root=ROOT):
     for icon in parser.icons:
         if not icon:
             continue
+        if entry.get('containsPath') and not any(a.get('d') == entry['containsPath'] for _, a in icon):
+            continue
         kind, attrs = icon[0]
         if (expected_attrs is not None and kind == first[1:].split()[0] and all(attrs.get(k) == v for k, v in expected_attrs.items())) or attrs.get('d') == first:
             return [(element_path(k, a), a.get('fill') == 'currentColor') for k, a in icon]

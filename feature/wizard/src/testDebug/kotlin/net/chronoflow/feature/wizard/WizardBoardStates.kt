@@ -1,13 +1,17 @@
 package net.chronoflow.feature.wizard
 
 import kotlinx.coroutines.test.TestScope
+import net.chronoflow.core.model.contracts.Language
 import net.chronoflow.core.testing.DeviceProfiles
 import net.chronoflow.core.testing.SafeInsetsDp
 import net.chronoflow.core.wizard.model.MemberWizardModel
+import net.chronoflow.core.wizard.model.allowsSleepOverride
+import net.chronoflow.core.wizard.model.checkingTitle
 import net.chronoflow.core.wizard.model.exclusionWasSaved
 import net.chronoflow.core.wizard.model.isEditing
 import net.chronoflow.core.wizard.model.navigationPath
 import net.chronoflow.core.wizard.model.optionalPrompts
+import net.chronoflow.core.wizard.model.preference
 import net.chronoflow.core.wizard.model.progress
 import net.chronoflow.core.wizard.model.reviewInput
 import net.chronoflow.core.wizard.model.showsBack
@@ -49,6 +53,7 @@ internal fun TestScope.boardState(
     val model = MemberWizardModel(draft, WizardMemoryDraftStore(), backgroundScope, { WizardBoardCaptureSeed.now })
     try {
         val presentation = WizardBoardCaptureSeed.presentation(board)
+        val override = WizardBoardCaptureSeed.uiOverride(board)
         val active =
             TripWizardUiState.Active(
                 model.snapshots.value,
@@ -58,6 +63,9 @@ internal fun TestScope.boardState(
                 exclusionWasSaved = model.exclusionWasSaved,
                 isEditing = model.isEditing,
                 optionalPrompts = model.optionalPrompts,
+                checkingTitle = model.checkingTitle,
+                allowsSleepOverride = model.allowsSleepOverride,
+                preferences = listOf("exclude_caffeine", "flight_movement_breaks").associateWith(model::preference),
             )
         val ui =
             WizardUiState.from(
@@ -65,6 +73,7 @@ internal fun TestScope.boardState(
                 dialog = presentation.discardDialogVisible,
                 now = WizardBoardCaptureSeed.now,
                 openTime = presentation.timeSheet,
+                uiOverride = override,
                 answerSheet =
                     model.optionalPrompts
                         .firstOrNull {
@@ -76,6 +85,8 @@ internal fun TestScope.boardState(
                                 draft.state.savedProfile,
                                 draft.fieldErrors,
                                 draft.form,
+                                language = Language.of(locale.language),
+                                initialError = override?.answerError,
                             )
                         },
             )
@@ -104,7 +115,7 @@ internal fun TestScope.boardState(
                 else -> presentation.query
             }
         return ui.copy(
-            chrome = ui.chrome.copy(showBack = model.showsBack),
+            chrome = ui.chrome.copy(showBack = if (ui.checking == null) model.showsBack else ui.chrome.showBack),
             sheet = sheet?.copy(seedQuery = query),
             search = searchUi,
             retryEnabled = search != SearchBoardState.Throttled,

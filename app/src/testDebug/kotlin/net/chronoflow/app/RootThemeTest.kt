@@ -1,24 +1,45 @@
+@file:OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+
 package net.chronoflow.app
 
+import android.app.Application
 import android.content.Intent
 import android.os.Looper
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.runtime.AbstractApplier
+import androidx.compose.runtime.BroadcastFrameClock
+import androidx.compose.runtime.Composition
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.Recomposer
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.State
+import androidx.compose.ui.hapticfeedback.HapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalFontFamilyResolver
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.text.font.FontFamily
-import androidx.lifecycle.ProcessLifecycleOwner
+import androidx.compose.ui.text.font.createFontFamilyResolver
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.job
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import net.chronoflow.core.designsystem.theme.LocalReduceMotion
 import net.chronoflow.core.testing.tiers.Logic
+import net.chronoflow.feature.launch.LaunchController
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
@@ -83,43 +104,125 @@ class RootThemeTest {
         }
     }
 
-    @Test fun rootProvidesReduceMotionAndUsesTheSuppliedFontBarrier() {
+    @Config(application = Application::class)
+    @Test
+    fun themeContentProvidesReduceMotionAndUsesTheSuppliedFontBarrier() =
+        runTest(timeout = 60.seconds) {
+            val dispatcher = StandardTestDispatcher(testScheduler)
+            val preloader = RecordingFontPreloader().apply { expectedDispatcher = dispatcher }
+            val launch =
+                LaunchController(moon = { error("font test must not load launch images") }, scope = backgroundScope)
+            val resolver = createFontFamilyResolver(RuntimeEnvironment.getApplication())
+            val frameClock = BroadcastFrameClock()
+            val recomposer = Recomposer(coroutineContext + frameClock)
+            val composition = Composition(NoUiApplier(), recomposer)
+            val recomposing = backgroundScope.launch(frameClock) { recomposer.runRecomposeAndApplyChanges() }
+            val completed = CompletableDeferred<Unit>()
+            val commit = ObservedCommit(completed)
+            val mainDispatcher = StandardTestDispatcher(testScheduler)
+            val graph =
+                object : RootThemeGraph {
+                    override val fontPreloader = preloader
+                    override val dispatchers = AppDispatchers(main = mainDispatcher, io = dispatcher)
+                    override val launch = launch
+                }
+            val inputs = graph.rootThemeInputs(true, commit)
+            var motion = false
+            try {
+                composition.setContent {
+                    CompositionLocalProvider(
+                        LocalFontFamilyResolver provides resolver,
+                        LocalHapticFeedback provides NoHapticFeedback,
+                    ) {
+                        RootThemeContent(false, inputs) {
+                            val current = LocalReduceMotion.current
+                            SideEffect { motion = current }
+                        }
+                    }
+                }
+                runCurrent()
+                frameClock.sendFrame(0L)
+                runCurrent()
+                assertEquals(0, preloader.calls.get())
+                assertTrue(commit.awaited.get())
+                assertTrue(motion)
+                assertFalse(launch.fontsReady)
+                completed.complete(Unit)
+                runCurrent()
+                assertEquals(4, preloader.calls.get())
+                assertTrue(launch.fontsReady)
+            } finally {
+                withContext(NonCancellable) {
+                    composition.dispose()
+                    recomposer.cancel()
+                    recomposing.cancelAndJoin()
+                }
+            }
+        }
+
+    @Config(application = Application::class)
+    @Test
+    fun cfRootForwardsMotionAndFirstCommit() {
         compose.mainClock.autoAdvance = false
-        val app = RuntimeEnvironment.getApplication() as RecordingApplication
-        app.preloader.expectedDispatcher = app.ioDispatcher
-        assertFalse(app.graph.launch.overlayActive)
-        // Advancing font work must not also start the unrelated session foreground pipeline.
-        ProcessLifecycleOwner.get().lifecycle.removeObserver(app.graph.activation)
+        assertCfRootBindings(reduceMotion = true)
+        assertCfRootBindings(reduceMotion = false)
+    }
+
+    private fun assertCfRootBindings(reduceMotion: Boolean) {
+        val main = StandardTestDispatcher()
+        val io = StandardTestDispatcher(main.scheduler)
+        val preloader = RecordingFontPreloader().apply { expectedDispatcher = io }
+        val launchScope = CoroutineScope(SupervisorJob() + main)
+        val launch = LaunchController(moon = { error("root wiring test loads no images") }, scope = launchScope)
+        val graph =
+            AppGraph(
+                RuntimeEnvironment.getApplication(),
+                preloader,
+                launchProvider = { launch },
+                overrides = GraphOverrides(dispatchers = AppDispatchers(main = main, io = io)),
+            )
         val host = Robolectric.buildActivity(ComponentActivity::class.java).setup()
-        val completed = CompletableDeferred<Unit>()
-        val commit = ObservedCommit(completed)
-        var motion = false
+        val firstCommit = CompletableDeferred<Unit>()
+        var observed: Boolean? = null
         try {
             host.get().setContent {
-                CfRoot(app.graph, false, true, commit, null) {
+                CfRoot(
+                    graph,
+                    false,
+                    reduceMotion,
+                    firstCommit,
+                    null,
+                    destinations = RoutedWelcomeDestinations(graph.rootNavigator),
+                ) {
                     val current = LocalReduceMotion.current
-                    SideEffect { motion = current }
+                    SideEffect { observed = current }
                 }
             }
             compose.mainClock.advanceTimeByFrame()
             compose.mainClock.advanceTimeByFrame()
-            app.ioDispatcher.scheduler.runCurrent()
+            io.scheduler.runCurrent()
             compose.runOnIdle {
-                assertEquals(0, app.preloader.calls.get())
-                assertTrue(commit.awaited.get())
-                assertTrue(motion)
-                completed.complete(Unit)
+                assertEquals(reduceMotion, observed)
+                assertEquals(0, preloader.calls.get())
+                firstCommit.complete(Unit)
             }
             compose.waitForIdle()
-            app.ioDispatcher.scheduler.runCurrent()
+            io.scheduler.runCurrent()
             compose.runOnIdle {
-                assertEquals(4, app.preloader.calls.get())
-                assertTrue(app.graph.launch.fontsReady)
+                assertEquals(4, preloader.calls.get())
+                assertTrue(launch.fontsReady)
             }
         } finally {
-            host.pause().stop().destroy()
-            app.graph.appScope.cancel()
-            runTest(app.mainDispatcher, timeout = 60.seconds) { app.graph.closeAndJoinForTest() }
+            try {
+                host.pause().stop().destroy()
+            } finally {
+                runTest(main, timeout = 60.seconds) {
+                    withContext(NonCancellable) {
+                        graph.closeAndJoinForTest()
+                        launchScope.coroutineContext.job.cancelAndJoin()
+                    }
+                }
+            }
         }
     }
 
@@ -154,6 +257,35 @@ class RootThemeTest {
             "setDurationScale",
             ClassParameter.from(Float::class.javaPrimitiveType, scale),
         )
+    }
+
+    private class NoUiApplier : AbstractApplier<Unit>(Unit) {
+        override fun onClear() = Unit
+
+        override fun insertTopDown(
+            index: Int,
+            instance: Unit,
+        ): Unit = error("theme fixture emits no UI nodes")
+
+        override fun insertBottomUp(
+            index: Int,
+            instance: Unit,
+        ): Unit = error("theme fixture emits no UI nodes")
+
+        override fun remove(
+            index: Int,
+            count: Int,
+        ): Unit = error("theme fixture emits no UI nodes")
+
+        override fun move(
+            from: Int,
+            to: Int,
+            count: Int,
+        ): Unit = error("theme fixture emits no UI nodes")
+    }
+
+    private object NoHapticFeedback : HapticFeedback {
+        override fun performHapticFeedback(hapticFeedbackType: HapticFeedbackType) = Unit
     }
 
     @OptIn(kotlinx.coroutines.InternalForInheritanceCoroutinesApi::class)

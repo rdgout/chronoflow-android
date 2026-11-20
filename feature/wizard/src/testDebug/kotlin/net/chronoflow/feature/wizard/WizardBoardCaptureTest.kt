@@ -57,7 +57,7 @@ class WizardBoardCaptureTest(
             ).around(compose)
 
     @Before fun useTheBoardsPhoneHourCycle() {
-        if (board == "PickerTime") {
+        if (board == "PickerTime" || board.startsWith("WizardSheetWake")) {
             val resolver = RuntimeEnvironment.getApplication().contentResolver
             previousHourCycle = Settings.System.getString(resolver, Settings.System.TIME_12_24)
             Settings.System.putString(resolver, Settings.System.TIME_12_24, "24")
@@ -65,7 +65,7 @@ class WizardBoardCaptureTest(
     }
 
     @After fun restoreThePhoneHourCycle() {
-        if (board == "PickerTime") {
+        if (board == "PickerTime" || board.startsWith("WizardSheetWake")) {
             Settings.System.putString(
                 RuntimeEnvironment.getApplication().contentResolver,
                 Settings.System.TIME_12_24,
@@ -94,9 +94,9 @@ class WizardBoardCaptureTest(
         // Focus is granted only after SheetValue.Expanded, so it also waits out the native expansion.
         if (state.sheet != null) compose.onNodeWithTag("wizard.airport.query").assertIsFocused()
         if (state.sleep?.openTime != null) compose.onNodeWithTag("wizard.time-sheet.title").assertIsFocused()
-        if (board == "PickerTime") {
+        if (board == "PickerTime" || board.startsWith("WizardSheetWake")) {
             compose
-                .onNodeWithTag("wizard.time-sheet")
+                .onNodeWithTag(if (board == "PickerTime") "wizard.time-sheet" else "wizard.answer.latest_wake")
                 .assert(SemanticsMatcher.expectValue(PickerIs24Hour, true))
         }
         if (state.answerSheet != null) compose.onNodeWithTag("wizard.answer.title").assertIsFocused()

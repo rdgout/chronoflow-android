@@ -991,7 +991,7 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A396 | (9d OQ-9d-14) Dialog title and context: the `PickerDateTime` title "Flight 1 departs", "Local time at …", summary chip. | Catalog titles "Departure date/time", "Arrival date/time" + "Time in {{city}}"; no summary chip (iOS dropped it). | 9d |
 | OQ-A397 | (9d OQ-9d-15) Time dialog: dial only, or also the M3 keyboard-input toggle. | Whatever the Phase 2 wrapper offers (dial by default); revisit with 9e OQ-A8. | 9d |
 | OQ-A398 | (9d OQ-9d-16) Pill wrapping: WizardCopy wraps from AX1, which the 1.3 font cap never reaches; narrow widths still overflow. | Wrap when the inline row does not fit (iOS `ViewThatFits`), checked by the 280 dp + 1.3 guard. | 9d |
-| OQ-A399 | (9d OQ-9d-17) iOS `fieldCopy` looks a key up in the plan-copy catalog before the wizard table; the wizard has no plan-catalog formatter on this stack. | 9e adds shared catalog-first `fieldCopy` for Where and optional-answer errors. Times keeps 9d's wizard-table fallback until 9f routes server review errors there. | 9d, 9e, 9f |
+| OQ-A399 | (9d OQ-9d-17) iOS `fieldCopy` looks a key up in the plan-copy catalog before the wizard table; the wizard has no plan-catalog formatter on this stack. | 9e adds shared catalog-first `fieldCopy` for Where and optional-answer errors. Closed in 9f Task 0: Times and Sleep also resolve server review errors through the shared catalog-first formatter, with wizard-table fallback. | 9d, 9e, 9f |
 | OQ-A400 | (9d review 2) Choice-card chevrons use `rgba(120,120,128,0.7)` on the boards, but tokens.json, theme.css and generated colors have no corresponding chevron or iOS tertiary-label token. | Keep `mutedForeground` until a token exists; add no literal color or invented substitute. | 9d |
 | OQ-A401 | (9e OQ-9e-1) Rounding direction for the 5-minute step. | Nearest (remainder 0–2 down, 3–4 up), wrapping 23:58 → 00:00. | 9e |
 | OQ-A402 | (9e OQ-9e-2) Done on an untouched picker over an off-grid saved value (e.g. 07:12 from the web). | Write nothing; the value stays 07:12 until the user moves the dial. | 9e |
@@ -1012,6 +1012,25 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A417 | (9e OQ-9e-17) 9c handed route server errors on Where to 9e, though the 9e plan entry does not list them. | Build them here (Task 8): outline + `wizard.route.error.<key>` lines, as iOS. | 9e |
 | OQ-A418 | (9e OQ-9e-18) OQ-A350: Sleep after a return flight is 0.50, below ReturnFlight 0.55; the plan default says the bar "never animates downward, so it holds at 55". | iOS at the pin draws `model.progress` as-is (`MemberWizardSteps.swift` l.16–23) and OQ-A350 is a default, not a user decision: show 0.50; the bar moves down. Nothing to build (9c's bar animates both ways); record it. | 9e |
 | OQ-A419 | Board sheet titles ask Fraunces 600; neither app ships it; both render 500 (iOS parity). | Orchestrator decision, 9e review round 2: use the heaviest shipped face, Fraunces 500 (opsz20 at 17 sp), with synthesis off. Resolve requested Fraunces weights above 500 to 500 in tokengen; add no font. | 9e |
+| OQ-A420 | (9f OQ-9f-1) Where do the two preference toggles (exclude caffeine, movement breaks) go? iOS puts them first; no board draws them. | A third card after the preparation card, so the drawn cards match the boards; same copy and behaviour as iOS. | 9f |
+| OQ-A421 | (9f OQ-9f-2) The light-device notice has no board (iOS NH5 adds it). | Build it under the question (user design exception, `I/plan.md:2484`). | 9f |
+| OQ-A422 | (9f OQ-9f-3) Override bed/wake precision: OQ-A8's 5-minute rounding (9e) or iOS `WizardTimeControl` minute precision? | Minute precision (iOS); OQ-A8/OQ-A403 name 9e and 10b only. | 9f |
+| OQ-A423 | (9f OQ-9f-4) Fine-tune row values and busy ranges show raw `HH:mm` (iOS); pills follow the account time format (9d). | Keep both as iOS/9d: row values and range texts raw 24 h, pills via `WizardDateFormat.time`. | 9f |
+| OQ-A424 | (9f OQ-9f-5) Busy range picking: iOS uses two `PickerDateTime` sheets; Android has separate date and time dialogs. | Four-dialog chain From date → From time → To date → To time; To time Done disabled while ≤ From; no error state (no board). | 9f |
+| OQ-A425 | (9f OQ-9f-6) Latest-wake inline picker: dial or `TimeInput`? | Dial; `TimeInput` when the window height is < 640 dp. | 9f |
+| OQ-A426 | (9f OQ-9f-7) Stepper accessibility without new copy. | One adjustable node (`setProgress`, `stateDescription`); the drawn halves are touch-only. Recommend Android-only copy "Decrease"/"Increase" later if TalkBack users need buttons. | 9f |
+| OQ-A427 | (9f OQ-9f-8) Board-only colours `rgba(120,120,128,0.3/0.7)` have no token. | `border` for the stepper divider, `mutedForeground` for chevrons (iOS). | 9f |
+| OQ-A428 | (9f OQ-9f-9) "Helps a lot" weight: board 600, iOS `screenMeta` 400. | `screenMeta` + SemiBold (shipped Figtree 600; 9e weight-copy precedent). | 9f |
+| OQ-A429 | (9f OQ-9f-10) Sheet question style 17/24 600 has no token. | 9e's `wizardRow` + SemiBold (17/22, Figtree 600). | 9f |
+| OQ-A430 | (9f OQ-9f-11) Arc: board cubic vs iOS quadratic with 8 dp inset. | Board cubic scaled as the SVG renders it (uniform `meet` scale, centred); iOS animation phase (3.6 s, Reduce Motion t = 0.65). | 9f |
+| OQ-A431 | (9f OQ-9f-12) Switch haptic: WizardSpec says Selection; the plan's Material mapping says `ToggleOn`/`ToggleOff`. | Plan mapping through `cfToggleable`. | 9f |
+| OQ-A432 | (9f OQ-9f-13) Sheet detents: iOS medium/large; Phase 2 skips the partial state. | Phase 2 default: full content height, scrollable. | 9f |
+| OQ-A433 | (9f OQ-9f-14) Rating text in nl: iOS seed stores "1.5" as a string, the board shows "1,5". | Load numbers with the app-language separator; seeds store numbers. | 9f |
+| OQ-A434 | (9f OQ-9f-15) Busy line under Reduce Motion: Phase 2 keeps `CfSpinner` spinning; WizardSpec and iOS show a static dot. | Static dot (WizardSpec, iOS). | 9f |
+| OQ-A435 | (9f OQ-9f-16) The debug freeze: iOS adds `#if DEBUG` methods to the model; Kotlin has no conditional compilation. | A neutral `WizardUiOverride` seam in the ViewModel plus a frozen checking clock, both set only from `src/debug`; the model is unchanged. | 9f |
+| OQ-A436 | (9f OQ-9f-17) `WizardFineTuneNone` draws 95 %, but the model gives a fresh Fine-tune 0.80 and reaches 0.95 only through `progressFloor` (opened from Ready); the iOS seed sets no floor. | The None seed sets `progressFloor = 0.95`, so the capture matches the board and shows what a user sees (a prompt-free Fine-tune is only reachable from Ready). | 9f |
+| OQ-A437 | (9f OQ-9f-18) Override and room times: Phase 2 dialog (brief draft) or 9e's PickerTime sheet (`CfTimePickerSheet`, OQ-A413/OQ-A416)? | 9e's sheet, at minute precision, without the "Steps of 5 minutes." footnote; busy-hour ranges keep 9d's date and time dialogs. | 9f |
+| OQ-A438 | (9f OQ-9f-19) The iOS seed calls `MockWizardPrompts.make`; Konsist forbids `:core:data-mock` in `:feature:wizard` main/debug. | Hand-built prompts in `WizardCompletionBoardSeed` (9e precedent), cross-checked against Kotlin `MockWizardPrompts.make` in a JVM test. | 9f |
 | OQ-0a-22 | Native libraries in the bundle? | Allow only `libandroidx.graphics.path.so` (Compose graphics-path; excluding it breaks Path conversion below API 34); fail on any other `.so` | 0a, 13 |
 | OQ-0b-1 | Where does `PlanMetrics` live? `08 §3.1` lists it inside `CfDimens`, but its consumer `:core:plan` is a JVM module that cannot depend on `:core:designsystem` | `core/plan/…/generated/PlanMetrics.generated.kt` (Double, dp), as iOS keeps it in `PlanCore` | 0b, 1b, 1c |
 | OQ-0b-2 | Port all iOS TokenGen outputs now (Auth, Settings, Terms, Welcome, PlanUI, Press, LaunchPaint, TypeMetrics), or only colors, sky and type? | All of them now (the iOS files are exact goldens and Phases 2, 3a, 3c, 5a, 9 and 10 need them) | 0b |
@@ -2881,18 +2900,18 @@ Implementation commits (brief §7):
 **Delivers.** Builds the Checking screen (canvas arc, tick timing, the slow line, the again ordering) and its offline, server and throttle failure cards with a countdown. It builds Fine-tune with its member rows, per-stay and per-flight rows, the different-sleep-times switch, and the busy and none states. It builds every fine-tune sheet (seat, room, checkout, wake, busy hours, drinks with steppers, light, blue blockers with rating), each with one nullable selection and its validation errors.
 
 **Tasks**
-- [ ] **Checking** (`WizardChecking*`).
-  - A canvas arc driven by the 9b tick timing, the slow line at 10 s, and the again ordering (`WizardCheckingAgain`).
-  - Failure cards for offline, server and throttle, with a countdown (`WizardCheckOffline`, `WizardCheckServer`, `WizardCheckThrottle`).
-  - No back while checking.
-  - TalkBack hears progress through a polite live region.
-- [ ] **Fine-tune** (`WizardFineTune*`):
+- [x] **Checking** (`WizardChecking*`).
+  - [x] A canvas arc driven by the 9b tick timing, the slow line at 10 s, and the again ordering (`WizardCheckingAgain`).
+  - [x] Failure cards for offline, server and throttle, with a countdown (`WizardCheckOffline`, `WizardCheckServer`, `WizardCheckThrottle`).
+  - [x] No back while checking.
+  - [x] TalkBack hears progress through a polite live region.
+- [x] **Fine-tune** (`WizardFineTune*`):
   - member rows, plus per-stay and per-flight rows;
   - the different-sleep-times switch (`WizardFineTuneSleep`);
   - the busy (`WizardFineTuneBusy`), none (`WizardFineTuneNone`) and multi (`WizardFineTuneMulti`) states.
-- [ ] **Sheets** (`WizardSheet*`, `WizardFineTuneSheet`): seat, room, checkout, wake, busy hours, drinks with steppers (and its error), light, and blue blockers with a rating (and its error). Each holds one nullable selection and its validation error.
-- [ ] **Haptics** per the WizardSpec "Haptics" section, through the `Haptics` interface.
-- [ ] **Tests.** Timing on the JVM with a fake clock, plus guards for all 26 boards and their DarkNL wrappers.
+- [x] **Sheets** (`WizardSheet*`, `WizardFineTuneSheet`): seat, room, checkout, wake, busy hours, drinks with steppers (and its error), light, and blue blockers with a rating (and its error). Each holds one nullable selection and its validation error.
+- [x] **Haptics** per the WizardSpec "Haptics" section, through the `Haptics` interface.
+- [x] **Tests.** Timing on the JVM with a fake clock; 107 light-mode guard cases for 21 distinct states. The 22 base boards have 46 wrappers (`WizardSheet` and `WizardFineTuneSheet` share the seat state); captures include those 46 plus the two Free Sleep wrappers over Fine-tune (48 PNGs, OQ-A412).
 
 **Acceptance**
 - The checking timing matches `06 §3.5`.
