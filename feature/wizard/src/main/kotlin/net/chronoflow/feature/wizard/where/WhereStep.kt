@@ -409,7 +409,6 @@ internal fun StopQuestion(
     onEvent: (WizardEvent) -> Unit,
 ) {
     val description = question.description.resolve()
-    val haptics = LocalHaptics.current
     Column(
         Modifier.fillMaxWidth().padding(top = WhereMetrics.questionTop.dp).testTag("wizard.route.question"),
         verticalArrangement = Arrangement.spacedBy(PlanUITokens.wizardChoiceGap.dp),
@@ -437,12 +436,13 @@ internal fun StopQuestion(
                         onEvent(WizardEvent.OpenAirport(question.addStopSheet))
                     }
                 } else {
-                    if (state.rows.size > 2) haptics.perform(HapticEvent.Light)
                     onEvent(WizardEvent.MakeDirect(state.home))
                 }
             },
             Modifier.fillMaxWidth().semantics { contentDescription = description },
             testTag = "wizard.route.stops",
+            optionEnabled = { it == 0 || question.yesEnabled },
+            optionHaptic = { if (it == 0 && state.rows.size > 2) HapticEvent.Light else HapticEvent.Selection },
         )
         if (state.limitReached) {
             Text(

@@ -46,7 +46,7 @@
   - `TripWizardViewModel`, `MemberWizardStore`, `AirportSearchService`, `WizardForm`, `WizardAirportSheet`, `navigationPath`, `popNavigation`, `chooseAirport`, `airportIsAllowed`, `swapAirports`, `removeStop`, `makeDirect`, `finishRoute`, `discard`, `hasChanges`;
   - `RootNavigator`, `Route.Wizard(WizardMode.Create)`, `RoutePlaceholder`, `DebugSeedRouting`, `ShellViewModel`, `ShellNavState.overlay`;
   - 9b: `TripWizardViewModel.state` (`Active(wizard, progress: Double, path)`), `TripWizardViewModel.search: AirportSearchSession` (`setQuery`, `retry`, `state`), `AirportSearchState`, `TripWizardDependencies.start()`; the iOS `MemberWizardStore` is `:core:data` `MemberWizardStore` (production) and `InMemoryWizardDraftStore` (tests);
-  - `CfModalBottomSheet`, `CfAlertDialog`, `CfLinearProgress`, `CfSegmentedButtons` (no per-option `enabled`), `CfIconButton`, `CfButton`, `CfSkeleton`, `CfSpinner`, `LocalSafeInsets`, `LocalHaptics`, `HapticEvent`, `LocalReduceMotion`, `RecordingHaptics` (`:core:testing-compose`).
+  - `CfModalBottomSheet`, `CfAlertDialog`, `CfLinearProgress`, `CfSegmentedButtons` (review 1 adds per-option enabled and haptic selection, with unchanged defaults), `CfIconButton`, `CfButton`, `CfSkeleton`, `CfSpinner`, `LocalSafeInsets`, `LocalHaptics`, `HapticEvent`, `LocalReduceMotion`, `RecordingHaptics` (`:core:testing-compose`).
 
   Before you code, open the merged code of 2, 4e, 6a, 9a and 9b and use **their exact names**. Where a name differs, keep theirs and note it in the PR. Do not rename earlier code.
 

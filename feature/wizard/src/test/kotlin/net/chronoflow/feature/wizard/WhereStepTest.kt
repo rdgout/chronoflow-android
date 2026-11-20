@@ -110,7 +110,7 @@ class WhereStepTest {
         host(routeDraft(1))
         click("wizard.route.stops.0")
         assertEquals(listOf(WizardEvent.MakeDirect(false)), events)
-        assertTrue(HapticEvent.Light in haptics.events)
+        assertEquals(listOf(HapticEvent.Light), haptics.events)
     }
 
     @Test fun yesWithoutStopsOpensTheStopSheet() {
@@ -119,6 +119,14 @@ class WhereStepTest {
         click("wizard.route.stops.1")
         assertEquals(listOf(WizardEvent.OpenAirport(screenState(draft).where!!.question!!.addStopSheet)), events)
         assertEquals(listOf(HapticEvent.Selection), haptics.events)
+    }
+
+    @Test fun disabledYesAtTheLimitHasNoHapticOrAction() {
+        host(routeDraft(14, home = true))
+        compose.onNodeWithTag("wizard.route.stops.1").assertIsNotEnabled()
+        click("wizard.route.stops.1")
+        assertTrue(haptics.events.isEmpty())
+        assertTrue(events.isEmpty())
     }
 
     @Test fun limitLineReplacesAddStop() {
