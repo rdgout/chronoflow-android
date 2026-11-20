@@ -8,6 +8,7 @@ import net.chronoflow.core.model.OutboxChange
 import net.chronoflow.core.model.api.AccountPolicies
 import net.chronoflow.core.model.api.ApiJson
 import net.chronoflow.core.model.store.SettingsRecord
+import net.chronoflow.feature.onboarding.support.OnboardingFixtureTest
 import net.chronoflow.feature.onboarding.support.withOnboardingFixture
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -19,7 +20,7 @@ import org.junit.Assert.fail
 import org.junit.Test
 import kotlin.time.Duration.Companion.seconds
 
-class OnboardingSessionTests {
+class OnboardingSessionTests : OnboardingFixtureTest() {
     @Test fun enqueueRejectsAStaleSnapshotWithSessionChanged() =
         runTest(timeout = 60.seconds) {
             withOnboardingFixture { f ->

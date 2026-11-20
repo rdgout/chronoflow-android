@@ -4,6 +4,7 @@ package net.chronoflow.feature.onboarding.walkthrough
 
 import kotlinx.coroutines.test.runTest
 import net.chronoflow.core.model.launch.Gate
+import net.chronoflow.feature.onboarding.support.OnboardingFixtureTest
 import net.chronoflow.feature.onboarding.support.withOnboardingFixture
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -15,7 +16,7 @@ import kotlin.time.Duration.Companion.seconds
 @RunWith(Parameterized::class)
 class WalkthroughSkipTests(
     private val page: WalkthroughModel.Page,
-) {
+) : OnboardingFixtureTest() {
     @Test fun skipFromEveryPage() =
         runTest(timeout = 60.seconds) {
             withOnboardingFixture { f ->

@@ -26,6 +26,7 @@ import net.chronoflow.core.sync.FullPull
 import net.chronoflow.core.sync.OutboxFlusher
 import net.chronoflow.core.sync.session.SessionController
 import net.chronoflow.core.sync.session.SessionTeardown
+import net.chronoflow.feature.onboarding.support.OnboardingFixtureTest
 import net.chronoflow.feature.onboarding.support.onboardingNow
 import net.chronoflow.feature.onboarding.support.withOnboardingFixture
 import org.junit.Assert.assertEquals
@@ -40,7 +41,7 @@ import kotlin.time.Duration.Companion.seconds
 @RunWith(Parameterized::class)
 class TermsAcceptanceTests(
     private val seen: Boolean,
-) {
+) : OnboardingFixtureTest() {
     @Test fun offlineAcceptanceOpensNextGateAndCanSyncLater() =
         runTest(timeout = 60.seconds) {
             withOnboardingFixture(seen = seen, termsPending = true) { f ->

@@ -297,3 +297,29 @@ The geometry class now parameterizes language as well as profile, adding Dutch a
 | `make quick`, once | All assertions pass; Gradle exits 0. Budget check exits 3 and make exits 2 on the untouched Terms case below | Whole command 37.802 s; Gradle 37 s |
 
 Quick's only failure is the untouched `net.chronoflow.feature.onboarding.terms.TermsScreenTest#policyRowStaysEnabledWhileFailed`: **3,464 ms > 3,000 ms** class warm-up allowance. It was not retried. Quick did not reach its later build-logic/tooling/serial-timing commands. Full command output and before/after XML/timings are in `build/phase9c-review2/`. No hangs or missing results occurred. No emulator, performance or profile commands ran; no copy or OQ rows were added.
+
+
+## Onboarding fixture cold-start budget fix
+
+The stale-session case paid JVM first-use work in the shared onboarding fixture, rather than a wait in `enqueue`. A temporary step timer and an ordered two-case probe measured the original stale-session case first, then in a separate test JVM after the policies case. Both probe cases called the existing test bodies unchanged. Timers, the probe and forced ordering were removed before the final validation.
+
+| Step | Stale-session case first | After policies in the same JVM |
+|---|---:|---:|
+| Fixture setup, total | 316.026 ms | 43.078 ms |
+| Mock-seed construction, within setup | 141.097 ms | 36.017 ms |
+| JDBC open/configuration/schema, within setup | 148.758 ms | 3.313 ms |
+| `session()` | 1.498 ms | 0.014 ms |
+| Sign-out | 10.077 ms | 4.130 ms |
+| Rejected enqueue | 0.200 ms | 0.191 ms |
+| Database file check | 0.034 ms | 0.034 ms |
+
+With policies first, its fixture setup paid the cold cost instead: 354.890 ms, including 150.847 ms for the mock seed and 178.796 ms for JDBC. The fixtures use `StandardTestDispatcher`, an injected empty mock sleep and an in-memory session store; there is no real delay or Keystore initialization to remove. Every fixture still creates a fresh schema, so the 3.313 ms warm JDBC measurement includes per-case schema creation. The large difference is first-use JDBC and mock-seed/JSON initialization. The host's >1 s overrun did not reproduce in these isolated diagnostic runs.
+
+`OnboardingFixtureTest` uses inherited `@BeforeClass` setup and a JVM-local lazy value to create, exercise and fully close one disposable fixture before timed cases. All six classes using `withOnboardingFixture` inherit it: `OnboardingSessionTests`, `WalkthroughModelTests`, `WalkthroughSkipTests`, `WalkthroughFlushTests`, `TermsAcceptanceTests` and `TermsViewModelTests`. The warm-up retains no fixture; each case still creates and cleans up its own database. All existing assertion bodies and TestTimingListener budgets are unchanged.
+
+| OnboardingSessionTests case | Before, stale-session case first | After once-per-JVM warm-up |
+|---|---:|---:|
+| `enqueueRejectsAStaleSnapshotWithSessionChanged` | 353 ms | 42 ms |
+| `policiesFlowDecodesTheStoredSection` | 48 ms | 44 ms |
+
+The reversed-order diagnostic measured policies first at 398 ms and the stale-session case second at 50 ms. `make targeted ONLY="feature:onboarding:OnboardingSessionTests"` after the fix passed both cases in 2.81 s tier wall time. The one final `make quick` invocation passed all stages in **35.890 s** with zero timing overruns. The regenerated profiles, benchmark gate, plan and perf docs at `553398ee` were preserved byte-for-byte. Detailed step logs, temporary instrumentation, XML and timing results are retained locally in `build/onboarding-fixture-evidence/`.
