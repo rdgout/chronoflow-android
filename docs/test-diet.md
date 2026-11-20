@@ -329,3 +329,23 @@ Optimization stopped with RootTheme still above 1 s under normal quick contentio
 Quick also reported AppGraphSignOutWiringTest#signOutNavigatesErasesAccountFilesAndRejectsTheOldToken[36][unauthorized=true] at **1.445 s** (the voluntary parameter was 0.399 s). StubReadinessTests#nativeSessionDelegates failed with UncaughtExceptionsBeforeTest: a background coroutine completion accessed Dispatchers.Main after the test dispatcher was unset. The originating background job was not identified; this report does not attribute the failure to StubReadinessTests or claim it is unrelated to the current changes. No additional quick invocation or broader fix was attempted after the failed gate.
 
 Spotless passed during quick. Round 2 did not request another layout tier. Full quick output, XML and timing metadata are preserved under `build/test-diet-round-2/quick-results/`; targeted, stage and mutation evidence share that parent directory. Both class changes are separate signed commits with no trailers.
+
+
+## Review round 3: finish owned coroutine work
+
+The isolated AppGraphSignOutWiringTest → StubReadinessTests baseline passed, so that ordering alone did not reproduce the intermittent Main failure. Job-tree probes did identify an unfinished producer in the plain `net.chronoflow.app.perf.FixtureTripPageSourceTest`: after ViewModelStore.clear, the ViewModel SupervisorJob and the producer from FixtureTripPageSource.snapshots().flowOn(Dispatchers.Default) were still Cancelling. That producer is a child of the ViewModel's Main coroutine and can resume its parent after resetMain. Draining and joining completed the entire tree. The probes and original stderr are preserved in `build/test-diet-round-3/baseline/`.
+
+The fixture now joins the ViewModel job before resetting Main. TripPageViewModelFactoryTest also joins its ViewModel, including its failure cleanup. A deterministic completion assertion checks the real job, not a copied lifecycle implementation. Removing the join makes that assertion fail while the job is still incomplete.
+
+Real-graph fixtures now use closeAndJoinForTest. It captures the independently owned app, controller, readiness and sync SupervisorJobs without initializing unused services, cancels them, runs the real graph cleanup, then joins all captured jobs. Joining only appScope would miss the three service scopes. SessionGraph jobs are children of appScope (or the JVM fixture's test scope). The JVM AppSessionFixture also joins its independently owned controller/sync scopes.
+
+GraphTestRule owns the explicitly constructed layout graphs and closes them after Compose disposes its content. Graphs are constructed outside composition. SessionTestApplication owns a test dispatcher and joins its original graph in onTerminate, including when a seed has replaced app.graph; seeded replacement graphs are joined by their fixtures. TestSeedsApplyTest now closes its replacement graph in finally. Existing graph fixtures use the same joined cleanup, and AGENTS.md records the lifetime rule.
+
+Proofs on final fixture code:
+
+- `make targeted ONLY='app:AppGraphSignOutWiringTest app:StubReadinessTests'` passes in one fork.
+- Deleting the graph teardown call makes both sign-out parameters fail: `all owned graph scopes must finish before the next test`.
+- Deleting the ViewModel join makes the real fixture fail: `the ViewModel and its background producer must be complete`.
+- Initial temporary Unit replacements produced compiler warnings and were discarded as invalid proofs. The final mutations delete the calls, compile successfully and fail the assertions above.
+
+Every mutation was restored. The affected graph/layout/ViewModel fixtures and the Konsist boundary rule passed targeted. The final quick run also passed: the ViewModel fixture's live-step case was 0.060 s and StubReadinessTests#nativeSessionDelegates was 0.001 s. There was no uncaught Main completion and no unexpected watchdog hang. Evidence: `build/test-diet-round-3/{suspect-fixed,mutation-graph-teardown,mutation-viewmodel-join}` and the complete `targeted-final.log`.

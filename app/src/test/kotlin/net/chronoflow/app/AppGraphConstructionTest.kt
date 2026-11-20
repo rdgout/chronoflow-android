@@ -56,7 +56,10 @@ class AppGraphConstructionTest {
             } finally {
                 StrictMode.setThreadPolicy(old)
             }
-            assertEquals(0, accesses)
-            graph.close()
+            try {
+                assertEquals(0, accesses)
+            } finally {
+                graph.closeAndJoinForTest()
+            }
         }
 }

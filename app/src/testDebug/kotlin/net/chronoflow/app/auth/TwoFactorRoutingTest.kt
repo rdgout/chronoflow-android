@@ -16,6 +16,7 @@ import net.chronoflow.app.AppGraph
 import net.chronoflow.app.MainActivity
 import net.chronoflow.app.SessionTestApplication
 import net.chronoflow.app.SoftwareSessionCipher
+import net.chronoflow.app.closeAndJoinForTest
 import net.chronoflow.core.navigation.Route
 import net.chronoflow.core.testing.tiers.Logic
 import net.chronoflow.debug.TestSeed
@@ -139,6 +140,6 @@ class TwoFactorRoutingTest {
 
     @After fun close() {
         scenario?.close()
-        if (::graph.isInitialized) runTest(dispatcher, timeout = 60.seconds) { graph.close() }
+        if (::graph.isInitialized) runTest(dispatcher, timeout = 60.seconds) { graph.closeAndJoinForTest() }
     }
 }

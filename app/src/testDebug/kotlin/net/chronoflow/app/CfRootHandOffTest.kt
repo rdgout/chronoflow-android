@@ -25,6 +25,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.RuleChain
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
@@ -33,10 +34,13 @@ import kotlin.time.Duration.Companion.milliseconds
 
 @Layout
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [36], qualifiers = "w411dp-h914dp-420dpi")
+@Config(sdk = [36], qualifiers = "w411dp-h914dp-420dpi", application = SessionTestApplication::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class CfRootHandOffTest {
-    @get:Rule val compose = createComposeRule()
+    private val compose = createComposeRule()
+    private val graphs = GraphTestRule()
+
+    @get:Rule val rules: RuleChain = RuleChain.outerRule(graphs).around(compose)
 
     @Test fun signedInContentBecomesAccessibleOnlyAfterTheHandOff() {
         val launch = mount(SessionPresence.SignedIn("a"))
@@ -88,7 +92,7 @@ class CfRootHandOffTest {
         launch.captureAppearance(app.resources.configuration)
         launch.captureReduceMotion(true, false)
         launch.onActivityCreated(null, screen)
-        val graph = AppGraph(app, launchProvider = { launch })
+        val graph = graphs.own(AppGraph(app, launchProvider = { launch }, overrides = graphs.overrides))
         compose.setContent {
             CfRoot(
                 graph,

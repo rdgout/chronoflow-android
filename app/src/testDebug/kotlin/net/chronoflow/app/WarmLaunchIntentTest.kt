@@ -75,7 +75,7 @@ class WarmLaunchIntentTest {
                     withLinkActivity(incoming) { checkHandoff() }
                 }
             } finally {
-                withContext(NonCancellable) { graph.close() }
+                withContext(NonCancellable) { graph.closeAndJoinForTest() }
             }
         }
 

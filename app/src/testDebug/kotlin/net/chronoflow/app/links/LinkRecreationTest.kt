@@ -16,6 +16,7 @@ import net.chronoflow.app.AppGraph
 import net.chronoflow.app.MainActivity
 import net.chronoflow.app.SessionTestApplication
 import net.chronoflow.app.SoftwareSessionCipher
+import net.chronoflow.app.closeAndJoinForTest
 import net.chronoflow.core.model.auth.AuthLink
 import net.chronoflow.core.model.auth.ResetPasswordLink
 import net.chronoflow.core.model.session.SessionPresence
@@ -91,7 +92,7 @@ class LinkRecreationTest {
         if (::controller.isInitialized) controller.pause().stop().destroy()
         if (::graph.isInitialized) {
             runTest(dispatcher, timeout = 60.seconds) {
-                withContext(NonCancellable) { graph.close() }
+                withContext(NonCancellable) { graph.closeAndJoinForTest() }
             }
         }
     }

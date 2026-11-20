@@ -67,7 +67,7 @@ class ProcessDeathRestoreTest {
         } finally {
             second.destroy()
             app.graph.appScope.cancel()
-            runTest(app.mainDispatcher, timeout = 60.seconds) { app.graph.close() }
+            runTest(app.mainDispatcher, timeout = 60.seconds) { app.graph.closeAndJoinForTest() }
         }
     }
 

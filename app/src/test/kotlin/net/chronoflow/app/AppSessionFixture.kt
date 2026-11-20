@@ -3,6 +3,8 @@ package net.chronoflow.app
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.job
 import kotlinx.coroutines.withContext
 import net.chronoflow.core.data.repository.AccountModel
 import net.chronoflow.core.data.repository.OutboxRepository
@@ -83,6 +85,8 @@ internal class AppSessionFixture private constructor(
         graphs.close()
         accounts.close()
         controller.close()
+        ownedTestScope(controller).coroutineContext.job.cancelAndJoin()
+        ownedTestScope(sync).coroutineContext.job.cancelAndJoin()
         withContext(io) { check(root.deleteRecursively()) }
     }
 

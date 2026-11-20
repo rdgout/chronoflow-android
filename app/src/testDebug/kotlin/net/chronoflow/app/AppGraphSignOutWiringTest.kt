@@ -99,7 +99,9 @@ class AppGraphSignOutWiringTest(
                 assertEquals(401, status)
             } finally {
                 withContext(NonCancellable) {
-                    graph.close()
+                    val jobs = graph.ownedTestJobs()
+                    graph.closeAndJoinForTest()
+                    assertTrue("all owned graph scopes must finish before the next test", jobs.all { it.isCompleted })
                     withContext(Dispatchers.IO) { check(root.deleteRecursively()) }
                 }
             }

@@ -98,7 +98,7 @@ class SeededScreenRecreationTest {
                     assertEquals(expected, graph.rootNavigator.state.value)
                 }
             } finally {
-                graph.close()
+                graph.closeAndJoinForTest()
             }
         }
 }

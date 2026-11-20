@@ -31,12 +31,18 @@ import kotlin.time.Duration.Companion.milliseconds
 
 @Layout
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [36])
+@Config(sdk = [36], application = SessionTestApplication::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class WelcomeSeamTest {
     private val compose = createComposeRule()
+    private val graphs = GraphTestRule()
 
-    @get:Rule val rules: RuleChain = RuleChain.outerRule(ProfileRule(DeviceProfiles.pixel8)).around(compose)
+    @get:Rule val rules: RuleChain =
+        RuleChain
+            .outerRule(
+                graphs,
+            ).around(ProfileRule(DeviceProfiles.pixel8))
+            .around(compose)
 
     @Test fun welcomeActionsOpenTheSeamsAndBackReturnsToFinalWelcome() {
         val app = ApplicationProvider.getApplicationContext<Application>()
@@ -46,7 +52,20 @@ class WelcomeSeamTest {
         launch.captureAppearance(app.resources.configuration)
         launch.captureReduceMotion(true, false)
         launch.onActivityCreated(null, false, LaunchOverrides(mode = LaunchMode.Welcome, freezeAt = 2300.milliseconds))
-        val graph = AppGraph(app, fontPreloader = FontPreloader { _, _ -> }, launchProvider = { launch })
+        val graph =
+            graphs.own(
+                AppGraph(
+                    app,
+                    fontPreloader =
+                        FontPreloader {
+                            _,
+                            _,
+                            ->
+                        },
+                    launchProvider = { launch },
+                    overrides = graphs.overrides,
+                ),
+            )
         lateinit var back: OnBackPressedDispatcher
         compose.setContent {
             val dispatcher = requireNotNull(LocalOnBackPressedDispatcherOwner.current).onBackPressedDispatcher

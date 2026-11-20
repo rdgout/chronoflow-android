@@ -41,14 +41,15 @@ import kotlin.time.Duration.Companion.milliseconds
 
 @Layout
 @RunWith(ParameterizedRobolectricTestRunner::class)
-@Config(sdk = [36])
+@Config(sdk = [36], application = SessionTestApplication::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class WelcomeHandOffTest(
     private val profile: DeviceProfile,
 ) {
     private val compose = createComposeRule()
+    private val graphs = GraphTestRule()
 
-    @get:Rule val rules: RuleChain = RuleChain.outerRule(ProfileRule(profile)).around(compose)
+    @get:Rule val rules: RuleChain = RuleChain.outerRule(graphs).around(ProfileRule(profile)).around(compose)
     private val clock = ManualLaunchClock()
     private val frames = Channel<Long>(Channel.CONFLATED)
     private var reports = 0
@@ -130,7 +131,20 @@ class WelcomeHandOffTest(
         launch.onActivityCreated(null, false)
         val firstCommit = CompletableDeferred<Unit>()
         if (fonts) firstCommit.complete(Unit)
-        val graph = AppGraph(app, fontPreloader = FontPreloader { _, _ -> }, launchProvider = { launch })
+        val graph =
+            graphs.own(
+                AppGraph(
+                    app,
+                    fontPreloader =
+                        FontPreloader {
+                            _,
+                            _,
+                            ->
+                        },
+                    launchProvider = { launch },
+                    overrides = graphs.overrides,
+                ),
+            )
         compose.setContent {
             CompositionLocalProvider(LocalFullyDrawnReporterOwner provides reporterOwner) {
                 CfRoot(graph, true, false, firstCommit, null)

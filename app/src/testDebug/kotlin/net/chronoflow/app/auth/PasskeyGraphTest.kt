@@ -11,6 +11,7 @@ import net.chronoflow.app.AppGraph
 import net.chronoflow.app.MainActivity
 import net.chronoflow.app.SessionTestApplication
 import net.chronoflow.app.SoftwareSessionCipher
+import net.chronoflow.app.closeAndJoinForTest
 import net.chronoflow.core.testing.tiers.Logic
 import net.chronoflow.debug.TestSeed
 import net.chronoflow.debug.TestSeeds
@@ -80,6 +81,6 @@ class PasskeyGraphTest {
 
     @After fun close() {
         scenario?.pause()?.stop()?.destroy()
-        if (::graph.isInitialized) runTest(dispatcher, timeout = 60.seconds) { graph.close() }
+        if (::graph.isInitialized) runTest(dispatcher, timeout = 60.seconds) { graph.closeAndJoinForTest() }
     }
 }

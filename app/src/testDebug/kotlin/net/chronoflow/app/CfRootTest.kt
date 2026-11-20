@@ -31,6 +31,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.RuleChain
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
@@ -41,21 +42,24 @@ import kotlin.time.Duration.Companion.seconds
 
 @Layout
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [36], qualifiers = "w411dp-h914dp-420dpi")
+@Config(sdk = [36], qualifiers = "w411dp-h914dp-420dpi", application = SessionTestApplication::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class CfRootTest {
-    @get:Rule val compose = createComposeRule()
+    private val compose = createComposeRule()
+    private val graphs = GraphTestRule()
+
+    @get:Rule val rules: RuleChain = RuleChain.outerRule(graphs).around(compose)
 
     @Test fun overlayComposesFirstAndShieldsTheContentOnTheNextFrame() {
         compose.mainClock.autoAdvance = false
         val app = ApplicationProvider.getApplicationContext<Application>()
         val launch =
-            newLaunchController(AppGraph(app)).apply {
+            newLaunchController(graphs.own(AppGraph(app, overrides = graphs.overrides))).apply {
                 captureAppearance(app.resources.configuration)
                 captureReduceMotion(false, null)
                 claimOverlay(LaunchOverrides.None)
             }
-        val graph = AppGraph(app, launchProvider = { launch })
+        val graph = graphs.own(AppGraph(app, launchProvider = { launch }, overrides = graphs.overrides))
         var clicks = 0
         compose.setContent {
             CfRoot(graph, true, true, CompletableDeferred(), null) {
@@ -75,8 +79,11 @@ class CfRootTest {
     @Test fun skippedOverlayComposesAccessibleContentOnTheFirstFrame() {
         compose.mainClock.autoAdvance = false
         val app = ApplicationProvider.getApplicationContext<Application>()
-        val launch = newLaunchController(AppGraph(app)).apply { claimOverlay(LaunchOverrides(skipOverlay = true)) }
-        val graph = AppGraph(app, launchProvider = { launch })
+        val launch =
+            newLaunchController(graphs.own(AppGraph(app, overrides = graphs.overrides))).apply {
+                claimOverlay(LaunchOverrides(skipOverlay = true))
+            }
+        val graph = graphs.own(AppGraph(app, launchProvider = { launch }, overrides = graphs.overrides))
         compose.setContent {
             CfRoot(
                 graph,
@@ -125,7 +132,7 @@ class CfRootTest {
             compose.onNodeWithTag("reset.password").assertExists()
             assertEquals(IconAppearance.LightIcons, statusIcons)
         } finally {
-            runTest(dispatcher, timeout = 60.seconds) { graph.close() }
+            runTest(dispatcher, timeout = 60.seconds) { graph.closeAndJoinForTest() }
         }
     }
 
@@ -136,7 +143,8 @@ class CfRootTest {
     private fun verifyRootBackground(night: Boolean) {
         RuntimeEnvironment.setQualifiers(if (night) "+night" else "+notnight")
         val app = ApplicationProvider.getApplicationContext<Application>()
-        compose.setContent { CfRoot(AppGraph(app), false, true, CompletableDeferred(), null) {} }
+        val graph = graphs.own(AppGraph(app, overrides = graphs.overrides))
+        compose.setContent { CfRoot(graph, false, true, CompletableDeferred(), null) {} }
         compose.onNodeWithTag("launch.opening").assertDoesNotExist()
         val pixels = compose.onNodeWithTag("app.root").captureToImage().toPixelMap()
         val expected = (if (night) CfDarkColors else CfLightColors).background.toArgb()

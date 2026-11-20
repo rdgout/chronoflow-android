@@ -5,9 +5,12 @@ package net.chronoflow.app.perf
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
@@ -17,6 +20,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.withContext
 import net.chronoflow.core.model.CheckOffChange
 import net.chronoflow.core.model.contracts.CheckStatus
 import net.chronoflow.core.model.contracts.Language
@@ -57,6 +61,7 @@ class FixtureTripPageSourceTest {
             val catalogs = CopyCatalogProvider(dispatcher)
             val preparer = PlanPreparer(decoder, catalogs, dispatcher)
             val store = ViewModelStore()
+            var modelJob: Job? = null
             try {
                 val vm =
                     ViewModelProvider(
@@ -87,6 +92,7 @@ class FixtureTripPageSourceTest {
                             }
                         },
                     )[TripPageViewModel::class.java]
+                modelJob = checkNotNull(vm.viewModelScope.coroutineContext[Job])
                 val ready = vm.ui.first { it.state == TripPageState.Ready }
                 val block =
                     checkNotNull(ready.plan)
@@ -106,6 +112,9 @@ class FixtureTripPageSourceTest {
                 steps.first { it.actions == StepActions.Open }
             } finally {
                 store.clear()
+                // FixtureTripPageSource's flowOn(Default) producer must finish before resetMain.
+                withContext(NonCancellable) { modelJob?.join() }
+                assertTrue("the ViewModel and its background producer must be complete", modelJob?.isCompleted == true)
             }
         }
 
