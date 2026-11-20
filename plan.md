@@ -492,6 +492,14 @@ Every screen scrolls when height-constrained. The minimum width is 280 dp; below
 | Passkeys intro | "Sign in with your fingerprint, face or screen lock instead of your password." | "Log in met je vingerafdruk, gezicht of schermvergrendeling in plaats van je wachtwoord." | settings "Sign in with Face ID, a fingerprint or your screen lock instead of your password." |
 | Notifications blocked step | "Tap Open phone settings and turn on notifications for ChronoFlow." | "Tik op Telefooninstellingen openen en zet meldingen voor ChronoFlow aan." | reminders "Open your phone's Settings.", "Tap Notifications, then ChronoFlow." and "Turn on Allow notifications." |
 | Recovery-codes file name | "Recovery codes.txt" | "Herstelcodes.txt" | — |
+| `android_wizard_airport_field` (needs review) | Airport or city | Luchthaven of stad | wizard "Search airports" |
+| `android_wizard_search_hint` (needs review) | Type at least 2 letters to search. | Typ minstens 2 letters om te zoeken. | — |
+| `android_wizard_search_searching` (needs review) | Searching airports… | Luchthavens zoeken… | — |
+| `android_wizard_search_empty_title` (needs review) | No airports found | Geen luchthavens gevonden | — |
+| `android_wizard_search_empty_body` (needs review) | Try the city name, like “Tokyo”, or the 3-letter code on your ticket, like “NRT”. | Probeer de naam van de stad, zoals “Tokio”, of de code van 3 letters op je ticket, zoals “NRT”. | — |
+| `android_wizard_search_error_title` (needs review) | We couldn't search airports. | We konden geen luchthavens zoeken. | — |
+| `android_wizard_search_error_body` (needs review) | Check your connection and try again. | Controleer je verbinding en probeer het opnieuw. | — |
+
 
 
 ## Performance budget
@@ -2706,6 +2714,7 @@ Implementation commits (brief §7):
 **Delivers.** Builds the full-screen wizard shell: a centered top bar with close and back, the 4 dp dawn progress bar at the board percentages, a fixed footer with IME padding and a 520 dp column on wide windows, plus the discard alert and the quiet recovery. It builds Where with From, To, stops, swap, the same-airport error and the flight-home route, and the full-height airport and stop search sheets with all search states. New trip on My trips opens it.
 
 **Tasks**
+- [x] **Search copy** (9c Task 1): seven generated en/nl Android search strings; resource and catalog resolution verified.
 - [ ] **Shell** (`feature/wizard/…/shell/`).
   - A full-screen route that replaces the tab shell.
   - A centred top bar with close and back; the first screen has no back.

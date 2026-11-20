@@ -35,6 +35,67 @@
       "replaces": [],
       "review": "needs review",
       "comment": "OQ-A12, A23: CreateDocument file name; nl from settings 'Recovery codes' = 'Herstelcodes'."
+    },
+    {
+      "name": "android_wizard_airport_field",
+      "en": "Airport or city",
+      "nl": "Luchthaven of stad",
+      "replaces": [
+        {
+          "table": "wizard",
+          "key": "Search airports"
+        }
+      ],
+      "review": "needs review",
+      "comment": "OQ-9c-2: WizardCopy."
+    },
+    {
+      "name": "android_wizard_search_hint",
+      "en": "Type at least 2 letters to search.",
+      "nl": "Typ minstens 2 letters om te zoeken.",
+      "replaces": [],
+      "review": "needs review",
+      "comment": "OQ-9c-3: TripSearchStates; Dutch web or proposed copy."
+    },
+    {
+      "name": "android_wizard_search_searching",
+      "en": "Searching airports…",
+      "nl": "Luchthavens zoeken…",
+      "replaces": [],
+      "review": "needs review",
+      "comment": "OQ-9c-3: TripSearchStates; Dutch web or proposed copy."
+    },
+    {
+      "name": "android_wizard_search_empty_title",
+      "en": "No airports found",
+      "nl": "Geen luchthavens gevonden",
+      "replaces": [],
+      "review": "needs review",
+      "comment": "OQ-9c-3: TripSearchStates; Dutch web or proposed copy."
+    },
+    {
+      "name": "android_wizard_search_empty_body",
+      "en": "Try the city name, like “Tokyo”, or the 3-letter code on your ticket, like “NRT”.",
+      "nl": "Probeer de naam van de stad, zoals “Tokio”, of de code van 3 letters op je ticket, zoals “NRT”.",
+      "replaces": [],
+      "review": "needs review",
+      "comment": "OQ-9c-3: TripSearchStates; Dutch web or proposed copy."
+    },
+    {
+      "name": "android_wizard_search_error_title",
+      "en": "We couldn't search airports.",
+      "nl": "We konden geen luchthavens zoeken.",
+      "replaces": [],
+      "review": "needs review",
+      "comment": "OQ-9c-3: TripSearchStates; Dutch web or proposed copy."
+    },
+    {
+      "name": "android_wizard_search_error_body",
+      "en": "Check your connection and try again.",
+      "nl": "Controleer je verbinding en probeer het opnieuw.",
+      "replaces": [],
+      "review": "needs review",
+      "comment": "OQ-9c-3: TripSearchStates; Dutch web or proposed copy."
     }
   ]
 }
