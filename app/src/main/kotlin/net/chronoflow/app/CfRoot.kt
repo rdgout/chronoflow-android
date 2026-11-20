@@ -24,7 +24,6 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalFontFamilyResolver
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.testTag
@@ -37,7 +36,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.MutableCreationExtras
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.Dispatchers
 import net.chronoflow.app.auth.SignInViewModelFactory
 import net.chronoflow.app.auth.SignUpViewModelFactory
 import net.chronoflow.app.auth.TwoFactorViewModelFactory
@@ -46,7 +44,6 @@ import net.chronoflow.core.designsystem.effect.skyBackground
 import net.chronoflow.core.designsystem.layout.LocalSafeInsets
 import net.chronoflow.core.designsystem.theme.CfTheme
 import net.chronoflow.core.designsystem.theme.ChronoFlowTheme
-import net.chronoflow.core.designsystem.theme.warmFontsAfterFirstFrame
 import net.chronoflow.core.navigation.RootState
 import net.chronoflow.core.navigation.Route
 import net.chronoflow.core.ui.window.LocalWindowSize
@@ -85,15 +82,7 @@ internal fun CfRoot(
         if (!graph.launch.overlayActive && displayedRoute != null) graph.finishLaunch()
     }
     BackHandler(enabled = seam != null) { destinations.closeSeam() }
-    val resolver = LocalFontFamilyResolver.current
-    LaunchedEffect(resolver) {
-        withFrameNanos { }
-        try {
-            warmFontsAfterFirstFrame(firstCommit, { graph.fontPreloader.preload(resolver, it) }, Dispatchers.IO)
-        } finally {
-            graph.launch.markFontsReady()
-        }
-    }
+    RootFontWarmup(firstCommit, graph.fontPreloader, graph.launch::markFontsReady)
     val night = isSystemInDarkTheme()
     val overlayShowing = graph.launch.overlayActive
     // Skipped overlays wait for first commit before readiness can select a route.

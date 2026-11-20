@@ -50,7 +50,7 @@ Decisions across the 50 audited classes: **27 shrink, 17 keep, 3 delete duplicat
 | `RootContentConstructionTest` | 0.023–0.025 | shrink | Nav3 subtree identity is a composition contract. Separate bridge/router scheduling into LaunchConnectionTests; keep only minimal route/revision composition fixtures. |
 | `RootContentTest` | 0.020–0.038 | shrink | Tagged destination structure, repeated-route remember identity, and actual Activity recreation without another navigation; isolate the two composition cases from the Application graph. |
 | `RootRouteTransitionTest` | 0.024 | shrink | Nav3 removes the outgoing subtree before a crossfade could mask overlap; plain Application. |
-| `RootThemeTest` | 0.037 | keep | Real Activity frame-commit callback gates IO font preloading and provides system reduce-motion state; seeded signed-out. |
+| `RootThemeTest` | 0.037 | keep | Real Activity frame-commit/IO font ordering and motion capture, plus root provision in a lighter host; review round 3 separates these cases without rendering the full app in MainActivity. |
 | `RoutePlaceholderGuardTest` | 0.015–0.020 | shrink | Profile geometry and safe bounds only; plain Application. |
 | `SeededScreenRecreationTest` | 0.181 | shrink | Actual frame-commit routing is not reapplied on recreation. Use signed-out Welcome → SignIn rather than signed-in Today → Settings. |
 | `WarmLaunchIntentTest` | 0.042–0.043 | shrink | Real warm Activity hand-off of link/reminder intents drains the buffer without changing the process route. Seed signed-out and retain Terms instead of rendering Today. |
@@ -375,3 +375,40 @@ All preconditions and outcome assertions remain: Today before teardown, a real a
 | unauthorized=false | 0.399 s (previous local quick) | **0.064 s** |
 
 The final focused warm run before the broad targeted validation measured 0.356 / 0.063 s. Different host contention makes the quick comparisons observations, not controlled speedup claims. Evidence: `build/test-diet-round-3/baseline/`, `profile-baseline.log`, `mutation-signout-{erase,logout,navigation}/`, and `quick-results/`.
+
+
+## Review round 3: split root theme checks
+
+The round 2 RootTheme timing failure is resolved by separating the real boundaries. RootFontWarmup is a minimal extraction of CfRoot's existing frame/font effect, preserving its frame wait, supplied commit Deferred, real resolver, IO preloader and finally callback. CfRoot calls that same component. No screen or application behavior changes.
+
+RootThemeTest now has three quick-tier cases:
+
+| Case | What can fail | Final quick XML |
+|---|---|---:|
+| activityPreloadsOnlyAfterItsFrameCommit | The real MainActivity registers its window callback; its actual Deferred blocks the extracted root font effect; zero before commit, all four fonts after, off Main, then ready. The Activity hosts only the font effect. | **0.042 s** |
+| activityRefreshesTheSystemMotionSettingWhenResumed | Real onCreate captures disabled system animation; onResume refreshes it after animation is enabled. No screen composition or attached window. | **0.093 s** |
+| rootProvidesReduceMotionAndUsesTheSuppliedFontBarrier | Actual CfRoot provides LocalReduceMotion and uses its supplied Deferred for font readiness, in a plain ComponentActivity with an empty content slot. | **0.325 s** |
+
+The original combined case was 1.169 s in the orchestrator's pre-round-3 quick run (1.104 s in the previous local quick). Its measured isolated native composition cost was about 269 ms. That composition is now needed only in the lightweight root-provision case; the Activity ordering case does not compose the app theme, navigation or screens. All three cases remain in quick, with the normal 1,000 ms budget and NATIVE graphics.
+
+The commit fixture observes when the font effect actually awaits its real Deferred, then checks zero calls before firing/completing that barrier. Two controlled virtual frames start the effect and pass its frame wait. The first smaller-host experiment's gate-bypass mutation passed, exposing a premature zero assertion; that experiment was corrected before final validation. The final bypass mutation cannot reach the observed real barrier and fails its bounded 5 s condition wait. Giving CfRoot the wrong barrier fails the root-provision case in the same way. Forcing CfRoot's motion argument false fails its local assertion, and forcing Activity motion capture false fails the Activity case. Those are intentional test failures, not watchdog hangs, and all mutations were restored.
+
+### Review round 3 final validation
+
+| Check | Result |
+|---|---|
+| Sign-out then StubReadinessTests, one fork | pass; removing graph teardown fails both real scope-completion assertions |
+| ViewModel source fixture then StubReadinessTests | pass; removing its join fails on the still-incomplete real ViewModel job |
+| Real sign-out wiring mutations | erase, logout and onSignedOut navigation each rejected by the corresponding file/token/route assertions |
+| Root split mutations | shared font barrier, CfRoot barrier binding, motion provision and Activity motion capture each rejected |
+| Affected graph, lifecycle, layout, seed and ViewModel tests | pass through make targeted; complete command/output in targeted-final.log |
+| Konsist boundary and its planted controls | pass; no allowlist additions |
+| make quick, exactly once | **pass**, **40.792 s** total wall, exit 0; includes build-logic/tooling and the serial timing tier |
+| Timing report | 453 measured cases, **zero overruns**, zero hangs; unchanged tasks retain their certified reuse |
+| Warm SDK 36 sign-out cases | unauthorized 0.391 s; voluntary 0.064 s |
+| Warm RootTheme cases | Activity fonts 0.042 s; Activity motion 0.093 s; root provision 0.325 s |
+| Earlier ProcessDeathRestore cases | process death 0.264 s; recreation 0.018 s |
+
+No measured warm Robolectric case exceeded 1 s. No budget, timing exemption or architecture allowlist changed. Spotless passed in quick. The touched layout classes were run targeted; round 3 requested no separate layout-tier invocation. Sandbox Kotlin-daemon/FSEvents warnings occurred but the final builds/tests passed. The layout/logic ownership changes and root extraction were validated together before the single quick run; subsequent edits only document results and create atomic signed commits.
+
+Raw final quick XML/timing metadata and complete output are retained under `build/test-diet-round-3/quick-results/` and `quick.log`; negative proofs, their assertion XML, the passing ordered pair and stage probes share that parent. The multi-module targeted wrapper retains only its last module's timing archive (Konsist); targeted-final.log records both successful app and Konsist invocations. Final app per-case numbers above come from quick's preserved XML.
