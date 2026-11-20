@@ -76,6 +76,10 @@ make baseline-profile                      # regenerates the committed profiles
 | 2026-11-19 | e61c4550 | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | trip-wide | benchmarkRelease, Partial(Require), bounded-swipe-v3 | n/a/n/a | 3.6/4.5/6.4 | 3.4/5.1 | -5.8 | 0.0/0.0 | 0.0/0.0 | 0 | 0.7 | 107.7 | -0.1 | 513 | 5 | ok | — | PASS |
 | 2026-11-19 | 8edb8455 | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | trip | benchmarkRelease, Partial(Require), bounded-swipe-v3 | 98.1/99.8 | 3.5/4.6/6.5 | 2.8/4.7 | -5.1 | 0.1/0.2 | 0.1/0.4 | 0 | 0.7 | 109.1 | 0.4 | 571 | 3 | ok | ok | PASS |
 | 2026-11-19 | 8edb8455 | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | trip-wide | benchmarkRelease, Partial(Require), bounded-swipe-v3 | n/a/n/a | 3.5/4.4/7.2 | 4.5/12.6 | -5.5 | 0.5/1.4 | 2.2/6.5 | 0 | 0.3 | 108.3 | 0.9 | 527 | 5 | ok | — | PASS |
+| 2026-11-20 | 62472d29 | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | trip | benchmarkRelease, Partial(Require), bounded-swipe-v3 | 99.5/100.6 | 3.8/7.2/11.8 | 5.8/8.8 | 1.8 | 1.3/2.1 | 5.1/8.9 | 0 | 1.1 | 109.1 | 0.0 | 571 | 3 | ok | ok | BAND |
+| 2026-11-20 | 62472d29 | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | trip-wide | benchmarkRelease, Partial(Require), bounded-swipe-v3 | n/a/n/a | 3.3/4.2/6.2 | 3.5/4.9 | -7.4 | 0.0/0.0 | 0.0/0.0 | 0 | 0.3 | 109.0 | -0.5 | 526 | 5 | ok | — | BAND |
+| 2026-11-20 | 62472d29 | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | trip | benchmarkRelease, Partial(Require), bounded-swipe-v3 | 98.9/99.9 | 3.6/4.6/6.4 | 3.0/4.7 | -5.4 | 0.0/0.0 | 0.0/0.0 | 0 | 0.7 | 109.2 | 0.3 | 571 | 3 | ok | ok | PASS |
+| 2026-11-20 | 62472d29 | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | trip-wide | benchmarkRelease, Partial(Require), bounded-swipe-v3 | n/a/n/a | 3.4/4.3/6.3 | 3.3/5.1 | -6.1 | 0.0/0.0 | 0.0/0.0 | 0 | 0.4 | 108.5 | -0.0 | 526 | 5 | ok | — | PASS |
 
 `-dirty` marks a run made with uncommitted changes (here the regenerated baseline profile, committed right after).
 
