@@ -11,8 +11,8 @@ import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
 @RunWith(Enclosed::class)
-class TodayTestBoundaryTest {
-    class Project {
+class TodayTestBoundaryTest : KonsistTest() {
+    class Project : KonsistTest() {
         @Test fun allUnitTestsKeepAppBootsAtApprovedBoundaries() = unitTestsKeepAppBootsAtApprovedBoundaries(scope)
 
         companion object {
@@ -28,7 +28,7 @@ class TodayTestBoundaryTest {
     @RunWith(Parameterized::class)
     class Planted(
         private val path: String,
-    ) {
+    ) : KonsistTest() {
         @Test fun rejectsPlantedViolation() {
             val scope = Konsist.scopeFromFile("konsist/src/test/resources/violations/testBoundary/$path")
             val failure = assertFailure { unitTestsKeepAppBootsAtApprovedBoundaries(scope) }

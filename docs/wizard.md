@@ -234,3 +234,44 @@ OQ-9c-1 through OQ-9c-12 are recorded as **OQ-A370–OQ-A381**, using the brief'
 2. The stop question now supplies each segment's enabled state and haptic kind to `CfSegmentedButtons`. Its defaults remain enabled + Selection for every other caller. The pinned `MemberWizardRouteView.routeStopQuestion` explicitly plays Light when making a route direct with existing stops; the native wrapper now plays exactly that one event. Disabled Yes has M3 disabled semantics, no callback and no haptic. `WhereStepTest` (10 cases, RecordingHaptics) and `CfSegmentedButtonsTest` (2 default/disabled contract cases) pass.
 
 3. `airportPlace` catches only `IllformedLocaleException` from region construction and omits that country, matching the pinned iOS city-only fallback. `WhereUiStateTest` adds separate JVM cases for a whitespace code and the country name “Netherlands”; all 17 cases pass.
+
+4. All Konsist test classes, including the enclosed parameterized classes, inherit `KonsistTest`. Its inherited `@BeforeClass` forces one tiny fixture parse through a JVM-local lazy value before any timed test case. TestTimingListener and every budget are unchanged. The same seven-class targeted selection runs 130 cases before and after: both pass (5.90 s and 5.77 s tier wall times). The reported 1.05 s overrun did not reproduce in this baseline; the following are the three slowest measured baseline cases and their corresponding times after warm-up.
+
+| Case | Before | After |
+|---|---:|---:|
+| `TodayTestBoundaryTest$Planted#rejectsPlantedViolation[app/src/testDebug/kotlin/AppGraphCallTest.kt]` | 0.529 s | 0.016 s |
+| `HapticsRulesTest#noHapticsInLaunch` | 0.365 s | 0.164 s |
+| `HapticsRulesTest#noHapticsInLaunchRejectsPlantedViolation` | 0.342 s | 0.010 s |
+
+The three slowest cases after warm-up are `TodayTestBoundaryTest$Project#allUnitTestsKeepAppBootsAtApprovedBoundaries` (0.195 s), `HapticsRulesTest#noHapticsInLaunch` (0.164 s), and `KonsistRulesTest#routesAreSerializable` (0.107 s). These are JVM test times, not app performance measurements.
+
+
+Review-round commands and final results:
+
+```sh
+make targeted ONLY="feature:wizard:AirportSearchSheetGeometryTest#fromTitleFitsOnOneLine feature:wizard:AirportSearchSheetGeometryTest#toTitleFitsOnOneLine feature:wizard:AirportSearchSheetGeometryTest#homeTitleFitsOnOneLine"
+make targeted ONLY="feature:wizard:AirportSearchSheetGeometryTest"
+make captures ONLY=WizardAirport,WizardStopSearch
+make targeted ONLY="feature:wizard:WhereStepTest core:designsystem:CfSegmentedButtonsTest"
+make targeted ONLY="feature:wizard:WhereUiStateTest"
+make targeted ONLY="konsist:HapticsRulesTest konsist:KonsistRulesTest konsist:ModuleGraphTest konsist:StringResourceLocationTest konsist:TierRegistryTest konsist:TodaySessionKeyTest konsist:TodayTestBoundaryTest"
+Scripts/run-tier.sh layout-9c-review1 --results 'feature/wizard/build/test-results/testDebugUnitTest/*.xml' --results 'core/designsystem/build/test-results/testDebugUnitTest/*.xml' --timings 'feature/wizard/build/cf-timings/testDebugUnitTest/*.json' --timings 'core/designsystem/build/cf-timings/testDebugUnitTest/*.json' -- ./gradlew :feature:wizard:testDebugUnitTest :core:designsystem:testDebugUnitTest -Pcf.tier=layout
+./gradlew :feature:wizard:lintDebug :core:designsystem:lintDebug
+make quick
+```
+
+| Selection | Exact result | Reported wall time |
+|---|---|---:|
+| New header guards before the fix | Six cases; five pass, pixel8 Home fails at 44.190475 dp | Gradle 6 s |
+| Full sheet geometry class after the fix | Eight pass; no timing overrun | Tier 7.58 s |
+| Sheet captures, once | Ten matching PNGs written | Tier 18.07 s |
+| WhereStepTest + CfSegmentedButtonsTest | Ten + two cases pass | Gradle builds 7 s + 5 s |
+| WhereUiStateTest | Seventeen pass; no timing overrun | Tier 4.07 s |
+| All seven Konsist classes, before / after | 130 pass each; zero over-budget cases | Tiers 5.90 / 5.77 s |
+| Layout, once | 122 pass including all 97 wizard guards; zero over-budget cases | Tier 11.81 s |
+| Requested lint tasks, once | Pass, warnings treated as errors | Gradle 22 s |
+| Quick, once | 2,783 freshly measured cases pass their assertions; all 4,551 collected/reused results pass. Gradle exits 0; the quick tier budget check exits 3, make exits 2 | Whole command 40.058 s; Gradle 39 s |
+
+Quick's only failures are unchanged cases exceeding the 1 s budget: `net.chronoflow.app.RootThemeTest#rootProvidesReduceMotionAndUsesTheSuppliedFontBarrier` at **1,001 ms**, and `net.chronoflow.feature.onboarding.OnboardingSessionTests#enqueueRejectsAStaleSnapshotWithSessionChanged` at **1,009 ms**. They were not retried, per p9c-i.md. No hangs or missing result files occurred. Quick did not reach its later build-logic/tooling/serial-timing commands after the timing gate failed; no successful full-quick claim is made.
+
+In the final quick run, the slowest three Konsist cases are `HapticsRulesTest#noHapticsInLaunch` (0.554 s), `TodayTestBoundaryTest$Project#allUnitTestsKeepAppBootsAtApprovedBoundaries` (0.447 s), and `KonsistRulesTest#routesAreSerializable` (0.325 s), all within the unchanged budget. Detailed logs, the before/after XML and timing files are retained in `build/phase9c-review1/`. No emulator, performance or profile command ran in this review round. No copy or OQ rows were added.

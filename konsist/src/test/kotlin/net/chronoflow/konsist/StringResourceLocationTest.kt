@@ -3,7 +3,7 @@ package net.chronoflow.konsist
 import org.junit.Test
 import java.io.File
 
-class StringResourceLocationTest {
+class StringResourceLocationTest : KonsistTest() {
     private val allowed =
         setOf(
             "core/ui/src/main/res/values/strings_ios.xml",
