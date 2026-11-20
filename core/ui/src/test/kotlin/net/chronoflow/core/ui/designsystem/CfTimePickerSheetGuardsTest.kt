@@ -4,10 +4,14 @@ package net.chronoflow.core.ui.designsystem
 
 import androidx.compose.material3.TimePickerState
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHeightIsAtLeast
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -107,5 +111,28 @@ class CfTimePickerSheetGuardsTest {
         compose.onNodeWithTag("custom.cancel").assertHeightIsAtLeast(48.dp)
         assertTrue(state.is24hour)
         assertFalse(TimePickerState(7, 15, false).is24hour)
+    }
+
+    @Test fun nativePeriodButtonsHaveFullHitAreas() {
+        state.is24hour = false
+        show()
+        val period =
+            hasAnyAncestor(hasTestTag("time-sheet")) and
+                SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button) and
+                SemanticsMatcher.keyIsDefined(SemanticsProperties.Selected)
+        compose.onAllNodes(period).assertCountEquals(2)
+        val selected =
+            compose
+                .onNode(period and SemanticsMatcher.expectValue(SemanticsProperties.Selected, true))
+                .fetchSemanticsNode()
+        val unselected =
+            compose
+                .onNode(period and SemanticsMatcher.expectValue(SemanticsProperties.Selected, false))
+                .fetchSemanticsNode()
+        val minimum = 48f * compose.density.density - .5f
+        assertTrue(selected.touchBoundsInRoot.width >= minimum)
+        assertTrue(selected.touchBoundsInRoot.height >= minimum)
+        assertTrue(unselected.touchBoundsInRoot.width >= minimum)
+        assertTrue(unselected.touchBoundsInRoot.height >= minimum)
     }
 }

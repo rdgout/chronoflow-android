@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
@@ -38,12 +37,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.constrainHeight
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.JsonPrimitive
@@ -115,48 +116,7 @@ internal fun WizardAnswerSheet(
                 ),
             verticalArrangement = Arrangement.spacedBy(PlanUITokens.wizardContentGap.dp),
         ) {
-            Row(
-                Modifier.fillMaxWidth().heightIn(min = PlanUITokens.actionMinHeight.dp),
-                horizontalArrangement = Arrangement.spacedBy(PlanUITokens.space2.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                CfButton(
-                    WizardCopy("Cancel").resolve(),
-                    { onEvent(WizardEvent.CancelAnswer) },
-                    Modifier.testTag("wizard.answer.cancel"),
-                    style = CfButtonStyle.Ghost,
-                    minHeight = PlanUITokens.actionMinHeight.dp,
-                    textStyle = CfTheme.type.style(CfTypeScale.wizardRow),
-                    contentColor = CfTheme.colors.dawnText,
-                    contentPadding = PaddingValues(0.dp),
-                )
-                Text(
-                    WizardCopy(WizardPromptLabels.key(ui.state.prompt)).resolve(),
-                    Modifier
-                        .weight(1f)
-                        .widthIn(max = WizardMetrics.sheetTitleMaxWidth.dp)
-                        .testTag("wizard.answer.title")
-                        .focusRequester(focus)
-                        .focusable()
-                        .semantics { heading() },
-                    color = CfTheme.colors.foreground,
-                    style = CfTheme.type.style(CfTypeScale.wizardButton),
-                    textAlign = TextAlign.Center,
-                    maxLines = 2,
-                )
-                CfButton(
-                    WizardCopy("Done").resolve(),
-                    { onEvent(WizardEvent.AnswerDone) },
-                    Modifier.testTag("wizard.answer.done"),
-                    style = CfButtonStyle.Ghost,
-                    minHeight = PlanUITokens.actionMinHeight.dp,
-                    enabled = ui.state.doneEnabled,
-                    disabledAlpha = PlanUITokens.wizardEmptyOpacity,
-                    textStyle = CfTheme.type.style(CfTypeScale.wizardButton),
-                    contentColor = CfTheme.colors.dawnText,
-                    contentPadding = PaddingValues(0.dp),
-                )
-            }
+            WizardAnswerHeader(ui, focus, onEvent)
             Text(
                 serverCopy(ui.state.prompt.text),
                 Modifier.testTag("wizard.answer.question"),
@@ -195,6 +155,91 @@ internal fun WizardAnswerSheet(
         }
     }
     ui.openTime?.let { WizardSleepTimeSheet(it, onEvent) }
+}
+
+@Composable
+private fun WizardAnswerHeader(
+    ui: WizardAnswerSheetUi,
+    focus: FocusRequester,
+    onEvent: (WizardEvent) -> Unit,
+) {
+    Layout(
+        content = {
+            CfButton(
+                WizardCopy("Cancel").resolve(),
+                { onEvent(WizardEvent.CancelAnswer) },
+                Modifier.testTag("wizard.answer.cancel"),
+                style = CfButtonStyle.Ghost,
+                minHeight = PlanUITokens.actionMinHeight.dp,
+                textStyle = CfTheme.type.style(CfTypeScale.wizardRow),
+                contentColor = CfTheme.colors.dawnText,
+                contentPadding = PaddingValues(0.dp),
+            )
+            Text(
+                WizardCopy(WizardPromptLabels.key(ui.state.prompt)).resolve(),
+                Modifier
+                    .testTag("wizard.answer.title")
+                    .focusRequester(focus)
+                    .focusable()
+                    .semantics { heading() },
+                color = CfTheme.colors.foreground,
+                style = CfTheme.type.style(CfTypeScale.wizardButton),
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+            )
+            CfButton(
+                WizardCopy("Done").resolve(),
+                { onEvent(WizardEvent.AnswerDone) },
+                Modifier.testTag("wizard.answer.done"),
+                style = CfButtonStyle.Ghost,
+                minHeight = PlanUITokens.actionMinHeight.dp,
+                enabled = ui.state.doneEnabled,
+                disabledAlpha = PlanUITokens.wizardEmptyOpacity,
+                textStyle = CfTheme.type.style(CfTypeScale.wizardButton),
+                contentColor = CfTheme.colors.dawnText,
+                contentPadding = PaddingValues(0.dp),
+            )
+        },
+        modifier = Modifier.fillMaxWidth().heightIn(min = PlanUITokens.actionMinHeight.dp),
+    ) { measurables, constraints ->
+        val target = PlanUITokens.actionMinHeight.dp.roundToPx()
+        val gap = PlanUITokens.space2.dp.roundToPx()
+        val sideLimit = ((constraints.maxWidth - gap) / 2).coerceAtLeast(target)
+        val leadingWidth =
+            maxOf(
+                target,
+                measurables[0].maxIntrinsicWidth(constraints.maxHeight),
+            ).coerceAtMost(sideLimit)
+        val trailingWidth =
+            maxOf(
+                target,
+                measurables[2].maxIntrinsicWidth(constraints.maxHeight),
+            ).coerceAtMost(sideLimit)
+        val inlineWidth = (constraints.maxWidth - 2 * maxOf(leadingWidth, trailingWidth) - 2 * gap).coerceAtLeast(0)
+        val naturalTitle = measurables[1].maxIntrinsicWidth(constraints.maxHeight)
+        val wrap = inlineWidth < maxOf(measurables[1].minIntrinsicWidth(constraints.maxHeight), (naturalTitle + 1) / 2)
+        val titleWidth =
+            minOf(
+                WizardMetrics.sheetTitleMaxWidth.dp.roundToPx(),
+                naturalTitle,
+                if (wrap) constraints.maxWidth else inlineWidth,
+            )
+        val loose = constraints.copy(minWidth = 0, minHeight = 0)
+        val title = measurables[1].measure(loose.copy(maxWidth = titleWidth))
+        val leading = measurables[0].measure(loose.copy(minWidth = leadingWidth, maxWidth = leadingWidth))
+        val trailing = measurables[2].measure(loose.copy(minWidth = trailingWidth, maxWidth = trailingWidth))
+        val actionsHeight = maxOf(leading.height, trailing.height)
+        val height = if (wrap) title.height + gap + actionsHeight else maxOf(title.height, actionsHeight)
+        layout(constraints.maxWidth, constraints.constrainHeight(height)) {
+            val actionY = if (wrap) title.height + gap else (height - actionsHeight) / 2
+            leading.placeRelative(0, actionY + (actionsHeight - leading.height) / 2)
+            trailing.placeRelative(
+                constraints.maxWidth - trailing.width,
+                actionY + (actionsHeight - trailing.height) / 2,
+            )
+            title.placeRelative((constraints.maxWidth - title.width) / 2, if (wrap) 0 else (height - title.height) / 2)
+        }
+    }
 }
 
 @Composable

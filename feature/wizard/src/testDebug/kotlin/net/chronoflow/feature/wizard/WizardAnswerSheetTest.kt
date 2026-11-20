@@ -8,6 +8,7 @@ import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -83,6 +84,17 @@ class WizardAnswerSheetTest {
             .assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.SelectableGroup))
         compose.onNodeWithTag("wizard.answer.time.free_day_bed").assertExists()
         compose.onNodeWithTag("wizard.answer.time.free_day_wake").assertExists()
+    }
+
+    @Test fun headerTitleIsCenteredBetweenTheSheetEdges() {
+        show()
+        val sheet = compose.onNodeWithTag("wizard.answer.free_day_times").getUnclippedBoundsInRoot()
+        val title = compose.onNodeWithTag("wizard.answer.title").getUnclippedBoundsInRoot()
+        assertEquals(
+            (sheet.left.value + sheet.right.value) / 2,
+            (title.left.value + title.right.value) / 2,
+            .5f,
+        )
     }
 
     @Test fun sameAsWorkdaysHidesTheTimes() {

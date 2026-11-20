@@ -67,6 +67,8 @@ class WizardBoardCaptureTest(
         }
         // Focus is granted only after SheetValue.Expanded, so it also waits out the native expansion.
         if (state.sheet != null) compose.onNodeWithTag("wizard.airport.query").assertIsFocused()
+        if (state.sleep?.openTime != null) compose.onNodeWithTag("wizard.time-sheet.title").assertIsFocused()
+        if (state.answerSheet != null) compose.onNodeWithTag("wizard.answer.title").assertIsFocused()
         compose.runOnIdle { keyboard?.hide() }
         compose.waitForIdle()
         captureWizard(
@@ -84,8 +86,8 @@ class WizardBoardCaptureTest(
             } else {
                 board
             },
-            state.sheet != null || state.discardDialogVisible || board == "PickerTime" ||
-                board.startsWith("WizardSheetFreeSleep"),
+            state.sheet != null || state.discardDialogVisible || state.sleep?.openTime != null ||
+                state.answerSheet != null,
         )
     }
 
