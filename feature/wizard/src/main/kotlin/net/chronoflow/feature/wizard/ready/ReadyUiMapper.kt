@@ -86,14 +86,58 @@ object ReadyUiMapper {
                     }
                 }
             }
-        val price = review?.price?.let { price(it, credits) }
+        val price =
+            review?.price?.let {
+                price(
+                    it,
+                    credits,
+                    active.isEditing,
+                    state.originalForm?.end?.kind,
+                    form.end.kind,
+                )
+            }
+        val sourceChanged =
+            state.sourceChange?.let { change ->
+                safely {
+                    ReadyText.capture { t ->
+                        WizardPresentation
+                            .sourceChangeSummary(
+                                change,
+                                review,
+                                review?.summary?.stayEnd ?: state.snapshotStayEnd,
+                                language,
+                                t,
+                            ).orEmpty()
+                    }
+                }.takeIf { it.pattern.isNotEmpty() }
+            }
         val failure = state.saveFailure
         val banner =
             when {
-                failure != null -> ReadyBannerUi.SaveFailed(failure.kind, snapshot.retrySeconds)
-                review?.status == PlanStatus.Modified -> ReadyBannerUi.Adjusted(review.reasons)
-                state.updated == true -> ReadyBannerUi.Updated(review?.summary?.line, review?.price?.let(::priceValue))
-                else -> null
+                failure != null -> {
+                    ReadyBannerUi.SaveFailed(failure.kind, snapshot.retrySeconds, active.isEditing)
+                }
+
+                sourceChanged != null -> {
+                    ReadyBannerUi.SourceChanged(sourceChanged)
+                }
+
+                review?.status == PlanStatus.Modified -> {
+                    ReadyBannerUi.Adjusted(review.reasons)
+                }
+
+                state.updated == true -> {
+                    ReadyBannerUi.Updated(
+                        review?.summary?.line,
+                        review?.price?.let {
+                            priceValue(it, active.isEditing)
+                        },
+                    )
+                }
+
+                else -> {
+                    null
+                }
             }
         val enabled =
             !snapshot.reviewing && !snapshot.persistenceFailed && !snapshot.closed && snapshot.retrySeconds == 0 &&
@@ -119,6 +163,10 @@ object ReadyUiMapper {
                             ReadyButtonLabel.Retry
                         }
 
+                        active.isEditing -> {
+                            ReadyButtonLabel.Update
+                        }
+
                         else -> {
                             ReadyButtonLabel.MakePlan
                         }
@@ -140,6 +188,7 @@ object ReadyUiMapper {
             footer,
             credits,
             snapshot.reviewing,
+            editing = active.isEditing,
         )
     }
 
@@ -180,8 +229,12 @@ object ReadyUiMapper {
         }
     }
 
-    fun priceValue(price: ApiReviewPrice): PriceValue =
+    fun priceValue(
+        price: ApiReviewPrice,
+        editing: Boolean = false,
+    ): PriceValue =
         when {
+            editing && price.cost == 0 -> PriceValue.Free
             price.unlimited -> PriceValue.Unlimited
             price.cost == 0 -> PriceValue.Free
             price.cost == 1 -> PriceValue.OneCredit
@@ -191,17 +244,32 @@ object ReadyUiMapper {
     fun price(
         price: ApiReviewPrice,
         credits: WizardCredits?,
+        editing: Boolean = false,
+        originalEndKind: String? = null,
+        endKind: String? = null,
     ): ReadyPriceUi =
         ReadyPriceUi(
             credits != WizardCredits.unlimited,
-            priceValue(price),
+            priceValue(price, editing),
             buildList {
-                if (credits == WizardCredits.free) add(PriceLine.FreeTrip)
+                if (credits == WizardCredits.free && !editing) add(PriceLine.FreeTrip)
                 if (credits == WizardCredits.oneFree) add(PriceLine.FreeHome)
                 if (!price.unlimited &&
                     price.cost > 0
                 ) {
                     add(PriceLine.Balance(price.balance, credits == WizardCredits.unavailable))
+                }
+                if (editing) {
+                    if (originalEndKind == "return_legs" && endKind != "return_legs") add(PriceLine.NoRefund)
+                    add(
+                        if (endKind == "return_legs" &&
+                            originalEndKind != "return_legs"
+                        ) {
+                            PriceLine.EditReturnNote
+                        } else {
+                            PriceLine.EditNote
+                        },
+                    )
                 }
             },
         )
