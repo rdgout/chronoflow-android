@@ -7,6 +7,7 @@ import net.chronoflow.core.wizard.model.MemberWizardModel
 import net.chronoflow.core.wizard.model.navigationPath
 import net.chronoflow.core.wizard.model.progress
 import net.chronoflow.core.wizard.model.showsBack
+import net.chronoflow.core.wizard.model.sleepComplete
 import net.chronoflow.feature.wizard.debug.FixedAirportSearch
 import net.chronoflow.feature.wizard.debug.WizardBoardCaptureSeed
 import net.chronoflow.feature.wizard.debug.WizardMemoryDraftStore
@@ -36,12 +37,19 @@ internal fun TestScope.boardState(
     val model = MemberWizardModel(draft, WizardMemoryDraftStore(), backgroundScope, { WizardBoardCaptureSeed.now })
     try {
         val presentation = WizardBoardCaptureSeed.presentation(board)
-        val active = TripWizardUiState.Active(model.snapshots.value, model.progress, model.navigationPath)
+        val active =
+            TripWizardUiState.Active(
+                model.snapshots.value,
+                model.progress,
+                model.navigationPath,
+                sleepComplete = model.sleepComplete,
+            )
         val ui =
             WizardUiState.from(
                 active,
                 dialog = presentation.discardDialogVisible,
                 now = WizardBoardCaptureSeed.now,
+                openTime = presentation.timeSheet,
             )
         val sheet = ui.sheet
         val results =

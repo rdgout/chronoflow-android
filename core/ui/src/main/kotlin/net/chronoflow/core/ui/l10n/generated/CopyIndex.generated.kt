@@ -1048,6 +1048,7 @@ object CopyIndex {
             "Try the city name, like “Tokyo”, or the 3-letter code on your ticket, like “NRT”." -> CopyEntry(R.string.android_wizard_search_empty_body, false, emptyList())
             "We couldn't search airports." -> CopyEntry(R.string.android_wizard_search_error_title, false, emptyList())
             "Check your connection and try again." -> CopyEntry(R.string.android_wizard_search_error_body, false, emptyList())
+            "Steps of 5 minutes." -> CopyEntry(R.string.android_wizard_time_sheet_steps, false, emptyList())
             else -> null
         }
 }

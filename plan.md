@@ -492,6 +492,7 @@ Every screen scrolls when height-constrained. The minimum width is 280 dp; below
 | Passkeys intro | "Sign in with your fingerprint, face or screen lock instead of your password." | "Log in met je vingerafdruk, gezicht of schermvergrendeling in plaats van je wachtwoord." | settings "Sign in with Face ID, a fingerprint or your screen lock instead of your password." |
 | Notifications blocked step | "Tap Open phone settings and turn on notifications for ChronoFlow." | "Tik op Telefooninstellingen openen en zet meldingen voor ChronoFlow aan." | reminders "Open your phone's Settings.", "Tap Notifications, then ChronoFlow." and "Turn on Allow notifications." |
 | Recovery-codes file name | "Recovery codes.txt" | "Herstelcodes.txt" | — |
+| `android_wizard_time_sheet_steps` (needs review) | Steps of 5 minutes. | Stappen van 5 minuten. | — |
 | `android_wizard_airport_field` (needs review) | Airport or city | Luchthaven of stad | wizard "Search airports" |
 | `android_wizard_search_hint` (needs review) | Type at least 2 letters to search. | Typ minstens 2 letters om te zoeken. | — |
 | `android_wizard_search_searching` (needs review) | Searching airports… | Luchthavens zoeken… | — |
@@ -2831,7 +2832,7 @@ Implementation commits (brief §7):
 - [x] **Time picker sheet**: neutral Material dial, hoisted state, shared colors, gallery and structural guards (9e Task 2).
 - [x] **Board drafts**: guest/member sleep, supported questions, excluded and free-day sheet seeds, with board capture profiles (9e Task 3).
 - [ ] **Sleep** (`WizardSleep`).
-  - Usual bedtime and wake time use the M3 `TimePicker` in a sheet, rounded to 5 min on Done (OQ-A8, `PickerTime`).
+  - [x] Usual bedtime and wake time use the M3 `TimePicker` in a sheet, rounded to 5 min on Done (OQ-A8, `PickerTime`).
   - The free-day times sheet (`WizardSheetFreeSleep`).
 - [ ] **Questions.** Age band (`WizardQAge`) and shift work (`WizardQShift`, `WizardQShiftNL`, `WizardQShiftLarge`). They auto-advance after 250 ms and use `role = RadioButton`.
 - [ ] **Excluded states** (`WizardExcluded`, `WizardExcludedShift`), for guests, saved shift-work answers and edits.

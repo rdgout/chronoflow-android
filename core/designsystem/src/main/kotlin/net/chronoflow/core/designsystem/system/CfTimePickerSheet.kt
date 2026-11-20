@@ -2,6 +2,7 @@
 
 package net.chronoflow.core.designsystem.system
 
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -10,20 +11,27 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.TimePickerDefaults
 import androidx.compose.material3.TimePickerState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.flow.first
 import net.chronoflow.core.designsystem.component.CfButton
 import net.chronoflow.core.designsystem.component.CfButtonSize
 import net.chronoflow.core.designsystem.component.CfButtonStyle
@@ -52,7 +60,13 @@ fun CfTimePickerSheet(
     val colors = CfTheme.colors
     val scheme = MaterialTheme.colorScheme
     val pickerScheme = remember(scheme, colors.card) { scheme.copy(surface = colors.card) }
-    CfModalBottomSheet(onDismissRequest = onDismiss) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val titleFocus = remember { FocusRequester() }
+    LaunchedEffect(sheetState) {
+        snapshotFlow { sheetState.currentValue }.first { it == SheetValue.Expanded }
+        titleFocus.requestFocus()
+    }
+    CfModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         Column(
             modifier
                 .fillMaxWidth()
@@ -70,7 +84,11 @@ fun CfTimePickerSheet(
             Column(verticalArrangement = Arrangement.spacedBy(PlanUITokens.space1.dp)) {
                 Text(
                     title,
-                    Modifier.testTag("$testTag.title").semantics { heading() },
+                    Modifier
+                        .testTag("$testTag.title")
+                        .focusRequester(titleFocus)
+                        .focusable()
+                        .semantics { heading() },
                     style = CfTheme.type.style(CfTypeScale.screenCardTitle),
                     color = colors.foreground,
                 )

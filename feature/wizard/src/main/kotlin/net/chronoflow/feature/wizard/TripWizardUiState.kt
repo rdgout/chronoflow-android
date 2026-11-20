@@ -11,6 +11,7 @@ sealed interface TripWizardUiState {
         val wizard: MemberWizardSnapshot,
         val progress: Double,
         val path: List<MemberWizardDestination>,
+        val sleepComplete: Boolean = false,
     ) : TripWizardUiState
 
     data class LoadFailed(

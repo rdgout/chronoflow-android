@@ -67,6 +67,8 @@ import net.chronoflow.core.ui.R
 import net.chronoflow.feature.wizard.TripWizardViewModel
 import net.chronoflow.feature.wizard.returnchoice.WizardReturnStep
 import net.chronoflow.feature.wizard.search.AirportSearchSheet
+import net.chronoflow.feature.wizard.sleep.WizardSleepStep
+import net.chronoflow.feature.wizard.sleep.WizardSleepTimeSheet
 import net.chronoflow.feature.wizard.times.WizardTimesStep
 import net.chronoflow.feature.wizard.ui.NavTitle
 import net.chronoflow.feature.wizard.ui.WizardChromeUi
@@ -102,6 +104,7 @@ fun WizardScreen(
     WizardScaffold(state, onEvent)
     WizardBackHandling(state, onEvent)
     state.sheet?.let { AirportSearchSheet(it, state.search, state.retryEnabled, onEvent) }
+    state.sleep?.openTime?.let { WizardSleepTimeSheet(it, onEvent) }
 }
 
 @Composable
@@ -356,8 +359,8 @@ private fun WizardStepContent(
         ) {
             val where = state.where
             val times = state.times
-            val titleCopy = where?.title ?: times?.title ?: state.returnChoice?.title
-            val subtitleCopy = where?.subtitle ?: times?.subtitle
+            val titleCopy = where?.title ?: times?.title ?: state.returnChoice?.title ?: state.sleep?.title
+            val subtitleCopy = where?.subtitle ?: times?.subtitle ?: state.sleep?.subtitle
             if (titleCopy != null) {
                 val titleFocus = remember { FocusRequester() }
                 Column(
@@ -395,6 +398,7 @@ private fun WizardStepContent(
                 }
                 LaunchedEffect(key) { titleFocus.requestFocus() }
                 when {
+                    state.sleep != null -> WizardSleepStep(state.sleep, onEvent)
                     where != null -> WhereStep(where, onEvent)
                     times != null -> WizardTimesStep(times, onEvent)
                     state.returnChoice != null -> WizardReturnStep(state.returnChoice, onEvent)

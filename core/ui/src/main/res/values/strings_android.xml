@@ -23,4 +23,6 @@
     <string name="android_wizard_search_error_title">We couldn\'t search airports.</string>
     <!-- android: Check your connection and try again. (review: needs review) -->
     <string name="android_wizard_search_error_body">Check your connection and try again.</string>
+    <!-- android: Steps of 5 minutes. (review: needs review) -->
+    <string name="android_wizard_time_sheet_steps">Steps of 5 minutes.</string>
 </resources>

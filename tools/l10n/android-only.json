@@ -96,6 +96,14 @@
       "replaces": [],
       "review": "needs review",
       "comment": "OQ-9c-3: TripSearchStates; Dutch web or proposed copy."
+    },
+    {
+      "name": "android_wizard_time_sheet_steps",
+      "en": "Steps of 5 minutes.",
+      "nl": "Stappen van 5 minuten.",
+      "replaces": [],
+      "review": "needs review",
+      "comment": "OQ-9e-4: PickerTime board footnote; the iOS compact picker has none."
     }
   ]
 }

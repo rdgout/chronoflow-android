@@ -13,6 +13,7 @@ import net.chronoflow.core.wizard.model.routeComplete
 import net.chronoflow.feature.wizard.TripWizardUiState
 import net.chronoflow.feature.wizard.returnchoice.WizardReturnUi
 import net.chronoflow.feature.wizard.shell.WizardStepKey
+import net.chronoflow.feature.wizard.sleep.WizardSleepUi
 import net.chronoflow.feature.wizard.times.WizardPicker
 import net.chronoflow.feature.wizard.times.WizardTimesUi
 import net.chronoflow.feature.wizard.times.flightTimesComplete
@@ -241,6 +242,10 @@ data class WizardChromeUi(
             val where = step == MemberWizardStep.whereTo || step == MemberWizardStep.returnRoute
             val complete =
                 when (step) {
+                    MemberWizardStep.sleep -> {
+                        active.sleepComplete
+                    }
+
                     MemberWizardStep.outbound -> {
                         flightTimesComplete(active.wizard.draft, false)
                     }
@@ -267,6 +272,7 @@ data class WizardChromeUi(
                 when (step) {
                     MemberWizardStep.whereTo -> "where"
                     MemberWizardStep.returnRoute -> "return-route"
+                    MemberWizardStep.sleep -> "sleep"
                     MemberWizardStep.outbound -> "outbound"
                     MemberWizardStep.returnFlight -> "return-flight"
                     else -> null
@@ -392,6 +398,7 @@ data class WizardUiState(
     val retryEnabled: Boolean = true,
     val times: WizardTimesUi? = null,
     val returnChoice: WizardReturnUi? = null,
+    val sleep: WizardSleepUi? = null,
 ) {
     companion object {
         fun from(
@@ -402,6 +409,7 @@ data class WizardUiState(
             now: Instant = Instant.EPOCH,
             continueFailures: Int = 0,
             picker: WizardPicker? = null,
+            openTime: String? = null,
         ): WizardUiState {
             val draft = active.wizard.draft
             val key =
@@ -432,6 +440,12 @@ data class WizardUiState(
                             continueFailures,
                             picker,
                         )
+                    } else {
+                        null
+                    },
+                sleep =
+                    if (key == WizardStepKey.Sleep) {
+                        WizardSleepUi.from(draft, continueFailures, timeFormat, openTime)
                     } else {
                         null
                     },
