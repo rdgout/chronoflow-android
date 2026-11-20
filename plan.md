@@ -2942,7 +2942,7 @@ Implementation commits (brief §7):
   - After process death, the save resumes in Calculating with the same identity (`14 §3.4`).
   - No automatic retry.
 - [x] **After save.** Open the trip page with `awaitingSync = true`, and set the first-trip reminders offer to `pending` (queued by 9b’s `MemberWizardStore.didSave`); 12c consumes it.
-- [ ] **Tests.**
+- [x] **Tests.**
   - Price-state mapping from `wizard/credits.json` and the related fixtures.
   - Process-death resume: Robolectric recreates the screen with a fresh graph and the drafts row.
   - Guards.
