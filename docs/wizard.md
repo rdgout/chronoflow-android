@@ -608,3 +608,151 @@ Final status: all functional assertions, captures, layout guards, Lint and token
 ### Final cleanup
 
 The host's `make check` passed on `eb0edba7`. Removed `returningToOutboundDoesNotReplayHomeFailureFeedback` and its test-only saveable host/imports because they supplied a pre-corrected count and could not fail for the production ViewModel bug. The remaining `WizardTimesStepTest` has nine cases; together with nine `TripWizardViewModelTimesTest` cases and the recomposition case, the retained group has 19. Historical execution totals above remain measurements of their original runs. `make targeted ONLY="feature:wizard:WizardTimesStepTest"` ran once: all nine cases pass in 6.53 s tier wall, with zero budget overruns. No other test or build command ran for this cleanup.
+
+## Phase 9e
+
+2026-11-20. [Brief](phases/phase-9e-wizard-sleep-questions.md). Sleep, age/shift-work questions, excluded states, the free-day answer sheet and server route errors are implemented. The rendered-board comparison remains an external acceptance step; the captures below are ready for the orchestrator.
+
+### Sleep clocks and state
+
+`WizardClockRounding` rounds to the nearest five minutes, with remainders 0–2 down and 3–4 up, wrapping midnight: `07:12 → 07:10`, `07:13 → 07:15`, `23:58 → 00:00`. It writes ASCII `HH:mm`, independently of the process locale. Only `habitual_bed`, `habitual_wake`, `free_day_bed` and `free_day_wake` use it. Flight times retain 9d's minute precision.
+
+The ViewModel and composable both use `WizardClockRounding.change(stored, hour, minute, touched)`. Untouched Done, a result equal to the stored clock, Cancel, Back and scrim dismissal write nothing and produce no Selection haptic. Only a changed confirm writes and produces one Selection. An off-grid stored value such as `07:12` survives untouched Done. Empty clocks show the generated Time placeholder; the unstored dial default is 12:00.
+
+`CfTimePickerSheet` stays neutral: no rounding or feature copy. Its normal, defaulted `TimePickerState` parameter supports state hoisting without a test-only callback. M3 saves the in-progress dial across recreation; the ViewModel holds the open field and answer-sheet edits. Unsaved sheet edits and an open time picker do not survive process death. A recovered `promptSheetID` reloads the answer sheet from the recovered review and saved profile.
+
+Pills follow the account time format. The native dial follows `DateFormat.is24HourFormat` and the application language. The title takes focus after `SheetValue.Expanded`. Time rows are single merged targets with label and value/not-set semantics. The chronotype grid measures equal-height rows inside layout and becomes one column below 320 dp available width. Not sure retains the `chronotype` key with JSON null. Only the existing model validates the 180–840 minute night, clears errors on edits and advances to Checking. Failed Continue retains the per-step counter and emits one Warning without replay on recreation.
+
+The free-day header centers its title against the sheet edges, independent of the action widths, and stacks the title above the actions when the inline space is insufficient. Its geometry regression failed before the fix (pixel8 title center 207.43 dp versus sheet center 205.33 dp), then passed within 0.5 dp. No measured size is stored in state.
+
+### Board drafts and capture files
+
+Every capture is under `build/captures/`. Except PickerTime, profiles are 390 × 844 dp, density 3, zero insets. PickerTime is 375 × 812 dp. The Large board uses Dutch and font scale 1.3. Board names without NL use English; DarkNL uses Dutch and dark appearance.
+
+| Capture name | Draft |
+|---|---|
+| `WizardSleep` | Guest Sleep, 23:30–07:15, intermediate, progress 0.30 |
+| `PickerTime` | Guest Sleep with the bedtime sheet open; stored time 23:30 |
+| `WizardSheetFreeSleep`, `WizardSheetFreeSleepDarkNL` | Member Fine-tune seam, `free_day_times::` open, saved camel keys declared / 00:30 / 09:00; progress 0.80 |
+| `WizardQAge`, `WizardQAgeDarkNL` | Guest question 0, age only, no selection, disclaimer; progress 0.54 |
+| `WizardQShift`, `WizardQShiftNL`, `WizardQShiftLarge` | Guest question 1 of [age, shift], age 18–64, no shift selection; progress 0.64 |
+| `WizardExcluded`, `WizardExcludedDarkNL` | Guest, session age under 18, default note; progress 0.60 |
+| `WizardExcludedShift`, `WizardExcludedShiftDarkNL` | Member, shift answer only in savedProfile (`shiftWork = true`), Saved note; progress 0.60 |
+| `WizardSleepMember_noBoard` | Member Sleep, saved-for-next-time subtitle; progress 0.50 |
+| `WizardSleepError_noBoard` | Member Sleep, 23:00–01:00, `profile.habitual_bed` error; progress 0.50 |
+| `WizardQAgeMember_noBoard` | Member age question, no disclaimer; progress 0.60 |
+
+Guest board drafts are render-only until 11a. No guest board capture triggers generation. PickerTime is Robolectric-only; device checks seed WizardSleepMember. No retired board is registered.
+
+The single command `make captures ONLY=WizardSleep,PickerTime,WizardSheetFreeSleep,WizardQAge,WizardQShift,WizardExcluded` wrote exactly **13 board PNGs + 3 `_noBoard` PNGs** (tier wall **19.13 s**, zero timing overruns). After inspecting the images, the header-centering regression above was fixed, the 42-case matrix was rerun, and only the two free-day PNG outputs were refreshed with:
+
+```sh
+Scripts/run-tier.sh 9e-header-captures --results 'feature/wizard/build/test-results/testDebugUnitTest/*.xml' --timings 'feature/wizard/build/cf-timings/testDebugUnitTest/*.json' -- ./gradlew --console=plain :feature:wizard:testDebugUnitTest -Pcf.tier=capture -Pcf.captureOnly=WizardSheetFreeSleep --tests '*WizardBoardCaptureTest'
+```
+
+That refresh passed in **8.36 s command wall**, selected the existing capture class and wrote two outputs (68 other cases skipped at the output filter). An attempted parameter-level Gradle filter matched no tests; it produced no capture evidence and was replaced by the class/output filter above. The PNG manifest, dimensions and hashes are in `build/phase9e-evidence/capture-manifest.json`; PickerTime is 1125 × 2436 px and the other files are 1170 × 2532 px. No stored Roborazzi references were recorded.
+
+### Copy and behavior decisions
+
+Server questions and reasons use the plan-copy catalog, with these substitutions for the raw board wording:
+
+| State | Server key used |
+|---|---|
+| Age | Which age group are you in? |
+| Shift work | In the past 14 days, have you worked night or rotating shifts, or had a very irregular sleep schedule? |
+| Under-18 exclusion | This plan is not available for travellers under 18. |
+| Shift exclusion | This plan is not available if, in the past 14 days, you have worked night or rotating shifts or had a very irregular sleep schedule. |
+| Free-day sheet | What time do you go to bed and wake up on free days? |
+
+Dutch comes from the same catalog, including “In welke leeftijdsgroep zit je?” and “Hoe laat ga je op vrije dagen naar bed en sta je op?”. The question eyebrow uses the generated wizard resource, uppercased with the application locale. Titles longer than 80 characters use `wizardLongTitle` (24/30); the shift title is long in both languages. Option order follows the age shape, or No then Yes for shift work. An unknown age option retains its raw label and value. Pending answers disable semantics without changing the drawing and advance through the model's existing 250 ms clock. Only guest age has the disclaimer. Back cancels the pause and skips Checking on the first question.
+
+The formatter travels as an explicit parameter through a compatible `WizardScreen` overload. Existing positional and trailing-lambda calls retain their signature. `TripWizardDependencies.copyFormatter()` defaults to null; the ViewModel loads it once. Production dependencies cache the formatter behind a Mutex and share AppGraph's existing `CopyCatalogProvider`, whose resource read and decode run on injected IO. No second catalog loader was added. A null formatter renders empty server copy; unknown server keys keep their key text. Unknown wizard-table keys retain the existing generic-error fallback.
+
+`fieldCopy` checks the plan catalog first, preserving FieldMessage arguments, then the generated wizard table. It serves Where/home-route errors and answer-sheet errors. This closes OQ-A399 for those surfaces; Times retains its 9d behavior until 9f. Route errors are restricted to the route's global leg range; their rows are invalid and their lines are polite live regions. Any route edit clears them through the existing model.
+
+The answer sheet loads review answers before saved camel keys, normalizes error paths with the existing journey mapper and preserves error arguments. Only FreeDayTimes is supported here. Declared clocks must exist before Done is enabled; validation uses `WizardOptionalAnswer`. Validation and ReviewExpired map to the existing error. A final submit regression also proved that malformed trip answer types can throw JsonDecodingException; the submit path now maps runtime failures to that same field error, after rethrowing caller cancellation. The stale-review fixture uses a real stale trip-leg path: the model does not check identity expiry in `answerOptional`.
+
+Excluded note precedence is Edit, then Saved, then Default. Footer Close always closes directly; header × closes a guest exclusion directly and asks a member with changes first. Change my answers calls the existing model: members clear only excluding answers (including saved ones) and recheck; guests restart at their first question. Only Excluded opts into the secondary footer and plain primary fill. `CfButton` gained a defaulted container override; existing button styles and 9d's primary remain unchanged.
+
+OQ-A418 settles OQ-A350: Sleep displays the model's **0.50**, even after ReturnFlight **0.55**. The existing progress bar already animates both directions; no progress-floor behavior was added. The former hold-at-55 text was a default, not a user decision.
+
+| Android-only copy (needs review) | en | nl |
+|---|---|---|
+| `android_wizard_time_sheet_steps` (OQ-A404) | Steps of 5 minutes. | Stappen van 5 minuten. |
+
+The string input, generated English and Dutch resources and plan approval row landed together. OQ-9e-1 through OQ-9e-18 are recorded as **OQ-A401–OQ-A418**.
+
+### Guard scope and comparison hand-off
+
+`WizardSleepQuestionGuardsTest` has exactly **42** cases; `WhereServerErrorGuardsTest` has exactly **3**. The light-only matrices are unchanged from the brief. The final 42-case header matrix passed in **7.99 s tier wall**, with zero overruns. The complete 45-case matrix passed in **9.33 s tier wall** before the header adjustment. The full module layout tier below rechecks all cases after that change.
+
+Where keeps 9c's shared-border exemption for `wizard.route.stops`. M3's AM/PM cells have 40 dp layout height and effective 48 dp hit areas. The new defaulted `nativeTouchTargets` matcher checks those actual hit areas only for Role.Button nodes exposing Selected inside `wizard.time-sheet`; every designed control retains the strict 48 dp layout guard. A wrapper regression checks both native period buttons' hit bounds. All existing guard callers retain their behavior.
+
+The PNGs were checked for clipping, missing content and native-window placement. **Rendered-board sign-off is pending with the orchestrator.** No Chromium launch was attempted. Compare all 13 board counterparts; fix or record every further difference. Expected differences are the server wording above, Material dial and drag handle, native 48 dp actions, the 64/72 dp option-height rule under Android font scaling, 9c's shell/progress, the Fine-tune seam behind the free-day sheet until 9f, and Sleep replacing GuestSleep behind PickerTime. PickerTime uses the seed's stored 23:30 rather than the raw board's 23:00. Phase 9f owns re-capturing the free-day sheet over the completed Fine-tune screen.
+
+| Swift source name | Kotlin surface |
+|---|---|
+| `sleepScreen` | `WizardSleepStep` |
+| `questionScreen` | `WizardQuestionStep` |
+| `excludedScreen` | `WizardExcludedStep` |
+| `WizardAnswerSheet` | `WizardAnswerSheet` / `WizardAnswerSheetState` |
+| `WizardTimeControl` | `WizardTimeRow` + `CfTimePickerSheet` |
+
+### Phase 9e verification
+
+`pixel` ran both seeded `WizardSleepTimeSheetDeviceTest` cases once: **en/24 h 2.501 s**, **nl/12 h 1.393 s**; command wall **12.57 s** / tier wall **12.46 s**. Both assertions observed zero IO StrictMode violations. The helper retains WizardOutbound as its default board for 9d; 9e passes WizardSleepMember explicitly. `pixel` remains running.
+
+Targeted results and final gate results are recorded below. Per-run JSON evidence and logs live in `build/phase9e-evidence/` and `build/phase9e-*.log`. First SDK/class warm-ups are distinct from warm-case budgets. No test budget was widened. No perf, timeline perf, baseline-profile, full check or other emulator tier was run: 9e has no wizard perf-budget row, and wizard profiles belong to Phase 13.
+
+| Targeted checks | Final result and elapsed evidence |
+|---|---|
+| `core:wizard:WizardClockRoundingTest` | 16 cases pass; final isolated Gradle build 1 s (rounded) |
+| `core:ui:CfTimePickerSheetGuardsTest`, `CfTimePickerDialogGuardsTest` | Sheet's five original cases and six unchanged dialog cases pass after the action target fix; 7 s initial build / 5 s isolated fix (Gradle rounded). Native period-hit regression passes separately in 6 s. |
+| `WizardSleepQuestionSeedTest`, `WizardBoardCaptureSeedTest`, `WizardFlightBoardSeedTest` | 72 cases pass, 3.74 s tier wall |
+| `TripWizardViewModelSleepTest`, `WizardSleepBoundaryTest`, `WizardSleepCompletenessTest`, `WizardSleepUiDerivationTest`, `WizardSleepStepTest`, `WizardChronotypeGridLayoutTest` | 29 cases pass, 7.49 s tier wall |
+| Existing `WizardHeaderTest`, `WizardReturnStepTest`, `WizardTimesStepTest`, untouched sleep confirm, picker wrapper | Pass unchanged; wizard / core-ui builds 7 s each (Gradle rounded), wrapper tier wall 7.16 s |
+| `WizardAnswerSheetStateTest`, `TripWizardViewModelAnswerSheetTest`, `WizardAnswerSheetTest` | Initial 15 JVM cases pass after the isolated error-path fix (3 s rounded fix build); six screen cases pass in 6.37 s tier wall; final answer-precedence + screen run passes in 7.00 s. Header regression added later; all seven screen cases pass in final quick. |
+| `TripWizardViewModelQuestionTest`, `WizardQuestionStepTest`, `WizardQuestionLargeTextTest`, `WizardServerCopyTest`, existing `app:SessionGraphsTest` | All pass: isolated last-answer fix 2 s (rounded); 15 screen/layout cases 7.31 s tier wall; pending-border/copy/app follow-up 12.70 s command wall |
+| `TripWizardViewModelExcludedTest`, `WizardExcludedStepTest`, existing `core:ui:CfButtonColorsTest` | All pass; wizard 6 s / button colors 5 s rounded builds, color tier wall 5.40 s |
+| `WhereServerErrorUiTest`, `WhereServerErrorStepTest` | All six pass after correcting the test-catalog placeholder; isolated field-copy fix 2.49 s tier wall |
+| Three new `KonsistRulesTest` methods, `QuestionKindsTest`, retired-board seed checks | All pass, 8.79 s command wall; 29 feature cases + 3 Konsist cases |
+| `WizardSleepQuestionGuardsTest`, `WhereServerErrorGuardsTest` | 42 + 3 pass, 9.33 s tier wall; final full 42-case run after header fix 7.99 s |
+| Malformed optional-answer regression | Fails before the runtime mapping with a suppressed JsonDecodingException; passes after, 2 s rounded build; final quick also passes it |
+
+Isolated SDK-36 first-case costs were **2,694 ms** (chronotype grid), **2,271 ms** (time-sheet wrapper), **2,910 ms** (answer sheet), **2,988 ms** (large-text questions), and **2,774 ms** (route-error guards). These use the 20 s cold-SDK allowance. Subsequent class warm-ups included Sleep 69 ms, Question 152 ms and the sleep/question matrix 100 ms; they use the separate 3 s allowance. In final quick, Phase 9e warm cases were at most **268 ms**.
+
+Final Lint passed once for `:app`, `:feature:wizard`, `:core:designsystem`, `:core:ui` and `:core:testing-compose`: **20.28 s command wall**. The same modules' layout-tier invocation passed in **21.33 s command wall / 21.25 s tier wall**, with **587 collected/measured cases**, zero overruns and zero hangs (app 70, wizard 246, core-ui 263, design-system 8; testing-compose has no local layout cases and is exercised through its consumers). All layout warm cases were ≤ **251 ms**. The existing wizard guard matrices and 9c/9d screens passed unchanged.
+
+`make quick` ran **once**. Gradle's test assertions and Spotless passed, but the timing collector exited 3 after **55.41 s command wall / 55.35 s tier wall**, with exactly these two untouched overruns against 1,000 ms:
+
+- `net.chronoflow.core.datamock.MockSeedRefreshTests#restoresTenDayOldSeedWithoutLosingUserStateLegacyAnchor`: **1,012 ms**.
+- `net.chronoflow.app.RootThemeTest#rootProvidesReduceMotionAndUsesTheSuppliedFontBarrier`: **1,576 ms**.
+
+There were no hangs or other collector errors. The quick collector contains 4,667 measured/collected or reused cases; no Phase 9e case exceeded its budget. Per the user's host-load rule, neither test nor quick was retried and neither untouched test was changed. Quick stopped before build-logic, tooling and serial timing, so those remaining stages were run separately once; their results follow.
+
+| Remaining quick stage | Result |
+|---|---|
+| Build logic | 37 passing XML results collected from the up-to-date task; 1.91 s command wall / 1.86 s tier wall |
+| Script tooling | 168 tests pass in 20.693 s (20.94 s command including the following failed parity invocation) |
+| Contracts | 24 cases passed initially; the parity case initially lacked Makefile's `IOS_REPO` / `WEB_REPO` environment. Only that case was rerun with those variables: pass, 0.14 s command wall. |
+| Strings | 49 tests pass; 0.08 s command wall |
+| Icons | 9 tests pass; 0.11 s command wall |
+| Serial timing | 7 cases pass, zero overruns; 3.10 s command wall / 3.05 s tier wall |
+
+The manual parity command was corrected to:
+
+```sh
+IOS_REPO=/Users/rickgout/Sites/chronoflow-ios WEB_REPO=/Users/rickgout/Sites/chronoflow-new python3 -I -m unittest discover -s tools/contracts-gen -t tools/contracts-gen -p 'test_*.py' -k test_matches_ios_generated_swift
+```
+
+Its original output was `AssertionError: set IOS_REPO and WEB_REPO to run the iOS parity test (make exports them)`. No source change was needed. The earlier targeted capture-filter attempt was:
+
+```sh
+make targeted ONLY="feature:wizard:WizardBoardCaptureTest#capturesTheBoardState*WizardSheetFreeSleep*"
+```
+
+It returned `No tests found for given includes: [*.WizardBoardCaptureTest.capturesTheBoardState*WizardSheetFreeSleep*](--tests filter)`. The successful class/output-filter capture command above replaced it; no required command remains blocked by the sandbox.
+
+Step 0 found no additional upstream-name mismatch and needed no standalone brief-refresh commit. Later brief notes landed with their tasks: normal state hoisting instead of a main-source test callback; copy-render helpers needed by Task 5; non-null prompt answers, normalized error paths and a real stale-leg ReviewExpired fixture; narrowly scoped native AM/PM hit-area checks; and runtime submit-failure mapping. The final malformed-answer fix is its own signed commit because it was discovered after the task commits; no history was rewritten.
+
+Tracked changes in all three read-only source repositories remain absent. Existing untracked future-phase briefs in this checkout were left untouched. No new external dependency, initializer, manifest entry, native library, secret-storage path or startup/timeline implementation was added.
