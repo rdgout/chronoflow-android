@@ -36,7 +36,7 @@ class ShellViewModelOverlayTest {
         assertEquals(initial.stacks, holder.state.stacks)
     }
 
-    private class Tracked : ViewModel() {
+    private class TrackedViewModel : ViewModel() {
         var cleared = false
 
         override fun onCleared() {
@@ -46,15 +46,15 @@ class ShellViewModelOverlayTest {
 
     @Test fun closingClearsTheOverlayStoreBeforeTheNextOpen() {
         val holder = ShellViewModel(ShellNav.initial())
-        val factory = viewModelFactory { initializer { Tracked() } }
+        val factory = viewModelFactory { initializer { TrackedViewModel() } }
         holder.push(Route.Wizard(WizardMode.Create))
         val firstOwner = holder.overlayOwner
-        val first = ViewModelProvider.create(firstOwner, factory)[Tracked::class.java]
+        val first = ViewModelProvider.create(firstOwner, factory)[TrackedViewModel::class.java]
         holder.closeWizard(WizardExit.Trips)
         assertTrue(first.cleared)
         holder.push(Route.Wizard(WizardMode.Create))
         assertNotSame(firstOwner, holder.overlayOwner)
-        val next = ViewModelProvider.create(holder.overlayOwner, factory)[Tracked::class.java]
+        val next = ViewModelProvider.create(holder.overlayOwner, factory)[TrackedViewModel::class.java]
         assertNotSame(first, next)
         holder.closeWizard(WizardExit.Trips)
         assertTrue(next.cleared)

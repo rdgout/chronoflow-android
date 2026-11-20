@@ -167,13 +167,13 @@ class StringParityTest {
         val main = sets.first { it.first == "main" }.second
         val formats = setOf("app_name", "plan_day_title_date", "plan_title_comma_date", "ui_refresh_feedback_separator")
         val ios = main.en.filterKeys { !it.startsWith("android_") && it !in formats }
-        assertThat(ios.values.count { !it.plural }).isEqualTo(922)
+        assertThat(ios.values.count { !it.plural }).isEqualTo(921)
         assertThat(ios.values.count { it.plural }).isEqualTo(31)
         assertThat(
             main.nl
                 .filterKeys { !it.startsWith("android_") }
                 .values
                 .count { !it.plural },
-        ).isEqualTo(921)
+        ).isEqualTo(920)
     }
 }

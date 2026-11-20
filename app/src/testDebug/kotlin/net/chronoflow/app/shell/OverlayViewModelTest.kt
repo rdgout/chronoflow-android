@@ -27,7 +27,7 @@ import org.robolectric.annotation.Config
 class OverlayViewModelTest {
     @get:Rule val compose = createComposeRule()
 
-    private class Model(
+    private class TestViewModel(
         val number: Int,
     ) : ViewModel()
 
@@ -40,8 +40,8 @@ class OverlayViewModelTest {
         compose.setContent {
             val frame = tick.intValue
             CompositionLocalProvider(LocalViewModelStoreOwner provides owner.value) {
-                val factory = viewModelFactory { initializer { Model(++creations) } }
-                val model: Model = rememberOverlayViewModel("wizard", factory, CreationExtras.Empty)
+                val factory = viewModelFactory { initializer { TestViewModel(++creations) } }
+                val model: TestViewModel = rememberOverlayViewModel("wizard", factory, CreationExtras.Empty)
                 SideEffect { shown = model.number }
                 Box(Modifier.testTag("frame.$frame"))
             }
