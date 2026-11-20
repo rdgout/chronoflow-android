@@ -2993,7 +2993,7 @@ Implementation commits (brief §7):
 Implementation commits:
 - [x] Task 1: prepared-row entry and first-screen back handling.
 - [x] Task 2: edit Ready mapping.
-- [ ] Task 3: edit Ready rendering and discard checks.
+- [x] Task 3: edit Ready rendering and discard checks.
 - [ ] Task 4: web end choice and duplicate subtitle.
 - [ ] Task 5: trip actions preparation and busy/failure states.
 - [ ] Task 6: app preparer and dependency wiring.

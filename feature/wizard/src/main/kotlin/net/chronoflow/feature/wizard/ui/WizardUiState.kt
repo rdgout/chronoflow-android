@@ -315,7 +315,7 @@ data class WizardChromeUi(
                 }
             return WizardChromeUi(
                 if (active.wizard.draft.state.edit == null) NavTitle.NewTrip else NavTitle.EditTrip,
-                step != MemberWizardStep.calculating && active.path.isNotEmpty() &&
+                !active.firstScreen && step != MemberWizardStep.calculating && active.path.isNotEmpty() &&
                     (step != MemberWizardStep.checking || (checking?.failure != null && !active.isEditing)),
                 step != MemberWizardStep.calculating,
                 active.progress.toFloat(),
