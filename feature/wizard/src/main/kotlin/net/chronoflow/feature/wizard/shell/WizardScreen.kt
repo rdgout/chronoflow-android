@@ -65,6 +65,7 @@ import net.chronoflow.core.designsystem.theme.CfTheme
 import net.chronoflow.core.designsystem.theme.LocalReduceMotion
 import net.chronoflow.core.ui.R
 import net.chronoflow.feature.wizard.TripWizardViewModel
+import net.chronoflow.feature.wizard.returnchoice.WizardReturnStep
 import net.chronoflow.feature.wizard.search.AirportSearchSheet
 import net.chronoflow.feature.wizard.times.WizardTimesStep
 import net.chronoflow.feature.wizard.ui.NavTitle
@@ -234,7 +235,24 @@ internal fun WizardFooter(
     step: WizardStepKey,
     onEvent: (WizardEvent) -> Unit,
 ) {
-    val id = chrome.footerId ?: return
+    val id = chrome.footerId
+    if (id == null) {
+        chrome.footerHint?.let {
+            Text(
+                it.resolve(),
+                Modifier
+                    .fillMaxWidth()
+                    .padding(
+                        horizontal = WizardMetrics.gutter.dp,
+                    ).padding(bottom = PlanUITokens.wizardHintBottom.dp)
+                    .testTag("wizard.return.hint"),
+                color = CfTheme.colors.mutedForeground,
+                style = CfTheme.type.style(CfTypeScale.wizardHint),
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            )
+        }
+        return
+    }
     Box(
         Modifier
             .fillMaxWidth()
@@ -324,7 +342,7 @@ private fun WizardStepContent(
     key: WizardStepKey,
     onEvent: (WizardEvent) -> Unit,
 ) {
-    Column(Modifier.fillMaxSize()) {
+    Column(Modifier.fillMaxSize().wizardBuiltStepBoundary(key)) {
         Column(
             Modifier
                 .weight(
@@ -338,7 +356,7 @@ private fun WizardStepContent(
         ) {
             val where = state.where
             val times = state.times
-            val titleCopy = where?.title ?: times?.title
+            val titleCopy = where?.title ?: times?.title ?: state.returnChoice?.title
             val subtitleCopy = where?.subtitle ?: times?.subtitle
             if (titleCopy != null) {
                 val titleFocus = remember { FocusRequester() }
@@ -379,6 +397,7 @@ private fun WizardStepContent(
                 when {
                     where != null -> WhereStep(where, onEvent)
                     times != null -> WizardTimesStep(times, onEvent)
+                    state.returnChoice != null -> WizardReturnStep(state.returnChoice, onEvent)
                 }
             } else {
                 WizardStepSeam(key)

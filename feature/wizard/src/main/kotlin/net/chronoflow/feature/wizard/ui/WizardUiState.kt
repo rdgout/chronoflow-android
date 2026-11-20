@@ -13,6 +13,7 @@ import net.chronoflow.core.wizard.model.WizardMode
 import net.chronoflow.core.wizard.model.route
 import net.chronoflow.core.wizard.model.routeComplete
 import net.chronoflow.feature.wizard.TripWizardUiState
+import net.chronoflow.feature.wizard.returnchoice.WizardReturnUi
 import net.chronoflow.feature.wizard.shell.WizardStepKey
 import net.chronoflow.feature.wizard.times.WizardTimesUi
 import net.chronoflow.feature.wizard.times.flightTimesComplete
@@ -269,6 +270,14 @@ data class WizardChromeUi(
                 },
                 complete && !closing && !active.wizard.persistenceFailed && !active.wizard.reviewing,
                 complete,
+                footerHint =
+                    if (step ==
+                        MemberWizardStep.returnChoice
+                    ) {
+                        WizardCopy("Tap an answer to continue.")
+                    } else {
+                        null
+                    },
             )
         }
     }
@@ -379,6 +388,7 @@ data class WizardUiState(
     val search: AirportSearchUi = AirportSearchUi.Hint,
     val retryEnabled: Boolean = true,
     val times: WizardTimesUi? = null,
+    val returnChoice: WizardReturnUi? = null,
 ) {
     companion object {
         fun from(
@@ -411,6 +421,18 @@ data class WizardUiState(
                 times =
                     if (key == WizardStepKey.Outbound || key == WizardStepKey.ReturnFlight) {
                         WizardTimesUi.from(draft, key == WizardStepKey.ReturnFlight, timeFormat, now, continueFailures)
+                    } else {
+                        null
+                    },
+                returnChoice =
+                    if (key ==
+                        WizardStepKey.ReturnChoice
+                    ) {
+                        WizardReturnUi.from(
+                            draft,
+                            active.wizard.choicePending,
+                            !closing && !active.wizard.persistenceFailed && !active.wizard.reviewing,
+                        )
                     } else {
                         null
                     },

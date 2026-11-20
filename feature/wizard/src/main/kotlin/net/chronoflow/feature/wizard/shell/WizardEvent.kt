@@ -6,6 +6,10 @@ import net.chronoflow.core.model.contracts.ApiAirportSuggestion
 import net.chronoflow.core.wizard.model.WizardAirportSheet
 
 sealed interface WizardEvent {
+    data class ChooseReturn(
+        val kind: String,
+    ) : WizardEvent
+
     data class SetDatePart(
         val index: Int,
         val arrival: Boolean,

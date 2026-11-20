@@ -37,6 +37,7 @@ import net.chronoflow.core.wizard.model.MemberWizardStep
 import net.chronoflow.core.wizard.model.RecoveryRejected
 import net.chronoflow.core.wizard.model.TripWizardAction
 import net.chronoflow.core.wizard.model.WizardAirportSheet
+import net.chronoflow.core.wizard.model.chooseReturn
 import net.chronoflow.core.wizard.model.finishFlightInput
 import net.chronoflow.core.wizard.model.finishOutboundStep
 import net.chronoflow.core.wizard.model.finishReturn
@@ -426,6 +427,18 @@ class TripWizardViewModel(
 
     fun onEvent(event: WizardEvent) {
         when (event) {
+            is WizardEvent.ChooseReturn -> {
+                val model = wizard
+                if (!closing.value && model != null &&
+                    (
+                        event.kind != "return_legs" || model.draft.form.end.kind == "return_legs" ||
+                            model.draft.form.legs.size < net.chronoflow.core.wizard.model.WizardForm.maxFlights
+                    )
+                ) {
+                    model.chooseReturn(event.kind)
+                }
+            }
+
             is WizardEvent.SetDatePart -> {
                 if (!closing.value) {
                     wizard?.setDatePart(

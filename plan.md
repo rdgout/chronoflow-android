@@ -2779,7 +2779,7 @@ Implementation commits (brief §7):
   - [x] Errors (`WizardOutboundErrors`, `WizardOutboundTwoErrors`).
   - [x] Three flights scroll under a fixed Continue (`WizardOutboundThree`).
   - [x] The past-arrival banner (`WizardOutboundPast`, `WizardReturnFlightPast`).
-- [ ] **Coming back?** (`WizardReturn*`): it auto-advances after 250 ms, and taps are ignored while it is pending.
+- [x] **Coming back?** (`WizardReturn*`): it auto-advances after 250 ms, and taps are ignored while it is pending.
 - [x] **Picker formats.** Pickers follow `DateFormat.is24HourFormat`, displayed values follow the account `timeFormat`, and the dialogs use the app language (OQ 46, `PickerDateTime`).
 - [ ] **Tests.**
   - [x] Date and time bounds on the JVM (9d Task 2).
