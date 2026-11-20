@@ -438,6 +438,7 @@ Commit: `feat(wizard): port credits, optional answers and wizard presentation`. 
 Commit: `docs(plan): record the phase 9a wizard decisions`. Ticks nothing.
 
 - Add OQ-9a-1 … OQ-9a-14 (§9) to `plan.md` "Open questions for the user" as **OQ-A349 … OQ-A362** (OQ-9a-n → OQ-A(348+n), tagged "(9a OQ-9a-n)"), each with its default and owner, in the existing table format after OQ-A348.
+- Additional port questions use OQ-A363 (the two `WizardMode` types and import alias), OQ-A364 (raw/normalized sleep-error routing) and OQ-A365 (pinned whole-number rating presentation). Each has its default and owner.
 - Under Phase 9b, add one line to "Delivers": "9a already ships `MemberWizardModel`, `WizardChecking.run` and the 250 ms choice delay; 9b hosts the model, wires the store and service, and ports the remaining suites (9a brief §10.2)." Do not edit the 9b brief.
 
 ---

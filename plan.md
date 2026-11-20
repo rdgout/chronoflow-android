@@ -932,6 +932,23 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A346 | (8 OQ-8-10) 5d's Custom Tab opener (`PolicyOpener`) lives in `:feature:auth`, which `:feature:onboarding` cannot use. | Phase 8 adds `PolicyLinks` in `:core:ui` with the same behaviour (no toolbar colour) and leaves 5d's code alone; a later cleanup may make 5d's opener delegate to it. | 8 |
 | OQ-A347 | (8 OQ-8-11) Hiding the tab bar under the replay needs a "no bar" layout that 6a's `CfNavLayout { Bar, Rail }` lacks. | Add `CfNavLayout.None` (`NavigationSuiteType.None`), chosen while the top entry `hidesShellChrome()`, with full insets for the content; no hide/show animation API (6a OQ-6a-9 still holds). Alternative not taken: 6a's full-screen `overlay` layer, which has no per-entry ViewModel store. | 8 |
 | OQ-A348 | Walkthrough progress height differs between the old brief and Phase 7. | Reuse OQ-A334: native `CfLinearProgress`, 80 × 6 dp. Pinned walkthrough reuses `DayProgressRow` and specifies no different height. | 8 |
+| OQ-A349 | (9a OQ-9a-1) The plan gives 9b "checking timers / 250 ms" and the ViewModel. Where does the iOS model class (`MemberWizardModel`) live? | **9a** ports it as a pure class on an injected scope; 9b hosts it in `TripWizardViewModel` and owns the DB store, service and search. 9b's timer items become wiring and integration tests. | 9a, 9b |
+| OQ-A350 | (9a OQ-9a-2) Sleep after a return flight: no board value; the model value (0.50) is below ReturnFlight 55 | 0.50 on every sleep step, as plan OQ-A36 / `06` OQ 1 ("sleep 50"); 9c's bar never animates downward, so it holds at 55 | 9a, 9c |
+| OQ-A351 | (9a OQ-9a-3) Edit progress: iOS floor 0.95; every edit board draws 100 | 1.0 on every edit step | 9a, 9c |
+| OQ-A352 | (9a OQ-9a-4) Guest "checking your answers": no board value | 0.64 on `checking` and `excluded` while checking answers (bar holds at the last question); first check 0.42 (`WizardCheckingGuest`); No plan otherwise 0.60 (`WizardExcluded`, guest) | 9a, 9c |
+| OQ-A353 | (9a OQ-9a-5) Back on Duplicate's Times and edit Checking failure (`06` OQ 2) | Board: `firstScreen`, no pop; system back acts as × (9c) | 9a, 9c |
+| OQ-A354 | (9a OQ-9a-6) Date text: Apple templates vs fixed tables | Fixed en/nl tables with 0d's `Language`; en year form `EEE, d MMM y` keeps Apple's comma [A] | 9a |
+| OQ-A355 | (9a OQ-9a-7) iOS combined date-time pill (`formatLocal`, its test) | Not ported: Android uses separate date and time pills (`06` OQ 4) | 9d, 9e |
+| OQ-A356 | (9a OQ-9a-8) `"{{flight}} · via {{airports}}"` is used by `flightSummary` but missing from the iOS wizard catalog | Model emits the key; 9g adds an Android-only string (en and nl) and removes the test exception; report the gap to the iOS session | 9g |
+| OQ-A357 | (9a OQ-9a-9) iOS fingerprints are `Data` | Canonical sorted-key JSON `String` | 9a, 9b |
+| OQ-A358 | (9a OQ-9a-10) iOS strips `guestSecret` only from the guest record | Strip it from every record payload | 9a, 11a |
+| OQ-A359 | (9a OQ-9a-11) Swift `mutating` structs | Immutable data classes with copy-returning functions | 9a |
+| OQ-A360 | (9a OQ-9a-12) Checking clock unit | `Long` milliseconds (no `Double` rounding at 1199/1200) | 9a, 9b |
+| OQ-A361 | (9a OQ-9a-13) iOS `#if DEBUG` board hooks on the model | Not ported; the seeds phase adds what it needs | 9c–9h |
+| OQ-A362 | (9a OQ-9a-14) `neutralPreferencesPersistAndReachReviewWithoutMedicalKeys` needs the iOS DB | Ported in 9a against the in-memory store, because it proves the no-health-data rule; 9b does not port it again | 9a, 9b |
+| OQ-A363 | (9a) `WizardMode` is also a navigation type with Create/Edit/Duplicate cases. | Keep the Swift `net.chronoflow.core.wizard.model.WizardMode` name for member/guest. Callers importing both types in 9b use an import alias; leave the navigation type and landed routing unchanged. | 9b |
+| OQ-A364 | (9a) The pinned journey mapper normalizes `profile.habitual_bed` to `profile.habitualBed`, while the pinned sleep-routing guard compares snake-case paths. | Keep the journey mapper and its ported tests. Compare raw and normalized sleep paths in the wizard failure guard so the error returns to Sleep, as the 9a brief requires. | 9a, 9b, 9e |
+| OQ-A365 | (9a) The pinned default rating `NumberFormatter` rounds to whole numbers: 1.5 → 2, 2.5 → 2, 9.9 → 10. | Retain zero fractional digits and half-even rounding in presentation. Validation still accepts finite 0.1…9.9 values, including a comma. Revisit the display with the Ready/sheet UI rather than silently changing the port. | 9g |
 | OQ-0a-22 | Native libraries in the bundle? | Allow only `libandroidx.graphics.path.so` (Compose graphics-path; excluding it breaks Path conversion below API 34); fail on any other `.so` | 0a, 13 |
 | OQ-0b-1 | Where does `PlanMetrics` live? `08 §3.1` lists it inside `CfDimens`, but its consumer `:core:plan` is a JVM module that cannot depend on `:core:designsystem` | `core/plan/…/generated/PlanMetrics.generated.kt` (Double, dp), as iOS keeps it in `PlanCore` | 0b, 1b, 1c |
 | OQ-0b-2 | Port all iOS TokenGen outputs now (Auth, Settings, Terms, Welcome, PlanUI, Press, LaunchPaint, TypeMetrics), or only colors, sky and type? | All of them now (the iOS files are exact goldens and Phases 2, 3a, 3c, 5a, 9 and 10 need them) | 0b |
@@ -2646,6 +2663,8 @@ Implementation commits (brief §7):
   - `Packages/ChronoFlowKit/Sources/TripWizard/Model/MemberWizardStore.swift`
 
 **Delivers.** Adds the generation service (review, save, edit input) with a 90 s HTTP timeout, the review operation capped at 30 s and saves never retried automatically, plus the checking timers and the 250 ms choice delay. It adds airport search with 2–60 characters, a 350 ms debounce, request pacing of at least 1.02 s and an in-memory cache, and the recovery row (one fixed-id drafts row, deleted on close, save or expiry). It adds the TripWizardViewModel scaffold with its conflated writer, tested against mock scenarios.
+
+9a already ships `MemberWizardModel`, `WizardChecking.run` and the 250 ms choice delay; 9b hosts the model, wires the store and service, and ports the remaining suites (9a brief §10.2).
 
 **Tasks**
 - [ ] **Generation** (`core/wizard/…/generation/`).
