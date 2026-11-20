@@ -10,7 +10,6 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import kotlinx.coroutines.flow.drop
@@ -18,6 +17,7 @@ import kotlinx.serialization.json.JsonPrimitive
 import net.chronoflow.core.designsystem.haptics.HapticEvent
 import net.chronoflow.core.designsystem.haptics.LocalHaptics
 import net.chronoflow.core.designsystem.system.CfTimePicker
+import net.chronoflow.core.ui.window.LocalWindowSize
 import net.chronoflow.core.wizard.model.WizardDateTime
 import net.chronoflow.feature.wizard.shell.WizardEvent
 import net.chronoflow.feature.wizard.shell.WizardMetrics
@@ -30,7 +30,7 @@ internal fun WizardWakeControl(
     onEvent: (WizardEvent) -> Unit,
 ) {
     val is24Hour = DateFormat.is24HourFormat(LocalContext.current)
-    val compact = LocalConfiguration.current.screenHeightDp < WizardMetrics.shortPickerWindow
+    val compact = LocalWindowSize.current.height.value < WizardMetrics.shortPickerWindow
     val haptics = LocalHaptics.current
     val events = rememberUpdatedState(onEvent)
     key(ui.state.prompt.id, is24Hour) {
