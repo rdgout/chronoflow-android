@@ -642,6 +642,10 @@ Scripts/run-tier.sh 9e-review1-layout --results 'feature/wizard/build/test-resul
 
 Lint and generation verification used `./gradlew --console=plain :feature:wizard:lintDebug :core:designsystem:lintDebug :core:ui:lintDebug :tools:tokengen:verifyTokens`, then `./gradlew --console=plain :app:lintDebug`. `make tokens` regenerated the token output with its generator change. No new copy, OQ or brief patch was needed. No emulator, perf, profile or `make check` tier ran in this review round.
 
+### Review round 2
+
+1. The time sheet saves its interaction flag alongside M3's saveable dial state. `StateRestorationTester` reconstructs a new dial instance: changing it to 07:13, restoring and confirming failed with `touched = false` before the fix and now retains true. Opening, recomposing, restoring and confirming an untouched dial retains false. The first `snapshotFlow` emission remains ignored, so restoration itself never marks the dial touched. The saveable flag contains no copy, identity or secret.
+
 ### Sleep clocks and state
 
 `WizardClockRounding` rounds to the nearest five minutes, with remainders 0–2 down and 3–4 up, wrapping midnight: `07:12 → 07:10`, `07:13 → 07:15`, `23:58 → 00:00`. It writes ASCII `HH:mm`, independently of the process locale. Only `habitual_bed`, `habitual_wake`, `free_day_bed` and `free_day_wake` use it. Flight times retain 9d's minute precision.

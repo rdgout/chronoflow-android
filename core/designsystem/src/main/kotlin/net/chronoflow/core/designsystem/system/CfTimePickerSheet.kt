@@ -23,6 +23,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -66,7 +67,7 @@ fun CfTimePickerSheet(
     val pickerScheme = remember(scheme, colors.card) { scheme.copy(surface = colors.card) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val titleFocus = remember { FocusRequester() }
-    var touched by remember(state) { mutableStateOf(false) }
+    var touched by rememberSaveable(state) { mutableStateOf(false) }
     LaunchedEffect(state) {
         snapshotFlow { state.hour to state.minute }.drop(1).collect { touched = true }
     }

@@ -3,6 +3,9 @@
 package net.chronoflow.core.ui.designsystem
 
 import androidx.compose.material3.TimePickerState
+import androidx.compose.material3.rememberTimePickerState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -12,6 +15,7 @@ import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -24,6 +28,7 @@ import net.chronoflow.core.testing.compose.ProfileRule
 import net.chronoflow.core.testing.tiers.Logic
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotSame
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -42,7 +47,7 @@ class CfTimePickerSheetGuardsTest {
 
     @get:Rule val rules: RuleChain = RuleChain.outerRule(ProfileRule(DeviceProfiles.pixel8)).around(compose)
 
-    private val state = TimePickerState(22, 30, true)
+    private var state = TimePickerState(22, 30, true)
     private val supporting = mutableStateOf(true)
     private var confirmed: Triple<Int, Int, Boolean>? = null
     private var dismissed = 0
@@ -50,8 +55,12 @@ class CfTimePickerSheetGuardsTest {
     private fun show(
         initialHour: Int = 22,
         initialMinute: Int = 30,
+        restoration: StateRestorationTester? = null,
     ) {
-        compose.setContent {
+        val content: @Composable () -> Unit = {
+            val pickerState =
+                if (restoration == null) state else rememberTimePickerState(initialHour, initialMinute, true)
+            SideEffect { state = pickerState }
             ProfileHost(DeviceProfiles.pixel8) {
                 ChronoFlowTheme(darkTheme = false, reduceMotion = true) {
                     CfTimePickerSheet(
@@ -67,11 +76,12 @@ class CfTimePickerSheetGuardsTest {
                         onDismiss = { dismissed++ },
                         confirmTag = "custom.done",
                         dismissTag = "custom.cancel",
-                        state = state,
+                        state = pickerState,
                     )
                 }
             }
         }
+        if (restoration == null) compose.setContent(content) else restoration.setContent(content)
     }
 
     @Test fun optionalSlotsAndHeadingAreStructural() {
@@ -109,6 +119,31 @@ class CfTimePickerSheetGuardsTest {
         compose.runOnIdle { state.hour = 12 }
         compose.onNodeWithTag("custom.done").performClick()
         assertEquals(Triple(12, 0, true), confirmed)
+    }
+
+    @Test fun changedDialKeepsInteractionAfterRestore() {
+        val restoration = StateRestorationTester(compose)
+        show(restoration = restoration)
+        val original = state
+        compose.runOnIdle {
+            state.hour = 7
+            state.minute = 13
+        }
+        restoration.emulateSavedInstanceStateRestore()
+        compose.onNodeWithTag("custom.done").performClick()
+        assertNotSame(original, state)
+        assertEquals(Triple(7, 13, true), confirmed)
+    }
+
+    @Test fun untouchedDialStaysUntouchedAfterRestore() {
+        val restoration = StateRestorationTester(compose)
+        show(restoration = restoration)
+        val original = state
+        compose.runOnIdle { supporting.value = false }
+        restoration.emulateSavedInstanceStateRestore()
+        compose.onNodeWithTag("custom.done").performClick()
+        assertNotSame(original, state)
+        assertEquals(Triple(22, 30, false), confirmed)
     }
 
     @Test fun dismissCallsOnlyOnDismiss() {
