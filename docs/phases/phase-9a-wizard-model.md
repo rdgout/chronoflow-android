@@ -375,7 +375,7 @@ Commit: `feat(wizard): port the member wizard model`. Ticks plan.md "**Model**" 
   - `answerAdvancesAfterTwoHundredFiftyMilliseconds` (249 ms → same step and `choicePending`; 250 ms → next);
   - `unsupportedAnswersAreIgnored` (`age_band = "42"`, `shift_work = "yes"`, a third prompt kind);
   - `throttledFailureCountsDownWithCeiling` (`Throttled(41.2)` → `retrySeconds == 42`; `beginChecking` ignored until 0);
-  - `validationErrorsRouteToTheirStep` — `Validation` with **server** paths, as `applyFailure` maps them through `WizardJourney.errors` (`MemberWizardReview.swift:237-251`): `outbound.legs.0.stay.check_out_local` → `fineTune` with `fieldErrors` key `stays.0.checkOutLocal`; `profile.habitual_bed` → `sleep`; `outbound.legs.0.to_iata` → `whereTo` with key `legs.0.toIata`;
+  - `validationErrorsRouteToTheirStep` — `Validation` with **server** paths, as `applyFailure` maps them through `WizardJourney.errors` (`MemberWizardReview.swift:237-251`): `outbound.legs.0.stay.check_out_local` → `fineTune` with `fieldErrors` key `stays.0.checkOutLocal`; `profile.habitual_bed` → `sleep` (the iOS mapper produces `profile.habitualBed`; compare both raw and normalized sleep paths in the routing guard, preserving `WizardJourney.errorPath`); `outbound.legs.0.to_iata` → `whereTo` with key `legs.0.toIata`;
   - `saveIsNeverRetriedAutomatically` (`Failed(Offline)` → `ready` with `saveFailure.kind == offline`, `FakeWizardGeneration.saves == 1` after advancing 60 s).
 
 ### Task 8. Board progress values and first screens

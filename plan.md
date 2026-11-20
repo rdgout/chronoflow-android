@@ -2612,7 +2612,7 @@ Implementation commits (brief §7):
 **Delivers.** Ports the wizard model into the JVM module :core:wizard: modes and entries, the step graph (route first, then times), transitions, the form and its mapping to the review input, route-editing rules, the strict wall-clock date and time model, picker bounds, client validation, progress values and the recovery record. It applies the no-health-data rules: only age band and shift work block. The model-level iOS wizard tests are ported.
 
 **Tasks**
-- [ ] **Model** (`core/wizard/…/model/`):
+- [x] **Model** (`core/wizard/…/model/`):
   - modes (create, edit, duplicate, guest) and entries (`06 §4.1`);
   - steps and transitions, route first, then times (`§4.2–§4.3`);
   - `WizardForm` → `ApiTripReviewInput` (`§5.1`);
@@ -2620,7 +2620,7 @@ Implementation commits (brief §7):
   - the wall-clock date and time model (`§5.3`) and the picker bounds (`§5.4`);
   - client validation (`§6.1`);
   - progress values (`§4.6`) and the recovery record (`§4.7`).
-- [ ] **No-health-data rules.** Only `age_band` and `shift_work` block. `exclude_caffeine` and `flight_movement_breaks` default to false.
+- [x] **No-health-data rules.** Only `age_band` and `shift_work` block. `exclude_caffeine` and `flight_movement_breaks` default to false.
 - [ ] **Discrepancies.** Resolve each source discrepancy in `06 §11` as recorded there, and name each resolution in a test.
 - [ ] **Ported tests.** Port the model-level suites of iOS `TripWizardTests`, keeping the names; the brief lists how many.
 

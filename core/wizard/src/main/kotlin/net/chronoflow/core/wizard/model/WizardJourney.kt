@@ -2,6 +2,7 @@ package net.chronoflow.core.wizard.model
 
 import kotlinx.serialization.json.JsonObject
 import net.chronoflow.core.model.DataFailure
+import net.chronoflow.core.model.FieldMessage
 import net.chronoflow.core.model.api.ApiTripReviewInput
 import net.chronoflow.core.model.contracts.ApiAirportSuggestion
 import net.chronoflow.core.model.contracts.ApiReviewIdentity
@@ -178,7 +179,7 @@ fun WizardForm.Companion.from(
 
 object WizardJourney {
     fun errorStep(
-        errors: Map<String, net.chronoflow.core.model.FieldMessage>,
+        errors: Map<String, FieldMessage>,
         form: WizardForm,
     ): MemberWizardStep {
         val routeErrors =
@@ -243,9 +244,9 @@ object WizardJourney {
     }
 
     fun errors(
-        fields: Map<String, net.chronoflow.core.model.FieldMessage>,
+        fields: Map<String, FieldMessage>,
         form: WizardForm,
-    ): Map<String, net.chronoflow.core.model.FieldMessage> =
+    ): Map<String, FieldMessage> =
         fields.entries.associate { (path, message) ->
             (
                 if (message.key ==

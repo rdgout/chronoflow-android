@@ -1,8 +1,12 @@
+@file:OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+
 package net.chronoflow.core.wizard.model
 
+import kotlinx.coroutines.test.runTest
 import net.chronoflow.core.wizard.model.WizardFlightTiming.Field
 import net.chronoflow.core.wizard.wizardAirport
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -10,6 +14,7 @@ import org.junit.experimental.runners.Enclosed
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import java.time.Instant
+import kotlin.time.Duration.Companion.seconds
 
 internal val timingAirports =
     mapOf(
@@ -232,5 +237,59 @@ class WizardFlightTimingTests {
                     arrayOf(Field.arrival(2), "2026-11-20T13:00"),
                 )
         }
+    }
+
+    class ChangedTimes {
+        @Test fun changedEarlierValuesKeepStoredTimesAndValidationFlagsThem() =
+            runTest(timeout = 60.seconds) {
+                val fixture = WizardModelFixture(backgroundScope, testScheduler)
+                val model = fixture.model
+                val values =
+                    listOf(
+                        "2026-11-12T14:00" to "2026-11-12T16:00",
+                        "2026-11-13T10:00" to "2026-11-14T00:00",
+                        "2026-11-14T10:00" to "2026-11-15T10:00",
+                    )
+                val form = timingRoute("AMS", "JFK", "AMS", "NRT")
+                model.form =
+                    form.copy(
+                        end = WizardEnd(kind = "return_legs", returnFromLeg = 1),
+                        legs =
+                            form.legs.mapIndexed {
+                                i,
+                                leg,
+                                ->
+                                leg.copy(departLocal = values[i].first, arriveLocal = values[i].second)
+                            },
+                    )
+                model.state = model.state.copy(airports = timingAirports)
+                model.setDateTime("2026-11-13T01:00", 0, false)
+                assertEquals("2026-11-12T19:00", model.minimumLocal(Field.arrival(0))?.let(WizardDateTime::string))
+                assertEquals(values[0].second, WizardDateTime.string(model.initialLocal(Field.arrival(0))))
+                assertFalse(model.finishOutbound())
+                assertEquals(
+                    "Check the departure and arrival times.",
+                    model.draft.fieldErrors["legs.0.arriveLocal"]?.key,
+                )
+                model.setDateTime("2026-11-13T12:00", 0, true)
+                assertEquals(values[1].first, WizardDateTime.string(model.initialLocal(Field.departure(1))))
+                assertFalse(model.finishReturn())
+                assertEquals(
+                    "This flight leaves before the previous one lands.",
+                    model.draft.fieldErrors["legs.1.departLocal"]?.key,
+                )
+                model.setDateTime("2026-11-14T12:00", 1, true)
+                assertEquals(values[2].first, WizardDateTime.string(model.initialLocal(Field.departure(2))))
+                assertFalse(model.finishReturn())
+                assertEquals(
+                    "This flight leaves before the previous one lands.",
+                    model.draft.fieldErrors["legs.2.departLocal"]?.key,
+                )
+                assertEquals(values[1].first, model.form.legs[1].departLocal)
+                assertEquals(values[2].first, model.form.legs[2].departLocal)
+                model.flush()
+                assertEquals(model.form, fixture.store.last?.form)
+                fixture.close()
+            }
     }
 }

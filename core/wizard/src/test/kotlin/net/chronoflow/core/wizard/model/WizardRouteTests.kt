@@ -1,5 +1,9 @@
+@file:OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+
 package net.chronoflow.core.wizard.model
 
+import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.runTest
 import net.chronoflow.core.wizard.generationInput
 import net.chronoflow.core.wizard.wizardAirport
 import org.junit.Assert.assertEquals
@@ -7,6 +11,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.experimental.runners.Enclosed
 import org.junit.runner.RunWith
+import kotlin.time.Duration.Companion.seconds
 
 @RunWith(Enclosed::class)
 class WizardRouteTests {
@@ -202,5 +207,117 @@ class WizardRouteTests {
             @org.junit.runners.Parameterized.Parameters(name = "confirmed={0}")
             fun cases() = listOf(false, true)
         }
+    }
+
+    class ModelRoutes {
+        @Test fun returnChoiceStartsWithADirectRouteAndEmptyTimes() =
+            runTest(timeout = 60.seconds) {
+                val fixture = WizardModelFixture(backgroundScope, testScheduler)
+                val model = fixture.model
+                model.form =
+                    model.form
+                        .insertStop(wizardAirport("DXB", "Dubai", "Asia/Dubai"), 0)
+                        .insertStop(wizardAirport("HEL", "Helsinki", "Europe/Helsinki"), 1)
+                model.state = model.state.copy(step = MemberWizardStep.returnChoice)
+                val before = model.form
+                model.chooseReturn("return_legs")
+                runCurrent()
+                assertTrue(fixture.checking.deadlines.contains(250))
+                fixture.checking.advance(250)
+                assertEquals(MemberWizardStep.returnRoute, model.state.step)
+                assertEquals(
+                    listOf(before.legs.last().toIata, before.legs[0].fromIata),
+                    model.form.route(true).map { it.iata },
+                )
+                assertEquals(4, model.form.legs.size)
+                assertTrue(
+                    model.form.legs
+                        .last()
+                        .departLocal
+                        .isEmpty() &&
+                        model.form.legs
+                            .last()
+                            .arriveLocal
+                            .isEmpty(),
+                )
+                assertEquals(false, model.state.returnRouteConfirmed)
+                model.finishReturnRoute()
+                assertEquals(MemberWizardStep.returnFlight, model.state.step)
+                val sheet = WizardAirportSheet(0, WizardAirportSheet.Side.stop, true)
+                model.openAirport(sheet)
+                model.chooseAirport(wizardAirport("LHR", "London", "Europe/London"), sheet)
+                assertEquals(4, model.form.legs.size)
+                assertEquals("LHR", model.form.legs[0].toIata)
+                assertEquals("LHR", model.form.legs[1].fromIata)
+                model.flush()
+                assertEquals(
+                    MemberWizardStep.returnFlight,
+                    fixture.store.last
+                        ?.state
+                        ?.step,
+                )
+                fixture.close()
+            }
+
+        @Test fun routeEditingLocksAndFollowsHomeAndBackKeepsStops() =
+            runTest(timeout = 60.seconds) {
+                val fixture = WizardModelFixture(backgroundScope, testScheduler)
+                val model = fixture.model
+                model.form = model.form.addReturn().setRouteAirport(wizardAirport("AMS", "Origin", "UTC"), 1, true)
+                val stop = wizardAirport("DXB", "Dubai", "Asia/Dubai")
+                val second = wizardAirport("HEL", "Helsinki", "Europe/Helsinki")
+                model.chooseAirport(stop, WizardAirportSheet(0, WizardAirportSheet.Side.stop))
+                val route = model.form.route()
+                model.swapAirports()
+                assertEquals(route, model.form.route())
+                model.go(MemberWizardStep.outbound)
+                model.popNavigation(emptyList(), listOf(MemberWizardDestination.outbound))
+                assertEquals(MemberWizardStep.whereTo, model.state.step)
+                assertEquals(route, model.form.route())
+                model.chooseAirport(second, WizardAirportSheet(0, WizardAirportSheet.Side.from))
+                assertEquals(
+                    "HEL",
+                    model.form.legs
+                        .last()
+                        .toIata,
+                )
+                model.chooseAirport(second, WizardAirportSheet(1, WizardAirportSheet.Side.to))
+                assertEquals("HEL", model.form.legs[2].fromIata)
+                model.chooseAirport(stop, WizardAirportSheet(2, WizardAirportSheet.Side.from))
+                assertEquals("HEL", model.form.legs[2].fromIata)
+                model.chooseAirport(stop, WizardAirportSheet(2, WizardAirportSheet.Side.home))
+                model.chooseAirport(
+                    wizardAirport("LHR", "London", "Europe/London"),
+                    WizardAirportSheet(0, WizardAirportSheet.Side.from),
+                )
+                assertEquals(
+                    "DXB",
+                    model.form.legs
+                        .last()
+                        .toIata,
+                )
+                model.go(MemberWizardStep.returnRoute)
+                model.finishReturnRoute()
+                assertEquals(true, model.state.returnRouteConfirmed)
+                assertEquals(MemberWizardStep.returnFlight, model.state.step)
+                assertEquals(
+                    listOf(
+                        MemberWizardDestination.outbound,
+                        MemberWizardDestination.returnChoice,
+                        MemberWizardDestination.returnRoute,
+                        MemberWizardDestination.returnFlight,
+                    ),
+                    model.navigationPath,
+                )
+                val path = model.navigationPath
+                model.popNavigation(path.dropLast(1), path)
+                assertEquals(MemberWizardStep.returnRoute, model.state.step)
+                model.makeDirect()
+                model.swapAirports()
+                assertEquals(listOf("HEL", "LHR"), model.form.route().map { it.iata })
+                model.flush()
+                assertEquals(model.draft, fixture.store.last)
+                fixture.close()
+            }
     }
 }
