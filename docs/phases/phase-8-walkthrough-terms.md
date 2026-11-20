@@ -210,6 +210,7 @@ class WalkthroughModel(
   - First run: `complete()`. Replay never calls it.
   - Success sets `failure = null` and `completed = true`, then calls `onFinish()`.
   - Catch order: `catch (e: StaleSessionException) { failure = e }` **first** (a revoked permit is a session change, not the caller's cancellation; iOS catches its `CancellationError` into `failure`), then `catch (e: CancellationException) { throw e }`, then `catch (e: Exception) { failure = e }` (this includes `SessionChangedException`).
+- Caller cancellation is rethrown when its coroutine is inactive; a foreign cancellation is a save failure, following the binding 6c lesson. The cancellation tests cancel the caller job.
 - It is called on the main thread only (from `viewModelScope`). It is pure Kotlin with no Android import, so it is JVM-testable.
 
 ### 5.4 `TermsUpdateModel` (`…/onboarding/terms/TermsUpdateModel.kt`) [F `TermsUpdateModel.swift`]
