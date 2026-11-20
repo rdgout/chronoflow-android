@@ -69,6 +69,7 @@ import net.chronoflow.feature.wizard.ui.WizardChromeUi
 import net.chronoflow.feature.wizard.ui.WizardCopy
 import net.chronoflow.feature.wizard.ui.WizardUiState
 import net.chronoflow.feature.wizard.ui.resolve
+import net.chronoflow.feature.wizard.where.WhereStep
 
 @Composable
 fun WizardRoot(
@@ -332,6 +333,7 @@ private fun WizardStepContent(
                     )
                 }
                 LaunchedEffect(key) { titleFocus.requestFocus() }
+                WhereStep(where, onEvent)
             } else {
                 WizardStepSeam(key)
             }
