@@ -1,17 +1,17 @@
 package net.chronoflow.feature.trip.actions
 
 import androidx.activity.ComponentActivity
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.receiveAsFlow
-import net.chronoflow.core.navigation.WizardMode
 import net.chronoflow.core.designsystem.theme.ChronoFlowTheme
 import net.chronoflow.core.model.config.AppLanguage
+import net.chronoflow.core.navigation.WizardMode
 import net.chronoflow.core.testing.DeviceProfiles
 import net.chronoflow.core.testing.compose.ProfileHost
 import net.chronoflow.core.testing.compose.ProfileRule
@@ -102,6 +102,7 @@ class TripActionsBusyTest {
         compose.onNodeWithTag("trip.actions").assertExists()
         assertEquals(1, TripActionsDebugCounters.failurePresented.get())
     }
+
     @Test fun recreationDoesNotReplayFailureAndIdenticalNextFailureIsPresented() {
         TripActionsDebugCounters.failurePresented.set(0)
         val mounted = mutableStateOf(true)
@@ -124,5 +125,4 @@ class TripActionsBusyTest {
         compose.onNodeWithTag("trip.actions").assertExists()
         assertEquals(2, TripActionsDebugCounters.failurePresented.get())
     }
-
 }

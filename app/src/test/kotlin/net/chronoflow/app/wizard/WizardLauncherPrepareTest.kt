@@ -2,6 +2,10 @@
 
 package net.chronoflow.app.wizard
 
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.cancelAndJoin
@@ -11,12 +15,14 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import net.chronoflow.app.shell.ShellViewModel
 import net.chronoflow.core.model.DataFailure
 import net.chronoflow.core.model.device.DeviceIdentityFailure
 import net.chronoflow.core.model.session.SessionFailure
 import net.chronoflow.core.model.store.StoreFailure
 import net.chronoflow.core.navigation.Route
 import net.chronoflow.core.navigation.WizardMode
+import net.chronoflow.core.navigation.shell.ShellNav
 import net.chronoflow.core.plan.actions.TripAction
 import net.chronoflow.core.testing.wizard.GenerationSource
 import net.chronoflow.core.testing.wizard.InMemoryWizardDraftStore
@@ -26,15 +32,9 @@ import net.chronoflow.core.wizard.model.RecoveryRejected
 import net.chronoflow.core.wizard.model.TripWizardAction
 import net.chronoflow.feature.trip.actions.TripWizardPrepareOutcome
 import net.chronoflow.feature.wizard.TripWizardDependencies
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.ViewModelStore
-import androidx.lifecycle.viewmodel.initializer
-import androidx.lifecycle.viewmodel.viewModelFactory
-import net.chronoflow.app.shell.ShellViewModel
-import net.chronoflow.core.navigation.shell.ShellNav
-import org.junit.Assert.assertSame
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.security.GeneralSecurityException
@@ -194,11 +194,12 @@ class WizardLauncherPrepareTest {
             val io = StandardTestDispatcher(testScheduler)
             val gate = CompletableDeferred<Unit>()
             var calls = 0
-            val deps = prepareDependencies { _, _ ->
-                calls++
-                gate.await()
-                MemberWizardDraft()
-            }
+            val deps =
+                prepareDependencies { _, _ ->
+                    calls++
+                    gate.await()
+                    MemberWizardDraft()
+                }
             try {
                 val firstOwner = ViewModelProvider.create(retained, factory)[ShellViewModel::class.java]
                 val capturedByTrip = firstOwner.wizardLauncher(deps, io)

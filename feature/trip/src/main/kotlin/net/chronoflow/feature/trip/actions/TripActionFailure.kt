@@ -14,7 +14,9 @@ enum class TripActionFailure(
 class TripActionFailureEvent(
     val failure: TripActionFailure,
 ) {
-    private val claimed = java.util.concurrent.atomic.AtomicBoolean(false)
+    private val claimed =
+        java.util.concurrent.atomic
+            .AtomicBoolean(false)
 
     internal fun claim(): Boolean = claimed.compareAndSet(false, true)
 }
