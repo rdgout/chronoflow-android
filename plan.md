@@ -492,6 +492,7 @@ Every screen scrolls when height-constrained. The minimum width is 280 dp; below
 | Passkeys intro | "Sign in with your fingerprint, face or screen lock instead of your password." | "Log in met je vingerafdruk, gezicht of schermvergrendeling in plaats van je wachtwoord." | settings "Sign in with Face ID, a fingerprint or your screen lock instead of your password." |
 | Notifications blocked step | "Tap Open phone settings and turn on notifications for ChronoFlow." | "Tik op Telefooninstellingen openen en zet meldingen voor ChronoFlow aan." | reminders "Open your phone's Settings.", "Tap Notifications, then ChronoFlow." and "Turn on Allow notifications." |
 | Recovery-codes file name | "Recovery codes.txt" | "Herstelcodes.txt" | — |
+| Ready flight with stops (`android_wizard_flight_via`, needs review, OQ-A356) | {{flight}} · via {{airports}} | {{flight}} · via {{airports}} | — |
 | `android_wizard_time_sheet_steps` (needs review) | Steps of 5 minutes. | Stappen van 5 minuten. | — |
 | `android_wizard_airport_field` (needs review) | Airport or city | Luchthaven of stad | wizard "Search airports" |
 | `android_wizard_search_hint` (needs review) | Type at least 2 letters to search. | Typ minstens 2 letters om te zoeken. | — |

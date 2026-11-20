@@ -5,7 +5,6 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import net.chronoflow.core.model.api.ApiJson
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
@@ -46,10 +45,19 @@ class WizardCopyKeysTest {
                 .map {
                     (it as JsonObject).getValue("key").jsonPrimitive.content
                 }.toSet()
-        val absent = "{{flight}} · via {{airports}}"
-        assertFalse(names.containsKey("wizard\t$absent"))
-        assertFalse(absent in planKeys)
-        val missing = (WizardModelCopyKeys.all - absent).filter { !names.containsKey("wizard\t$it") && it !in planKeys }
+        val android =
+            ApiJson.response.parseToJsonElement(
+                File(root, "tools/l10n/android-only.json").readText(),
+            ) as JsonObject
+        val androidKeys =
+            (android.getValue("entries") as JsonArray)
+                .map {
+                    (it as JsonObject).getValue("en").jsonPrimitive.content
+                }.toSet()
+        val missing =
+            WizardModelCopyKeys.all.filter {
+                !names.containsKey("wizard\t$it") && it !in planKeys && it !in androidKeys
+            }
         assertTrue("Unresolved wizard copy keys: $missing", missing.isEmpty())
     }
 }

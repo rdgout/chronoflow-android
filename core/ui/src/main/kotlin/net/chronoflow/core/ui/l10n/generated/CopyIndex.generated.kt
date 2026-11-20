@@ -1049,6 +1049,7 @@ object CopyIndex {
             "We couldn't search airports." -> CopyEntry(R.string.android_wizard_search_error_title, false, emptyList())
             "Check your connection and try again." -> CopyEntry(R.string.android_wizard_search_error_body, false, emptyList())
             "Steps of 5 minutes." -> CopyEntry(R.string.android_wizard_time_sheet_steps, false, emptyList())
+            "{{flight}} · via {{airports}}" -> CopyEntry(R.string.android_wizard_flight_via, false, listOf("flight", "airports"))
             else -> null
         }
 }

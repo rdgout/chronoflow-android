@@ -25,4 +25,6 @@
     <string name="android_wizard_search_error_body">Check your connection and try again.</string>
     <!-- android: Steps of 5 minutes. (review: needs review) -->
     <string name="android_wizard_time_sheet_steps">Steps of 5 minutes.</string>
+    <!-- android: {{flight}} · via {{airports}} (review: needs review) -->
+    <string name="android_wizard_flight_via">%1$s · via %2$s</string>
 </resources>
