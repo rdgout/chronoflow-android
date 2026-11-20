@@ -50,14 +50,18 @@ class WizardBoardCaptureTest(
 
     @Test fun capturesTheBoardState() {
         lateinit var state: WizardUiState
+        lateinit var formatter: net.chronoflow.core.plan.CopyLineFormatter
         var keyboard: SoftwareKeyboardController? = null
-        runTest(timeout = 60.seconds) { state = boardState(board, Locale.forLanguageTag(language.tag)) }
+        runTest(timeout = 60.seconds) {
+            state = boardState(board, Locale.forLanguageTag(language.tag))
+            formatter = wizardCopyFormatter()
+        }
         compose.setContent {
             ProfileHost(profile) {
                 ChronoFlowTheme(darkTheme = dark, reduceMotion = true) {
                     val controller = LocalSoftwareKeyboardController.current
                     SideEffect { keyboard = controller }
-                    WizardScreen(state, {})
+                    WizardScreen(state, formatter, {})
                 }
             }
         }

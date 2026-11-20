@@ -106,6 +106,14 @@ internal class FakeWizardDependencies(
     var draft = MemberWizardDraft()
     var failure: DataFailure? = null
     var starts = 0
+    var formatterCalls = 0
+    var formatter: net.chronoflow.core.plan.CopyLineFormatter? = null
+
+    override suspend fun copyFormatter(): net.chronoflow.core.plan.CopyLineFormatter? {
+        formatterCalls++
+        return formatter
+    }
+
     val tripStarts = mutableListOf<Pair<String, TripWizardAction>>()
     val generations = mutableListOf<TripGenerationService>()
 

@@ -18,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
@@ -44,9 +45,19 @@ internal fun WizardChoiceCard(
     tag: String,
     onClick: () -> Unit,
     style: WizardChoiceStyle = WizardChoiceStyle.Return,
+    rawTitle: String? = null,
 ) {
     val sleep = style == WizardChoiceStyle.Chronotype
-    val shape = RoundedCornerShape(if (sleep) PlanUITokens.radiusXl.dp else PlanUITokens.radius2Xl.dp)
+    val question = style == WizardChoiceStyle.Question
+    val large = LocalDensity.current.fontScale >= WizardMetrics.questionLargeFontScale
+    val shape =
+        RoundedCornerShape(
+            when {
+                sleep -> PlanUITokens.radiusXl.dp
+                question -> PlanUITokens.wizardQuestionRadius.dp
+                else -> PlanUITokens.radius2Xl.dp
+            },
+        )
     val source = remember { MutableInteractionSource() }
     Row(
         Modifier
@@ -63,12 +74,33 @@ internal fun WizardChoiceCard(
             ).cfPress(source)
             .background(CfTheme.colors.card, shape)
             .border(AuthTokens.focusWidth.dp, if (selected) CfTheme.colors.dawn else CfTheme.colors.border, shape)
-            .heightIn(min = PlanUITokens.wizardChoiceHeight.dp)
-            .padding(
+            .heightIn(
+                min =
+                    when {
+                        question && large -> WizardMetrics.questionLargeMinHeight.dp
+                        question -> PlanUITokens.wizardFlightRowHeight.dp
+                        else -> PlanUITokens.wizardChoiceHeight.dp
+                    },
+            ).padding(
                 start = (if (sleep) PlanUITokens.wizardContentGap else PlanUITokens.space5).dp,
-                end = (if (sleep) PlanUITokens.wizardContentGap else PlanUITokens.space4).dp,
-                top = (if (sleep) PlanUITokens.wizardChronotypePadding else PlanUITokens.space3).dp,
-                bottom = (if (sleep) PlanUITokens.wizardChronotypePadding else PlanUITokens.space3).dp,
+                end =
+                    when {
+                        sleep -> PlanUITokens.wizardContentGap.dp
+                        question -> PlanUITokens.space5.dp
+                        else -> PlanUITokens.space4.dp
+                    },
+                top =
+                    when {
+                        sleep -> PlanUITokens.wizardChronotypePadding.dp
+                        question -> 0.dp
+                        else -> PlanUITokens.space3.dp
+                    },
+                bottom =
+                    when {
+                        sleep -> PlanUITokens.wizardChronotypePadding.dp
+                        question -> 0.dp
+                        else -> PlanUITokens.space3.dp
+                    },
             ),
         horizontalArrangement = Arrangement.spacedBy(PlanUITokens.space3.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -78,7 +110,7 @@ internal fun WizardChoiceCard(
             verticalArrangement = Arrangement.spacedBy(if (sleep) PlanUITokens.wizardLabelGap.dp else 0.dp),
         ) {
             Text(
-                title.resolve(),
+                rawTitle ?: title.resolve(),
                 color = CfTheme.colors.foreground,
                 style = CfTheme.type.style(if (sleep) CfTypeScale.wizardChronotype else CfTypeScale.wizardChoice),
             )

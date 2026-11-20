@@ -40,6 +40,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -65,8 +66,11 @@ import net.chronoflow.core.designsystem.theme.CfTheme
 import net.chronoflow.core.designsystem.theme.LocalReduceMotion
 import net.chronoflow.core.plan.CopyLineFormatter
 import net.chronoflow.core.ui.R
+import net.chronoflow.core.wizard.model.MemberWizardStep
 import net.chronoflow.feature.wizard.TripWizardViewModel
 import net.chronoflow.feature.wizard.answers.WizardAnswerSheetHost
+import net.chronoflow.feature.wizard.components.rememberServerCopy
+import net.chronoflow.feature.wizard.questions.WizardQuestionStep
 import net.chronoflow.feature.wizard.returnchoice.WizardReturnStep
 import net.chronoflow.feature.wizard.search.AirportSearchSheet
 import net.chronoflow.feature.wizard.sleep.WizardSleepStep
@@ -85,6 +89,7 @@ fun WizardRoot(
     onExit: (WizardExit) -> Unit,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val formatter by viewModel.copyFormatter.collectAsStateWithLifecycle()
     val search by viewModel.searchState.collectAsStateWithLifecycle()
     val retryEnabled by viewModel.retryEnabled.collectAsStateWithLifecycle()
     val exit = rememberUpdatedState(onExit)
@@ -94,7 +99,7 @@ fun WizardRoot(
     if (active == null) {
         Box(Modifier.fillMaxSize().background(CfTheme.colors.background))
     } else {
-        WizardScreen(active.copy(search = search, retryEnabled = retryEnabled), events)
+        WizardScreen(active.copy(search = search, retryEnabled = retryEnabled), formatter, events)
     }
 }
 
@@ -110,7 +115,7 @@ fun WizardScreen(
     copyFormatter: CopyLineFormatter?,
     onEvent: (WizardEvent) -> Unit,
 ) {
-    WizardScaffold(state, onEvent)
+    WizardScaffold(state, onEvent, copyFormatter)
     WizardBackHandling(state, onEvent)
     state.sheet?.let { AirportSearchSheet(it, state.search, state.retryEnabled, onEvent) }
     state.sleep?.openTime?.let { WizardSleepTimeSheet(it, onEvent) }
@@ -121,6 +126,7 @@ fun WizardScreen(
 internal fun WizardScaffold(
     state: WizardUiState,
     onEvent: (WizardEvent) -> Unit,
+    copyFormatter: CopyLineFormatter? = null,
 ) {
     BoxWithConstraints(Modifier.fillMaxSize().background(CfTheme.colors.background).testTag("wizard.window")) {
         val safe = LocalSafeInsets.current
@@ -151,6 +157,7 @@ internal fun WizardScaffold(
                 state,
                 onEvent,
                 column.align(Alignment.TopCenter).padding(top = WizardMetrics.contentStart.dp).fillMaxSize(),
+                copyFormatter,
             )
         }
     }
@@ -258,7 +265,15 @@ internal fun WizardFooter(
                     .padding(
                         horizontal = WizardMetrics.gutter.dp,
                     ).padding(bottom = PlanUITokens.wizardHintBottom.dp)
-                    .testTag("wizard.return.hint"),
+                    .testTag(
+                        if (step.step ==
+                            MemberWizardStep.question
+                        ) {
+                            "wizard.question.hint"
+                        } else {
+                            "wizard.return.hint"
+                        },
+                    ),
                 color = CfTheme.colors.mutedForeground,
                 style = CfTheme.type.style(CfTypeScale.wizardHint),
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -294,6 +309,7 @@ internal fun WizardStepHost(
     state: WizardUiState,
     onEvent: (WizardEvent) -> Unit,
     modifier: Modifier = Modifier,
+    copyFormatter: CopyLineFormatter? = null,
 ) {
     val reduce = LocalReduceMotion.current
     val events = rememberUpdatedState(onEvent)
@@ -314,6 +330,7 @@ internal fun WizardStepHost(
                         },
                         key,
                         events.value,
+                        copyFormatter,
                     )
                 }
             },
@@ -354,6 +371,7 @@ private fun WizardStepContent(
     state: WizardUiState,
     key: WizardStepKey,
     onEvent: (WizardEvent) -> Unit,
+    copyFormatter: CopyLineFormatter?,
 ) {
     Column(Modifier.fillMaxSize().wizardBuiltStepBoundary(key)) {
         Column(
@@ -371,13 +389,23 @@ private fun WizardStepContent(
             val times = state.times
             val titleCopy = where?.title ?: times?.title ?: state.returnChoice?.title ?: state.sleep?.title
             val subtitleCopy = where?.subtitle ?: times?.subtitle ?: state.sleep?.subtitle
-            if (titleCopy != null) {
+            val serverCopy = rememberServerCopy(copyFormatter)
+            val title = titleCopy?.resolve() ?: state.question?.let { serverCopy(it.title) }
+            val locale = LocalConfiguration.current.locales[0]
+            if (title != null) {
                 val titleFocus = remember { FocusRequester() }
                 Column(
                     verticalArrangement = Arrangement.spacedBy(WizardMetrics.titleGap.dp),
                     modifier = Modifier.padding(bottom = WizardMetrics.titleExtra.dp),
                 ) {
-                    val title = titleCopy.resolve()
+                    state.question?.eyebrow?.let {
+                        Text(
+                            it.resolve().uppercase(locale),
+                            Modifier.testTag("wizard.eyebrow"),
+                            color = CfTheme.colors.dawnText,
+                            style = CfTheme.type.style(CfTypeScale.screenEyebrow),
+                        )
+                    }
                     Text(
                         title,
                         Modifier
@@ -409,11 +437,12 @@ private fun WizardStepContent(
                 LaunchedEffect(key) { titleFocus.requestFocus() }
                 when {
                     state.sleep != null -> WizardSleepStep(state.sleep, onEvent)
+                    state.question != null -> WizardQuestionStep(state.question, onEvent)
                     where != null -> WhereStep(where, onEvent)
                     times != null -> WizardTimesStep(times, onEvent)
                     state.returnChoice != null -> WizardReturnStep(state.returnChoice, onEvent)
                 }
-            } else {
+            } else if (key.step != MemberWizardStep.question) {
                 WizardStepSeam(key)
             }
         }

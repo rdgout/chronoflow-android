@@ -319,6 +319,7 @@ class AppGraph(
                 dataSources::forSession,
                 appScope,
                 dispatchers.io,
+                copyCatalogs = copyCatalogs,
             ).also {
                 it.start()
             }

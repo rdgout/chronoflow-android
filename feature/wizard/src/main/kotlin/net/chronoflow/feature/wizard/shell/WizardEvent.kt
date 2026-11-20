@@ -4,6 +4,10 @@ import net.chronoflow.core.model.contracts.ApiAirportSuggestion
 import net.chronoflow.core.wizard.model.WizardAirportSheet
 
 sealed interface WizardEvent {
+    data class AnswerQuestion(
+        val value: kotlinx.serialization.json.JsonElement,
+    ) : WizardEvent
+
     data class UpdateAnswer(
         val field: String,
         val value: kotlinx.serialization.json.JsonElement,

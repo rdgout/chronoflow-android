@@ -40,6 +40,7 @@ import net.chronoflow.core.wizard.model.TripWizardAction
 import net.chronoflow.core.wizard.model.WizardAirportSheet
 import net.chronoflow.core.wizard.model.WizardClockRounding
 import net.chronoflow.core.wizard.model.answerOptional
+import net.chronoflow.core.wizard.model.answerQuestion
 import net.chronoflow.core.wizard.model.chooseReturn
 import net.chronoflow.core.wizard.model.finishFlightInput
 import net.chronoflow.core.wizard.model.finishOutboundStep
@@ -83,6 +84,8 @@ class TripWizardViewModel(
     deps: TripWizardDependencies?,
     presentation: WizardInitialPresentation = WizardInitialPresentation(),
 ) : ViewModel() {
+    private val mutableFormatter = MutableStateFlow<net.chronoflow.core.plan.CopyLineFormatter?>(null)
+    val copyFormatter = mutableFormatter.asStateFlow()
     private val pickerNow = deps?.now ?: { Instant.EPOCH }
     private val mutableClosing = MutableStateFlow(false)
     val closing = mutableClosing.asStateFlow()
@@ -233,6 +236,17 @@ class TripWizardViewModel(
             mutableState.value = TripWizardUiState.LoadFailed(DataFailure.Unauthorized(401))
             exitOnce()
         } else {
+            viewModelScope.launch {
+                try {
+                    mutableFormatter.value = deps.copyFormatter()
+                } catch (_: CancellationException) {
+                    currentCoroutineContext().ensureActive()
+                } catch (_: IOException) {
+                    // A later entry can retry a catalog that could not be read.
+                } catch (_: RuntimeException) {
+                    // Keep the iOS empty-copy fallback when the catalog cannot be decoded.
+                }
+            }
             viewModelScope.launch {
                 try {
                     val draft =
@@ -525,6 +539,10 @@ class TripWizardViewModel(
 
     fun onEvent(event: WizardEvent) {
         when (event) {
+            is WizardEvent.AnswerQuestion -> {
+                if (!closing.value) wizard?.answerQuestion(event.value)
+            }
+
             is WizardEvent.SetSleep -> {
                 if (!closing.value) wizard?.setSleep(event.field, event.value)
             }

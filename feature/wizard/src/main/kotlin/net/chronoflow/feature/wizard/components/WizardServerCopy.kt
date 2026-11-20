@@ -15,8 +15,14 @@ import net.chronoflow.feature.wizard.ui.wizardCopy
 @Composable
 internal fun rememberServerCopy(formatter: CopyLineFormatter?): (CopyLine) -> String {
     val language = Language.of(LocalConfiguration.current.locales[0].language)
-    return remember(formatter, language) { { line -> formatter?.format(line, CopyFormat(language)) ?: "" } }
+    return remember(formatter, language) { { line -> serverCopy(line, formatter, language) } }
 }
+
+internal fun serverCopy(
+    line: CopyLine,
+    formatter: CopyLineFormatter?,
+    language: Language,
+): String = formatter?.format(line, CopyFormat(language)) ?: ""
 
 internal fun fieldCopy(
     message: FieldMessage,

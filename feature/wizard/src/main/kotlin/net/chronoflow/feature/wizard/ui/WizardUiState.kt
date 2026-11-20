@@ -14,6 +14,7 @@ import net.chronoflow.feature.wizard.TripWizardUiState
 import net.chronoflow.feature.wizard.answers.SUPPORTED_SHEET_KINDS
 import net.chronoflow.feature.wizard.answers.WizardAnswerSheetState
 import net.chronoflow.feature.wizard.answers.WizardAnswerSheetUi
+import net.chronoflow.feature.wizard.questions.WizardQuestionUi
 import net.chronoflow.feature.wizard.returnchoice.WizardReturnUi
 import net.chronoflow.feature.wizard.shell.WizardStepKey
 import net.chronoflow.feature.wizard.sleep.WizardSleepUi
@@ -286,7 +287,7 @@ data class WizardChromeUi(
                 complete,
                 footerHint =
                     if (step ==
-                        MemberWizardStep.returnChoice
+                        MemberWizardStep.returnChoice || step == MemberWizardStep.question
                     ) {
                         WizardCopy("Tap an answer to continue.")
                     } else {
@@ -405,6 +406,7 @@ data class WizardUiState(
     val returnChoice: WizardReturnUi? = null,
     val sleep: WizardSleepUi? = null,
     val answerSheet: WizardAnswerSheetUi? = null,
+    val question: WizardQuestionUi? = null,
 ) {
     companion object {
         fun from(
@@ -465,6 +467,16 @@ data class WizardUiState(
                                     }?.let { WizardTimeSheetUi(it, sheet.values[it].clockString()) },
                             )
                         },
+                question =
+                    if (key.step == MemberWizardStep.question) {
+                        WizardQuestionUi.from(
+                            draft,
+                            active.wizard.choicePending,
+                            !closing && !active.wizard.persistenceFailed && !active.wizard.reviewing,
+                        )
+                    } else {
+                        null
+                    },
                 sleep =
                     if (key == WizardStepKey.Sleep) {
                         WizardSleepUi.from(draft, continueFailures, timeFormat, openTime)

@@ -20,6 +20,12 @@ import net.chronoflow.feature.wizard.ui.AirportSearchUi
 import net.chronoflow.feature.wizard.ui.WizardUiState
 import java.util.Locale
 
+internal suspend fun TestScope.wizardCopyFormatter(): net.chronoflow.core.plan.CopyLineFormatter =
+    net.chronoflow.core.plan.CopyLineFormatter(
+        net.chronoflow.core.plan.CopyCatalog
+            .load(kotlinx.coroutines.test.StandardTestDispatcher(testScheduler)),
+    )
+
 internal val wizardBoardProfile =
     DeviceProfiles.pixel8.copy(
         name = "wizardBoard",

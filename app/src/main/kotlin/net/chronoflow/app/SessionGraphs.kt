@@ -32,6 +32,7 @@ class SessionGraphs(
     private val source: suspend (StoredSession) -> DataSource,
     private val scope: CoroutineScope,
     private val io: CoroutineDispatcher = Dispatchers.IO,
+    private val copyCatalogs: net.chronoflow.core.plan.CopyCatalogProvider? = null,
 ) {
     private val mutableCurrent = MutableStateFlow<SessionGraph?>(null)
     val current = mutableCurrent.asStateFlow()
@@ -72,6 +73,7 @@ class SessionGraphs(
                                 CoroutineScope(scope.coroutineContext + SupervisorJob(scope.coroutineContext[Job])),
                                 permit = permit,
                                 wizardIo = io,
+                                wizardCatalogs = copyCatalogs,
                             )
                         mutableCurrent.value = graph
                         accountModel.attach(graph.accounts, update.epoch, token)
