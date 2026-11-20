@@ -2892,7 +2892,7 @@ Implementation commits (brief §7):
   - the busy (`WizardFineTuneBusy`), none (`WizardFineTuneNone`) and multi (`WizardFineTuneMulti`) states.
 - [x] **Sheets** (`WizardSheet*`, `WizardFineTuneSheet`): seat, room, checkout, wake, busy hours, drinks with steppers (and its error), light, and blue blockers with a rating (and its error). Each holds one nullable selection and its validation error.
 - [x] **Haptics** per the WizardSpec "Haptics" section, through the `Haptics` interface.
-- [ ] **Tests.** Timing on the JVM with a fake clock, plus guards for all 26 boards and their DarkNL wrappers.
+- [x] **Tests.** Timing on the JVM with a fake clock; 107 light-mode guard cases for 21 distinct states. The 22 base boards have 46 wrappers (`WizardSheet` and `WizardFineTuneSheet` share the seat state); captures include those 46 plus the two Free Sleep wrappers over Fine-tune (48 PNGs, OQ-A412).
 
 **Acceptance**
 - The checking timing matches `06 §3.5`.
