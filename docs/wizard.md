@@ -1113,3 +1113,30 @@ Validation:
 | Quick serial timing | 7 measured budget cases passed | 2.83 s |
 
 The changed test-runtime library caused quick to measure every selected case afresh. The stage times above include that validation and the separate tooling stage; the full quick command was not repeated. No required command was sandbox-blocked. Lint/layout ran once for touched Android modules; no emulator, capture, perf/profile tier or `make check` was run. The `pixel` emulator remains running.
+
+## Phase 9f review round 3
+
+2026-11-20. Test-only fixes; production files are unchanged.
+
+`RootThemeTest#cfRootForwardsMotionAndFirstCommit` invokes the real `CfRoot` with a minimal actual AppGraph, distinct main/IO test dispatchers, a non-started launch controller and explicit routed destinations. Two fresh compositions in the one case check initial motion true and false. Each asserts zero preloads before completing its supplied commit, then four preloads on the graph's IO dispatcher and the launch fonts-ready flag. Graph and launch scopes are cancelled/joined during teardown. This avoids unrelated session/navigation initialization without bypassing the CfRoot call site. The first paused-clock draft used an in-place motion toggle; it was replaced with fresh compositions so the test checks both initial values directly.
+
+Both requested mutations were applied to the actual call in `CfRoot.kt`, not the factory:
+
+- `rootThemeInputs(false, firstCommit)` failed: `expected:<true> but was:<false>`.
+- `rootThemeInputs(reduceMotion, CompletableDeferred(Unit))` failed: `expected:<0> but was:<4>`.
+
+Both were restored byte-for-byte before validation. The restored RootTheme class passed all four cases; the new case took **119 ms warm** (4.29-second targeted command) and **312 ms under parallel quick load**, below the 1 s budget. Its isolated first-SDK run was 2.229 s and is a cold-start cost, not a warm-case claim. No budget or production seam was changed.
+
+`ClassWarmupTest` now owns its directories through `TemporaryFolder` with deletion assurance, retaining the existing property-restoration finally block. All six old `core/testing-junit/build/class-warmup-proof-*` directories were removed. Both targeted cases passed (1.49-second command), and zero proof directories remained after targeted and quick runs.
+
+`make format` passed (10 seconds). `make quick` ran once: 5,051 collected assertion results passed, 3,259 cases were newly measured, and no test hung. The first-stage timing gate failed only on untouched `TermsScreenTest#policyRowStaysEnabledWhileFailed`: **3,264 ms > 3,000 ms**. That case was not retried or modified. First-stage wall time was 39.58 seconds. The skipped quick stages passed separately: build-logic 37 certified results (1.38 s); tooling 170 scripts / 25 contracts / 49 l10n / 11 icons (20.158 / 0.112 / 0.017 / 0.074 s); seven certified up-to-date serial timing results (0.87 s). These are macOS-host JVM/Robolectric measurements, not device claims.
+
+```sh
+make targeted ONLY='app:RootThemeTest'
+make targeted ONLY='app:RootThemeTest#cfRootForwardsMotionAndFirstCommit'
+make targeted ONLY='core:testing-junit:ClassWarmupTest'
+make format
+make quick
+```
+
+No required command was sandbox-blocked. No second quick run, emulator tier, perf/profile tier or `make check` was run. The `pixel` emulator remains running.
