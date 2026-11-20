@@ -14,6 +14,7 @@ import net.chronoflow.core.model.api.AccountPolicies
 import net.chronoflow.core.testing.DeviceProfiles
 import net.chronoflow.core.testing.compose.ProfileHost
 import net.chronoflow.core.testing.compose.ProfileRule
+import net.chronoflow.core.testing.junit.measureClassWarmup
 import net.chronoflow.core.testing.tiers.Logic
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -30,10 +31,12 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.android.controller.ActivityController
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 
 @Logic
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [36])
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
 class TermsScreenTest {
     private val compose = createEmptyComposeRule()
 
@@ -144,11 +147,12 @@ class TermsScreenTest {
 
     companion object {
         private val fixtureReady by lazy {
-            val started = System.nanoTime()
-            org.robolectric.nativeruntime.DefaultNativeRuntimeLoader
-                .injectAndLoad()
-            android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.NORMAL)
-            println("terms step=font-runtime-warmup-once ms=${(System.nanoTime() - started) / 1_000_000.0}")
+            measureClassWarmup(TermsScreenTest::class.java, 36, "native-font-runtime") {
+                // In Robolectric 4.18, NATIVE alone leaves Typeface's font-map lock null during BeforeClass.
+                org.robolectric.nativeruntime.DefaultNativeRuntimeLoader
+                    .injectAndLoad()
+                android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.NORMAL)
+            }
         }
 
         @BeforeClass

@@ -458,3 +458,11 @@ The one remaining overrun is:
 RootThemeTest's earlier activityRefreshesTheSystemMotionSettingWhenResumed case took 311 ms and consumed its class/SDK allowance (3,000 ms, class-warmup). The root-provision case was later and correctly retained 1,000 ms; activityPreloadsOnlyAfterItsFrameCommit then took 116 ms under the same normal budget. This exposes a class whose rendering setup occurs after its first case. The requested first-case rule remains in place; no app test, ordering or further budget was changed to address this remaining result.
 
 Quick stopped at its timing gate, before its separate build-logic, tooling-script and serial timing stages. The changed timing-report consumer test was therefore run directly afterward with `python3 -I -m unittest discover -s Scripts/tests -p test_run_tier.py -k test_exempt_and_warmup_pass`; it passed. Quick and layout were each invoked exactly once. Final quick JSON/XML and output are under `build/test-diet-gate-fix/{quick-results,quick.log}`, and listener/mutation evidence shares that parent directory. Sandbox Kotlin-daemon/FSEvents warnings occurred; the final Gradle invocations completed.
+
+Explicit class fixture warm-ups use `measureClassWarmup(testClass, sdk, name) { ... }` from
+`:core:testing-junit`. The caller keeps the work once per JVM in `BeforeClass`. A separate
+`warmup-*.json` file carries class, SDK, phase name and elapsed milliseconds across Robolectric's
+sandbox class loader. `run-tier` includes these records in the top-level `warmups` array of
+`timings.json`; they neither count as test cases nor replace the listener's required test evidence.
+Existing test/SDK/class allowances are unchanged. Up-to-date tasks incur no new warm-up and have
+no fresh warm-up record.
