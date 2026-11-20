@@ -303,6 +303,10 @@ class AppGraph(
             }
         }
     val sessionGraphs: SessionGraphs by graphsLazy
+    val onboardingSessions: net.chronoflow.feature.onboarding.OnboardingSessions by lazy {
+        net.chronoflow.app.onboarding
+            .AppOnboardingSessions(controller, sessionGraphs.current)
+    }
     private val routerLazy: Lazy<SessionGateRouter> =
         lazy {
             SessionGateRouter(

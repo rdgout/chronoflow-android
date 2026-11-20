@@ -54,12 +54,13 @@ object TestSeeds {
                     MockSeedFlags(seed.unverified, seed.walkthroughSeen, seed.termsPending),
                     cipher,
                     dispatchers,
+                    mutationsOffline = seed.mutationsOffline,
                 )
             DebugAppHooks.resetGraph(app, overrides)
             val credentials = KeystoreSessionStore(File(dir, "ChronoFlowMock/session.bin"), alias, cipher, io)
             val source = sourceForSeed(dir, overrides, io) { credentials.readStoredSession()?.token }
             SeedRunner(dir, credentials, AndroidAccountDriverFactory(context), source, io)
-                .reseed(seed.signedIn, seed.testId)
+                .reseed(seed.signedIn, seed.testId, seed.termsChangesPending)
             seed.authTestLink?.let { link ->
                 withContext(app.graph.dispatchers.main) { app.graph.pendingLaunchIntents.captureLink(link) }
             }

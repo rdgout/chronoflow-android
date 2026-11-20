@@ -51,6 +51,7 @@ class PerfMockSources(
     ): DataSource =
         MockDataSource(
             store = FileMockStateStore(root),
+            mutationsOffline = overrides.mutationsOffline,
             seed =
                 overrides.mockSeed?.let {
                     MockAppSeed.make(

@@ -67,12 +67,12 @@ class RootContentTest {
                 .putExtra("CF_AUTH_TEST_ID", "0199a3c0-0000-7000-8000-000000000000")
                 .putExtra("CF_UI_TEST_PROFILE", "screen")
         ActivityScenario.launch<MainActivity>(intent).use { scenario ->
-            scenario.onActivity { app.graph.rootNavigator.navigate(Route.Terms) }
-            compose.onNodeWithTag("route.terms").assertExists()
+            scenario.onActivity { app.graph.rootNavigator.navigate(Route.GuestWizard) }
+            compose.onNodeWithTag("route.guestWizard").assertExists()
             val revision = app.graph.rootNavigator.state.value.revision
             scenario.recreate()
-            compose.onNodeWithTag("route.terms").assertExists()
-            assertEquals(RootState(Route.Terms, revision), app.graph.rootNavigator.state.value)
+            compose.onNodeWithTag("route.guestWizard").assertExists()
+            assertEquals(RootState(Route.GuestWizard, revision), app.graph.rootNavigator.state.value)
         }
     }
 }

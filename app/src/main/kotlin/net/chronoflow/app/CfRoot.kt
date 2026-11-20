@@ -39,6 +39,8 @@ import kotlinx.coroutines.Deferred
 import net.chronoflow.app.auth.SignInViewModelFactory
 import net.chronoflow.app.auth.SignUpViewModelFactory
 import net.chronoflow.app.auth.TwoFactorViewModelFactory
+import net.chronoflow.app.onboarding.WalkthroughEntry
+import net.chronoflow.app.onboarding.onboardingExtras
 import net.chronoflow.app.shell.AppShell
 import net.chronoflow.core.designsystem.effect.skyBackground
 import net.chronoflow.core.designsystem.layout.LocalSafeInsets
@@ -58,6 +60,8 @@ import net.chronoflow.feature.auth.verify.VerifyEmailRoute
 import net.chronoflow.feature.launch.LaunchOverlay
 import net.chronoflow.feature.launch.model.LaunchRoute
 import net.chronoflow.feature.launch.welcome.WelcomeScreen
+import net.chronoflow.feature.onboarding.terms.TermsRoute
+import net.chronoflow.feature.onboarding.terms.TermsViewModel
 import net.chronoflow.feature.trip.timeline.LocalTimelineJankTagger
 import net.chronoflow.feature.trip.timeline.TimelineJankTagger
 
@@ -207,6 +211,29 @@ internal fun CfRoot(
                                             viewModel(factory = SignUpViewModelFactory, extras = extras),
                                             opener,
                                         )
+                                    }
+
+                                    Route.Terms -> {
+                                        TermsRoute(
+                                            viewModel(
+                                                factory = TermsViewModel.Factory,
+                                                extras = onboardingExtras(graph),
+                                            ),
+                                            signOutConfirmation = { _, _, _ ->
+                                                // Phase 10a supplies the pending-change confirmation sheet.
+                                            },
+                                        )
+                                    }
+
+                                    is Route.Walkthrough -> {
+                                        LaunchedEffect(route.replay) {
+                                            if (route.replay && BuildConfig.DEBUG) {
+                                                android.util.Log.w("ChronoFlow", "root walkthrough replay")
+                                            }
+                                        }
+                                        WalkthroughEntry(graph, route.replay) {
+                                            graph.rootNavigator.navigate(Route.Settings)
+                                        }
                                     }
 
                                     Route.SignIn -> {

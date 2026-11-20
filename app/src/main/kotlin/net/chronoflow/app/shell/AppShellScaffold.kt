@@ -35,6 +35,7 @@ import net.chronoflow.core.designsystem.system.CfNavLayout
 import net.chronoflow.core.designsystem.system.CfNavigationSuiteScaffold
 import net.chronoflow.core.designsystem.theme.CfTheme
 import net.chronoflow.core.navigation.Route
+import net.chronoflow.core.navigation.hidesShellChrome
 import net.chronoflow.core.navigation.shell.ShellTab
 import net.chronoflow.core.navigation.stateKey
 import net.chronoflow.core.ui.R
@@ -56,19 +57,32 @@ internal fun AppShellScaffold(
     val state = holder.state
     val safe = LocalSafeInsets.current
     val layout =
-        if (currentWindowAdaptiveInfoV2().windowSizeClass.isWidthAtLeastBreakpoint(WindowPolicy.wideBreakpointDp)) {
+        if (state.stacks
+                .getValue(state.selected)
+                .last()
+                .hidesShellChrome()
+        ) {
+            CfNavLayout.None
+        } else if (currentWindowAdaptiveInfoV2().windowSizeClass.isWidthAtLeastBreakpoint(
+                WindowPolicy.wideBreakpointDp,
+            )
+        ) {
             CfNavLayout.Rail
         } else {
             CfNavLayout.Bar
         }
     val contentInsets =
-        safe.only(
-            if (layout == CfNavLayout.Bar) {
-                WindowInsetsSides.Top + WindowInsetsSides.Horizontal
-            } else {
-                WindowInsetsSides.Top + WindowInsetsSides.End + WindowInsetsSides.Bottom
-            },
-        )
+        if (layout == CfNavLayout.None) {
+            safe
+        } else {
+            safe.only(
+                if (layout == CfNavLayout.Bar) {
+                    WindowInsetsSides.Top + WindowInsetsSides.Horizontal
+                } else {
+                    WindowInsetsSides.Top + WindowInsetsSides.End + WindowInsetsSides.Bottom
+                },
+            )
+        }
     val items =
         listOf(
             CfNavItem(

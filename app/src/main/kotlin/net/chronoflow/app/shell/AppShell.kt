@@ -87,6 +87,9 @@ internal fun AppShell(
                         onRouteChange = { holder.replaceRoute(route, it) },
                         onWizard = { holder.push(Route.Wizard(it)) },
                     )
+                } else if (route is Route.Walkthrough) {
+                    net.chronoflow.app.onboarding
+                        .WalkthroughEntry(graph, replay = true) { holder.back() }
                 } else {
                     render.value(route)
                 }

@@ -45,7 +45,7 @@ class GenerateIconsTest(unittest.TestCase):
 
     def test_manifest_names_all_generate(self):
         names = json.loads(g.MANIFEST.read_text())['glyphs']
-        self.assertEqual(len(names), 43)
+        self.assertEqual(len(names), 44)
         text = g.generate()
         for name in names:
             self.assertIn(f'"{name}"', text)

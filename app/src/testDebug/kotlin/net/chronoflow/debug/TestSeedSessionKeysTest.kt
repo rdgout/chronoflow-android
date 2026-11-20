@@ -37,6 +37,8 @@ class TestSeedSessionKeysTest(
                 "CF_AUTH_TEST_SIGNED_IN" -> seed.signedIn
                 "CF_AUTH_TEST_WALKTHROUGH_SEEN" -> seed.walkthroughSeen
                 "CF_AUTH_TEST_TERMS_PENDING" -> seed.termsPending
+                "CF_WALKTHROUGH_TEST_PENDING" -> seed.walkthroughPending
+                "CF_AUTH_TEST_TERMS_CHANGES_PENDING" -> seed.termsChangesPending
                 "CF_AUTH_TEST_UNVERIFIED" -> seed.unverified
                 "CF_AUTH_TEST_AUDIT_SCREEN" -> seed.auditScreen
                 "CF_AUTH_TEST_AUDIT_STATE" -> seed.auditState
@@ -67,6 +69,8 @@ class TestSeedSessionKeysTest(
                     Row("account", "CF_AUTH_TEST_SIGNED_IN", "demo", true, SeedAccount.Demo, false),
                     Row("walkthrough", "CF_AUTH_TEST_WALKTHROUGH_SEEN", "1", true, true, false),
                     Row("terms", "CF_AUTH_TEST_TERMS_PENDING", "1", true, true, false),
+                    Row("walkthrough-pending", "CF_WALKTHROUGH_TEST_PENDING", "1", true, true, false),
+                    Row("terms-changes-pending", "CF_AUTH_TEST_TERMS_CHANGES_PENDING", "1", true, true, false),
                     Row("verify", "CF_AUTH_TEST_UNVERIFIED", "1", true, true, false),
                     Row("audit-screen", "CF_AUTH_TEST_AUDIT_SCREEN", "sign-in", true, "sign-in", false),
                     Row("audit-state", "CF_AUTH_TEST_AUDIT_STATE", "failed", true, "failed", false),
@@ -89,7 +93,7 @@ class TestSeedSessionKeysTest(
 
             fun empty(key: String): Any? =
                 when (key) {
-                    "CF_AUTH_TEST_WALKTHROUGH_SEEN", "CF_AUTH_TEST_TERMS_PENDING", "CF_AUTH_TEST_UNVERIFIED", "CF_PLAN_TEST_POSITION", "CF_PLAN_TEST_FREEZE_CLOCK", "CF_WIZARD_AUTO_OPEN" -> false
+                    "CF_AUTH_TEST_WALKTHROUGH_SEEN", "CF_WALKTHROUGH_TEST_PENDING", "CF_AUTH_TEST_TERMS_CHANGES_PENDING", "CF_AUTH_TEST_TERMS_PENDING", "CF_AUTH_TEST_UNVERIFIED", "CF_PLAN_TEST_POSITION", "CF_PLAN_TEST_FREEZE_CLOCK", "CF_WIZARD_AUTO_OPEN" -> false
                     "CF_MOCK_DELAY" -> Duration.ZERO
                     else -> null
                 }
@@ -105,7 +109,14 @@ class TestSeedSessionKeysTest(
                     }.map {
                         it.copy(
                             name = it.name + "-invalid",
-                            value = "invalid",
+                            value =
+                                if (it.key in
+                                    setOf("CF_WALKTHROUGH_TEST_PENDING", "CF_AUTH_TEST_TERMS_CHANGES_PENDING")
+                                ) {
+                                    "yes"
+                                } else {
+                                    "invalid"
+                                },
                             expected = empty(it.key),
                             ignored = true,
                         )
