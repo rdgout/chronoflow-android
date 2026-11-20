@@ -272,6 +272,49 @@ class MemberWizardReviewTest {
     }
 
     @RunWith(Parameterized::class)
+    class ForeignSaveCancellation(
+        private val duringCreate: Boolean,
+    ) {
+        @Test fun savePlanForeignCancellationReturnsToReadyWithServerFailure() =
+            runTest(timeout = 60.seconds) {
+                val fixture = WizardModelFixture(backgroundScope, testScheduler, ready = true)
+                if (duringCreate) {
+                    fixture.generation.outcomes.add(TripGenerationSaveResult.Outcome.Saved("created-trip"))
+                    fixture.store.beforePersist = {
+                        if (it.state.savedTripId != null) throw CancellationException("foreign")
+                    }
+                } else {
+                    fixture.generation.saveFailure = CancellationException("foreign")
+                }
+                try {
+                    fixture.model.savePlan()
+                    assertEquals(MemberWizardStep.calculating, fixture.model.state.step)
+                    runCurrent()
+                    assertEquals(MemberWizardStep.ready, fixture.model.state.step)
+                    assertEquals(
+                        WizardSaveFailure.Kind.server,
+                        fixture.model.state.saveFailure
+                            ?.kind,
+                    )
+                    assertFalse(fixture.model.persistenceFailed)
+                    assertFalse(fixture.model.closed)
+                    assertNull(fixture.model.saveJob)
+                    assertTrue(fixture.model.canSave)
+                    fixture.checking.advance(60_000)
+                    assertEquals(1, fixture.generation.saves)
+                } finally {
+                    fixture.close()
+                }
+            }
+
+        companion object {
+            @JvmStatic
+            @Parameterized.Parameters(name = "duringCreate={0}")
+            fun cases() = listOf(false, true)
+        }
+    }
+
+    @RunWith(Parameterized::class)
     class ValidationRouting(
         private val path: String,
         private val step: MemberWizardStep,

@@ -16,6 +16,7 @@ class FakeWizardGeneration : MemberWizardGeneration {
     val cancellations = mutableListOf<String>()
     var cancelled = false
     var reviewHandler: (suspend () -> TripGenerationReviewResult)? = null
+    var saveFailure: Throwable? = null
 
     override suspend fun review(
         instance: String,
@@ -32,6 +33,7 @@ class FakeWizardGeneration : MemberWizardGeneration {
         didCreate: suspend (String) -> Unit,
     ): TripGenerationSaveResult {
         saves++
+        saveFailure?.let { throw it }
         val outcome = outcomes.removeFirstOrNull() ?: TripGenerationSaveResult.Outcome.Failed(DataFailure.Server(null))
         if (outcome is TripGenerationSaveResult.Outcome.Saved) {
             didCreate(outcome.tripId)
