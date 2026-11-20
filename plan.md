@@ -2567,7 +2567,7 @@ Implementation commits (brief §7):
   - Three pages.
   - Skip and Done commit locally and enqueue the walkthrough change without waiting for sync.
   - The first run ends on Today. `Walkthrough(replay = true)` returns to its caller (`WalkthroughReplay`).
-- [ ] **Terms update gate** (`TermsUpdate`, `TermsFailed`).
+- [x] **Terms update gate** (`TermsUpdate`, `TermsFailed`).
   - Accept posts the change, with a failed state and retry.
   - Policy pages (`PolicyReader`) open in a Custom Tab (`androidx.browser`, OQ-A32).
   - Terms come before the walkthrough, and missing policies keep the gate loading.
