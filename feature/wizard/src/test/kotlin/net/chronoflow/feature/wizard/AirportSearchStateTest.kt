@@ -49,6 +49,24 @@ class AirportSearchStateTest {
         block(fixture)
     }
 
+    @Test fun searchChangesDoNotEmitRouteOrChromeState() =
+        runTest(timeout = 60.seconds) {
+            searching { f ->
+                var headers = 0
+                var routes = 0
+                backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { f.model.chrome.collect { headers++ } }
+                backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { f.model.where.collect { routes++ } }
+                runCurrent()
+                headers = 0
+                routes = 0
+                f.model.onQuery("AmsterdamX")
+                advanceTimeBy(350)
+                runCurrent()
+                assertEquals(0, headers)
+                assertEquals(0, routes)
+            }
+        }
+
     @Test fun shortQueriesShowTheHint() =
         runTest(timeout = 60.seconds) {
             searching { f ->

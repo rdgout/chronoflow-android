@@ -228,7 +228,7 @@ The boards are read-only. Open the HTML in a browser to render them; the frame i
 | Sheet grabber 36 × 5 | M3 `BottomSheetDefaults.DragHandle()` | Phase 2 OQ-2-3 [F] |
 | Search placeholder: iOS "Search airports" | "Airport or city" / "Luchthaven of stad" (WizardCopy) as Android-only copy | WizardCopy is the binding copy deck [R]; OQ-9c-2 |
 | `TripAirportSearch` rows (Fraunces code 20/28, 64 high, radius 22, count line) | `WizardSheet` rows (code 15/700, 60 high, radius 16, no count line) | `WizardSheet` is newer and iOS built it [R]; OQ-9c-4 |
-| Board progress on sheet and alert backdrops (`WizardAirportFrom` 15 over the empty Where, `WizardAirportHome` and `WizardStopSearchHome` 55, `WizardDiscard` 30) | The model's value for the state shown: 8, 50, 50 and 15 | progress comes from 9a, never per board [R]; OQ-9c-6 |
+| Board progress on the same-airport state and sheet/alert backdrops (`WizardWhereSame` 15 despite an incomplete route, `WizardAirportFrom` 15 over the empty Where, `WizardAirportHome` and `WizardStopSearchHome` 55, `WizardDiscard` 30) | The model's value for the state shown: 8 on Same and AirportFrom, 50 on AirportHome and StopSearchHome, and 15 on Discard | progress comes from 9a, never per board [R]; OQ-9c-6 |
 | `WizardDiscard` backdrop = Outbound | In 9c the alert is captured over Where with something entered; 9d re-captures it over Outbound | Outbound is 9d [R]; OQ-9c-5 |
 | `WizardAirportHome` backdrop = flight-home **times** | Captured over the flight-home route (`WizardHomeRoute`), which is where the To row opens it | iOS opens it from the route [F]; times are 9d |
 | No audience notice on the Where boards | Built per iOS NH5, below the route card on Where (not on the home route) | iOS user decision, no-health-data [F `MemberWizardRouteView.swift` l.23–33]; OQ-9c-1 |
@@ -845,6 +845,8 @@ No Robolectric entry test: composing `AppShell` needs `ChronoFlowApp.graph` and 
 - The end-to-end seed path runs on the emulator in Task 11's keyboard check (`CF_WIZARD_BOARD_CAPTURE=WizardStopSearch`).
 - `app/src/testRelease/…/ReleaseReadinessTest.kt` (extend it): release has no `WizardBoardCaptureSeed`, `FixedAirportSearch` or debug `WizardStepSeam`, and `wizardStartOverride` is null.
 
+**Task 10 implementation notes (2026-11-20):** debug-seed guards and captures live in `src/testDebug` so release unit-test compilation never imports debug classes. The no-overlap guard exempts only the M3 segmented group: Material intentionally overlaps its segments by one shared border width. Truncation, target sizes and safe-area checks still cover that group; custom controls have no overlap exemption. Same-airport progress follows the pinned model (8%, not the illustrative board’s 15%). Separate native windows are composited over the activity raster with their own dim and gravity for full-frame captures. Navigation guards also cover stale question indices on non-question steps and preserve the outgoing step state during slides.
+
 ### Task 10: Guards and board captures (`test(wizard): guard where and search states and capture the boards`) [ticks "Tests" with Task 11]
 
 **`WizardGuardsTest`** (`@Layout`, parameterised, one test case per parameter set). It runs 0e `Guards` (no truncation, 48 dp targets, inside `safeDrawing`, no overlap, headings) on `WizardScreen` with states derived from the seed drafts and `FixedAirportSearch` results (no ViewModel).
@@ -1013,7 +1015,7 @@ If the worker sandbox cannot run the emulator, report the exact commands (`make 
 | OQ-9c-3 | TripSearchStates copy (hint, searching, empty, error) has no iOS catalog keys, because iOS never built those states. | Ship §5.7's en (board) and nl (web `lang/nl.json` where it exists; proposed otherwise), marked "needs review". |
 | OQ-9c-4 | `TripAirportSearch` draws a count line ("5 airports") and older rows. | Not built. `WizardSheet` rows only; the count line has no copy. |
 | OQ-9c-5 | The `WizardDiscard` backdrop is Outbound, which 9d builds. | 9c captures the alert over Where with something entered; 9d re-captures `WizardDiscard*` over Outbound. |
-| OQ-9c-6 | Backdrop percentages on the sheet boards (15 over the empty Where, 55 on the home sheets) disagree with the model. | Show the model value for the state under the sheet (8 or 50); record it. |
+| OQ-9c-6 | The Same board (15 despite an incomplete route) and backdrop percentages on the sheet boards (15 over the empty Where, 55 on the home sheets) disagree with the model. | Show the model value (8 on Same and the empty Where, 50 on the home route); record it. |
 | OQ-9c-7 | Glass circles (header buttons, swap) under OQ-A6 "no glass". | Header: ghost icon buttons with no fill. Swap: an opaque 40 dp circle in `wizardPickerFill`. |
 | OQ-9c-8 | The board search field is 40 high, below the 48 dp target. | A 40 dp visible box inside a 48 dp clickable band, with gaps adjusted so the box sits where the board draws it. |
 | OQ-9c-9 | Where row height: board 68 vs iOS token `wizardAirportHeight` 76. | Board, 68 dp. |

@@ -5,6 +5,7 @@ import net.chronoflow.core.designsystem.layout.BoardMetrics
 @Suppress("ktlint:standard:property-naming")
 @BoardMetrics("Wizard", "WizardCopy")
 internal object WizardMetrics {
+    const val headerStroke = 2.4f
     const val header = 54
     const val headerInset = 10
     const val target = 48

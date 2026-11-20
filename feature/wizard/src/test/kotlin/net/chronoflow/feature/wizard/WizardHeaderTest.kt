@@ -31,6 +31,27 @@ class WizardHeaderTest {
 
     @get:Rule val rules: RuleChain = RuleChain.outerRule(ProfileRule(DeviceProfiles.pixel8)).around(compose)
 
+    @Test fun theForwardSlideKeepsTheOutgoingWhereContent() {
+        val draft = routeDraft()
+        val state = mutableStateOf(screenState(draft))
+        compose.mainClock.autoAdvance = false
+        compose.setContent {
+            net.chronoflow.core.testing.compose.ProfileHost(DeviceProfiles.pixel8) {
+                net.chronoflow.core.designsystem.theme.ChronoFlowTheme(reduceMotion = false) {
+                    WizardScreen(state.value, {})
+                }
+            }
+        }
+        compose.runOnIdle {
+            state.value =
+                screenState(draft.copy(state = draft.state.copy(step = MemberWizardStep.outbound)))
+        }
+        compose.mainClock.advanceTimeBy(150)
+        compose.onNodeWithTag("wizard.route").assertExists()
+        compose.onNodeWithTag("wizard.seam.outbound").assertExists()
+        compose.onNodeWithTag("wizard.seam.whereTo").assertDoesNotExist()
+    }
+
     @Test fun whereHasCloseAndNoBack() {
         compose.setContent { WizardTestHost { WizardScreen(screenState(), {}) } }
         compose.onNodeWithTag("wizard.back").assertDoesNotExist()

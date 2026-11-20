@@ -362,7 +362,17 @@ data class WizardUiState(
             dialog: Boolean = false,
         ): WizardUiState {
             val draft = active.wizard.draft
-            val key = WizardStepKey(draft.state.step, draft.state.questionIndex)
+            val key =
+                WizardStepKey(
+                    draft.state.step,
+                    if (draft.state.step ==
+                        MemberWizardStep.question
+                    ) {
+                        draft.state.questionIndex ?: 0
+                    } else {
+                        null
+                    },
+                )
             return WizardUiState(
                 WizardChromeUi.from(active, closing),
                 key,

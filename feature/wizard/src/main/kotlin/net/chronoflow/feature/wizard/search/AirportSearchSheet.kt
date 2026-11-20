@@ -84,6 +84,7 @@ import net.chronoflow.feature.wizard.ui.resolve
 @Suppress("ktlint:standard:property-naming")
 @BoardMetrics("WizardSheet", "TripSearchStates")
 internal object SheetMetrics {
+    const val searchStroke = 2.2f
     const val top = 56
     const val gutter = 20
     const val target = 48
@@ -183,13 +184,18 @@ internal fun AirportSearchSheet(
                             contentPadding = PaddingValues(0.dp),
                         )
                     }
-                    Text(
-                        ui.title.resolve(),
-                        Modifier.weight(2f).widthIn(max = SheetMetrics.headerTitleMax.dp).semantics { heading() },
-                        style = CfTheme.type.style(CfTypeScale.wizardButton),
-                        color = CfTheme.colors.foreground,
-                        textAlign = TextAlign.Center,
-                    )
+                    Box(Modifier.weight(2f), contentAlignment = Alignment.Center) {
+                        Text(
+                            ui.title.resolve(),
+                            Modifier
+                                .widthIn(max = SheetMetrics.headerTitleMax.dp)
+                                .testTag("wizard.airport.title")
+                                .semantics { heading() },
+                            style = CfTheme.type.style(CfTypeScale.wizardButton),
+                            color = CfTheme.colors.foreground,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
                     Spacer(Modifier.weight(1f))
                 }
                 ui.caption?.let { caption ->
@@ -272,7 +278,7 @@ internal fun AirportSearchField(
                     horizontalArrangement = Arrangement.spacedBy(SheetMetrics.fieldIconGap.dp),
                 ) {
                     Icon(
-                        LucideGlyphs.Search.imageVector(),
+                        LucideGlyphs.Search.imageVector(SheetMetrics.searchStroke),
                         null,
                         Modifier.size(SheetMetrics.fieldIcon.dp),
                         tint = CfTheme.colors.mutedForeground,

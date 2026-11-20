@@ -32,6 +32,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -155,9 +156,17 @@ internal fun WizardHeader(
             .testTag("wizard.header"),
     ) {
         if (chrome.showBack) {
-            CfIconButton(LucideGlyphs.ChevronLeft.imageVector(), stringResource(R.string.auth_back), {
-                onEvent(WizardEvent.Back)
-            }, Modifier.align(Alignment.CenterStart).testTag("wizard.back"), iconSize = WizardMetrics.backGlyph.dp)
+            CfIconButton(
+                LucideGlyphs.ChevronLeft.imageVector(
+                    WizardMetrics.headerStroke,
+                ),
+                stringResource(R.string.auth_back),
+                {
+                    onEvent(WizardEvent.Back)
+                },
+                Modifier.align(Alignment.CenterStart).testTag("wizard.back"),
+                iconSize = WizardMetrics.backGlyph.dp,
+            )
         }
         Text(
             stringResource(
@@ -180,9 +189,17 @@ internal fun WizardHeader(
             overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
         )
         if (chrome.showClose) {
-            CfIconButton(LucideGlyphs.X.imageVector(), stringResource(R.string.wizard_close), {
-                onEvent(WizardEvent.RequestClose)
-            }, Modifier.align(Alignment.CenterEnd).testTag("wizard.close"), iconSize = WizardMetrics.closeGlyph.dp)
+            CfIconButton(
+                LucideGlyphs.X.imageVector(
+                    WizardMetrics.headerStroke,
+                ),
+                stringResource(R.string.wizard_close),
+                {
+                    onEvent(WizardEvent.RequestClose)
+                },
+                Modifier.align(Alignment.CenterEnd).testTag("wizard.close"),
+                iconSize = WizardMetrics.closeGlyph.dp,
+            )
         }
     }
 }
@@ -249,8 +266,25 @@ internal fun WizardStepHost(
     val reduce = LocalReduceMotion.current
     val events = rememberUpdatedState(onEvent)
     val stack = listOf(WizardStepKey.Where) + state.path
+    val rendered = remember { mutableMapOf<WizardStepKey, WizardUiState>() }
+    SideEffect { rendered[state.step] = state }
     NavDisplay(
-        entries = stack.map { key -> NavEntry(key) { WizardStepContent(state, key, events.value) } },
+        entries =
+            stack.map { key ->
+                NavEntry(key) {
+                    WizardStepContent(
+                        if (key ==
+                            state.step
+                        ) {
+                            state
+                        } else {
+                            rendered[key] ?: state
+                        },
+                        key,
+                        events.value,
+                    )
+                }
+            },
         onBack = { onEvent(WizardEvent.Back) },
         modifier = modifier,
         transitionSpec = {

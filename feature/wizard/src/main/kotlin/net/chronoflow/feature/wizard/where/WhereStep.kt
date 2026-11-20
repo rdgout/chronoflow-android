@@ -60,6 +60,8 @@ import net.chronoflow.feature.wizard.ui.resolve
 @Suppress("ktlint:standard:property-naming")
 @BoardMetrics("Wizard")
 internal object WhereMetrics {
+    const val swapStroke = 2.2f
+    const val actionStroke = 2.4f
     const val none = 0
     const val row = 68
     const val rowVertical = 10
@@ -76,6 +78,7 @@ internal object WhereMetrics {
     const val noticeGap = 10
     const val noticeIcon = 18
     const val noticeRadius = 18
+    const val limitOffset = -4
     const val questionTop = 4
     const val questionInset = 4
     const val errorGap = 6
@@ -137,7 +140,7 @@ internal fun RouteCard(
         if (state.showSwap) {
             val haptics = LocalHaptics.current
             RoundAction(
-                LucideGlyphs.ArrowDownUp.imageVector(),
+                LucideGlyphs.ArrowDownUp.imageVector(WhereMetrics.swapStroke),
                 state.swapDescription.resolve(),
                 WhereMetrics.swap,
                 WhereMetrics.glyph,
@@ -290,7 +293,7 @@ internal fun RouteRow(
         if (row.removable) {
             val haptics = LocalHaptics.current
             RoundAction(
-                LucideGlyphs.X.imageVector(),
+                LucideGlyphs.X.imageVector(WhereMetrics.actionStroke),
                 row.removeDescription.resolve(),
                 WhereMetrics.remove,
                 WhereMetrics.removeGlyph,
@@ -444,7 +447,11 @@ internal fun StopQuestion(
         if (state.limitReached) {
             Text(
                 WizardCopy("That's the most we can plan: 16 flights.").resolve(),
-                Modifier.padding(horizontal = WhereMetrics.questionInset.dp).testTag("wizard.route.limit"),
+                Modifier
+                    .offset(
+                        y = WhereMetrics.limitOffset.dp,
+                    ).padding(horizontal = WhereMetrics.questionInset.dp)
+                    .testTag("wizard.route.limit"),
                 style = CfTheme.type.style(CfTypeScale.wizardHint),
                 color = CfTheme.colors.mutedForeground,
             )
@@ -467,7 +474,7 @@ internal fun StopQuestion(
                     ),
             ) {
                 Icon(
-                    LucideGlyphs.Plus.imageVector(),
+                    LucideGlyphs.Plus.imageVector(WhereMetrics.actionStroke),
                     null,
                     Modifier.size(WhereMetrics.glyph.dp),
                     tint = CfTheme.colors.dawnText,

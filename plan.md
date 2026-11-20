@@ -2714,6 +2714,7 @@ Implementation commits (brief §7):
 **Delivers.** Builds the full-screen wizard shell: a centered top bar with close and back, the 4 dp dawn progress bar at the board percentages, a fixed footer with IME padding and a 520 dp column on wide windows, plus the discard alert and the quiet recovery. It builds Where with From, To, stops, swap, the same-airport error and the flight-home route, and the full-height airport and stop search sheets with all search states. New trip on My trips opens it.
 
 **Tasks**
+- [x] **Guards and captures** (9c Task 10): 97 profile cases, search recomposition guard, and 37 full-frame board PNGs; external rendered-board comparison pending sandbox handoff.
 - [x] **Entry and quiet recovery** (9c Task 8): Create overlay, guarded launcher, owned ViewModel store and recovery once per session epoch on IO.
 - [x] **Shell geometry** (9c Task 4): header, progress, column breakpoint, footer and Nav3 seam host; profile guards verified.
 - [x] **Search state** (9c Task 3): map the shared search session, filter through the model and enable throttle retry with one delay.

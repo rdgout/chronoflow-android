@@ -56,6 +56,7 @@ class AirportSearchSheetGeometryTest(
         assertEquals(40f, bounds("wizard.airport.query.box").height, 0.5f)
         assertTrue(bounds("wizard.airport.query").height >= 48)
         assertTrue(bounds("wizard.airport.AMS").height >= 60)
+        assertTrue(bounds("wizard.airport.title").width <= 220.5f)
         assertEquals(44f, bounds("wizard.airport.code.AMS").width, 0.5f)
     }
 

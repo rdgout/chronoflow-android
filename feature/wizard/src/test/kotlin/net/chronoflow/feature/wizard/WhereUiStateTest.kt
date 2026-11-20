@@ -19,6 +19,7 @@ import net.chronoflow.feature.wizard.ui.StopQuestionUi
 import net.chronoflow.feature.wizard.ui.WhereUi
 import net.chronoflow.feature.wizard.ui.WizardChromeUi
 import net.chronoflow.feature.wizard.ui.WizardCopy
+import net.chronoflow.feature.wizard.ui.WizardUiState
 import net.chronoflow.feature.wizard.ui.airportPlace
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -29,6 +30,16 @@ import org.junit.Test
 import kotlin.time.Duration.Companion.seconds
 
 class WhereUiStateTest {
+    @Test fun nonQuestionStepsIgnoreTheOldQuestionIndex() {
+        val draft = routeDraft().let { it.copy(state = it.state.copy(questionIndex = 3)) }
+        val ui = WizardUiState.from(TripWizardUiState.Active(MemberWizardSnapshot(draft), 0.15, emptyList()))
+        assertEquals(net.chronoflow.feature.wizard.shell.WizardStepKey.Where, ui.step)
+        assertTrue(ui.where != null)
+        val home = routeDraft(home = true).let { it.copy(state = it.state.copy(questionIndex = 3)) }
+        assertEquals(net.chronoflow.feature.wizard.shell.WizardStepKey.ReturnRoute, screenState(home).step)
+        assertTrue(screenState(home).where != null)
+    }
+
     @Test fun emptyRouteShowsPlaceholdersAndDisablesSwap() {
         val ui = WhereUi.from(MemberWizardDraft())
         assertEquals(2, ui.rows.size)
