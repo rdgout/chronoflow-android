@@ -28,7 +28,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDatePickerState
-import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -81,7 +80,7 @@ import net.chronoflow.core.designsystem.system.CfPullToRefreshBox
 import net.chronoflow.core.designsystem.system.CfSegmentedButtons
 import net.chronoflow.core.designsystem.system.CfSnackbarHost
 import net.chronoflow.core.designsystem.system.CfSwitch
-import net.chronoflow.core.designsystem.system.CfTimePickerDialog
+import net.chronoflow.core.designsystem.system.CfTimePickerSheet
 import net.chronoflow.core.designsystem.system.CfTopAppBar
 import net.chronoflow.core.designsystem.system.cfToggleable
 import net.chronoflow.core.designsystem.theme.CfTheme
@@ -413,16 +412,16 @@ fun GalleryPage(
 }
 
 @Composable fun ColumnScope.TimePicker() {
-    CfTimePickerDialog(
-        rememberTimePickerState(initialHour = 22, initialMinute = 30, is24Hour = true),
-        {
-        },
-        {
-        },
-        stringResource(
-            R.string.settings_done,
-        ),
-        stringResource(R.string.settings_cancel),
-        stringResource(R.string.settings_bedtime),
+    CfTimePickerSheet(
+        title = stringResource(R.string.settings_bedtime),
+        subtitle = stringResource(R.string.settings_on_a_normal_work_or_school_day),
+        footnote = null,
+        initialHour = 22,
+        initialMinute = 30,
+        is24Hour = true,
+        confirmLabel = stringResource(R.string.settings_done),
+        dismissLabel = stringResource(R.string.settings_cancel),
+        onConfirm = { _, _, _ -> },
+        onDismiss = {},
     )
 }

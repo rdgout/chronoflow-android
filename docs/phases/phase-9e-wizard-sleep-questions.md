@@ -131,7 +131,7 @@ object WizardClockRounding {
     onConfirm: (hour: Int, minute: Int, touched: Boolean) -> Unit, onDismiss: () -> Unit,
     modifier: Modifier = Modifier, testTag: String = "time-sheet",
     confirmTag: String = "time-sheet.done", dismissTag: String = "time-sheet.cancel",
-    onStateCreated: (TimePickerState) -> Unit = {},   // internal test hook, as 9d's onDatePickerState
+    state: TimePickerState = rememberTimePickerState(initialHour, initialMinute, is24Hour),
 )
 ```
 
@@ -141,7 +141,7 @@ object WizardClockRounding {
 - Footnote (optional): 14/20 `mutedForeground`, centred.
 - Buttons (column, gap 8): `CfButton(style = Primary, size = Lg, fillWidth)` = confirm; `CfButton(style = Ghost, size = Lg, fillWidth)` = dismiss. Both keep the ≥ 48 dp target.
 - `touched = state.hour != initialHour || state.minute != initialMinute`. Confirm calls `onConfirm(state.hour, state.minute, touched)`; dismiss, back and scrim call `onDismiss` only. The sheet itself never rounds or writes.
-- The test hook is a `@VisibleForTesting` parameter (9d added no picker-state hook; its dialogs are never opened in Robolectric). The caller passes `modifier` for its tag and semantics (the wizard passes `Modifier.testTag("wizard.time-sheet").wizardPickerSemantics(null, is24Hour)`); the sheet applies `modifier` to its content column inside the sheet window.
+- The picker state is hoisted through a defaulted `state` parameter, following the user's no-test-hooks-in-`src/main` instruction (9d added no picker-state hook). Tests supply the normal state parameter; there is no testing callback. The caller passes `modifier` for its tag and semantics (the wizard passes `Modifier.testTag("wizard.time-sheet").wizardPickerSemantics(null, is24Hour)`); the sheet applies `modifier` to its content column inside the sheet window.
 
 ### 5.3 Wizard time rows (new) [F `MemberWizardSteps.swift:282–302`, `MemberWizardFineTuneView.swift:195–215`; R]
 
@@ -312,7 +312,7 @@ Each task is one commit (Conventional Commits, lower-case imperative, **no trail
 
 ### Task 2: Time picker sheet (`feat(designsystem): add a time picker sheet`)
 - §5.2, plus its entry in the `GallerySection.TimePicker` section of `core/testing-compose/…/designsystem/DesignSystemGallery.kt` and its guard (Konsist `designSystemPrimitivesHaveGuards` scans `core/ui/src/test/…/designsystem/*GuardsTest.kt`).
-- **Robolectric `CfTimePickerSheetGuardsTest` (`@Logic`, `core/ui/src/test/kotlin/net/chronoflow/core/ui/designsystem/`, next to `CfTimePickerDialogGuardsTest`; structure only, no copy):** the `title`/`subtitle`/`footnote` tags exist when given and are absent when null; confirm passes `(hour, minute, touched = false)` when untouched and `touched = true` after `state.hour = 7; state.minute = 13` through the test hook in `runOnIdle`; dismiss calls only `onDismiss`; `is24Hour` reaches the state; both buttons ≥ 48 dp and carry the given tags; the title is a heading. Each warm case < 1 s.
+- **Robolectric `CfTimePickerSheetGuardsTest` (`@Logic`, `core/ui/src/test/kotlin/net/chronoflow/core/ui/designsystem/`, next to `CfTimePickerDialogGuardsTest`; structure only, no copy):** the `title`/`subtitle`/`footnote` tags exist when given and are absent when null; confirm passes `(hour, minute, touched = false)` when untouched and `touched = true` after `state.hour = 7; state.minute = 13` through the hoisted state in `runOnIdle`; dismiss calls only `onDismiss`; `is24Hour` reaches the state; both buttons ≥ 48 dp and carry the given tags; the title is a heading. Each warm case < 1 s.
 
 ### Task 3: Board drafts (`test(wizard): seed the sleep, question and no-plan boards`)
 - Extend 9c's `WizardBoardCaptureSeed` (`…/fwd/debug/WizardBoardCaptureSeed.kt`) with the base draft of 9d (AMS → NRT 2026-10-12T14:40 → 2026-10-13T09:15, airports, nl "Tokio", profile `{habitual_bed:"23:30", habitual_wake:"07:15", chronotype:"intermediate"}`, `entered`, `fromLastTrip = false`) and:
