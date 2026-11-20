@@ -37,7 +37,7 @@ fun CfFace.fontFamily(): FontFamily =
     when (this) {
         CfFace.System400 -> FontFamily.Default
         CfFace.Figtree400, CfFace.Figtree500, CfFace.Figtree600, CfFace.Figtree700 -> Figtree
-        CfFace.Fraunces400Opsz20, CfFace.Fraunces500Opsz20 -> Fraunces20
+        CfFace.Fraunces400Opsz20, CfFace.Fraunces500Opsz20, CfFace.Fraunces600Opsz20 -> Fraunces20
         CfFace.Fraunces400Opsz32, CfFace.Fraunces500Opsz32 -> Fraunces32
         CfFace.Fraunces400Opsz48, CfFace.Fraunces500Opsz48 -> Fraunces48
     }
@@ -57,7 +57,7 @@ fun CfFace.fontWeight(): FontWeight =
         CfFace.Fraunces500Opsz48,
         -> FontWeight.W500
 
-        CfFace.Figtree600 -> FontWeight.W600
+        CfFace.Figtree600, CfFace.Fraunces600Opsz20 -> FontWeight.W600
 
         CfFace.Figtree700 -> FontWeight.W700
     }
@@ -108,6 +108,7 @@ class CfType {
                 CfTypeScale.wizardAirportPlaceholder,
                 CfTypeScale.wizardRow,
                 CfTypeScale.wizardButton,
+                CfTypeScale.wizardSheetTitle,
                 CfTypeScale.wizardSubtitle,
                 CfTypeScale.wizardChronotype,
                 CfTypeScale.wizardFieldLabel,

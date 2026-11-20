@@ -34,6 +34,8 @@ class CfTypeTest {
     @Test fun facesAndStylesKeepTheIosMetrics() {
         assertSame(Fraunces48, CfFace.Fraunces400Opsz48.fontFamily())
         assertEquals(FontWeight.W500, CfFace.Fraunces500Opsz20.fontWeight())
+        assertSame(Fraunces20, CfFace.Fraunces600Opsz20.fontFamily())
+        assertEquals(FontWeight.W600, CfFace.Fraunces600Opsz20.fontWeight())
         val label = CfTypeScale.authLabel.toTextStyle()
         assertSame(Figtree, label.fontFamily)
         assertEquals(FontWeight.W500, label.fontWeight)

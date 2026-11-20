@@ -2,6 +2,7 @@ package net.chronoflow.feature.wizard
 
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
@@ -12,11 +13,15 @@ import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.text.TextLayoutResult
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonPrimitive
+import net.chronoflow.core.designsystem.generated.CfTypeScale
 import net.chronoflow.core.designsystem.haptics.HapticEvent
 import net.chronoflow.core.designsystem.haptics.LocalHaptics
+import net.chronoflow.core.designsystem.theme.toTextStyle
 import net.chronoflow.core.testing.DeviceProfiles
 import net.chronoflow.core.testing.compose.ProfileRule
 import net.chronoflow.core.testing.compose.RecordingHaptics
@@ -95,6 +100,21 @@ class WizardAnswerSheetTest {
             (title.left.value + title.right.value) / 2,
             .5f,
         )
+    }
+
+    @Test fun headerUsesTheBoardDisplayStyle() {
+        show()
+        val layouts = mutableListOf<TextLayoutResult>()
+        compose.onNodeWithTag("wizard.answer.title").performSemanticsAction(SemanticsActions.GetTextLayoutResult) {
+            it(layouts)
+        }
+        val expected = CfTypeScale.wizardSheetTitle.toTextStyle()
+        val actual = layouts.single().layoutInput.style
+        assertEquals(expected.fontFamily, actual.fontFamily)
+        assertEquals(expected.fontWeight, actual.fontWeight)
+        assertEquals(expected.fontSize, actual.fontSize)
+        assertEquals(expected.lineHeight, actual.lineHeight)
+        assertEquals(expected.letterSpacing, actual.letterSpacing)
     }
 
     @Test fun sameAsWorkdaysHidesTheTimes() {

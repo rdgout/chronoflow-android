@@ -223,7 +223,7 @@ private fun AirportSearchHeader(
             Text(
                 title,
                 Modifier.testTag("wizard.airport.title").semantics { heading() },
-                style = CfTheme.type.style(CfTypeScale.wizardButton),
+                style = CfTheme.type.style(CfTypeScale.wizardSheetTitle),
                 color = CfTheme.colors.foreground,
                 textAlign = TextAlign.Center,
             )

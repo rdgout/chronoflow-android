@@ -183,7 +183,7 @@ private fun WizardAnswerHeader(
                     .focusable()
                     .semantics { heading() },
                 color = CfTheme.colors.foreground,
-                style = CfTheme.type.style(CfTypeScale.wizardButton),
+                style = CfTheme.type.style(CfTypeScale.wizardSheetTitle),
                 textAlign = TextAlign.Center,
                 maxLines = 2,
             )

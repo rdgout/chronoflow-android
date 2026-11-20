@@ -48,7 +48,7 @@ class TokenSet(
     override fun hashCode(): Int = metrics.hashCode()
 }
 
-/** Faces that exist as font files (`core/designsystem/src/main/res/font`). */
+/** Bundled faces, plus the sheet heading's browser-equivalent synthesized semibold. */
 val knownFaces =
     setOf(
         "Figtree400",
@@ -61,6 +61,7 @@ val knownFaces =
         "Fraunces500Opsz20",
         "Fraunces500Opsz32",
         "Fraunces500Opsz48",
+        "Fraunces600Opsz20",
     )
 
 fun face(name: String): String = if (name in knownFaces) name else throw GenerationError("Unsupported typeface: $name")

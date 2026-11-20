@@ -42,6 +42,15 @@ class TypeScaleGoldenTest {
     }
 
     @Test
+    fun wizardSheetTitleUsesTheBoardsInheritedDisplayFace() {
+        val title = ui.style("wizardSheetTitle")
+        assertEquals("Fraunces600Opsz20", title.face)
+        assertEquals(17.0, title.size, 0.0)
+        assertEquals(22.0, title.lineHeight!!, 0.0)
+        assertEquals(-0.17, title.trackingPt, 1e-9)
+    }
+
+    @Test
     fun compositeStylesMatchTheResolvedTable() {
         val table =
             listOf(

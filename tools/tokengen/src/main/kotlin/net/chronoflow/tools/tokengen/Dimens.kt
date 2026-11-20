@@ -14,6 +14,7 @@ private val FACE_ORDER =
         "Fraunces500Opsz20",
         "Fraunces500Opsz32",
         "Fraunces500Opsz48",
+        "Fraunces600Opsz20",
         "System400",
     )
 
