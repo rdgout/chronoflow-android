@@ -45,7 +45,6 @@ import net.chronoflow.app.shell.AppShell
 import net.chronoflow.core.designsystem.effect.skyBackground
 import net.chronoflow.core.designsystem.layout.LocalSafeInsets
 import net.chronoflow.core.designsystem.theme.CfTheme
-import net.chronoflow.core.designsystem.theme.ChronoFlowTheme
 import net.chronoflow.core.navigation.RootState
 import net.chronoflow.core.navigation.Route
 import net.chronoflow.core.ui.window.LocalWindowSize
@@ -86,27 +85,33 @@ internal fun CfRoot(
         if (!graph.launch.overlayActive && displayedRoute != null) graph.finishLaunch()
     }
     BackHandler(enabled = seam != null) { destinations.closeSeam() }
-    RootFontWarmup(firstCommit, graph.fontPreloader, graph.dispatchers.io, graph.launch::markFontsReady)
     val night = isSystemInDarkTheme()
-    val overlayShowing = graph.launch.overlayActive
-    // Skipped overlays wait for first commit before readiness can select a route.
-    val launchSky =
-        content == null &&
-            (
-                displayedRoute == null || displayedRoute == Route.Welcome ||
-                    (
-                        displayedRoute == Route.SignIn || displayedRoute == Route.TwoFactor ||
-                            displayedRoute == Route.Forgot || displayedRoute is Route.Reset ||
-                            displayedRoute == Route.SignUp || displayedRoute == Route.Verify
-                    )
-            )
-    SideEffect { onSystemBars(night, overlayShowing, onSky || launchSky) }
-    val currentRoute = rememberUpdatedState(displayedRoute)
-    // Replacing the predicate disposes its reporter and can report before the overlay exits.
-    ReportDrawnWhen(remember(graph) { { !graph.launch.overlayActive && currentRoute.value != null } })
-    val window = LocalWindowInfo.current.containerSize
-    val windowSize = with(LocalDensity.current) { DpSize(window.width.toDp(), window.height.toDp()) }
-    ChronoFlowTheme(darkTheme = night, reduceMotion = reduceMotion) {
+    RootThemeContent(
+        night,
+        reduceMotion,
+        firstCommit,
+        graph.fontPreloader,
+        graph.dispatchers.io,
+        graph.launch::markFontsReady,
+    ) {
+        val overlayShowing = graph.launch.overlayActive
+        // Skipped overlays wait for first commit before readiness can select a route.
+        val launchSky =
+            content == null &&
+                (
+                    displayedRoute == null || displayedRoute == Route.Welcome ||
+                        (
+                            displayedRoute == Route.SignIn || displayedRoute == Route.TwoFactor ||
+                                displayedRoute == Route.Forgot || displayedRoute is Route.Reset ||
+                                displayedRoute == Route.SignUp || displayedRoute == Route.Verify
+                        )
+                )
+        SideEffect { onSystemBars(night, overlayShowing, onSky || launchSky) }
+        val currentRoute = rememberUpdatedState(displayedRoute)
+        // Replacing the predicate disposes its reporter and can report before the overlay exits.
+        ReportDrawnWhen(remember(graph) { { !graph.launch.overlayActive && currentRoute.value != null } })
+        val window = LocalWindowInfo.current.containerSize
+        val windowSize = with(LocalDensity.current) { DpSize(window.width.toDp(), window.height.toDp()) }
         CompositionLocalProvider(
             LocalSafeInsets provides WindowInsets.safeDrawing,
             LocalWindowSize provides windowSize,

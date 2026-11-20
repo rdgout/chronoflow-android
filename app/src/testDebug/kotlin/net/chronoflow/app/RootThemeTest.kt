@@ -1,5 +1,6 @@
 package net.chronoflow.app
 
+import android.app.Application
 import android.content.Intent
 import android.os.Looper
 import androidx.activity.ComponentActivity
@@ -9,16 +10,20 @@ import androidx.compose.runtime.State
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.text.font.FontFamily
-import androidx.lifecycle.ProcessLifecycleOwner
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.job
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import net.chronoflow.core.designsystem.theme.LocalReduceMotion
 import net.chronoflow.core.testing.tiers.Logic
+import net.chronoflow.feature.launch.LaunchController
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
@@ -83,43 +88,58 @@ class RootThemeTest {
         }
     }
 
-    @Test fun rootProvidesReduceMotionAndUsesTheSuppliedFontBarrier() {
+    @Config(application = Application::class)
+    @Test
+    fun rootProvidesReduceMotionAndUsesTheSuppliedFontBarrier() {
+        var checkpoint = System.nanoTime()
+
+        fun mark(step: String) {
+            val now = System.nanoTime()
+            println("rootTheme step=$step ms=${(now - checkpoint) / 1_000_000.0}")
+            checkpoint = now
+        }
         compose.mainClock.autoAdvance = false
-        val app = RuntimeEnvironment.getApplication() as RecordingApplication
-        app.preloader.expectedDispatcher = app.ioDispatcher
-        assertFalse(app.graph.launch.overlayActive)
-        // Advancing font work must not also start the unrelated session foreground pipeline.
-        ProcessLifecycleOwner.get().lifecycle.removeObserver(app.graph.activation)
+        val dispatcher = StandardTestDispatcher()
+        val scope = CoroutineScope(SupervisorJob() + dispatcher)
+        val preloader = RecordingFontPreloader().apply { expectedDispatcher = dispatcher }
+        val launch = LaunchController(moon = { error("font test must not load launch images") }, scope = scope)
+        mark("font-fixture")
         val host = Robolectric.buildActivity(ComponentActivity::class.java).setup()
+        mark("activity-setup")
         val completed = CompletableDeferred<Unit>()
         val commit = ObservedCommit(completed)
         var motion = false
         try {
             host.get().setContent {
-                CfRoot(app.graph, false, true, commit, null) {
+                RootThemeContent(false, true, commit, preloader, dispatcher, launch::markFontsReady) {
                     val current = LocalReduceMotion.current
                     SideEffect { motion = current }
                 }
             }
+            mark("set-content")
             compose.mainClock.advanceTimeByFrame()
             compose.mainClock.advanceTimeByFrame()
-            app.ioDispatcher.scheduler.runCurrent()
+            mark("two-frames")
+            dispatcher.scheduler.runCurrent()
             compose.runOnIdle {
-                assertEquals(0, app.preloader.calls.get())
+                assertEquals(0, preloader.calls.get())
                 assertTrue(commit.awaited.get())
                 assertTrue(motion)
+                assertFalse(launch.fontsReady)
                 completed.complete(Unit)
             }
+            mark("blocked-and-commit-assertions")
             compose.waitForIdle()
-            app.ioDispatcher.scheduler.runCurrent()
+            dispatcher.scheduler.runCurrent()
             compose.runOnIdle {
-                assertEquals(4, app.preloader.calls.get())
-                assertTrue(app.graph.launch.fontsReady)
+                assertEquals(4, preloader.calls.get())
+                assertTrue(launch.fontsReady)
             }
+            mark("font-work-and-ready-assertions")
         } finally {
             host.pause().stop().destroy()
-            app.graph.appScope.cancel()
-            runTest(app.mainDispatcher, timeout = 60.seconds) { app.graph.closeAndJoinForTest() }
+            runTest(dispatcher, timeout = 60.seconds) { scope.coroutineContext.job.cancelAndJoin() }
+            mark("teardown")
         }
     }
 
