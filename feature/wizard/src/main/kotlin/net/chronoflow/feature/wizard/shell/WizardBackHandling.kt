@@ -29,7 +29,7 @@ internal fun WizardBackHandling(
     if (state.discardDialogVisible) {
         CfAlertDialog(
             title = WizardCopy("Discard this trip?").resolve(),
-            text = WizardCopy("What you entered is not saved.").resolve(),
+            text = state.discardMessage.resolve(),
             confirm =
                 CfDialogAction(
                     WizardCopy("Discard").resolve(),

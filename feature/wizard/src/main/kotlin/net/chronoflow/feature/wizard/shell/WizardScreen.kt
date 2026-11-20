@@ -325,7 +325,7 @@ internal fun WizardFooter(
         if (chrome.secondaryClose) {
             CfButton(
                 WizardCopy("Close").resolve(),
-                { onEvent(if (chrome.secondaryRequestsClose) WizardEvent.RequestClose else WizardEvent.CloseNow) },
+                { onEvent(if (chrome.secondaryRequestsClose) WizardEvent.CloseFromFooter else WizardEvent.CloseNow) },
                 Modifier.testTag("wizard.$id.secondary-close"),
                 style = CfButtonStyle.Ghost,
                 fillWidth = true,

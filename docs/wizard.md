@@ -846,7 +846,7 @@ The tick table describes a request completed before the minimum display interval
 | Other checking failures | Circle-alert | Enabled |
 | Validation routed to an input step | That input step's catalog-first field error | No checking failure card or outcome cue |
 
-A 41.2-second throttle shows 42, then 41 after one checking-clock second. Retry before zero makes no request. Close on a failure requests discard for a member with changes; a guest closes directly. Success, no-plan and failure cues map to Success, Warning and Error respectively. A saveable handled sequence prevents replay after recreation.
+A 41.2-second throttle shows 42, then 41 after one checking-clock second. Retry before zero makes no request. The failure-card secondary Close requests discard for a member with changes; a guest closes directly. Toolbar × asks to discard whenever there are changes, except for a guest on Excluded. Success, no-plan and failure cues map to Success, Warning and Error respectively. A saveable handled sequence prevents replay after recreation.
 
 The arc uses the board's cubic SVG with uniform centred scaling. Its cached path, dash and stroke are built by `drawWithCache`; only draw reads the animation state. Animation is 3.6 seconds. Reduce Motion creates no transition, fixes the arc dot at t = 0.65 and replaces the line spinner with a static dot. Each line announces its status politely; decorative arc and icon semantics are cleared.
 

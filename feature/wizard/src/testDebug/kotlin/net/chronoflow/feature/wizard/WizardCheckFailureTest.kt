@@ -62,13 +62,13 @@ class WizardCheckFailureTest(
         val icon = compose.onNodeWithTag("$tag.icon", useUnmergedTree = true).fetchSemanticsNode()
         assertTrue(icon.config.isClearingSemantics)
         compose.onNodeWithTag("wizard.checking.secondary-close").assertExists().performClick()
-        assertEquals(listOf(WizardEvent.RequestClose), events)
+        assertEquals(listOf(WizardEvent.CloseFromFooter), events)
         val continueButton = compose.onNodeWithTag("wizard.checking.continue")
         if (board == "WizardCheckThrottle") {
             continueButton.assertIsNotEnabled()
         } else {
             continueButton.assertIsEnabled().performClick()
-            assertEquals(listOf(WizardEvent.RequestClose, WizardEvent.Continue(WizardStepKey.Checking)), events)
+            assertEquals(listOf(WizardEvent.CloseFromFooter, WizardEvent.Continue(WizardStepKey.Checking)), events)
         }
         if (editing) {
             compose.onNodeWithTag("wizard.back").assertDoesNotExist()

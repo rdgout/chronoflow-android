@@ -25,6 +25,8 @@ sealed interface WizardEvent {
         val value: Boolean,
     ) : WizardEvent
 
+    data object CloseFromFooter : WizardEvent
+
     data object CloseNow : WizardEvent
 
     data class AnswerQuestion(

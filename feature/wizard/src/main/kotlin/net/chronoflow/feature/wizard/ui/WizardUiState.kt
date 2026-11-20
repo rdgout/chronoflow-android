@@ -469,6 +469,7 @@ data class WizardUiState(
     val checking: net.chronoflow.feature.wizard.checking.WizardCheckingUi? = null,
     val fineTune: net.chronoflow.feature.wizard.finetune.WizardFineTuneUi? = null,
     val cue: net.chronoflow.feature.wizard.checking.WizardHapticCue? = null,
+    val discardMessage: WizardCopy = WizardCopy("What you entered is not saved."),
 ) {
     companion object {
         fun from(
@@ -521,6 +522,22 @@ data class WizardUiState(
                         openTime,
                     ),
                 cue = active.cue,
+                discardMessage =
+                    WizardCopy(
+                        when {
+                            active.isEditing -> {
+                                "Your trip stays as it was."
+                            }
+
+                            draft.state.mode == WizardMode.guest -> {
+                                "What you entered is not saved. You go back to the welcome screen."
+                            }
+
+                            else -> {
+                                "What you entered is not saved."
+                            }
+                        },
+                    ),
                 times =
                     if (key == WizardStepKey.Outbound || key == WizardStepKey.ReturnFlight) {
                         WizardTimesUi.from(

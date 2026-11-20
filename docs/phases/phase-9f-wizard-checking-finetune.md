@@ -515,7 +515,7 @@ Each task is one commit (Conventional Commits, lower-case imperative, **no trail
 
 ### Task 6: Failure cards (`feat(wizard): add the checking failure cards`) [ticks "Checking"]
 - §5.2 and the glyphs (`tools/icons/lucide.json` + `make vectors`, generated output in the same commit).
-- **Robolectric `WizardCheckFailureTest` (`@Logic`)**, from the three failure boards (+ an `editing` variant): card tag `wizard.checking.<kind>`, glyph node `wizard.checking.<kind>.icon` cleared from semantics, `LiveRegion == Polite` on the card, `wizard.checking.secondary-close` and `wizard.checking.continue` present, `wizard.back` present (non-edit); on Throttle `continue` `assertIsNotEnabled()`, enabled otherwise; tapping Close records `RequestClose`, tapping Try again records `Continue(checking)`; no haptic on either tap (`RecordingHaptics` empty).
+- **Robolectric `WizardCheckFailureTest` (`@Logic`)**, from the three failure boards (+ an `editing` variant): card tag `wizard.checking.<kind>`, glyph node `wizard.checking.<kind>.icon` cleared from semantics, `LiveRegion == Polite` on the card, `wizard.checking.secondary-close` and `wizard.checking.continue` present, `wizard.back` present (non-edit); on Throttle `continue` `assertIsNotEnabled()`, enabled otherwise; tapping Close records `CloseFromFooter`, tapping Try again records `Continue(checking)`; no haptic on either tap (`RecordingHaptics` empty).
 
 ### Task 7: Fine-tune screen (`feat(wizard): build the fine-tune screen`) [ticks "Fine-tune"]
 - §5.4, §5.5, `WizardStepper`, the three cards, the footer states.
@@ -610,3 +610,5 @@ Each task is one commit (Conventional Commits, lower-case imperative, **no trail
 | OQ-9f-17 | `WizardFineTuneNone` draws 95 %, but the model gives a fresh Fine-tune 0.80 and reaches 0.95 only through `progressFloor` (opened from Ready); the iOS seed sets no floor. | The None seed sets `progressFloor = 0.95`, so the capture matches the board and shows what a user sees (a prompt-free Fine-tune is only reachable from Ready). |
 | OQ-9f-18 | Override and room times: Phase 2 dialog (brief draft) or 9e's PickerTime sheet (`CfTimePickerSheet`, OQ-A413/OQ-A416)? | 9e's sheet, at minute precision, without the "Steps of 5 minutes." footnote; busy-hour ranges keep 9d's date and time dialogs. |
 | OQ-9f-19 | The iOS seed calls `MockWizardPrompts.make`; Konsist forbids `:core:data-mock` in `:feature:wizard` main/debug. | Hand-built prompts in `WizardCompletionBoardSeed` (9e precedent), cross-checked against Kotlin `MockWizardPrompts.make` in a JVM test. |
+
+Review round 1: toolbar `RequestClose` follows iOS’s guest-excluded exception only; checking-failure secondary `CloseFromFooter` closes guests directly. These are separate intents. The guest toolbar discard body uses the existing welcome-screen catalog key.

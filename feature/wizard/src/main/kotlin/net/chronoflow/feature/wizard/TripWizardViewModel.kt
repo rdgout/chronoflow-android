@@ -563,17 +563,24 @@ class TripWizardViewModel(
     fun requestClose() {
         if (closing.value) return
         val model = wizard
-        if (model?.draft?.state?.mode == WizardMode.guest && model.draft.state.step in
-            setOf(
-                MemberWizardStep.excluded,
-                MemberWizardStep.checking,
-            )
-        ) {
+        if (model?.draft?.state?.mode == WizardMode.guest && model.draft.state.step == MemberWizardStep.excluded) {
             close()
         } else if (model?.hasChanges == true) {
             mutableDialog.value = true
         } else {
             close()
+        }
+    }
+
+    private fun closeFromFooter() {
+        if (closing.value) return
+        val model = wizard
+        if (model?.draft?.state?.step == MemberWizardStep.excluded ||
+            model?.draft?.state?.mode == WizardMode.guest || model?.hasChanges != true
+        ) {
+            close()
+        } else {
+            mutableDialog.value = true
         }
     }
 
@@ -712,6 +719,10 @@ class TripWizardViewModel(
                         event.value,
                     )
                 }
+            }
+
+            WizardEvent.CloseFromFooter -> {
+                closeFromFooter()
             }
 
             WizardEvent.CloseNow -> {

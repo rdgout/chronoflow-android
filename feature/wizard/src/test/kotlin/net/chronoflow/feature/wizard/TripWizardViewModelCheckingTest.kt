@@ -13,6 +13,7 @@ import net.chronoflow.core.testing.wizard.generationReview
 import net.chronoflow.core.wizard.model.MemberWizardStep
 import net.chronoflow.core.wizard.model.WizardCheckingProgress
 import net.chronoflow.core.wizard.model.WizardMode
+import net.chronoflow.core.wizard.model.hasChanges
 import net.chronoflow.feature.wizard.checking.CheckFailureKind
 import net.chronoflow.feature.wizard.checking.CheckLineState.Busy
 import net.chronoflow.feature.wizard.checking.CheckLineState.Done
@@ -280,7 +281,7 @@ class TripWizardViewModelCheckingTest {
                 source.configure(reviewFailure = DataFailure.Offline)
             }) { f ->
                 runCurrent()
-                f.model.onEvent(WizardEvent.RequestClose)
+                f.model.onEvent(WizardEvent.CloseFromFooter)
                 runCurrent()
                 assertTrue(f.model.discardDialogVisible.value)
             }
@@ -295,6 +296,45 @@ class TripWizardViewModelCheckingTest {
                     }
 
                 source.configure(reviewFailure = DataFailure.Offline)
+            }) { f ->
+                runCurrent()
+                f.model.onEvent(WizardEvent.CloseFromFooter)
+                runCurrent()
+                assertFalse(f.model.discardDialogVisible.value)
+                assertNotNull(f.model.exit.value)
+            }
+        }
+
+    @Test fun guestToolbarDuringCheckingAsksToDiscardChanges() =
+        runTest(timeout = 60.seconds) {
+            withWizard(configure = {
+                draft =
+                    checkedDraft(MemberWizardStep.checking).let {
+                        it.copy(state = it.state.copy(mode = WizardMode.guest, entered = true, sleepCompleted = true))
+                    }
+                uiOverride = WizardUiOverride(WizardCheckingProgress(1))
+            }) { f ->
+                runCurrent()
+                assertTrue(f.model.wizard!!.hasChanges)
+                f.model.onEvent(WizardEvent.RequestClose)
+                runCurrent()
+                assertTrue(f.model.discardDialogVisible.value)
+                assertNull(f.model.exit.value)
+                assertEquals(
+                    "What you entered is not saved. You go back to the welcome screen.",
+                    f.model.uiState.value!!
+                        .discardMessage.key,
+                )
+            }
+        }
+
+    @Test fun guestExcludedToolbarClosesDirectly() =
+        runTest(timeout = 60.seconds) {
+            withWizard(configure = {
+                draft =
+                    checkedDraft(MemberWizardStep.excluded).let {
+                        it.copy(state = it.state.copy(mode = WizardMode.guest, entered = true, sleepCompleted = true))
+                    }
             }) { f ->
                 runCurrent()
                 f.model.onEvent(WizardEvent.RequestClose)
