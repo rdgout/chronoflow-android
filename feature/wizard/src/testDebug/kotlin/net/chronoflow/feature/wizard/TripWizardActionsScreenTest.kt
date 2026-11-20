@@ -10,7 +10,6 @@ import net.chronoflow.core.testing.compose.ProfileRule
 import net.chronoflow.core.testing.tiers.Logic
 import net.chronoflow.feature.wizard.shell.WizardEvent
 import net.chronoflow.feature.wizard.shell.WizardScreen
-import net.chronoflow.feature.wizard.ui.WizardUiState
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -39,13 +38,8 @@ class TripWizardActionsScreenTest {
         dialog: Boolean = false,
     ) {
         val state =
-            WizardUiState.from(
-                editReadyActive(board).copy(
-                    firstScreen = true,
-                    path = listOf(net.chronoflow.core.wizard.model.MemberWizardDestination.ready),
-                ),
-                dialog = dialog,
-            )
+            completionBoard("Wizard" + board, java.util.Locale.forLanguageTag("nl"))
+                .copy(discardDialogVisible = dialog)
         compose.setContent {
             WizardTestHost {
                 WizardScreen(state) {
@@ -56,16 +50,7 @@ class TripWizardActionsScreenTest {
     }
 
     @Test fun testDuplicateOpensOutboundWithEmptyDates() {
-        val state =
-            WizardUiState.from(
-                TripWizardUiState.Active(
-                    net.chronoflow.core.wizard.model
-                        .MemberWizardSnapshot(duplicateDraft()),
-                    .22,
-                    listOf(net.chronoflow.core.wizard.model.MemberWizardDestination.outbound),
-                    firstScreen = true,
-                ),
-            )
+        val state = completionBoard("WizardDuplicate", java.util.Locale.forLanguageTag("nl"))
         compose.setContent { WizardTestHost { WizardScreen(state) {} } }
         compose.onNodeWithTag("wizard.outbound.continue").assertIsNotEnabled()
         compose.onNodeWithTag("wizard.0.departure.date").assertExists()
@@ -75,22 +60,7 @@ class TripWizardActionsScreenTest {
     }
 
     @Test fun webChoiceRequestsTheSameWebEnd() {
-        val draft =
-            webEndDraft().let {
-                it.copy(
-                    state =
-                        it.state.copy(step = net.chronoflow.core.wizard.model.MemberWizardStep.returnChoice),
-                )
-            }
-        val state =
-            WizardUiState.from(
-                TripWizardUiState.Active(
-                    net.chronoflow.core.wizard.model
-                        .MemberWizardSnapshot(draft),
-                    .45,
-                    listOf(net.chronoflow.core.wizard.model.MemberWizardDestination.returnChoice),
-                ),
-            )
+        val state = completionBoard("WizardReturnWeb", java.util.Locale.forLanguageTag("nl"))
         compose.setContent { WizardTestHost { WizardScreen(state, events::add) } }
         val web = compose.onNodeWithTag("wizard.choice.web")
         val one = compose.onNodeWithTag("wizard.choice.one-way")

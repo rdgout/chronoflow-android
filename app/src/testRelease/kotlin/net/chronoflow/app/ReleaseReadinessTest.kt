@@ -34,6 +34,7 @@ class ReleaseReadinessTest {
         missing("net.chronoflow.feature.wizard.debug.WizardBoardCaptureSeed")
         missing("net.chronoflow.feature.wizard.debug.FixedAirportSearch")
         missing("net.chronoflow.feature.wizard.debug.WizardCompletionBoardSeed")
+        missing("net.chronoflow.feature.wizard.debug.TripWizardActionsBoardSeed")
         missing("net.chronoflow.feature.wizard.debug.WizardSaveJourney")
         missing("net.chronoflow.feature.wizard.debug.WizardCompletionPrompts")
         missing("net.chronoflow.feature.wizard.debug.FrozenCheckingClock")
@@ -82,6 +83,8 @@ class ReleaseReadinessTest {
         missing("net.chronoflow.app.perf.FixtureTripPageSource")
         val feedback = Class.forName("net.chronoflow.core.ui.plan.RefusedChangeDebug")
         assertFalse(feedback.declaredFields.any { it.name == "presentedCount" })
+        val actions = Class.forName("net.chronoflow.feature.trip.actions.TripActionsDebugCounters")
+        assertFalse(actions.declaredFields.any { it.name == "failurePresented" })
     }
 
     @Test fun passkeyCapabilityIsShippedOff() {

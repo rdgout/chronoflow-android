@@ -2985,7 +2985,7 @@ Implementation commits (brief §7):
   - Variants: `WizardEdit`, `WizardEditChanged`, `WizardEditNoReturn`, `WizardEditReturn`, `WizardEditReturnNoCredits`, `WizardEditWeb` and `WizardReturnWeb`.
   - The edit checking and failure cards (`WizardCheckingEdit`, `WizardCheckOfflineEdit`, `WizardCheckServerEdit`) and `WizardExcludedEdit`.
   - The discard-changes alert (`WizardDiscardEdit`).
-- [ ] **Duplicate** (`WizardDuplicate`): opens on the times step with empty dates and the copied-from line.
+- [x] **Duplicate** (`WizardDuplicate`): opens on the times step with empty dates and the copied-from line.
 - [ ] **Tests.**
   - The ported 17d cases.
   - Guards.
@@ -2998,7 +2998,7 @@ Implementation commits:
 - [x] Task 4: web end choice and duplicate subtitle.
 - [x] Task 5: trip actions preparation and busy/failure states.
 - [x] Task 6: app preparer and dependency wiring.
-- [ ] Task 7: edit and duplicate board seeds.
+- [x] Task 7: edit and duplicate board seeds.
 - [ ] Task 8: guards and board captures.
 - [ ] Task 9: actions-to-wizard entry tests.
 - [ ] Task 10: edit emulator journey.
