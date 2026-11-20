@@ -498,3 +498,18 @@ Remaining external acceptance: the rendered-board comparison described above and
 3. Removed the max-line-length suppression from all 32 phase-touched files that carried it, wrapping the one 127-character subtitle expression in `WizardUiState.kt`. Every affected line now fits 120 characters. `CfPickers.kt`'s justified parameter-order/modifier suppressions are unchanged. The change is formatting only; `make format` passes, and the final quick/layout runs cover the affected source and test classes.
 
 4. `RootFontWarmup` accepts the injected worker; `CfRoot` supplies `graph.dispatchers.io` (production still uses IO). The root-theme test drives that worker's test scheduler and asserts the awaited barrier and exactly four calls directly, replacing both polling waits. Its motion/barrier/count/fonts-ready assertions remain. The fake checks the injected dispatcher in the controlled case; the companion real-IO frame-commit test retains its physical off-main-looper assertion. Quiet baseline: 439 ms, including activity setup 124 ms, `setContent` 240 ms, and the final preloader wait 17 ms. After: 378 ms in the same three-case class run. The host's reported 1.20–1.74 s overruns did not reproduce here. Both class runs pass; no real font-loading work is added to the fixture.
+
+5. The seed-refresh fixture now warms a complete build/save/load/refresh/trip-read path once per JVM in `@BeforeClass`, rather than only decoding the seed inputs. It creates and deletes a disposable file store on IO and retains only `Unit`; every real case still gets a fresh file store, and all existing assertion bodies are unchanged. Temporary per-step timers were removed. CurrentAnchor fell from 428 ms to 253 ms; LegacyAnchor from 257 ms to 174 ms. The host's 1.07 s overrun did not reproduce here. An intermediate JSON-only warm-up left first-use data-source/file-path costs and measured 311/180 ms, which is why the final warm-up exercises the actual fixture path.
+
+| Seed step | Baseline CurrentAnchor | Baseline LegacyAnchor | After JSON-only warm-up, CurrentAnchor |
+|---|---:|---:|---:|
+| Build old seed | 62.406 ms | 18.461 ms | 29.366 ms |
+| Edit fixture state | 3.006 ms | 0.130 ms | 3.826 ms |
+| Save old seed (legacy includes removing the anchor key) | 37.605 ms | 36.977 ms | 33.833 ms |
+| First identity read / restore / refresh | 162.779 ms | 102.445 ms | 118.599 ms |
+| Read trips | 23.563 ms | 19.883 ms | 12.482 ms |
+| Read persisted state | 18.395 ms | 9.152 ms | 14.651 ms |
+| Build expected seed | 20.966 ms | 14.246 ms | 21.654 ms |
+| Compare refreshed accounts | 2.460 ms | 1.282 ms | 2.088 ms |
+| Reopen source / read trips | 55.790 ms | 44.464 ms | 29.234 ms |
+| Reload / compare state | 13.094 ms | 9.198 ms | 12.525 ms |
