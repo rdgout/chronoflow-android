@@ -620,6 +620,7 @@ data class WizardUiState(
                             draft,
                             active.wizard.choicePending,
                             !closing && !active.wizard.persistenceFailed && !active.wizard.reviewing,
+                            language = language,
                         )
                     } else {
                         null

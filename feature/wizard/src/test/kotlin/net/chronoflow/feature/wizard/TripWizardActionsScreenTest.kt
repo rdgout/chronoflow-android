@@ -55,6 +55,52 @@ class TripWizardActionsScreenTest {
         }
     }
 
+    @Test fun testDuplicateOpensOutboundWithEmptyDates() {
+        val state =
+            WizardUiState.from(
+                TripWizardUiState.Active(
+                    net.chronoflow.core.wizard.model
+                        .MemberWizardSnapshot(duplicateDraft()),
+                    .22,
+                    listOf(net.chronoflow.core.wizard.model.MemberWizardDestination.outbound),
+                    firstScreen = true,
+                ),
+            )
+        compose.setContent { WizardTestHost { WizardScreen(state) {} } }
+        compose.onNodeWithTag("wizard.outbound.continue").assertIsNotEnabled()
+        compose.onNodeWithTag("wizard.0.departure.date").assertExists()
+        compose.onNodeWithTag("wizard.subtitle").assertExists()
+        compose.onNodeWithTag("wizard.nav-title").assertExists()
+        compose.onNodeWithTag("wizard.back").assertDoesNotExist()
+    }
+
+    @Test fun webChoiceRequestsTheSameWebEnd() {
+        val draft =
+            webEndDraft().let {
+                it.copy(
+                    state =
+                        it.state.copy(step = net.chronoflow.core.wizard.model.MemberWizardStep.returnChoice),
+                )
+            }
+        val state =
+            WizardUiState.from(
+                TripWizardUiState.Active(
+                    net.chronoflow.core.wizard.model
+                        .MemberWizardSnapshot(draft),
+                    .45,
+                    listOf(net.chronoflow.core.wizard.model.MemberWizardDestination.returnChoice),
+                ),
+            )
+        compose.setContent { WizardTestHost { WizardScreen(state, events::add) } }
+        val web = compose.onNodeWithTag("wizard.choice.web")
+        val one = compose.onNodeWithTag("wizard.choice.one-way")
+        org.junit.Assert.assertTrue(
+            web.fetchSemanticsNode().boundsInRoot.top < one.fetchSemanticsNode().boundsInRoot.top,
+        )
+        web.performClick()
+        assertEquals(listOf(WizardEvent.ChooseReturn("nights")), events)
+    }
+
     @Test fun testUntouchedEditHasDisabledUpdateButton() {
         show()
         compose.onNodeWithTag("wizard.ready.continue").assertIsNotEnabled()

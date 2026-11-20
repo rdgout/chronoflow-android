@@ -24,6 +24,12 @@ internal fun WizardReturnStep(
         Modifier.fillMaxWidth().selectableGroup().testTag("wizard.return.choices"),
         verticalArrangement = Arrangement.spacedBy(PlanUITokens.wizardChoiceGap.dp),
     ) {
+        ui.web?.let { web ->
+            WizardChoiceCard(web.title, web.hint, web.selected, web.enabled, "wizard.choice.web", {
+                haptics.perform(HapticEvent.Selection)
+                onEvent(WizardEvent.ChooseReturn(web.kind))
+            })
+        }
         val one = ui.oneWay
         WizardChoiceCard(one.title, one.hint, one.selected, one.enabled, "wizard.choice.one-way", {
             haptics.perform(HapticEvent.Selection)
