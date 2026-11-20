@@ -49,6 +49,9 @@ import net.chronoflow.core.designsystem.icon.imageVector
 import net.chronoflow.core.designsystem.layout.BoardMetrics
 import net.chronoflow.core.designsystem.system.CfSegmentedButtons
 import net.chronoflow.core.designsystem.theme.CfTheme
+import net.chronoflow.core.plan.CopyLineFormatter
+import net.chronoflow.feature.wizard.components.WizardErrorLine
+import net.chronoflow.feature.wizard.components.fieldCopy
 import net.chronoflow.feature.wizard.shell.WizardEvent
 import net.chronoflow.feature.wizard.ui.RouteRowUi
 import net.chronoflow.feature.wizard.ui.RowHint
@@ -89,6 +92,13 @@ internal object WhereMetrics {
 internal fun WhereStep(
     state: WhereUi,
     onEvent: (WizardEvent) -> Unit,
+) = WhereStep(state, null, onEvent)
+
+@Composable
+internal fun WhereStep(
+    state: WhereUi,
+    formatter: CopyLineFormatter?,
+    onEvent: (WizardEvent) -> Unit,
 ) {
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(PlanUITokens.wizardContentGap.dp)) {
         RouteCard(state, onEvent)
@@ -112,6 +122,9 @@ internal fun WhereStep(
                     color = CfTheme.colors.destructive,
                 )
             }
+        }
+        state.serverErrors.forEach { (key, message) ->
+            WizardErrorLine(fieldCopy(message, formatter), "wizard.route.error.$key")
         }
         state.question?.let { StopQuestion(it, state, onEvent) }
     }

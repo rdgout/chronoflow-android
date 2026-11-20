@@ -2836,6 +2836,7 @@ Implementation commits (brief §7):
   - [x] The free-day times sheet (`WizardSheetFreeSleep`).
 - [x] **Questions.** Age band (`WizardQAge`) and shift work (`WizardQShift`, `WizardQShiftNL`, `WizardQShiftLarge`). They auto-advance after 250 ms and use `role = RadioButton`.
 - [x] **Excluded states** (`WizardExcluded`, `WizardExcludedShift`), for guests, saved shift-work answers and edits.
+- [x] **Route errors**: scoped server errors on Where and the home route, with catalog-first field copy (9e Task 8).
 - [ ] **No retired questions.** A test proves that no retired health question is referenced; `WizardQBipolar`, `WizardQCaffeine`, `WizardQClot`, `WizardQEye` and `WizardQPregnant` stay unbuilt.
 - [ ] **Tests.** Rounding and validation, plus guards for each board.
 

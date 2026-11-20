@@ -463,7 +463,7 @@ private fun WizardStepContent(
                     state.sleep != null -> WizardSleepStep(state.sleep, onEvent)
                     state.question != null -> WizardQuestionStep(state.question, onEvent)
                     state.excluded != null -> WizardExcludedStep(state.excluded, copyFormatter)
-                    where != null -> WhereStep(where, onEvent)
+                    where != null -> WhereStep(where, copyFormatter, onEvent)
                     times != null -> WizardTimesStep(times, onEvent)
                     state.returnChoice != null -> WizardReturnStep(state.returnChoice, onEvent)
                 }

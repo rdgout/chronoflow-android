@@ -1,6 +1,7 @@
 package net.chronoflow.feature.wizard.ui
 
 import androidx.compose.runtime.Immutable
+import net.chronoflow.core.model.FieldMessage
 import net.chronoflow.core.model.contracts.ApiAirportSuggestion
 import net.chronoflow.core.model.contracts.TimeFormat
 import net.chronoflow.core.wizard.model.MemberWizardDraft
@@ -34,6 +35,8 @@ data class WizardCopy(
     val key: String,
     val arguments: Map<String, String> = emptyMap(),
 )
+
+private val routeServerError = Regex("^legs\\.(\\d+)\\.(fromIata|toIata)$")
 
 enum class NavTitle { NewTrip, EditTrip }
 
@@ -121,6 +124,7 @@ data class WhereUi(
     val limitReached: Boolean,
     val showAddStop: Boolean,
     val complete: Boolean,
+    val serverErrors: Map<String, FieldMessage> = emptyMap(),
 ) {
     val title: WizardCopy get() = WizardCopy(if (home) "Your flight home" else "Where are you flying?")
     val subtitle: WizardCopy get() =
@@ -179,7 +183,13 @@ data class WhereUi(
                         },
                         locked,
                         stop,
-                        same && position == route.lastIndex,
+                        (same && position == route.lastIndex) || draft.fieldErrors[
+                            if (position == 0) {
+                                "legs.$start.fromIata"
+                            } else {
+                                "legs.${start + maxOf(0, position - 1)}.toIata"
+                            },
+                        ] != null,
                         if (locked) {
                             null
                         } else {
@@ -224,6 +234,15 @@ data class WhereUi(
                 !canAdd,
                 canAdd && stops > 0,
                 form.routeComplete(home),
+                draft.fieldErrors
+                    .filterKeys { field ->
+                        routeServerError
+                            .matchEntire(field)
+                            ?.groupValues
+                            ?.get(1)
+                            ?.toIntOrNull()
+                            ?.let { it in start until start + route.size - 1 } == true
+                    }.toSortedMap(),
             )
         }
     }
