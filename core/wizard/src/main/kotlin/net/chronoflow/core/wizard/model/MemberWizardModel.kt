@@ -1,9 +1,12 @@
 package net.chronoflow.core.wizard.model
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -330,7 +333,13 @@ class MemberWizardModel(
         pending =
             scope.launch {
                 previous?.join()
-                wizardOperation({ store.persist(value) }, { persistenceFailed = true })
+                wizardOperation({
+                    try {
+                        store.persist(value)
+                    } catch (_: CancellationException) {
+                        currentCoroutineContext().ensureActive()
+                    }
+                }, { persistenceFailed = true })
             }
     }
 

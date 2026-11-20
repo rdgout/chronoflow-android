@@ -35,6 +35,23 @@ import kotlin.time.Duration.Companion.seconds
 @RunWith(Enclosed::class)
 class MemberWizardReviewTest {
     class Reviews {
+        @Test fun foreignCancellationOnPersistIsNotAPersistenceFailure() =
+            runTest(timeout = 60.seconds) {
+                val fixture = WizardModelFixture(backgroundScope, testScheduler)
+                fixture.store.failure = CancellationException("stale")
+                try {
+                    fixture.model.go(MemberWizardStep.outbound)
+                    fixture.model.flush()
+                    assertFalse(fixture.model.persistenceFailed)
+                    fixture.model.go(MemberWizardStep.returnChoice)
+                    fixture.model.flush()
+                    assertEquals(MemberWizardStep.returnChoice, fixture.model.state.step)
+                    assertFalse(fixture.model.persistenceFailed)
+                } finally {
+                    fixture.close()
+                }
+            }
+
         @Test fun callerCancellationStillFlushesAndDiscards() =
             runTest(timeout = 60.seconds) {
                 val fixture = WizardModelFixture(backgroundScope, testScheduler)

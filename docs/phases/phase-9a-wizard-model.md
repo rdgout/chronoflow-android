@@ -355,7 +355,7 @@ Commit: `feat(wizard): port the member wizard model`. Ticks plan.md "**Model**" 
    - sleep duration `(wake − bed + 1440) % 1440` ∈ **180…840** min, else `fieldErrors["profile.habitual_bed"] = FieldMessage("Check your bedtime and wake-up time.")` (l.90–104);
    - Ready expiry **1800 s** on `now()` (`MemberWizardCompletion.swift:63-72`), i.e. `Duration.between(reviewedAt, now()) >= 1_800_000 ms`;
    - throttle: checking `retryAt = checkingClock.nowMillis() + (retryAfterSeconds * 1000).roundToLong()` when finite and > 0; save `retryAt = now() + that`; countdown ticks every `min(1000, remaining)` ms on `checkingClock` (`MemberWizardRetry.swift`);
-   - `persist()` increments `state.revision`, then chains `pending = scope.launch { previous?.join(); store.persist(value) }`; a non-cancellation exception sets `persistenceFailed = true` (rethrow `CancellationException`).
+   - `persist()` increments `state.revision`, then chains `pending = scope.launch { previous?.join(); store.persist(value) }`; a non-cancellation exception sets `persistenceFailed = true`. On `CancellationException`, rethrow when the caller is cancelled; otherwise drop the rejected/stale write without setting `persistenceFailed`, as pinned iOS does.
 6. **No health data.** `answerQuestion` accepts only a single-field profile prompt that is `Screening` + `shift_work` + boolean shape + `true`/`false`, or `AgeBand` + `age_band` + a value in `shape.options`; anything else is ignored. `questions` = blocking prompts that pass `ProfilePreferences.isSupported`; `needs_answers` with none → `applyFailure(Server(null))`. `preference`/`setPreference` accept only `exclude_caffeine` and `flight_movement_breaks` (default false from `profile` or `savedProfile` camel keys); any other field is ignored. Retired keys are dropped by `discardRetiredValues` on init and by `ProfilePreferences.request` on every review.
 7. Progress in this task is the iOS table (`MemberWizardReview.swift:28-43`, `WizardMode.swift:72-84`); Task 8 replaces it with the board values. `navigationPath`/`popNavigation` are the iOS versions; Task 8 adds the board's first screens.
 
@@ -469,7 +469,7 @@ Commit: `docs(plan): record the phase 9a wizard decisions`. Ticks nothing.
 - [ ] **No health data:** only `age_band` (`under_18`, `18_64`, `65_plus`) and `shift_work` (`true`/`false`) are accepted; preference toggles limited to the two neutral keys; retired keys never in state, record or request.
 - [ ] **Secrets:** `guestSecret` stripped from both identities before any record payload; nothing logs a draft.
 - [ ] **Recovery codec:** 30 min expiry inclusive at 1_800_000 ms; shape checks; `continuation` and `returnFlight` migrations; `mode` default member.
-- [ ] **Concurrency:** single-threaded model on the injected scope; every `CancellationException` rethrown except the documented request case; persistence serialized and `revision` incremented per write; no save retry without a user action.
+- [ ] **Concurrency:** single-threaded model on the injected scope; caller cancellation rethrown; foreign cancellation follows the documented operation-specific rules; persistence serialized and `revision` incremented per write; no save retry without a user action.
 - [ ] **Copy:** the model emits iOS English keys only; `WizardCopyKeysTest` passes; no hard-coded credit counts.
 - [ ] **Commits:** 10 atomic commits, Conventional, no trailers, plan boxes ticked in the commits named above.
 
