@@ -2783,7 +2783,7 @@ Implementation commits (brief §7):
 - [x] **Picker formats.** Pickers follow `DateFormat.is24HourFormat`, displayed values follow the account `timeFormat`, and the dialogs use the app language (OQ 46, `PickerDateTime`).
 - [ ] **Tests.**
   - [x] Date and time bounds on the JVM (9d Task 2).
-  - Guards for each board.
+  - [x] Guards for each board and 29 Robolectric captures (9d Task 8).
   - On the emulator: the date and time dialogs keep the app language and the phone's 12/24-hour setting.
 
 **Acceptance**
