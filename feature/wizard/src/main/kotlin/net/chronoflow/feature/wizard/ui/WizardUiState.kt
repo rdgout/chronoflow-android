@@ -540,14 +540,8 @@ data class WizardUiState(
                             sheet.prompt.id == draft.state.promptSheetID &&
                                 sheet.prompt.kind in SUPPORTED_SHEET_KINDS && sheet.prompt in active.optionalPrompts
                         }?.let { sheet ->
-                            WizardAnswerSheetUi(
-                                sheet,
-                                timeFormat,
-                                openTime
-                                    ?.takeIf {
-                                        it in setOf("free_day_bed", "free_day_wake")
-                                    }?.let { WizardTimeSheetUi(it, sheet.values[it].clockString()) },
-                            )
+                            net.chronoflow.feature.wizard.answers
+                                .answerSheetUi(sheet, draft, timeFormat, now, openTime)
                         },
                 excluded =
                     if (key == WizardStepKey.Excluded) {

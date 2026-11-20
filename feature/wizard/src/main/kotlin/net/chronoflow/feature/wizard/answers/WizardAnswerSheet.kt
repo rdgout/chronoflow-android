@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -59,6 +60,7 @@ import net.chronoflow.core.designsystem.icon.LucideGlyphs
 import net.chronoflow.core.designsystem.icon.imageVector
 import net.chronoflow.core.designsystem.system.CfModalBottomSheet
 import net.chronoflow.core.designsystem.theme.CfTheme
+import net.chronoflow.core.model.contracts.PromptKind
 import net.chronoflow.core.plan.CopyLineFormatter
 import net.chronoflow.feature.wizard.components.WizardErrorLine
 import net.chronoflow.feature.wizard.components.WizardTimeRow
@@ -105,53 +107,87 @@ internal fun WizardAnswerSheet(
         Column(
             Modifier
                 .fillMaxWidth()
-                .testTag("wizard.answer.${ui.state.prompt.kind.raw}")
-                .verticalScroll(rememberScrollState())
-                .navigationBarsPadding()
+                .testTag(
+                    if (ui.state.prompt.kind == PromptKind.LatestWake) {
+                        "wizard.answer.latest_wake.sheet"
+                    } else {
+                        "wizard.answer.${ui.state.prompt.kind.raw}"
+                    },
+                ).navigationBarsPadding()
+                .imePadding()
                 .padding(
                     top = PlanUITokens.wizardChronotypePadding.dp,
                     start = PlanUITokens.space5.dp,
                     end = PlanUITokens.space5.dp,
                     bottom = (PlanUITokens.space8 + PlanUITokens.wizardLabelGap).dp,
                 ),
-            verticalArrangement = Arrangement.spacedBy(PlanUITokens.wizardContentGap.dp),
         ) {
             WizardAnswerHeader(ui, focus, onEvent)
-            Text(
-                serverCopy(ui.state.prompt.text),
-                Modifier.testTag("wizard.answer.question"),
-                color = CfTheme.colors.foreground,
-                style = CfTheme.type.style(CfTypeScale.wizardRow).copy(fontWeight = FontWeight.SemiBold),
-            )
-            WizardAnswerCard {
-                Column(Modifier.selectableGroup().testTag("wizard.answer.options")) {
-                    WizardFreeDayOption(ui, 0, "same_as_workdays", "Same as work days", onEvent)
-                    HorizontalDivider(color = CfTheme.colors.border)
-                    WizardFreeDayOption(ui, 1, "declared", "Different times", onEvent)
-                }
-            }
-            if (ui.declared) {
-                WizardAnswerCard {
-                    WizardTimeRow(
-                        WizardCopy("Bedtime"),
-                        ui.state.values["free_day_bed"].clockString(),
-                        ui.timeFormat,
-                        { onEvent(WizardEvent.OpenTimeSheet("free_day_bed")) },
-                        "wizard.answer.time.free_day_bed",
-                        minHeight = WizardMetrics.sheetRowMinHeight.dp,
+            Column(
+                Modifier
+                    .weight(1f, fill = false)
+                    .verticalScroll(rememberScrollState())
+                    .testTag("wizard.answer.scroll")
+                    .padding(top = PlanUITokens.wizardContentGap.dp),
+                verticalArrangement = Arrangement.spacedBy(PlanUITokens.wizardContentGap.dp),
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(PlanUITokens.space2.dp)) {
+                    Text(
+                        serverCopy(ui.state.prompt.text),
+                        Modifier.testTag("wizard.answer.question"),
+                        color = CfTheme.colors.foreground,
+                        style = CfTheme.type.style(CfTypeScale.wizardRow).copy(fontWeight = FontWeight.SemiBold),
                     )
-                    HorizontalDivider(color = CfTheme.colors.border)
-                    WizardTimeRow(
-                        WizardCopy("Wake-up"),
-                        ui.state.values["free_day_wake"].clockString(),
-                        ui.timeFormat,
-                        { onEvent(WizardEvent.OpenTimeSheet("free_day_wake")) },
-                        "wizard.answer.time.free_day_wake",
-                        minHeight = WizardMetrics.sheetRowMinHeight.dp,
+                    if (ui.state.prompt.kind == PromptKind.SeatSide) {
+                        ui.route?.let {
+                            Text(
+                                it,
+                                color = CfTheme.colors.mutedForeground,
+                                style = CfTheme.type.style(CfTypeScale.wizardHint),
+                            )
+                        }
+                    }
+                }
+                if (ui.state.prompt.kind == PromptKind.LightDevice) {
+                    Text(
+                        WizardCopy(
+                            "Don't use a light box or light glasses if you have an eye disease, have had recent eye surgery or take medicine that makes your eyes sensitive to light. Ask your doctor first.",
+                        ).resolve(),
+                        Modifier.testTag("wizard.answer.lightNotice"),
+                        color = CfTheme.colors.mutedForeground,
+                        style = CfTheme.type.style(CfTypeScale.wizardHint),
                     )
                 }
+                WizardAnswerOptions(ui.state, onEvent)
+                when (ui.state.prompt.kind) {
+                    PromptKind.FreeDayTimes -> {
+                        WizardFreeDayControl(ui, onEvent)
+                    }
+
+                    PromptKind.Room -> {
+                        WizardRoomControl(ui, onEvent)
+                    }
+
+                    PromptKind.LatestWake -> {
+                        WizardWakeControl(ui, onEvent)
+                    }
+
+                    PromptKind.PreDepartureBusyHours -> {
+                        WizardBusyControl(ui, onEvent)
+                    }
+
+                    PromptKind.Cups -> {
+                        WizardDrinksControl(ui.state, onEvent)
+                    }
+
+                    PromptKind.BlueBlockers -> {
+                        WizardRatingControl(ui.state, onEvent)
+                    }
+
+                    else -> {}
+                }
+                ui.state.error?.let { WizardErrorLine(fieldCopy(it, formatter), "wizard.answer.error") }
             }
-            ui.state.error?.let { WizardErrorLine(fieldCopy(it, formatter), "wizard.answer.error") }
         }
     }
     ui.openTime?.let { WizardSleepTimeSheet(it, onEvent) }
@@ -176,7 +212,7 @@ private fun WizardAnswerHeader(
                 contentPadding = PaddingValues(0.dp),
             )
             Text(
-                WizardCopy(WizardPromptLabels.key(ui.state.prompt)).resolve(),
+                WizardCopy(ui.labelKey).resolve() + ui.suffix.orEmpty(),
                 Modifier
                     .testTag("wizard.answer.title")
                     .focusRequester(focus)
@@ -243,46 +279,7 @@ private fun WizardAnswerHeader(
 }
 
 @Composable
-private fun WizardFreeDayOption(
-    ui: WizardAnswerSheetUi,
-    index: Int,
-    value: String,
-    label: String,
-    onEvent: (WizardEvent) -> Unit,
-) {
-    val selected = ui.state.values["free_day_status"] == JsonPrimitive(value)
-    val haptics = LocalHaptics.current
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .heightIn(min = WizardMetrics.sheetRowMinHeight.dp)
-            .testTag("wizard.answer.option.$index")
-            .selectable(selected, role = Role.RadioButton) {
-                haptics.perform(HapticEvent.Selection)
-                onEvent(WizardEvent.UpdateAnswer("free_day_status", JsonPrimitive(value)))
-            }.padding(horizontal = PlanUITokens.space4.dp, vertical = PlanUITokens.space2.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(PlanUITokens.space3.dp),
-    ) {
-        Text(
-            WizardCopy(label).resolve(),
-            Modifier.weight(1f),
-            color = CfTheme.colors.foreground,
-            style = CfTheme.type.style(CfTypeScale.wizardRow),
-        )
-        if (selected) {
-            Icon(
-                LucideGlyphs.Check.imageVector(),
-                null,
-                Modifier.size(PlanUITokens.space5.dp),
-                tint = CfTheme.colors.dawnText,
-            )
-        }
-    }
-}
-
-@Composable
-private fun WizardAnswerCard(content: @Composable () -> Unit) {
+internal fun WizardAnswerCard(content: @Composable () -> Unit) {
     val shape = RoundedCornerShape(PlanUITokens.wizardCardRadius.dp)
     Box(
         Modifier

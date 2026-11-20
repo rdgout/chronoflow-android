@@ -25,6 +25,8 @@ import kotlinx.serialization.json.JsonPrimitive
 import net.chronoflow.core.model.DataFailure
 import net.chronoflow.core.model.FieldMessage
 import net.chronoflow.core.model.contracts.ApiAirportSuggestion
+import net.chronoflow.core.model.contracts.Language
+import net.chronoflow.core.model.contracts.PromptKind
 import net.chronoflow.core.model.contracts.TimeFormat
 import net.chronoflow.core.model.device.DeviceIdentityFailure
 import net.chronoflow.core.model.session.SessionFailure
@@ -39,6 +41,7 @@ import net.chronoflow.core.wizard.model.RecoveryRejected
 import net.chronoflow.core.wizard.model.TripWizardAction
 import net.chronoflow.core.wizard.model.WizardAirportSheet
 import net.chronoflow.core.wizard.model.WizardClockRounding
+import net.chronoflow.core.wizard.model.WizardDateTime
 import net.chronoflow.core.wizard.model.WizardMode
 import net.chronoflow.core.wizard.model.allowsSleepOverride
 import net.chronoflow.core.wizard.model.answerOptional
@@ -76,6 +79,7 @@ import net.chronoflow.feature.wizard.answers.SUPPORTED_SHEET_KINDS
 import net.chronoflow.feature.wizard.answers.WizardAnswerSheetState
 import net.chronoflow.feature.wizard.checking.CheckingOutcome
 import net.chronoflow.feature.wizard.checking.WizardHapticCue
+import net.chronoflow.feature.wizard.finetune.promptLegIndex
 import net.chronoflow.feature.wizard.shell.WizardEvent
 import net.chronoflow.feature.wizard.shell.WizardExit
 import net.chronoflow.feature.wizard.shell.WizardStepKey
@@ -124,6 +128,8 @@ class TripWizardViewModel(
         combine(continueFailures, mutablePicker, mutableOpenTime) { failures, picker, time ->
             Triple(failures, picker, time)
         }
+    private var answerOpenedAt = Instant.EPOCH
+    private var answerLanguage: Language = Language.En
     private val mutableAnswer = MutableStateFlow<WizardAnswerSheetState?>(null)
     private val stepPresentation =
         combine(
@@ -152,7 +158,7 @@ class TripWizardViewModel(
                         closing,
                         dialog,
                         timeFormat,
-                        times.second?.openedAt ?: Instant.EPOCH,
+                        times.second?.openedAt ?: answerOpenedAt,
                         times.first[step] ?: 0,
                         times.second?.picker,
                         openTime = times.third,
@@ -353,6 +359,7 @@ class TripWizardViewModel(
                                 mutableOpenTime.value = null
                             }
                         } else if (mutableAnswer.value?.prompt?.id != prompt.id) {
+                            answerOpenedAt = pickerNow()
                             mutableAnswer.value =
                                 WizardAnswerSheetState.load(
                                     prompt,
@@ -361,6 +368,7 @@ class TripWizardViewModel(
                                     snapshot.draft.fieldErrors,
                                     snapshot.draft.form,
                                     initialError = uiOverride?.answerError,
+                                    language = answerLanguage,
                                 )
                         }
                         val finished = snapshot.closed && snapshot.createdTripID != null
@@ -680,6 +688,11 @@ class TripWizardViewModel(
 
     fun onEvent(event: WizardEvent) {
         when (event) {
+            is WizardEvent.LanguageChanged -> {
+                answerLanguage = event.language
+                mutableAnswer.value = mutableAnswer.value?.withLanguage(event.language)
+            }
+
             is WizardEvent.OpenPrompt -> {
                 if (!closing.value) wizard?.openPrompt(event.id)
             }
@@ -744,7 +757,7 @@ class TripWizardViewModel(
                             event.field in setOf("habitual_bed", "habitual_wake")
                     val free =
                         mutableAnswer.value?.let {
-                            it.prompt.kind == net.chronoflow.core.model.contracts.PromptKind.FreeDayTimes &&
+                            it.prompt.kind == PromptKind.FreeDayTimes &&
                                 it.values["free_day_status"] == JsonPrimitive("declared") &&
                                 event.field in setOf("free_day_bed", "free_day_wake")
                         } == true
@@ -752,7 +765,17 @@ class TripWizardViewModel(
                         model.draft.state.step == MemberWizardStep.fineTune && model.allowsSleepOverride &&
                             model.draft.form.override.enabled && !model.reviewing &&
                             event.field in setOf("override.habitual_bed", "override.habitual_wake")
-                    if (usual || free || override) mutableOpenTime.value = event.field
+                    val room =
+                        mutableAnswer.value?.let { answer ->
+                            val index = promptLegIndex(answer.prompt, model.draft.form)
+                            answer.prompt.kind == PromptKind.Room &&
+                                answer.values["stay.bed_available_mode"] == JsonPrimitive("declared") &&
+                                event.field == "stay.bed_available_from_local" &&
+                                model.draft.form.legs.getOrNull(index)?.arriveLocal?.let {
+                                    WizardDateTime.date(it)
+                                } != null
+                        } == true
+                    if (usual || free || override || room) mutableOpenTime.value = event.field
                 }
             }
 
@@ -788,6 +811,20 @@ class TripWizardViewModel(
                                         },
                                 )
                             }
+                        }
+                        return
+                    }
+                    if (event.field == "stay.bed_available_from_local" && answer != null) {
+                        mutableOpenTime.value = null
+                        if (event.touched) {
+                            val index = promptLegIndex(answer.prompt, model.draft.form)
+                            mutableAnswer.value =
+                                answer.setRoomTime(
+                                    clockString(event.hour, event.minute),
+                                    model.draft.form.legs
+                                        .getOrNull(index)
+                                        ?.arriveLocal,
+                                )
                         }
                         return
                     }

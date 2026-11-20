@@ -20,6 +20,7 @@ data class WizardTimeSheetUi(
     val minutePrecision: Boolean = false,
     val title: WizardCopy? = null,
     val subtitle: WizardCopy? = null,
+    val titleSuffix: String? = null,
 ) {
     val initialHour: Int get() = if (WizardDateTime.isTime(stored)) stored!!.take(2).toInt() else 12
     val initialMinute: Int get() = if (WizardDateTime.isTime(stored)) stored!!.takeLast(2).toInt() else 0

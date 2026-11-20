@@ -99,6 +99,10 @@ fun WizardRoot(
     viewModel: TripWizardViewModel,
     onExit: (WizardExit) -> Unit,
 ) {
+    val language =
+        net.chronoflow.core.model.contracts.Language
+            .of(LocalConfiguration.current.locales[0].language)
+    LaunchedEffect(viewModel, language) { viewModel.onEvent(WizardEvent.LanguageChanged(language)) }
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val formatter by viewModel.copyFormatter.collectAsStateWithLifecycle()
     val search by viewModel.searchState.collectAsStateWithLifecycle()

@@ -27,7 +27,7 @@ internal fun WizardSleepTimeSheet(
     val haptics = LocalHaptics.current
     key(ui.field) {
         CfTimePickerSheet(
-            title = ui.label.resolve(),
+            title = ui.label.resolve() + ui.titleSuffix.orEmpty(),
             subtitle =
                 ui.subtitle?.resolve()
                     ?: if (ui.usual) stringResource(R.string.settings_on_a_normal_work_or_school_day) else null,

@@ -51,6 +51,8 @@ data class WizardAnswerSheetState(
     val values: Map<String, JsonElement>,
     val error: FieldMessage? = null,
     val failures: Int = 0,
+    val ratingLanguage: Language = Language.En,
+    val ratingEdited: Boolean = false,
 ) {
     val optionField: String get() =
         if (prompt.kind == PromptKind.Room) {
@@ -170,7 +172,11 @@ data class WizardAnswerSheetState(
                     values + (field to value)
                 }
             }
-        return copy(values = next, error = null)
+        return copy(
+            values = next,
+            error = null,
+            ratingEdited = ratingEdited || field == "blue_blocker_mdfd",
+        )
     }
 
     fun setRoomTime(
@@ -195,6 +201,13 @@ data class WizardAnswerSheetState(
     fun removeBusy(index: Int): WizardAnswerSheetState {
         if (index !in intervals.indices) return this
         return update("pre_departure_busy_intervals", JsonArray(intervals.filterIndexed { i, _ -> i != index }))
+    }
+
+    fun withLanguage(language: Language): WizardAnswerSheetState {
+        if (language == ratingLanguage || ratingEdited || prompt.kind != PromptKind.BlueBlockers) return this
+        val text = values["blue_blocker_mdfd"].clockString() ?: return copy(ratingLanguage = language)
+        val localized = if (language == Language.Nl) text.replace('.', ',') else text.replace(',', '.')
+        return copy(values = values + ("blue_blocker_mdfd" to JsonPrimitive(localized)), ratingLanguage = language)
     }
 
     fun validate(): String? = WizardOptionalAnswer.error(prompt, values)
@@ -263,6 +276,7 @@ data class WizardAnswerSheetState(
                 values,
                 WizardPresentation.promptFieldError(prompt, form, WizardJourney.errors(fieldErrors, form))
                     ?: initialError?.let(::FieldMessage),
+                ratingLanguage = language,
             )
         }
     }
@@ -273,6 +287,19 @@ data class WizardAnswerSheetUi(
     val state: WizardAnswerSheetState,
     val timeFormat: TimeFormat,
     val openTime: WizardTimeSheetUi? = null,
+    val labelKey: String = WizardPromptLabels.key(state.prompt),
+    val suffix: String? = null,
+    val route: String? = null,
+    val roomArrival: String? = null,
+    val roomZone: net.chronoflow.feature.wizard.ui.WizardCopy =
+        net.chronoflow.feature.wizard.ui.WizardCopy(
+            "Local time",
+        ),
+    val busyInitial: String? = null,
+    val busyZone: net.chronoflow.feature.wizard.ui.WizardCopy =
+        net.chronoflow.feature.wizard.ui.WizardCopy(
+            "Local time",
+        ),
 ) {
     val declared: Boolean get() = state.values["free_day_status"] == JsonPrimitive("declared")
 }

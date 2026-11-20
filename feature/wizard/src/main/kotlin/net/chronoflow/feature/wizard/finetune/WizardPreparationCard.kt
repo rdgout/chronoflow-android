@@ -114,7 +114,7 @@ internal fun WizardPreparationCard(
                     ui.timeFormat,
                     { onEvent(WizardEvent.OpenTimeSheet("override.habitual_bed")) },
                     "wizard.override.bed",
-                    minHeight = AuthTokens.touch.dp,
+                    minHeight = PlanUITokens.actionMinHeight.dp,
                     enabled = !ui.reviewing,
                     labelStyle = CfTheme.type.style(CfTypeScale.wizardSearchName),
                 )
@@ -125,7 +125,7 @@ internal fun WizardPreparationCard(
                     ui.timeFormat,
                     { onEvent(WizardEvent.OpenTimeSheet("override.habitual_wake")) },
                     "wizard.override.wake",
-                    minHeight = AuthTokens.touch.dp,
+                    minHeight = PlanUITokens.actionMinHeight.dp,
                     enabled = !ui.reviewing,
                     labelStyle = CfTheme.type.style(CfTypeScale.wizardSearchName),
                 )

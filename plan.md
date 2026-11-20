@@ -2890,7 +2890,7 @@ Implementation commits (brief §7):
   - member rows, plus per-stay and per-flight rows;
   - the different-sleep-times switch (`WizardFineTuneSleep`);
   - the busy (`WizardFineTuneBusy`), none (`WizardFineTuneNone`) and multi (`WizardFineTuneMulti`) states.
-- [ ] **Sheets** (`WizardSheet*`, `WizardFineTuneSheet`): seat, room, checkout, wake, busy hours, drinks with steppers (and its error), light, and blue blockers with a rating (and its error). Each holds one nullable selection and its validation error.
+- [x] **Sheets** (`WizardSheet*`, `WizardFineTuneSheet`): seat, room, checkout, wake, busy hours, drinks with steppers (and its error), light, and blue blockers with a rating (and its error). Each holds one nullable selection and its validation error.
 - [ ] **Haptics** per the WizardSpec "Haptics" section, through the `Haptics` interface.
 - [ ] **Tests.** Timing on the JVM with a fake clock, plus guards for all 26 boards and their DarkNL wrappers.
 

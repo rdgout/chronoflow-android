@@ -347,4 +347,82 @@ class TripWizardViewModelAnswerSheetTest {
                 )
             }
         }
+
+    @Test fun roomTimeUsesLandingDateAndMinutePrecision() =
+        runTest(timeout = 60.seconds) {
+            val room = completionPrompt(PromptKind.Room)
+            withWizard(configure = {
+                val base = fineTuneDraft()
+                draft =
+                    base.copy(
+                        form =
+                            base.form.copy(
+                                stays =
+                                    base.form.stays.map {
+                                        it.copy(
+                                            bedAvailableMode = "declared",
+                                            bedAvailableFromLocal = "2026-10-13T15:00",
+                                        )
+                                    },
+                            ),
+                        state = base.state.copy(promptSheetID = room.id),
+                    )
+            }) { f ->
+                runCurrent()
+                val original =
+                    f.model.wizard!!
+                        .draft.form
+                f.model.onEvent(WizardEvent.OpenTimeSheet("stay.bed_available_from_local"))
+                runCurrent()
+                assertEquals(
+                    true,
+                    f.model.uiState.value!!
+                        .answerSheet!!
+                        .openTime!!
+                        .minutePrecision,
+                )
+                f.model.onEvent(WizardEvent.ConfirmTimeSheet("stay.bed_available_from_local", 15, 3, true))
+                runCurrent()
+                val landing = original.legs[0].arriveLocal.take(10)
+                assertEquals(
+                    JsonPrimitive(landing + "T15:03"),
+                    f.model.uiState.value!!
+                        .answerSheet!!
+                        .state.values["stay.bed_available_from_local"],
+                )
+                assertEquals(
+                    original,
+                    f.model.wizard!!
+                        .draft.form,
+                )
+            }
+        }
+
+    @Test fun languageChangeLocalizesAnUneditedRatingAndKeepsEdits() =
+        runTest(timeout = 60.seconds) {
+            withWizard(configure = {
+                val base = freeDayDraft(completionPrompt(PromptKind.BlueBlockers))
+                val saved = JsonObject(mapOf("blueBlockerMdfd" to JsonPrimitive(1.5)))
+                draft = base.copy(state = base.state.copy(savedProfile = saved))
+            }) { f ->
+                runCurrent()
+                f.model.onEvent(WizardEvent.LanguageChanged(net.chronoflow.core.model.contracts.Language.Nl))
+                runCurrent()
+                assertEquals(
+                    JsonPrimitive("1,5"),
+                    f.model.uiState.value!!
+                        .answerSheet!!
+                        .state.values["blue_blocker_mdfd"],
+                )
+                f.model.onEvent(WizardEvent.UpdateAnswer("blue_blocker_mdfd", JsonPrimitive("2,5")))
+                f.model.onEvent(WizardEvent.LanguageChanged(net.chronoflow.core.model.contracts.Language.En))
+                runCurrent()
+                assertEquals(
+                    JsonPrimitive("2,5"),
+                    f.model.uiState.value!!
+                        .answerSheet!!
+                        .state.values["blue_blocker_mdfd"],
+                )
+            }
+        }
 }
