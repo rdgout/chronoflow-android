@@ -40,12 +40,11 @@ object WizardOutboundRules {
         return errors
     }
 
-    fun connection(
+    fun connectionFact(
         form: WizardForm,
         index: Int,
         airports: Map<String, ApiAirportSuggestion> = emptyMap(),
-        duration: (Int) -> String,
-    ): FieldMessage? {
+    ): WizardConnection? {
         if (index <= 0 || index !in form.legs.indices || index == form.returnBoundary) return null
         val leg = form.legs[index - 1]
         val airport = leg.toCity ?: leg.toIata
@@ -61,7 +60,7 @@ object WizardOutboundRules {
         if (fact !=
             null
         ) {
-            return connectionMessage(
+            return connectionValue(
                 airport,
                 fact.durationMin,
                 if (fact.kind ==
@@ -71,7 +70,6 @@ object WizardOutboundRules {
                 } else {
                     fact.nights
                 },
-                duration,
             )
         }
         val zone = airports[leg.toIata]?.timezone
@@ -81,16 +79,49 @@ object WizardOutboundRules {
             if (arrival != null && departure != null &&
                 departure > arrival
             ) {
-                return connectionMessage(
+                return connectionValue(
                     airport,
                     Duration.between(arrival, departure).toMinutes().toInt(),
                     completeNights(leg.arriveLocal, form.legs[index].departLocal, zone),
-                    duration,
                 )
             }
         }
-        return FieldMessage("Stop in {{airport}}", mapOf("airport" to JsonPrimitive(airport)))
+        return WizardConnection.Stop(airport)
     }
+
+    fun connection(
+        form: WizardForm,
+        index: Int,
+        airports: Map<String, ApiAirportSuggestion> = emptyMap(),
+        duration: (Int) -> String,
+    ): FieldMessage? =
+        when (val fact = connectionFact(form, index, airports)) {
+            null -> {
+                null
+            }
+
+            is WizardConnection.Stop -> {
+                FieldMessage(
+                    "Stop in {{airport}}",
+                    mapOf("airport" to JsonPrimitive(fact.airport)),
+                )
+            }
+
+            is WizardConnection.Connection -> {
+                connectionMessage(fact.airport, fact.minutes, 0, duration)
+            }
+
+            is WizardConnection.Overnight -> {
+                connectionMessage(fact.airport, 0, fact.nights, duration)
+            }
+        }
+
+    private fun connectionValue(
+        airport: String,
+        minutes: Int,
+        nights: Int,
+    ): WizardConnection =
+        if (nights > 0) WizardConnection.Overnight(airport, nights) else WizardConnection.Connection(airport, minutes)
 
     fun flightMinutes(
         form: WizardForm,

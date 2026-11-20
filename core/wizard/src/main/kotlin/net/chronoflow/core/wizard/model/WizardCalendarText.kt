@@ -11,6 +11,11 @@ internal object WizardCalendarText {
     private val enMonths = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
     private val nlMonths = listOf("jan", "feb", "mrt", "apr", "mei", "jun", "jul", "aug", "sep", "okt", "nov", "dec")
 
+    fun shortMonth(
+        month: Int,
+        language: Language,
+    ): String = (if (language == Language.Nl) nlMonths else enMonths)[month - 1]
+
     fun format(
         date: LocalDateTime,
         template: WizardDateTemplate,
@@ -19,7 +24,7 @@ internal object WizardCalendarText {
         val nl = language == Language.Nl
         val weekday = (if (nl) nlWeekdays else enWeekdays)[date.dayOfWeek.value - 1]
         if (template == WizardDateTemplate.EEE) return weekday
-        val month = (if (nl) nlMonths else enMonths)[date.monthValue - 1]
+        val month = shortMonth(date.monthValue, language)
         val comma = if (template == WizardDateTemplate.EEE_D_MMM_Y && !nl) "," else ""
         val year = if (template == WizardDateTemplate.EEE_D_MMM_Y) " ${date.year}" else ""
         return "$weekday$comma ${date.dayOfMonth} $month$year"

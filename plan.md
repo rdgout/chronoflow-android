@@ -2780,7 +2780,7 @@ Implementation commits (brief §7):
 - [ ] **Coming back?** (`WizardReturn*`): it auto-advances after 250 ms, and taps are ignored while it is pending.
 - [ ] **Picker formats.** Pickers follow `DateFormat.is24HourFormat`, displayed values follow the account `timeFormat`, and the dialogs use the app language (OQ 46, `PickerDateTime`).
 - [ ] **Tests.**
-  - Date and time bounds on the JVM.
+  - [x] Date and time bounds on the JVM (9d Task 2).
   - Guards for each board.
   - On the emulator: the date and time dialogs keep the app language and the phone's 12/24-hour setting.
 
