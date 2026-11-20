@@ -73,7 +73,7 @@ Write every new or changed test this way. These rules translate the iOS Tests ru
    - Wait with `composeTestRule.waitUntil(timeoutMillis) {…}` / `waitUntilExactlyOneExists(…)`. For UiAutomator, use `device.wait(Until.hasObject(By.res(..)), t)`.
    - **Never `Thread.sleep` / `SystemClock.sleep`.**
 5. **Budgets.**
-   - An emulator test < 10 s; a JVM or warm Robolectric case < 1 s (except the declared perf-budget tests). Record the first sandbox cost per SDK and fork separately.
+   - An emulator test < 10 s; a JVM or warm Robolectric case < 1 s (except the declared perf-budget tests). In each fork, allow 20 s for the first Robolectric case per SDK, then 3 s for the first case per class/SDK; record these warm-up costs separately.
    - Hang caps (below): 60 s per test.
    - Split profile × language × size loops into one test per profile (JUnit `Parameterized` or `TestParameterInjector` is fine: each parameter is its own test case).
    - Needing more time is a design smell; fix the test.

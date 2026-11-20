@@ -412,3 +412,49 @@ The commit fixture observes when the font effect actually awaits its real Deferr
 No measured warm Robolectric case exceeded 1 s. No budget, timing exemption or architecture allowlist changed. Spotless passed in quick. The touched layout classes were run targeted; round 3 requested no separate layout-tier invocation. Sandbox Kotlin-daemon/FSEvents warnings occurred but the final builds/tests passed. The layout/logic ownership changes and root extraction were validated together before the single quick run; subsequent edits only document results and create atomic signed commits.
 
 Raw final quick XML/timing metadata and complete output are retained under `build/test-diet-round-3/quick-results/` and `quick.log`; negative proofs, their assertion XML, the passing ordered pair and stage probes share that parent. The multi-module targeted wrapper retains only its last module's timing archive (Konsist); targeted-final.log records both successful app and Konsist invocations. Final app per-case numbers above come from quick's preserved XML.
+
+
+## Gate fix: first render per class and SDK
+
+The orchestrator's subsequent make check failed only on LaunchOverlayGuardTest#overlayFillsTheWindowWithoutFontDependentGeometry at 1,523 ms against the 1,000 ms gate. Its follow-up measurements separated class initialization from subsequent cases:
+
+| Orchestrator measurement | ms |
+|---|---:|
+| Isolated launch-overlay first parameter [36][small-nl,ms=0] | 2,091 |
+| Every later parameter of that method | 40–135 |
+| Same overlay first parameter within the full launch module | 713 |
+| FlightPathStrokeTest's single case within the full launch module | 1,144 |
+| First cases in other module/SDK sandboxes | 3,600–4,500 |
+
+The first renderer/composition/font work can recur at a class boundary after its SDK sandbox is already warm. Per the gate-fix request, each fork now tracks both SDKs and (class, SDK) pairs independently. The first SDK case keeps 20,000 ms and status warmup; otherwise the first class/SDK case gets 3,000 ms and status class-warmup; every later case keeps 1,000 ms. The class pair is consumed even when the same case uses the SDK allowance. Parameter, method and locale changes do not grant another allowance. JVM budgets and the watchdog's per-SDK cold flag are unchanged. The tier report includes the class budget in its metadata.
+
+Classify tests cover 2,500 ms → class-warmup, 3,500 ms → over against 3,000 ms, and a later 1,100 ms case → over against 1,000 ms. Additional checks retain SDK precedence and the JVM cap. A plain JVM listener replay verifies emitted records across two classes, two SDKs, parameter suffixes, returns to an earlier SDK, and surrounding JVM tests. The existing watchdog proofs also pass. Mutations lowering the class cap, raising the later-case cap, or removing SDK from the class key each fail the corresponding test assertion and were restored.
+
+
+### Gate-fix validation
+
+| Check | Result |
+|---|---|
+| Listener/classifier/watchdog, targeted final run | 22 cases pass; three deliberate mutations fail their intended assertions |
+| Requested eight-module layout tier, once | **pass**, 936 measured cases, **41.259 s** command wall, zero overruns |
+| Layout allowance records | 12 SDK warm-ups, 90 class warm-ups, 832 ordinary cases, two existing perf exemptions |
+| Layout ordinary cases | 5–557 ms; launch-overlay later parameters 64–184 ms |
+| Timing-report consumer, focused Python test | pass; class-warmup record accepted with its 3,000 ms budget |
+| make quick, once | Gradle tests/Spotless pass; **timing gate fails**, 3,705 measured cases, **39.086 s** wall, tier exit 3 / make exit 2 |
+| Unexpected watchdog hangs | zero |
+
+The layout invocation selected :feature:launch, :feature:trips, :feature:today, :feature:auth, :feature:trip, :core:ui, :core:designsystem and :app, each with testDebugUnitTest and -Pcf.tier=layout. Exact argv are recorded in `build/test-diet-gate-fix/layout-command.json`; results and full output are preserved in that directory's `layout-results/` and `layout.log`.
+
+LaunchOverlayGuardTest#overlayFillsTheWindowWithoutFontDependentGeometry[36][small-nl,ms=0] measured **1,533 ms**, budget **3,000 ms**, status **class-warmup**. It was the only layout class warm-up above 1 s. SDK cold cases ranged from 702 to 4,599 ms, separately covered by their 20,000 ms budget.
+
+FlightPathStrokeTest#shapeLayerStrokeTipMatchesArcLengthEvery10Milliseconds[36] measured **2,097 ms** in the listener (2,090 ms in XML). This run placed it first for SDK 36 in the launch fork, so the existing SDK allowance took precedence: budget **20,000 ms**, status **warmup**. It is also its class's first case. The orchestrator's earlier **1,144 ms** result with an already-warm SDK is eligible for the new **3,000 ms class allowance**; this run does not relabel its SDK cold cost as a warm class measurement.
+
+The one remaining overrun is:
+
+| Class#method | ms | Budget ms | Status |
+|---|---:|---:|---|
+| net.chronoflow.app.RootThemeTest#rootProvidesReduceMotionAndUsesTheSuppliedFontBarrier | **1,437** | **1,000** | over |
+
+RootThemeTest's earlier activityRefreshesTheSystemMotionSettingWhenResumed case took 311 ms and consumed its class/SDK allowance (3,000 ms, class-warmup). The root-provision case was later and correctly retained 1,000 ms; activityPreloadsOnlyAfterItsFrameCommit then took 116 ms under the same normal budget. This exposes a class whose rendering setup occurs after its first case. The requested first-case rule remains in place; no app test, ordering or further budget was changed to address this remaining result.
+
+Quick stopped at its timing gate, before its separate build-logic, tooling-script and serial timing stages. The changed timing-report consumer test was therefore run directly afterward with `python3 -I -m unittest discover -s Scripts/tests -p test_run_tier.py -k test_exempt_and_warmup_pass`; it passed. Quick and layout were each invoked exactly once. Final quick JSON/XML and output are under `build/test-diet-gate-fix/{quick-results,quick.log}`, and listener/mutation evidence shares that parent directory. Sandbox Kotlin-daemon/FSEvents warnings occurred; the final Gradle invocations completed.
