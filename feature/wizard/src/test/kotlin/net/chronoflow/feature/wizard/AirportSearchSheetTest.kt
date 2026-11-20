@@ -13,8 +13,14 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.font.FontSynthesis
+import androidx.compose.ui.text.font.FontWeight
+import net.chronoflow.core.designsystem.generated.CfTypeScale
 import net.chronoflow.core.designsystem.haptics.HapticEvent
 import net.chronoflow.core.designsystem.haptics.LocalHaptics
+import net.chronoflow.core.designsystem.theme.Fraunces20
+import net.chronoflow.core.designsystem.theme.toTextStyle
 import net.chronoflow.core.testing.DeviceProfiles
 import net.chronoflow.core.testing.compose.ProfileRule
 import net.chronoflow.core.testing.compose.RecordingHaptics
@@ -70,6 +76,22 @@ class AirportSearchSheetTest {
     @Test fun fieldIsFocusedWhenTheSheetOpens() {
         host()
         compose.onNodeWithTag("wizard.airport.query").assertIsFocused()
+    }
+
+    @Test fun headerUsesTheBoardDisplayStyle() {
+        host()
+        val layouts = mutableListOf<TextLayoutResult>()
+        compose.onNodeWithTag("wizard.airport.title").performSemanticsAction(SemanticsActions.GetTextLayoutResult) {
+            it(layouts)
+        }
+        val expected = CfTypeScale.wizardSheetTitle.toTextStyle()
+        val actual = layouts.single().layoutInput.style
+        assertEquals(Fraunces20, actual.fontFamily)
+        assertEquals(FontWeight.W500, actual.fontWeight)
+        assertEquals(FontSynthesis.None, actual.fontSynthesis)
+        assertEquals(expected.fontSize, actual.fontSize)
+        assertEquals(expected.lineHeight, actual.lineHeight)
+        assertEquals(expected.letterSpacing, actual.letterSpacing)
     }
 
     @Test fun eachSearchStateShowsItsTagHint() {

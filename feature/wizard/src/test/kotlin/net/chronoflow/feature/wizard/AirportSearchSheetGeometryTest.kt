@@ -76,7 +76,7 @@ class AirportSearchSheetGeometryTest(
         val title = bounds("wizard.airport.title")
         assertTrue(
             "${profile.name}/$side: title height ${title.height}",
-            title.height <= requireNotNull(CfTypeScale.wizardButton.lineHeight) + 0.5f,
+            title.height <= requireNotNull(CfTypeScale.wizardSheetTitle.lineHeight) + 0.5f,
         )
         val sheet = bounds("wizard.airport-search")
         val cancel = bounds("wizard.airport.cancel")

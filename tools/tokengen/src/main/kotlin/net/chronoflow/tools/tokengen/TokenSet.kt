@@ -17,6 +17,7 @@ class TypeEntry(
     val size: Double,
     val lineHeight: Double?,
     val trackingPt: Double,
+    val allowFontSynthesis: Boolean = true,
 ) {
     override fun equals(other: Any?): Boolean =
         other is TypeEntry &&
@@ -24,7 +25,8 @@ class TypeEntry(
             other.face == face &&
             other.size == size &&
             other.lineHeight == lineHeight &&
-            other.trackingPt == trackingPt
+            other.trackingPt == trackingPt &&
+            other.allowFontSynthesis == allowFontSynthesis
 
     override fun hashCode(): Int = name.hashCode() * 31 + size.hashCode()
 
@@ -48,7 +50,7 @@ class TokenSet(
     override fun hashCode(): Int = metrics.hashCode()
 }
 
-/** Faces that exist as font files (`core/designsystem/src/main/res/font`). */
+/** Faces shipped in `core/designsystem/src/main/res/font`. */
 val knownFaces =
     setOf(
         "Figtree400",
@@ -63,4 +65,13 @@ val knownFaces =
         "Fraunces500Opsz48",
     )
 
-fun face(name: String): String = if (name in knownFaces) name else throw GenerationError("Unsupported typeface: $name")
+fun face(name: String): String {
+    val fraunces = Regex("""Fraunces(\d+)Opsz(20|32|48)""").matchEntire(name)
+    val resolved =
+        if (fraunces != null && fraunces.groupValues[1].toInt() > 500) {
+            "Fraunces500Opsz${fraunces.groupValues[2]}"
+        } else {
+            name
+        }
+    return if (resolved in knownFaces) resolved else throw GenerationError("Unsupported typeface: $name")
+}

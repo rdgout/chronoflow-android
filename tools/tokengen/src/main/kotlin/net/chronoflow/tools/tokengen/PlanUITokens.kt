@@ -78,7 +78,7 @@ fun planUITokens(root: Path): TokenSet {
         }
     }
     val base = TokenSet(metrics, styles)
-    return TokenSet(metrics, styles + wizardStyles(base) + wizardPickerStyle(root))
+    return TokenSet(metrics, styles + wizardStyles(base) + wizardPickerStyle(root) + wizardSheetTitleStyle(root))
 }
 
 private fun wizardStyles(ui: TokenSet): List<TypeEntry> {
@@ -148,4 +148,26 @@ private fun wizardPickerStyle(root: Path): TypeEntry {
     val size = firstCapture("""font-size:\s*([\d.]+)px""", pill).toDouble()
     val line = firstCapture("""line-height:\s*([\d.]+)px""", pill).toDouble()
     return TypeEntry("wizardPicker", "System400", size, line, tracking * size)
+}
+
+private fun wizardSheetTitleStyle(root: Path): TypeEntry {
+    val heading =
+        firstCapture("""<h2 id="ws-title" style="([^"]*max-width[^"]*)"""", root.design("WizardSheet.dc.html"))
+    if (heading.contains("font-family")) throw GenerationError("Wizard sheet title overrides its heading family")
+    val inherited = firstCapture("""h1,h2,h3\{([^}]+)\}""", root.design("ds/chronoflow/components/bundle.css"))
+    if (!inherited.contains("font-family:var(--font-display)")) {
+        throw GenerationError("Wizard sheet title no longer inherits the display face")
+    }
+    val size = firstCapture("""font-size:\s*([\d.]+)px""", heading).toDouble()
+    val line = firstCapture("""line-height:\s*([\d.]+)px""", heading).toDouble()
+    val weight = firstCapture("""font-weight:\s*(\d+)""", heading)
+    val tracking = firstCapture("""letter-spacing:\s*(-?[\d.]+)em""", inherited).toDouble()
+    return TypeEntry(
+        "wizardSheetTitle",
+        face("Fraunces${weight}Opsz20"),
+        size,
+        line,
+        tracking * size,
+        allowFontSynthesis = false,
+    )
 }

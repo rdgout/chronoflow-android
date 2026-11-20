@@ -111,18 +111,25 @@ fun CfTimePickerDialog(
         ) {
             TimePicker(
                 state,
-                colors =
-                    TimePickerDefaults.colors(
-                        containerColor = c.popover,
-                        clockDialColor = c.muted,
-                        selectorColor = c.dawn,
-                        clockDialSelectedContentColor = c.dawnForeground,
-                        timeSelectorSelectedContainerColor = c.systemSelected,
-                        timeSelectorSelectedContentColor = c.dawnText,
-                        periodSelectorSelectedContainerColor = c.systemSelected,
-                        periodSelectorSelectedContentColor = c.dawnText,
-                    ),
+                colors = cfTimePickerColors(c.popover),
             )
         }
     }
+}
+
+@Composable
+internal fun cfTimePickerColors(
+    container: androidx.compose.ui.graphics.Color,
+): androidx.compose.material3.TimePickerColors {
+    val c = CfTheme.colors
+    return TimePickerDefaults.colors(
+        containerColor = container,
+        clockDialColor = c.muted,
+        selectorColor = c.dawn,
+        clockDialSelectedContentColor = c.dawnForeground,
+        timeSelectorSelectedContainerColor = c.systemSelected,
+        timeSelectorSelectedContentColor = c.dawnText,
+        periodSelectorSelectedContainerColor = c.systemSelected,
+        periodSelectorSelectedContentColor = c.dawnText,
+    )
 }

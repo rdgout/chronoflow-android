@@ -3,8 +3,14 @@ package net.chronoflow.feature.wizard.shell
 import net.chronoflow.core.designsystem.layout.BoardMetrics
 
 @Suppress("ktlint:standard:property-naming")
-@BoardMetrics("Wizard", "WizardCopy", "WizardOutbound", "WizardReturn")
+@BoardMetrics("Wizard", "WizardCopy", "WizardOutbound", "WizardReturn", "WizardSheet", "PickerTime")
 internal object WizardMetrics {
+    const val timeRowMinHeight = 56
+    const val sheetRowMinHeight = 52
+    const val sheetTitleMaxWidth = 220
+    const val questionLargeMinHeight = 72
+    const val questionLargeFontScale = 1.15f
+    const val chronotypeSingleColumnBelow = 320
     const val pillRadius = 8
     const val chipPaddingVertical = 5
     const val routeGlyph = 18

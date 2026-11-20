@@ -4,9 +4,16 @@ import kotlinx.coroutines.test.TestScope
 import net.chronoflow.core.testing.DeviceProfiles
 import net.chronoflow.core.testing.SafeInsetsDp
 import net.chronoflow.core.wizard.model.MemberWizardModel
+import net.chronoflow.core.wizard.model.exclusionWasSaved
+import net.chronoflow.core.wizard.model.isEditing
 import net.chronoflow.core.wizard.model.navigationPath
+import net.chronoflow.core.wizard.model.optionalPrompts
 import net.chronoflow.core.wizard.model.progress
+import net.chronoflow.core.wizard.model.reviewInput
 import net.chronoflow.core.wizard.model.showsBack
+import net.chronoflow.core.wizard.model.sleepComplete
+import net.chronoflow.feature.wizard.answers.SUPPORTED_SHEET_KINDS
+import net.chronoflow.feature.wizard.answers.WizardAnswerSheetState
 import net.chronoflow.feature.wizard.debug.FixedAirportSearch
 import net.chronoflow.feature.wizard.debug.WizardBoardCaptureSeed
 import net.chronoflow.feature.wizard.debug.WizardMemoryDraftStore
@@ -14,6 +21,12 @@ import net.chronoflow.feature.wizard.ui.AirportRowUi
 import net.chronoflow.feature.wizard.ui.AirportSearchUi
 import net.chronoflow.feature.wizard.ui.WizardUiState
 import java.util.Locale
+
+internal suspend fun TestScope.wizardCopyFormatter(): net.chronoflow.core.plan.CopyLineFormatter =
+    net.chronoflow.core.plan.CopyLineFormatter(
+        net.chronoflow.core.plan.CopyCatalog
+            .load(kotlinx.coroutines.test.StandardTestDispatcher(testScheduler)),
+    )
 
 internal val wizardBoardProfile =
     DeviceProfiles.pixel8.copy(
@@ -36,12 +49,35 @@ internal fun TestScope.boardState(
     val model = MemberWizardModel(draft, WizardMemoryDraftStore(), backgroundScope, { WizardBoardCaptureSeed.now })
     try {
         val presentation = WizardBoardCaptureSeed.presentation(board)
-        val active = TripWizardUiState.Active(model.snapshots.value, model.progress, model.navigationPath)
+        val active =
+            TripWizardUiState.Active(
+                model.snapshots.value,
+                model.progress,
+                model.navigationPath,
+                sleepComplete = model.sleepComplete,
+                exclusionWasSaved = model.exclusionWasSaved,
+                isEditing = model.isEditing,
+                optionalPrompts = model.optionalPrompts,
+            )
         val ui =
             WizardUiState.from(
                 active,
                 dialog = presentation.discardDialogVisible,
                 now = WizardBoardCaptureSeed.now,
+                openTime = presentation.timeSheet,
+                answerSheet =
+                    model.optionalPrompts
+                        .firstOrNull {
+                            it.id == draft.state.promptSheetID && it.kind in SUPPORTED_SHEET_KINDS
+                        }?.let {
+                            WizardAnswerSheetState.load(
+                                it,
+                                model.reviewInput,
+                                draft.state.savedProfile,
+                                draft.fieldErrors,
+                                draft.form,
+                            )
+                        },
             )
         val sheet = ui.sheet
         val results =

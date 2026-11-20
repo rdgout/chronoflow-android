@@ -25,12 +25,13 @@ internal fun <T> withWizardPhoneHourCycle(
 internal fun wizardPickerSeed(
     language: String,
     dark: Boolean = false,
+    board: String = "WizardOutbound",
 ): Map<String, String> =
     mapOf(
         "CF_AUTH_TEST_SIGNED_IN" to "demo",
         "CF_AUTH_TEST_WALKTHROUGH_SEEN" to "1",
         "CF_MOCK_DELAY" to "0",
-        "CF_WIZARD_BOARD_CAPTURE" to "WizardOutbound",
+        "CF_WIZARD_BOARD_CAPTURE" to board,
         "cf.settings.language" to language,
         "cf.settings.theme" to if (dark) "dark" else "light",
     )

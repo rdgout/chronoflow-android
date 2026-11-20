@@ -160,15 +160,16 @@ object Guards {
         profile: DeviceProfile,
         minSize: Dp = 48.dp,
         exemptTags: Set<String> = emptySet(),
+        nativeTouchTargets: SemanticsMatcher? = null,
     ) {
         val min = minSize.value * profile.density
         for (node in rule.onAllNodes(interactive).fetchSemanticsNodes()) {
             if (isExempt(node, exemptTags)) continue
-            // Native inline links must retain the paragraph's text geometry; Compose owns their expanded targets.
-            // Other controls use layout size so a 40 dp button cannot pass on automatic touch expansion alone.
-            val inlineLink = SemanticsProperties.LinkTestMarker in node.config
-            val width = if (inlineLink) node.touchBoundsInRoot.width else node.layoutInfo.width.toFloat()
-            val height = if (inlineLink) node.touchBoundsInRoot.height else node.layoutInfo.height.toFloat()
+            // Native links and explicitly identified system controls keep their framework geometry and hit areas.
+            // Designed controls must measure 48 dp; automatic touch expansion alone cannot pass them.
+            val native = SemanticsProperties.LinkTestMarker in node.config || nativeTouchTargets?.matches(node) == true
+            val width = if (native) node.touchBoundsInRoot.width else node.layoutInfo.width.toFloat()
+            val height = if (native) node.touchBoundsInRoot.height else node.layoutInfo.height.toFloat()
             if (width < min - TOLERANCE || height < min - TOLERANCE) {
                 throw AssertionError("${describe(node)} is $width x $height px, below $min px")
             }

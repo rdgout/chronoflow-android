@@ -23,6 +23,8 @@ interface TripWizardDependencies {
     val timeFormat: Flow<TimeFormat> get() = flowOf(TimeFormat.Value24)
     val checkingClock: WizardCheckingClock get() = WizardCheckingClock.continuous
 
+    suspend fun copyFormatter(): net.chronoflow.core.plan.CopyLineFormatter? = null
+
     suspend fun start(): MemberWizardDraft
 
     suspend fun startTrip(

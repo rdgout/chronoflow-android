@@ -18,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
@@ -33,6 +34,8 @@ import net.chronoflow.feature.wizard.shell.WizardMetrics
 import net.chronoflow.feature.wizard.ui.WizardCopy
 import net.chronoflow.feature.wizard.ui.resolve
 
+internal enum class WizardChoiceStyle { Return, Chronotype, Question }
+
 @Composable
 internal fun WizardChoiceCard(
     title: WizardCopy,
@@ -41,8 +44,20 @@ internal fun WizardChoiceCard(
     enabled: Boolean,
     tag: String,
     onClick: () -> Unit,
+    style: WizardChoiceStyle = WizardChoiceStyle.Return,
+    rawTitle: String? = null,
 ) {
-    val shape = RoundedCornerShape(PlanUITokens.radius2Xl.dp)
+    val sleep = style == WizardChoiceStyle.Chronotype
+    val question = style == WizardChoiceStyle.Question
+    val large = LocalDensity.current.fontScale >= WizardMetrics.questionLargeFontScale
+    val shape =
+        RoundedCornerShape(
+            when {
+                sleep -> PlanUITokens.radiusXl.dp
+                question -> PlanUITokens.wizardQuestionRadius.dp
+                else -> PlanUITokens.radius2Xl.dp
+            },
+        )
     val source = remember { MutableInteractionSource() }
     Row(
         Modifier
@@ -59,35 +74,63 @@ internal fun WizardChoiceCard(
             ).cfPress(source)
             .background(CfTheme.colors.card, shape)
             .border(AuthTokens.focusWidth.dp, if (selected) CfTheme.colors.dawn else CfTheme.colors.border, shape)
-            .heightIn(min = PlanUITokens.wizardChoiceHeight.dp)
+            .heightIn(
+                min =
+                    when {
+                        question && large -> WizardMetrics.questionLargeMinHeight.dp
+                        question -> PlanUITokens.wizardFlightRowHeight.dp
+                        else -> PlanUITokens.wizardChoiceHeight.dp
+                    },
+            ).padding(if (sleep) AuthTokens.focusWidth.dp else 0.dp)
             .padding(
-                start = PlanUITokens.space5.dp,
-                end = PlanUITokens.space4.dp,
-                top = PlanUITokens.space3.dp,
-                bottom = PlanUITokens.space3.dp,
+                start = (if (sleep) PlanUITokens.wizardContentGap else PlanUITokens.space5).dp,
+                end =
+                    when {
+                        sleep -> PlanUITokens.wizardContentGap.dp
+                        question -> PlanUITokens.space5.dp
+                        else -> PlanUITokens.space4.dp
+                    },
+                top =
+                    when {
+                        sleep -> PlanUITokens.wizardChronotypePadding.dp
+                        question -> 0.dp
+                        else -> PlanUITokens.space3.dp
+                    },
+                bottom =
+                    when {
+                        sleep -> PlanUITokens.wizardChronotypePadding.dp
+                        question -> 0.dp
+                        else -> PlanUITokens.space3.dp
+                    },
             ),
         horizontalArrangement = Arrangement.spacedBy(PlanUITokens.space3.dp),
-        verticalAlignment = Alignment.CenterVertically,
+        verticalAlignment = if (sleep) Alignment.Top else Alignment.CenterVertically,
     ) {
-        Column(Modifier.weight(1f)) {
+        Column(
+            Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(if (sleep) PlanUITokens.wizardLabelGap.dp else 0.dp),
+        ) {
             Text(
-                title.resolve(),
+                rawTitle ?: title.resolve(),
+                Modifier.testTag("$tag.title"),
                 color = CfTheme.colors.foreground,
-                style = CfTheme.type.style(CfTypeScale.wizardChoice),
+                style = CfTheme.type.style(if (sleep) CfTypeScale.wizardChronotype else CfTypeScale.wizardChoice),
             )
             hint?.let {
                 Text(
                     it.resolve(),
                     color = CfTheme.colors.mutedForeground,
-                    style = CfTheme.type.style(CfTypeScale.screenBody),
+                    style = CfTheme.type.style(if (sleep) CfTypeScale.wizardHint else CfTypeScale.screenBody),
                 )
             }
         }
-        Icon(
-            LucideGlyphs.ChevronRight.imageVector(WizardMetrics.headerStroke),
-            null,
-            Modifier.size(WizardMetrics.chevronGlyph.dp),
-            tint = CfTheme.colors.mutedForeground,
-        )
+        if (style == WizardChoiceStyle.Return) {
+            Icon(
+                LucideGlyphs.ChevronRight.imageVector(WizardMetrics.headerStroke),
+                null,
+                Modifier.size(WizardMetrics.chevronGlyph.dp),
+                tint = CfTheme.colors.mutedForeground,
+            )
+        }
     }
 }

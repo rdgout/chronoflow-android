@@ -35,9 +35,10 @@ data class SessionGraph(
     val scope: CoroutineScope,
     val permit: SessionMutationPermit? = null,
     private val wizardIo: CoroutineDispatcher = Dispatchers.IO,
+    private val wizardCatalogs: CopyCatalogProvider? = null,
 ) {
     val wizard: TripWizardDependencies? by lazy {
-        permit?.let { SessionTripWizardDependencies(this, it, wizardIo) }
+        permit?.let { SessionTripWizardDependencies(this, it, wizardIo, wizardCatalogs) }
     }
     val refusedChanges = RefusedChangeModel()
 
