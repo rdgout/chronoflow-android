@@ -9,7 +9,7 @@ import org.junit.Assert.assertTrue
 import org.junit.BeforeClass
 import org.junit.Test
 
-class KonsistRulesTest {
+class KonsistRulesTest : KonsistTest() {
     @Test fun featureSizesComeFromTheWindow() = featureSizesComeFromTheWindow(projectScope)
 
     @Test fun featureSizesComeFromTheWindowRejectsPlantedViolation() {

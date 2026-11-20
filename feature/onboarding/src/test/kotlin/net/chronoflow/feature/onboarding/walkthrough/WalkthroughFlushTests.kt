@@ -7,6 +7,7 @@ import net.chronoflow.core.datamock.MockMethod
 import net.chronoflow.core.model.DataFailure
 import net.chronoflow.core.model.launch.Gate
 import net.chronoflow.core.sync.SyncState
+import net.chronoflow.feature.onboarding.support.OnboardingFixtureTest
 import net.chronoflow.feature.onboarding.support.withOnboardingFixture
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -23,7 +24,7 @@ import kotlin.time.Duration.Companion.seconds
 @RunWith(Parameterized::class)
 class WalkthroughFlushTests(
     private val failure: DataFailure,
-) {
+) : OnboardingFixtureTest() {
     @Test fun failedFlushKeepsCompletionAndLaterSyncs() =
         runTest(timeout = 60.seconds) {
             withOnboardingFixture { f ->

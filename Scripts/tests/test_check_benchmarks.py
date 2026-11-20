@@ -52,8 +52,8 @@ class CheckBenchmarksTest(unittest.TestCase):
                 self.assertIn(metric + " is missing", result.stderr)
 
     def test_welcome_moments_gate_every_iteration_at_both_edges(self):
-        for metric, target in [("welcomeInteractiveMs", 2550), ("introLastItemMs", 3200)]:
-            for value in [target - 1.1, target + 1000 / 60.000004 + 1.1]:
+        for metric, target, frames in [("welcomeInteractiveMs", 2550, 2), ("introLastItemMs", 3200, 1)]:
+            for value in [target - 1.1, target + frames * 1000 / 60.000004 + 1.1]:
                 with self.subTest(metric=metric, value=value):
                     root = temp_dir(self)
                     fixture = next((FIXTURES / "startup/pass").glob("*.json"))

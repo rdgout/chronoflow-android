@@ -7,7 +7,7 @@ import org.junit.Assert.assertTrue
 import org.junit.BeforeClass
 import org.junit.Test
 
-class TodaySessionKeyTest {
+class TodaySessionKeyTest : KonsistTest() {
     @Test fun todayTabPassesTheSessionEpochKeyToItsModel() {
         val initializer = functionCode.substringAfter("valmodel:TodayViewModel=", "")
         assertTrue("TodayTab must obtain its model through viewModel", initializer.startsWith("viewModel("))

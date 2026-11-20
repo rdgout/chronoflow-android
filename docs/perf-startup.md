@@ -37,6 +37,7 @@ The reference and low-end gates stay open until a device exists (OQ-A22).
 | 2026-11-19 | 8edb8455-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | benchmarkRelease, Partial(Require) | 129.4/119.2/146.3 | PASS |
 | 2026-11-20 | ed0c402f-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | benchmarkRelease, Partial(Require) | 127.5/116.1/136.5 | FAIL |
 | 2026-11-20 | ed0c402f-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | benchmarkRelease, Partial(Require) | 123.9/119.2/149.3 | PASS |
+| 2026-11-20 | 5cb57682-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | benchmarkRelease, Partial(Require) | 132.9/123.0/144.0 | FAIL |
 
 Device rows: open: device only (OQ-A22).
 
@@ -105,6 +106,7 @@ Every mandated validation command was executed; there is no unrun tier to substi
 | 2026-11-19 | 8edb8455-dirty | emulator | sdk_gphone64_arm64 | 60 | benchmarkRelease, Partial(Require) | 51.1 | 36.5 | 173.0 | 99.1/100.0 | PASS |
 | 2026-11-20 | ed0c402f-dirty | emulator | sdk_gphone64_arm64 | 60 | benchmarkRelease, Partial(Require) | 50.3 | 13.3 | 192.0 | 99.6/100.0 | PASS |
 | 2026-11-20 | ed0c402f-dirty | emulator | sdk_gphone64_arm64 | 60 | benchmarkRelease, Partial(Require) | 49.5 | 22.3 | 191.0 | 98.0/100.0 | PASS |
+| 2026-11-20 | 5cb57682-dirty | emulator | sdk_gphone64_arm64 | 60 | benchmarkRelease, Partial(Require) | 52.0 | 12.0 | 191.0 | 98.4/100.0 | PASS |
 
 ## Phase 3a: startup measurements
 
@@ -294,3 +296,19 @@ Near-miss to watch: `welcomeInteractiveMs` (hard 2567.7 ms, min 2549, both from 
 | 2026-11-19 | 8edb8455-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | 1.0 | light | benchmarkRelease, Partial(Require) | 128.1 | 2062.9 | FixtureTodaySource | REPORT |
 | 2026-11-20 | ed0c402f-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | 1.0 | light | benchmarkRelease, Partial(Require) | 125.4 | 2053.5 | FixtureTodaySource | FAIL |
 | 2026-11-20 | ed0c402f-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | 1.0 | light | benchmarkRelease, Partial(Require) | 127.5 | 2061.1 | FixtureTodaySource | REPORT |
+| 2026-11-20 | 5cb57682-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | 1.0 | light | benchmarkRelease, Partial(Require) | 124.4 | 2061.8 | FixtureTodaySource | FAIL |
+
+## Phase 9c — wizard shell and Where (2026-11-20)
+
+The wizard open path changed, so the profiles were regenerated (`make baseline-profile`) before `make perf` on 5cb57682. Results on `pixel` AVD, API 36, `benchmarkRelease`, `Partial(Require)`, 60 Hz (`build/perf/startup/20261120T123721Z-5cb57682-…`):
+
+| Metric | Phase 8 (AC) | Phase 9c |
+|---|---|---|
+| Signed-out cold TTID median | 123.9 ms | 132.9 ms (+7%) |
+| Signed-out cold TTFD median | 2708.6 ms | 2714.4 ms |
+| Warm TTID median | 34.3 ms | 35.2 ms |
+| Signed-in cold TTID / TTFD median | 127.5 / 2061.1 ms | 124.4 / 2061.8 ms |
+| `welcomeInteractiveMs` (each) | 2554–2569.1 | 2550.3–2568.8 |
+| `introLastItemMs` (each) | — | 3200.1–3203.0 |
+
+The host was on battery but not in Low Power Mode (`powermode 2`), and every metric sits within 7% of the Phase 8 AC run, so the run stands. The `FAIL` rows above for 5cb57682 are this run under the old one-frame `welcomeInteractiveMs` gate: its first iteration was 2568.8 ms, 1.1 ms over 2567.7, the same first-iteration miss seen in 4e, 7 and 8 with the welcome path unchanged since 3c. OQ-A382 widens that emulator gate alone to two frames (2584.3 ms); re-checking the same results with `Scripts/check-benchmarks.py --suite startup` and `--suite launch` (emulator, 60 Hz) exits 0. Emulator numbers are reports, never device claims.

@@ -31,6 +31,7 @@ import net.chronoflow.core.model.store.StoreFailure
 import net.chronoflow.core.sync.FullPull
 import net.chronoflow.core.sync.session.SessionController
 import net.chronoflow.core.sync.session.SessionTeardown
+import net.chronoflow.feature.onboarding.support.OnboardingFixtureTest
 import net.chronoflow.feature.onboarding.support.onboardingNow
 import net.chronoflow.feature.onboarding.support.withOnboardingFixture
 import org.junit.Assert.assertEquals
@@ -42,7 +43,7 @@ import org.junit.Assert.fail
 import org.junit.Test
 import kotlin.time.Duration.Companion.seconds
 
-class WalkthroughModelTests {
+class WalkthroughModelTests : OnboardingFixtureTest() {
     @Test fun nextNextDoneCommitsOnceAndGateMovesWithoutAnyNetworkRequest() =
         runTest(timeout = 60.seconds) {
             withOnboardingFixture { f ->

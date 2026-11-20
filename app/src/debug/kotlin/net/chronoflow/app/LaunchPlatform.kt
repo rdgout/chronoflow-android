@@ -8,6 +8,24 @@ import net.chronoflow.debug.DebugRouteLabel
 import net.chronoflow.feature.launch.LaunchController
 
 internal object LaunchPlatform {
+    private val wizardSeeds by lazy { java.util.WeakHashMap<AppGraph, net.chronoflow.debug.WizardDebugSeeds>() }
+
+    fun prepareWizard(
+        graph: AppGraph,
+        epoch: Long,
+        locale: java.util.Locale,
+    ): Boolean {
+        val prepared =
+            wizardSeeds
+                .getOrPut(graph) { net.chronoflow.debug.WizardDebugSeeds() }
+                .prepare(net.chronoflow.debug.DebugSeedRouting.current, epoch, locale)
+        graph.wizardStartOverride = prepared.override
+        return prepared.open
+    }
+
+    val wizardBoardCapture: String? get() =
+        net.chronoflow.debug.DebugSeedRouting.current
+            ?.wizardBoardCapture
     val frozenTripInstant: java.time.Instant? get() =
         net.chronoflow.app.perf.perfClockInstant(
             net.chronoflow.debug.DebugSeedRouting.current

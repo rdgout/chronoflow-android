@@ -923,7 +923,7 @@ object CopyIndex {
             "Route" -> CopyEntry(R.string.wizard_route, false, emptyList())
             "Same as work days" -> CopyEntry(R.string.wizard_same_as_work_days, false, emptyList())
             "Saving needs a connection" -> CopyEntry(R.string.wizard_saving_needs_a_connection, false, emptyList())
-            "Search airports" -> CopyEntry(R.string.wizard_search_airports, false, emptyList())
+            "Search airports" -> CopyEntry(R.string.android_wizard_airport_field, false, emptyList())
             "Search needs a connection" -> CopyEntry(R.string.wizard_search_needs_a_connection, false, emptyList())
             "Set on the website. Keep it, or add your flight home." -> CopyEntry(R.string.wizard_set_on_the_website_keep_it_or_add_a5efb7, false, emptyList())
             "Shift work changes how we can plan your clock." -> CopyEntry(R.string.wizard_shift_work_changes_how_we_can_plan_3ae211, false, emptyList())
@@ -1041,6 +1041,13 @@ object CopyIndex {
             "Sign in with your fingerprint, face or screen lock instead of your password." -> CopyEntry(R.string.android_passkeys_intro, false, emptyList())
             "Tap Open phone settings and turn on notifications for ChronoFlow." -> CopyEntry(R.string.android_notifications_blocked_step, false, emptyList())
             "Recovery codes.txt" -> CopyEntry(R.string.android_recovery_codes_file_name, false, emptyList())
+            "Airport or city" -> CopyEntry(R.string.android_wizard_airport_field, false, emptyList())
+            "Type at least 2 letters to search." -> CopyEntry(R.string.android_wizard_search_hint, false, emptyList())
+            "Searching airports…" -> CopyEntry(R.string.android_wizard_search_searching, false, emptyList())
+            "No airports found" -> CopyEntry(R.string.android_wizard_search_empty_title, false, emptyList())
+            "Try the city name, like “Tokyo”, or the 3-letter code on your ticket, like “NRT”." -> CopyEntry(R.string.android_wizard_search_empty_body, false, emptyList())
+            "We couldn't search airports." -> CopyEntry(R.string.android_wizard_search_error_title, false, emptyList())
+            "Check your connection and try again." -> CopyEntry(R.string.android_wizard_search_error_body, false, emptyList())
             else -> null
         }
 }

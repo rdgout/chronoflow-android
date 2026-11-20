@@ -18,6 +18,7 @@ import net.chronoflow.app.auth.VerificationSessionAdapter
 import net.chronoflow.app.auth.mockResetMail
 import net.chronoflow.app.links.AuthLinkDispatcher
 import net.chronoflow.app.links.AuthLinkRouting
+import net.chronoflow.app.wizard.SessionTripWizardDependencies
 import net.chronoflow.core.data.clock.SystemPlanClock
 import net.chronoflow.core.data.passkey.CredentialManagerClient
 import net.chronoflow.core.data.passkey.PasskeyAnchor
@@ -72,6 +73,25 @@ class AppGraph(
     val overrides: GraphOverrides = GraphOverrides.None,
     private val suppliedDispatchers: AppDispatchers = AppDispatchers(),
 ) {
+    private val wizardOverrides by lazy {
+        net.chronoflow.app.wizard
+            .WizardStartOverrides()
+    }
+    var wizardStartOverride: net.chronoflow.app.wizard.WizardStartOverride?
+        get() = wizardOverrides.wizardStartOverride
+        internal set(value) {
+            wizardOverrides.wizardStartOverride = value
+        }
+    internal val wizardRecoveryCheck by lazy {
+        net.chronoflow.app.wizard.WizardRecoveryCheck(
+            dispatchers,
+            {
+                val deps = sessionGraphs.current.value?.wizard as? SessionTripWizardDependencies
+                deps?.store?.recover() != null
+            },
+            { LaunchPlatform.wizardBoardCapture },
+        )
+    }
     val dispatchers by lazy { overrides.dispatchers ?: suppliedDispatchers }
     val appScope by lazy { CoroutineScope(SupervisorJob() + dispatchers.main) }
     internal val launchScope get() = appScope
