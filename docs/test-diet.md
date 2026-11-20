@@ -289,3 +289,43 @@ There are no frame advances, idle loops or UI waits in this test. Stage values d
 | recreationRestoresTheRegistryWithoutClaimingOrHoldingSplash | 0.026 s | 0.022 s | 0.021 s | — → 0.130 s |
 
 Mutation proofs preserve the integration coverage: passing the saved Bundle after process death fails with a non-null registry Bundle; dropping it during recreation fails with expected 1 / actual null. Both mutations were restored. The final targeted run passed. Evidence is under `build/test-diet-round-2/{baseline,final-profile,targeted-final,mutation-process-registry-retained,mutation-recreation-registry-dropped}`.
+
+
+## Review round 2: root theme and frame commit
+
+RootThemeTest retains the real MainActivity, CfRoot, window frame-commit callback and background font preloader. Its graph main dispatcher is paused, leaving Compose's UI/frame work and font IO running. The ready diagnostic seed avoids unrelated readiness work. The redundant explicit waitForIdle before runOnIdle is removed. Auto-advance is disabled and exactly one frame is advanced before checking zero preloads, so the font effect reaches its frame-commit barrier before the assertion. All original reduce-motion, zero-before-commit, real-callback, four-after-commit and off-main-thread assertions remain. Cleanup cancels and closes the graph.
+
+| RootThemeTest stage | Original ms | Revised ms |
+|---|---:|---:|
+| Lazy graph construction | 0.037 | 0.034 |
+| Build / create Activity | 2.459 / 4.604 | 2.297 / 4.500 |
+| Start / resume | 0.084 / 0.423 | 1.725 / 15.301 |
+| visible: native root composition/layout | 270.274 | 268.860 |
+| Explicit waitForIdle | 4.801 | removed |
+| Explicit frame advance | none | 3.144 (one 16 ms virtual frame) |
+| runOnIdle, including assertions and callback | 20.141 | 10.600 |
+| Real frame-commit callback, included above | 11.669 | 0.235 |
+| Font completion wait | 14.818 | 12.977 (two polls, no further frames) |
+| Activity cleanup | 9.098 | 11.603 |
+
+The stages are isolated wall measurements; nested callback time must not be counted twice. There is no custom idle loop. The complete XML case was 0.386 s before, 0.389 s after with probes, and 0.398 s in the final uninstrumented targeted run. This does not demonstrate an isolated speedup. Native first composition remains the main cost. Splitting the current assertions would still require this same Activity/root composition to prove each real binding; the existing pure ReduceMotionTest and FontWarmupOrderingTest do not prove that MainActivity supplies the actual values/barrier.
+
+Bypassing CfRoot's firstCommit barrier made the retained zero-preload assertion fail with expected 0 / actual 4. The mutation was restored and the final targeted run passed. An earlier explicit LEGACY graphics experiment was rejected: Robolectric keys its sandbox on graphics mode, causing a second cold sandbox and a 1.031 s process-restore case classified warm. Final code retains NATIVE graphics, with no new allowance.
+
+### Review round 2 validation and remaining failures
+
+| Check | Result |
+|---|---|
+| Final targeted AppGraphConstructionTest + both changed classes | pass, 4.809 s command wall |
+| Mutation proofs | both saved-registry mutations and the font-barrier bypass fail for the intended assertions; all restored |
+| make quick, exactly once | **fail**, 37.912 s wall, make exit 2 (Gradle test failure and two timing overruns) |
+| Process-death case, quick before → after | **1.009 → 0.788 s**, now under budget |
+| Matching-process recreation case, this quick | 0.130 s |
+| Root-theme case, quick before → after | **1.318 → 1.104 s**, still over budget |
+| First app SDK 36 sandbox, this quick | 4.048 s, existing 20 s cold allowance; excluded from warm comparisons |
+
+Optimization stopped with RootTheme still above 1 s under normal quick contention. The isolated breakdown above cannot attribute the parallel quick run's additional 0.715 s to individual stages. No warm budget was raised, no exemption was added, and no coverage or production behavior was changed. The work remains incomplete for RootTheme's quick timing gate.
+
+Quick also reported AppGraphSignOutWiringTest#signOutNavigatesErasesAccountFilesAndRejectsTheOldToken[36][unauthorized=true] at **1.445 s** (the voluntary parameter was 0.399 s). StubReadinessTests#nativeSessionDelegates failed with UncaughtExceptionsBeforeTest: a background coroutine completion accessed Dispatchers.Main after the test dispatcher was unset. The originating background job was not identified; this report does not attribute the failure to StubReadinessTests or claim it is unrelated to the current changes. No additional quick invocation or broader fix was attempted after the failed gate.
+
+Spotless passed during quick. Round 2 did not request another layout tier. Full quick output, XML and timing metadata are preserved under `build/test-diet-round-2/quick-results/`; targeted, stage and mutation evidence share that parent directory. Both class changes are separate signed commits with no trailers.

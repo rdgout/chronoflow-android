@@ -7,6 +7,9 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.text.font.FontFamily
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
 import net.chronoflow.core.designsystem.theme.LocalReduceMotion
 import net.chronoflow.core.testing.tiers.Logic
 import org.junit.Assert.assertEquals
@@ -24,6 +27,7 @@ import org.robolectric.shadows.ShadowValueAnimator
 import org.robolectric.util.ReflectionHelpers
 import org.robolectric.util.ReflectionHelpers.ClassParameter
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.time.Duration.Companion.seconds
 
 @OptIn(ExperimentalTestApi::class)
 @Logic
@@ -34,6 +38,7 @@ class RootThemeTest {
     @get:Rule val compose = createEmptyComposeRule()
 
     @Test fun activityProvidesReduceMotionAndPreloadsOnlyAfterItsFrameCommit() {
+        compose.mainClock.autoAdvance = false
         ReflectionHelpers.callStaticMethod<Unit>(
             ShadowValueAnimator::class.java,
             "setDurationScale",
@@ -45,6 +50,7 @@ class RootThemeTest {
             Intent(app, MainActivity::class.java)
                 .putExtra("CF_AUTH_TEST_ID", "0199a3c0-0000-7000-8000-000000000000")
                 .putExtra("CF_UI_TEST_PROFILE", "screen")
+                .putExtra("cf.mode", "ready")
         val controller = Robolectric.buildActivity(MainActivity::class.java, intent)
         val activity = controller.get()
         try {
@@ -53,7 +59,7 @@ class RootThemeTest {
                 .start()
                 .resume()
                 .visible()
-            compose.waitForIdle()
+            compose.mainClock.advanceTimeByFrame()
             compose.runOnIdle {
                 val root = compose.onNodeWithTag("app.root").fetchSemanticsNode()
                 val locals =
@@ -74,6 +80,8 @@ class RootThemeTest {
             compose.waitUntil(5000) { calls.get() == 4 }
         } finally {
             controller.pause().stop().destroy()
+            app.graph.appScope.cancel()
+            runTest(app.mainDispatcher, timeout = 60.seconds) { app.graph.close() }
             ReflectionHelpers.callStaticMethod<Unit>(
                 ShadowValueAnimator::class.java,
                 "setDurationScale",
@@ -85,7 +93,15 @@ class RootThemeTest {
     class RecordingApplication : ChronoFlowApp() {
         val preloader = RecordingFontPreloader()
 
-        override fun createGraph(): AppGraph = AppGraph(this, preloader)
+        // Keep the real UI/frame/font coroutines running without starting unrelated session restoration.
+        val mainDispatcher = StandardTestDispatcher()
+
+        override fun createGraph(): AppGraph =
+            AppGraph(
+                this,
+                preloader,
+                overrides = GraphOverrides(dispatchers = AppDispatchers(main = mainDispatcher)),
+            )
     }
 
     class RecordingFontPreloader : FontPreloader {
