@@ -36,7 +36,7 @@ class WizardBackHandlingTest {
     private fun host(state: WizardUiState = screenState()) {
         compose.setContent {
             dispatcher = checkNotNull(LocalOnBackPressedDispatcherOwner.current).onBackPressedDispatcher
-            WizardTestHost { WizardScreen(state, events::add) }
+            WizardTestHost { WizardScreen(state) { if (it !is WizardEvent.Query) events.add(it) } }
         }
     }
 

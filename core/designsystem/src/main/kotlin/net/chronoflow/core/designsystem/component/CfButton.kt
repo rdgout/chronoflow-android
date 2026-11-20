@@ -77,6 +77,7 @@ fun CfButton(
     contentPadding: PaddingValues? = null,
     leadingIconSize: Dp = AuthTokens.icon.dp,
     disabledAlpha: Float = AuthTokens.disabledOpacity,
+    contentColor: Color = Color.Unspecified,
 ) {
     require(!loading || loadingDescription != null) { "A loading button needs a localized loadingDescription" }
     val c = CfTheme.colors
@@ -107,8 +108,9 @@ fun CfButton(
             CfButtonStyle.OnSky -> c.skyCopy
             else -> c.foreground
         }
+    val resolvedInk = if (contentColor == Color.Unspecified) ink else contentColor
     val active = enabled && !loading
-    CompositionLocalProvider(LocalContentColor provides ink) {
+    CompositionLocalProvider(LocalContentColor provides resolvedInk) {
         Row(
             modifier
                 .minimumInteractiveComponentSize()
@@ -137,7 +139,13 @@ fun CfButton(
         ) {
             if (loading) CfSpinner()
             if (leadingIcon != null) Icon(leadingIcon, null, Modifier.size(leadingIconSize))
-            Text(text, Modifier.weight(1f, fill = false), color = ink, style = textStyle, textAlign = TextAlign.Center)
+            Text(
+                text,
+                Modifier.weight(1f, fill = false),
+                color = resolvedInk,
+                style = textStyle,
+                textAlign = TextAlign.Center,
+            )
         }
     }
 }

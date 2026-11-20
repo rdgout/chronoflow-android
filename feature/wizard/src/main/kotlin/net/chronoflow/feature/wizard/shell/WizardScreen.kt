@@ -64,6 +64,7 @@ import net.chronoflow.core.designsystem.theme.CfTheme
 import net.chronoflow.core.designsystem.theme.LocalReduceMotion
 import net.chronoflow.core.ui.R
 import net.chronoflow.feature.wizard.TripWizardViewModel
+import net.chronoflow.feature.wizard.search.AirportSearchSheet
 import net.chronoflow.feature.wizard.ui.NavTitle
 import net.chronoflow.feature.wizard.ui.WizardChromeUi
 import net.chronoflow.feature.wizard.ui.WizardCopy
@@ -97,6 +98,7 @@ fun WizardScreen(
 ) {
     WizardScaffold(state, onEvent)
     WizardBackHandling(state, onEvent)
+    state.sheet?.let { AirportSearchSheet(it, state.search, state.retryEnabled, onEvent) }
 }
 
 @Composable

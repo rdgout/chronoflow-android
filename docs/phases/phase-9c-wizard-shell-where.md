@@ -777,6 +777,8 @@ The close and discard logic is JVM-tested in Task 2's `TripWizardViewModelCloseT
 - remove and swap targets are ≥ 48;
 - the swap visual is 40 and its end = card end − 14 (on `WizardWhere`).
 
+**Task 7 implementation notes (2026-11-20):** `AirportRowUi` also retains the airport timezone so choosing a result passes the complete suggestion to the model. The existing `CfButton` gains an optional `contentColor` (default unchanged) for the dawn Cancel ghost button. The search glyph is generated from `WizardSheet`; swap and plus are generated from `Wizard`.
+
 ### Task 7: Search sheet (`feat(wizard): add the airport and stop search sheet`) [ticks "Search sheets"]
 
 **Change.** §5.5.

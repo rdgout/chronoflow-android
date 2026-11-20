@@ -170,6 +170,11 @@
       "source": "board",
       "board": "Wizard",
       "first": "M5 12h14"
+    },
+    "search": {
+      "source": "board",
+      "board": "WizardSheet",
+      "first": "<circle cx=\"11\" cy=\"11\" r=\"8\">"
     }
   }
 }

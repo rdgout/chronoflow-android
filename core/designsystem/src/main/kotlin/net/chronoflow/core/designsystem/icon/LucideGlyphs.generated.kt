@@ -366,6 +366,15 @@ object LucideGlyphs {
             ),
         )
 
+    val Search =
+        LucideGlyph(
+            "search",
+            listOf(
+                LucidePath("M3 11a8 8 0 1 0 16 0a8 8 0 1 0-16 0Z", false),
+                LucidePath("m21 21-4.3-4.3", false),
+            ),
+        )
+
     val SearchX =
         LucideGlyph(
             "search-x",

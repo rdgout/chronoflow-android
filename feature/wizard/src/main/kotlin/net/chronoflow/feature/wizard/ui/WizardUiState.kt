@@ -306,10 +306,13 @@ data class AirportRowUi(
     val name: String,
     val city: String?,
     val country: String,
+    val timezone: String,
 ) {
+    val airport: ApiAirportSuggestion get() = ApiAirportSuggestion(iata, name, city, country, timezone)
+
     companion object {
         fun from(airport: ApiAirportSuggestion) =
-            AirportRowUi(airport.iata, airport.name, airport.city, airport.country)
+            AirportRowUi(airport.iata, airport.name, airport.city, airport.country, airport.timezone)
     }
 }
 
