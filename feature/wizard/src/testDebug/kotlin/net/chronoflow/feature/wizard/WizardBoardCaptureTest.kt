@@ -105,9 +105,9 @@ class WizardBoardCaptureTest(
         compose.runOnIdle { keyboard?.hide() }
         compose.waitForIdle()
         if (motion) {
-            // Start the native animation, then freeze its three-quarter sweep like the boards.
+            // M3 1.4.0 keyframes place both arc endpoints closest to the boards at this offset.
             compose.mainClock.advanceTimeByFrame()
-            compose.mainClock.advanceTimeBy(2_532, ignoreFrameDuration = true)
+            compose.mainClock.advanceTimeBy(2_936, ignoreFrameDuration = true)
         }
         captureWizard(
             compose,
