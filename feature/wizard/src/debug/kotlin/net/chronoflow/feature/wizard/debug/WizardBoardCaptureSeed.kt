@@ -73,13 +73,14 @@ object WizardBoardCaptureSeed {
             "WizardReturnFlightDarkNL",
             "WizardReturnFlightPast",
             "WizardReturnFlightPastDarkNL",
-        )
+        ) + WizardSleepQuestionBoardSeed.names
 
     fun baseName(board: String): String =
         when {
             board.endsWith("DarkNL") -> board.removeSuffix("DarkNL")
             board.endsWith("Dark") -> board.removeSuffix("Dark")
             board.endsWith("NL") -> board.removeSuffix("NL")
+            board.endsWith("Large") -> board.removeSuffix("Large")
             else -> board
         }
 
@@ -95,6 +96,7 @@ object WizardBoardCaptureSeed {
                     else -> null
                 },
             discardDialogVisible = baseName(board) == "WizardDiscard",
+            timeSheet = "habitual_bed".takeIf { board == "PickerTime" },
         )
 
     fun draft(
@@ -254,7 +256,7 @@ object WizardBoardCaptureSeed {
                         else -> null
                     },
             )
-        return MemberWizardDraft(form, state, errors)
+        return WizardSleepQuestionBoardSeed.apply(MemberWizardDraft(form, state, errors), board)
     }
 }
 

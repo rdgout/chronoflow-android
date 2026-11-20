@@ -33,13 +33,19 @@ class WizardBoardCaptureTest(
     private val board: String,
 ) {
     private val compose = createComposeRule()
-    private val language = if (board.endsWith("NL")) AppLanguage.Nl else AppLanguage.En
+    private val language = if (board.endsWith("NL") || board == "WizardQShiftLarge") AppLanguage.Nl else AppLanguage.En
     private val dark = "Dark" in board
+    private val profile =
+        when (board) {
+            "PickerTime" -> wizardBoardProfile.copy(widthDp = 375, heightDp = 812)
+            "WizardQShiftLarge" -> wizardBoardProfile.copy(fontScale = 1.3f)
+            else -> wizardBoardProfile
+        }
 
     @get:Rule val rules: RuleChain =
         RuleChain
             .outerRule(
-                ProfileRule(wizardBoardProfile, language, dark),
+                ProfileRule(profile, language, dark),
             ).around(compose)
 
     @Test fun capturesTheBoardState() {
@@ -47,7 +53,7 @@ class WizardBoardCaptureTest(
         var keyboard: SoftwareKeyboardController? = null
         runTest(timeout = 60.seconds) { state = boardState(board, Locale.forLanguageTag(language.tag)) }
         compose.setContent {
-            ProfileHost(wizardBoardProfile) {
+            ProfileHost(profile) {
                 ChronoFlowTheme(darkTheme = dark, reduceMotion = true) {
                     val controller = LocalSoftwareKeyboardController.current
                     SideEffect { keyboard = controller }
@@ -61,12 +67,21 @@ class WizardBoardCaptureTest(
         compose.waitForIdle()
         captureWizard(
             compose,
-            if (board in setOf("WizardWhereLimit", "WizardOutboundScrollErrors")) {
+            if (board in
+                setOf(
+                    "WizardWhereLimit",
+                    "WizardOutboundScrollErrors",
+                    "WizardSleepMember",
+                    "WizardSleepError",
+                    "WizardQAgeMember",
+                )
+            ) {
                 "${board}_noBoard"
             } else {
                 board
             },
-            state.sheet != null || state.discardDialogVisible,
+            state.sheet != null || state.discardDialogVisible || board == "PickerTime" ||
+                board.startsWith("WizardSheetFreeSleep"),
         )
     }
 
