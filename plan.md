@@ -3065,7 +3065,7 @@ Implementation commits:
 **Brief implementation tasks**
 
 - [x] **10a Task 1**: settings glyphs and ghost destructive button.
-- [ ] **10a Task 2**: settings home state.
+- [x] **10a Task 2**: settings home state.
 - [ ] **10a Task 3**: home model and sign-out flow.
 - [ ] **10a Task 4**: page scaffold and components.
 - [ ] **10a Task 5**: settings home screen.
