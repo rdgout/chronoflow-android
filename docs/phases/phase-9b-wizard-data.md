@@ -17,6 +17,7 @@
   - **Other names.** `SyncEpoch.isValid` exists (no fallback needed); `StaleSessionException : CancellationException` is what an invalid epoch or revoked `SessionMutationPermit` throws. `AccountDatabase.write` bodies are non-suspending `(AccountSql) -> T`. `StoreApplication` is `internal object` in `:core:data` (`pending(sql)`). `eventually` is `net.chronoflow.core.testing.sync.eventually`. 4c's package is `net.chronoflow.core.datamock`; `MockDataSource(store, seed, offline, …, now, delay, sleep, id, …, zone, io)`. 4b's envelope mapper `ApiErrorMapper` is `internal` → Task 9 uses the literal failures. 4b's wizard routes use `ApiTimeouts.Generation` (`ApiEndpoint.kt:52`, `ApiDataSource.kt` review/save/update): verified, no fallback.
   - **Recovery JSON.** 9a's `MemberWizardRecord.encode` uses the shared `ApiJson.response` (`encodeDefaults` off). `instance` still encodes (its default is a fresh UUID), but `revision = 0` is **omitted**, so `recoveryJsonAlwaysCarriesInstanceAndRevision` will fail as written. Use §5.4 #6's fix commit with a codec-local `Json(ApiJson.response) { encodeDefaults = true }` (not a change to `ApiJson`), and have `updateRecovery` read a missing `"revision"` as 0.
   - **Test diet (AGENTS "Tests" 1, 5).** JVM and warm Robolectric cases < 1 s; 60 s hang cap (`TestTimingListener`). Parameterized Swift tests follow 9a's pattern: `@RunWith(Enclosed::class)` with a nested `@RunWith(Parameterized::class)` class whose method keeps the Swift name (each parameter is its own case), not a loop. No new test may construct `AppGraph`, `SessionGraph(s)`, `RootContent`, `CfRoot` or `MainActivity` (Konsist `AppTestBoundaryRules.kt` allowlist); Task 10's tests use fakes only.
+  - **Task dependency (repeat check, 2026-11-20).** Task 1’s required duplicate-trip test constructs `RecoveryRejected`, but Task 4 originally introduced that type. Introduce its specified `class RecoveryRejected : Exception()` in Task 1; Task 4 reuses it. This only orders new 9b code and changes no landed behaviour.
   - **OQ numbering.** OQ rows end at **OQ-A366**; next free is **OQ-A367** (Task 11).
   - **Flagged (keep the brief's behaviour; report, do not silently change):**
     1. `wizardOperation` (`model/WizardOperation.kt`) catches `RuntimeException` but not a checked-style `Exception`; `class RecoveryRejected : Exception()` reaching it (e.g. from `didCreate` if the service ever rethrew it) would escape the model's job. The writer and service catch it first, so this is latent; say so in the PR.
@@ -625,6 +626,7 @@ Run `make targeted ONLY=…` for each task's tests, and `make quick` once before
 - Files:
   - `core/wizard/…/generation/TripGenerationService.kt`, holding `TripGenerationEffects` (with its `companion object`) and `TripGenerationService` (§6.1, §6.2). It implements 9a's `MemberWizardGeneration` and uses 9a's `TripEditContext`, `TripGenerationState`, `TripGenerationSaveResult`, `TripGenerationReviewResult` and `TripGenerationAnswers`;
   - `TripGenerationReview.kt` (`performReview`, `refreshSource`, `sendReview`);
+  - `core/wizard/…/model/RecoveryRejected.kt` (`class RecoveryRejected : Exception()`), needed by this task’s duplicate-trip cases and reused by Task 4;
   - the module build deps of §5.1 for `:core:wizard`, if 9a lacks one.
 - Test helpers in `core/testing/…/wizard/`:
   - `GenerationSource.kt`, a port of `Tests/TripWizardTests/GenerationSource.swift:1–125`, implementing 4b's `DataSource`. `mock` is a `DataSource?` (tests pass 4c's `MockDataSource`; `:core:testing` does not depend on `:core:data-mock`). Every `DataSource` method it does not implement throws `DataFailure.Server(null)` (Swift l.109–125). It keeps the per-method counters (`count("review")`, `"save"`, `"update"`, `"trips"`, `"detail"`, `"input"`), `reviewInputs`, `editRequests`, `operations`, plus `queueReviews`, `queueSnapshots`, `loseSaveResponseOnce`, `configure(...)` and `waitForReviews`/`waitForSaves`, built on `CompletableDeferred`.
@@ -671,7 +673,7 @@ Run `make targeted ONLY=…` for each task's tests, and `make quick` once before
 - Files:
   - `core/model/…/store/DraftRecord.kt`;
   - the `drafts` named queries in `Drafts.sq`, their `AccountSql` mappings in `core/database/…/database/store/RecordMapping.kt`, and the two narrowed REPLACE patterns (`OR\s+REPLACE`, `\bREPLACE\s+INTO`) in 4a's `SqlSafetyTest` (§6.5; same commit, or `make quick` fails);
-  - `core/wizard/…/model/RecoveryRejected.kt` (`class RecoveryRejected : Exception()`; Task 6's writer imports it);
+  - reuse Task 1’s `core/wizard/…/model/RecoveryRejected.kt` (`class RecoveryRejected : Exception()`; Task 6’s writer imports it);
   - `core/data/…/wizard/DraftRepository.kt` and `MemberWizardStore.kt` (§6.5, everything except `start(seed:)`, which is 11a's), on 9a's `MemberWizardRecord` and `MemberWizardDrafts`;
   - `core/data/…/reminders/FirstTripRemindersOffer.kt` (`queue` only);
   - module deps for `:core:data`.
