@@ -349,3 +349,29 @@ Proofs on final fixture code:
 - Initial temporary Unit replacements produced compiler warnings and were discarded as invalid proofs. The final mutations delete the calls, compile successfully and fail the assertions above.
 
 Every mutation was restored. The affected graph/layout/ViewModel fixtures and the Konsist boundary rule passed targeted. The final quick run also passed: the ViewModel fixture's live-step case was 0.060 s and StubReadinessTests#nativeSessionDelegates was 0.001 s. There was no uncaught Main completion and no unexpected watchdog hang. Evidence: `build/test-diet-round-3/{suspect-fixed,mutation-graph-teardown,mutation-viewmodel-join}` and the complete `targeted-final.log`.
+
+
+## Review round 3: sign-out setup cost
+
+The unauthorized path was not sleeping, retrying or waiting for a route. Baseline stage probes, with SDK 36 already warm, measured the unauthorized case at 0.550 s versus 0.140 s voluntary. Its actual controller.unauthorized call was only 5.839 ms. The expensive first-parameter work was:
+
+| Baseline unauthorized stage | ms |
+|---|---:|
+| Mock sign-in and full initial seed | 228.200 |
+| Accept session / open account database | 84.535 |
+| Route through real readiness/graph | 29.327 |
+| New source and initial valid-token check | 61.054 |
+| New source and server-side revocation | 67.082 |
+| Actual controller.unauthorized | 5.839 |
+| New source and final 401 check | 38.549 |
+
+PerfMockSources eagerly builds a complete MockAppSeed for every new source even when persisted state already exists. The fixture now seeds a minimal real file-backed demo account, obtains its token from the real MockDataSource sign-in, accepts it through the real graph controller, and routes through ScreenSessionFixture. The account is verified, has accepted terms and has seen walkthrough; its unrelated trip fixtures are absent. All graph dispatchers use the test scheduler. Independent token-check sources load persisted server state without rebuilding the full app seed. Voluntary logout still resolves through the unmodified AppGraph dataSources callback.
+
+All preconditions and outcome assertions remain: Today before teardown, a real account directory, a valid old token, then SignedOut, SignIn, erased files and 401 from a fresh source. Unauthorized still revokes the server token before delivering the received 401 to the controller. Removing erase fails the directory assertion; removing logout fails only voluntary token rejection (expected 401 / actual null); removing onSignedOut navigation leaves both cases on Today. These are execution failures, not compilation failures. Mutation code was restored.
+
+| Warm case | Before | Final quick XML |
+|---|---:|---:|
+| unauthorized=true | 1.537 s (orchestrator, pre-round-3) | **0.391 s** |
+| unauthorized=false | 0.399 s (previous local quick) | **0.064 s** |
+
+The final focused warm run before the broad targeted validation measured 0.356 / 0.063 s. Different host contention makes the quick comparisons observations, not controlled speedup claims. Evidence: `build/test-diet-round-3/baseline/`, `profile-baseline.log`, `mutation-signout-{erase,logout,navigation}/`, and `quick-results/`.

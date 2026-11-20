@@ -8,12 +8,20 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
+import net.chronoflow.core.datamock.FileMockStateStore
+import net.chronoflow.core.datamock.MockDataSource
+import net.chronoflow.core.datamock.MockLatency
 import net.chronoflow.core.datamock.MockScenarioValues
+import net.chronoflow.core.datamock.MockServerAccount
+import net.chronoflow.core.datamock.MockServerState
 import net.chronoflow.core.model.DataFailure
+import net.chronoflow.core.model.api.AccountSettings
+import net.chronoflow.core.model.api.AccountSnapshot
 import net.chronoflow.core.model.api.PasswordSignInInput
 import net.chronoflow.core.model.api.SignInResult
 import net.chronoflow.core.model.session.SessionPresence
 import net.chronoflow.core.navigation.Route
+import net.chronoflow.core.testing.sync.snapshot
 import net.chronoflow.core.testing.tiers.Logic
 import net.chronoflow.debug.ScreenSessionFixture
 import org.junit.Assert.assertEquals
@@ -49,14 +57,58 @@ class AppGraphSignOutWiringTest(
                             mockDelay = Duration.ZERO,
                             mockSeed = MockSeedFlags(unverified = false, walkthroughSeen = true, termsPending = false),
                             sessionCipher = SoftwareSessionCipher(),
-                            dispatchers = AppDispatchers(dispatcher, Dispatchers.IO, dispatcher),
+                            dispatchers = AppDispatchers(dispatcher, dispatcher, dispatcher),
                         ),
                 )
             try {
                 // Account teardown needs a session and account DB, not the UI seed's full trip/plan synchronization.
                 graph.sessionSync.setEnabled(false)
+                val store = FileMockStateStore(root)
+                withContext(Dispatchers.IO) {
+                    store.save(
+                        MockServerState(
+                            listOf(
+                                MockServerAccount(
+                                    snapshot(MockScenarioValues.demoID).let { value ->
+                                        AccountSnapshot(
+                                            value.id,
+                                            value.name,
+                                            MockScenarioValues.demoEmail,
+                                            value.hasVerifiedEmail,
+                                            AccountSettings(
+                                                value.settings.bodyClock,
+                                                value.settings.sleepAnswered,
+                                                value.settings.preferences,
+                                                value.settings.reminders,
+                                                value.settings.planCredits,
+                                                value.settings.policies.copy(
+                                                    acceptedTermsVersion = value.settings.policies.termsVersion,
+                                                ),
+                                            ),
+                                            value.readiness,
+                                            value.billing,
+                                            value.security,
+                                        )
+                                    },
+                                    MockScenarioValues.password,
+                                    walkthroughSeen = true,
+                                ),
+                            ),
+                        ),
+                    )
+                }
+
+                fun source(bearer: suspend () -> String?) =
+                    MockDataSource(
+                        store = FileMockStateStore(root),
+                        bearer = bearer,
+                        debugAppSeed = false,
+                        delay = { 0.0 },
+                        sleep = MockLatency.exact(0.0),
+                        io = dispatcher,
+                    )
                 val result =
-                    graph.dataSources.public().signIn(
+                    source { null }.signIn(
                         PasswordSignInInput(
                             MockScenarioValues.demoEmail,
                             MockScenarioValues.password,
@@ -75,8 +127,7 @@ class AppGraphSignOutWiringTest(
                 val account = File(root, "ChronoFlowMock/Accounts/${old.session.accountId}")
                 withContext(Dispatchers.IO) { assertTrue(account.isDirectory) }
 
-                fun freshSource() =
-                    checkNotNull(graph.mockSources).dataSource(root, graph.overrides) { old.session.token }
+                fun freshSource() = source { old.session.token }
                 assertEquals(old.session.accountId, freshSource().fetchIdentity().id)
                 if (unauthorized) {
                     // A 401 is already revoked server-side; this path deliberately skips a redundant logout.
