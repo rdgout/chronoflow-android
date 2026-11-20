@@ -104,6 +104,11 @@ class WizardBoardCaptureTest(
         if (state.answerSheet != null) compose.onNodeWithTag("wizard.answer.title").assertIsFocused()
         compose.runOnIdle { keyboard?.hide() }
         compose.waitForIdle()
+        if (motion) {
+            // Start the native animation, then freeze its three-quarter sweep like the boards.
+            compose.mainClock.advanceTimeByFrame()
+            compose.mainClock.advanceTimeBy(2_532, ignoreFrameDuration = true)
+        }
         captureWizard(
             compose,
             if (board in
