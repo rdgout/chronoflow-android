@@ -43,7 +43,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
@@ -440,142 +439,100 @@ private fun WizardStepContent(
     onEvent: (WizardEvent) -> Unit,
     copyFormatter: CopyLineFormatter?,
 ) {
-    val fineTuneViewport =
-        remember {
-            net.chronoflow.feature.wizard.finetune
-                .WizardFineTuneViewport()
-        }
+    val where = state.where
+    val times = state.times
+    val titleCopy =
+        where?.title ?: times?.title ?: state.returnChoice?.title ?: state.sleep?.title ?: state.excluded?.title
+            ?: state.checking?.title ?: state.fineTune?.title
+    val subtitleCopy =
+        where?.subtitle ?: times?.subtitle ?: state.sleep?.subtitle ?: state.checking?.subtitle
+            ?: state.fineTune?.subtitle
+    val serverCopy = rememberServerCopy(copyFormatter)
+    val title = titleCopy?.resolve() ?: state.question?.let { serverCopy(it.title) }
+    val heading: @Composable () -> Unit = {
+        if (title != null) WizardStepHeading(state, key, title, subtitleCopy)
+    }
     Column(Modifier.fillMaxSize().wizardBuiltStepBoundary(key)) {
-        Column(
+        val scroll =
             Modifier
-                .weight(
-                    1f,
-                ).fillMaxWidth()
+                .weight(1f)
+                .fillMaxWidth()
                 .testTag("wizard.scroll")
-                .then(
-                    if (state.fineTune == null) {
-                        Modifier
-                    } else {
-                        Modifier.layout { measurable, constraints ->
-                            fineTuneViewport.height =
-                                (constraints.maxHeight - WizardMetrics.contentTop.dp.roundToPx() * 2).coerceAtLeast(0)
-                            fineTuneViewport.heading = 0
-                            val content = measurable.measure(constraints)
-                            layout(content.width, content.height) { content.placeRelative(0, 0) }
-                        }
-                    },
-                ).verticalScroll(
-                    rememberScrollState(),
-                ).padding(horizontal = WizardMetrics.gutter.dp, vertical = WizardMetrics.contentTop.dp),
-            verticalArrangement = Arrangement.spacedBy(PlanUITokens.wizardContentGap.dp),
-        ) {
-            val where = state.where
-            val times = state.times
-            val titleCopy =
-                where?.title ?: times?.title ?: state.returnChoice?.title ?: state.sleep?.title ?: state.excluded?.title
-                    ?: state.checking?.title ?: state.fineTune?.title
-            val subtitleCopy =
-                where?.subtitle ?: times?.subtitle ?: state.sleep?.subtitle ?: state.checking?.subtitle
-                    ?: state.fineTune?.subtitle
-            val serverCopy = rememberServerCopy(copyFormatter)
-            val title = titleCopy?.resolve() ?: state.question?.let { serverCopy(it.title) }
-            val locale = LocalConfiguration.current.locales[0]
-            if (title != null) {
-                val titleFocus = remember { FocusRequester() }
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(WizardMetrics.titleGap.dp),
-                    modifier =
-                        Modifier.padding(bottom = WizardMetrics.titleExtra.dp).then(
-                            if (state.fineTune == null) {
-                                Modifier
-                            } else {
-                                Modifier.layout { measurable, constraints ->
-                                    val content = measurable.measure(constraints)
-                                    fineTuneViewport.heading = content.height + WizardMetrics.titleExtra.dp.roundToPx()
-                                    layout(content.width, content.height) { content.placeRelative(0, 0) }
-                                }
-                            },
-                        ),
-                ) {
-                    state.question?.eyebrow?.let {
-                        Text(
-                            it.resolve().uppercase(locale),
-                            Modifier.testTag("wizard.eyebrow"),
-                            color = CfTheme.colors.dawnText,
-                            style = CfTheme.type.style(CfTypeScale.screenEyebrow),
-                        )
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = WizardMetrics.gutter.dp, vertical = WizardMetrics.contentTop.dp)
+        val fineTune = state.fineTune
+        if (fineTune != null) {
+            WizardFineTuneStep(fineTune, copyFormatter, onEvent, scroll, heading)
+        } else {
+            Column(scroll, verticalArrangement = Arrangement.spacedBy(PlanUITokens.wizardContentGap.dp)) {
+                if (title != null) {
+                    heading()
+                    when {
+                        state.checking != null -> WizardCheckingStep(state.checking)
+                        state.sleep != null -> WizardSleepStep(state.sleep, onEvent, copyFormatter)
+                        state.question != null -> WizardQuestionStep(state.question, onEvent)
+                        state.excluded != null -> WizardExcludedStep(state.excluded, copyFormatter)
+                        where != null -> WhereStep(where, copyFormatter, onEvent)
+                        times != null -> WizardTimesStep(times, onEvent, copyFormatter)
+                        state.returnChoice != null -> WizardReturnStep(state.returnChoice, onEvent)
                     }
-                    Text(
-                        title,
-                        Modifier
-                            .testTag("wizard.title")
-                            .focusRequester(titleFocus)
-                            .focusable()
-                            .semantics { heading() },
-                        color = CfTheme.colors.foreground,
-                        style =
-                            CfTheme.type.style(
-                                if (title.length >
-                                    80
-                                ) {
-                                    CfTypeScale.wizardLongTitle
-                                } else {
-                                    CfTypeScale.screenPageTitle
-                                },
-                            ),
-                    )
-                    if (subtitleCopy != null) {
-                        Text(
-                            subtitleCopy.resolve(),
-                            Modifier.testTag("wizard.subtitle"),
-                            color = CfTheme.colors.mutedForeground,
-                            style = CfTheme.type.style(CfTypeScale.wizardSubtitle),
-                        )
-                    }
+                } else if (key.step != MemberWizardStep.question) {
+                    WizardStepSeam(key)
                 }
-                LaunchedEffect(key) { titleFocus.requestFocus() }
-                when {
-                    state.fineTune != null -> {
-                        WizardFineTuneStep(
-                            state.fineTune,
-                            copyFormatter,
-                            onEvent,
-                            fineTuneViewport,
-                        )
-                    }
-
-                    state.checking != null -> {
-                        WizardCheckingStep(state.checking)
-                    }
-
-                    state.sleep != null -> {
-                        WizardSleepStep(state.sleep, onEvent, copyFormatter)
-                    }
-
-                    state.question != null -> {
-                        WizardQuestionStep(state.question, onEvent)
-                    }
-
-                    state.excluded != null -> {
-                        WizardExcludedStep(state.excluded, copyFormatter)
-                    }
-
-                    where != null -> {
-                        WhereStep(where, copyFormatter, onEvent)
-                    }
-
-                    times != null -> {
-                        WizardTimesStep(times, onEvent, copyFormatter)
-                    }
-
-                    state.returnChoice != null -> {
-                        WizardReturnStep(state.returnChoice, onEvent)
-                    }
-                }
-            } else if (key.step != MemberWizardStep.question) {
-                WizardStepSeam(key)
             }
         }
         if (key == state.step) WizardFooter(state.chrome, key, onEvent)
     }
+}
+
+@Composable
+private fun WizardStepHeading(
+    state: WizardUiState,
+    key: WizardStepKey,
+    title: String,
+    subtitleCopy: WizardCopy?,
+) {
+    val titleFocus = remember { FocusRequester() }
+    val locale = LocalConfiguration.current.locales[0]
+    Column(
+        verticalArrangement = Arrangement.spacedBy(WizardMetrics.titleGap.dp),
+        modifier = Modifier.padding(bottom = WizardMetrics.titleExtra.dp),
+    ) {
+        state.question?.eyebrow?.let {
+            Text(
+                it.resolve().uppercase(locale),
+                Modifier.testTag("wizard.eyebrow"),
+                color = CfTheme.colors.dawnText,
+                style = CfTheme.type.style(CfTypeScale.screenEyebrow),
+            )
+        }
+        Text(
+            title,
+            Modifier
+                .testTag("wizard.title")
+                .focusRequester(titleFocus)
+                .focusable()
+                .semantics { heading() },
+            color = CfTheme.colors.foreground,
+            style =
+                CfTheme.type.style(
+                    if (title.length >
+                        80
+                    ) {
+                        CfTypeScale.wizardLongTitle
+                    } else {
+                        CfTypeScale.screenPageTitle
+                    },
+                ),
+        )
+        if (subtitleCopy != null) {
+            Text(
+                subtitleCopy.resolve(),
+                Modifier.testTag("wizard.subtitle"),
+                color = CfTheme.colors.mutedForeground,
+                style = CfTheme.type.style(CfTypeScale.wizardSubtitle),
+            )
+        }
+    }
+    LaunchedEffect(key) { titleFocus.requestFocus() }
 }

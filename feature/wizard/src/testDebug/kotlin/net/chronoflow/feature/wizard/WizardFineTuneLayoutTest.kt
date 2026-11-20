@@ -1,8 +1,13 @@
 package net.chronoflow.feature.wizard
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.height
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.unit.dp
 import net.chronoflow.core.testing.DeviceProfiles
 import net.chronoflow.core.testing.compose.ProfileRule
 import net.chronoflow.core.testing.tiers.Layout
@@ -43,6 +48,30 @@ class WizardFineTuneLayoutTest(
             val viewport = compose.onNodeWithTag("wizard.scroll").getUnclippedBoundsInRoot()
             assertTrue("preferences=$preferences viewport=$viewport", preferences.top >= viewport.bottom)
         }
+    }
+
+    @Test fun preferencesFollowAHeightOnlyResize() {
+        val state = completionBoard("WizardFineTuneNone")
+        val height = mutableStateOf(profile.heightDp.dp)
+        compose.setContent {
+            WizardTestHost(profile) {
+                Box(Modifier.height(height.value)) { WizardScreen(state, {}) }
+            }
+        }
+        val before =
+            compose
+                .onNodeWithTag("wizard.preferences")
+                .getUnclippedBoundsInRoot()
+                .top.value
+        compose.runOnIdle { height.value -= 80.dp }
+        val after =
+            compose
+                .onNodeWithTag("wizard.preferences")
+                .getUnclippedBoundsInRoot()
+                .top.value
+        org.junit.Assert.assertEquals(before - 80, after, 1f)
+        val viewport = compose.onNodeWithTag("wizard.scroll").getUnclippedBoundsInRoot()
+        assertTrue(after >= viewport.bottom.value)
     }
 
     companion object {
