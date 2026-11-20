@@ -1060,3 +1060,56 @@ make timing
 ```
 
 No required command was blocked by the sandbox. An optional image-pair assembly helper lacked Pillow (`ModuleNotFoundError: No module named 'PIL'`); existing pair/capture images were inspected directly, without installing a dependency. No production mutation, temporary configuration or new dependency remains. The `pixel` emulator was left running.
+
+## Phase 9f review round 2
+
+2026-11-20. The host confirmed round 1's `make check` passed. This round restores graph-wiring coverage, records explicit fixture warm-ups, removes profiling stdout, and completes the edit-mode discard labels.
+
+`CfRoot` now delegates all font/motion bindings to `RootThemeGraph.rootThemeInputs`. `AppGraph` implements that narrow source interface using its existing getters; the factory selects `dispatchers.io`, preserves the preloader/commit/motion flag and binds the actual launch controller's ready callback. `RootThemeInputsTest` runs three plain JVM cases against a fake source, without constructing AppGraph. Mutating the factory to select `dispatchers.main` failed the identity assertion; mutating motion to constant false failed the enabled-motion assertion. Both mutations were restored and the affected cases passed. The runtime-composition case is now named `themeContentProvidesReduceMotionAndUsesTheSuppliedFontBarrier`, distinguishing its rendering responsibility from the graph factory's tests.
+
+Baseline root rendering was 88 ms warm; the first factory-backed run was 87 ms, and the final isolated run after removing profiling was 92 ms. In the parallel quick run it was 133 ms, below the 1 s limit. The three factory cases were 13 / 1 / 1 ms in quick.
+
+`:core:testing-junit` had no explicit BeforeClass measurement API; its existing allowances apply to test windows. `measureClassWarmup` now writes separate class/SDK/name/ms evidence beside the listener's output, crossing Robolectric's sandbox class-loader boundary through files. `run-tier` exposes it in `timings.json` under `warmups`, separate from `tests`, `measuredTests` and `budgetChecks`. It does not spend, extend or replace an existing test allowance. The writer tests cover returned values, escaping and failed setup; collector tests prove that warm-up evidence cannot stand in for missing test metrics. See [test-diet.md](test-diet.md) for the API.
+
+Terms' baseline native warm-up was 525 ms, printed only to stdout. Its structured isolated records were 740 ms initially and 529 ms after profiling removal. The four-case class still produces exactly one warm-up record. The final quick record was:
+
+```json
+{"class":"net.chronoflow.feature.onboarding.terms.TermsScreenTest","sdk":"36","name":"native-font-runtime","ms":0}
+```
+
+Zero means the runtime had already been initialized in that worker. Both RootTheme and Terms XML outputs contain no per-case stdout. Terms' first isolated case changed from 1.492 s before this round to 1.462 s after cleanup; its final quick class-first case was 1.835 s, below 3 s, with the remaining cases at 156 / 113 / 86 ms. These are macOS JVM/Robolectric figures, not device performance claims.
+
+The public alternative was tested with `@GraphicsMode(NATIVE)` and `Typeface.create` alone:
+
+```sh
+make targeted ONLY='core:testing-junit:ClassWarmupTest feature:onboarding:TermsScreenTest'
+```
+
+The writer tests passed, but Terms failed immediately in BeforeClass:
+
+```text
+java.lang.NullPointerException: Cannot enter synchronized block because "android.graphics.Typeface.SYSTEM_FONT_MAP_LOCK" is null
+```
+
+Robolectric 4.18 defers Typeface's static initialization, so NATIVE alone cannot perform this pre-class warm-up. The internal loader remains, with that reason in one comment. Restoring it passed all four Terms cases; no unsupported public warm-up or mutation remains.
+
+Discard title and confirm copy now come from UI state alongside the existing message, matching pinned `MemberWizardView.swift` l.125–136. Editing uses `Discard your changes?` / `Discard changes`; a new trip uses `Discard this trip?` / `Discard`. Guest welcome-screen and edit-preservation messages remain intact. Before implementation, all four generated IDs were verified in both `values/strings_ios.xml` and `values-nl/strings_ios.xml`. `WizardDiscardUiTest` checks editing/new member/new guest state on the JVM. No screen-copy assertion, new string, Android-only copy or OQ was added.
+
+Validation:
+
+| Scope | Result | Timing |
+|---|---|---:|
+| Root input factory and RootTheme class | All six passed; both binding mutations failed as required and restored cases passed | 8 s Gradle initial run |
+| Warm-up writer/listener/classification | 15 passed | 2 s Gradle |
+| New collector tests | 2 passed | 0.312 s |
+| Clean RootTheme/factory and Terms classes | Passed; stdout empty in both Robolectric classes | Root warm 92 ms; Terms first 1.462 s |
+| Discard UI + checking VM | 16 passed | 4 s Gradle |
+| Touched app/wizard/onboarding lint | Passed | 12 s Gradle |
+| Touched Android modules' layout tier | 455 passed; zero overruns | 16.98 s |
+| `make format` | Passed before quick | 10 s Gradle |
+| `make quick`, once | 5,050 measured cases passed; zero overruns/hangs; class warm-up recorded separately | 44.77 s first stage |
+| Quick build-logic | 37 certified passing results | 1.82 s |
+| Quick tooling | 170 scripts / 25 contracts / 49 l10n / 11 icons passed | 20.423 / 0.114 / 0.017 / 0.077 s |
+| Quick serial timing | 7 measured budget cases passed | 2.83 s |
+
+The changed test-runtime library caused quick to measure every selected case afresh. The stage times above include that validation and the separate tooling stage; the full quick command was not repeated. No required command was sandbox-blocked. Lint/layout ran once for touched Android modules; no emulator, capture, perf/profile tier or `make check` was run. The `pixel` emulator remains running.
