@@ -5,82 +5,63 @@ package net.chronoflow.core.network
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import kotlinx.coroutines.test.runTest
-import mockwebserver3.MockResponse
-import mockwebserver3.SocketEffect
 import net.chronoflow.core.model.DataFailure
 import net.chronoflow.core.model.api.SessionAccount
-import net.chronoflow.core.network.support.EventRecorder
-import net.chronoflow.core.network.support.MockApi
-import net.chronoflow.core.network.support.RecordingDeadline
 import net.chronoflow.core.network.support.failure
-import net.chronoflow.core.network.support.json
-import net.chronoflow.core.network.support.requestJson
-import net.chronoflow.core.network.support.response
 import okhttp3.OkHttpClient
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.io.InputStream
+import java.io.OutputStream
+import java.net.ConnectException
+import java.net.InetAddress
 import java.net.Proxy
+import java.net.Socket
+import java.net.SocketAddress
 import java.net.UnknownHostException
+import javax.net.SocketFactory
 import kotlin.time.Duration.Companion.seconds
 
 @RunWith(Parameterized::class)
 class ApiClientTransportTests(
     private val mode: String,
 ) {
-    @get:Rule val api = MockApi()
-
     @Test fun transportFailuresMapToOffline() =
         runTest(timeout = 60.seconds) {
+            val sockets = ScriptedTransportSocketFactory(mode)
             val client =
-                when (mode) {
-                    "disconnect" -> {
-                        api.route(
-                            "GET",
-                            "/v1/users/me",
-                        ) { MockResponse.Builder().onResponseStart(SocketEffect.CloseSocket()).build() }
-                        api.client()
-                    }
-
-                    "body" -> {
-                        api.route("GET", "/v1/users/me") {
-                            MockResponse
-                                .Builder()
-                                .body("0123456789")
-                                .setHeader("Content-Length", "100")
-                                .onResponseEnd(SocketEffect.CloseSocket())
-                                .build()
-                        }
-                        api.client()
-                    }
-
-                    "refused" -> {
-                        val closed = mockwebserver3.MockWebServer()
-                        closed.start()
-                        val url = ApiBaseUrl.parse(closed.url("/v1").toString(), false)
-                        closed.close()
-                        ApiClient(
-                            url,
-                            bearer = { "artificial" },
-                            deadline = ApiDeadline { kotlinx.coroutines.awaitCancellation() },
-                        )
-                    }
-
-                    else -> {
-                        api.client(base = {
-                            OkHttpClient
-                                .Builder()
-                                .proxy(Proxy.NO_PROXY)
-                                .dns { throw UnknownHostException("artificial") }
-                                .build()
-                        })
-                    }
-                }
+                ApiClient(
+                    ApiBaseUrl.parse("http://transport.test:8080/v1", false),
+                    baseClient = {
+                        OkHttpClient
+                            .Builder()
+                            .proxy(Proxy.NO_PROXY)
+                            .socketFactory(sockets)
+                            .apply {
+                                dns {
+                                    if (mode ==
+                                        "dns"
+                                    ) {
+                                        throw UnknownHostException("artificial")
+                                    } else {
+                                        listOf(InetAddress.getLoopbackAddress())
+                                    }
+                                }
+                            }.build()
+                    },
+                    bearer = { "artificial" },
+                    deadline = ApiDeadline { kotlinx.coroutines.awaitCancellation() },
+                )
             assertThat(
                 failure { client.request(ApiEndpoint(path = listOf("users", "me")), SessionAccount.serializer()) },
             ).isEqualTo(DataFailure.Offline)
-            assertThat(api.server.requestCount).isEqualTo(if (mode == "disconnect" || mode == "body") 1 else 0)
+            assertThat(sockets.attempts).isEqualTo(if (mode == "dns") 0 else 1)
+            assertThat(
+                sockets.requests.toString(Charsets.UTF_8).startsWith("GET /v1/users/me HTTP/1.1\r\n"),
+            ).isEqualTo(mode == "disconnect" || mode == "body")
         }
 
     companion object {
@@ -94,4 +75,65 @@ class ApiClientTransportTests(
                 arrayOf("dns"),
             )
     }
+}
+
+/** Exercises OkHttp's real HTTP codec without the scheduling of a peer socket or ephemeral port reuse. */
+private class ScriptedTransportSocketFactory(
+    private val mode: String,
+) : SocketFactory() {
+    var attempts = 0
+        private set
+    val requests = ByteArrayOutputStream()
+
+    override fun createSocket(): Socket =
+        object : Socket() {
+            override fun connect(
+                endpoint: SocketAddress?,
+                timeout: Int,
+            ) {
+                attempts++
+                if (mode == "refused") throw ConnectException("artificial")
+            }
+
+            override fun getInputStream(): InputStream =
+                ByteArrayInputStream(
+                    if (mode == "body") {
+                        "HTTP/1.1 200 OK\r\nContent-Length: 100\r\n\r\n0123456789".toByteArray()
+                    } else {
+                        byteArrayOf()
+                    },
+                )
+
+            override fun getOutputStream(): OutputStream = requests
+
+            override fun setSoTimeout(timeout: Int) = Unit
+
+            override fun getSoTimeout(): Int = 0
+
+            override fun setTcpNoDelay(on: Boolean) = Unit
+        }
+
+    override fun createSocket(
+        host: String?,
+        port: Int,
+    ): Socket = error("unexpected socket overload")
+
+    override fun createSocket(
+        host: String?,
+        port: Int,
+        localHost: InetAddress?,
+        localPort: Int,
+    ): Socket = error("unexpected socket overload")
+
+    override fun createSocket(
+        host: InetAddress?,
+        port: Int,
+    ): Socket = error("unexpected socket overload")
+
+    override fun createSocket(
+        host: InetAddress?,
+        port: Int,
+        localHost: InetAddress?,
+        localPort: Int,
+    ): Socket = error("unexpected socket overload")
 }

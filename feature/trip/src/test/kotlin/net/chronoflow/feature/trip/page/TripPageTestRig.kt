@@ -42,6 +42,7 @@ class TripPageTestRig(
     makePath: () -> net.chronoflow.core.sync.SyncPathMonitoring? = { null },
     applyChecks: Boolean = false,
     val savedState: SavedStateHandle = SavedStateHandle(),
+    wizardPreparer: net.chronoflow.feature.trip.actions.TripWizardPreparer? = null,
 ) {
     val detail = LargeTimelineFixtures.fixture(fixture).detail
     val source = initialSnapshot?.let { FakeTripPageSource(it) } ?: FakeTripPageSource.fixture(fixture)
@@ -75,6 +76,7 @@ class TripPageTestRig(
                         cache,
                         { CopyLineFormatter(catalogs.catalog()) },
                         TimelineTracer.None,
+                        preparer = wizardPreparer,
                         initialTimeline = initialTimeline,
                         fetchDetail = fetchDetail,
                         makePath = makePath,

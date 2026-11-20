@@ -36,14 +36,7 @@ val MemberWizardModel.sleepComplete: Boolean get() =
     WizardDateTime.isTime(state.profile["habitual_bed"].stringValue) &&
         WizardDateTime.isTime(state.profile["habitual_wake"].stringValue) && state.profile["chronotype"] != null
 val MemberWizardModel.currentQuestion: ApiReviewPrompt? get() = state.questions?.getOrNull(state.questionIndex ?: 0)
-val MemberWizardModel.progress: Double get() =
-    if (state.edit !=
-        null
-    ) {
-        1.0
-    } else {
-        maxOf(state.progressFloor ?: 0.0, stepProgress)
-    }
+val MemberWizardModel.progress: Double get() = maxOf(state.progressFloor ?: 0.0, stepProgress)
 internal val MemberWizardModel.stepProgress: Double get() {
     if (mode == WizardMode.guest) return guestStepProgress
     return when (state.step) {

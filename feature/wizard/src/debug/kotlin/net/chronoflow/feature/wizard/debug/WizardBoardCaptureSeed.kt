@@ -73,7 +73,7 @@ object WizardBoardCaptureSeed {
             "WizardReturnFlightDarkNL",
             "WizardReturnFlightPast",
             "WizardReturnFlightPastDarkNL",
-        ) + WizardSleepQuestionBoardSeed.names + WizardCompletionBoardSeed.names
+        ) + WizardSleepQuestionBoardSeed.names + WizardCompletionBoardSeed.names + TripWizardActionsBoardSeed.names
 
     fun baseName(board: String): String =
         when {
@@ -85,7 +85,7 @@ object WizardBoardCaptureSeed {
         }
 
     fun uiOverride(board: String): net.chronoflow.feature.wizard.shell.WizardUiOverride? =
-        WizardCompletionBoardSeed.uiOverride(baseName(board))
+        TripWizardActionsBoardSeed.uiOverride(baseName(board)) ?: WizardCompletionBoardSeed.uiOverride(baseName(board))
 
     fun knows(board: String): Boolean = board == "WizardSaveJourney" || names.any { baseName(it) == baseName(board) }
 
@@ -98,7 +98,7 @@ object WizardBoardCaptureSeed {
                     "WizardStopSearchSecond" -> "Ban"
                     else -> null
                 },
-            discardDialogVisible = baseName(board) == "WizardDiscard",
+            discardDialogVisible = baseName(board) in setOf("WizardDiscard", "WizardDiscardEdit"),
             timeSheet = "habitual_bed".takeIf { board == "PickerTime" },
         )
 
@@ -265,8 +265,11 @@ object WizardBoardCaptureSeed {
                         else -> null
                     },
             )
-        return WizardCompletionBoardSeed.apply(
-            WizardSleepQuestionBoardSeed.apply(MemberWizardDraft(form, state, errors), board),
+        return TripWizardActionsBoardSeed.apply(
+            WizardCompletionBoardSeed.apply(
+                WizardSleepQuestionBoardSeed.apply(MemberWizardDraft(form, state, errors), board),
+                board,
+            ),
             board,
         )
     }

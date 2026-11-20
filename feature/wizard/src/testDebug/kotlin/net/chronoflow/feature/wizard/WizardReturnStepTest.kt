@@ -68,6 +68,18 @@ class WizardReturnStepTest {
         compose.onNodeWithTag("wizard.return.continue").assertDoesNotExist()
     }
 
+    @Test fun webCardHasACheckAndOtherCardsHaveChevrons() {
+        lateinit var state: WizardUiState
+        runTest(timeout = 60.seconds) { state = boardState("WizardReturnWeb", Locale.ENGLISH) }
+        compose.setContent { WizardTestHost { WizardScreen(state, {}) } }
+        compose.onNodeWithTag("wizard.choice.web.check", useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag("wizard.choice.web.chevron-right", useUnmergedTree = true).assertDoesNotExist()
+        compose.onNodeWithTag("wizard.choice.one-way.chevron-right", useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag("wizard.choice.add-return.chevron-right", useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag("wizard.choice.one-way.check", useUnmergedTree = true).assertDoesNotExist()
+        compose.onNodeWithTag("wizard.choice.add-return.check", useUnmergedTree = true).assertDoesNotExist()
+    }
+
     @Test fun pendingDisablesBothCardsAndKeepsSelection() {
         val state =
             state().let {

@@ -51,6 +51,7 @@ fun TripPageRoute(
     onToday: (() -> Unit)? = null,
     onRouteChange: (Route.TripPage) -> Unit = {},
     onWizard: (net.chronoflow.core.navigation.WizardMode) -> Unit = {},
+    preparer: net.chronoflow.feature.trip.actions.TripWizardPreparer? = null,
 ) {
     val appContext = LocalContext.current.applicationContext
     val graph = (appContext as ChronoFlowApp).graph
@@ -67,7 +68,7 @@ fun TripPageRoute(
             TripPageArgs(route.tripId, route.dayId, route.blockId, summary, route.awaitingSync)
         }
     val factory =
-        remember(args, appContext, language, freeze) {
+        remember(args, appContext, language, freeze, preparer) {
             tripPageViewModelFactory(
                 args,
                 appContext,
@@ -75,6 +76,7 @@ fun TripPageRoute(
                 freeze,
                 route.sheet ?: LaunchPlatform.initialTripSheet,
                 route.notificationInputHash,
+                preparer,
             )
         }
     val vm: TripPageViewModel = viewModel(key = "trip:${route.tripId}", factory = factory)
@@ -99,6 +101,7 @@ internal fun tripPageViewModelFactory(
     freezeClock: Boolean,
     initialSheet: net.chronoflow.core.navigation.TripSheet? = null,
     notificationInputHash: String? = null,
+    preparer: net.chronoflow.feature.trip.actions.TripWizardPreparer? = null,
 ) = viewModelFactory {
     initializer {
         val graph = checkNotNull(this[AppGraphKey])
@@ -126,6 +129,7 @@ internal fun tripPageViewModelFactory(
             initialTimeline = !LaunchPlatform.startTripInList,
             initialSheet = initialSheet,
             notificationInputHash = notificationInputHash,
+            preparer = preparer,
             isCurrent = { graph.sessionGraphs.current.value === session },
             enqueueCheck = { change ->
                 val permit =

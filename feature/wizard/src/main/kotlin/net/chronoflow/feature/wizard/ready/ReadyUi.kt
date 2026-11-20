@@ -87,6 +87,12 @@ sealed interface PriceLine {
 
     data object FreeHome : PriceLine
 
+    data object NoRefund : PriceLine
+
+    data object EditReturnNote : PriceLine
+
+    data object EditNote : PriceLine
+
     data class Balance(
         val n: Int,
         val alert: Boolean,
@@ -94,9 +100,31 @@ sealed interface PriceLine {
 
     val copy: WizardCopy get() =
         when (this) {
-            FreeTrip -> WizardCopy("This trip is free: only a small body-clock shift is needed.")
-            FreeHome -> WizardCopy("Your flight home is free: only a small shift is needed that way.")
-            is Balance -> WizardCopy("You have {{count}} credits", mapOf("count" to n.toString()))
+            FreeTrip -> {
+                WizardCopy("This trip is free: only a small body-clock shift is needed.")
+            }
+
+            FreeHome -> {
+                WizardCopy("Your flight home is free: only a small shift is needed that way.")
+            }
+
+            NoRefund -> {
+                WizardCopy("Removing a flight doesn't give a credit back.")
+            }
+
+            EditReturnNote -> {
+                WizardCopy(
+                    "Adding a return flight costs 1 credit, because credits are per direction. Other changes are free.",
+                )
+            }
+
+            EditNote -> {
+                WizardCopy("Changes recalculate the plan. Check-offs on steps that stay in your plan are kept.")
+            }
+
+            is Balance -> {
+                WizardCopy("You have {{count}} credits", mapOf("count" to n.toString()))
+            }
         }
 }
 
@@ -112,6 +140,7 @@ sealed interface ReadyBannerUi {
     data class SaveFailed(
         val kind: WizardSaveFailure.Kind,
         val retrySeconds: Int,
+        val editing: Boolean = false,
     ) : ReadyBannerUi {
         val tag: String get() = "wizard.save.${kind.name}"
         val title: WizardCopy get() =
@@ -126,12 +155,22 @@ sealed interface ReadyBannerUi {
             when (kind) {
                 WizardSaveFailure.Kind.offline -> {
                     WizardCopy(
-                        "Connect to the internet and tap Make my plan again. Keep this screen open: closing discards the trip.",
+                        if (editing) {
+                            "Connect to the internet and try again. If you close now, your trip stays as it was."
+                        } else {
+                            "Connect to the internet and tap Make my plan again. Keep this screen open: closing discards the trip."
+                        },
                     )
                 }
 
                 WizardSaveFailure.Kind.server -> {
-                    WizardCopy("Something went wrong on our side. Tap Make my plan to try again.")
+                    WizardCopy(
+                        if (editing) {
+                            "Something went wrong on our side. Try again in a moment. If you close now, your trip stays as it was."
+                        } else {
+                            "Something went wrong on our side. Tap Make my plan to try again."
+                        },
+                    )
                 }
 
                 WizardSaveFailure.Kind.throttle -> {
@@ -150,6 +189,10 @@ sealed interface ReadyBannerUi {
                 }
             }
     }
+
+    data class SourceChanged(
+        val body: ReadyText,
+    ) : ReadyBannerUi
 
     data class Adjusted(
         val reasons: List<CopyLine>,
@@ -172,6 +215,8 @@ sealed interface ReadyBannerUi {
 sealed interface ReadyButtonLabel {
     data object MakePlan : ReadyButtonLabel
 
+    data object Update : ReadyButtonLabel
+
     data object Checking : ReadyButtonLabel
 
     data object Retry : ReadyButtonLabel
@@ -183,6 +228,7 @@ sealed interface ReadyButtonLabel {
     val copy: WizardCopy get() =
         when (this) {
             MakePlan -> WizardCopy("Make my plan")
+            Update -> WizardCopy("Update my plan")
             Checking -> WizardCopy("Checking…")
             Retry -> WizardCopy("Try again")
             is Countdown -> WizardCopy("Try again in {{count}} s", mapOf("count" to seconds.toString()))
@@ -209,7 +255,8 @@ data class ReadyUi(
     val footer: ReadyFooterUi,
     val credits: WizardCredits?,
     val reviewing: Boolean,
+    val editing: Boolean = false,
 ) {
-    val title: WizardCopy get() = WizardCopy("Ready to plan")
+    val title: WizardCopy get() = WizardCopy(if (editing) "Edit your trip" else "Ready to plan")
     val rowsUi: ReadyRowsUi get() = ReadyRowsUi(rows, !reviewing)
 }

@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -51,7 +52,7 @@ fun actionsUi(
     return TripActionsUi(
         template.card.id,
         tripActionsHeader(template.card, detail, PageCopy(language, table)),
-        TripActionsAvailability(true, true, state != "offline", false),
+        TripActionsAvailability(true, true, state != "offline", state == "busy"),
     )
 }
 
@@ -75,6 +76,7 @@ fun ActionsFixture(
     case: ActionsCase,
     modifier: Modifier = Modifier,
 ) {
+    val failure = remember { TripActionFailureEvent(TripActionFailure.Duplicate) }
     val ui = actionsUi(case.state, if (case.language == AppLanguage.Nl) Language.Nl else Language.En)
     ProfileHost(case.profile) {
         ChronoFlowTheme(darkTheme = case.dark) {
@@ -86,7 +88,13 @@ fun ActionsFixture(
                     .windowInsetsPadding(LocalSafeInsets.current),
                 contentAlignment = Alignment.BottomCenter,
             ) {
-                Box(Modifier.widthIn(max = 640.dp).background(CfTheme.colors.card)) { TripActionsContent(ui, {}, {}) }
+                if (case.state in setOf("busy", "failure")) {
+                    TripActionsWindow(ui, failure.takeIf { case.state == "failure" }, {}, {})
+                } else {
+                    Box(
+                        Modifier.widthIn(max = 640.dp).background(CfTheme.colors.card),
+                    ) { TripActionsContent(ui, {}, {}) }
+                }
             }
         }
     }

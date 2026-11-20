@@ -165,7 +165,6 @@ fun WizardScreen(
         }
     }
     WizardScaffold(state, onEvent, copyFormatter)
-    WizardBackHandling(state, onEvent)
     state.sheet?.let { AirportSearchSheet(it, state.search, state.retryEnabled, onEvent) }
     state.sleep?.openTime?.let { WizardSleepTimeSheet(it, onEvent) }
     state.fineTune?.openTime?.let { WizardSleepTimeSheet(it, onEvent) }
@@ -455,7 +454,8 @@ internal fun WizardStepHost(
             }
         },
     )
-    // BoxWithConstraints subcomposes this host; register the save lock after NavDisplay so it wins back dispatch.
+    // BoxWithConstraints subcomposes this host; these handlers must register after NavDisplay.
+    WizardBackHandling(state, onEvent)
     BackHandler(enabled = state.step == WizardStepKey.Calculating) {}
 }
 

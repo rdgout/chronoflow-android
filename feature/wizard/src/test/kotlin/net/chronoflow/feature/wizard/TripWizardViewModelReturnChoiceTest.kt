@@ -16,6 +16,38 @@ import kotlin.time.Duration.Companion.seconds
 class TripWizardViewModelReturnChoiceTest {
     @get:Rule val main: org.junit.rules.TestWatcher = WizardMainDispatcherRule()
 
+    @Test fun webChoiceKeepsTheWebEnd() =
+        runTest(timeout = 60.seconds) {
+            withWizard(configure = {
+                draft = webEndDraft().let { it.copy(state = it.state.copy(step = MemberWizardStep.returnChoice)) }
+            }) { f ->
+                runCurrent()
+                f.model.onEvent(WizardEvent.ChooseReturn("nights"))
+                runCurrent()
+                f.deps.checking.advance(249)
+                assertEquals(
+                    MemberWizardStep.returnChoice,
+                    f.model.wizard!!
+                        .draft.state.step,
+                )
+                f.deps.checking.advance(250)
+                assertEquals(
+                    "nights",
+                    f.model.wizard!!
+                        .draft.form.end.kind,
+                )
+                assertEquals(
+                    9,
+                    f.model.wizard!!
+                        .draft.form.end.nights,
+                )
+                assertTrue(
+                    f.model.wizard!!
+                        .draft.state.step != MemberWizardStep.returnChoice,
+                )
+            }
+        }
+
     @Test fun oneWayAdvancesAfter250ms() =
         runTest(timeout = 60.seconds) {
             withWizard(configure = {

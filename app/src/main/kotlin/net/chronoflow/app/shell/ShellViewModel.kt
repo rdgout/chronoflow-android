@@ -7,16 +7,33 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.CoroutineDispatcher
+import net.chronoflow.app.wizard.WizardLauncher
 import net.chronoflow.core.navigation.Route
 import net.chronoflow.core.navigation.shell.ShellNav
 import net.chronoflow.core.navigation.shell.ShellNavState
 import net.chronoflow.core.navigation.shell.ShellStart
 import net.chronoflow.core.navigation.shell.ShellTab
+import net.chronoflow.feature.wizard.TripWizardDependencies
 
 @Stable
 internal class ShellViewModel(
     initial: ShellNavState,
 ) : ViewModel() {
+    private var launcher: WizardLauncher? = null
+    private var launcherDependencies: TripWizardDependencies? = null
+
+    fun wizardLauncher(
+        dependencies: TripWizardDependencies?,
+        io: CoroutineDispatcher,
+    ): WizardLauncher {
+        launcher?.takeIf { launcherDependencies === dependencies }?.let { return it }
+        return WizardLauncher({ state.overlay }, ::push, dependencies, io).also {
+            launcherDependencies = dependencies
+            launcher = it
+        }
+    }
+
     private var overlayStoreOwner = TabViewModelStoreOwner()
     val overlayOwner: TabViewModelStoreOwner get() = overlayStoreOwner
     private var mutableState by mutableStateOf(initial)
@@ -25,7 +42,9 @@ internal class ShellViewModel(
         private set(value) {
             val closed = mutableState.overlay != null && value.overlay == null
             if (mutableState.overlay == null && value.overlay != null) overlayStoreOwner = TabViewModelStoreOwner()
+            val overlayChanged = mutableState.overlay != value.overlay
             mutableState = value
+            if (overlayChanged) launcher?.overlayChanged()
             if (closed) overlayOwner.viewModelStore.clear()
         }
     private val owners = ShellTab.entries.associateWith { TabViewModelStoreOwner() }

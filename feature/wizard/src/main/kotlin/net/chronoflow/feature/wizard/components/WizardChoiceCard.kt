@@ -46,6 +46,7 @@ internal fun WizardChoiceCard(
     onClick: () -> Unit,
     style: WizardChoiceStyle = WizardChoiceStyle.Return,
     rawTitle: String? = null,
+    web: Boolean = false,
 ) {
     val sleep = style == WizardChoiceStyle.Chronotype
     val question = style == WizardChoiceStyle.Question
@@ -125,11 +126,12 @@ internal fun WizardChoiceCard(
             }
         }
         if (style == WizardChoiceStyle.Return) {
+            val glyph = if (web) LucideGlyphs.Check else LucideGlyphs.ChevronRight
             Icon(
-                LucideGlyphs.ChevronRight.imageVector(WizardMetrics.headerStroke),
+                glyph.imageVector(WizardMetrics.headerStroke),
                 null,
-                Modifier.size(WizardMetrics.chevronGlyph.dp),
-                tint = CfTheme.colors.mutedForeground,
+                Modifier.size((if (web) PlanUITokens.space5 else PlanUITokens.space4).dp).testTag("$tag.${glyph.name}"),
+                tint = if (web) CfTheme.colors.dawnText else CfTheme.colors.mutedForeground,
             )
         }
     }

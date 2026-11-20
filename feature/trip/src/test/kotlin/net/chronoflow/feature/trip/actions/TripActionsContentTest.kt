@@ -59,7 +59,11 @@ class TripActionsContentTest {
     }
 
     private fun navigate(edit: Boolean) {
-        val page = TripPageTestRig("S1").also { rig = it }
+        val page =
+            TripPageTestRig("S1", wizardPreparer = TripWizardPreparer { _, _ -> TripWizardPrepareOutcome.Ready }).also {
+                rig =
+                    it
+            }
         val snapshot = page.source.snapshot.value
         val card = LargeTimelineFixtures.fixture("S1").card.copy(canEdit = true, canDuplicate = true)
         page.source.snapshot.value =

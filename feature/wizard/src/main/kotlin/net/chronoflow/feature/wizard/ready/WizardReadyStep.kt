@@ -61,6 +61,15 @@ private fun ReadyBanner(
             WizardBanner(ui.body.resolve(), ui.tag, title = ui.title.resolve())
         }
 
+        is ReadyBannerUi.SourceChanged -> {
+            WizardBanner(
+                ui.body.resolve(),
+                "wizard.ready.notice",
+                tone = WizardBannerTone.Info,
+                title = WizardCopy("Updated").resolve(),
+            )
+        }
+
         is ReadyBannerUi.Adjusted -> {
             WizardBanner(
                 ui.body(serverCopy),

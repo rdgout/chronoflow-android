@@ -82,7 +82,9 @@ class WizardBoardCaptureTest(
             state = boardState(board, Locale.forLanguageTag(language.tag))
             formatter = wizardCopyFormatter()
         }
-        val motion = board.startsWith("WizardCalculating") || board.startsWith("WizardReadyChecking")
+        val motion =
+            board.startsWith("WizardCalculating") || board.startsWith("WizardReadyChecking") ||
+                board.startsWith("WizardCheckingEdit")
         if (motion) compose.mainClock.autoAdvance = false
         compose.setContent {
             ProfileHost(profile) {
@@ -114,6 +116,8 @@ class WizardBoardCaptureTest(
             if (board in
                 setOf(
                     "WizardSaveThrottle",
+                    "WizardEditSaveOffline",
+                    "WizardEditSaveServer",
                     "WizardWhereLimit",
                     "WizardOutboundScrollErrors",
                     "WizardSleepMember",

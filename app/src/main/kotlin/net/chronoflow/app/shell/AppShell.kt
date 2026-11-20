@@ -9,17 +9,14 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.HasDefaultViewModelProviderFactory
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.viewmodel.MutableCreationExtras
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import net.chronoflow.app.ChronoFlowApp
 import net.chronoflow.app.LaunchPlatform
 import net.chronoflow.app.trip.TripPageRoute
-import net.chronoflow.app.wizard.WizardLauncher
 import net.chronoflow.core.model.contracts.Language
 import net.chronoflow.core.navigation.Route
-import net.chronoflow.core.navigation.WizardMode
 import net.chronoflow.core.navigation.shell.ShellTab
 import net.chronoflow.core.sync.refresh.RefreshFeedbackState
 import net.chronoflow.feature.trips.TripsContent
@@ -27,9 +24,6 @@ import net.chronoflow.feature.trips.TripsDependenciesKey
 import net.chronoflow.feature.trips.TripsScreen
 import net.chronoflow.feature.trips.TripsUiState
 import net.chronoflow.feature.trips.TripsViewModel
-import net.chronoflow.feature.wizard.TripWizardDependenciesKey
-import net.chronoflow.feature.wizard.TripWizardViewModel
-import net.chronoflow.feature.wizard.shell.WizardRoot
 
 @Composable
 internal fun AppShell(
@@ -41,8 +35,8 @@ internal fun AppShell(
     val sessionGraph by graph.sessionGraphs.current.collectAsStateWithLifecycle()
     val render = rememberUpdatedState(placeholder)
     val holder = rememberShellViewModel(root)
-    val launcher = remember(holder) { WizardLauncher({ holder.state.overlay }, holder::push) }
-    LaunchedEffect(holder.state.overlay) { launcher.overlayChanged() }
+    val wizardDependencies = sessionGraph?.wizard
+    val launcher = holder.wizardLauncher(wizardDependencies, graph.dispatchers.io)
     val wizardLocale = rememberUpdatedState(LocalConfiguration.current.locales[0])
     LaunchedEffect(sessionGraph?.epoch) {
         val epoch = sessionGraph?.epoch ?: return@LaunchedEffect
@@ -56,7 +50,7 @@ internal fun AppShell(
         AppShellScaffold(
             holder,
             onRootBack = onRootBack,
-            overlayOwnsBack = holder.state.overlay.let { it is Route.Wizard && it.mode == WizardMode.Create },
+            overlayOwnsBack = holder.state.overlay.let { it is Route.Wizard },
             today = { TodayTab(graph, sessionGraph, holder) },
             trips = {
                 val session = sessionGraph
@@ -100,6 +94,7 @@ internal fun AppShell(
                         onToday = { holder.leaveTripPage(ShellTab.Today) },
                         onRouteChange = { holder.replaceRoute(route, it) },
                         onWizard = { holder.push(Route.Wizard(it)) },
+                        preparer = launcher,
                     )
                 } else if (route is Route.Walkthrough) {
                     net.chronoflow.app.onboarding
@@ -109,36 +104,14 @@ internal fun AppShell(
                 }
             },
             overlay = { route ->
-                if (route is Route.Wizard && route.mode == WizardMode.Create) {
-                    val owner = checkNotNull(LocalViewModelStoreOwner.current)
+                if (route is Route.Wizard) {
                     val startOverride = graph.wizardStartOverride
                     val sessionDeps = sessionGraph?.wizard
                     val deps =
                         remember(sessionDeps, startOverride) {
-                            sessionDeps?.let {
-                                startOverride?.dependencies(it)
-                                    ?: it
-                            }
+                            sessionDeps?.let { startOverride?.dependencies(it) ?: it }
                         }
-                    val extras =
-                        remember(owner, deps, startOverride) {
-                            MutableCreationExtras(
-                                (owner as? HasDefaultViewModelProviderFactory)?.defaultViewModelCreationExtras
-                                    ?: CreationExtras.Empty,
-                            ).apply {
-                                deps?.let { set(TripWizardDependenciesKey, it) }
-                                startOverride?.let {
-                                    set(
-                                        net.chronoflow.feature.wizard.ui.WizardInitialPresentationKey,
-                                        it.presentation,
-                                    )
-                                }
-                            }
-                        }
-                    WizardRoot(
-                        rememberOverlayViewModel(route.mode, TripWizardViewModel.factory(route.mode), extras),
-                        holder::closeWizard,
-                    )
+                    WizardOverlay(route.mode, deps, startOverride?.presentation, holder::closeWizard)
                 } else {
                     render.value(route)
                 }

@@ -62,6 +62,7 @@ data class WizardTimesUi(
     val timeFormat: TimeFormat,
     val continueFailures: Int,
     val picker: WizardFlightPickerUi? = null,
+    val copiedRoute: String? = null,
 ) {
     val id: String get() = if (home) "return-flight" else "outbound"
     val title: WizardCopy get() =
@@ -72,7 +73,10 @@ data class WizardTimesUi(
                 else -> "When is your flight?"
             },
         )
-    val subtitle: WizardCopy get() = WizardCopy("Times are local at each airport.")
+    val subtitle: WizardCopy get() =
+        copiedRoute?.let {
+            WizardCopy("Copied from {{route}}. Choose the new dates.", mapOf("route" to it))
+        } ?: WizardCopy("Times are local at each airport.")
 
     companion object {
         fun from(
@@ -135,6 +139,7 @@ data class WizardTimesUi(
                     val time = WizardPickerDates.initialTime(draft, field, now)
                     WizardFlightPickerUi(it, WizardPickerDates.initialDate(draft, field, now), time.hour, time.minute)
                 },
+                copiedRoute = draft.state.copiedRoute.takeIf { !home && draft.state.edit == null },
             )
         }
     }

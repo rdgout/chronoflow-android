@@ -107,10 +107,11 @@ class WizardProgressTest {
     class Edit(
         private val step: MemberWizardStep,
     ) {
-        @Test fun editIsAlwaysFull() =
+        @Test fun editInitialPathKeepsTheFullFloor() =
             runTest(timeout = 60.seconds) {
                 val fixture = WizardModelFixture(backgroundScope, testScheduler)
-                fixture.model.state = fixture.model.state.copy(step = step, edit = TripEditContext("trip", "source"))
+                fixture.model.state =
+                    fixture.model.state.copy(step = step, edit = TripEditContext("trip", "source"), progressFloor = 1.0)
                 assertEquals(1.0, fixture.model.progress, 0.0)
                 fixture.close()
             }
@@ -118,7 +119,7 @@ class WizardProgressTest {
         companion object {
             @JvmStatic
             @Parameterized.Parameters(name = "step={0}")
-            fun cases() = listOf(MemberWizardStep.outbound, MemberWizardStep.checking, MemberWizardStep.ready)
+            fun cases() = listOf(MemberWizardStep.checking, MemberWizardStep.ready)
         }
     }
 

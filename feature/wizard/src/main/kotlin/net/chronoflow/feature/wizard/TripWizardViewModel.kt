@@ -59,6 +59,7 @@ import net.chronoflow.core.wizard.model.finishOutboundStep
 import net.chronoflow.core.wizard.model.finishReturn
 import net.chronoflow.core.wizard.model.finishRoute
 import net.chronoflow.core.wizard.model.finishSleep
+import net.chronoflow.core.wizard.model.firstScreen
 import net.chronoflow.core.wizard.model.hasChanges
 import net.chronoflow.core.wizard.model.isEditing
 import net.chronoflow.core.wizard.model.navigationPath
@@ -321,14 +322,13 @@ class TripWizardViewModel(
                             }
 
                             is WizardEntry.Edit -> {
-                                deps.startTrip(entry.tripId, TripWizardAction.edit)
+                                deps.recover()?.takeIf { it.state.edit?.tripID == entry.tripId }
+                                    ?: deps.startTrip(entry.tripId, TripWizardAction.edit)
                             }
 
                             is WizardEntry.Duplicate -> {
-                                deps.startTrip(
-                                    entry.tripId,
-                                    TripWizardAction.duplicate,
-                                )
+                                deps.recover()?.takeIf { it.state.edit == null && it.state.copiedRoute != null }
+                                    ?: deps.startTrip(entry.tripId, TripWizardAction.duplicate)
                             }
                         }
                     currentCoroutineContext().ensureActive()
@@ -404,6 +404,7 @@ class TripWizardViewModel(
                                     isEditing = model.isEditing,
                                     optionalPrompts = model.optionalPrompts,
                                     hasChanges = model.hasChanges,
+                                    firstScreen = model.firstScreen,
                                     checkingTitle = model.checkingTitle,
                                     allowsSleepOverride = model.allowsSleepOverride,
                                     preferences =
