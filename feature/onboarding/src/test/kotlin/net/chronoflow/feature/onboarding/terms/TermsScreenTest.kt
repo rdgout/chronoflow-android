@@ -1,11 +1,11 @@
 package net.chronoflow.feature.onboarding.terms
 
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.LocalActivity
+import androidx.activity.compose.setContent
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
-import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -15,7 +15,9 @@ import net.chronoflow.core.testing.DeviceProfiles
 import net.chronoflow.core.testing.compose.ProfileHost
 import net.chronoflow.core.testing.compose.ProfileRule
 import net.chronoflow.core.testing.tiers.Logic
+import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.Rule
 import org.junit.Test
@@ -23,15 +25,17 @@ import org.junit.rules.RuleChain
 import org.junit.rules.TestRule
 import org.junit.runner.RunWith
 import org.junit.runners.model.Statement
+import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
+import org.robolectric.android.controller.ActivityController
 import org.robolectric.annotation.Config
 
 @Logic
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [36])
 class TermsScreenTest {
-    private val compose = createComposeRule()
+    private val compose = createEmptyComposeRule()
 
     @get:Rule val rules: RuleChain =
         RuleChain
@@ -57,20 +61,31 @@ class TermsScreenTest {
         }
 
     private lateinit var activity: ComponentActivity
+    private lateinit var host: ActivityController<ComponentActivity>
+
+    @Before fun createHost() {
+        val started = System.nanoTime()
+        host = Robolectric.buildActivity(ComponentActivity::class.java).setup()
+        activity = host.get()
+        println("terms step=activity-setup ms=${(System.nanoTime() - started) / 1_000_000.0}")
+    }
+
+    @After fun closeHost() {
+        host.pause().stop().destroy()
+    }
 
     private fun show(
         state: TermsUiState,
         onEvent: (TermsEvent) -> Unit = {},
     ) {
-        compose.setContent {
+        activity.setContent {
             ProfileHost(DeviceProfiles.pixel8) {
                 ChronoFlowTheme(reduceMotion = true) {
-                    val current = LocalActivity.current as ComponentActivity
-                    SideEffect { activity = current }
                     TermsScreen(state, onEvent)
                 }
             }
         }
+        compose.waitForIdle()
     }
 
     @Test fun policyRowOpensTheTermsCustomTab() {
@@ -103,7 +118,7 @@ class TermsScreenTest {
         var count = -1
         var stay: () -> Unit = {}
         var event: TermsEvent? = null
-        compose.setContent {
+        activity.setContent {
             ProfileHost(DeviceProfiles.pixel8) {
                 ChronoFlowTheme(reduceMotion = true) {
                     TermsScreen(TermsUiState(pendingSignOutCount = 1), { event = it }, signOutConfirmation = {
@@ -119,6 +134,7 @@ class TermsScreenTest {
                 }
             }
         }
+        compose.waitForIdle()
         compose.runOnIdle {
             assertEquals(1, count)
             stay()
