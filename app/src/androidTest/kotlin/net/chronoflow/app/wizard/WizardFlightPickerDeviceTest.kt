@@ -1,5 +1,3 @@
-@file:Suppress("ktlint:standard:max-line-length")
-
 package net.chronoflow.app.wizard
 
 import androidx.compose.ui.test.ExperimentalTestApi

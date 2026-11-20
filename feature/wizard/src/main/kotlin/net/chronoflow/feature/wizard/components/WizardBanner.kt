@@ -1,5 +1,3 @@
-@file:Suppress("ktlint:standard:max-line-length")
-
 package net.chronoflow.feature.wizard.components
 
 import androidx.compose.foundation.background

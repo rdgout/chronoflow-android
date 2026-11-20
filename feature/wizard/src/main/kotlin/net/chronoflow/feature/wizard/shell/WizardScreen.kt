@@ -1,4 +1,4 @@
-@file:Suppress("ktlint:standard:max-line-length", "ktlint:compose:modifier-missing-check")
+@file:Suppress("ktlint:compose:modifier-missing-check")
 
 package net.chronoflow.feature.wizard.shell
 

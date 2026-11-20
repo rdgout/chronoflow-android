@@ -1,5 +1,4 @@
 @file:OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-@file:Suppress("ktlint:standard:max-line-length")
 
 package net.chronoflow.feature.wizard
 

@@ -1,5 +1,3 @@
-@file:Suppress("ktlint:standard:max-line-length")
-
 package net.chronoflow.core.wizard.model
 
 import org.junit.Assert.assertEquals

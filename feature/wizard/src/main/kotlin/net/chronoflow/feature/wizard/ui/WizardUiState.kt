@@ -1,5 +1,3 @@
-@file:Suppress("ktlint:standard:max-line-length")
-
 package net.chronoflow.feature.wizard.ui
 
 import androidx.compose.runtime.Immutable
@@ -118,7 +116,11 @@ data class WhereUi(
     val title: WizardCopy get() = WizardCopy(if (home) "Your flight home" else "Where are you flying?")
     val subtitle: WizardCopy get() =
         WizardCopy(
-            if (home) "It leaves from where you landed. Add any stops on the way." else "Pick the airports from your booking.",
+            if (home) {
+                "It leaves from where you landed. Add any stops on the way."
+            } else {
+                "Pick the airports from your booking."
+            },
         )
     val swapDescription: WizardCopy get() = WizardCopy("Swap airports")
 
