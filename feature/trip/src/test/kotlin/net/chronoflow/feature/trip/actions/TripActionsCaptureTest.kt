@@ -30,9 +30,13 @@ class TripActionsCaptureTest(
             ).around(compose)
 
     @Test fun capture() {
+        if (case.state == "failure") TripActionsDebugCounters.failurePresented.set(0)
         compose.setContent { ActionsFixture(case) }
+        if (case.state == "failure") compose.waitUntil(4_000) { TripActionsDebugCounters.failurePresented.get() == 1 }
         val name =
             when (case.state) {
+                "busy" -> "TripActionsBusy_noBoard_pixel8_en_light"
+                "failure" -> "TripActionsFailure_noBoard_pixel8_nl_light"
                 "noPlan" -> "TripActionsNoPlan_pixel8_en_light"
                 "offline" -> "TripActions_offline_pixel8_nl_dark"
                 else -> "TripActions_pixel8_en_light"
@@ -48,6 +52,8 @@ class TripActionsCaptureTest(
                 arrayOf(ActionsCase("online", DeviceProfiles.pixel8, AppLanguage.En, false)),
                 arrayOf(ActionsCase("noPlan", DeviceProfiles.pixel8, AppLanguage.En, false)),
                 arrayOf(ActionsCase("offline", DeviceProfiles.pixel8, AppLanguage.Nl, true)),
+                arrayOf(ActionsCase("busy", DeviceProfiles.pixel8, AppLanguage.En, false)),
+                arrayOf(ActionsCase("failure", DeviceProfiles.pixel8, AppLanguage.Nl, false)),
             )
     }
 }

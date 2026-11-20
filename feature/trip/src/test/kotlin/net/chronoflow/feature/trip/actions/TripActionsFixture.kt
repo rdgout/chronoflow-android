@@ -51,7 +51,7 @@ fun actionsUi(
     return TripActionsUi(
         template.card.id,
         tripActionsHeader(template.card, detail, PageCopy(language, table)),
-        TripActionsAvailability(true, true, state != "offline", false),
+        TripActionsAvailability(true, true, state != "offline", state == "busy"),
     )
 }
 
@@ -86,7 +86,13 @@ fun ActionsFixture(
                     .windowInsetsPadding(LocalSafeInsets.current),
                 contentAlignment = Alignment.BottomCenter,
             ) {
-                Box(Modifier.widthIn(max = 640.dp).background(CfTheme.colors.card)) { TripActionsContent(ui, {}, {}) }
+                if (case.state in setOf("busy", "failure")) {
+                    TripActionsWindow(ui, TripActionFailure.Duplicate.takeIf { case.state == "failure" }, {}, {})
+                } else {
+                    Box(
+                        Modifier.widthIn(max = 640.dp).background(CfTheme.colors.card),
+                    ) { TripActionsContent(ui, {}, {}) }
+                }
             }
         }
     }

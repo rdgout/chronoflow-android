@@ -122,6 +122,7 @@ These notes **override the body**. They were checked with `git grep` and file re
   - As a result, an untouched edit would render "Update my plan" enabled.
   - Pass `hasChanges = model.hasChanges`. This is additive, and create boards are unaffected because the mapper reads it only when editing.
 - **Captures.** No new `WizardEditCaptureTest` is needed.
+  - `cf.captureOnly` uses literal prefixes, so the Task 8 command uses `ONLY=WizardEdit,WizardReturnWeb,WizardCheckingEdit,WizardCheckOfflineEdit,WizardCheckServerEdit,WizardExcludedEdit,WizardDiscardEdit,WizardDuplicate,TripActions` (no `*`).
   - 9f's `WizardBoardCaptureTest` (`…/fwtd/WizardBoardCaptureTest.kt`) captures every `WizardBoardCaptureSeed.names` entry through `boardState` + `WizardScreen`. It appends `_noBoard` for the names in its set (l.112–121).
   - Task 8: add the 25 wrappers, `WizardEditSaveOffline` and `WizardEditSaveServer` to the seed names, and add the last two to that `_noBoard` set.
   - The trip actions captures extend `feature/trip/src/test/kotlin/net/chronoflow/feature/trip/actions/TripActionsCaptureTest.kt` (it exists).
