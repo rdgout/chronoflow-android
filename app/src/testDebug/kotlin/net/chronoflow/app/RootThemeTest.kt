@@ -9,6 +9,7 @@ import androidx.compose.runtime.State
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.text.font.FontFamily
+import androidx.lifecycle.ProcessLifecycleOwner
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Deferred
@@ -86,6 +87,9 @@ class RootThemeTest {
         compose.mainClock.autoAdvance = false
         val app = RuntimeEnvironment.getApplication() as RecordingApplication
         app.preloader.expectedDispatcher = app.ioDispatcher
+        assertFalse(app.graph.launch.overlayActive)
+        // Advancing font work must not also start the unrelated session foreground pipeline.
+        ProcessLifecycleOwner.get().lifecycle.removeObserver(app.graph.activation)
         val host = Robolectric.buildActivity(ComponentActivity::class.java).setup()
         val completed = CompletableDeferred<Unit>()
         val commit = ObservedCommit(completed)
@@ -168,11 +172,13 @@ class RootThemeTest {
         val preloader = RecordingFontPreloader()
         val mainDispatcher = StandardTestDispatcher()
         val ioDispatcher = StandardTestDispatcher(mainDispatcher.scheduler)
+        private val controller by lazy { newLaunchController(graph) }
 
         override fun createGraph(): AppGraph =
             AppGraph(
                 this,
                 preloader,
+                launchProvider = { controller },
                 overrides = GraphOverrides(dispatchers = AppDispatchers(main = mainDispatcher, io = ioDispatcher)),
             )
     }

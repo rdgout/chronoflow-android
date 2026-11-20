@@ -578,8 +578,8 @@ The Android system face is slightly narrower than the host's SF Pro (date −4.3
 |---|---|---:|
 | `make targeted ONLY="feature:wizard:TripWizardViewModelTimesTest#homeFailureDoesNotFollowBackToOutbound"` before the fix | Required regression fails, expected zero / actual one | Gradle 2 s |
 | `make targeted ONLY="feature:wizard:TripWizardViewModelTimesTest feature:wizard:WizardTimesStepTest feature:wizard:WizardTimesRecompositionTest"` final | 20 pass, including process restoration, independent feedback and unchanged card invalidation | 6.62 s |
-| `make targeted ONLY="feature:wizard:WizardDateTimeRowLayoutTest#pillsReflowWithoutChangingTheirIdentity"` at the actual board density, before the fix | New English board case fails (pills 48 dp below label); existing Dutch cases pass | Gradle 4 s |
-| `make targeted ONLY="tools:tokengen:TypeScaleGoldenTest core:designsystem:CfTypeTest feature:wizard:WizardDateTimeRowLayoutTest"` | Generator/style checks and corrected inline cases pass | Individual Gradle walls in `pill-after.log` |
+| `make targeted ONLY="feature:wizard:WizardDateTimeRowLayoutTest#pillsReflowWithoutChangingTheirIdentity"` at the actual board density, before the fix | New English board case fails (pills 48 dp below label); existing Dutch cases pass | Gradle 5 s |
+| `make targeted ONLY="tools:tokengen:TypeScaleGoldenTest core:designsystem:CfTypeTest feature:wizard:WizardDateTimeRowLayoutTest"` | Generator/style checks and corrected inline cases pass | Gradle 2 + 2 + 5 s |
 | `make targeted ONLY="feature:wizard:WizardDateTimeRowLayoutTest"` final | Three cases pass: centered English/Dutch inline, narrow stacked; target/fill geometry | 5.00 s |
 | `make targeted ONLY="app:RootThemeTest#rootProvidesReduceMotionAndUsesTheSuppliedFontBarrier"`, temporary mutation | Intended failure: zero calls expected, four actual; source restored | Gradle 5 s; 2.052 s SDK-cold case |
 | `make targeted ONLY="app:RootThemeTest"` after restoring ordering | Three pass; strengthened case 307 ms warm, separate SDK cold 1.515 s | 3.95 s |
@@ -588,3 +588,19 @@ The Android system face is slightly narrower than the host's SF Pro (date −4.3
 | `make quick` | Once; assertions all pass, one touched timing overrun: root-theme barrier **1,242 ms > 1,000 ms**; 3,018 fresh measurements; no hangs. Later recipe stages did not start | 36.91 s command / 36.85 s main tier |
 
 The quick timing failure is retained. Quick, captures, layout and Lint are not rerun. A narrowly scoped fixture correction and only the missed quick stages are recorded in the follow-up below. No emulator, performance or profile tier ran; no dependency or native library was added. The only new OQ is OQ-A400, and there is no Android-only copy or brief refresh.
+
+### Root-fixture follow-up after quick
+
+The only quick failure was the touched root-theme case's 1,242 ms budget overrun; its assertions passed. Draining the shared test scheduler can also run the process lifecycle's session-activation work, and the default `LaunchPlatform.controller` is cached outside the recording application. The root fixture now detaches its unrelated session-activation observer before starting the host and supplies its own lazy controller through the existing `AppGraph.launchProvider`. It asserts that the overlay is inactive, retaining the real `CfRoot`, first-commit Deferred, motion local, dispatcher checks, zero/four preload assertions and fonts-ready assertion. The allowlist and production code are unchanged.
+
+Removing only the session observer measured 321 ms warm; adding the independent controller measured **298 ms warm** (307 ms before these fixture changes). These quiet runs do **not** establish the cause of, or prove removal of, the 1,242 ms parallel-load overrun. No budget is widened and the failed quick run is not described as passing. All three cases pass after isolation (SDK cold 1.576 s; other warm case 47 ms), through `make targeted ONLY="app:RootThemeTest"` in **4.36 s**. The intermediate observer-only run took 4.71 s. No further timing trials were run. The fixture change is a separate signed follow-up commit because Task 6 had already started; no completed commit was rewritten.
+
+Only the quick recipe stages that had not started were run afterward:
+
+| Command | Result | Wall time |
+|---|---|---:|
+| `Scripts/run-tier.sh build-logic-9d-review2 --results 'build-logic/convention/build/test-results/test/*.xml' -- ./gradlew --console=plain :build-logic:convention:test` | Pass; 37 collected from up-to-date outputs | 1.18 s |
+| `Scripts/test_scripts.sh` with the same exported source paths as make | 168 scripts, 25 contracts, 49 localization and nine icons pass | 20.24 s total (groups 19.768 / 0.116 / 0.017 / 0.062 s) |
+| `make timing` | Pass; seven collected metrics from up-to-date outputs | 0.76 s |
+
+Final status: all functional assertions, captures, layout guards, Lint and token verification pass; the single full quick result retains its touched root-theme timing failure. A full run under parallel load remains unverified after the test-only fixture isolation. Commands were not blocked by the sandbox. Pixel was left running; no push or history rewrite occurred.
