@@ -2622,7 +2622,7 @@ Implementation commits (brief §7):
   - progress values (`§4.6`) and the recovery record (`§4.7`).
 - [x] **No-health-data rules.** Only `age_band` and `shift_work` block. `exclude_caffeine` and `flight_movement_breaks` default to false.
 - [x] **Discrepancies.** Resolve each source discrepancy in `06 §11` as recorded there, and name each resolution in a test.
-- [ ] **Ported tests.** Port the model-level suites of iOS `TripWizardTests`, keeping the names; the brief lists how many.
+- [x] **Ported tests.** Port the model-level suites of iOS `TripWizardTests`, keeping the names; the brief lists how many.
 
 **Acceptance**
 - Every ported model case passes on the JVM.

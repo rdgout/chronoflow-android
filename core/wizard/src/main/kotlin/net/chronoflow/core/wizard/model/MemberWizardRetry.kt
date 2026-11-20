@@ -46,7 +46,10 @@ private val MemberWizardModel.retryDelay: Long get() =
         MemberWizardStep.ready -> {
             minOf(
                 1000,
-                state.saveFailure?.retryAt?.let { Duration.between(now(), it).toMillis().coerceAtLeast(0) } ?: 0,
+                state.saveFailure?.retryAt?.let {
+                    val remaining = Duration.between(now(), it)
+                    if (remaining.isNegative || remaining.isZero) 0L else remaining.toMillis().coerceAtLeast(1)
+                } ?: 0,
             )
         }
 

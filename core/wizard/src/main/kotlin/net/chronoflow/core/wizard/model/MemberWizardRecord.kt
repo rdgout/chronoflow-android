@@ -21,11 +21,13 @@ object MemberWizardRecord {
     ): Boolean = nowMillis - updatedAtMillis >= EXPIRY_MILLIS
 
     fun encode(draft: MemberWizardDraft): Payload {
-        val form = draft.form.copy(identity = draft.form.identity?.copy(guestSecret = null))
+        val form = withoutGuestSecret(draft.form)
         val cleaned = draft.state.discardRetiredValues()
         val state =
             cleaned.copy(
                 review = cleaned.review?.let { it.copy(identity = it.identity.copy(guestSecret = null)) },
+                originalForm = cleaned.originalForm?.let(::withoutGuestSecret),
+                sourceChange = cleaned.sourceChange?.let { it.copy(form = withoutGuestSecret(it.form)) },
             )
         return Payload(
             ApiJson.response.encodeToString(form),
@@ -74,4 +76,7 @@ object MemberWizardRecord {
         } catch (_: IllegalArgumentException) {
             null
         }
+
+    private fun withoutGuestSecret(form: WizardForm): WizardForm =
+        form.copy(identity = form.identity?.copy(guestSecret = null))
 }

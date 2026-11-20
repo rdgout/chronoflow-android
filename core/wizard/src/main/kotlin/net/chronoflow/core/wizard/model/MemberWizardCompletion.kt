@@ -334,3 +334,5 @@ private fun MemberWizardModel.saveFailed(failure: DataFailure) {
     restartRetryCountdown()
     persist()
 }
+
+val MemberWizardModel.credits: WizardCredits? get() = state.review?.let(WizardCredits::of)

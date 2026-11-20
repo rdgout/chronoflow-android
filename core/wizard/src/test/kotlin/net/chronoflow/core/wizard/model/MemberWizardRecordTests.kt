@@ -62,6 +62,13 @@ class MemberWizardRecordTests {
                         profile = JsonObject(mapOf("pregnancy" to JsonPrimitive(true), "age_band" to JsonNull)),
                         savedProfile = JsonObject(mapOf("bipolar" to JsonPrimitive(true))),
                         review = generationReview().copy(identity = identity),
+                        originalForm = WizardForm.from(generationInput()).copy(identity = identity),
+                        sourceChange =
+                            WizardPresentation.SourceChange(
+                                WizardForm.from(generationInput()).copy(identity = identity),
+                                emptyList(),
+                                null,
+                            ),
                     ),
                 )
             val payload = MemberWizardRecord.encode(draft)

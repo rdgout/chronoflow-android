@@ -5,7 +5,6 @@ package net.chronoflow.core.wizard.model
 import kotlinx.serialization.Serializable
 import java.time.Duration
 import java.time.Instant
-import kotlin.math.ceil
 
 @Serializable
 data class WizardSaveFailure(
@@ -16,7 +15,9 @@ data class WizardSaveFailure(
 
     fun seconds(at: Instant): Int {
         val retryAt = retryAt ?: return 0
-        return ceil(Duration.between(at, retryAt).toMillis().coerceAtLeast(0) / 1000.0).toInt()
+        val remaining = Duration.between(at, retryAt)
+        if (remaining.isNegative || remaining.isZero) return 0
+        return (remaining.seconds + if (remaining.nano > 0) 1 else 0).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
     }
 }
 
