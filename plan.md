@@ -2979,7 +2979,7 @@ Implementation commits (brief §7):
 **Delivers.** Wires Edit and Duplicate from the trip actions sheet. Edit loads the trip input, reviews it with the source revision and saves with PUT, covering every edit variant (changed elsewhere, return removed or added, no credits, web trip ending), the edit checking and failure cards, excluded-on-edit and the discard-changes alert. Duplicate opens on the times step with empty dates and the copied-from line.
 
 **Tasks**
-- [ ] **Edit**, from the trip actions sheet.
+- [x] **Edit**, from the trip actions sheet.
   - Load the input snapshot, review it with the source revision, and save with `PUT trips/{id}`.
   - Variants: `WizardEdit`, `WizardEditChanged`, `WizardEditNoReturn`, `WizardEditReturn`, `WizardEditReturnNoCredits`, `WizardEditWeb` and `WizardReturnWeb`.
   - The edit checking and failure cards (`WizardCheckingEdit`, `WizardCheckOfflineEdit`, `WizardCheckServerEdit`) and `WizardExcludedEdit`.
@@ -2996,7 +2996,7 @@ Implementation commits:
 - [x] Task 3: edit Ready rendering and discard checks.
 - [x] Task 4: web end choice and duplicate subtitle.
 - [x] Task 5: trip actions preparation and busy/failure states.
-- [ ] Task 6: app preparer and dependency wiring.
+- [x] Task 6: app preparer and dependency wiring.
 - [ ] Task 7: edit and duplicate board seeds.
 - [ ] Task 8: guards and board captures.
 - [ ] Task 9: actions-to-wizard entry tests.

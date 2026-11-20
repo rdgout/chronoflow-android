@@ -471,9 +471,7 @@ class TripPageViewModel(
                         )
                     }
 
-                    TripWizardPrepareOutcome.Ignored -> {
-                        Unit
-                    }
+                    TripWizardPrepareOutcome.Ignored -> {}
 
                     is TripWizardPrepareOutcome.Failed -> {
                         mutableActionFailure.value =

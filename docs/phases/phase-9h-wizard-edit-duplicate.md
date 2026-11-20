@@ -49,6 +49,7 @@ These notes **override the body**. They were checked with `git grep` and file re
   - The §5.2 change is to drop the `mode == WizardMode.Create` condition.
 - **`WizardLauncher`** (`app/src/main/kotlin/net/chronoflow/app/wizard/WizardLauncher.kt`).
   - Today it is `internal class WizardLauncher(overlay: () -> Route?, push: (Route) -> Unit)` with `pending: AtomicBoolean`, `open()` and `overlayChanged()`. `AppShell.kt:44` builds it as `remember(holder) { WizardLauncher({ holder.state.overlay }, holder::push) }`.
+  - `WizardLauncherTest.closingAnOverlayAllowsAnotherOpen` uses the original trailing-lambda constructor. Preserve that two-argument overload when adding the defaulted dependency/dispatcher parameters; keep the earlier test unchanged (Task 6 check, 2026-11-20).
   - It has no session dependencies or dispatchers. Add defaulted constructor parameters: the session's `TripWizardDependencies?` (from `SessionGraph.wizard`, `SessionGraph.kt:40`, implemented by `SessionTripWizardDependencies`) and the IO dispatcher.
   - `AppDispatchers` is `app/src/main/kotlin/net/chronoflow/app/AppDispatchers.kt`, reached as `graph.dispatchers`. Keep the `withContext(io)` that Task 6 asserts, even though the store also switches.
 - **`TripPageViewModel`** (`feature/trip/src/main/kotlin/net/chronoflow/feature/trip/page/TripPageViewModel.kt`, package `…feature.trip.page`).

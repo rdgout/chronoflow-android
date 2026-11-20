@@ -36,7 +36,11 @@ internal fun AppShell(
     val sessionGraph by graph.sessionGraphs.current.collectAsStateWithLifecycle()
     val render = rememberUpdatedState(placeholder)
     val holder = rememberShellViewModel(root)
-    val launcher = remember(holder) { WizardLauncher({ holder.state.overlay }, holder::push) }
+    val wizardDependencies = sessionGraph?.wizard
+    val launcher =
+        remember(holder, wizardDependencies, graph.dispatchers.io) {
+            WizardLauncher({ holder.state.overlay }, holder::push, wizardDependencies, graph.dispatchers.io)
+        }
     LaunchedEffect(holder.state.overlay) { launcher.overlayChanged() }
     val wizardLocale = rememberUpdatedState(LocalConfiguration.current.locales[0])
     LaunchedEffect(sessionGraph?.epoch) {
@@ -95,6 +99,7 @@ internal fun AppShell(
                         onToday = { holder.leaveTripPage(ShellTab.Today) },
                         onRouteChange = { holder.replaceRoute(route, it) },
                         onWizard = { holder.push(Route.Wizard(it)) },
+                        preparer = launcher,
                     )
                 } else if (route is Route.Walkthrough) {
                     net.chronoflow.app.onboarding
