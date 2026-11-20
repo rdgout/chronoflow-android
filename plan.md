@@ -3066,7 +3066,7 @@ Implementation commits:
 
 - [x] **10a Task 1**: settings glyphs and ghost destructive button.
 - [x] **10a Task 2**: settings home state.
-- [ ] **10a Task 3**: home model and sign-out flow.
+- [x] **10a Task 3**: home model and sign-out flow.
 - [ ] **10a Task 4**: page scaffold and components.
 - [ ] **10a Task 5**: settings home screen.
 - [ ] **10a Task 6**: pending sign-out sheet and Terms slot.
