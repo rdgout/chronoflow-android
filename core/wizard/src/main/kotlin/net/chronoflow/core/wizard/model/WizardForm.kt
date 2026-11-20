@@ -1,10 +1,14 @@
 package net.chronoflow.core.wizard.model
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonObject
 import net.chronoflow.core.model.contracts.ApiAirportSuggestion
 import net.chronoflow.core.model.contracts.ApiReviewIdentity
 import net.chronoflow.core.model.contracts.ApiReviewItinerary
 import net.chronoflow.core.model.contracts.ApiTripInputBusy
+import net.chronoflow.core.model.contracts.ObjectSerializer
 import java.util.UUID
 
 @Serializable
@@ -32,8 +36,56 @@ data class WizardBusy(
     val input: ApiTripInputBusy get() = ApiTripInputBusy(startLocal, endLocal)
 }
 
-@Serializable
+@Serializable(with = WizardStay.Serializer::class)
 data class WizardStay(
+    val bedAvailableMode: String? = "arrival",
+    val bedAvailableFromLocal: String? = null,
+    val checkOutLocal: String? = null,
+    val lateCheckOutOrDayRoom: Boolean = false,
+    val arrivalTransferMin: Int? = null,
+    val transferMode: String? = null,
+    val busyIntervals: List<WizardBusy> = emptyList(),
+) {
+    object Serializer : ObjectSerializer<WizardStay>("net.chronoflow.core.wizard.model.WizardStay") {
+        override fun decode(
+            json: Json,
+            obj: JsonObject,
+        ): WizardStay {
+            val value = json.decodeFromJsonElement(WizardStayWire.serializer(), obj)
+            return WizardStay(
+                value.bedAvailableMode,
+                value.bedAvailableFromLocal,
+                value.checkOutLocal,
+                value.lateCheckOutOrDayRoom,
+                value.arrivalTransferMin,
+                value.transferMode,
+                value.busyIntervals,
+            )
+        }
+
+        override fun encode(
+            json: Json,
+            value: WizardStay,
+        ): JsonObject {
+            val wire =
+                WizardStayWire(
+                    value.bedAvailableMode,
+                    value.bedAvailableFromLocal,
+                    value.checkOutLocal,
+                    value.lateCheckOutOrDayRoom,
+                    value.arrivalTransferMin,
+                    value.transferMode,
+                    value.busyIntervals,
+                )
+            val result = json.encodeToJsonElement(WizardStayWire.serializer(), wire) as JsonObject
+            // Omitting null would decode as the non-null default and change a recovered answer.
+            return if (value.bedAvailableMode == null) JsonObject(result + ("bedAvailableMode" to JsonNull)) else result
+        }
+    }
+}
+
+@Serializable
+private data class WizardStayWire(
     val bedAvailableMode: String? = "arrival",
     val bedAvailableFromLocal: String? = null,
     val checkOutLocal: String? = null,

@@ -173,4 +173,34 @@ class WizardRouteTests {
                 )
         }
     }
+
+    @org.junit.runner.RunWith(org.junit.runners.Parameterized::class)
+    class Recovery(
+        private val confirmed: Boolean,
+    ) {
+        @Test fun recoveryDecodesOldReturnFlightAndPreservesConfirmedTimes() {
+            val initial = MemberWizardDrafts.memberInitial(false, null, null, null)
+            val draft =
+                initial.copy(
+                    form = WizardForm.from(generationInput()).addReturn(),
+                    state =
+                        initial.state.copy(
+                            step = MemberWizardStep.returnFlight,
+                            returnRouteConfirmed = confirmed.takeIf { it },
+                        ),
+                )
+            val recovered = MemberWizardRecord.decode(MemberWizardRecord.encode(draft))!!
+            assertEquals(
+                if (confirmed) MemberWizardStep.returnFlight else MemberWizardStep.returnRoute,
+                recovered.state.step,
+            )
+            assertEquals(draft.form, recovered.form)
+        }
+
+        companion object {
+            @JvmStatic
+            @org.junit.runners.Parameterized.Parameters(name = "confirmed={0}")
+            fun cases() = listOf(false, true)
+        }
+    }
 }
