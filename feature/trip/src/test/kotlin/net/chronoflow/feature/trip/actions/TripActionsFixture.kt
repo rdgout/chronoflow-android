@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -75,6 +76,7 @@ fun ActionsFixture(
     case: ActionsCase,
     modifier: Modifier = Modifier,
 ) {
+    val failure = remember { TripActionFailureEvent(TripActionFailure.Duplicate) }
     val ui = actionsUi(case.state, if (case.language == AppLanguage.Nl) Language.Nl else Language.En)
     ProfileHost(case.profile) {
         ChronoFlowTheme(darkTheme = case.dark) {
@@ -87,7 +89,7 @@ fun ActionsFixture(
                 contentAlignment = Alignment.BottomCenter,
             ) {
                 if (case.state in setOf("busy", "failure")) {
-                    TripActionsWindow(ui, TripActionFailure.Duplicate.takeIf { case.state == "failure" }, {}, {})
+                    TripActionsWindow(ui, failure.takeIf { case.state == "failure" }, {}, {})
                 } else {
                     Box(
                         Modifier.widthIn(max = 640.dp).background(CfTheme.colors.card),

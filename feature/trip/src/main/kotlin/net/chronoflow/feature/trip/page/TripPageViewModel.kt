@@ -65,6 +65,7 @@ import net.chronoflow.core.sync.SyncState
 import net.chronoflow.core.sync.refresh.RefreshDebugProbe
 import net.chronoflow.core.sync.refresh.RefreshFeedbackModel
 import net.chronoflow.feature.trip.actions.TripActionFailure
+import net.chronoflow.feature.trip.actions.TripActionFailureEvent
 import net.chronoflow.feature.trip.actions.TripActionsUi
 import net.chronoflow.feature.trip.actions.TripWizardPrepareOutcome
 import net.chronoflow.feature.trip.actions.TripWizardPreparer
@@ -179,8 +180,8 @@ class TripPageViewModel(
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     private val openingWizard = MutableStateFlow(false)
-    private val mutableActionFailure = MutableStateFlow<TripActionFailure?>(null)
-    val actionFailure: StateFlow<TripActionFailure?> = mutableActionFailure.asStateFlow()
+    private val mutableActionFailure = MutableStateFlow<TripActionFailureEvent?>(null)
+    val actionFailure: StateFlow<TripActionFailureEvent?> = mutableActionFailure.asStateFlow()
     private val wizardRequestEvents = Channel<WizardMode>(Channel.BUFFERED)
     val wizardRequests: Flow<WizardMode> = wizardRequestEvents.receiveAsFlow()
 
@@ -478,11 +479,13 @@ class TripPageViewModel(
 
                     is TripWizardPrepareOutcome.Failed -> {
                         mutableActionFailure.value =
-                            when {
-                                outcome.offline -> TripActionFailure.Offline
-                                action == TripAction.Duplicate -> TripActionFailure.Duplicate
-                                else -> TripActionFailure.Edit
-                            }
+                            TripActionFailureEvent(
+                                when {
+                                    outcome.offline -> TripActionFailure.Offline
+                                    action == TripAction.Duplicate -> TripActionFailure.Duplicate
+                                    else -> TripActionFailure.Edit
+                                },
+                            )
                     }
                 }
             } finally {

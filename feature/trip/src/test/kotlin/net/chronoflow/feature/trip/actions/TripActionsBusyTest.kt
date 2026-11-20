@@ -89,10 +89,11 @@ class TripActionsBusyTest {
 
     @Test fun failureIsPresentedInsideTheSheetOnce() {
         TripActionsDebugCounters.failurePresented.set(0)
+        val failure = TripActionFailureEvent(TripActionFailure.Duplicate)
         compose.setContent {
             ProfileHost(DeviceProfiles.pixel8) {
                 ChronoFlowTheme(reduceMotion = true) {
-                    TripActionsWindow(actionsUi(), TripActionFailure.Duplicate, {}, {})
+                    TripActionsWindow(actionsUi(), failure, {}, {})
                 }
             }
         }
@@ -101,4 +102,27 @@ class TripActionsBusyTest {
         compose.onNodeWithTag("trip.actions").assertExists()
         assertEquals(1, TripActionsDebugCounters.failurePresented.get())
     }
+    @Test fun recreationDoesNotReplayFailureAndIdenticalNextFailureIsPresented() {
+        TripActionsDebugCounters.failurePresented.set(0)
+        val mounted = mutableStateOf(true)
+        val failure = mutableStateOf(TripActionFailureEvent(TripActionFailure.Duplicate))
+        compose.setContent {
+            ProfileHost(DeviceProfiles.pixel8) {
+                ChronoFlowTheme(reduceMotion = true) {
+                    if (mounted.value) TripActionsWindow(actionsUi(), failure.value, {}, {})
+                }
+            }
+        }
+        compose.waitUntil(4_000) { TripActionsDebugCounters.failurePresented.get() == 1 }
+        compose.runOnIdle { mounted.value = false }
+        compose.waitForIdle()
+        compose.runOnIdle { mounted.value = true }
+        compose.waitForIdle()
+        assertEquals("the retained event was already consumed", 1, TripActionsDebugCounters.failurePresented.get())
+        compose.runOnIdle { failure.value = TripActionFailureEvent(TripActionFailure.Duplicate) }
+        compose.waitForIdle()
+        compose.onNodeWithTag("trip.actions").assertExists()
+        assertEquals(2, TripActionsDebugCounters.failurePresented.get())
+    }
+
 }

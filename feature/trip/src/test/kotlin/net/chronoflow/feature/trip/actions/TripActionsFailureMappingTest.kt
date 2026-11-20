@@ -24,7 +24,7 @@ class TripActionsFailureMappingTest(
             withActionsModel(TripWizardPreparer { _, _ -> TripWizardPrepareOutcome.Failed(offline) }) { vm ->
                 vm.startAction(action)
                 runCurrent()
-                assertEquals(expected, vm.actionFailure.value)
+                assertEquals(expected, vm.actionFailure.value?.failure)
                 assertEquals(copy, expected.message)
             }
         }

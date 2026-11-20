@@ -179,7 +179,7 @@ class TripActionsWizardEntryTest {
                 runCurrent()
                 settleTag("trip.actions.failure")
                 compose.waitUntil(4_000) { TripActionsDebugCounters.failurePresented.get() == 1 }
-                assertEquals(TripActionFailure.Edit, page.actionFailure.value)
+                assertEquals(TripActionFailure.Edit, page.actionFailure.value?.failure)
                 compose.onNodeWithTag("trip.actions").assertExists()
                 compose.onNodeWithTag("wizard.title").assertDoesNotExist()
             }
@@ -194,7 +194,7 @@ class TripActionsWizardEntryTest {
                 runCurrent()
                 settleTag("trip.actions.failure")
                 compose.waitUntil(4_000) { TripActionsDebugCounters.failurePresented.get() == 1 }
-                assertEquals(TripActionFailure.Offline, page.actionFailure.value)
+                assertEquals(TripActionFailure.Offline, page.actionFailure.value?.failure)
                 compose.onNodeWithTag("trip.actions").assertExists()
                 compose.onNodeWithTag("wizard.title").assertDoesNotExist()
             }

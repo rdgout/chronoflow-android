@@ -27,7 +27,7 @@ import net.chronoflow.core.plan.actions.TripAction
 @Composable
 internal fun TripActionsWindow(
     ui: TripActionsUi,
-    failure: TripActionFailure?,
+    failure: TripActionFailureEvent?,
     onAction: (TripAction) -> Unit,
     onDismiss: () -> Unit,
     wizardRequests: Flow<WizardMode> = emptyFlow(),
@@ -43,9 +43,9 @@ internal fun TripActionsWindow(
         )
     val scope = rememberCoroutineScope()
     val host = remember { SnackbarHostState() }
-    val message = failure?.let { stringResource(it.message) }
+    val message = failure?.let { stringResource(it.failure.message) }
     LaunchedEffect(failure) {
-        if (message != null) host.showSnackbar(message, duration = SnackbarDuration.Short)
+        if (message != null && failure.claim()) host.showSnackbar(message, duration = SnackbarDuration.Short)
     }
     LaunchedEffect(wizardRequests) {
         wizardRequests.collect { mode ->

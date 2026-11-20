@@ -159,7 +159,7 @@ class TripActionsPrepareTest {
                 vm.startAction(TripAction.Edit)
                 runCurrent()
                 assertTrue(requests.isEmpty())
-                assertNull(vm.actionFailure.value)
+                assertNull(vm.actionFailure.value?.failure)
                 assertFalse(
                     vm.tripActions.value!!
                         .availability.busy,
@@ -172,7 +172,7 @@ class TripActionsPrepareTest {
             withActionsModel(null) { vm ->
                 vm.startAction(TripAction.Edit)
                 runCurrent()
-                assertNull(vm.actionFailure.value)
+                assertNull(vm.actionFailure.value?.failure)
                 assertFalse(
                     vm.tripActions.value!!
                         .availability.busy,
@@ -238,9 +238,9 @@ class TripActionsPrepareTest {
             withActionsModel(TripWizardPreparer { _, _ -> TripWizardPrepareOutcome.Failed(false) }) { vm ->
                 vm.startAction(TripAction.Edit)
                 runCurrent()
-                assertEquals(TripActionFailure.Edit, vm.actionFailure.value)
+                assertEquals(TripActionFailure.Edit, vm.actionFailure.value?.failure)
                 vm.openTripActions()
-                assertNull(vm.actionFailure.value)
+                assertNull(vm.actionFailure.value?.failure)
             }
         }
 }
