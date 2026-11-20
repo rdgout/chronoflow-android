@@ -6,6 +6,7 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import net.chronoflow.core.designsystem.generated.CfTypeScale
 import net.chronoflow.core.testing.DeviceProfile
 import net.chronoflow.core.testing.DeviceProfiles
 import net.chronoflow.core.testing.compose.ProfileRule
@@ -58,6 +59,23 @@ class AirportSearchSheetGeometryTest(
         assertTrue(bounds("wizard.airport.AMS").height >= 60)
         assertTrue(bounds("wizard.airport.title").width <= 220.5f)
         assertEquals(44f, bounds("wizard.airport.code.AMS").width, 0.5f)
+    }
+
+    @Test fun fromTitleFitsOnOneLine() = assertTitleFitsOnOneLine(WizardAirportSheet.Side.from)
+
+    @Test fun toTitleFitsOnOneLine() = assertTitleFitsOnOneLine(WizardAirportSheet.Side.to)
+
+    @Test fun homeTitleFitsOnOneLine() = assertTitleFitsOnOneLine(WizardAirportSheet.Side.home)
+
+    private fun assertTitleFitsOnOneLine(side: WizardAirportSheet.Side) {
+        val state = screenState().copy(sheet = AirportSheetUi(WizardAirportSheet(0, side), null))
+        compose.setContent { WizardTestHost(profile) { WizardScreen(state, {}) } }
+        val title = bounds("wizard.airport.title")
+        assertTrue(
+            "${profile.name}/$side: title height ${title.height}",
+            title.height <= requireNotNull(CfTypeScale.wizardButton.lineHeight) + 0.5f,
+        )
+        assertEquals(bounds("wizard.airport-search").center.x, title.center.x, 0.5f)
     }
 
     companion object {

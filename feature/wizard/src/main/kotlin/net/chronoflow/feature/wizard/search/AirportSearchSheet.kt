@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -49,6 +48,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
@@ -89,6 +89,7 @@ internal object SheetMetrics {
     const val gutter = 20
     const val target = 48
     const val headerTitleMax = 220
+    const val headerGap = 8
     const val captionGap = 8
     const val fieldGap = 10
     const val field = 40
@@ -158,45 +159,13 @@ internal fun AirportSearchSheet(
                     ).imePadding()
                     .padding(horizontal = SheetMetrics.gutter.dp),
             ) {
-                Row(
-                    Modifier.fillMaxWidth().heightIn(min = SheetMetrics.target.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
-                        CfButton(
-                            WizardCopy("Cancel").resolve(),
-                            {
-                                if (!selected) {
-                                    selected = true
-                                    scope.launch { state.hide() }.invokeOnCompletion {
-                                        if (it ==
-                                            null
-                                        ) {
-                                            events.value(WizardEvent.CancelAirport)
-                                        }
-                                    }
-                                }
-                            },
-                            Modifier.testTag("wizard.airport.cancel"),
-                            style = CfButtonStyle.Ghost,
-                            textStyle = CfTheme.type.style(CfTypeScale.wizardRow),
-                            contentColor = CfTheme.colors.dawnText,
-                            contentPadding = PaddingValues(0.dp),
-                        )
+                AirportSearchHeader(ui.title.resolve()) {
+                    if (!selected) {
+                        selected = true
+                        scope.launch { state.hide() }.invokeOnCompletion {
+                            if (it == null) events.value(WizardEvent.CancelAirport)
+                        }
                     }
-                    Box(Modifier.weight(2f), contentAlignment = Alignment.Center) {
-                        Text(
-                            ui.title.resolve(),
-                            Modifier
-                                .widthIn(max = SheetMetrics.headerTitleMax.dp)
-                                .testTag("wizard.airport.title")
-                                .semantics { heading() },
-                            style = CfTheme.type.style(CfTypeScale.wizardButton),
-                            color = CfTheme.colors.foreground,
-                            textAlign = TextAlign.Center,
-                        )
-                    }
-                    Spacer(Modifier.weight(1f))
                 }
                 ui.caption?.let { caption ->
                     Spacer(Modifier.height(SheetMetrics.captionGap.dp))
@@ -231,6 +200,61 @@ internal fun AirportSearchSheet(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun AirportSearchHeader(
+    title: String,
+    onCancel: () -> Unit,
+) {
+    Layout(
+        content = {
+            CfButton(
+                WizardCopy("Cancel").resolve(),
+                onCancel,
+                Modifier.testTag("wizard.airport.cancel"),
+                style = CfButtonStyle.Ghost,
+                textStyle = CfTheme.type.style(CfTypeScale.wizardRow),
+                contentColor = CfTheme.colors.dawnText,
+                contentPadding = PaddingValues(0.dp),
+            )
+            Text(
+                title,
+                Modifier.testTag("wizard.airport.title").semantics { heading() },
+                style = CfTheme.type.style(CfTypeScale.wizardButton),
+                color = CfTheme.colors.foreground,
+                textAlign = TextAlign.Center,
+            )
+            Spacer(Modifier)
+        },
+        modifier = Modifier.fillMaxWidth().heightIn(min = SheetMetrics.target.dp),
+    ) { measurables, constraints ->
+        val gap = SheetMetrics.headerGap.dp.roundToPx()
+        val minimumSide =
+            maxOf(
+                measurables[0].minIntrinsicWidth(constraints.maxHeight),
+                measurables[2].minIntrinsicWidth(constraints.maxHeight),
+            )
+        val titleWidth =
+            minOf(
+                measurables[1].maxIntrinsicWidth(constraints.maxHeight),
+                SheetMetrics.headerTitleMax.dp.roundToPx(),
+                (constraints.maxWidth - 2 * (gap + minimumSide)).coerceAtLeast(0),
+            )
+        val loose = constraints.copy(minWidth = 0, minHeight = 0)
+        val heading = measurables[1].measure(loose.copy(minWidth = titleWidth, maxWidth = titleWidth))
+        val sideWidth = ((constraints.maxWidth - heading.width - 2 * gap) / 2).coerceAtLeast(0)
+        val cancel = measurables[0].measure(loose.copy(maxWidth = sideWidth))
+        val trailing = measurables[2].measure(loose.copy(maxWidth = sideWidth))
+        val height =
+            maxOf(constraints.minHeight, heading.height, cancel.height, trailing.height)
+                .coerceAtMost(constraints.maxHeight)
+        layout(constraints.maxWidth, height) {
+            cancel.placeRelative(0, (height - cancel.height) / 2)
+            heading.placeRelative((constraints.maxWidth - heading.width) / 2, (height - heading.height) / 2)
+            trailing.placeRelative(constraints.maxWidth - sideWidth, (height - trailing.height) / 2)
         }
     }
 }

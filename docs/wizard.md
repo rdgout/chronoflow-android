@@ -226,3 +226,7 @@ The preparation/drawing timings are JVM harness results, not device frame measur
 - Quiet recovery adds work after entering AppShell, on injected IO. Run `make perf` to check startup against the existing budget and record numbers in `docs/perf-startup.md`. No startup, timeline or profile performance command was run in this phase. No timeline implementation changed.
 
 OQ-9c-1 through OQ-9c-12 are recorded as **OQ-A370–OQ-A381**, using the brief's defaults. No credential capability was enabled, no new native library dependency was added, and the pixel emulator remains running.
+
+## Review round 1
+
+1. The airport header now measures the title's intrinsic width, caps it at 220 dp and reserves the side slots and 8 dp gaps in a custom `Layout`. The remaining side slots are equal, so the title stays centered. No measured size enters state. The From, To and Home line-height guards use the generated wizardButton line height and tags only. Before the fix the pixel8 Home title measured 44.190475 dp and failed; all eight geometry cases now pass (targeted tier 7.58 s). `make captures ONLY=WizardAirport,WizardStopSearch` ran once, regenerated ten sheet PNGs and passed in 18.07 s; unrelated earlier captures were preserved. The 390 dp From capture now has a single-line title; Dutch Home uses two lines within the space left by Cancel.
