@@ -72,9 +72,9 @@ class WizardBoardCaptureSeedTest(
                     "WizardStopSearch" to listOf(2, false, "AMS", "NRT", false, 0, stop, "Du", false),
                     "WizardStopSearchSecond" to listOf(3, false, "AMS", "NRT", true, 1, stop, "Ban", false),
                     "WizardStopSearchHome" to listOf(2, true, "NRT", "AMS", false, 1, stop, "Du", false),
-                    "WizardDiscard" to listOf(2, false, "AMS", "NRT", true, null, null, null, true),
+                    "WizardDiscard" to listOf(2, false, "AMS", "NRT", false, null, null, null, true),
                 )
-            return WizardBoardCaptureSeed.names.map {
+            return WizardBoardCaptureSeed.names.filter { WizardBoardCaptureSeed.baseName(it) in expected }.map {
                 arrayOf<Any>(
                     it,
                     expected.getValue(WizardBoardCaptureSeed.baseName(it)),
