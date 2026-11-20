@@ -37,6 +37,7 @@ class ReadyBannerUiTest {
 
     @Test fun adjustedRetainsTheServerReasonsInOrder() {
         val reasons = listOf(CopyLine("reason.one", emptyList()), CopyLine("reason.two", emptyList()))
+        assertEquals("reason.one reason.two", ReadyBannerUi.Adjusted(reasons).body { it.key })
         assertEquals(
             ReadyBannerUi.Adjusted(reasons),
             readyActive(generationReview().copy(status = PlanStatus.Modified, reasons = reasons)).ready().banner,
@@ -44,6 +45,10 @@ class ReadyBannerUiTest {
     }
 
     @Test fun updatedDropsMissingSummaryAndPrice() {
+        val empty = ReadyBannerUi.Updated(null, null)
+        assertEquals("Price: Free", empty.body("", "Price: Free"))
+        assertEquals("Summary", empty.body("Summary", ""))
+        assertEquals("", empty.body("", ""))
         val active = readyActive(generationReview().copy(summary = null, price = null))
         val draft = active.wizard.draft
         assertEquals(

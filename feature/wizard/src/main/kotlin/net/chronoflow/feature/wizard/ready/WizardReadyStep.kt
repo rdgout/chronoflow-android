@@ -63,7 +63,7 @@ private fun ReadyBanner(
 
         is ReadyBannerUi.Adjusted -> {
             WizardBanner(
-                ui.reasons.joinToString(" ") { serverCopy(it) },
+                ui.body(serverCopy),
                 "wizard.ready.notice",
                 tone = WizardBannerTone.Info,
                 title = WizardCopy("We adjusted your plan").resolve(),
@@ -74,7 +74,7 @@ private fun ReadyBanner(
             val summary = ui.summary?.let(serverCopy).orEmpty()
             val price = ui.price?.let { WizardCopy("Price").resolve() + ": " + it.copy.resolve() }.orEmpty()
             WizardBanner(
-                listOf(summary, price).filter { it.isNotEmpty() }.joinToString(" "),
+                ui.body(summary, price),
                 "wizard.ready.notice",
                 tone = WizardBannerTone.Info,
                 title = WizardCopy("Updated").resolve(),

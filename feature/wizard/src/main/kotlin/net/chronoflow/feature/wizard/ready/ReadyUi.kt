@@ -153,12 +153,19 @@ sealed interface ReadyBannerUi {
 
     data class Adjusted(
         val reasons: List<CopyLine>,
-    ) : ReadyBannerUi
+    ) : ReadyBannerUi {
+        fun body(resolve: (CopyLine) -> String): String = reasons.joinToString(" ", transform = resolve)
+    }
 
     data class Updated(
         val summary: CopyLine?,
         val price: PriceValue?,
-    ) : ReadyBannerUi
+    ) : ReadyBannerUi {
+        fun body(
+            summary: String,
+            price: String,
+        ): String = listOf(summary, price).filter { it.isNotEmpty() }.joinToString(" ")
+    }
 }
 
 @Immutable
