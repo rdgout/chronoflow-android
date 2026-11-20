@@ -19,7 +19,6 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
-import net.chronoflow.core.designsystem.generated.AuthTokens
 import net.chronoflow.core.designsystem.generated.CfTypeScale
 import net.chronoflow.core.designsystem.generated.PlanUITokens
 import net.chronoflow.core.designsystem.theme.CfTheme
@@ -42,15 +41,15 @@ internal fun WizardConnectionChip(
 ) {
     val color = CfTheme.colors.border
     val rule =
-        Modifier.height(AuthTokens.focusWidth.dp).clearAndSetSemantics { }.drawWithCache {
-            val stroke = AuthTokens.focusWidth.dp.toPx()
+        Modifier.height(PlanUITokens.wizardStopDotWidth.dp).clearAndSetSemantics { }.drawWithCache {
+            val stroke = PlanUITokens.wizardStopDotWidth.dp.toPx()
             val dash =
                 PathEffect.dashPathEffect(
-                    floatArrayOf(PlanUITokens.wizardStopDotWidth.dp.toPx(), PlanUITokens.wizardStopDotGap.dp.toPx()),
+                    floatArrayOf(stroke, stroke),
                 )
             val start = Offset(0f, size.height / 2)
             val end = Offset(size.width, size.height / 2)
-            onDrawBehind { drawLine(color, start, end, strokeWidth = stroke, cap = StrokeCap.Round, pathEffect = dash) }
+            onDrawBehind { drawLine(color, start, end, strokeWidth = stroke, cap = StrokeCap.Butt, pathEffect = dash) }
         }
     Row(
         Modifier.fillMaxWidth().testTag("wizard.connection.$index"),

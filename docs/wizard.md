@@ -552,3 +552,39 @@ Final quick measurements: root-theme barrier case **352 ms**, seed CurrentAnchor
 4. No matching chevron/iOS tertiary-label color exists in `ds/chronoflow/tokens.json`, `theme.css`, the Android overlay, or generated `CfLightColors` / `CfDarkColors`. The board's `rgba(120,120,128,0.7)` is a literal on the choice/row chevrons, not a named color token. Material's generated mapping uses dawn for tertiary and does not supply this label color. Added **OQ-A400**, default **keep `mutedForeground` until a token exists**, as requested. `WizardChoiceCard` remains unchanged, and `WizardReturn`, `WizardReturnDark`, `WizardReturnNL` retain this recorded color difference. No literal, alpha adjustment or new color token was invented.
 
 5. The root-theme test now drains `ioDispatcher.scheduler.runCurrent()` before asserting zero preload calls, while the commit Deferred is still incomplete. All existing barrier/motion/count/fonts-ready assertions remain. A temporary mutation moved `warmFonts` before `firstFrame.await()`; the strengthened test failed at the intended assertion, **expected 0, actual 4** (isolated SDK-cold case 2.052 s). The mutation was restored byte-for-byte. The complete three-case class then passes; final warm measurements are recorded below. No production font-ordering code is committed for this item.
+
+6. The connection rule was a real mismatch: the board declares `border-top: 2px dotted var(--border)`, while the Kotlin rule used a 2/4 dp dash effect with round caps. At @3x the host board's interior marks are 6 × 6 px on a 12 px pitch; the old capture has elongated marks on an 18 px pitch (10 fully opaque horizontal pixels plus antialiased ends). The rule now uses the generated 2 dp dot width for stroke/height, equal 2 dp marks and spaces, and butt caps, matching the rendered board's square dots. The existing `border` token is already correct in both appearances. The effect and geometry stay inside `drawWithCache`, with no per-frame allocation. No new literal or geometry token was needed.
+
+### Review round 2 captures and validation
+
+`make captures ONLY=WizardOutbound,WizardReturn` ran **once**, writing 27 PNGs (26 board counterparts plus `WizardOutboundScrollErrors_noBoard`), tier wall 16.05 s / command wall 16.12 s. The host renders and Android captures were read directly for `WizardOutbound`, `WizardOutboundErrors`, `WizardOutboundStop` and `WizardReturnFlightPastDarkNL`; all 26 matched-name pairs were then read in seven comparison sheets (`build/phase9d-review2/comparison-*.png`, board left / Android right, names in `comparison-index.json`). There is no new missing content or clipping in these boards. Settled 9c native header/progress/footer mapping, the existing iOS-selected One way state, model progress on incomplete multi-flight drafts, and the pinned Overnight values remain the recorded exceptions. The chevron remains OQ-A400's explicit token exception.
+
+Full-resolution pixel scans of `WizardOutbound`'s filled Arrives pills (all images 1170 × 2532; measurements below in pixels, divide by three for dp):
+
+| Measurement | Host board | Before round 2 | After round 2 |
+|---|---:|---:|---:|
+| Date pill width | 360 | 377 | 347 |
+| Time pill width | 207 | 213 | 199 |
+| Solid date glyph run | 279 | 293 | 266 |
+| Solid time glyph run | 129 | 133 | 120 |
+| Pill fill RGB | 234,237,240 | 234,237,240 | 234,237,240 |
+| Departs row at 390 dp | Inline | Stacked | Inline |
+| Connection rule interior pitch | 12 | 18 | 12 |
+| Connection rule fully opaque mark width | 6 | 10 plus antialiased ends | 6 |
+
+The Android system face is slightly narrower than the host's SF Pro (date −4.33 dp / time −2.67 dp); both use the board's system-face mapping, regular 17/22, −0.01 em, tabular digits and 6/12 padding. No width clamp, font shrinking, date abbreviation or font literal compensates for platform glyph metrics. The draw/touch geometry is separately guarded (34 dp fill, ≥48 dp target), and both label centers match the fills within 0.5 dp. The final connection dots are 6 × 6 px on a 12 px pitch in the same border RGB as the board. Raw spans are retained in `pixel-measurements.json`.
+
+| Command / selection | Result | Wall time |
+|---|---|---:|
+| `make targeted ONLY="feature:wizard:TripWizardViewModelTimesTest#homeFailureDoesNotFollowBackToOutbound"` before the fix | Required regression fails, expected zero / actual one | Gradle 2 s |
+| `make targeted ONLY="feature:wizard:TripWizardViewModelTimesTest feature:wizard:WizardTimesStepTest feature:wizard:WizardTimesRecompositionTest"` final | 20 pass, including process restoration, independent feedback and unchanged card invalidation | 6.62 s |
+| `make targeted ONLY="feature:wizard:WizardDateTimeRowLayoutTest#pillsReflowWithoutChangingTheirIdentity"` at the actual board density, before the fix | New English board case fails (pills 48 dp below label); existing Dutch cases pass | Gradle 4 s |
+| `make targeted ONLY="tools:tokengen:TypeScaleGoldenTest core:designsystem:CfTypeTest feature:wizard:WizardDateTimeRowLayoutTest"` | Generator/style checks and corrected inline cases pass | Individual Gradle walls in `pill-after.log` |
+| `make targeted ONLY="feature:wizard:WizardDateTimeRowLayoutTest"` final | Three cases pass: centered English/Dutch inline, narrow stacked; target/fill geometry | 5.00 s |
+| `make targeted ONLY="app:RootThemeTest#rootProvidesReduceMotionAndUsesTheSuppliedFontBarrier"`, temporary mutation | Intended failure: zero calls expected, four actual; source restored | Gradle 5 s; 2.052 s SDK-cold case |
+| `make targeted ONLY="app:RootThemeTest"` after restoring ordering | Three pass; strengthened case 307 ms warm, separate SDK cold 1.515 s | 3.95 s |
+| Layout tier (`:feature:wizard`, `:core:designsystem`, `:app`, `-Pcf.tier=layout`, through `Scripts/run-tier.sh layout-9d-review2`) | Once; all 273 pass, zero timing overruns/hangs. Existing 62 flight guards and 97 Where guards unchanged | 11.91 s |
+| `./gradlew :feature:wizard:lintDebug :app:lintDebug :core:designsystem:lintDebug :tools:tokengen:verifyTokens` | Once; all pass | 15.95 s |
+| `make quick` | Once; assertions all pass, one touched timing overrun: root-theme barrier **1,242 ms > 1,000 ms**; 3,018 fresh measurements; no hangs. Later recipe stages did not start | 36.91 s command / 36.85 s main tier |
+
+The quick timing failure is retained. Quick, captures, layout and Lint are not rerun. A narrowly scoped fixture correction and only the missed quick stages are recorded in the follow-up below. No emulator, performance or profile tier ran; no dependency or native library was added. The only new OQ is OQ-A400, and there is no Android-only copy or brief refresh.
