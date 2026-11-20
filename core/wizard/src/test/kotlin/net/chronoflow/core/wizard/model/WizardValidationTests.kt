@@ -2,8 +2,8 @@ package net.chronoflow.core.wizard.model
 
 import kotlinx.serialization.json.JsonPrimitive
 import net.chronoflow.core.model.FieldMessage
-import net.chronoflow.core.wizard.generationInput
-import net.chronoflow.core.wizard.wizardAirport
+import net.chronoflow.core.testing.wizard.generationInput
+import net.chronoflow.core.testing.wizard.wizardAirport
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull

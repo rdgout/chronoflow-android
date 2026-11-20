@@ -1,5 +1,8 @@
 package net.chronoflow.core.wizard
 
+import net.chronoflow.core.testing.wizard.WizardTestClock
+import net.chronoflow.core.testing.wizard.generationInput
+import net.chronoflow.core.testing.wizard.generationReview
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test

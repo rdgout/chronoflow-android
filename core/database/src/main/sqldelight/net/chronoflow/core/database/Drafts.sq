@@ -4,3 +4,18 @@ CREATE TABLE drafts (
     review_revision INTEGER, wizard_source_revision TEXT, wizard_review TEXT, furthest_step TEXT,
     wizard_state TEXT, source_revision TEXT, save_failure TEXT, field_errors TEXT, updated_at TEXT NOT NULL
 );
+
+draftById:
+SELECT * FROM drafts WHERE id = ?;
+
+listedDrafts:
+SELECT * FROM drafts WHERE id != 'member-wizard' ORDER BY updated_at, id;
+
+insertDraft:
+INSERT INTO drafts VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+saveDraft:
+INSERT OR REPLACE INTO drafts VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+deleteDraft:
+DELETE FROM drafts WHERE id = ?;

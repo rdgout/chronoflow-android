@@ -1,5 +1,6 @@
 package net.chronoflow.core.wizard.model
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
@@ -272,12 +273,16 @@ fun MemberWizardModel.savePlan(recovering: Boolean = false) {
                         state = state.copy(savedTripId = result.state.savedTripId)
                         when (val outcome = result.outcome) {
                             is TripGenerationSaveResult.Outcome.Saved -> {
-                                wizardOperation(
-                                    { store.didSave(snapshot.state.instance, snapshot.state.firstTrip) },
-                                    {},
-                                )
+                                try {
+                                    store.didSave(snapshot.state.instance, snapshot.state.firstTrip)
+                                } catch (_: CancellationException) {
+                                    currentCoroutineContext().ensureActive()
+                                } catch (_: Exception) {
+                                    // Recovery can retry cleanup after the trip has already been saved.
+                                }
                                 currentCoroutineContext().ensureActive()
                                 if (!closed) {
+                                    close()
                                     createdTripID = outcome.tripId
                                     closed = true
                                 }

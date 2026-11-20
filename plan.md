@@ -949,7 +949,10 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A363 | (9a) `WizardMode` is also a navigation type with Create/Edit/Duplicate cases. | Keep the Swift `net.chronoflow.core.wizard.model.WizardMode` name for member/guest. Callers importing both types in 9b use an import alias; leave the navigation type and landed routing unchanged. | 9b |
 | OQ-A364 | (9a) The pinned journey mapper normalizes `profile.habitual_bed` to `profile.habitualBed`, while the pinned sleep-routing guard compares snake-case paths. | Keep the journey mapper and its ported tests. Compare raw and normalized sleep paths in the wizard failure guard so the error returns to Sleep, as the 9a brief requires. | 9a, 9b, 9e |
 | OQ-A365 | (9a) The pinned default rating `NumberFormatter` rounds to whole numbers: 1.5 → 2, 2.5 → 2, 9.9 → 10. | Retain zero fractional digits and half-even rounding in presentation. Validation still accepts finite 0.1…9.9 values, including a comma. Revisit the display with the Ready/sheet UI rather than silently changing the port. | 9g |
-| OQ-A366 | (9a review 1) Pinned iOS returns on a save `CancellationError`, leaving the wizard on Calculating. How should Android handle a foreign `CancellationException` from `generation.save` or its `didCreate` callback? | Keep Android’s behavior: while the save job remains active, map it to a server save failure and return to Ready, clear the save-job handle, and allow a manual retry. Never retry automatically. Rethrow cancellation when the caller is cancelled. Risk for 9b: if the failure hits `didCreate`, the server trip already exists but `savedTripId` is not stored, so a manual retry from Ready could create a duplicate (also after a non-cancellation `didCreate` failure); 9b must make the retry reuse the created trip id. | 9a, 9b |
+| OQ-A366 | (9a review 1) Pinned iOS returns on a save `CancellationError`, leaving the wizard on Calculating. How should Android handle a foreign `CancellationException` from `generation.save` or its `didCreate` callback? | Keep Android’s behavior: while the save job remains active, map it to a server save failure and return to Ready, clear the save-job handle, and allow a manual retry. Never retry automatically. Rethrow cancellation when the caller is cancelled. Risk for 9b: if the failure hits `didCreate`, the server trip already exists but `savedTripId` is not stored, so a manual retry from Ready could create a duplicate (also after a non-cancellation `didCreate` failure); 9b must make the retry reuse the created trip id. Resolved by 9b: R-A366 (`TripGenerationDuplicateTests`, `foreignDidCreateCancellationRetryDoesNotCreateASecondTrip`). | 9a, 9b |
+| OQ-A367 | (9b OQ-9b-2) iOS writes every recovery revision sequentially, while the Android plan requires a conflated writer. | Use one consumer with latest-wins conflation: skip only superseded revisions, persist strictly increasing revisions, and finish on the latest revision after `flush`. The database revision guard rejects older writes; discard flushes before deleting, and `didCreate` awaits the saved-trip-id write before pulling. | 9b |
+| OQ-A368 | (9b OQ-9b-7) Which phase queues the first-trip reminders offer? | 9b ports `FirstTripRemindersOffer.queue` and calls it from `MemberWizardStore.didSave`. It writes `wizardReminders` as the JSON string `"pending"` once for a successful first trip. 12c ports `consume`; until then the row stays pending. | 9b, 9g, 12c |
+| OQ-A369 | (9b OQ-9b-15) How does a retry avoid a second trip when `didCreate` fails after the server has created it (R-A366)? | Keep `savedTrips[key]` before awaiting `didCreate`. A non-caller failure, including foreign cancellation, returns a server save failure with the created `savedTripId` retained. Manual retry reuses that id without a second POST or PUT. Only caller/service cancellation rethrows; after process death the server receipt provides deduplication. | 9b |
 | OQ-0a-22 | Native libraries in the bundle? | Allow only `libandroidx.graphics.path.so` (Compose graphics-path; excluding it breaks Path conversion below API 34); fail on any other `.so` | 0a, 13 |
 | OQ-0b-1 | Where does `PlanMetrics` live? `08 §3.1` lists it inside `CfDimens`, but its consumer `:core:plan` is a JVM module that cannot depend on `:core:designsystem` | `core/plan/…/generated/PlanMetrics.generated.kt` (Double, dp), as iOS keeps it in `PlanCore` | 0b, 1b, 1c |
 | OQ-0b-2 | Port all iOS TokenGen outputs now (Auth, Settings, Terms, Welcome, PlanUI, Press, LaunchPaint, TypeMetrics), or only colors, sky and type? | All of them now (the iOS files are exact goldens and Phases 2, 3a, 3c, 5a, 9 and 10 need them) | 0b |
@@ -2668,19 +2671,19 @@ Implementation commits (brief §7):
 9a already ships `MemberWizardModel`, `WizardChecking.run` and the 250 ms choice delay; 9b hosts the model, wires the store and service, and ports the remaining suites (9a brief §10.2).
 
 **Tasks**
-- [ ] **Generation** (`core/wizard/…/generation/`).
+- [x] **Generation** (`core/wizard/…/generation/`).
   - Review, save and edit-input calls, with a 90 s HTTP timeout and the review operation capped at 30 s. Saves are never retried automatically.
   - An in-flight map keyed by `(instance, fingerprint, token, reviewRevision, edit)`, guarded by a `Mutex`, and the expiry retry.
   - Checking timers: ticks at 0.4, 0.8 and ≥ 1.2 s, a 0.3 s pause, slow at 10 s, failure at 30 s.
-- [ ] **Airport search**, porting `AirportSearchService`.
+- [x] **Airport search**, porting `AirportSearchService`.
   - The query is trimmed and must be 2–60 characters long.
   - A 350 ms debounce, with stale searches cancelled.
   - Requests are spaced at least 1.02 s apart, with a wait after a 429.
   - An in-memory LRU cache.
   - The search states as a sealed type.
-- [ ] **Recovery**, porting `MemberWizardStore`: one fixed-id `drafts` row (OQ 40), written through a conflated writer and deleted on close, save or expiry (30 min). Add the draft halves of iOS `RecordsTests` (the `DraftRecord` round trip and the draft upsert/remove).
-- [ ] **TripWizardViewModel scaffold** (`feature/wizard/…`). The state holder, plus the cancellable jobs `checkJob`, `reviewJob`, `saveJob`, `choiceJob` (250 ms) and `retryCountdownJob`.
-- [ ] **Tests** against `MockDataSource` scenarios and the `wizard/*.json` fixtures: throttled, capacity, expired, needs-answers and unknown-field.
+- [x] **Recovery**, porting `MemberWizardStore`: one fixed-id `drafts` row (OQ 40), written through a conflated writer and deleted on close, save or expiry (30 min). Add the draft halves of iOS `RecordsTests` (the `DraftRecord` round trip and the draft upsert/remove).
+- [x] **TripWizardViewModel scaffold** (`feature/wizard/…`). The state holder, plus the cancellable jobs `checkJob`, `reviewJob`, `saveJob`, `choiceJob` (250 ms) and `retryCountdownJob`.
+- [x] **Tests** against `MockDataSource` scenarios and the `wizard/*.json` fixtures: throttled, capacity, expired, needs-answers and unknown-field.
 
 **Acceptance**
 - The timer, pacing and recovery cases pass on a fake clock.
@@ -2841,7 +2844,7 @@ Implementation commits (brief §7):
   - `WizardCalculating`, with the offline and server errors (`WizardSaveOffline`, `WizardSaveServer`).
   - After process death, the save resumes in Calculating with the same identity (`14 §3.4`).
   - No automatic retry.
-- [ ] **After save.** Open the trip page with `awaitingSync = true`, and set the first-trip reminders offer to `pending`; 12c consumes it.
+- [ ] **After save.** Open the trip page with `awaitingSync = true`, and set the first-trip reminders offer to `pending` (queued by 9b’s `MemberWizardStore.didSave`); 12c consumes it.
 - [ ] **Tests.**
   - Price-state mapping from `wizard/credits.json` and the related fixtures.
   - Process-death resume: Robolectric recreates the screen with a fresh graph and the drafts row.

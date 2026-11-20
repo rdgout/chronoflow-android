@@ -1,4 +1,7 @@
-package net.chronoflow.core.wizard.model
+package net.chronoflow.core.testing.wizard
+
+import net.chronoflow.core.wizard.model.MemberWizardDraft
+import net.chronoflow.core.wizard.model.WizardDraftStore
 
 class InMemoryWizardDraftStore : WizardDraftStore {
     val persisted = mutableListOf<MemberWizardDraft>()

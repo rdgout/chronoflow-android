@@ -1,4 +1,4 @@
-package net.chronoflow.core.wizard
+package net.chronoflow.core.testing.wizard
 
 import net.chronoflow.core.model.api.ApiJson
 import net.chronoflow.core.model.contracts.ApiAirportSuggestion

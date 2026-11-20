@@ -1,4 +1,4 @@
-package net.chronoflow.core.wizard.model
+package net.chronoflow.core.testing.wizard
 
 import net.chronoflow.core.model.DataFailure
 import net.chronoflow.core.model.api.ApiTripReviewInput

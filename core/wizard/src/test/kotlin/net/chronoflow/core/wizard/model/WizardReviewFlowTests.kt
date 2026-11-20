@@ -5,8 +5,8 @@ package net.chronoflow.core.wizard.model
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import net.chronoflow.core.wizard.generationReview
-import net.chronoflow.core.wizard.wizardAirport
+import net.chronoflow.core.testing.wizard.generationReview
+import net.chronoflow.core.testing.wizard.wizardAirport
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue

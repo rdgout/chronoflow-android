@@ -11,9 +11,9 @@ import net.chronoflow.core.model.contracts.PromptKind
 import net.chronoflow.core.model.contracts.ReviewPromptTarget
 import net.chronoflow.core.model.contracts.SegmentKindCode
 import net.chronoflow.core.model.contracts.TripDirection
-import net.chronoflow.core.wizard.generationInput
-import net.chronoflow.core.wizard.generationReview
-import net.chronoflow.core.wizard.wizardAirport
+import net.chronoflow.core.testing.wizard.generationInput
+import net.chronoflow.core.testing.wizard.generationReview
+import net.chronoflow.core.testing.wizard.wizardAirport
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
