@@ -1,3 +1,4 @@
+@file:Suppress("ktlint:standard:max-line-length")
 @file:OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 
 package net.chronoflow.feature.wizard
@@ -67,6 +68,11 @@ internal class WizardMainDispatcherRule : TestWatcher() {
 internal class FakeWizardDependencies(
     scope: TestScope,
 ) : TripWizardDependencies {
+    override var timeFormat: kotlinx.coroutines.flow.Flow<net.chronoflow.core.model.contracts.TimeFormat> =
+        kotlinx.coroutines.flow
+            .flowOf(
+                net.chronoflow.core.model.contracts.TimeFormat.Value24,
+            )
     val recovery = InMemoryWizardDraftStore()
     var discardFailure: IOException? = null
     override val store =

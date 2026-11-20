@@ -4,6 +4,7 @@ package net.chronoflow.feature.wizard.ui
 
 import androidx.compose.runtime.Immutable
 import net.chronoflow.core.model.contracts.ApiAirportSuggestion
+import net.chronoflow.core.model.contracts.TimeFormat
 import net.chronoflow.core.wizard.model.MemberWizardDraft
 import net.chronoflow.core.wizard.model.MemberWizardStep
 import net.chronoflow.core.wizard.model.WizardAirportSheet
@@ -13,6 +14,8 @@ import net.chronoflow.core.wizard.model.route
 import net.chronoflow.core.wizard.model.routeComplete
 import net.chronoflow.feature.wizard.TripWizardUiState
 import net.chronoflow.feature.wizard.shell.WizardStepKey
+import net.chronoflow.feature.wizard.times.WizardTimesUi
+import net.chronoflow.feature.wizard.times.flightTimesComplete
 import java.time.Instant
 import java.util.IllformedLocaleException
 import java.util.Locale
@@ -223,6 +226,7 @@ data class WizardChromeUi(
     val footerId: String?,
     val continueEnabled: Boolean,
     val routeComplete: Boolean,
+    val footerHint: WizardCopy? = null,
 ) {
     companion object {
         fun from(
@@ -232,9 +236,21 @@ data class WizardChromeUi(
             val step = active.wizard.draft.state.step
             val where = step == MemberWizardStep.whereTo || step == MemberWizardStep.returnRoute
             val complete =
-                where &&
-                    active.wizard.draft.form
-                        .routeComplete(step == MemberWizardStep.returnRoute)
+                when (step) {
+                    MemberWizardStep.outbound -> {
+                        flightTimesComplete(active.wizard.draft, false)
+                    }
+
+                    MemberWizardStep.returnFlight -> {
+                        flightTimesComplete(active.wizard.draft, true)
+                    }
+
+                    else -> {
+                        where &&
+                            active.wizard.draft.form
+                                .routeComplete(step == MemberWizardStep.returnRoute)
+                    }
+                }
             return WizardChromeUi(
                 if (active.wizard.draft.state.edit == null) NavTitle.NewTrip else NavTitle.EditTrip,
                 active.path.isNotEmpty(),
@@ -244,12 +260,12 @@ data class WizardChromeUi(
                     active.progress *
                         100
                 ).toInt(),
-                if (!where) {
-                    null
-                } else if (step == MemberWizardStep.returnRoute) {
-                    "return-route"
-                } else {
-                    "where"
+                when (step) {
+                    MemberWizardStep.whereTo -> "where"
+                    MemberWizardStep.returnRoute -> "return-route"
+                    MemberWizardStep.outbound -> "outbound"
+                    MemberWizardStep.returnFlight -> "return-flight"
+                    else -> null
                 },
                 complete && !closing && !active.wizard.persistenceFailed && !active.wizard.reviewing,
                 complete,
@@ -362,12 +378,16 @@ data class WizardUiState(
     val path: List<WizardStepKey> = emptyList(),
     val search: AirportSearchUi = AirportSearchUi.Hint,
     val retryEnabled: Boolean = true,
+    val times: WizardTimesUi? = null,
 ) {
     companion object {
         fun from(
             active: TripWizardUiState.Active,
             closing: Boolean = false,
             dialog: Boolean = false,
+            timeFormat: TimeFormat = TimeFormat.Value24,
+            now: Instant = Instant.EPOCH,
+            continueFailures: Int = 0,
         ): WizardUiState {
             val draft = active.wizard.draft
             val key =
@@ -388,6 +408,12 @@ data class WizardUiState(
                 AirportSheetUi.from(draft),
                 dialog,
                 active.path.map(WizardStepKey::from),
+                times =
+                    if (key == WizardStepKey.Outbound || key == WizardStepKey.ReturnFlight) {
+                        WizardTimesUi.from(draft, key == WizardStepKey.ReturnFlight, timeFormat, now, continueFailures)
+                    } else {
+                        null
+                    },
             )
         }
     }

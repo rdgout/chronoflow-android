@@ -17,12 +17,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.launch
 import net.chronoflow.core.model.DataFailure
 import net.chronoflow.core.model.contracts.ApiAirportSuggestion
+import net.chronoflow.core.model.contracts.TimeFormat
 import net.chronoflow.core.model.device.DeviceIdentityFailure
 import net.chronoflow.core.model.session.SessionFailure
 import net.chronoflow.core.model.store.StoreFailure
@@ -35,6 +37,9 @@ import net.chronoflow.core.wizard.model.MemberWizardStep
 import net.chronoflow.core.wizard.model.RecoveryRejected
 import net.chronoflow.core.wizard.model.TripWizardAction
 import net.chronoflow.core.wizard.model.WizardAirportSheet
+import net.chronoflow.core.wizard.model.finishFlightInput
+import net.chronoflow.core.wizard.model.finishOutboundStep
+import net.chronoflow.core.wizard.model.finishReturn
 import net.chronoflow.core.wizard.model.finishRoute
 import net.chronoflow.core.wizard.model.hasChanges
 import net.chronoflow.core.wizard.model.navigationPath
@@ -42,6 +47,8 @@ import net.chronoflow.core.wizard.model.popNavigation
 import net.chronoflow.core.wizard.model.progress
 import net.chronoflow.core.wizard.model.resumeChecking
 import net.chronoflow.core.wizard.model.resumeCompletion
+import net.chronoflow.core.wizard.model.setDatePart
+import net.chronoflow.core.wizard.model.setTimePart
 import net.chronoflow.core.wizard.model.showsBack
 import net.chronoflow.feature.wizard.shell.WizardEvent
 import net.chronoflow.feature.wizard.shell.WizardExit
@@ -72,19 +79,34 @@ class TripWizardViewModel(
     private var continuing = false
     private val mutableState = MutableStateFlow<TripWizardUiState>(TripWizardUiState.Loading)
     val state: StateFlow<TripWizardUiState> = mutableState.asStateFlow()
+    private val continueFailures = MutableStateFlow(0)
     val uiState =
-        combine(state, closing, discardDialogVisible) { value, closing, dialog ->
+        combine(
+            state,
+            closing,
+            discardDialogVisible,
+            deps?.timeFormat ?: flowOf(TimeFormat.Value24),
+            continueFailures,
+        ) { value, closing, dialog, timeFormat, failures ->
             (value as? TripWizardUiState.Active)?.let {
-                WizardUiState.from(it, closing, dialog).let { ui ->
-                    ui.copy(
-                        sheet = ui.sheet?.copy(seedQuery = presentation.query),
-                        chrome =
-                            ui.chrome.copy(
-                                showBack =
-                                    wizard?.showsBack == true,
-                            ),
-                    )
-                }
+                WizardUiState
+                    .from(
+                        it,
+                        closing,
+                        dialog,
+                        timeFormat,
+                        deps?.now?.invoke() ?: Instant.EPOCH,
+                        failures,
+                    ).let { ui ->
+                        ui.copy(
+                            sheet = ui.sheet?.copy(seedQuery = presentation.query),
+                            chrome =
+                                ui.chrome.copy(
+                                    showBack =
+                                        wizard?.showsBack == true,
+                                ),
+                        )
+                    }
             }
         }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
     val chrome = uiState.map { it?.chrome }.distinctUntilChanged().stateIn(viewModelScope, SharingStarted.Eagerly, null)
@@ -306,9 +328,33 @@ class TripWizardViewModel(
         continuing = true
         try {
             when (step) {
-                WizardStepKey.Where -> model.finishRoute()
-                WizardStepKey.ReturnRoute -> model.finishRoute(home = true)
-                else -> Unit
+                WizardStepKey.Where -> {
+                    model.finishRoute()
+                }
+
+                WizardStepKey.ReturnRoute -> {
+                    model.finishRoute(home = true)
+                }
+
+                WizardStepKey.Outbound -> {
+                    if (model.finishOutbound()) {
+                        if (model.draft.state.revisit != null) model.finishFlightInput() else model.finishOutboundStep()
+                    } else {
+                        continueFailures.value++
+                    }
+                }
+
+                WizardStepKey.ReturnFlight -> {
+                    if (model.finishReturn()) {
+                        model.finishFlightInput()
+                    } else {
+                        continueFailures.value++
+                    }
+                }
+
+                else -> {
+                    Unit
+                }
             }
         } finally {
             continuing = false
@@ -382,19 +428,78 @@ class TripWizardViewModel(
 
     fun onEvent(event: WizardEvent) {
         when (event) {
-            is WizardEvent.OpenAirport -> openAirport(event.sheet)
-            WizardEvent.CancelAirport -> cancelAirport()
-            is WizardEvent.ChooseAirport -> chooseAirport(event.airport, event.sheet)
-            WizardEvent.SwapAirports -> swapAirports()
-            is WizardEvent.RemoveStop -> removeStop(event.routeIndex)
-            is WizardEvent.MakeDirect -> makeDirect(event.home)
-            is WizardEvent.Continue -> continueFrom(event.step)
-            WizardEvent.Back -> back()
-            WizardEvent.RequestClose -> requestClose()
-            WizardEvent.ConfirmDiscard -> confirmDiscard()
-            WizardEvent.DismissDiscard -> dismissDiscard()
-            is WizardEvent.Query -> onQuery(event.text)
-            WizardEvent.RetrySearch -> retrySearch()
+            is WizardEvent.SetDatePart -> {
+                if (!closing.value) {
+                    wizard?.setDatePart(
+                        event.index,
+                        event.arrival,
+                        event.date,
+                    )
+                }
+            }
+
+            is WizardEvent.SetTimePart -> {
+                if (!closing.value) {
+                    wizard?.setTimePart(
+                        event.index,
+                        event.arrival,
+                        event.hour,
+                        event.minute,
+                    )
+                }
+            }
+
+            is WizardEvent.OpenAirport -> {
+                openAirport(event.sheet)
+            }
+
+            WizardEvent.CancelAirport -> {
+                cancelAirport()
+            }
+
+            is WizardEvent.ChooseAirport -> {
+                chooseAirport(event.airport, event.sheet)
+            }
+
+            WizardEvent.SwapAirports -> {
+                swapAirports()
+            }
+
+            is WizardEvent.RemoveStop -> {
+                removeStop(event.routeIndex)
+            }
+
+            is WizardEvent.MakeDirect -> {
+                makeDirect(event.home)
+            }
+
+            is WizardEvent.Continue -> {
+                continueFrom(event.step)
+            }
+
+            WizardEvent.Back -> {
+                back()
+            }
+
+            WizardEvent.RequestClose -> {
+                requestClose()
+            }
+
+            WizardEvent.ConfirmDiscard -> {
+                confirmDiscard()
+            }
+
+            WizardEvent.DismissDiscard -> {
+                dismissDiscard()
+            }
+
+            is WizardEvent.Query -> {
+                onQuery(event.text)
+            }
+
+            WizardEvent.RetrySearch -> {
+                retrySearch()
+            }
         }
     }
 

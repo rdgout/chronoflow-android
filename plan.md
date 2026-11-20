@@ -2773,12 +2773,12 @@ Implementation commits (brief §7):
   - [x] Half-entered values and recovery (9d Task 1).
   - [x] Debug board drafts and variant checks (9d Task 4).
   - [x] Supporting text, confirm state and window tags on the shared picker wrappers (9d Task 3).
-  - Separate date and time pills.
+  - [x] Separate date and time pills.
   - `CfDatePickerDialog` is bounded to the airport's wall dates. In the time dialog only Done writes, at minute precision.
-  - Flight-time, connection and overnight chips.
-  - Errors (`WizardOutboundErrors`, `WizardOutboundTwoErrors`).
-  - Three flights scroll under a fixed Continue (`WizardOutboundThree`).
-  - The past-arrival banner (`WizardOutboundPast`, `WizardReturnFlightPast`).
+  - [x] Flight-time, connection and overnight chips.
+  - [x] Errors (`WizardOutboundErrors`, `WizardOutboundTwoErrors`).
+  - [x] Three flights scroll under a fixed Continue (`WizardOutboundThree`).
+  - [x] The past-arrival banner (`WizardOutboundPast`, `WizardReturnFlightPast`).
 - [ ] **Coming back?** (`WizardReturn*`): it auto-advances after 250 ms, and taps are ignored while it is pending.
 - [ ] **Picker formats.** Pickers follow `DateFormat.is24HourFormat`, displayed values follow the account `timeFormat`, and the dialogs use the app language (OQ 46, `PickerDateTime`).
 - [ ] **Tests.**

@@ -3,8 +3,15 @@ package net.chronoflow.feature.wizard.shell
 import net.chronoflow.core.designsystem.layout.BoardMetrics
 
 @Suppress("ktlint:standard:property-naming")
-@BoardMetrics("Wizard", "WizardCopy")
+@BoardMetrics("Wizard", "WizardCopy", "WizardOutbound", "WizardReturn")
 internal object WizardMetrics {
+    const val pillRadius = 8
+    const val chipPaddingVertical = 5
+    const val routeGlyph = 18
+    const val errorGlyph = 16
+    const val errorGlyphTop = 2
+    const val chevronGlyph = 16
+    const val bannerGlyphTop = 1
     const val headerStroke = 2.4f
     const val header = 54
     const val headerInset = 10

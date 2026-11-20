@@ -66,6 +66,7 @@ import net.chronoflow.core.designsystem.theme.LocalReduceMotion
 import net.chronoflow.core.ui.R
 import net.chronoflow.feature.wizard.TripWizardViewModel
 import net.chronoflow.feature.wizard.search.AirportSearchSheet
+import net.chronoflow.feature.wizard.times.WizardTimesStep
 import net.chronoflow.feature.wizard.ui.NavTitle
 import net.chronoflow.feature.wizard.ui.WizardChromeUi
 import net.chronoflow.feature.wizard.ui.WizardCopy
@@ -329,19 +330,23 @@ private fun WizardStepContent(
                 .weight(
                     1f,
                 ).fillMaxWidth()
+                .testTag("wizard.scroll")
                 .verticalScroll(
                     rememberScrollState(),
                 ).padding(horizontal = WizardMetrics.gutter.dp, vertical = WizardMetrics.contentTop.dp),
             verticalArrangement = Arrangement.spacedBy(PlanUITokens.wizardContentGap.dp),
         ) {
             val where = state.where
-            if ((key == WizardStepKey.Where || key == WizardStepKey.ReturnRoute) && where != null) {
+            val times = state.times
+            val titleCopy = where?.title ?: times?.title
+            val subtitleCopy = where?.subtitle ?: times?.subtitle
+            if (titleCopy != null) {
                 val titleFocus = remember { FocusRequester() }
                 Column(
                     verticalArrangement = Arrangement.spacedBy(WizardMetrics.titleGap.dp),
                     modifier = Modifier.padding(bottom = WizardMetrics.titleExtra.dp),
                 ) {
-                    val title = where.title.resolve()
+                    val title = titleCopy.resolve()
                     Text(
                         title,
                         Modifier
@@ -361,15 +366,20 @@ private fun WizardStepContent(
                                 },
                             ),
                     )
-                    Text(
-                        where.subtitle.resolve(),
-                        Modifier.testTag("wizard.subtitle"),
-                        color = CfTheme.colors.mutedForeground,
-                        style = CfTheme.type.style(CfTypeScale.wizardSubtitle),
-                    )
+                    if (subtitleCopy != null) {
+                        Text(
+                            subtitleCopy.resolve(),
+                            Modifier.testTag("wizard.subtitle"),
+                            color = CfTheme.colors.mutedForeground,
+                            style = CfTheme.type.style(CfTypeScale.wizardSubtitle),
+                        )
+                    }
                 }
                 LaunchedEffect(key) { titleFocus.requestFocus() }
-                WhereStep(where, onEvent)
+                when {
+                    where != null -> WhereStep(where, onEvent)
+                    times != null -> WizardTimesStep(times, onEvent)
+                }
             } else {
                 WizardStepSeam(key)
             }

@@ -15,6 +15,9 @@ data class WizardStepKey(
     val debugName: String get() = if (step == MemberWizardStep.question) "question${questionIndex ?: 0}" else step.name
 
     companion object {
+        val Outbound = WizardStepKey(MemberWizardStep.outbound)
+        val ReturnChoice = WizardStepKey(MemberWizardStep.returnChoice)
+        val ReturnFlight = WizardStepKey(MemberWizardStep.returnFlight)
         val Where = WizardStepKey(MemberWizardStep.whereTo)
         val ReturnRoute = WizardStepKey(MemberWizardStep.returnRoute)
 
