@@ -14,6 +14,8 @@ import net.chronoflow.feature.wizard.TripWizardUiState
 import net.chronoflow.feature.wizard.answers.SUPPORTED_SHEET_KINDS
 import net.chronoflow.feature.wizard.answers.WizardAnswerSheetState
 import net.chronoflow.feature.wizard.answers.WizardAnswerSheetUi
+import net.chronoflow.feature.wizard.excluded.ExcludedNote
+import net.chronoflow.feature.wizard.excluded.WizardExcludedUi
 import net.chronoflow.feature.wizard.questions.WizardQuestionUi
 import net.chronoflow.feature.wizard.returnchoice.WizardReturnUi
 import net.chronoflow.feature.wizard.shell.WizardStepKey
@@ -238,6 +240,9 @@ data class WizardChromeUi(
     val continueEnabled: Boolean,
     val routeComplete: Boolean,
     val footerHint: WizardCopy? = null,
+    val secondaryClose: Boolean = false,
+    val primaryPlain: Boolean = false,
+    val closeEnabled: Boolean = true,
 ) {
     companion object {
         fun from(
@@ -248,6 +253,10 @@ data class WizardChromeUi(
             val where = step == MemberWizardStep.whereTo || step == MemberWizardStep.returnRoute
             val complete =
                 when (step) {
+                    MemberWizardStep.excluded -> {
+                        true
+                    }
+
                     MemberWizardStep.sleep -> {
                         active.sleepComplete
                     }
@@ -279,12 +288,16 @@ data class WizardChromeUi(
                     MemberWizardStep.whereTo -> "where"
                     MemberWizardStep.returnRoute -> "return-route"
                     MemberWizardStep.sleep -> "sleep"
+                    MemberWizardStep.excluded -> "excluded"
                     MemberWizardStep.outbound -> "outbound"
                     MemberWizardStep.returnFlight -> "return-flight"
                     else -> null
                 },
                 complete && !closing && !active.wizard.persistenceFailed && !active.wizard.reviewing,
                 complete,
+                secondaryClose = step == MemberWizardStep.excluded,
+                primaryPlain = step == MemberWizardStep.excluded,
+                closeEnabled = !closing,
                 footerHint =
                     if (step ==
                         MemberWizardStep.returnChoice || step == MemberWizardStep.question
@@ -407,6 +420,7 @@ data class WizardUiState(
     val sleep: WizardSleepUi? = null,
     val answerSheet: WizardAnswerSheetUi? = null,
     val question: WizardQuestionUi? = null,
+    val excluded: WizardExcludedUi? = null,
 ) {
     companion object {
         fun from(
@@ -467,6 +481,21 @@ data class WizardUiState(
                                     }?.let { WizardTimeSheetUi(it, sheet.values[it].clockString()) },
                             )
                         },
+                excluded =
+                    if (key == WizardStepKey.Excluded) {
+                        WizardExcludedUi(
+                            draft.state.review
+                                ?.reasons
+                                .orEmpty(),
+                            when {
+                                active.isEditing -> ExcludedNote.Edit
+                                active.exclusionWasSaved -> ExcludedNote.Saved
+                                else -> ExcludedNote.Default
+                            },
+                        )
+                    } else {
+                        null
+                    },
                 question =
                     if (key.step == MemberWizardStep.question) {
                         WizardQuestionUi.from(

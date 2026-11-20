@@ -39,15 +39,19 @@ import net.chronoflow.core.wizard.model.RecoveryRejected
 import net.chronoflow.core.wizard.model.TripWizardAction
 import net.chronoflow.core.wizard.model.WizardAirportSheet
 import net.chronoflow.core.wizard.model.WizardClockRounding
+import net.chronoflow.core.wizard.model.WizardMode
 import net.chronoflow.core.wizard.model.answerOptional
 import net.chronoflow.core.wizard.model.answerQuestion
+import net.chronoflow.core.wizard.model.changeExcludedAnswers
 import net.chronoflow.core.wizard.model.chooseReturn
+import net.chronoflow.core.wizard.model.exclusionWasSaved
 import net.chronoflow.core.wizard.model.finishFlightInput
 import net.chronoflow.core.wizard.model.finishOutboundStep
 import net.chronoflow.core.wizard.model.finishReturn
 import net.chronoflow.core.wizard.model.finishRoute
 import net.chronoflow.core.wizard.model.finishSleep
 import net.chronoflow.core.wizard.model.hasChanges
+import net.chronoflow.core.wizard.model.isEditing
 import net.chronoflow.core.wizard.model.navigationPath
 import net.chronoflow.core.wizard.model.openPrompt
 import net.chronoflow.core.wizard.model.optionalPrompts
@@ -304,6 +308,8 @@ class TripWizardViewModel(
                                     model.progress,
                                     model.navigationPath,
                                     sleepComplete = model.sleepComplete,
+                                    exclusionWasSaved = model.exclusionWasSaved,
+                                    isEditing = model.isEditing,
                                     optionalPrompts = model.optionalPrompts,
                                 )
                             }
@@ -407,6 +413,10 @@ class TripWizardViewModel(
         mutableOpenTime.value = null
         try {
             when (step) {
+                WizardStepKey.Excluded -> {
+                    model.changeExcludedAnswers()
+                }
+
                 WizardStepKey.Sleep -> {
                     if (!model.finishSleep()) {
                         continueFailures.update { it + (step to ((it[step] ?: 0) + 1)) }
@@ -465,7 +475,14 @@ class TripWizardViewModel(
 
     fun requestClose() {
         if (closing.value) return
-        if (wizard?.hasChanges == true) mutableDialog.value = true else close()
+        val model = wizard
+        if (model?.draft?.state?.mode == WizardMode.guest && model.draft.state.step == MemberWizardStep.excluded) {
+            close()
+        } else if (model?.hasChanges == true) {
+            mutableDialog.value = true
+        } else {
+            close()
+        }
     }
 
     fun dismissDiscard() {
@@ -539,6 +556,10 @@ class TripWizardViewModel(
 
     fun onEvent(event: WizardEvent) {
         when (event) {
+            WizardEvent.CloseNow -> {
+                close()
+            }
+
             is WizardEvent.AnswerQuestion -> {
                 if (!closing.value) wizard?.answerQuestion(event.value)
             }

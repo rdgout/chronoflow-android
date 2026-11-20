@@ -55,6 +55,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.ui.NavDisplay
 import net.chronoflow.core.designsystem.component.CfButton
+import net.chronoflow.core.designsystem.component.CfButtonStyle
 import net.chronoflow.core.designsystem.component.CfIconButton
 import net.chronoflow.core.designsystem.generated.CfTypeScale
 import net.chronoflow.core.designsystem.generated.PlanUITokens
@@ -70,6 +71,7 @@ import net.chronoflow.core.wizard.model.MemberWizardStep
 import net.chronoflow.feature.wizard.TripWizardViewModel
 import net.chronoflow.feature.wizard.answers.WizardAnswerSheetHost
 import net.chronoflow.feature.wizard.components.rememberServerCopy
+import net.chronoflow.feature.wizard.excluded.WizardExcludedStep
 import net.chronoflow.feature.wizard.questions.WizardQuestionStep
 import net.chronoflow.feature.wizard.returnchoice.WizardReturnStep
 import net.chronoflow.feature.wizard.search.AirportSearchSheet
@@ -281,16 +283,35 @@ internal fun WizardFooter(
         }
         return
     }
-    Box(
+    Column(
         Modifier
             .fillMaxWidth()
             .padding(
                 horizontal = WizardMetrics.gutter.dp,
                 vertical = WizardMetrics.footerInset.dp,
             ).testTag("wizard.$id.footer"),
+        verticalArrangement = Arrangement.spacedBy(PlanUITokens.wizardControlGap.dp),
     ) {
+        if (chrome.secondaryClose) {
+            CfButton(
+                WizardCopy("Close").resolve(),
+                { onEvent(WizardEvent.CloseNow) },
+                Modifier.testTag("wizard.$id.secondary-close"),
+                style = CfButtonStyle.Ghost,
+                fillWidth = true,
+                minHeight = PlanUITokens.actionMinHeight.dp,
+                textStyle = CfTheme.type.style(CfTypeScale.wizardSecondary),
+                enabled = chrome.closeEnabled,
+            )
+        }
         CfButton(
-            stringResource(R.string.wizard_continue),
+            if (chrome.primaryPlain) {
+                WizardCopy(
+                    "Change my answers",
+                ).resolve()
+            } else {
+                stringResource(R.string.wizard_continue)
+            },
             {
                 onEvent(WizardEvent.Continue(step))
             },
@@ -300,6 +321,8 @@ internal fun WizardFooter(
             textStyle = CfTheme.type.style(CfTypeScale.wizardButton),
             enabled = chrome.continueEnabled,
             disabledAlpha = if (chrome.routeComplete) 1f else PlanUITokens.wizardDisabledOpacity,
+            containerColor = if (chrome.primaryPlain) CfTheme.colors.surface2 else CfTheme.colors.primary,
+            contentColor = if (chrome.primaryPlain) CfTheme.colors.foreground else CfTheme.colors.primaryForeground,
         )
     }
 }
@@ -387,7 +410,8 @@ private fun WizardStepContent(
         ) {
             val where = state.where
             val times = state.times
-            val titleCopy = where?.title ?: times?.title ?: state.returnChoice?.title ?: state.sleep?.title
+            val titleCopy =
+                where?.title ?: times?.title ?: state.returnChoice?.title ?: state.sleep?.title ?: state.excluded?.title
             val subtitleCopy = where?.subtitle ?: times?.subtitle ?: state.sleep?.subtitle
             val serverCopy = rememberServerCopy(copyFormatter)
             val title = titleCopy?.resolve() ?: state.question?.let { serverCopy(it.title) }
@@ -438,6 +462,7 @@ private fun WizardStepContent(
                 when {
                     state.sleep != null -> WizardSleepStep(state.sleep, onEvent)
                     state.question != null -> WizardQuestionStep(state.question, onEvent)
+                    state.excluded != null -> WizardExcludedStep(state.excluded, copyFormatter)
                     where != null -> WhereStep(where, onEvent)
                     times != null -> WizardTimesStep(times, onEvent)
                     state.returnChoice != null -> WizardReturnStep(state.returnChoice, onEvent)

@@ -4,6 +4,8 @@ import kotlinx.coroutines.test.TestScope
 import net.chronoflow.core.testing.DeviceProfiles
 import net.chronoflow.core.testing.SafeInsetsDp
 import net.chronoflow.core.wizard.model.MemberWizardModel
+import net.chronoflow.core.wizard.model.exclusionWasSaved
+import net.chronoflow.core.wizard.model.isEditing
 import net.chronoflow.core.wizard.model.navigationPath
 import net.chronoflow.core.wizard.model.optionalPrompts
 import net.chronoflow.core.wizard.model.progress
@@ -53,6 +55,8 @@ internal fun TestScope.boardState(
                 model.progress,
                 model.navigationPath,
                 sleepComplete = model.sleepComplete,
+                exclusionWasSaved = model.exclusionWasSaved,
+                isEditing = model.isEditing,
                 optionalPrompts = model.optionalPrompts,
             )
         val ui =
