@@ -1,9 +1,10 @@
 @file:OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 
-package net.chronoflow.core.wizard.model
+package net.chronoflow.core.testing.wizard
 
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.TestCoroutineScheduler
+import net.chronoflow.core.wizard.model.WizardCheckingClock
 
 class CheckingTestClock(
     private val scheduler: TestCoroutineScheduler,

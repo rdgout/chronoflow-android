@@ -9,7 +9,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import net.chronoflow.core.model.DataFailure
 import net.chronoflow.core.model.api.ApiJson
-import net.chronoflow.core.wizard.wizardAirport
+import net.chronoflow.core.testing.wizard.wizardAirport
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull

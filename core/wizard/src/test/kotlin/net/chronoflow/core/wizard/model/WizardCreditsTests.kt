@@ -1,7 +1,7 @@
 package net.chronoflow.core.wizard.model
 
 import net.chronoflow.core.model.contracts.PlanStatus
-import net.chronoflow.core.wizard.generationReview
+import net.chronoflow.core.testing.wizard.generationReview
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.experimental.runners.Enclosed

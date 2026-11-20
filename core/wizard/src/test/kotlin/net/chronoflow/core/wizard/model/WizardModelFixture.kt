@@ -2,9 +2,12 @@ package net.chronoflow.core.wizard.model
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.test.TestCoroutineScheduler
-import net.chronoflow.core.wizard.WizardTestClock
-import net.chronoflow.core.wizard.generationInput
-import net.chronoflow.core.wizard.generationReview
+import net.chronoflow.core.testing.wizard.CheckingTestClock
+import net.chronoflow.core.testing.wizard.FakeWizardGeneration
+import net.chronoflow.core.testing.wizard.InMemoryWizardDraftStore
+import net.chronoflow.core.testing.wizard.WizardTestClock
+import net.chronoflow.core.testing.wizard.generationInput
+import net.chronoflow.core.testing.wizard.generationReview
 
 internal class WizardModelFixture(
     scope: CoroutineScope,

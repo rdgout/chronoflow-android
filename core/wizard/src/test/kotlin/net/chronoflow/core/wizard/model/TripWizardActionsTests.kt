@@ -1,7 +1,7 @@
 package net.chronoflow.core.wizard.model
 
-import net.chronoflow.core.wizard.generationInput
-import net.chronoflow.core.wizard.generationReview
+import net.chronoflow.core.testing.wizard.generationInput
+import net.chronoflow.core.testing.wizard.generationReview
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
