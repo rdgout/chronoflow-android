@@ -260,3 +260,32 @@ Warm Robolectric overruns from the quick run, retained for follow-up (no budget 
 The quick run also measured the original graph fixture's first parameter at 1.995 s and mislabeled it `default` SDK warm-up. SDK 36 was already initialized in that fork, so this is recorded rather than accepted as another cold exemption. The fixture and SDK parsing refinements above address that issue; the current graph cases are both classified SDK 36, budget 1,000 ms, status `ok`. The initial new Konsist rule's 1.782 s JVM overrun was likewise fixed and verified targeted. Quick was not rerun.
 
 There were no unexpected hangs and no relaxed budgets. The initial guard compilation error and formatter long-line errors were corrected before quick. Logs, comparison XML and mutation evidence are retained in `build/test-diet-review-1/`; the original quick timing report is copied to `quick-timings.json`, and final targeted XML to `targeted-final/`. No application production behavior changed.
+
+
+## Review round 2: process restoration
+
+The SDK 36 native-graphics sandbox is warmed by AppGraphConstructionTest before the two changed classes in the controlled targeted comparisons. Its first-case XML cost was 1.395 s before and 1.189 s after; those values are separate from the warm cases below. Temporary `System.nanoTime` probes measured actual lifecycle calls and were removed before final validation. These are isolated targeted measurements, not a decomposition of the parallel quick run.
+
+ProcessDeathRestoreTest now creates, saves and destroys its first real MainActivity without starting/resuming it. SavedStateRegistry restores in onCreate; the checks still use the real Activity's decision to pass or drop the saved Bundle, and retain every registry, launch-kind, overlay and splash assertion. A test Application supplies a paused graph main dispatcher and the ready diagnostic seed, avoiding unrelated session readiness/foreground jobs. Cleanup cancels and closes the graph. No application production behavior changes.
+
+| ProcessDeathRestoreTest stage | Original ms | Revised ms |
+|---|---:|---:|
+| Lazy graph construction | 0.044 | 0.049 |
+| Launch resets, both Activities | 13.731 | 11.518 |
+| Build first Activity | 81.760 | 81.617 |
+| First onCreate | 143.262 | 143.728 |
+| First start/resume | 22.234 | removed |
+| Save registry | 2.826 | 2.516 |
+| First pause/stop | 1.175 | removed |
+| First destroy | 1.223 | 1.514 |
+| Build / create second Activity | 0.954 / 4.968 | 0.936 / 4.920 |
+| Second destroy | 0.166 | 0.185 |
+
+There are no frame advances, idle loops or UI waits in this test. Stage values do not include all JUnit/Robolectric overhead. The first Activity's class resolution and onCreate dominate; graph construction itself is lazy and negligible.
+
+| Warm XML case | Original isolated | Revised isolated, profiled | Final uninstrumented targeted | Previous quick → this quick |
+|---|---:|---:|---:|---:|
+| processDeathDropsTheRegistryAndClaimsAColdOverlay | 0.319 s | 0.294 s | 0.294 s | 1.009 → 0.788 s |
+| recreationRestoresTheRegistryWithoutClaimingOrHoldingSplash | 0.026 s | 0.022 s | 0.021 s | — → 0.130 s |
+
+Mutation proofs preserve the integration coverage: passing the saved Bundle after process death fails with a non-null registry Bundle; dropping it during recreation fails with expected 1 / actual null. Both mutations were restored. The final targeted run passed. Evidence is under `build/test-diet-round-2/{baseline,final-profile,targeted-final,mutation-process-registry-retained,mutation-recreation-registry-dropped}`.
