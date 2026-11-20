@@ -81,6 +81,9 @@ import net.chronoflow.feature.wizard.components.rememberServerCopy
 import net.chronoflow.feature.wizard.excluded.WizardExcludedStep
 import net.chronoflow.feature.wizard.finetune.WizardFineTuneStep
 import net.chronoflow.feature.wizard.questions.WizardQuestionStep
+import net.chronoflow.feature.wizard.ready.ReadyFooter
+import net.chronoflow.feature.wizard.ready.ReadyFooterUi
+import net.chronoflow.feature.wizard.ready.WizardReadyStep
 import net.chronoflow.feature.wizard.returnchoice.WizardReturnStep
 import net.chronoflow.feature.wizard.search.AirportSearchSheet
 import net.chronoflow.feature.wizard.sleep.WizardSleepStep
@@ -286,6 +289,7 @@ internal fun WizardFooter(
     step: WizardStepKey,
     onEvent: (WizardEvent) -> Unit,
 ) {
+    val haptics = LocalHaptics.current
     val id = chrome.footerId
     if (id == null) {
         chrome.footerHint?.let {
@@ -321,6 +325,10 @@ internal fun WizardFooter(
             ).testTag("wizard.$id.footer"),
         verticalArrangement = Arrangement.spacedBy(PlanUITokens.wizardControlGap.dp),
     ) {
+        if (chrome.readyFooter == ReadyFooterUi.CloseOnly) {
+            ReadyFooter(chrome.closeEnabled, onEvent)
+            return@Column
+        }
         if (chrome.secondaryClose) {
             CfButton(
                 WizardCopy("Close").resolve(),
@@ -342,6 +350,7 @@ internal fun WizardFooter(
                 stringResource(R.string.wizard_continue)
             },
             {
+                if (step == WizardStepKey.Ready) haptics.perform(HapticEvent.Medium)
                 onEvent(WizardEvent.Continue(step))
             },
             Modifier.testTag("wizard.$id.continue").semantics {
@@ -443,7 +452,7 @@ private fun WizardStepContent(
     val times = state.times
     val titleCopy =
         where?.title ?: times?.title ?: state.returnChoice?.title ?: state.sleep?.title ?: state.excluded?.title
-            ?: state.checking?.title ?: state.fineTune?.title
+            ?: state.checking?.title ?: state.fineTune?.title ?: state.ready?.title
     val subtitleCopy =
         where?.subtitle ?: times?.subtitle ?: state.sleep?.subtitle ?: state.checking?.subtitle
             ?: state.fineTune?.subtitle
@@ -468,6 +477,7 @@ private fun WizardStepContent(
                 if (title != null) {
                     heading()
                     when {
+                        state.ready != null -> WizardReadyStep(state.ready, copyFormatter, onEvent)
                         state.checking != null -> WizardCheckingStep(state.checking)
                         state.sleep != null -> WizardSleepStep(state.sleep, onEvent, copyFormatter)
                         state.question != null -> WizardQuestionStep(state.question, onEvent)

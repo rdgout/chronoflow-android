@@ -2936,7 +2936,7 @@ Implementation commits (brief §7):
 **Delivers.** Builds Ready with every price state from the server credits (paid, unlimited, free, one free, adjusted, re-checking, no credits without any hand-off). It builds the save flow through Calculating, with the offline and server errors and the same-identity resume after process death. A saved trip opens its trip page awaiting sync and marks the first-trip reminders offer pending. One emulator journey creates a trip on the mock.
 
 **Tasks**
-- [ ] **Ready** (`WizardReady*`). The price states come from the server credits: paid, unlimited, free, one free, adjusted, re-checking, and no credits (with no website button, A14). Also the return variant.
+- [x] **Ready** (`WizardReady*`). The price states come from the server credits: paid, unlimited, free, one free, adjusted, re-checking, and no credits (with no website button, A14). Also the return variant.
 - [ ] **Save.**
   - `WizardCalculating`, with the offline and server errors (`WizardSaveOffline`, `WizardSaveServer`).
   - After process death, the save resumes in Calculating with the same identity (`14 §3.4`).
