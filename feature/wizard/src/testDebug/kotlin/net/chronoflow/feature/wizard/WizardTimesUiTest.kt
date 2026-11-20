@@ -9,6 +9,8 @@ import net.chronoflow.core.wizard.model.MemberWizardStep
 import net.chronoflow.core.wizard.model.WizardConnection
 import net.chronoflow.core.wizard.model.WizardPendingDateTime
 import net.chronoflow.feature.wizard.debug.WizardBoardCaptureSeed
+import net.chronoflow.feature.wizard.times.WizardPicker
+import net.chronoflow.feature.wizard.times.WizardPickerKind
 import net.chronoflow.feature.wizard.times.WizardTimesUi
 import net.chronoflow.feature.wizard.ui.wizardCopy
 import org.junit.Assert.assertEquals
@@ -101,9 +103,15 @@ class WizardTimesUiTest(
                             mapOf("${draft.form.legs[0].id}.departLocal" to WizardPendingDateTime("2026-10-12")),
                     ),
             )
-        val ui = WizardTimesUi.from(half, false, now = WizardBoardCaptureSeed.now)
+        val ui =
+            WizardTimesUi.from(
+                half,
+                false,
+                now = WizardBoardCaptureSeed.now,
+                picker = WizardPicker(0, false, WizardPickerKind.Date),
+            )
         assertFalse(ui.complete)
-        assertEquals(LocalDate.of(2026, 10, 12), ui.cards[0].departure.initialDate)
+        assertEquals(LocalDate.of(2026, 10, 12), ui.picker!!.initialDate)
         assertNull(ui.cards[0].departure.timePart)
     }
 

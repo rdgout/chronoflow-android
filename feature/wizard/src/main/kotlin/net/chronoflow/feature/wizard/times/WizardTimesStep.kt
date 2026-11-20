@@ -15,7 +15,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -48,12 +47,10 @@ internal fun WizardTimesStep(
     ui: WizardTimesUi,
     onEvent: (WizardEvent) -> Unit,
 ) {
-    var open by rememberSaveable(stateSaver = WizardPicker.saver) { mutableStateOf<WizardPicker?>(null) }
     val pick =
-        remember {
+        remember(onEvent) {
             { field: WizardDateTimeFieldUi, kind: WizardPickerKind ->
-                open =
-                    WizardPicker(field.index, field.arrival, kind)
+                onEvent(WizardEvent.OpenFlightPicker(WizardPicker(field.index, field.arrival, kind)))
             }
         }
     val requesters = remember(ui.cards.map { it.id }) { ui.cards.associate { it.index to BringIntoViewRequester() } }
@@ -77,14 +74,15 @@ internal fun WizardTimesStep(
             }
         }
     }
-    open?.let { picker ->
+    ui.picker?.let { presentation ->
+        val picker = presentation.picker
         ui.cards.firstOrNull { it.index == picker.index }?.let { card ->
             key(picker) {
                 WizardFlightPickers(
-                    picker,
+                    presentation,
                     if (picker.arrival) card.arrival else card.departure,
                     onEvent,
-                    { open = null },
+                    { onEvent(WizardEvent.DismissFlightPicker) },
                 )
             }
         }

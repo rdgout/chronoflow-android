@@ -15,6 +15,7 @@ import net.chronoflow.core.wizard.model.routeComplete
 import net.chronoflow.feature.wizard.TripWizardUiState
 import net.chronoflow.feature.wizard.returnchoice.WizardReturnUi
 import net.chronoflow.feature.wizard.shell.WizardStepKey
+import net.chronoflow.feature.wizard.times.WizardPicker
 import net.chronoflow.feature.wizard.times.WizardTimesUi
 import net.chronoflow.feature.wizard.times.flightTimesComplete
 import java.time.Instant
@@ -398,6 +399,7 @@ data class WizardUiState(
             timeFormat: TimeFormat = TimeFormat.Value24,
             now: Instant = Instant.EPOCH,
             continueFailures: Int = 0,
+            picker: WizardPicker? = null,
         ): WizardUiState {
             val draft = active.wizard.draft
             val key =
@@ -420,7 +422,14 @@ data class WizardUiState(
                 active.path.map(WizardStepKey::from),
                 times =
                     if (key == WizardStepKey.Outbound || key == WizardStepKey.ReturnFlight) {
-                        WizardTimesUi.from(draft, key == WizardStepKey.ReturnFlight, timeFormat, now, continueFailures)
+                        WizardTimesUi.from(
+                            draft,
+                            key == WizardStepKey.ReturnFlight,
+                            timeFormat,
+                            now,
+                            continueFailures,
+                            picker,
+                        )
                     } else {
                         null
                     },

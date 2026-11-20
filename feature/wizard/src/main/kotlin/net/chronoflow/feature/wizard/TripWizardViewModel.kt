@@ -54,6 +54,7 @@ import net.chronoflow.core.wizard.model.showsBack
 import net.chronoflow.feature.wizard.shell.WizardEvent
 import net.chronoflow.feature.wizard.shell.WizardExit
 import net.chronoflow.feature.wizard.shell.WizardStepKey
+import net.chronoflow.feature.wizard.times.WizardPicker
 import net.chronoflow.feature.wizard.ui.AirportRowUi
 import net.chronoflow.feature.wizard.ui.AirportSearchUi
 import net.chronoflow.feature.wizard.ui.WizardInitialPresentation
@@ -70,6 +71,7 @@ class TripWizardViewModel(
     deps: TripWizardDependencies?,
     presentation: WizardInitialPresentation = WizardInitialPresentation(),
 ) : ViewModel() {
+    private val pickerNow = deps?.now ?: { Instant.EPOCH }
     private val mutableClosing = MutableStateFlow(false)
     val closing = mutableClosing.asStateFlow()
     private val mutableDialog = MutableStateFlow(presentation.discardDialogVisible)
@@ -81,14 +83,22 @@ class TripWizardViewModel(
     private val mutableState = MutableStateFlow<TripWizardUiState>(TripWizardUiState.Loading)
     val state: StateFlow<TripWizardUiState> = mutableState.asStateFlow()
     private val continueFailures = MutableStateFlow(0)
+
+    private data class OpenPicker(
+        val picker: WizardPicker,
+        val openedAt: Instant,
+    )
+
+    private val mutablePicker = MutableStateFlow<OpenPicker?>(null)
+    private val timesPresentation = combine(continueFailures, mutablePicker) { failures, picker -> failures to picker }
     val uiState =
         combine(
             state,
             closing,
             discardDialogVisible,
             deps?.timeFormat ?: flowOf(TimeFormat.Value24),
-            continueFailures,
-        ) { value, closing, dialog, timeFormat, failures ->
+            timesPresentation,
+        ) { value, closing, dialog, timeFormat, times ->
             (value as? TripWizardUiState.Active)?.let {
                 WizardUiState
                     .from(
@@ -96,8 +106,9 @@ class TripWizardViewModel(
                         closing,
                         dialog,
                         timeFormat,
-                        deps?.now?.invoke() ?: Instant.EPOCH,
-                        failures,
+                        times.second?.openedAt ?: Instant.EPOCH,
+                        times.first,
+                        times.second?.picker,
                     ).let { ui ->
                         ui.copy(
                             sheet = ui.sheet?.copy(seedQuery = presentation.query),
@@ -327,6 +338,7 @@ class TripWizardViewModel(
             return
         }
         continuing = true
+        mutablePicker.value = null
         try {
             when (step) {
                 WizardStepKey.Where -> {
@@ -362,6 +374,10 @@ class TripWizardViewModel(
 
     fun back() {
         if (closing.value) return
+        if (mutablePicker.value != null) {
+            mutablePicker.value = null
+            return
+        }
         val model = wizard ?: return
         val path = model.navigationPath
         model.popNavigation(path.dropLast(1), path)
@@ -385,6 +401,7 @@ class TripWizardViewModel(
     private fun close() {
         if (closing.value) return
         mutableClosing.value = true
+        mutablePicker.value = null
         viewModelScope.launch {
             try {
                 discard()
@@ -425,8 +442,29 @@ class TripWizardViewModel(
         if (!closing.value) search.retry()
     }
 
+    private fun openFlightPicker(picker: WizardPicker) {
+        val model = wizard ?: return
+        if (closing.value || model.closed) return
+        val form = model.draft.form
+        val range =
+            when (model.draft.state.step) {
+                MemberWizardStep.outbound -> 0 until form.returnBoundary
+                MemberWizardStep.returnFlight -> form.returnBoundary until form.legs.size
+                else -> return
+            }
+        if (picker.index in range) mutablePicker.value = OpenPicker(picker, pickerNow())
+    }
+
     fun onEvent(event: WizardEvent) {
         when (event) {
+            is WizardEvent.OpenFlightPicker -> {
+                openFlightPicker(event.picker)
+            }
+
+            WizardEvent.DismissFlightPicker -> {
+                mutablePicker.value = null
+            }
+
             is WizardEvent.ChooseReturn -> {
                 val model = wizard
                 if (!closing.value && model != null &&

@@ -25,9 +25,6 @@ data class WizardDateTimeFieldUi(
     val timePart: String?,
     val error: FieldMessage?,
     val minimumDate: LocalDate?,
-    val initialDate: LocalDate,
-    val initialHour: Int,
-    val initialMinute: Int,
     val city: String?,
 ) {
     val tag: String get() = "wizard.$index." + if (arrival) "arrival" else "departure"
@@ -50,6 +47,14 @@ data class WizardFlightCardUi(
 }
 
 @Immutable
+data class WizardFlightPickerUi(
+    val picker: WizardPicker,
+    val initialDate: LocalDate,
+    val initialHour: Int,
+    val initialMinute: Int,
+)
+
+@Immutable
 data class WizardTimesUi(
     val home: Boolean,
     val cards: List<WizardFlightCardUi>,
@@ -58,6 +63,7 @@ data class WizardTimesUi(
     val flightMinutes: Int?,
     val timeFormat: TimeFormat,
     val continueFailures: Int,
+    val picker: WizardFlightPickerUi? = null,
 ) {
     val id: String get() = if (home) "return-flight" else "outbound"
     val title: WizardCopy get() =
@@ -77,6 +83,7 @@ data class WizardTimesUi(
             timeFormat: TimeFormat = TimeFormat.Value24,
             now: Instant,
             continueFailures: Int = 0,
+            picker: WizardPicker? = null,
         ): WizardTimesUi {
             val start = if (home) draft.form.returnBoundary else 0
             val end = if (home) draft.form.legs.size else draft.form.returnBoundary
@@ -88,7 +95,6 @@ data class WizardTimesUi(
             ): WizardDateTimeFieldUi {
                 val field = WizardFlightTiming.Field(index, arrival)
                 val leg = draft.form.legs[index]
-                val time = WizardPickerDates.initialTime(draft, field, now)
                 return WizardDateTimeFieldUi(
                     index,
                     arrival,
@@ -96,9 +102,6 @@ data class WizardTimesUi(
                     draft.timePart(index, arrival),
                     draft.fieldErrors["legs.$index." + if (arrival) "arriveLocal" else "departLocal"],
                     timing.minimumLocal(field)?.toLocalDate(),
-                    WizardPickerDates.initialDate(draft, field, now),
-                    time.hour,
-                    time.minute,
                     if (arrival) leg.toCity else leg.fromCity,
                 )
             }
@@ -129,6 +132,11 @@ data class WizardTimesUi(
                 if (cards.size == 1) WizardOutboundRules.flightMinutes(draft.form, start, draft.airports) else null,
                 timeFormat,
                 continueFailures,
+                picker?.takeIf { it.index in start until end }?.let {
+                    val field = WizardFlightTiming.Field(it.index, it.arrival)
+                    val time = WizardPickerDates.initialTime(draft, field, now)
+                    WizardFlightPickerUi(it, WizardPickerDates.initialDate(draft, field, now), time.hour, time.minute)
+                },
             )
         }
     }

@@ -3,6 +3,7 @@
 
 package net.chronoflow.feature.wizard
 
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -12,10 +13,14 @@ import net.chronoflow.core.wizard.model.MemberWizardStep
 import net.chronoflow.core.wizard.model.inputFingerprint
 import net.chronoflow.feature.wizard.shell.WizardEvent
 import net.chronoflow.feature.wizard.shell.WizardStepKey
+import net.chronoflow.feature.wizard.times.WizardPicker
+import net.chronoflow.feature.wizard.times.WizardPickerKind
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Rule
 import org.junit.Test
+import java.time.Instant
 import java.time.LocalDate
 import kotlin.time.Duration.Companion.seconds
 
@@ -195,6 +200,97 @@ class TripWizardViewModelTimesTest {
                     f.model.uiState.value!!
                         .times!!
                         .timeFormat,
+                )
+            }
+        }
+
+    @Test fun clockIsSampledOnlyWhenAPickerOpens() =
+        runTest(timeout = 60.seconds) {
+            var clockReads = 0
+            val format = MutableStateFlow<TimeFormat>(TimeFormat.Value24)
+            withWizard(configure = {
+                val route = routeDraft(stops = 1)
+                draft =
+                    route.copy(
+                        state =
+                            route.state.copy(
+                                step = MemberWizardStep.outbound,
+                                airports = listOf(AMS, NRT, DXB).associateBy { it.iata },
+                            ),
+                    )
+                wall.now = Instant.parse("2026-10-01T09:00:00Z")
+                now = {
+                    clockReads++
+                    wall.now
+                }
+                timeFormat = format
+            }) { f ->
+                runCurrent()
+                val before =
+                    f.model.uiState.value!!
+                        .times!!
+                val initialReads = clockReads
+                f.deps.wall.advance(60.0)
+                format.value = TimeFormat.Value12
+                runCurrent()
+                assertEquals(initialReads, clockReads)
+                assertEquals(
+                    before.cards,
+                    f.model.uiState.value!!
+                        .times!!
+                        .cards,
+                )
+
+                val picker = WizardPicker(1, false, WizardPickerKind.Time)
+                f.model.onEvent(WizardEvent.OpenFlightPicker(picker))
+                runCurrent()
+                val opened =
+                    f.model.uiState.value!!
+                        .times!!
+                        .picker!!
+                assertEquals(initialReads + 1, clockReads)
+                assertEquals(13, opened.initialHour)
+                assertEquals(1, opened.initialMinute)
+                f.deps.wall.advance(60.0)
+                f.model.onEvent(WizardEvent.SetTimePart(0, true, 7, 3))
+                runCurrent()
+                assertEquals(initialReads + 1, clockReads)
+                assertEquals(
+                    before.cards[1],
+                    f.model.uiState.value!!
+                        .times!!
+                        .cards[1],
+                )
+                assertEquals(
+                    opened,
+                    f.model.uiState.value!!
+                        .times!!
+                        .picker,
+                )
+
+                f.model.onEvent(WizardEvent.DismissFlightPicker)
+                runCurrent()
+                f.model.onEvent(WizardEvent.OpenFlightPicker(picker))
+                runCurrent()
+                assertEquals(initialReads + 2, clockReads)
+                assertEquals(
+                    2,
+                    f.model.uiState.value!!
+                        .times!!
+                        .picker!!
+                        .initialMinute,
+                )
+                f.model.onEvent(WizardEvent.Back)
+                runCurrent()
+                assertEquals(
+                    MemberWizardStep.outbound,
+                    f.model.wizard!!
+                        .draft.state.step,
+                )
+                assertNull(
+                    f.model.uiState.value!!
+                        .times!!
+                        .picker,
                 )
             }
         }

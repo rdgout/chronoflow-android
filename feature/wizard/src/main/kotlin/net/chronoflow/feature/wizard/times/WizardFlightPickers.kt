@@ -8,8 +8,8 @@ import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -23,29 +23,12 @@ import net.chronoflow.feature.wizard.ui.WizardCopy
 import net.chronoflow.feature.wizard.ui.resolve
 import java.time.LocalDate
 
-internal data class WizardPicker(
+@Immutable
+data class WizardPicker(
     val index: Int,
     val arrival: Boolean,
     val kind: WizardPickerKind,
-) {
-    companion object {
-        val saver =
-            listSaver<WizardPicker?, Any>(
-                save = { picker -> picker?.let { listOf(it.index, it.arrival, it.kind.name) } ?: emptyList() },
-                restore = { values ->
-                    if (values.isEmpty()) {
-                        null
-                    } else {
-                        WizardPicker(
-                            values[0] as Int,
-                            values[1] as Boolean,
-                            WizardPickerKind.valueOf(values[2] as String),
-                        )
-                    }
-                },
-            )
-    }
-}
+)
 
 internal class WizardSelectableDates(
     private val minimum: LocalDate?,
@@ -59,11 +42,12 @@ internal class WizardSelectableDates(
 
 @Composable
 internal fun WizardFlightPickers(
-    picker: WizardPicker,
+    ui: WizardFlightPickerUi,
     field: WizardDateTimeFieldUi,
     onEvent: (WizardEvent) -> Unit,
     onDismiss: () -> Unit,
 ) {
+    val picker = ui.picker
     val haptics = LocalHaptics.current
     val done = WizardCopy("Done").resolve()
     val cancel = WizardCopy("Cancel").resolve()
@@ -82,7 +66,7 @@ internal fun WizardFlightPickers(
         val state =
             rememberDatePickerState(
                 initialSelectedDateMillis = field.datePart?.let { WizardPickerDates.utcMillis(LocalDate.parse(it)) },
-                initialDisplayedMonthMillis = WizardPickerDates.utcMillis(field.initialDate),
+                initialDisplayedMonthMillis = WizardPickerDates.utcMillis(ui.initialDate),
                 selectableDates = selectable,
             )
         CfDatePickerDialog(
@@ -107,8 +91,8 @@ internal fun WizardFlightPickers(
     } else {
         val state =
             rememberTimePickerState(
-                field.initialHour,
-                field.initialMinute,
+                ui.initialHour,
+                ui.initialMinute,
                 DateFormat.is24HourFormat(LocalContext.current),
             )
         CfTimePickerDialog(

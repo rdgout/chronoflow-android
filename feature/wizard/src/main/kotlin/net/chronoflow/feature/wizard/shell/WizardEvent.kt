@@ -6,6 +6,12 @@ import net.chronoflow.core.model.contracts.ApiAirportSuggestion
 import net.chronoflow.core.wizard.model.WizardAirportSheet
 
 sealed interface WizardEvent {
+    data class OpenFlightPicker(
+        val picker: net.chronoflow.feature.wizard.times.WizardPicker,
+    ) : WizardEvent
+
+    data object DismissFlightPicker : WizardEvent
+
     data class ChooseReturn(
         val kind: String,
     ) : WizardEvent
