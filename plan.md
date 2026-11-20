@@ -2672,7 +2672,7 @@ Implementation commits (brief §7):
   - Review, save and edit-input calls, with a 90 s HTTP timeout and the review operation capped at 30 s. Saves are never retried automatically.
   - An in-flight map keyed by `(instance, fingerprint, token, reviewRevision, edit)`, guarded by a `Mutex`, and the expiry retry.
   - Checking timers: ticks at 0.4, 0.8 and ≥ 1.2 s, a 0.3 s pause, slow at 10 s, failure at 30 s.
-- [ ] **Airport search**, porting `AirportSearchService`.
+- [x] **Airport search**, porting `AirportSearchService`.
   - The query is trimmed and must be 2–60 characters long.
   - A 350 ms debounce, with stale searches cancelled.
   - Requests are spaced at least 1.02 s apart, with a wait after a 429.
