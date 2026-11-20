@@ -81,7 +81,8 @@ internal fun WizardChoiceCard(
                         question -> PlanUITokens.wizardFlightRowHeight.dp
                         else -> PlanUITokens.wizardChoiceHeight.dp
                     },
-            ).padding(
+            ).padding(if (sleep) AuthTokens.focusWidth.dp else 0.dp)
+            .padding(
                 start = (if (sleep) PlanUITokens.wizardContentGap else PlanUITokens.space5).dp,
                 end =
                     when {
@@ -103,7 +104,7 @@ internal fun WizardChoiceCard(
                     },
             ),
         horizontalArrangement = Arrangement.spacedBy(PlanUITokens.space3.dp),
-        verticalAlignment = Alignment.CenterVertically,
+        verticalAlignment = if (sleep) Alignment.Top else Alignment.CenterVertically,
     ) {
         Column(
             Modifier.weight(1f),
@@ -111,6 +112,7 @@ internal fun WizardChoiceCard(
         ) {
             Text(
                 rawTitle ?: title.resolve(),
+                Modifier.testTag("$tag.title"),
                 color = CfTheme.colors.foreground,
                 style = CfTheme.type.style(if (sleep) CfTypeScale.wizardChronotype else CfTypeScale.wizardChoice),
             )

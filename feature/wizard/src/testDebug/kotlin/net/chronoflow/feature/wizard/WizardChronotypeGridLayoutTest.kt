@@ -46,12 +46,23 @@ class WizardChronotypeGridLayoutTest(
         val second = compose.onNodeWithTag("wizard.choice.sleep.intermediate").getUnclippedBoundsInRoot()
         val third = compose.onNodeWithTag("wizard.choice.sleep.late").getUnclippedBoundsInRoot()
         val fourth = compose.onNodeWithTag("wizard.choice.sleep.unsure").getUnclippedBoundsInRoot()
+        val firstTitle =
+            compose
+                .onNodeWithTag("wizard.choice.sleep.early.title", useUnmergedTree = true)
+                .getUnclippedBoundsInRoot()
+        assertEquals("CSS padding plus border", 12f, firstTitle.top.value - first.top.value, .5f)
+        assertEquals("CSS padding plus border", 16f, firstTitle.left.value - first.left.value, .5f)
         assertTrue(first.height.value >= 76f)
         assertTrue(second.height.value >= 76f)
         assertTrue(third.height.value >= 76f)
         assertTrue(fourth.height.value >= 76f)
         assertEquals(first.width.value, second.width.value, .5f)
         if (columns == 2) {
+            val secondTitle =
+                compose
+                    .onNodeWithTag("wizard.choice.sleep.intermediate.title", useUnmergedTree = true)
+                    .getUnclippedBoundsInRoot()
+            assertEquals("chronotype title tops", firstTitle.top.value, secondTitle.top.value, .5f)
             assertEquals(first.top.value, second.top.value, .5f)
             assertEquals(first.height.value, second.height.value, .5f)
             assertEquals(third.height.value, fourth.height.value, .5f)

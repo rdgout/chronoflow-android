@@ -613,6 +613,12 @@ The host's `make check` passed on `eb0edba7`. Removed `returningToOutboundDoesNo
 
 2026-11-20. [Brief](phases/phase-9e-wizard-sleep-questions.md). Sleep, age/shift-work questions, excluded states, the free-day answer sheet and server route errors are implemented. The rendered-board comparison remains an external acceptance step; the captures below are ready for the orchestrator.
 
+### Review round 1
+
+Host `make check` passed on `e33a4799`. Reviewed the host-rendered boards and all 13 supplied board/capture pairs.
+
+1. Chronotype text now aligns at the top; Return and Question retain their centered alignment. CSS includes a 2 dp border outside its 10/14 dp padding, while Compose's drawn border reserved no space. Adding that inset removes 4 dp of extra text width and restores 4 dp of missing natural height: a two-line hint uses 22 + 2 + 36 + 20 + 4 = 84 dp. The generated line heights and padding already matched the board. The layout regression failed first (early title 403.43 dp, intermediate 412.57 dp), then all three profiles passed, including 12 dp top and 16 dp horizontal content insets. `make targeted ONLY='feature:wizard:WizardChronotypeGridLayoutTest#gridUsesEqualCellsAndFitsTheLongestHint'`: 5.97 s tier wall, 2.692 s SDK warm-up, 114/73 ms warm cases.
+
 ### Sleep clocks and state
 
 `WizardClockRounding` rounds to the nearest five minutes, with remainders 0–2 down and 3–4 up, wrapping midnight: `07:12 → 07:10`, `07:13 → 07:15`, `23:58 → 00:00`. It writes ASCII `HH:mm`, independently of the process locale. Only `habitual_bed`, `habitual_wake`, `free_day_bed` and `free_day_wake` use it. Flight times retain 9d's minute precision.
