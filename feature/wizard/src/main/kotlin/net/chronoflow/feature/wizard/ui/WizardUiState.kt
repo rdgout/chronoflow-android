@@ -14,6 +14,7 @@ import net.chronoflow.core.wizard.model.routeComplete
 import net.chronoflow.feature.wizard.TripWizardUiState
 import net.chronoflow.feature.wizard.shell.WizardStepKey
 import java.time.Instant
+import java.util.IllformedLocaleException
 import java.util.Locale
 
 @Immutable
@@ -319,13 +320,20 @@ data class AirportRowUi(
 fun airportPlace(
     airport: AirportRowUi,
     locale: Locale,
-): String =
-    listOfNotNull(
-        airport.city,
-        Locale.Builder().setRegion(airport.country).build().getDisplayCountry(locale).takeIf {
-            it.isNotEmpty()
-        },
-    ).joinToString(", ")
+): String {
+    val country =
+        try {
+            Locale
+                .Builder()
+                .setRegion(airport.country)
+                .build()
+                .getDisplayCountry(locale)
+                .takeIf { it.isNotEmpty() }
+        } catch (_: IllformedLocaleException) {
+            null
+        }
+    return listOfNotNull(airport.city, country).joinToString(", ")
+}
 
 @Immutable
 sealed interface AirportSearchUi {

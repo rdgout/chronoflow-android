@@ -240,6 +240,17 @@ class WhereUiStateTest {
         )
     }
 
+    @Test fun whitespaceCountryFallsBackToTheCity() {
+        assertEquals("Amsterdam", airportPlace(AirportRowUi.from(AMS).copy(country = "  "), java.util.Locale.ENGLISH))
+    }
+
+    @Test fun countryNameFallsBackToTheCity() {
+        assertEquals(
+            "Amsterdam",
+            airportPlace(AirportRowUi.from(AMS).copy(country = "Netherlands"), java.util.Locale.ENGLISH),
+        )
+    }
+
     @Test fun placeUsesTheGivenLocale() {
         assertEquals("Amsterdam, Netherlands", airportPlace(AirportRowUi.from(AMS), java.util.Locale.ENGLISH))
         assertEquals(
