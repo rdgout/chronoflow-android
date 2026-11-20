@@ -111,6 +111,36 @@ class WizardRecoveryWriterTests {
             assertTrue(failed)
         }
 
+    @Test fun closeDrainsPendingLatestAndIgnoresLaterEnqueues() =
+        runTest(timeout = 60.seconds) {
+            val owner = SupervisorJob(backgroundScope.coroutineContext.job)
+            val scope = CoroutineScope(backgroundScope.coroutineContext + owner)
+            val store = InMemoryWizardDraftStore()
+            val gate = CompletableDeferred<Unit>()
+            store.beforePersist = { gate.await() }
+            val writer = WizardRecoveryWriter(store, scope) { error("Unexpected persistence failure") }
+            try {
+                writer.enqueue(draft(1))
+                runCurrent()
+                writer.enqueue(draft(2))
+                writer.close()
+                writer.close()
+                writer.enqueue(draft(3))
+                runCurrent()
+                assertTrue(store.persisted.isEmpty())
+                assertTrue(owner.children.any { it.isActive })
+                gate.complete(Unit)
+                writer.flush()
+                runCurrent()
+                assertEquals(listOf(1, 2), store.persisted.map { it.state.revision })
+                assertTrue(owner.isActive)
+                assertFalse(owner.children.any { it.isActive })
+            } finally {
+                gate.complete(Unit)
+                owner.cancelAndJoin()
+            }
+        }
+
     @Test fun flushReturnsWhenWriterScopeIsCancelled() =
         runTest(timeout = 60.seconds) {
             val owner = SupervisorJob(backgroundScope.coroutineContext.job)

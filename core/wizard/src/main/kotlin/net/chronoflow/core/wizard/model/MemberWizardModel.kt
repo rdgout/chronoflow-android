@@ -284,6 +284,8 @@ class MemberWizardModel(
 
     suspend fun flush() = writer.flush()
 
+    fun close() = writer.close()
+
     fun setGuestAuthenticationPresented(presented: Boolean) {
         if (mode != WizardMode.guest) return
         guestAuthenticationPresented = presented
@@ -310,6 +312,7 @@ class MemberWizardModel(
                 generation?.cancel()
                 flush()
                 store.discard(state.instance)
+                close()
             } catch (failure: Exception) {
                 closed = false
                 restartRetryCountdown()

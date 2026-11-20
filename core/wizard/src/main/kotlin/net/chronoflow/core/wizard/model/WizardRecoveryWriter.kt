@@ -23,6 +23,7 @@ class WizardRecoveryWriter(
     private val sequence = AtomicLong()
     private val latest = AtomicReference<Pair<Long, MemberWizardDraft>?>()
     private val signal = Channel<Unit>(Channel.CONFLATED)
+    private var closed = false
     private val written = MutableStateFlow(0L)
     private val consumer =
         writerScope.launch {
@@ -43,8 +44,15 @@ class WizardRecoveryWriter(
 
     @Synchronized
     fun enqueue(draft: MemberWizardDraft) {
+        if (closed) return
         latest.set(sequence.incrementAndGet() to draft)
         signal.trySend(Unit)
+    }
+
+    @Synchronized
+    fun close() {
+        closed = true
+        signal.close()
     }
 
     suspend fun flush() {

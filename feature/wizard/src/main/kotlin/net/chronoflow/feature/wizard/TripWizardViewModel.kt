@@ -131,6 +131,7 @@ class TripWizardViewModel(
     }
 
     override fun onCleared() {
+        wizard?.close()
         generation?.cancelNow()
     }
 

@@ -178,6 +178,11 @@ class TripWizardViewModelTest {
                     assertTrue(cancelled)
                     gate.complete(Unit)
                     wizard.flush()
+                    runCurrent()
+                    assertFalse(
+                        f.deps.writerScope.coroutineContext.job.children
+                            .any { it.isActive },
+                    )
                     assertEquals(
                         latest,
                         f.deps.recovery.last!!

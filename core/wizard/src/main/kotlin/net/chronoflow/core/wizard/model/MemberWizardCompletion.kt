@@ -282,6 +282,7 @@ fun MemberWizardModel.savePlan(recovering: Boolean = false) {
                                 }
                                 currentCoroutineContext().ensureActive()
                                 if (!closed) {
+                                    close()
                                     createdTripID = outcome.tripId
                                     closed = true
                                 }
