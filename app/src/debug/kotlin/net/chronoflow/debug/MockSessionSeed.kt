@@ -7,6 +7,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import net.chronoflow.core.data.session.SessionAccountDatabase
 import net.chronoflow.core.data.sync.SqlSyncDatabase
+import net.chronoflow.core.database.AccountDatabase
 import net.chronoflow.core.database.AccountDriverFactory
 import net.chronoflow.core.model.AccountID
 import net.chronoflow.core.model.DataSource
@@ -14,6 +15,7 @@ import net.chronoflow.core.model.api.PasswordSignInInput
 import net.chronoflow.core.model.api.SignInResult
 import net.chronoflow.core.model.api.TwoFactorInput
 import net.chronoflow.core.model.session.SessionFailure
+import net.chronoflow.core.model.session.SessionMutationPermit
 import net.chronoflow.core.model.session.SessionStore
 import net.chronoflow.core.model.session.StorageNamespace
 import net.chronoflow.core.model.session.SyncEpoch
@@ -46,6 +48,7 @@ object MockSessionSeed {
         twoFactorCode: String,
         driverFactory: AccountDriverFactory,
         io: CoroutineDispatcher,
+        onSessionReady: suspend (AccountDatabase, SessionMutationPermit) -> Unit = { _, _ -> },
     ) = withContext(io) {
         val marker = File(root, "signed-in-seed.done")
         if (marker.exists()) return@withContext
@@ -70,6 +73,8 @@ object MockSessionSeed {
             FullPull(SqlSyncDatabase(database), source, now = {
                 Instant.now()
             }).run(SyncEpoch(AccountID.of(result.account.id), session.epoch))
+            val permit = controller.mutationPermit(session) ?: throw SessionFailure.DatabaseUnavailable
+            onSessionReady(database, permit)
             accounts.close()
             root.mkdirs()
             val temporary = File(root, "signed-in-seed.done.tmp")
@@ -84,8 +89,9 @@ object MockSessionSeed {
                 ) {
                     throw cancelled
                 } catch (_: StoreFailure) {
+                } finally {
+                    controller.close()
                 }
-                controller.close()
             }
         }
     }

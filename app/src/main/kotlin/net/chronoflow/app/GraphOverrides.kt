@@ -17,6 +17,7 @@ data class GraphOverrides(
     val mockSeed: MockSeedFlags? = null,
     val sessionCipher: SessionCipher? = null,
     val dispatchers: AppDispatchers? = null,
+    val mutationsOffline: Boolean = false,
 ) {
     companion object {
         val None = GraphOverrides()
