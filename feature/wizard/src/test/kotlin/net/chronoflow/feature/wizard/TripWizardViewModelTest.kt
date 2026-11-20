@@ -22,9 +22,7 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.yield
 import net.chronoflow.core.model.DataFailure
-import net.chronoflow.core.testing.sync.eventually
 import net.chronoflow.core.testing.wizard.CheckingTestClock
 import net.chronoflow.core.testing.wizard.GenerationSource
 import net.chronoflow.core.testing.wizard.InMemoryWizardDraftStore
@@ -313,7 +311,7 @@ private class FakeWizardDependencies(
         TripGenerationService(
             source,
             TripGenerationEffects({}, {}, {}),
-            parentContext = writerScope.coroutineContext + Dispatchers.Default,
+            parentContext = writerScope.coroutineContext,
         ).also { generations.add(it) }
 
     fun checkedDraft(step: MemberWizardStep): MemberWizardDraft {
@@ -399,15 +397,7 @@ private suspend fun TestScope.withWizard(
     }
 }
 
-private suspend fun awaitWizard(condition: suspend () -> Boolean) {
-    assertTrue(
-        eventually {
-            if (condition()) {
-                true
-            } else {
-                yield()
-                false
-            }
-        },
-    )
+private suspend fun TestScope.awaitWizard(condition: suspend () -> Boolean) {
+    runCurrent()
+    assertTrue(condition())
 }

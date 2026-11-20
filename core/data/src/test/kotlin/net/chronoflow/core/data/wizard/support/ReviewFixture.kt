@@ -3,15 +3,14 @@
 package net.chronoflow.core.data.wizard.support
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.job
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.yield
 import kotlinx.serialization.json.JsonObject
 import net.chronoflow.core.data.wizard.MemberWizardStore
 import net.chronoflow.core.data.wizard.storing
@@ -38,8 +37,6 @@ import net.chronoflow.core.wizard.model.WizardForm
 import net.chronoflow.core.wizard.model.from
 import org.junit.Assert.assertTrue
 import java.time.Instant
-import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.TimeSource
 
 internal class ReviewFixture(
     val model: MemberWizardModel,
@@ -100,7 +97,7 @@ internal suspend fun TestScope.reviewFixture(
         TripGenerationService(
             source,
             stored,
-            parentContext = scope.coroutineContext + Dispatchers.Default,
+            parentContext = scope.coroutineContext,
         )
     val clock = CheckingTestClock(testScheduler)
     val now = { Instant.parse("0001-01-01T00:00:00Z") }
@@ -108,20 +105,15 @@ internal suspend fun TestScope.reviewFixture(
     return ReviewFixture(model, source, clock, databaseStore, store, scope, generation, now)
 }
 
-internal suspend fun awaitWizard(
+internal suspend fun TestScope.awaitWizard(
     detail: () -> String = { "Wizard condition" },
     condition: suspend () -> Boolean,
 ) {
-    // Stay runnable so JDBC/service waits cannot auto-advance the fake checking clock.
-    val started = TimeSource.Monotonic.markNow()
-    while (started.elapsedNow() < 500.milliseconds) {
-        if (condition()) return
-        yield()
-    }
+    runCurrent()
     assertTrue(detail(), condition())
 }
 
-internal suspend fun finishCheck(
+internal suspend fun TestScope.finishCheck(
     fixture: ReviewFixture,
     count: Int = 1,
     start: Long = 0,

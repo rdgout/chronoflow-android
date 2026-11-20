@@ -3,7 +3,6 @@
 package net.chronoflow.core.data.wizard.support
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelAndJoin
@@ -57,7 +56,7 @@ internal class CompletionFixture(
         TripGenerationService(
             source,
             noGenerationEffects(),
-            parentContext = scope.coroutineContext + Dispatchers.Default,
+            parentContext = scope.coroutineContext,
         )
 
     suspend fun close() =
@@ -119,7 +118,7 @@ internal suspend fun TestScope.completionFixture(
         TripGenerationService(
             source,
             effects,
-            parentContext = scope.coroutineContext + Dispatchers.Default,
+            parentContext = scope.coroutineContext,
         )
     val checking = CheckingTestClock(testScheduler)
     val model = MemberWizardModel(draft, store, scope, { clock.now }, service, checking.clock)

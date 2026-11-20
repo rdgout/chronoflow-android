@@ -236,8 +236,18 @@ class WizardSaveRecoveryTests {
                         ),
                     )
                 val source = GenerationSource(mock)
-                val service = TripGenerationService(source, noGenerationEffects())
-                val restarted = TripGenerationService(source, noGenerationEffects())
+                val service =
+                    TripGenerationService(
+                        source,
+                        noGenerationEffects(),
+                        parentContext = backgroundScope.coroutineContext,
+                    )
+                val restarted =
+                    TripGenerationService(
+                        source,
+                        noGenerationEffects(),
+                        parentContext = backgroundScope.coroutineContext,
+                    )
                 try {
                     val reviewed = service.review("lost", ApiTripReviewInput(generationInput()))
                     val initial = TripGenerationState("lost", reviewed.input, review = reviewed.review)

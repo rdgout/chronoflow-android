@@ -3,6 +3,7 @@
 package net.chronoflow.core.data.wizard
 
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -319,7 +320,7 @@ class TripWizardActionsTests {
     }
 }
 
-private suspend fun completeEditCheck(
+private suspend fun TestScope.completeEditCheck(
     f: ReviewFixture,
     model: MemberWizardModel,
 ) {

@@ -65,7 +65,7 @@ class TripGenerationTests {
                     requestSync = { probe.synced() },
                     now = { now },
                 )
-            val service = TripGenerationService(source, effects)
+            val service = TripGenerationService(source, effects, parentContext = backgroundScope.coroutineContext)
             try {
                 val snapshot = mock.fetchAccount()
                 val identity = mock.fetchIdentity()
