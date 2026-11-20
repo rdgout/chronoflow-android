@@ -112,7 +112,7 @@ Conflict order (plan "How conflicts between sources are settled"): a user decisi
 | Accept `href="Walkthrough.dc.html"` | No navigation from the screen. The gate router navigates to Walkthrough or Today once the local commit lands. | `TermsDestination.swift`, 4e router |
 | Walkthrough Skip/Done `href` to Today | No navigation from the screen in first-run mode: the gate opens Today. In replay mode the caller's return action runs. | `WalkthroughModel.swift`, 17f |
 | `CategorySwatch size="md"` = 36 dp (bundle `size-9`), icon 16 | 6a's `CategorySwatch(type)` = 32 dp (`PlanUITokens.space8`); small 28 dp (`space6 + space1`) | `PlanComponents.swift:15–17`; 6a l.356, OQ-6a-12 (OQ-8-1) |
-| `DayProgress` bar `h-1.5` (6 px) | `CfLinearProgress` (4 dp) × `PlanUITokens.progressTrackWidth` (80) | iOS `ProgressView` default (`TodayPanelComponents.swift:52`) |
+| `DayProgress` bar `h-1.5` (6 px) | `CfLinearProgress` (6 dp) × `PlanUITokens.progressTrackWidth` (80) | Phase 7 user decision OQ-A334; pinned walkthrough reuses the same `DayProgressRow` (OQ-A348). |
 | Dot width `transition 150ms ease` | 150 ms (`PlanUITokens.walkthroughDotDuration`), `EaseInOut`; no animation under Reduce Motion | `WalkthroughView.swift:89–92` (OQ-8-7) |
 | Brand image `/_blob/…` 28 × 28 | `R.drawable.terms_brand`, converted unchanged from `_design/icon/ios/AppIcon-default.svg` (square; iOS AssetGen copies the PNG rendering of the same master, `_design/icon/ios/AppIcon-default.png`, into `TermsBrand.png`) | `I/Tools/AssetGen/Sources/AssetGenCore/Generator.swift:54–61` |
 
@@ -231,7 +231,7 @@ class TermsUpdateModel(policies: AccountPolicies? = null, private val save: susp
 `accept()` runs in this order:
 1. If `!canAccept`, return. Capture `p = policies`. Set `busy = true` and `failed = false`; a `finally` resets `busy = false`.
 2. Call `save(p.termsVersion)`. On success, set `completed = (state.policies?.termsVersion == p.termsVersion)`.
-3. In this order: `catch (SessionChangedException)` and `catch (StaleSessionException)`: nothing (iOS `catch is CancellationError {}`; the iOS fixture saves straight through the permit, so `revokedPermitCannotAcceptForAnotherSession` reaches this through `StaleSessionException`). `catch (CancellationException)`: rethrow. `catch (Exception)`: `failed = true`.
+3. Caller cancellation is rethrown only while the caller is inactive; a foreign cancellation sets `failed`, following the binding 6c lesson. In this order: `catch (SessionChangedException)` and `catch (StaleSessionException)`: nothing (iOS `catch is CancellationError {}`; the iOS fixture saves straight through the permit, so `revokedPermitCannotAcceptForAnotherSession` reaches this through `StaleSessionException`). `catch (CancellationException)`: rethrow. `catch (Exception)`: `failed = true`.
 
 ### 5.5 Geometry (pure, `:feature:onboarding`) [F `WalkthroughGeometry.swift`, `TermsGeometry.swift`; R the 560 dp column]
 
@@ -286,7 +286,7 @@ The layout is a full-size `Box` with `background(colors.background)`. Inside it 
     Content: when the block's available width is `< walkthroughCompactWidth` (640), show the **compact** form: only the category glyph, 14 dp (`space3 + space1/2`), centred, in the category foreground. Otherwise show the full form: glyph plus title (`screenBlockLabel` 600 11/13.75; caffeine shows `walkthrough_title_time`), then the time on a second line except for caffeine. With the 560 dp column, every Android width is compact (OQ-8-4); implement both, as iOS does.
   - **Page 2, categories:** five rows for `sleep`, `seek_light`, `avoid_light`, `caffeine_serving` and `flight`, labelled Sleep, Seek bright light, Avoid light, Caffeine and Flight. Each row is a `Row(spacedBy(space3 = 12), heightIn(min = AuthTokens.touch = 44), centred)` holding 6a's `CategorySwatch(type)` (`CategorySwatchSize.Regular`, 32 dp) and the label in `type.walkthroughBody` (500 16/24), `foreground`.
   - **Page 3, progress:**
-    - A progress row with `padding(top = space1)`, flowing with gap `space2` (8) (a `FlowRow`, iOS `PlanFlowRow`): `CfLinearProgress(progress = { 3f / 7f }, Modifier.width(progressTrackWidth = 80))` (Phase 2: dawn on muted, 4 dp), then a `Row(spacedBy(space2))` holding the lucide `check` at 12 dp (`space3`) and `walkthrough_done_total_done("3", "7")`, all in `screenMeta` (12/16), `mutedForeground`, with tabular numbers. (iOS `DayProgressRow` reads the same English key from the plan table; the walkthrough table has the identical key and Dutch value, so use `walkthrough_done_total_done`.)
+    - A progress row with `padding(top = space1)`, flowing with gap `space2` (8) (a `FlowRow`, iOS `PlanFlowRow`): `CfLinearProgress(progress = { 3f / 7f }, Modifier.width(progressTrackWidth = 80))` (dawn on muted, 6 dp per OQ-A334/OQ-A348), then a `Row(spacedBy(space2))` holding the lucide `check` at 12 dp (`space3`) and `walkthrough_done_total_done("3", "7")`, all in `screenMeta` (12/16), `mutedForeground`, with tabular numbers. (iOS `DayProgressRow` reads the same English key from the plan table; the walkthrough table has the identical key and Dutch value, so use `walkthrough_done_total_done`.)
     - Two rows, each `Row(spacedBy(space3), heightIn(min = space14 = 56), padding(space2 = 8))` with `CategorySwatch` and a `Column` of the title (`walkthroughBody`, `foreground`) and a meta line `walkthrough_time_zone_relative(time, Tokyo, relative)` (`screenBody` 14/20, `mutedForeground`, tabular numbers):
       - seek_light "Seek bright light outdoors", `11:00`, "In 15 min";
       - caffeine_serving "1 cup of filter coffee", `10:45`, relative = `walkthrough_done` ("Done" / "Klaar").
@@ -647,3 +647,15 @@ Each task is one atomic Conventional Commit with no trailer. Tick the `plan.md` 
   - importing 5d's `PolicyOpener` from `:feature:auth` (a feature → feature edge);
   - using `NavigationSuiteScaffoldState` hide/show instead of the `CfNavLayout.None` layout type;
   - deriving `mutationsOffline` from `CF_AUTH_TEST_TERMS_CHANGES_PENDING`.
+
+
+## Results (2026-11-20)
+
+All three Phase 8 plan boxes are complete. See [Phase 8 validation](../phase-8-results.md) for commands, timings, capture differences and remaining orchestrator checks.
+
+Resolved stack flags: progress is 80 × 6 dp (OQ-A348); screens are stateless with thin route wrappers; logic/counter/finish assertions are JVM tests; replay routing hosts the shell with fakes; gate assertions stay on the JVM; guards use 15 walkthrough and 10 terms cases. The dot animation policy is proved on the JVM with a tween control, and the dots container keeps cleared semantics. The root entry decorators and revision keys were already present and were retained. The metrics object uses the project's uppercase constant convention (`WIDE_COLUMN`, `POLICY_CHEVRON`, `PROGRESS_HEIGHT`).
+
+Capture review restored the walkthrough footer to the specified 40 dp visual height with the native 48 dp touch target. The single `make captures` invocation produced 24 PNGs; a subsequent targeted run regenerated the class's captures after that correction. The single emulator journey passed before this visual-height correction; its button target, callbacks and routing are unchanged. No emulator journey was repeated.
+
+
+Release validation also required `implementation(libs.androidx.core.ktx)` in `:core:ui`: `PolicyLinks` uses `toUri`, and that extension was only transitively available to the initial debug compilation. The current typography API is `CfTheme.type.style(CfTypeScale.screenPageTitle)` (and the equivalent generated specs for the other non-convenience styles); no upstream typography API was renamed. These are mechanical adaptations with unchanged earlier-phase behaviour.
