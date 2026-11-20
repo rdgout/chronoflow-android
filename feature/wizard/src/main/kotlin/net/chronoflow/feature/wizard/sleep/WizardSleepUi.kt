@@ -17,16 +17,21 @@ internal fun JsonElement?.clockString(): String? = (this as? JsonPrimitive)?.tak
 data class WizardTimeSheetUi(
     val field: String,
     val stored: String?,
+    val minutePrecision: Boolean = false,
+    val title: WizardCopy? = null,
+    val subtitle: WizardCopy? = null,
 ) {
     val initialHour: Int get() = if (WizardDateTime.isTime(stored)) stored!!.take(2).toInt() else 12
     val initialMinute: Int get() = if (WizardDateTime.isTime(stored)) stored!!.takeLast(2).toInt() else 0
     val usual: Boolean get() = this.field == "habitual_bed" || this.field == "habitual_wake"
     val label: WizardCopy get() =
-        WizardCopy(
+        title ?: WizardCopy(
             when (this.field) {
                 "habitual_bed" -> "Usual bedtime"
                 "habitual_wake" -> "Usual wake-up"
                 "free_day_bed" -> "Bedtime"
+                "override.habitual_bed" -> "Bedtime on this trip"
+                "override.habitual_wake" -> "Wake-up on this trip"
                 else -> "Wake-up"
             },
         )
@@ -78,3 +83,8 @@ data class WizardSleepUi(
         }
     }
 }
+
+internal fun clockString(
+    hour: Int,
+    minute: Int,
+): String = hour.toString().padStart(2, '0') + ":" + minute.toString().padStart(2, '0')

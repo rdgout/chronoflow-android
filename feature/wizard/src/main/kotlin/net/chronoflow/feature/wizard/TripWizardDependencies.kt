@@ -21,6 +21,7 @@ interface TripWizardDependencies {
     val now: () -> Instant
     val writerScope: CoroutineScope
     val timeFormat: Flow<TimeFormat> get() = flowOf(TimeFormat.Value24)
+    val uiOverride: net.chronoflow.feature.wizard.shell.WizardUiOverride? get() = null
     val checkingClock: WizardCheckingClock get() = WizardCheckingClock.continuous
 
     suspend fun copyFormatter(): net.chronoflow.core.plan.CopyLineFormatter? = null

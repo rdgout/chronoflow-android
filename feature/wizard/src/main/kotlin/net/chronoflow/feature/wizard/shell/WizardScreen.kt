@@ -295,7 +295,7 @@ internal fun WizardFooter(
         if (chrome.secondaryClose) {
             CfButton(
                 WizardCopy("Close").resolve(),
-                { onEvent(WizardEvent.CloseNow) },
+                { onEvent(if (chrome.secondaryRequestsClose) WizardEvent.RequestClose else WizardEvent.CloseNow) },
                 Modifier.testTag("wizard.$id.secondary-close"),
                 style = CfButtonStyle.Ghost,
                 fillWidth = true,
@@ -305,7 +305,7 @@ internal fun WizardFooter(
             )
         }
         CfButton(
-            if (chrome.primaryPlain) {
+            chrome.primaryLabel?.resolve() ?: if (chrome.primaryPlain) {
                 WizardCopy(
                     "Change my answers",
                 ).resolve()
@@ -320,7 +320,16 @@ internal fun WizardFooter(
             minHeight = PlanUITokens.wizardButtonHeight.dp,
             textStyle = CfTheme.type.style(CfTypeScale.wizardButton),
             enabled = chrome.continueEnabled,
-            disabledAlpha = if (chrome.routeComplete) 1f else PlanUITokens.wizardDisabledOpacity,
+            loading = chrome.primaryBusy,
+            loadingDescription = chrome.primaryLabel?.resolve().orEmpty(),
+            disabledAlpha =
+                if (chrome.primaryBusy) {
+                    WizardMetrics.ctaBusyAlpha
+                } else if (chrome.routeComplete) {
+                    1f
+                } else {
+                    PlanUITokens.wizardDisabledOpacity
+                },
             containerColor = if (chrome.primaryPlain) CfTheme.colors.surface2 else CfTheme.colors.primary,
             contentColor = if (chrome.primaryPlain) CfTheme.colors.foreground else CfTheme.colors.primaryForeground,
         )
