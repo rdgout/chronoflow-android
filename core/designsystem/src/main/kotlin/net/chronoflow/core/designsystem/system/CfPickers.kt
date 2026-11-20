@@ -4,6 +4,7 @@
 
 package net.chronoflow.core.designsystem.system
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDefaults
@@ -25,6 +26,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import net.chronoflow.core.designsystem.theme.CfTheme
 
+@SuppressLint("ModifierParameter")
 @Composable
 fun CfDatePickerDialog(
     state: DatePickerState,
@@ -71,6 +73,7 @@ fun CfDatePickerDialog(
     }
 }
 
+@SuppressLint("ModifierParameter")
 @Composable
 fun CfTimePickerDialog(
     state: TimePickerState,

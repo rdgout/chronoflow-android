@@ -2781,10 +2781,10 @@ Implementation commits (brief §7):
   - [x] The past-arrival banner (`WizardOutboundPast`, `WizardReturnFlightPast`).
 - [x] **Coming back?** (`WizardReturn*`): it auto-advances after 250 ms, and taps are ignored while it is pending.
 - [x] **Picker formats.** Pickers follow `DateFormat.is24HourFormat`, displayed values follow the account `timeFormat`, and the dialogs use the app language (OQ 46, `PickerDateTime`).
-- [ ] **Tests.**
+- [x] **Tests.**
   - [x] Date and time bounds on the JVM (9d Task 2).
   - [x] Guards for each board and 29 Robolectric captures (9d Task 8).
-  - On the emulator: the date and time dialogs keep the app language and the phone's 12/24-hour setting.
+  - [x] On the emulator: the date and time dialogs keep the app language and the phone's 12/24-hour setting.
 
 **Acceptance**
 - The bounds and the 12/24-hour rules hold.
