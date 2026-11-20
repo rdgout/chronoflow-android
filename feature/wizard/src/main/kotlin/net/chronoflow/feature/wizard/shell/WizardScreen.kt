@@ -2,6 +2,7 @@
 
 package net.chronoflow.feature.wizard.shell
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -454,6 +455,8 @@ internal fun WizardStepHost(
             }
         },
     )
+    // NavDisplay is subcomposed, so the save lock must register after it in this same composition.
+    BackHandler(enabled = state.step == WizardStepKey.Calculating) {}
 }
 
 @Composable
