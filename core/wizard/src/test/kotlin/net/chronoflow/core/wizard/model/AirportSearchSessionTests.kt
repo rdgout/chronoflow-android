@@ -160,5 +160,4 @@ class AirportSearchSessionTests {
             runCurrent()
             assertEquals(listOf(query), fixture.queries)
         }
-
 }

@@ -6,11 +6,10 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
 
-/** 9b may add INSERT OR REPLACE to Drafts.sq, which has no foreign-key children. */
+/** Drafts.sq has no foreign-key children, so replacing its recovery row is safe. */
 class SqlSafetyTest {
     private val forbidden =
         listOf(
-            // 9b: exclude Drafts.sq from the REPLACE checks when its queries land.
             "OR\\s+REPLACE",
             "\\bREPLACE\\s+INTO",
             "ON\\s+CONFLICT",
@@ -19,7 +18,12 @@ class SqlSafetyTest {
             "\\bOVER\\s*\\(",
         ).map { Regex(it, RegexOption.IGNORE_CASE) }
 
-    private fun safe(sql: String) = forbidden.none { it.containsMatchIn(sql) }
+    private fun safe(
+        sql: String,
+        fileName: String = "Other.sq",
+    ) = forbidden.withIndex().none { (index, rule) ->
+        !(fileName == "Drafts.sq" && index < 2) && rule.containsMatchIn(sql)
+    }
 
     @Test fun noSqlNewerThanApi29() {
         val files =
@@ -29,20 +33,25 @@ class SqlSafetyTest {
                     it.extension == "sq"
                 }.toList()
         assertEquals(9, files.size)
-        files.forEach { assertTrue(it.name, safe(it.readText())) }
+        files.forEach { assertTrue(it.name, safe(it.readText(), it.name)) }
+    }
+
+    @Test fun replaceIsAllowedOnlyForDrafts() {
+        assertTrue(safe("INSERT OR REPLACE INTO drafts", "Drafts.sq"))
+        assertTrue(safe("REPLACE INTO drafts", "Drafts.sq"))
+        assertFalse(safe("INSERT OR REPLACE INTO trips", "Trips.sq"))
+        assertFalse(safe("REPLACE INTO trips", "Trips.sq"))
+        assertFalse(safe("ON CONFLICT", "Drafts.sq"))
+        assertFalse(safe("RETURNING id", "Drafts.sq"))
     }
 
     @Test fun scannerRejectsPlantedViolations() {
-        listOf(
-            "INSERT OR REPLACE",
-            "REPLACE INTO t",
-            "ON CONFLICT",
-            "RETURNING id",
-            "DEFAULT true",
-            "DEFAULT false",
-            "OVER (",
-        ).forEach {
-            assertFalse(it, safe(it))
-        }
+        assertFalse(safe("INSERT OR REPLACE"))
+        assertFalse(safe("REPLACE INTO t"))
+        assertFalse(safe("ON CONFLICT"))
+        assertFalse(safe("RETURNING id"))
+        assertFalse(safe("DEFAULT true"))
+        assertFalse(safe("DEFAULT false"))
+        assertFalse(safe("OVER ("))
     }
 }
