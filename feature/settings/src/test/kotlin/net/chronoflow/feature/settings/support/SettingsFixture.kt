@@ -178,13 +178,31 @@ internal class SettingsFixture(
             override suspend fun formatter() = CopyLineFormatter(catalog)
         }
     val store = ViewModelStore()
-    val viewModels = mutableListOf<SettingsHomeViewModel>()
+    val viewModels = mutableListOf<androidx.lifecycle.ViewModel>()
 
     fun model(): SettingsHomeViewModel =
         SettingsHomeViewModel(deps, io).also {
             store.put("home-${viewModels.size}", it)
             viewModels += it
         }
+
+    fun profile(): net.chronoflow.feature.settings.profile.ProfileViewModel =
+        net.chronoflow.feature.settings.profile.ProfileViewModel(deps, androidx.lifecycle.SavedStateHandle(), io).also {
+            store.put("profile-${viewModels.size}", it)
+            viewModels += it
+        }
+
+    suspend fun reopen() {
+        store.clear()
+        viewModels.forEach {
+            it.viewModelScope.coroutineContext.job
+                .cancelAndJoin()
+        }
+        accounts.close()
+        accounts.open(AccountID.of(result.account.id))
+        accounts.upsert(result.account)
+        storedDatabase = checkNotNull(accounts.activeAccountDatabase())
+    }
 
     suspend fun pending() =
         withContext(io) {

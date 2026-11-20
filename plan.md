@@ -3071,7 +3071,7 @@ Implementation commits:
 - [x] **10a Task 5**: settings home screen.
 - [x] **10a Task 6**: pending sign-out sheet and Terms slot.
 - [x] **10a Task 7**: stored and loading states.
-- [ ] **10a Task 8**: account and profile pages.
+- [x] **10a Task 8**: account and profile pages.
 - [ ] **10a Task 9**: language page and applier.
 - [ ] **10a Task 10**: settings routes and seed paths.
 - [ ] **10a Task 11**: pending-change seed.
