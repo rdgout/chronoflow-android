@@ -1,6 +1,7 @@
 package net.chronoflow.feature.onboarding.walkthrough
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.SnapSpec
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -200,16 +201,12 @@ fun WalkthroughScreen(
 @Composable
 private fun WalkthroughDot(active: Boolean) {
     val target = walkthroughDotWidth(active)
-    val reduceMotion = LocalReduceMotion.current
+    val spec = walkthroughDotAnimationSpec(LocalReduceMotion.current)
     val width =
-        if (reduceMotion) {
+        if (spec is SnapSpec<*>) {
             rememberUpdatedState(target)
         } else {
-            animateFloatAsState(
-                target,
-                walkthroughDotAnimationSpec(reduceMotion),
-                label = "walkthrough.dot",
-            )
+            animateFloatAsState(target, spec, label = "walkthrough.dot")
         }
     Box(
         Modifier
