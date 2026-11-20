@@ -61,7 +61,9 @@ internal fun WizardTimesStep(
     val haptics = LocalHaptics.current
     val reduce = LocalReduceMotion.current
     LaunchedEffect(ui.continueFailures) {
-        if (ui.continueFailures > handled) {
+        if (ui.continueFailures < handled) {
+            handled = ui.continueFailures
+        } else if (ui.continueFailures > handled) {
             handled = ui.continueFailures
             haptics.perform(HapticEvent.Warning)
             withFrameNanos { }

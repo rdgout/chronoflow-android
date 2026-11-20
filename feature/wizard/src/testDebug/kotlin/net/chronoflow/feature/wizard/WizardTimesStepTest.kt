@@ -3,14 +3,22 @@
 package net.chronoflow.feature.wizard
 
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.test.runTest
 import net.chronoflow.core.designsystem.haptics.HapticEvent
 import net.chronoflow.core.designsystem.haptics.LocalHaptics
@@ -21,6 +29,7 @@ import net.chronoflow.core.testing.tiers.Logic
 import net.chronoflow.feature.wizard.shell.WizardScreen
 import net.chronoflow.feature.wizard.ui.WizardUiState
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.RuleChain
@@ -120,5 +129,46 @@ class WizardTimesStepTest {
                 state.value.copy(retryEnabled = false)
         }
         compose.runOnIdle { assertEquals(listOf(HapticEvent.Warning), haptics.events) }
+    }
+
+    @Test fun firstFailureAfterRestorationWarnsOnceAndRevealsTheFirstError() {
+        lateinit var initial: WizardUiState
+        runTest(timeout = 60.seconds) { initial = boardState("WizardOutboundScrollErrors", Locale.ENGLISH) }
+        val haptics = RecordingHaptics()
+        lateinit var current: MutableState<WizardUiState>
+        val restoration = StateRestorationTester(compose)
+        restoration.setContent {
+            val state = remember { mutableStateOf(initial) }
+            SideEffect { current = state }
+            WizardTestHost {
+                CompositionLocalProvider(LocalHaptics provides haptics) { WizardScreen(state.value, {}) }
+            }
+        }
+        compose.runOnIdle { current.value = initial.copy(times = initial.times!!.copy(continueFailures = 1)) }
+        compose.waitForIdle()
+        compose.runOnIdle { assertEquals(listOf(HapticEvent.Warning), haptics.events) }
+
+        restoration.emulateSavedInstanceStateRestore()
+        compose.runOnIdle {
+            assertEquals(0, current.value.times!!.continueFailures)
+            assertEquals(listOf(HapticEvent.Warning), haptics.events)
+        }
+        compose.onNodeWithTag("wizard.scroll").performSemanticsAction(SemanticsActions.ScrollBy) { it(0f, 100_000f) }
+        compose.waitForIdle()
+        val viewport = compose.onNodeWithTag("wizard.scroll").getUnclippedBoundsInRoot()
+        val footer = compose.onNodeWithTag("wizard.outbound.footer").getUnclippedBoundsInRoot()
+        val before = compose.onNodeWithTag("wizard.flight.errors.0").getUnclippedBoundsInRoot()
+        assertTrue("the first error must start offscreen: $before / $viewport", before.bottom < viewport.top)
+
+        compose.runOnIdle { current.value = initial.copy(times = initial.times!!.copy(continueFailures = 1)) }
+        compose.waitForIdle()
+        compose.runOnIdle { assertEquals(listOf(HapticEvent.Warning, HapticEvent.Warning), haptics.events) }
+        val revealed = compose.onNodeWithTag("wizard.flight.errors.0").getUnclippedBoundsInRoot()
+        assertTrue(
+            "the entire error group must be revealed: $revealed / $viewport",
+            revealed.top >= viewport.top - .5.dp && revealed.bottom <= minOf(viewport.bottom, footer.top) + .5.dp,
+        )
+        compose.runOnIdle { current.value = current.value.copy(retryEnabled = false) }
+        compose.runOnIdle { assertEquals(listOf(HapticEvent.Warning, HapticEvent.Warning), haptics.events) }
     }
 }
