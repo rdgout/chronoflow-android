@@ -1,5 +1,6 @@
 package net.chronoflow.core.ui.designsystem
 
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.dp
@@ -17,15 +18,19 @@ import org.junit.Test
 import org.junit.rules.RuleChain
 
 abstract class PrimitiveGuard(
-    private val case: LayoutCase,
+    protected val case: LayoutCase,
     private val section: GallerySection,
 ) {
-    private val compose = createComposeRule()
+    protected val compose = createComposeRule()
 
     @get:Rule val rules: RuleChain = RuleChain.outerRule(ProfileRule(case)).around(compose)
 
+    @Composable protected open fun GuardContent() {
+        GalleryPage(section)
+    }
+
     @Test fun primitiveFitsTheProfileAndSafeArea() {
-        compose.setContent { ProfileHost(case.profile) { GalleryHost(case.language, false) { GalleryPage(section) } } }
+        compose.setContent { ProfileHost(case.profile) { GalleryHost(case.language, false) { GuardContent() } } }
         Guards.assertTextFits(compose, case.profile)
         val nativeWindow =
             section in
