@@ -28,11 +28,11 @@ internal fun WizardBackHandling(
     BackHandler(enabled = state.discardDialogVisible) { onEvent(WizardEvent.DismissDiscard) }
     if (state.discardDialogVisible) {
         CfAlertDialog(
-            title = WizardCopy("Discard this trip?").resolve(),
+            title = state.discardTitle.resolve(),
             text = state.discardMessage.resolve(),
             confirm =
                 CfDialogAction(
-                    WizardCopy("Discard").resolve(),
+                    state.discardConfirmLabel.resolve(),
                     { onEvent(WizardEvent.ConfirmDiscard) },
                     destructive = true,
                 ),

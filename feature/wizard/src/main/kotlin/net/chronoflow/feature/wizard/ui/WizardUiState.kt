@@ -463,6 +463,8 @@ data class WizardUiState(
     val fineTune: net.chronoflow.feature.wizard.finetune.WizardFineTuneUi? = null,
     val cue: net.chronoflow.feature.wizard.checking.WizardHapticCue? = null,
     val discardMessage: WizardCopy = WizardCopy("What you entered is not saved."),
+    val discardTitle: WizardCopy = WizardCopy("Discard this trip?"),
+    val discardConfirmLabel: WizardCopy = WizardCopy("Discard"),
 ) {
     companion object {
         fun from(
@@ -514,6 +516,8 @@ data class WizardUiState(
                 checking = checking,
                 fineTune = fineTune,
                 cue = active.cue,
+                discardTitle = WizardCopy(if (active.isEditing) "Discard your changes?" else "Discard this trip?"),
+                discardConfirmLabel = WizardCopy(if (active.isEditing) "Discard changes" else "Discard"),
                 discardMessage =
                     WizardCopy(
                         when {
