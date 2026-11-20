@@ -1043,6 +1043,17 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A447 | (9g OQ-9g-9) The board Calculating card draws a 64 dp dawn-tinted disc behind the spinner, radius 26, padding 32/20 and a soft shadow; iOS shows a bare large spinner in `.wizardCard()` (radius 16, padding 32 all round, no shadow). | Board card and disc with `CfSpinner` 30 dp; static clock under Reduce Motion (iOS). | 9g |
 | OQ-A448 | (9g OQ-9g-10) "Latest wake-up" row has no iOS accessibility id. | `wizard.ready.latest-wake-up`. | 9g |
 | OQ-A449 | (9g OQ-9g-11) iOS freezes completion boards with a `#if DEBUG` model method; 9f replaced it with the `WizardUiOverride` seam (OQ-9f-16), which does not stop `readyTick`. | Reuse 9f's seam; `readyTick()`/`readyForeground()` in the ViewModel return at once while the override is set. No model-level freeze. | 9g |
+| OQ-A450 | (9h OQ-9h-1) 9b's ViewModel loads Edit/Duplicate itself (`startTrip` in `init`), which would show the wizard before the load and needs an unboarded loading/error state; iOS loads first, on the sheet. | Prepare on the sheet (`TripWizardPreparer` → `startTrip`), then push the route; the VM recovers the prepared row and falls back to `startTrip` only when the row does not match. | 9h |
+| OQ-A451 | (9h OQ-9h-2) iOS shows the action failure as `FeedbackToast` inside the sheet. | M3 Snackbar inside the sheet (OQ-A5), `SnackbarDuration.Short`, tag `trip.actions.failure`; capture `TripActionsFailure_noBoard`. | 9h |
+| OQ-A452 | (9h OQ-9h-3) The busy actions sheet has no board; iOS disables rows and Cancel with no spinner. | iOS: disabled rows ("Needs a connection." subtitle, as 6d draws disabled rows), Cancel disabled, no dismiss; capture `TripActionsBusy_noBoard`. | 9h |
+| OQ-A453 | (9h OQ-9h-4) A failed in-wizard load (fallback path only, e.g. a restored overlay route after the 30-minute row expired) has no board (`06` OQ 9, OQ-9b-12). | Close the wizard quietly (`WizardExit.Trips`); retain the existing generic warning log (R2). | 9h |
+| OQ-A454 | (9h OQ-9h-5) 9c expected 9h to add a `WizardExit` case for edit. Clearing the overlay already returns to the trip page under it (board `exitHref` Plan). | No new case; `Trips` = clear the overlay; save uses 9g's `Saved`. | 9h |
+| OQ-A455 | (9h OQ-9h-6) `WizardEditChanged` draws the edit-return note; the iOS seed's baseline already has the return, so iOS shows the edit note. | iOS seed and rule (EditNote); record the difference. | 9h |
+| OQ-A456 | (9h OQ-9h-7) `WizardExcludedEdit` draws the shift-work line plus "Your doctor can tell you what's safe when you travel."; the iOS seed uses the under-18 reason; the server sends one shift reason and no doctor line. | Seed the server's shift-work reason; no doctor line (server copy wins, as 9e); record it. | 9h |
+| OQ-A457 | (9h OQ-9h-8) The iOS `WizardReturnWeb` seed has no edit context, so it shows "New trip" and the plain add-return hint; the board shows "Edit trip" and "· 1 credit". | Seed the edit context (board); the rule is iOS's. | 9h |
+| OQ-A458 | (9h OQ-9h-9) Board back targets from revisited edit steps go to Ready (`backHref` l.262); iOS's `navigationPath` goes to the previous input step (Coming back? → Times). | iOS (9a's model, unchanged); record it. | 9h |
+| OQ-A459 | (9h OQ-9h-11) "Ends after {{count}} nights" has no singular in the iOS catalog ("Ends after 1 nights"). | Use the catalog string as is; report to the iOS session; nights < 2 is rare on web trips. | 9h |
+| OQ-A460 | (9h OQ-9h-12) iOS checks `canEdit`/`canDuplicate` from the card; the plan and 6d keep that. A trip whose `tripInput` shape fails `loadTrip` (legs > 16, bad boundary) throws `Server(null)`. | Treated as "other" failure (edit: server copy; duplicate: duplicate copy). | 9h |
 | OQ-A461 | (9h) OQ-A351 requires 1.0 on every edit step, but pinned iOS clears the floor on revisited input steps and WizardReturnWeb draws 45%. | Orchestrator decision, 2026-11-20: OQ-A351 was a plan default. Keep the 1.0 floor on initial edit Checking, its failures and first Ready (the recorded difference from iOS 0.95); after a revisit, use iOS `go()` floor clearing and `max(progressFloor ?: 0, stepProgress)`. Coming back? is 0.45, and later Checking/Ready use their step weights. | 9a, 9h |
 | OQ-0a-22 | Native libraries in the bundle? | Allow only `libandroidx.graphics.path.so` (Compose graphics-path; excluding it breaks Path conversion below API 34); fail on any other `.so` | 0a, 13 |
 | OQ-0b-1 | Where does `PlanMetrics` live? `08 §3.1` lists it inside `CfDimens`, but its consumer `:core:plan` is a JVM module that cannot depend on `:core:designsystem` | `core/plan/…/generated/PlanMetrics.generated.kt` (Double, dp), as iOS keeps it in `PlanCore` | 0b, 1b, 1c |
@@ -3002,11 +3013,13 @@ Implementation commits:
 - [x] Task 8: guards and board captures.
 - [x] Task 9: actions-to-wizard entry tests.
 - [x] Task 10: edit emulator journey.
-- [ ] Task 11: acceptance documentation and open questions.
+- [x] Task 11: acceptance documentation and open questions.
 
 **Acceptance**
 - Edit uses the source revision, and a changed-elsewhere trip shows `WizardEditChanged`.
 - Duplicate starts with empty dates.
+
+**Verification (2026-11-20):** Phase 9h tests, the 1,150 touched-module layout cases, 185 release cases and the pixel edit journey pass. The single `make quick` run remains red on the unchanged timeline presentation-marker guard; it passes in isolation without code changes. Tooling and serial timing stages pass separately. See `docs/wizard.md` for the open gate and capture hand-off.
 
 ### Phase 10a: Settings home, sign-out and account pages (`feat/phase-10a-settings-home`)
 
