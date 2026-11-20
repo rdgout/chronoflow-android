@@ -34,8 +34,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -59,6 +62,8 @@ import net.chronoflow.core.designsystem.component.CfButtonStyle
 import net.chronoflow.core.designsystem.component.CfIconButton
 import net.chronoflow.core.designsystem.generated.CfTypeScale
 import net.chronoflow.core.designsystem.generated.PlanUITokens
+import net.chronoflow.core.designsystem.haptics.HapticEvent
+import net.chronoflow.core.designsystem.haptics.LocalHaptics
 import net.chronoflow.core.designsystem.icon.LucideGlyphs
 import net.chronoflow.core.designsystem.icon.imageVector
 import net.chronoflow.core.designsystem.layout.LocalSafeInsets
@@ -70,6 +75,8 @@ import net.chronoflow.core.ui.R
 import net.chronoflow.core.wizard.model.MemberWizardStep
 import net.chronoflow.feature.wizard.TripWizardViewModel
 import net.chronoflow.feature.wizard.answers.WizardAnswerSheetHost
+import net.chronoflow.feature.wizard.checking.CheckingOutcome
+import net.chronoflow.feature.wizard.checking.WizardCheckingStep
 import net.chronoflow.feature.wizard.components.rememberServerCopy
 import net.chronoflow.feature.wizard.excluded.WizardExcludedStep
 import net.chronoflow.feature.wizard.questions.WizardQuestionStep
@@ -117,6 +124,22 @@ fun WizardScreen(
     copyFormatter: CopyLineFormatter?,
     onEvent: (WizardEvent) -> Unit,
 ) {
+    val haptics = LocalHaptics.current
+    var handledCue by rememberSaveable { mutableIntStateOf(0) }
+    LaunchedEffect(state.cue) {
+        state.cue?.let { cue ->
+            if (cue.sequence > handledCue) {
+                handledCue = cue.sequence
+                haptics.perform(
+                    when (cue.outcome) {
+                        CheckingOutcome.Success -> HapticEvent.Success
+                        CheckingOutcome.Warning -> HapticEvent.Warning
+                        CheckingOutcome.Error -> HapticEvent.Error
+                    },
+                )
+            }
+        }
+    }
     WizardScaffold(state, onEvent, copyFormatter)
     WizardBackHandling(state, onEvent)
     state.sheet?.let { AirportSearchSheet(it, state.search, state.retryEnabled, onEvent) }
@@ -421,7 +444,8 @@ private fun WizardStepContent(
             val times = state.times
             val titleCopy =
                 where?.title ?: times?.title ?: state.returnChoice?.title ?: state.sleep?.title ?: state.excluded?.title
-            val subtitleCopy = where?.subtitle ?: times?.subtitle ?: state.sleep?.subtitle
+                    ?: state.checking?.title
+            val subtitleCopy = where?.subtitle ?: times?.subtitle ?: state.sleep?.subtitle ?: state.checking?.subtitle
             val serverCopy = rememberServerCopy(copyFormatter)
             val title = titleCopy?.resolve() ?: state.question?.let { serverCopy(it.title) }
             val locale = LocalConfiguration.current.locales[0]
@@ -469,6 +493,7 @@ private fun WizardStepContent(
                 }
                 LaunchedEffect(key) { titleFocus.requestFocus() }
                 when {
+                    state.checking != null -> WizardCheckingStep(state.checking)
                     state.sleep != null -> WizardSleepStep(state.sleep, onEvent, copyFormatter)
                     state.question != null -> WizardQuestionStep(state.question, onEvent)
                     state.excluded != null -> WizardExcludedStep(state.excluded, copyFormatter)

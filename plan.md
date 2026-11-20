@@ -2882,10 +2882,10 @@ Implementation commits (brief §7):
 
 **Tasks**
 - [ ] **Checking** (`WizardChecking*`).
-  - A canvas arc driven by the 9b tick timing, the slow line at 10 s, and the again ordering (`WizardCheckingAgain`).
+  - [x] A canvas arc driven by the 9b tick timing, the slow line at 10 s, and the again ordering (`WizardCheckingAgain`).
   - Failure cards for offline, server and throttle, with a countdown (`WizardCheckOffline`, `WizardCheckServer`, `WizardCheckThrottle`).
-  - No back while checking.
-  - TalkBack hears progress through a polite live region.
+  - [x] No back while checking.
+  - [x] TalkBack hears progress through a polite live region.
 - [ ] **Fine-tune** (`WizardFineTune*`):
   - member rows, plus per-stay and per-flight rows;
   - the different-sleep-times switch (`WizardFineTuneSleep`);

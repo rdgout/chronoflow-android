@@ -5,6 +5,15 @@ import net.chronoflow.core.designsystem.layout.BoardMetrics
 @Suppress("ktlint:standard:property-naming")
 @BoardMetrics("Wizard", "WizardCopy", "WizardOutbound", "WizardReturn", "WizardSheet", "PickerTime")
 internal object WizardMetrics {
+    const val arcBoxWidth = 200f
+    const val arcStartX = 4f
+    const val arcBaseY = 34f
+    const val arcControl1X = 60f
+    const val arcControl2X = 140f
+    const val arcControlY = 2f
+    const val arcEndX = 196f
+    const val arcPeriodMillis = 3600
+    const val arcReducedPhase = 0.65f
     const val ctaBusyAlpha = 0.7f
     const val timeRowMinHeight = 56
     const val sheetRowMinHeight = 52

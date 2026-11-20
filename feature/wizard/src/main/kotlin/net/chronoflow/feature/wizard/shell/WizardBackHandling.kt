@@ -18,6 +18,12 @@ internal fun WizardBackHandling(
     BackHandler(enabled = state.step == WizardStepKey.Where && state.sheet == null && !state.discardDialogVisible) {
         onEvent(WizardEvent.RequestClose)
     }
+    BackHandler(
+        enabled =
+            state.step == WizardStepKey.Checking && state.checking?.failure == null && !state.discardDialogVisible,
+    ) {
+        onEvent(WizardEvent.Back)
+    }
     BackHandler(enabled = state.sheet != null && !state.discardDialogVisible) { onEvent(WizardEvent.CancelAirport) }
     BackHandler(enabled = state.discardDialogVisible) { onEvent(WizardEvent.DismissDiscard) }
     if (state.discardDialogVisible) {
