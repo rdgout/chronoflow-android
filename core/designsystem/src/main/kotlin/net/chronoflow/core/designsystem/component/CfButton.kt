@@ -56,7 +56,7 @@ private object ButtonMetrics {
     const val DEFAULT_HEIGHT = 36f
 }
 
-enum class CfButtonStyle { Primary, Secondary, Outline, Ghost, Destructive, Dawn, OnSky }
+enum class CfButtonStyle { Primary, Secondary, Outline, Ghost, GhostDestructive, Destructive, Dawn, OnSky }
 
 enum class CfButtonSize { Sm, Default, Lg, Icon, Touch }
 
@@ -95,7 +95,7 @@ fun CfButton(
             CfButtonStyle.Primary -> c.primary
             CfButtonStyle.Secondary -> c.secondary
             CfButtonStyle.Outline -> c.background
-            CfButtonStyle.Ghost -> Color.Transparent
+            CfButtonStyle.Ghost, CfButtonStyle.GhostDestructive -> Color.Transparent
             CfButtonStyle.Destructive -> c.destructive
             CfButtonStyle.Dawn -> c.dawn
             CfButtonStyle.OnSky -> c.skyCopyBackground
@@ -104,6 +104,7 @@ fun CfButton(
         when (style) {
             CfButtonStyle.Primary -> c.primaryForeground
             CfButtonStyle.Secondary -> c.secondaryForeground
+            CfButtonStyle.GhostDestructive -> c.destructive
             CfButtonStyle.Destructive -> c.destructiveForeground
             CfButtonStyle.Dawn -> c.dawnForeground
             CfButtonStyle.OnSky -> c.skyCopy
@@ -173,12 +174,13 @@ fun CfIconButton(
             CfButtonStyle.Destructive -> c.destructive
             CfButtonStyle.Dawn -> c.dawn
             CfButtonStyle.OnSky -> c.skyCopyBackground
-            CfButtonStyle.Ghost -> Color.Transparent
+            CfButtonStyle.Ghost, CfButtonStyle.GhostDestructive -> Color.Transparent
         }
     val ink =
         when (style) {
             CfButtonStyle.Primary -> c.primaryForeground
             CfButtonStyle.Secondary -> c.secondaryForeground
+            CfButtonStyle.GhostDestructive -> c.destructive
             CfButtonStyle.Destructive -> c.destructiveForeground
             CfButtonStyle.Dawn -> c.dawnForeground
             CfButtonStyle.OnSky -> c.skyCopy

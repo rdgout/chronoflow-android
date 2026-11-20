@@ -3062,6 +3062,23 @@ Implementation commits:
   - One emulator journey: sign out with a pending change → Stay → Discard.
   - One emulator check that a language change switches the copy.
 
+**Brief implementation tasks**
+
+- [x] **10a Task 1**: settings glyphs and ghost destructive button.
+- [ ] **10a Task 2**: settings home state.
+- [ ] **10a Task 3**: home model and sign-out flow.
+- [ ] **10a Task 4**: page scaffold and components.
+- [ ] **10a Task 5**: settings home screen.
+- [ ] **10a Task 6**: pending sign-out sheet and Terms slot.
+- [ ] **10a Task 7**: stored and loading states.
+- [ ] **10a Task 8**: account and profile pages.
+- [ ] **10a Task 9**: language page and applier.
+- [ ] **10a Task 10**: settings routes and seed paths.
+- [ ] **10a Task 11**: pending-change seed.
+- [ ] **10a Task 12**: board guards and captures.
+- [ ] **10a Task 13**: device sign-out and language checks.
+- [ ] **10a Task 14**: acceptance record.
+
 **Acceptance**
 - Sign-out with pending changes matches both `SignOutPending` boards.
 - The language switch works on API 29 and 36, through Robolectric and the `pixel` emulator.
