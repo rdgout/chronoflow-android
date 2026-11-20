@@ -2718,7 +2718,7 @@ Implementation commits (brief §7):
 - [x] **Search state** (9c Task 3): map the shared search session, filter through the model and enable throttle retry with one delay.
 - [x] **Where state and intents** (9c Task 2): pure UI derivation and guarded ViewModel route/close intents with JVM coverage.
 - [x] **Search copy** (9c Task 1): seven generated en/nl Android search strings; resource and catalog resolution verified.
-- [ ] **Shell** (`feature/wizard/…/shell/`).
+- [x] **Shell** (`feature/wizard/…/shell/`).
   - A full-screen route that replaces the tab shell.
   - A centred top bar with close and back; the first screen has no back.
   - A 4 dp `CfLinearProgress` at the board percentages.

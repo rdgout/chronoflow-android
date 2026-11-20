@@ -9,6 +9,7 @@ android {
 dependencies {
     implementation(project(":core:wizard"))
     implementation(libs.androidx.navigation3.ui)
+    implementation(libs.androidx.activity.compose)
     testImplementation(project(":core:testing-compose"))
     implementation(libs.kotlinx.coroutines.core)
     testImplementation(project(":core:testing"))

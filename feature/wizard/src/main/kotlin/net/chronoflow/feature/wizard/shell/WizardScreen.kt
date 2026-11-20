@@ -95,6 +95,7 @@ fun WizardScreen(
     onEvent: (WizardEvent) -> Unit,
 ) {
     WizardScaffold(state, onEvent)
+    WizardBackHandling(state, onEvent)
 }
 
 @Composable

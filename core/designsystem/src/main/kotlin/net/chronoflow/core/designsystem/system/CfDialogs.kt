@@ -88,6 +88,7 @@ fun CfAlertDialog(
 ) {
     AlertDialog(
         onDismissRequest,
+        modifier = Modifier.semantics { testTagsAsResourceId = true },
         confirmButton = { DialogAction(confirm, "cf.dialog.confirm") },
         dismissButton = dismiss?.let { { DialogAction(it, "cf.dialog.dismiss") } },
         title = { Text(title) },
