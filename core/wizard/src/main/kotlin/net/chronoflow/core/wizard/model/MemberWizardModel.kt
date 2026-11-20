@@ -39,6 +39,7 @@ class MemberWizardModel(
     internal val now: () -> Instant,
     internal val generation: MemberWizardGeneration? = null,
     internal val checkingClock: WizardCheckingClock = WizardCheckingClock.continuous,
+    writerScope: CoroutineScope = scope,
 ) {
     private val mutableSnapshots =
         MutableStateFlow(
@@ -101,7 +102,7 @@ class MemberWizardModel(
     internal var saveJob: Job? = null
     internal var choiceJob: Job? = null
     internal var retryJob: Job? = null
-    internal var pending: Job? = null
+    private val writer = WizardRecoveryWriter(store, writerScope, onFailure = { persistenceFailed = true })
     internal var checkID: String = UUID.randomUUID().toString()
     internal var retryID: String = UUID.randomUUID().toString()
     internal var checkInstance: String? = null
@@ -281,9 +282,7 @@ class MemberWizardModel(
         return draft.fieldErrors.isEmpty()
     }
 
-    suspend fun flush() {
-        pending?.join()
-    }
+    suspend fun flush() = writer.flush()
 
     fun setGuestAuthenticationPresented(presented: Boolean) {
         if (mode != WizardMode.guest) return
@@ -328,19 +327,7 @@ class MemberWizardModel(
 
     internal fun persist() {
         state = state.copy(revision = state.revision + 1)
-        val value = draft
-        val previous = pending
-        pending =
-            scope.launch {
-                previous?.join()
-                wizardOperation({
-                    try {
-                        store.persist(value)
-                    } catch (_: CancellationException) {
-                        currentCoroutineContext().ensureActive()
-                    }
-                }, { persistenceFailed = true })
-            }
+        writer.enqueue(draft)
     }
 
     fun minimumLocal(field: WizardFlightTiming.Field): LocalDateTime? =

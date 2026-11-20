@@ -8,7 +8,10 @@ import net.chronoflow.core.data.repository.TripRepository
 import net.chronoflow.core.data.wizard.support.WizardStore
 import net.chronoflow.core.data.wizard.support.wizardTrip
 import net.chronoflow.core.model.store.SettingsRecord
+import net.chronoflow.core.testing.wizard.CheckingTestClock
 import net.chronoflow.core.testing.wizard.WizardTestClock
+import net.chronoflow.core.testing.wizard.wizardAirport
+import net.chronoflow.core.wizard.model.MemberWizardModel
 import net.chronoflow.core.wizard.model.MemberWizardStep
 import net.chronoflow.core.wizard.model.RecoveryRejected
 import net.chronoflow.core.wizard.model.WizardAirportSheet
@@ -96,6 +99,47 @@ class WizardRecoveryTests {
                     assertNull(store.recover())
                     assertRejected { store.persist(expired) }
                 } finally {
+                    fixture.close()
+                }
+            }
+
+        @Test fun editingAndClosingFlushQueuedWritesAndRememberStepAndSheet() =
+            runTest(timeout = 60.seconds) {
+                val fixture = WizardStore(StandardTestDispatcher(testScheduler))
+                val clock = WizardTestClock()
+                val store = MemberWizardStore(fixture.database, now = { clock.now }, io = fixture.io)
+                val model =
+                    MemberWizardModel(
+                        store.start(),
+                        store,
+                        backgroundScope,
+                        { clock.now },
+                        checkingClock = CheckingTestClock(testScheduler).clock,
+                    )
+                try {
+                    model.openAirport(WizardAirportSheet(0, WizardAirportSheet.Side.from))
+                    model.chooseAirport(
+                        wizardAirport("AMS", "Amsterdam", "Europe/Amsterdam"),
+                        WizardAirportSheet(0, WizardAirportSheet.Side.from),
+                    )
+                    model.chooseAirport(
+                        wizardAirport("HND", "Tokyo", "Asia/Tokyo"),
+                        WizardAirportSheet(0, WizardAirportSheet.Side.to),
+                    )
+                    assertTrue(model.whereComplete)
+                    assertTrue(model.draft.state.entered)
+                    model.go(MemberWizardStep.outbound)
+                    model.setDateTime("2027-03-28T02:30", 0, false)
+                    model.openAirport(WizardAirportSheet(0, WizardAirportSheet.Side.stop))
+                    model.flush()
+                    assertEquals(model.draft, store.recover())
+                    model.discard()
+                    assertNull(store.recover())
+                    model.setDateTime("2027-03-28T05:30", 0, false)
+                    model.flush()
+                    assertNull(store.recover())
+                } finally {
+                    model.discard()
                     fixture.close()
                 }
             }
