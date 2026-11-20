@@ -12,6 +12,7 @@ sealed interface TripWizardUiState {
         val progress: Double,
         val path: List<MemberWizardDestination>,
         val sleepComplete: Boolean = false,
+        val optionalPrompts: List<net.chronoflow.core.model.contracts.ApiReviewPrompt> = emptyList(),
     ) : TripWizardUiState
 
     data class LoadFailed(

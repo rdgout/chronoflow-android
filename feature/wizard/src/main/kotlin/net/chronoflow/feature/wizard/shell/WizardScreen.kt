@@ -63,8 +63,10 @@ import net.chronoflow.core.designsystem.layout.LocalSafeInsets
 import net.chronoflow.core.designsystem.system.CfLinearProgress
 import net.chronoflow.core.designsystem.theme.CfTheme
 import net.chronoflow.core.designsystem.theme.LocalReduceMotion
+import net.chronoflow.core.plan.CopyLineFormatter
 import net.chronoflow.core.ui.R
 import net.chronoflow.feature.wizard.TripWizardViewModel
+import net.chronoflow.feature.wizard.answers.WizardAnswerSheetHost
 import net.chronoflow.feature.wizard.returnchoice.WizardReturnStep
 import net.chronoflow.feature.wizard.search.AirportSearchSheet
 import net.chronoflow.feature.wizard.sleep.WizardSleepStep
@@ -100,11 +102,19 @@ fun WizardRoot(
 fun WizardScreen(
     state: WizardUiState,
     onEvent: (WizardEvent) -> Unit,
+) = WizardScreen(state, null, onEvent)
+
+@Composable
+fun WizardScreen(
+    state: WizardUiState,
+    copyFormatter: CopyLineFormatter?,
+    onEvent: (WizardEvent) -> Unit,
 ) {
     WizardScaffold(state, onEvent)
     WizardBackHandling(state, onEvent)
     state.sheet?.let { AirportSearchSheet(it, state.search, state.retryEnabled, onEvent) }
     state.sleep?.openTime?.let { WizardSleepTimeSheet(it, onEvent) }
+    WizardAnswerSheetHost(state.answerSheet, onEvent, copyFormatter)
 }
 
 @Composable

@@ -11,9 +11,14 @@ import net.chronoflow.core.wizard.model.WizardMode
 import net.chronoflow.core.wizard.model.route
 import net.chronoflow.core.wizard.model.routeComplete
 import net.chronoflow.feature.wizard.TripWizardUiState
+import net.chronoflow.feature.wizard.answers.SUPPORTED_SHEET_KINDS
+import net.chronoflow.feature.wizard.answers.WizardAnswerSheetState
+import net.chronoflow.feature.wizard.answers.WizardAnswerSheetUi
 import net.chronoflow.feature.wizard.returnchoice.WizardReturnUi
 import net.chronoflow.feature.wizard.shell.WizardStepKey
 import net.chronoflow.feature.wizard.sleep.WizardSleepUi
+import net.chronoflow.feature.wizard.sleep.WizardTimeSheetUi
+import net.chronoflow.feature.wizard.sleep.clockString
 import net.chronoflow.feature.wizard.times.WizardPicker
 import net.chronoflow.feature.wizard.times.WizardTimesUi
 import net.chronoflow.feature.wizard.times.flightTimesComplete
@@ -399,6 +404,7 @@ data class WizardUiState(
     val times: WizardTimesUi? = null,
     val returnChoice: WizardReturnUi? = null,
     val sleep: WizardSleepUi? = null,
+    val answerSheet: WizardAnswerSheetUi? = null,
 ) {
     companion object {
         fun from(
@@ -410,6 +416,7 @@ data class WizardUiState(
             continueFailures: Int = 0,
             picker: WizardPicker? = null,
             openTime: String? = null,
+            answerSheet: WizardAnswerSheetState? = null,
         ): WizardUiState {
             val draft = active.wizard.draft
             val key =
@@ -443,6 +450,21 @@ data class WizardUiState(
                     } else {
                         null
                     },
+                answerSheet =
+                    answerSheet
+                        ?.takeIf { sheet ->
+                            sheet.prompt.id == draft.state.promptSheetID &&
+                                sheet.prompt.kind in SUPPORTED_SHEET_KINDS && sheet.prompt in active.optionalPrompts
+                        }?.let { sheet ->
+                            WizardAnswerSheetUi(
+                                sheet,
+                                timeFormat,
+                                openTime
+                                    ?.takeIf {
+                                        it in setOf("free_day_bed", "free_day_wake")
+                                    }?.let { WizardTimeSheetUi(it, sheet.values[it].clockString()) },
+                            )
+                        },
                 sleep =
                     if (key == WizardStepKey.Sleep) {
                         WizardSleepUi.from(draft, continueFailures, timeFormat, openTime)

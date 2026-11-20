@@ -2831,9 +2831,9 @@ Implementation commits (brief §7):
 - [x] **Clock rounding**: nearest five minutes with midnight wrap; untouched and unchanged confirms write nothing (9e Task 1).
 - [x] **Time picker sheet**: neutral Material dial, hoisted state, shared colors, gallery and structural guards (9e Task 2).
 - [x] **Board drafts**: guest/member sleep, supported questions, excluded and free-day sheet seeds, with board capture profiles (9e Task 3).
-- [ ] **Sleep** (`WizardSleep`).
+- [x] **Sleep** (`WizardSleep`).
   - [x] Usual bedtime and wake time use the M3 `TimePicker` in a sheet, rounded to 5 min on Done (OQ-A8, `PickerTime`).
-  - The free-day times sheet (`WizardSheetFreeSleep`).
+  - [x] The free-day times sheet (`WizardSheetFreeSleep`).
 - [ ] **Questions.** Age band (`WizardQAge`) and shift work (`WizardQShift`, `WizardQShiftNL`, `WizardQShiftLarge`). They auto-advance after 250 ms and use `role = RadioButton`.
 - [ ] **Excluded states** (`WizardExcluded`, `WizardExcludedShift`), for guests, saved shift-work answers and edits.
 - [ ] **No retired questions.** A test proves that no retired health question is referenced; `WizardQBipolar`, `WizardQCaffeine`, `WizardQClot`, `WizardQEye` and `WizardQPregnant` stay unbuilt.

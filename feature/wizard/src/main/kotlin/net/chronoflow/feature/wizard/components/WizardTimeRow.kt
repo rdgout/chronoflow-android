@@ -48,6 +48,7 @@ internal fun WizardTimeRow(
         }
     val text = label.resolve()
     val empty = WizardCopy("not set").resolve()
+    val free = minHeight == WizardMetrics.sheetRowMinHeight.dp
     val shape = RoundedCornerShape(WizardMetrics.pillRadius.dp)
     Row(
         Modifier
@@ -60,9 +61,9 @@ internal fun WizardTimeRow(
                 stateDescription = formatted ?: empty
             }.padding(
                 start = PlanUITokens.space4.dp,
-                end = PlanUITokens.space3.dp,
-                top = PlanUITokens.wizardControlGap.dp,
-                bottom = PlanUITokens.wizardControlGap.dp,
+                end = (if (free) PlanUITokens.space4 else PlanUITokens.space3).dp,
+                top = (if (free) PlanUITokens.space2 else PlanUITokens.wizardControlGap).dp,
+                bottom = (if (free) PlanUITokens.space2 else PlanUITokens.wizardControlGap).dp,
             ),
         horizontalArrangement = Arrangement.spacedBy(PlanUITokens.space2.dp),
         verticalAlignment = Alignment.CenterVertically,

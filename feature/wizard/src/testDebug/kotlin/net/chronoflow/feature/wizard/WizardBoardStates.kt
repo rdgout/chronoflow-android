@@ -5,9 +5,13 @@ import net.chronoflow.core.testing.DeviceProfiles
 import net.chronoflow.core.testing.SafeInsetsDp
 import net.chronoflow.core.wizard.model.MemberWizardModel
 import net.chronoflow.core.wizard.model.navigationPath
+import net.chronoflow.core.wizard.model.optionalPrompts
 import net.chronoflow.core.wizard.model.progress
+import net.chronoflow.core.wizard.model.reviewInput
 import net.chronoflow.core.wizard.model.showsBack
 import net.chronoflow.core.wizard.model.sleepComplete
+import net.chronoflow.feature.wizard.answers.SUPPORTED_SHEET_KINDS
+import net.chronoflow.feature.wizard.answers.WizardAnswerSheetState
 import net.chronoflow.feature.wizard.debug.FixedAirportSearch
 import net.chronoflow.feature.wizard.debug.WizardBoardCaptureSeed
 import net.chronoflow.feature.wizard.debug.WizardMemoryDraftStore
@@ -43,6 +47,7 @@ internal fun TestScope.boardState(
                 model.progress,
                 model.navigationPath,
                 sleepComplete = model.sleepComplete,
+                optionalPrompts = model.optionalPrompts,
             )
         val ui =
             WizardUiState.from(
@@ -50,6 +55,19 @@ internal fun TestScope.boardState(
                 dialog = presentation.discardDialogVisible,
                 now = WizardBoardCaptureSeed.now,
                 openTime = presentation.timeSheet,
+                answerSheet =
+                    model.optionalPrompts
+                        .firstOrNull {
+                            it.id == draft.state.promptSheetID && it.kind in SUPPORTED_SHEET_KINDS
+                        }?.let {
+                            WizardAnswerSheetState.load(
+                                it,
+                                model.reviewInput,
+                                draft.state.savedProfile,
+                                draft.fieldErrors,
+                                draft.form,
+                            )
+                        },
             )
         val sheet = ui.sheet
         val results =
