@@ -1,0 +1,47 @@
+@file:Suppress("ktlint:standard:max-line-length")
+
+package net.chronoflow.feature.wizard.shell
+
+import net.chronoflow.core.model.contracts.ApiAirportSuggestion
+import net.chronoflow.core.wizard.model.WizardAirportSheet
+
+sealed interface WizardEvent {
+    data class OpenAirport(
+        val sheet: WizardAirportSheet,
+    ) : WizardEvent
+
+    data object CancelAirport : WizardEvent
+
+    data class ChooseAirport(
+        val airport: ApiAirportSuggestion,
+        val sheet: WizardAirportSheet,
+    ) : WizardEvent
+
+    data object SwapAirports : WizardEvent
+
+    data class RemoveStop(
+        val routeIndex: Int,
+    ) : WizardEvent
+
+    data class MakeDirect(
+        val home: Boolean,
+    ) : WizardEvent
+
+    data class Continue(
+        val step: WizardStepKey,
+    ) : WizardEvent
+
+    data object Back : WizardEvent
+
+    data object RequestClose : WizardEvent
+
+    data object ConfirmDiscard : WizardEvent
+
+    data object DismissDiscard : WizardEvent
+
+    data class Query(
+        val text: String,
+    ) : WizardEvent
+
+    data object RetrySearch : WizardEvent
+}

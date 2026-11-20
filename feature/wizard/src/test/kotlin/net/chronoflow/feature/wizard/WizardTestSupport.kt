@@ -41,6 +41,7 @@ import net.chronoflow.core.wizard.model.WizardForm
 import net.chronoflow.core.wizard.model.from
 import net.chronoflow.core.wizard.model.inputFingerprint
 import net.chronoflow.core.wizard.model.reviewInput
+import net.chronoflow.core.wizard.model.setRouteAirport
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -211,4 +212,54 @@ internal suspend fun TestScope.withWizard(
 internal suspend fun TestScope.awaitWizard(condition: suspend () -> Boolean) {
     runCurrent()
     assertTrue(condition())
+}
+
+internal val AMS =
+    net.chronoflow.core.model.contracts.ApiAirportSuggestion(
+        "AMS",
+        "Amsterdam Airport Schiphol",
+        "Amsterdam",
+        "NL",
+        "Europe/Amsterdam",
+    )
+internal val NRT =
+    net.chronoflow.core.model.contracts.ApiAirportSuggestion(
+        "NRT",
+        "Narita International",
+        "Tokyo",
+        "JP",
+        "Asia/Tokyo",
+    )
+internal val DXB =
+    net.chronoflow.core.model.contracts.ApiAirportSuggestion(
+        "DXB",
+        "Dubai International",
+        "Dubai",
+        "AE",
+        "Asia/Dubai",
+    )
+internal val BKK =
+    net.chronoflow.core.model.contracts.ApiAirportSuggestion(
+        "BKK",
+        "Suvarnabhumi",
+        "Bangkok",
+        "TH",
+        "Asia/Bangkok",
+    )
+
+internal fun routeDraft(
+    stops: Int = 0,
+    home: Boolean = false,
+): MemberWizardDraft {
+    var form = WizardForm().setRouteAirport(AMS, 0).setRouteAirport(NRT, 1)
+    repeat(stops) { form = form.insertStop(if (it % 2 == 0) DXB else BKK, form.returnBoundary - 1) }
+    if (home) form = form.addReturn().setRouteAirport(AMS, 1, home = true)
+    return MemberWizardDraft(
+        form,
+        net.chronoflow.core.wizard.model.MemberWizardState(
+            entered = true,
+            fromLastTrip = true,
+            step = if (home) MemberWizardStep.returnRoute else MemberWizardStep.whereTo,
+        ),
+    )
 }
