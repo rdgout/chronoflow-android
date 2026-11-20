@@ -2881,9 +2881,9 @@ Implementation commits (brief §7):
 **Delivers.** Builds the Checking screen (canvas arc, tick timing, the slow line, the again ordering) and its offline, server and throttle failure cards with a countdown. It builds Fine-tune with its member rows, per-stay and per-flight rows, the different-sleep-times switch, and the busy and none states. It builds every fine-tune sheet (seat, room, checkout, wake, busy hours, drinks with steppers, light, blue blockers with rating), each with one nullable selection and its validation errors.
 
 **Tasks**
-- [ ] **Checking** (`WizardChecking*`).
+- [x] **Checking** (`WizardChecking*`).
   - [x] A canvas arc driven by the 9b tick timing, the slow line at 10 s, and the again ordering (`WizardCheckingAgain`).
-  - Failure cards for offline, server and throttle, with a countdown (`WizardCheckOffline`, `WizardCheckServer`, `WizardCheckThrottle`).
+  - [x] Failure cards for offline, server and throttle, with a countdown (`WizardCheckOffline`, `WizardCheckServer`, `WizardCheckThrottle`).
   - [x] No back while checking.
   - [x] TalkBack hears progress through a polite live region.
 - [ ] **Fine-tune** (`WizardFineTune*`):

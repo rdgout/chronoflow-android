@@ -90,9 +90,7 @@ internal fun WizardCheckLine(
                     }
                 }
 
-                CheckLineState.Open -> {
-                    Unit
-                }
+                CheckLineState.Open -> {}
             }
         }
         Text(

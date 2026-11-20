@@ -26,8 +26,9 @@ import net.chronoflow.feature.wizard.ui.resolve
 
 @Composable
 internal fun WizardCheckingStep(ui: WizardCheckingUi) {
-    if (ui.failure != null) return
-    Column(Modifier.fillMaxWidth().testTag("wizard.checking")) { WizardCheckingCard(ui) }
+    Column(Modifier.fillMaxWidth().testTag("wizard.checking")) {
+        if (ui.failure != null) WizardCheckFailure(ui) else WizardCheckingCard(ui)
+    }
 }
 
 @Composable
