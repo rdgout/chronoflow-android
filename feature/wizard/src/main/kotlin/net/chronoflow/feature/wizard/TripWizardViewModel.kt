@@ -114,6 +114,14 @@ class TripWizardViewModel(
     private val mutableDialog = MutableStateFlow(presentation.discardDialogVisible)
     val discardDialogVisible = mutableDialog.asStateFlow()
     private val mutableExit = MutableStateFlow<WizardExit?>(null)
+    private var savedHapticDelivered = false
+
+    internal fun consumeSavedHaptic(): Boolean {
+        if (mutableExit.value !is WizardExit.Saved || savedHapticDelivered) return false
+        savedHapticDelivered = true
+        return true
+    }
+
     val exit = mutableExit.asStateFlow()
     private var selectedAirport = false
     private var continuing = false

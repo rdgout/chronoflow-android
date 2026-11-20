@@ -113,7 +113,19 @@ fun WizardRoot(
     val search by viewModel.searchState.collectAsStateWithLifecycle()
     val retryEnabled by viewModel.retryEnabled.collectAsStateWithLifecycle()
     val exit = rememberUpdatedState(onExit)
-    LaunchedEffect(viewModel) { viewModel.exit.collect { it?.let { target -> exit.value(target) } } }
+    val haptics = rememberUpdatedState(LocalHaptics.current)
+    LaunchedEffect(viewModel) {
+        viewModel.exit.collect { target ->
+            if (target != null) {
+                if (target is WizardExit.Saved &&
+                    viewModel.consumeSavedHaptic()
+                ) {
+                    haptics.value.perform(HapticEvent.Success)
+                }
+                exit.value(target)
+            }
+        }
+    }
     val events = remember(viewModel) { viewModel::onEvent }
     val active = state
     if (active == null) {
