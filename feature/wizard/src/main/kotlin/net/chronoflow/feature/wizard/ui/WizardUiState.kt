@@ -480,6 +480,7 @@ data class WizardUiState(
     val discardMessage: WizardCopy = WizardCopy("What you entered is not saved."),
     val discardTitle: WizardCopy = WizardCopy("Discard this trip?"),
     val discardConfirmLabel: WizardCopy = WizardCopy("Discard"),
+    val firstScreen: Boolean = false,
 ) {
     companion object {
         fun from(
@@ -539,6 +540,7 @@ data class WizardUiState(
                     net.chronoflow.feature.wizard.calculating.CalculatingUi
                         .from(draft),
                 cue = active.cue,
+                firstScreen = active.firstScreen,
                 discardTitle = WizardCopy(if (active.isEditing) "Discard your changes?" else "Discard this trip?"),
                 discardConfirmLabel = WizardCopy(if (active.isEditing) "Discard changes" else "Discard"),
                 discardMessage =

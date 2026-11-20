@@ -15,7 +15,12 @@ internal fun WizardBackHandling(
     state: WizardUiState,
     onEvent: (WizardEvent) -> Unit,
 ) {
-    BackHandler(enabled = state.step == WizardStepKey.Where && state.sheet == null && !state.discardDialogVisible) {
+    BackHandler(
+        enabled =
+            (state.firstScreen || state.step == WizardStepKey.Where) && state.sheet == null &&
+                state.sleep?.openTime == null && state.fineTune?.openTime == null && state.answerSheet == null &&
+                !state.discardDialogVisible,
+    ) {
         onEvent(WizardEvent.RequestClose)
     }
     BackHandler(

@@ -2990,6 +2990,19 @@ Implementation commits (brief §7):
   - Guards.
   - One emulator journey: edit a trip → save → the trip page shows the new revision.
 
+Implementation commits:
+- [x] Task 1: prepared-row entry and first-screen back handling.
+- [ ] Task 2: edit Ready mapping.
+- [ ] Task 3: edit Ready rendering and discard checks.
+- [ ] Task 4: web end choice and duplicate subtitle.
+- [ ] Task 5: trip actions preparation and busy/failure states.
+- [ ] Task 6: app preparer and dependency wiring.
+- [ ] Task 7: edit and duplicate board seeds.
+- [ ] Task 8: guards and board captures.
+- [ ] Task 9: actions-to-wizard entry tests.
+- [ ] Task 10: edit emulator journey.
+- [ ] Task 11: acceptance documentation and open questions.
+
 **Acceptance**
 - Edit uses the source revision, and a changed-elsewhere trip shows `WizardEditChanged`.
 - Duplicate starts with empty dates.
