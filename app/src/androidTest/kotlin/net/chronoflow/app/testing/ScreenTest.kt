@@ -104,10 +104,17 @@ abstract class ScreenTest {
         }
     }
 
-    protected fun waitForImeToSettle(submitTag: String) {
+    protected fun waitForImeToSettle(
+        submitTag: String,
+        windowDecor: View? = null,
+    ) {
         val submit = compose.onNodeWithTag(submitTag).fetchSemanticsNode()
         lateinit var decor: View
-        checkNotNull(scenario).onActivity { decor = it.window.decorView }
+        if (windowDecor == null) {
+            checkNotNull(scenario).onActivity { decor = it.window.decorView }
+        } else {
+            decor = windowDecor
+        }
         waitForImeToSettle(decor, visible = true, bounds = { submit.boundsInRoot })
     }
 
