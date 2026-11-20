@@ -2937,7 +2937,7 @@ Implementation commits (brief §7):
 
 **Tasks**
 - [x] **Ready** (`WizardReady*`). The price states come from the server credits: paid, unlimited, free, one free, adjusted, re-checking, and no credits (with no website button, A14). Also the return variant.
-- [ ] **Save.**
+- [x] **Save.**
   - `WizardCalculating`, with the offline and server errors (`WizardSaveOffline`, `WizardSaveServer`).
   - After process death, the save resumes in Calculating with the same identity (`14 §3.4`).
   - No automatic retry.

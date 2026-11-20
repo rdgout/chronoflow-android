@@ -55,6 +55,9 @@ These facts override the body wherever they disagree. Paths use the abbreviation
 
 17. **Task 5 seed value check.** The landed 9f board seed stores `blueBlockerMdfd` as a JSON number (`1.5`); the pinned iOS completion seed stores the string `"1.5"`. Keep 9f's existing boards unchanged and use the pinned string for the new Ready/Save/Calculating boards. Both already pass through the presentation's numeric/string reader; OQ-A365's whole-number display remains unchanged.
 
+18. **Task 7 source set.** Put `WizardProcessDeathTest` and its direct-store fixture in `app/src/testDebug`, not the body's `app/src/test`: the test needs `MockDataSource`, which the app correctly exposes only through `debugImplementation`. No mock dependency is added to release tests or production.
+19. **Task 7 lost-response boundary.** Kill graph A after the mock has durably written its trip/receipt and before its response reaches `didCreate`. Hold that response in the decorator. Returning `Offline` first would correctly persist Ready, whose recovery forces a re-review (`MemberWizardCompletion.swift:171–175`); it would no longer be a killed Calculating save. 9b already covers delivered Offline plus manual retry. This test adds the missing process-death boundary without changing the landed model.
+
 This phase adds **UI, wiring, seeds and tests only**. The Ready, save, re-check, retry and recovery rules are already ported (9a model, 9b service and store). If a rule below is missing from 9a/9b, port it into `:core:wizard` (or `:core:data`) with its iOS test, in a separate `fix(wizard): …` commit that names the Swift line, and report it.
 
 ---
