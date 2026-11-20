@@ -821,3 +821,165 @@ It returned `No tests found for given includes: [*.WizardBoardCaptureTest.captur
 Step 0 found no additional upstream-name mismatch and needed no standalone brief-refresh commit. Later brief notes landed with their tasks: normal state hoisting instead of a main-source test callback; copy-render helpers needed by Task 5; non-null prompt answers, normalized error paths and a real stale-leg ReviewExpired fixture; narrowly scoped native AM/PM hit-area checks; and runtime submit-failure mapping. The final malformed-answer fix is its own signed commit because it was discovered after the task commits; no history was rewritten.
 
 Tracked changes in all three read-only source repositories remain absent. Existing untracked future-phase briefs in this checkout were left untouched. No new external dependency, initializer, manifest entry, native library, secret-storage path or startup/timeline implementation was added.
+
+## Phase 9f: checking and fine-tune
+
+2026-11-20. [Brief](phases/phase-9f-wizard-checking-finetune.md). The shell now renders checking, its three failure cards, fine-tune and every optional-answer sheet. Screen state is mapped from the landed model; the model owns checking and retry time. Answer drafts stay in the entry-scoped ViewModel. Only Done applies them; closing a sheet discards edits. Password and verification-link storage paths are unchanged.
+
+### Checking
+
+| Checking clock | Lines (Done / Busy / Open) | Behaviour |
+|---|---|---|
+| 0–399 ms | Busy, Open, Open | Request running |
+| 400–799 ms | Done, Busy, Open | First tick |
+| 800–1,199 ms | Done, Done, Busy | Second tick |
+| From 1,200 ms | Done, Done, Done | Completed request waits until the 1,500 ms presentation minimum |
+| From 10,000 ms | Model progress retained | Polite slow line |
+| 30,000 ms without a response | Failure | Server card and Error cue |
+
+The tick table describes a request completed before the minimum display interval; a pending request keeps the final line busy. The normal member order is flights/time zones, saved answers, tailoring. Guests replace saved answers with their answers. Checking Again orders answers, flights/time zones, tailoring. Back cancels checking and returns to the last input step without a late cue. The visible back button is absent while checking; a failure restores it outside editing.
+
+| Failure | Card | Retry |
+|---|---|---|
+| `Offline` | Cloud-off | Enabled |
+| `Throttled` | Clock | Disabled until the model countdown reaches zero; rounded-up seconds and `LockoutWait` body |
+| Other checking failures | Circle-alert | Enabled |
+| Validation routed to an input step | That input step's catalog-first field error | No checking failure card or outcome cue |
+
+A 41.2-second throttle shows 42, then 41 after one checking-clock second. Retry before zero makes no request. Close on a failure requests discard for a member with changes; a guest closes directly. Success, no-plan and failure cues map to Success, Warning and Error respectively. A saveable handled sequence prevents replay after recreation.
+
+The arc uses the board's cubic SVG with uniform centred scaling. Its cached path, dash and stroke are built by `drawWithCache`; only draw reads the animation state. Animation is 3.6 seconds. Reduce Motion creates no transition, fixes the arc dot at t = 0.65 and replaces the line spinner with a static dot. Each line announces its status politely; decorative arc and icon semantics are cleared.
+
+### Fine-tune and sheets
+
+Card order is optional answers, preparation, preferences. Preferences stay after the two designed cards and below their first viewport on the standard board size. Prompt order comes from `optionalPrompts`; multi-leg rows retain the iOS route/city suffixes. Required rows carry the filled star and “Helps a lot”. Preparation clamps to 0–4. Sleep override prefill keeps an existing value, then uses profile, then saved profile. Guests have no override switch. Reviewing disables edits and shows the footer spinner; no-prompt Fine-tune uses Done.
+
+| Sheet | Controls and commit rule |
+|---|---|
+| Seat side | Nullable radio selection; aisle/not sure commits JSON null |
+| Room | Mode radios; declared time uses landing date and minute precision |
+| Late check-out | Nullable radio selection |
+| Latest wake | Native inline time picker; phone hour cycle, app language; compact input below 640 dp height |
+| Busy hours | Editable/removable ranges; From date → From time → To date → To time; final confirm disabled for To ≤ From |
+| Drinks | Habit radios and four 0–max steppers; None resets every drink; a step selects cups; empty cups rejected |
+| Free-day sleep | Existing 9e options and rounded time sheets, now over Fine-tune |
+| Light device | Radios and the iOS safety notice below the question |
+| Blue blockers | Radios and decimal rating; numeric loads use the language separator; edited text is preserved; submission normalizes comma to dot |
+
+Override and room use `CfTimePickerSheet` at minute precision, with no five-minute footnote. The free-day sheet keeps 9e rounding. Busy ranges keep the date/time dialogs. The answer header remains fixed while the body scrolls, including above the keyboard. Steppers expose a single adjustable accessibility node and separate 48 dp touch targets. All new remove targets and the rating field measure at least 48 dp.
+
+### Seeds and captures
+
+| Base seed | State |
+|---|---|
+| `WizardChecking` | Checking, tick 1, progress 0.60 |
+| `WizardCheckingAgain` | Answers-first checking, tick 1, progress 0.70 |
+| `WizardCheckingSlow` | Tick 2 plus slow line |
+| `WizardCheckOffline`, `WizardCheckServer`, `WizardCheckThrottle` | Frozen failure; throttle 42 seconds |
+| `WizardFineTune`, `WizardFineTuneMulti` | Single/multi-leg prompt order, progress 0.80 |
+| `WizardFineTuneSleep` | Override enabled |
+| `WizardFineTuneBusy` | Review in place; edits disabled |
+| `WizardFineTuneNone` | No prompts; seed floor 0.95 |
+| `WizardFineTuneSheet`, `WizardSheet` | Seat sheet over Fine-tune (same render state) |
+| `WizardSheetRoom`, `WizardSheetCheckout`, `WizardSheetWake`, `WizardSheetBusy` | Corresponding open sheet |
+| `WizardSheetDrinks`, `WizardSheetDrinksError` | Drinks and validation ring |
+| `WizardSheetLight`, `WizardSheetBlue`, `WizardSheetBlueError` | Light and rating, including validation ring |
+| `WizardSheetFreeSleep*` | 9e seed handed forward over real Fine-tune, OQ-A412 |
+
+`WizardCompletionBoardSeed` and its hand-built prompts live in debug; a test compares them with `MockWizardPrompts.make`. The frozen checking clock and neutral UI override prevent requests during captures. Release readiness rejects the seed/prompt/clock classes and verifies the shipped override is null. `:feature:wizard` has no main/debug dependency on data-mock.
+
+Capture inventory (48 PNGs, board names, in `build/captures/`):
+
+- `WizardChecking`, `WizardCheckingDark`, `WizardCheckingNL`.
+- `WizardCheckingAgain`, `WizardCheckingSlow`, `WizardCheckOffline`, `WizardCheckServer`, `WizardCheckThrottle`: base and `DarkNL` each.
+- `WizardFineTune`: base, `Dark`, `NL`, `DarkNL`.
+- `WizardFineTuneMulti`, `WizardFineTuneSleep`, `WizardFineTuneBusy`, `WizardFineTuneNone`, `WizardFineTuneSheet`: base and `DarkNL` each.
+- `WizardSheet`.
+- `WizardSheetRoom`, `WizardSheetCheckout`, `WizardSheetWake`, `WizardSheetBusy`, `WizardSheetDrinks`, `WizardSheetDrinksError`, `WizardSheetLight`, `WizardSheetBlue`, `WizardSheetBlueError`: base and `DarkNL` each.
+- `WizardSheetFreeSleep`, `WizardSheetFreeSleepDarkNL`.
+
+All use Reduce Motion and account time format Value24. The wake picker also sets/restores the phone's 24-hour setting. No stored Roborazzi references were added. `make captures ONLY=WizardChecking,WizardCheck,WizardFineTune,WizardSheet` ran once (19 seconds): 46 images succeeded; both wake cases failed on a fixture that queried the time-sheet tag. The corrected fixture reran only those two via:
+
+```sh
+env 'ORG_GRADLE_PROJECT_cf.captureOnly=WizardSheetWake' make targeted ONLY='feature:wizard:WizardBoardCaptureTest#capturesTheBoardState'
+```
+
+That passed in 10.06 seconds including skipped parameters and produced the remaining two images. The full capture command was not repeated.
+
+### Guards and board comparison hand-off
+
+`WizardCheckingFineTuneGuardsTest` has exactly 107 uniquely named light-only cases: 21 states × Dutch × small/pixel8/foldInner/largeFont (84); those states × English × small (21); Fine-tune/seat × Dutch × landscapeSideNav (2). All pass. The class took 7.23 seconds (10.78-second command); first case 2.502 seconds, warm maximum 0.186 seconds. Guards cover text, measured targets, safe area, overlap and headings. Native AM/PM buttons use framework touch bounds, as existing picker guards do. Small/large-font Dutch cases also check body scrolling and fixed visible actions. There are 22 base boards and 46 wrappers; the plan's former “26 boards” count was corrected. Seat's two board names share one guard state.
+
+The orchestrator compares the 48 captures with the board renders at 390 × 844. This sandbox did not launch Chromium. Record visual differences from that comparison against these expected adaptations:
+
+- Native M3 sheet handle/header actions, switches and inline time picker; time sheets for override/room and date/time dialogs for busy ranges.
+- Static busy dot under Reduce Motion, preferences after the designed cards, and the existing 16 dp button spinner (board 18 dp).
+- iOS model answers take precedence over board placeholders: default room is “When I land”, false checkout is “No”, and unanswered busy hours show zero ranges. No model behaviour was changed to force “Add”.
+- Prompt questions use server catalog copy; free-day question therefore follows the catalog, as recorded in 9e. Requested Fraunces weights above 500 resolve to the shipped 500 face with synthesis off (OQ-A419).
+
+### Swift → Kotlin coverage
+
+| Swift helper/test | Kotlin coverage |
+|---|---|
+| `assertFineTune` | `WizardFineTuneStepTest` |
+| `assertAnswerSheet` | `WizardAnswerSheetTest` |
+| `testCheckOfflineScreenKeepsEditingAndGoesBack` | `closeOnFailureAsksOnlyWithChanges`, `backCancelsCheckingAndReturnsToTheLastInputStep` |
+| `testDuoResizeKeepsFineTuneAndOpenAnswer` | `ratingSurvivesRestoration` |
+
+The new model/ViewModel cases use `CheckingTestClock`, fake repositories, 60-second `runTest` caps and owned scopes. No screen-copy assertions, app-root logic tests, main-source test callbacks or clock-reading Compose mappers were added. Outcome counters and restoration tests cover transient feedback without racing animations. Catalog-first Times/Sleep field errors close OQ-A399.
+
+### Validation record
+
+Device: `pixel` AVD, Android 16/API 36, debug, functional animator settings. `make targeted ONLY="app:WizardAnswerSheetDeviceTest"` ran once: wake passed in 2.346 seconds; rating's geometry passed but activity-window keyboard teardown timed out (6.476-second case, 16-second Gradle command). The test now settles the focused sheet's IME, closes the sheet, then lets the base fixture close the activity. Only that method reran:
+
+```sh
+make targeted ONLY="app:WizardAnswerSheetDeviceTest#ratingFieldAndDoneStayAboveTheKeyboard"
+```
+
+It passed in 2.456 seconds (7-second Gradle command). Neither run logged a StrictMode disk/network violation. The two tests check native controls/IME only; they do not repeat model validation or add a journey.
+
+The brief refresh corrected iOS/landed answer-default expectations and replaced private `ApiReviewPrompt.copy` use with its public constructor. Task 3 also recorded the additive `CfTimePickerDialog.confirmEnabled` parameter because only the date dialog previously had it. No landed model behaviour changed. OQ-A420–OQ-A438 carry the nineteen 9f defaults; no Android-only copy was added. No new runtime dependency, manifest initializer or native library was introduced. Wizard perf/profile tiers belong to Phase 13; none were run or requested for this phase.
+
+Final checks (macOS host; JVM/Robolectric values are host results, not device performance):
+
+| Command / scope | Result | Wall time |
+|---|---|---|
+| Task 0 `make targeted ONLY="feature:wizard:WizardServerCopyTest"` | 4 passed; disabling catalog lookup made the new case fail, restored case passed | 2.55 s |
+| Task 1 checking mapper + checking/fine-tune ViewModels | 40 passed | 3.06 s |
+| Task 2 answer-state + answer ViewModel suites | 51 passed; drinks-reset mutation failed, restored case passed | 3.21 s |
+| Task 3 `CfTimePickerGuardsTest` | 4 passed; first 2.445 s, warm 0.049–0.184 s | 6.43 s |
+| Task 4 seed suites / registry / release readiness | 82 / 75 / 13 passed | 4.28 / 3.45 / 5.00 s |
+| Task 4 app debug seed wiring | 6 passed | 3 s Gradle |
+| Task 5 checking structure and recomposition | All 9 pass in final quick; cleared-semantics mutation failed as intended, restored case passed | 0.212 s test sum in final quick |
+| Task 6 failure cards / icon-generator tests | 4 / 11 passed | 5.95 s / 0.080 s Python |
+| Task 7 fine-tune structure / layouts | 13 / 2 passed (final quick / final layout) | 0.306 s structure test sum; layouts included in final layout tier |
+| Task 8 answer UI + ViewModel expansion | Initial 49-case run found duplicate wake tag and 44 dp busy target; both corrected cases passed | 7 s initial Gradle; 5 s correction Gradle |
+| Task 8 final edited controls + Task 9 haptics | 5 passed | 6.71 s |
+| Task 10 new guards | 107 passed, no overruns | 10.78 s |
+| Task 11 device checks | Both passed as detailed above | Wake 2.346 s; rating 2.456 s |
+| App, wizard, design-system, UI `lintDebug` | Passed after replacing configuration height with root `LocalWindowSize` (backed by `LocalWindowInfo`) | 9 s Gradle |
+| Touched modules' layout tier | 700 passed, zero overruns/hangs | 19.96 s |
+| `make quick` (once only) | First Gradle stage failed on the stale glyph count and two untouched timing cases; all new wizard cases passed | 37.19 s |
+| `LucideGlyphsTest#everyBoardPathParsesAndVectorsAreCached` after correction | Passed (50 glyphs; filled star and clock hands also checked) | 1.39 s |
+| Remaining quick build-logic stage | 37 certified passing results (up to date) | 1.61 s |
+| Remaining quick script/tooling stage | Scripts 168 passed; contracts 24 passed, parity corrected environment then passed; l10n 49 passed; icons 11 passed | 19.959 / 0.020 + 0.100 / 0.018 / 0.080 s Python |
+| Remaining quick `make timing` | 7 certified passing results (up to date), zero overruns | 1.62 s |
+
+The full quick command was not repeated. Its untouched timing overruns were `RootThemeTest#rootProvidesReduceMotionAndUsesTheSuppliedFontBarrier` at **1.290 s** (1 s budget) and `TermsScreenTest#policyRowStaysEnabledWhileFailed` at **3.544 s** (first-class 3 s budget). Neither test was retried or modified. The first stage collected 5,035 passing results and the one stale-glyph failure, with 3,220 newly measured cases; no hangs. Final quick passed all 23 `WizardAnswerSheetTest` cases (1.772-second sum) and both haptic cases (0.081-second sum), including the earlier corrections.
+
+The manual tooling continuation initially omitted the `IOS_REPO`/`WEB_REPO` environment that Make exports, so only the parity test failed with `set IOS_REPO and WEB_REPO to run the iOS parity test (make exports them)`. The corrected command was:
+
+```sh
+IOS_REPO=/Users/rickgout/Sites/chronoflow-ios WEB_REPO=/Users/rickgout/Sites/chronoflow-new python3 -I -m unittest discover -s tools/contracts-gen -t tools/contracts-gen -p 'test_*.py' -k test_matches_ios_generated_swift
+```
+
+It passed; the script suite was not repeated. Layout and lint ran with:
+
+```sh
+export ANDROID_HOME=/opt/homebrew/share/android-commandlinetools
+export JAVA_HOME=$(/usr/libexec/java_home -v 17)
+./gradlew :app:lintDebug :feature:wizard:lintDebug :core:designsystem:lintDebug :core:ui:lintDebug
+Scripts/run-tier.sh layout --results 'feature/wizard/build/test-results/testDebugUnitTest/*.xml' --results 'core/ui/build/test-results/testDebugUnitTest/*.xml' --results 'core/designsystem/build/test-results/testDebugUnitTest/*.xml' --results 'app/build/test-results/testDebugUnitTest/*.xml' --timings 'feature/wizard/build/cf-timings/testDebugUnitTest/*.json' --timings 'core/ui/build/cf-timings/testDebugUnitTest/*.json' --timings 'core/designsystem/build/cf-timings/testDebugUnitTest/*.json' --timings 'app/build/cf-timings/testDebugUnitTest/*.json' -- ./gradlew :feature:wizard:testDebugUnitTest :core:ui:testDebugUnitTest :core:designsystem:testDebugUnitTest :app:testDebugUnitTest -Pcf.tier=layout
+```
+
+The final lint correction and glyph-test update are separate signed acceptance-fix commits; no task commit was rewritten. Source scans found no new screen-copy assertions, size callbacks, checking/sheet timers, locale formatters or accessibility announcement calls. The sole checking `Path()` is inside `drawWithCache`. There was no sandbox-blocked command. `make check`, perf, perf-timeline, baseline-profile and other emulator tiers were intentionally not run. The host board comparison and an interactive checking → fine-tune → sheet StrictMode observation remain for the orchestrator; the seeded device checks reported no disk/network violation. The `pixel` emulator remains running.
