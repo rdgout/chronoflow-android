@@ -28,7 +28,7 @@ internal fun WizardReturnStep(
             WizardChoiceCard(web.title, web.hint, web.selected, web.enabled, "wizard.choice.web", {
                 haptics.perform(HapticEvent.Selection)
                 onEvent(WizardEvent.ChooseReturn(web.kind))
-            })
+            }, web = true)
         }
         val one = ui.oneWay
         WizardChoiceCard(one.title, one.hint, one.selected, one.enabled, "wizard.choice.one-way", {
