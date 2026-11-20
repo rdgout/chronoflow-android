@@ -200,7 +200,7 @@ class MemberWizardModel(
                 form = form.updateLeg(form.legs.lastIndex) { it.copy(toIata = airport.iata, toCity = airport.city) }
             }
         }
-        state = state.copy(sheet = null)
+        state = state.copy(sheet = null, pendingDateTimes = emptyMap())
         changed()
     }
 
@@ -243,7 +243,7 @@ class MemberWizardModel(
             form =
                 form.updateLeg(form.legs.lastIndex) { it.copy(toIata = last.toIata, toCity = last.toCity) }
         }
-        state = state.copy(fromLastTrip = false)
+        state = state.copy(fromLastTrip = false, pendingDateTimes = emptyMap())
         changed()
     }
 
@@ -260,12 +260,14 @@ class MemberWizardModel(
     fun removeStop(at: Int) {
         if (closed) return
         form = form.removeStop(at)
+        state = state.copy(pendingDateTimes = emptyMap())
         changed()
     }
 
     fun makeDirect(home: Boolean = false) {
         if (closed) return
         form = form.makeDirect(home)
+        state = state.copy(pendingDateTimes = emptyMap())
         changed()
     }
 

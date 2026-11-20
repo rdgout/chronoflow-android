@@ -2770,6 +2770,7 @@ Implementation commits (brief §7):
 
 **Tasks**
 - [ ] **Outbound and flight-home times** (`WizardOutbound*`, `WizardReturnFlight*`).
+  - [x] Half-entered values and recovery (9d Task 1).
   - Separate date and time pills.
   - `CfDatePickerDialog` is bounded to the airport's wall dates. In the time dialog only Done writes, at minute precision.
   - Flight-time, connection and overnight chips.
