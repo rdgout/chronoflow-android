@@ -73,7 +73,7 @@ object WizardBoardCaptureSeed {
             "WizardReturnFlightDarkNL",
             "WizardReturnFlightPast",
             "WizardReturnFlightPastDarkNL",
-        ) + WizardSleepQuestionBoardSeed.names
+        ) + WizardSleepQuestionBoardSeed.names + WizardCompletionBoardSeed.names
 
     fun baseName(board: String): String =
         when {
@@ -83,6 +83,9 @@ object WizardBoardCaptureSeed {
             board.endsWith("Large") -> board.removeSuffix("Large")
             else -> board
         }
+
+    fun uiOverride(board: String): net.chronoflow.feature.wizard.shell.WizardUiOverride? =
+        WizardCompletionBoardSeed.uiOverride(baseName(board))
 
     fun knows(board: String): Boolean = names.any { baseName(it) == baseName(board) }
 
@@ -256,7 +259,10 @@ object WizardBoardCaptureSeed {
                         else -> null
                     },
             )
-        return WizardSleepQuestionBoardSeed.apply(MemberWizardDraft(form, state, errors), board)
+        return WizardCompletionBoardSeed.apply(
+            WizardSleepQuestionBoardSeed.apply(MemberWizardDraft(form, state, errors), board),
+            board,
+        )
     }
 }
 

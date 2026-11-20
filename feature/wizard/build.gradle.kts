@@ -14,5 +14,6 @@ dependencies {
     testImplementation(project(":core:testing-compose"))
     implementation(libs.kotlinx.coroutines.core)
     testImplementation(project(":core:testing"))
+    testImplementation(project(":core:data-mock"))
     testImplementation(libs.kotlinx.coroutines.test)
 }
