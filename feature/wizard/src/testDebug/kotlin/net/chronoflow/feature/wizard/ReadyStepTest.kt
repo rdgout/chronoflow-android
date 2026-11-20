@@ -59,16 +59,7 @@ class ReadyStepTest {
     }
 
     @Test fun noCreditsHasOnlyTheCloseActionInItsFooter() {
-        val review = generationReview()
-        show(
-            readyScreen(
-                review.copy(
-                    canSave = false,
-                    saveBlockedReason = "Not enough credits",
-                    price = review.price!!.copy(balance = 0),
-                ),
-            ),
-        )
+        show(completionBoard("WizardReadyNoCredits"))
         compose.onNodeWithTag("wizard.ready.continue").assertDoesNotExist()
         compose.onNodeWithTag("wizard.ready.no-credits").assertHasClickAction().performClick()
         compose.onAllNodes(hasAnyAncestor(hasTestTag("wizard.ready.footer")) and hasClickAction()).assertCountEquals(1)
@@ -76,7 +67,7 @@ class ReadyStepTest {
     }
 
     @Test fun checkingButtonIsDisabledAndIndeterminate() {
-        show(readyScreen(reviewing = true))
+        show(completionBoard("WizardReadyChecking"))
         compose
             .onNodeWithTag("wizard.ready.continue")
             .assertIsNotEnabled()
@@ -89,17 +80,12 @@ class ReadyStepTest {
     }
 
     @Test fun saveFailureHasItsBannerTag() {
-        val state = readyScreen()
-        show(
-            state.copy(
-                ready = state.ready!!.copy(banner = ReadyBannerUi.SaveFailed(WizardSaveFailure.Kind.offline, 0)),
-            ),
-        )
+        show(completionBoard("WizardSaveOffline"))
         compose.onNodeWithTag("wizard.save.offline").assertExists()
     }
 
     @Test fun routeTapSendsTheRowIntentAndSelectionHaptic() {
-        show(readyScreen())
+        show(completionBoard("WizardReady"))
         compose.onNodeWithTag("wizard.ready.route").performScrollTo().performClick()
         assertEquals(
             listOf(WizardEvent.RevisitFromReady(ReadyRow.Route)),
@@ -109,7 +95,7 @@ class ReadyStepTest {
     }
 
     @Test fun makePlanTapSendsContinueAndMediumHaptic() {
-        show(readyScreen())
+        show(completionBoard("WizardReady"))
         compose.onNodeWithTag("wizard.ready.continue").performClick()
         assertEquals(listOf(HapticEvent.Medium), haptics.events)
         assertEquals(WizardEvent.Continue(net.chronoflow.feature.wizard.shell.WizardStepKey.Ready), events.last())

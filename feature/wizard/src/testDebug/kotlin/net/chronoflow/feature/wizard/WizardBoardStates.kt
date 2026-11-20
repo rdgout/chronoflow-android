@@ -74,6 +74,7 @@ internal fun TestScope.boardState(
                 now = WizardBoardCaptureSeed.now,
                 openTime = presentation.timeSheet,
                 uiOverride = override,
+                language = Language.of(locale.language),
                 answerSheet =
                     model.optionalPrompts
                         .firstOrNull {

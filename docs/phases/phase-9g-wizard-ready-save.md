@@ -53,6 +53,8 @@ These facts override the body wherever they disagree. Paths use the abbreviation
     - The card chevron is `LucideGlyphs.ChevronRight` at `WizardMetrics.chevronGlyph` (`…/fw/finetune/WizardExtraRow.kt:97–99`).
 16. **Open questions.** OQ-9g-1 … OQ-9g-11 become **OQ-A439 … OQ-A449** in that order. The next free number is OQ-A439, because 9f used A420–A438. OQ-A365 (rating display) also names 9g: decide it with the Extras/Latest-wake row values, or carry it forward in `plan.md`.
 
+17. **Task 5 seed value check.** The landed 9f board seed stores `blueBlockerMdfd` as a JSON number (`1.5`); the pinned iOS completion seed stores the string `"1.5"`. Keep 9f's existing boards unchanged and use the pinned string for the new Ready/Save/Calculating boards. Both already pass through the presentation's numeric/string reader; OQ-A365's whole-number display remains unchanged.
+
 This phase adds **UI, wiring, seeds and tests only**. The Ready, save, re-check, retry and recovery rules are already ported (9a model, 9b service and store). If a rule below is missing from 9a/9b, port it into `:core:wizard` (or `:core:data`) with its iOS test, in a separate `fix(wizard): …` commit that names the Swift line, and report it.
 
 ---

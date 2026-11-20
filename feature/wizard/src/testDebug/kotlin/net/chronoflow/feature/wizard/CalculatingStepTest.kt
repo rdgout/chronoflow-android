@@ -39,18 +39,7 @@ class CalculatingStepTest {
     private lateinit var dispatcher: OnBackPressedDispatcher
 
     private fun show(reduceMotion: Boolean = true) {
-        val base = readyActive()
-        val draft = base.wizard.draft
-        val state =
-            WizardUiState.from(
-                base.copy(
-                    wizard =
-                        base.wizard.copy(
-                            draft = draft.copy(state = draft.state.copy(step = MemberWizardStep.calculating)),
-                        ),
-                    path = listOf(MemberWizardDestination.calculating),
-                ),
-            )
+        val state = completionBoard("WizardCalculating")
         compose.mainClock.autoAdvance = false
         compose.setContent {
             WizardTestHost {
