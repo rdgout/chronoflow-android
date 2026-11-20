@@ -2,13 +2,16 @@ package net.chronoflow.app
 
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import net.chronoflow.app.wizard.SessionTripWizardDependencies
 import net.chronoflow.core.data.repository.AccountRepository
 import net.chronoflow.core.data.repository.OutboxRepository
 import net.chronoflow.core.data.repository.SettingsRepository
 import net.chronoflow.core.data.repository.TripRepository
 import net.chronoflow.core.database.AccountDatabase
 import net.chronoflow.core.model.DataSource
+import net.chronoflow.core.model.session.SessionMutationPermit
 import net.chronoflow.core.model.session.SessionSnapshot
 import net.chronoflow.core.plan.CopyCatalogProvider
 import net.chronoflow.core.plan.PlanDecoder
@@ -17,6 +20,7 @@ import net.chronoflow.core.sync.SessionSync
 import net.chronoflow.core.sync.SyncEvent
 import net.chronoflow.core.sync.refusal.RefusedChangeModel
 import net.chronoflow.feature.trip.page.DefaultTripPlanPipeline
+import net.chronoflow.feature.wizard.TripWizardDependencies
 
 data class SessionGraph(
     val epoch: Long,
@@ -29,7 +33,12 @@ data class SessionGraph(
     val sync: SessionSync,
     val dataSource: DataSource,
     val scope: CoroutineScope,
+    val permit: SessionMutationPermit? = null,
+    private val wizardIo: CoroutineDispatcher = Dispatchers.IO,
 ) {
+    val wizard: TripWizardDependencies? by lazy {
+        permit?.let { SessionTripWizardDependencies(this, it, wizardIo) }
+    }
     val refusedChanges = RefusedChangeModel()
 
     init {

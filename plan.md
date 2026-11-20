@@ -2679,7 +2679,7 @@ Implementation commits (brief §7):
   - An in-memory LRU cache.
   - The search states as a sealed type.
 - [x] **Recovery**, porting `MemberWizardStore`: one fixed-id `drafts` row (OQ 40), written through a conflated writer and deleted on close, save or expiry (30 min). Add the draft halves of iOS `RecordsTests` (the `DraftRecord` round trip and the draft upsert/remove).
-- [ ] **TripWizardViewModel scaffold** (`feature/wizard/…`). The state holder, plus the cancellable jobs `checkJob`, `reviewJob`, `saveJob`, `choiceJob` (250 ms) and `retryCountdownJob`.
+- [x] **TripWizardViewModel scaffold** (`feature/wizard/…`). The state holder, plus the cancellable jobs `checkJob`, `reviewJob`, `saveJob`, `choiceJob` (250 ms) and `retryCountdownJob`.
 - [x] **Tests** against `MockDataSource` scenarios and the `wizard/*.json` fixtures: throttled, capacity, expired, needs-answers and unknown-field.
 
 **Acceptance**
