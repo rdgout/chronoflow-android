@@ -33,7 +33,11 @@ class LucideGlyphsTest {
         assertEquals(5, LucideGlyphs.FileText.paths.size)
         assertEquals(2, LucideGlyphs.KeyRound.paths.size)
         assertTrue(LucideGlyphs.KeyRound.paths[1].filled)
-        assertTrue(LucideGlyphs.Star.paths.single().filled)
+        assertTrue(
+            LucideGlyphs.Star.paths
+                .single()
+                .filled,
+        )
         assertEquals(2, LucideGlyphs.Clock.paths.size)
         assertEquals("M12 6v6l4 2", LucideGlyphs.Clock.paths[1].d)
         assertSame(LucideGlyphs.Moon.imageVector(), LucideGlyphs.Moon.imageVector())
