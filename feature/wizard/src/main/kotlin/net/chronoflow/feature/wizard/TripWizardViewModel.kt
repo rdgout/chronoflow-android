@@ -360,6 +360,7 @@ class TripWizardViewModel(
                                     snapshot.draft.state.savedProfile,
                                     snapshot.draft.fieldErrors,
                                     snapshot.draft.form,
+                                    initialError = uiOverride?.answerError,
                                 )
                         }
                         val finished = snapshot.closed && snapshot.createdTripID != null
@@ -922,7 +923,7 @@ class TripWizardViewModel(
                             failures = answer.failures + 1,
                         )
                 } else {
-                    model.answerOptional(answer.prompt, answer.values)
+                    model.answerOptional(answer.prompt, answer.submittedValues())
                 }
             } catch (_: CancellationException) {
                 currentCoroutineContext().ensureActive()
