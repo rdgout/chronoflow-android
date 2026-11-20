@@ -3045,7 +3045,7 @@ Implementation commits:
 **Delivers.** Builds the Settings tab home (the initials card, the live sync line with its age table, rows with subtitles and badges, the sign-out pill) and the sign-out-with-pending-changes sheet. It adds the shared settings states: loading, account not on this phone, saved and failed messages, refused change, and rows disabled offline. It adds the Account, Profile and Language pages; a language change goes through LocaleManager or the device-config file and recreates the activity. Wide windows use a 560 dp column.
 
 **Tasks**
-- [ ] **Home** (`feature/settings/…/home/`, a `SettingsHomeState` port).
+- [x] **Home** (`feature/settings/…/home/`, a `SettingsHomeState` port; 10a Tasks 1–5).
   - The initials card.
   - The live sync line with its age table (`SettingsHomeState.swift:113-140`).
   - Rows with subtitles and badges, and the sign-out pill.
@@ -3068,7 +3068,7 @@ Implementation commits:
 - [x] **10a Task 2**: settings home state.
 - [x] **10a Task 3**: home model and sign-out flow.
 - [x] **10a Task 4**: page scaffold and components.
-- [ ] **10a Task 5**: settings home screen.
+- [x] **10a Task 5**: settings home screen.
 - [ ] **10a Task 6**: pending sign-out sheet and Terms slot.
 - [ ] **10a Task 7**: stored and loading states.
 - [ ] **10a Task 8**: account and profile pages.
