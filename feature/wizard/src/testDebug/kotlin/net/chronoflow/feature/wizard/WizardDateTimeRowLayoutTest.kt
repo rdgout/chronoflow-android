@@ -58,7 +58,11 @@ class WizardDateTimeRowLayoutTest(
             assertTrue(date.top >= label.bottom)
             assertEquals((date.right - date.left).value, (time.right - time.left).value, .5f)
         } else {
-            assertEquals(label.top.value, date.top.value, .5f)
+            val dateVisual = compose.onNodeWithTag("wizard.0.departure.date.visual", true).getUnclippedBoundsInRoot()
+            val timeVisual = compose.onNodeWithTag("wizard.0.departure.time.visual", true).getUnclippedBoundsInRoot()
+            val labelCenter = (label.top + label.bottom).value / 2
+            assertEquals(labelCenter, (dateVisual.top + dateVisual.bottom).value / 2, .5f)
+            assertEquals(labelCenter, (timeVisual.top + timeVisual.bottom).value / 2, .5f)
         }
     }
 

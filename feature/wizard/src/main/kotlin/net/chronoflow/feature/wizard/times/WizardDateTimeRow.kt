@@ -99,10 +99,14 @@ internal fun WizardDateTimeRow(
                 )
             val datePill = measurables[1].measure(loose.copy(minWidth = dateWidth, maxWidth = dateWidth))
             val timePill = measurables[2].measure(loose.copy(minWidth = timeWidth, maxWidth = timeWidth))
-            layout(constraints.maxWidth, maxOf(label.height, datePill.height, timePill.height)) {
-                label.placeRelative(0, 0)
-                datePill.placeRelative(constraints.maxWidth - timePill.width - gap - datePill.width, 0)
-                timePill.placeRelative(constraints.maxWidth - timePill.width, 0)
+            val height = maxOf(label.height, datePill.height, timePill.height)
+            layout(constraints.maxWidth, height) {
+                label.placeRelative(0, (height - label.height) / 2)
+                datePill.placeRelative(
+                    constraints.maxWidth - timePill.width - gap - datePill.width,
+                    (height - datePill.height) / 2,
+                )
+                timePill.placeRelative(constraints.maxWidth - timePill.width, (height - timePill.height) / 2)
             }
         } else {
             val label = measurables[0].measure(loose)
