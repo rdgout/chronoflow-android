@@ -3000,7 +3000,7 @@ Implementation commits:
 - [x] Task 6: app preparer and dependency wiring.
 - [x] Task 7: edit and duplicate board seeds.
 - [x] Task 8: guards and board captures.
-- [ ] Task 9: actions-to-wizard entry tests.
+- [x] Task 9: actions-to-wizard entry tests.
 - [ ] Task 10: edit emulator journey.
 - [ ] Task 11: acceptance documentation and open questions.
 
