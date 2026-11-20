@@ -12,7 +12,7 @@ import org.junit.Test
 import kotlin.time.Duration.Companion.seconds
 
 class RootThemeInputsTest {
-    @Test fun graphSuppliesTheIoDispatcherPreloaderCommitAndReadyCallback() = runTest(timeout = 60.seconds) {
+    @Test fun graphSuppliesFontDependenciesAndReadyCallback() = runTest(timeout = 60.seconds) {
         val graph = graph()
         val commit = CompletableDeferred<Unit>()
         val inputs = graph.rootThemeInputs(true, commit)
