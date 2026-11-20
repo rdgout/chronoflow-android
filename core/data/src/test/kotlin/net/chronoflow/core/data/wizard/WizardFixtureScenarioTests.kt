@@ -89,7 +89,10 @@ class WizardFixtureScenarioTests {
                 withCompletion {
                     source.configure(saveFailure = fixtureFailure("capacity", DataFailure.SaveCapacity))
                     model.savePlan()
-                    awaitWizard { model.draft.state.saveFailure != null }
+                    awaitWizard({ "Save failure after ${model.draft.state.step} step" }) {
+                        model.draft.state.saveFailure !=
+                            null
+                    }
                     assertEquals(
                         WizardSaveFailure.Kind.server,
                         model.draft.state.saveFailure
@@ -238,18 +241,25 @@ class WizardFixtureScenarioTests {
                     if (failure is DataFailure.Throttled) fixtureFailure("throttled", failure)
                     source.configure(saveFailure = failure)
                     model.savePlan()
-                    awaitWizard { model.draft.state.saveFailure != null }
+                    awaitWizard({ "Save failure after ${model.draft.state.step} step" }) {
+                        model.draft.state.saveFailure !=
+                            null
+                    }
                     repeat(60) {
                         clock.advance(60.0)
                         checking.advance(checking.now + 60_000)
                         model.readyTick()
-                        if (model.reviewing) awaitWizard { !model.reviewing }
+                        if (model.reviewing) awaitWizard({ "Ready review at ${clock.now}" }) { !model.reviewing }
                     }
                     assertEquals(1, source.count("save"))
                     assertEquals(0, model.retrySeconds)
                     source.configure()
                     model.savePlan()
-                    awaitWizard { model.createdTripID == "created" }
+                    awaitWizard(
+                        { "Manual save: ${model.draft.state.step}; failure=${model.draft.state.saveFailure}" },
+                    ) {
+                        model.createdTripID == "created"
+                    }
                     assertEquals(2, source.count("save"))
                 }
             }

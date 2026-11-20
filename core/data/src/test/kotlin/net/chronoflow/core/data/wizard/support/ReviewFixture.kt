@@ -24,7 +24,6 @@ import net.chronoflow.core.model.contracts.PromptKind
 import net.chronoflow.core.model.contracts.ReviewAnswerShape
 import net.chronoflow.core.model.contracts.ReviewPromptTarget
 import net.chronoflow.core.model.session.SyncEpoch
-import net.chronoflow.core.testing.sync.eventually
 import net.chronoflow.core.testing.wizard.CheckingTestClock
 import net.chronoflow.core.testing.wizard.GenerationSource
 import net.chronoflow.core.testing.wizard.WizardTestClock
@@ -39,6 +38,8 @@ import net.chronoflow.core.wizard.model.WizardForm
 import net.chronoflow.core.wizard.model.from
 import org.junit.Assert.assertTrue
 import java.time.Instant
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.TimeSource
 
 internal class ReviewFixture(
     val model: MemberWizardModel,
@@ -111,16 +112,13 @@ internal suspend fun awaitWizard(
     detail: () -> String = { "Wizard condition" },
     condition: suspend () -> Boolean,
 ) {
-    val ready =
-        eventually {
-            if (condition()) {
-                true
-            } else {
-                yield()
-                false
-            }
-        }
-    assertTrue(detail(), ready)
+    // Stay runnable so JDBC/service waits cannot auto-advance the fake checking clock.
+    val started = TimeSource.Monotonic.markNow()
+    while (started.elapsedNow() < 500.milliseconds) {
+        if (condition()) return
+        yield()
+    }
+    assertTrue(detail(), condition())
 }
 
 internal suspend fun finishCheck(
