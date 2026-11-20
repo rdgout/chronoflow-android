@@ -26,7 +26,6 @@ fun TripPageSheets(
     val sheet by vm.sheet.collectAsStateWithLifecycle()
     val state by vm.stepSheet.collectAsStateWithLifecycle()
     val busy by vm.checkBusy.collectAsStateWithLifecycle()
-    val actions by vm.tripActions.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
     val dismiss: () -> Unit = {
@@ -54,6 +53,7 @@ fun TripPageSheets(
         }
 
         TripSheet.TripActions -> {
+            val actions by vm.tripActions.collectAsStateWithLifecycle()
             actions?.let { ui ->
                 val failure by vm.actionFailure.collectAsStateWithLifecycle()
                 net.chronoflow.feature.trip.actions.TripActionsWindow(

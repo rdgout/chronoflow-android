@@ -199,6 +199,9 @@ class TripPageViewModel(
             }
         }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
+    val hasTripActions: StateFlow<Boolean> =
+        tripActions.map { it != null }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
     private val _timeline = MutableStateFlow(initialTimeline)
     val timeline: StateFlow<Boolean> = _timeline.asStateFlow()
 
