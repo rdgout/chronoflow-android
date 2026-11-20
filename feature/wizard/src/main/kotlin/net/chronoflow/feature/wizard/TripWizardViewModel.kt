@@ -9,6 +9,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -18,6 +19,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.launch
 import net.chronoflow.core.model.DataFailure
 import net.chronoflow.core.model.contracts.ApiAirportSuggestion
@@ -27,6 +29,7 @@ import net.chronoflow.core.model.store.StoreFailure
 import net.chronoflow.core.wizard.generation.TripGenerationService
 import net.chronoflow.core.wizard.model.AirportSearchService
 import net.chronoflow.core.wizard.model.AirportSearchSession
+import net.chronoflow.core.wizard.model.AirportSearchState
 import net.chronoflow.core.wizard.model.MemberWizardModel
 import net.chronoflow.core.wizard.model.MemberWizardStep
 import net.chronoflow.core.wizard.model.RecoveryRejected
@@ -42,9 +45,12 @@ import net.chronoflow.core.wizard.model.resumeCompletion
 import net.chronoflow.feature.wizard.shell.WizardEvent
 import net.chronoflow.feature.wizard.shell.WizardExit
 import net.chronoflow.feature.wizard.shell.WizardStepKey
+import net.chronoflow.feature.wizard.ui.AirportRowUi
+import net.chronoflow.feature.wizard.ui.AirportSearchUi
 import net.chronoflow.feature.wizard.ui.WizardUiState
 import java.io.IOException
 import java.security.GeneralSecurityException
+import java.time.Duration
 import java.time.Instant
 import net.chronoflow.core.navigation.WizardMode as WizardEntry
 
@@ -87,6 +93,69 @@ class TripWizardViewModel(
             viewModelScope,
             deps?.now ?: { Instant.EPOCH },
         )
+
+    val searchState =
+        combine(search.state, state) { result, current ->
+            val sheet =
+                (current as? TripWizardUiState.Active)
+                    ?.wizard
+                    ?.draft
+                    ?.state
+                    ?.sheet
+            when (result) {
+                AirportSearchState.Hint -> {
+                    AirportSearchUi.Hint
+                }
+
+                is AirportSearchState.Searching -> {
+                    AirportSearchUi.Searching
+                }
+
+                is AirportSearchState.Results -> {
+                    val allowed =
+                        if (sheet ==
+                            null
+                        ) {
+                            emptyList()
+                        } else {
+                            result.airports.filter { wizard?.airportIsAllowed(it.iata, sheet) == true }
+                        }
+                    if (allowed.isEmpty()) {
+                        AirportSearchUi.Empty
+                    } else {
+                        AirportSearchUi.Results(
+                            allowed.map(AirportRowUi::from),
+                        )
+                    }
+                }
+
+                is AirportSearchState.Empty -> {
+                    AirportSearchUi.Empty
+                }
+
+                is AirportSearchState.Failed -> {
+                    AirportSearchUi.Failed(null)
+                }
+
+                is AirportSearchState.Throttled -> {
+                    AirportSearchUi.Failed(result.retryAt)
+                }
+            }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AirportSearchUi.Hint)
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    val retryEnabled =
+        searchState
+            .transformLatest { value ->
+                val retryAt = (value as? AirportSearchUi.Failed)?.retryAt
+                val now = deps?.now?.invoke() ?: Instant.EPOCH
+                val wait = retryAt?.let { Duration.between(now, it).toMillis().coerceAtLeast(0) } ?: 0L
+                emit(wait == 0L)
+                if (wait > 0L) {
+                    delay(wait)
+                    emit(true)
+                }
+            }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
 
     init {
         if (deps == null) {

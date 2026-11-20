@@ -77,7 +77,7 @@ internal class FakeWizardDependencies(
             }
         }
     val wall = WizardTestClock()
-    override val now = { wall.now }
+    override var now = { wall.now }
     val checking = CheckingTestClock(scope.testScheduler)
     override val checkingClock = checking.clock
     override val writerScope =
@@ -89,7 +89,7 @@ internal class FakeWizardDependencies(
         )
     override val source = GenerationSource()
     val queries = mutableListOf<String>()
-    override val airportSearch =
+    override var airportSearch =
         AirportSearchService(
             search = { query ->
                 queries.add(query)
