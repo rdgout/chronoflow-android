@@ -3,12 +3,15 @@
 package net.chronoflow.feature.wizard.answers
 
 import android.text.format.DateFormat
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.key
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -47,12 +50,14 @@ internal fun WizardWakeControl(
                 haptics.perform(HapticEvent.Selection)
             }
         }
-        WizardAnswerCard {
-            CfTimePicker(
-                state,
-                Modifier.testTag("wizard.answer.latest_wake").wizardPickerSemantics(null, state.is24hour),
-                compact,
-            )
+        WizardAnswerCard(Modifier.testTag("wizard.answer.latest_wake.card")) {
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                CfTimePicker(
+                    state,
+                    Modifier.testTag("wizard.answer.latest_wake").wizardPickerSemantics(null, state.is24hour),
+                    compact,
+                )
+            }
         }
     }
 }

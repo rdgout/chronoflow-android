@@ -279,10 +279,13 @@ private fun WizardAnswerHeader(
 }
 
 @Composable
-internal fun WizardAnswerCard(content: @Composable () -> Unit) {
+internal fun WizardAnswerCard(
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
+) {
     val shape = RoundedCornerShape(PlanUITokens.wizardCardRadius.dp)
     Box(
-        Modifier
+        modifier
             .fillMaxWidth()
             .background(CfTheme.colors.background, shape)
             .border(AuthTokens.borderWidth.dp, CfTheme.colors.border, shape),
