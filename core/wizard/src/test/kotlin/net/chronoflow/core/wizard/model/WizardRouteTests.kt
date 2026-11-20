@@ -85,4 +85,92 @@ class WizardRouteTests {
             assertEquals(16, form.stays.size)
         }
     }
+
+    @org.junit.runner.RunWith(org.junit.runners.Parameterized::class)
+    class MixedErrors(
+        private val paths: List<String>,
+        private val step: MemberWizardStep,
+    ) {
+        @Test fun mixedServerErrorsReturnToTheEarliestScreenInPathOrder() {
+            val form =
+                WizardForm
+                    .from(generationInput())
+                    .insertStop(wizardAirport("DXB", "Dubai", "Asia/Dubai"), 0)
+                    .addReturn()
+                    .insertStop(wizardAirport("HEL", "Helsinki", "Europe/Helsinki"), 2)
+            val errors =
+                paths.associateWith {
+                    net.chronoflow.core.model
+                        .FieldMessage("error")
+                }
+            assertEquals(step, WizardJourney.errorStep(errors, form))
+        }
+
+        companion object {
+            @JvmStatic
+            @org.junit.runners.Parameterized.Parameters(name = "paths={0}")
+            fun cases() =
+                listOf(
+                    arrayOf<Any>(listOf("legs.0.arriveLocal", "legs.2.toIata"), MemberWizardStep.outbound),
+                    arrayOf<Any>(listOf("legs.1.departLocal", "legs.2.fromIata"), MemberWizardStep.outbound),
+                    arrayOf<Any>(listOf("legs.1.toIata", "legs.2.departLocal"), MemberWizardStep.whereTo),
+                    arrayOf<Any>(
+                        listOf("legs.0.toIata", "legs.2.toIata", "legs.1.departLocal"),
+                        MemberWizardStep.whereTo,
+                    ),
+                    arrayOf<Any>(listOf("legs.2.toIata", "legs.3.arriveLocal"), MemberWizardStep.returnRoute),
+                    arrayOf<Any>(listOf("legs.2.departLocal", "legs.3.arriveLocal"), MemberWizardStep.returnFlight),
+                )
+        }
+    }
+
+    @org.junit.runner.RunWith(org.junit.runners.Parameterized::class)
+    class EditorErrors(
+        private val path: String,
+        private val step: MemberWizardStep,
+    ) {
+        @Test fun laterCardOwnsChronologyErrorAndServerFieldsReturnToTheirEditors() {
+            var form =
+                WizardForm
+                    .from(generationInput())
+                    .insertStop(wizardAirport("DXB", "Dubai", "Asia/Dubai"), 0)
+                    .updateLeg(0) { it.copy(arriveLocal = "2026-11-11T12:00") }
+                    .updateLeg(1) { it.copy(departLocal = "2026-11-11T11:00") }
+            val errors = WizardValidation.validate(form, mapOf("DXB" to wizardAirport("DXB", "Dubai", "Asia/Dubai")))
+            assertEquals("This flight leaves before the previous one lands.", errors["legs.1.departLocal"]?.key)
+            org.junit.Assert.assertNull(errors["legs.0.departLocal"])
+            form = form.addReturn()
+            assertEquals(
+                step,
+                WizardJourney.errorStep(
+                    mapOf(
+                        path to
+                            net.chronoflow.core.model
+                                .FieldMessage("error"),
+                    ),
+                    form,
+                ),
+            )
+            val rejection =
+                net.chronoflow.core.model.FieldMessage(
+                    "Your flight home must leave from the airport you landed at.",
+                )
+            val mapped = WizardJourney.errors(mapOf("return.legs.0.from_iata" to rejection), form)
+            assertEquals(mapOf("review" to rejection), mapped)
+            assertEquals(MemberWizardStep.returnFlight, WizardJourney.errorStep(mapped, form))
+        }
+
+        companion object {
+            @JvmStatic
+            @org.junit.runners.Parameterized.Parameters(name = "path={0}")
+            fun cases() =
+                listOf(
+                    arrayOf<Any>("legs.1.departLocal", MemberWizardStep.outbound),
+                    arrayOf<Any>("legs.1.toIata", MemberWizardStep.whereTo),
+                    arrayOf<Any>("legs.2.departLocal", MemberWizardStep.returnFlight),
+                    arrayOf<Any>("legs.2.toIata", MemberWizardStep.returnRoute),
+                    arrayOf<Any>("review", MemberWizardStep.returnFlight),
+                )
+        }
+    }
 }

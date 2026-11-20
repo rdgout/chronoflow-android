@@ -175,3 +175,87 @@ fun WizardForm.Companion.from(
         itinerary = retained?.itinerary,
     )
 }
+
+object WizardJourney {
+    fun errorStep(
+        errors: Map<String, net.chronoflow.core.model.FieldMessage>,
+        form: WizardForm,
+    ): MemberWizardStep {
+        val routeErrors =
+            form.legs.indices.filter { index ->
+                errors.keys.any {
+                    it == "legs.$index.fromIata" ||
+                        it == "legs.$index.toIata"
+                }
+            }
+        if (routeErrors.any { it < form.returnBoundary }) return MemberWizardStep.whereTo
+        if (errors.keys.any { key ->
+                (0 until form.returnBoundary).any { key.startsWith("legs.$it.") }
+            }
+        ) {
+            return MemberWizardStep.outbound
+        }
+        if (routeErrors.isNotEmpty()) return MemberWizardStep.returnRoute
+        return if (form.end.kind == "return_legs") MemberWizardStep.returnFlight else MemberWizardStep.outbound
+    }
+
+    internal val topFields =
+        mapOf(
+            "trip_end_kind" to "end.kind",
+            "trip_end_nights" to "end.nights",
+            "trip_end_check_out_date" to "end.checkOutDate",
+            "return_from_leg" to "end.returnFromLeg",
+            "preparation_days" to "preparation.days",
+            "latest_wake" to "preparation.latestWake",
+            "pre_departure_busy_answered" to "preparation.busyAnswered",
+            "pre_departure_busy_intervals" to "preparation.busyIntervals",
+            "feasible_night_bed" to "preparation.feasibleNightBed",
+            "feasible_night_wake" to "preparation.feasibleNightWake",
+            "fast_delay_opt_in" to "preparation.fastDelayOptIn",
+            "use_profile_override" to "override.enabled",
+            "override_habitual_bed" to "override.habitualBed",
+            "override_habitual_wake" to "override.habitualWake",
+            "override_chronotype" to "override.chronotype",
+        )
+
+    internal fun camel(value: String): String {
+        val words = value.split('_')
+        return words.first() + words.drop(1).joinToString("") { it.replaceFirstChar { c -> c.uppercase() } }
+    }
+
+    fun errorPath(
+        path: String,
+        form: WizardForm,
+    ): String {
+        val parts = path.split('.')
+        val position = parts.getOrNull(2)?.toIntOrNull()
+        if (parts.size >= 3 && parts[0] in listOf("outbound", "return") && parts[1] == "legs" && position != null) {
+            val index = position + if (parts[0] == "return") form.returnBoundary else 0
+            val stay = parts.getOrNull(3) == "stay"
+            return (
+                listOf(if (stay) "stays" else "legs", index.toString()) +
+                    parts.drop(if (stay) 4 else 3).map(::camel)
+            ).joinToString(".")
+        }
+        if (path == "override.use") return "override.enabled"
+        val first = parts.firstOrNull() ?: return path
+        return (listOf(topFields[first] ?: first) + parts.drop(1).map(::camel)).joinToString(".")
+    }
+
+    fun errors(
+        fields: Map<String, net.chronoflow.core.model.FieldMessage>,
+        form: WizardForm,
+    ): Map<String, net.chronoflow.core.model.FieldMessage> =
+        fields.entries.associate { (path, message) ->
+            (
+                if (message.key ==
+                    "Your flight home must leave from the airport you landed at."
+                ) {
+                    "review"
+                } else {
+                    errorPath(path, form)
+                }
+            ) to
+                message
+        }
+}
