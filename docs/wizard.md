@@ -513,3 +513,30 @@ Remaining external acceptance: the rendered-board comparison described above and
 | Compare refreshed accounts | 2.460 ms | 1.282 ms | 2.088 ms |
 | Reopen source / read trips | 55.790 ms | 44.464 ms | 29.234 ms |
 | Reload / compare state | 13.094 ms | 9.198 ms | 12.525 ms |
+
+6. The endpoint transport flake remains unresolved. The saved host XML identifies only `DataFailure.Offline`; it contains no underlying IOException or transport events. Reading `MockApi` and `ApiClient` establishes a new JUnit rule/server per parameter, an ephemeral listening port from `server.start()`, a fresh default client/connection pool per API client, and no connection reuse between parameterized cases. `reply` registers a route rather than enqueuing responses. Dispatch matches `(method, encodedPath)`, so the airports query is checked by the contract assertion but cannot change route selection; unmatched routes return 599 and map to a server failure. `RecordingDeadline.await` suspends forever. These paths do not explain the observed Offline failure.
+
+   A temporary, failure-only OkHttp EventListener recorded connection addresses, transport phases and sanitized IOException classifications/stack frames without headers, bodies or credentials. Five rounds (210 cases) passed in 2.38 s tier wall / 0.666 s XML class total. A final bounded twenty-round run (840 cases) with sixteen CPU workers also passed, in 7.20 s tier wall / 4.064 s XML total. Every temporary diagnostic and repetition was removed, and the original 42-case class passed again (0.321 s XML total). There is no evidence identifying whether the original IOException came from connect, response headers, body read, OS resource pressure or another external cause. Per the review stopping rule, no speculative support change, retry or swallowed failure was added. Item 6 needs a future reproduction retaining the underlying transport failure.
+
+### Review round 1 validation
+
+Commands ran from `feat/phase-9d-wizard-flights`. All five fixes have separate signed commits; the sixth review item has this investigation record because its cause was not identified. There is no new OQ, brief refresh, copy, dependency or test-boundary allowlist entry. No emulator, performance or profile tier ran, and Pixel was left running. Full command output and copied timing files are under `build/phase9d-review1/`.
+
+| Command / selection | Result | Wall time |
+|---|---|---:|
+| `make targeted ONLY="feature:wizard:WizardTimesStepTest#firstFailureAfterRestorationWarnsOnceAndRevealsTheFirstError"` before / after | Required haptic regression fails before; passes after | 7.04 / 4.78 s, separate SDK cold costs 3.089 / 2.394 s |
+| `make targeted ONLY="feature:wizard:WizardTimesClockTest#emptyCardsStayEqualWhenTheClockMovesByOneMinute"` before | Required card-equality regression fails before | 3.00 s |
+| `make targeted ONLY="feature:wizard:WizardTimesClockTest feature:wizard:WizardTimesUiTest feature:wizard:TripWizardViewModelTimesTest feature:wizard:WizardTimesRecompositionTest"` | All 35 pass | 7.89 s |
+| `make targeted ONLY="feature:wizard:TripWizardViewModelTimesTest#clockIsSampledOnlyWhenAPickerOpens"` after adding Back assertions | Pass | Gradle 2 s |
+| `make targeted ONLY="app:RootThemeTest"` before / after | All three pass; final targeted root case 378 ms | 7.76 / 4.60 s |
+| `make targeted ONLY="app:RootThemeTest#rootProvidesReduceMotionAndUsesTheSuppliedFontBarrier"` | Pass with controlled IO scheduler | Gradle 6 s |
+| `make targeted ONLY="core:data-mock:MockSeedRefreshTests"` before / final | All four pass; CurrentAnchor 428 / 253 ms | 3.32 / 2.70 s |
+| Same seed class, intermediate JSON-only warm-up | All four pass; CurrentAnchor 311 ms | 2.70 s |
+| `make targeted ONLY="core:network:EndpointContractTest"`, temporary five-round diagnostic | 210 pass; no IOException | 2.38 s |
+| Same endpoint command, temporary twenty-round CPU-load diagnostic | 840 pass; no IOException | 7.20 s |
+| `make targeted ONLY="core:network:EndpointContractTest core:wizard:WizardPickerDatesTest feature:wizard:WizardTimesStepTest feature:wizard:WizardReturnStepTest feature:wizard:TripWizardViewModelReturnChoiceTest feature:wizard:WizardBoardCaptureSeedTest feature:wizard:WizardFlightBoardSeedTest"` | Original endpoint 42, picker dates six, feature 74 pass; restoration case 140 ms warm | JVM Gradle 1 + 2 s; feature tier 6.86 s |
+| `Scripts/run-tier.sh layout-9d-review1 --results 'feature/wizard/build/test-results/testDebugUnitTest/*.xml' --results 'app/build/test-results/testDebugUnitTest/*.xml' --timings 'feature/wizard/build/cf-timings/testDebugUnitTest/*.json' --timings 'app/build/cf-timings/testDebugUnitTest/*.json' -- ./gradlew --console=plain :feature:wizard:testDebugUnitTest :app:testDebugUnitTest -Pcf.tier=layout` | Once; all 264 pass, zero overruns or hangs | 12.02 s |
+| `./gradlew :app:lintDebug :feature:wizard:lintDebug` | Once; pass | 10.39 s |
+| `make quick` | Once; pass, zero overruns or hangs; 1,634 freshly measured cases / 4,669 collected or reused results; all four tooling groups pass (168 / 25 / 49 / 9); build-logic 37 and timing seven collected from up-to-date outputs | 45.15 s total; main tier 22.32 s |
+
+Final quick measurements: root-theme barrier case **352 ms**, seed CurrentAnchor **242 ms**, seed LegacyAnchor **214 ms**, restoration feedback **77 ms**. The clock/ViewModel case is **4 ms**, and the existing card recomposition guard is **31 ms** including its class warm-up. RootThemeTest's class warm-up is 89 ms, WizardTimesStepTest's 26 ms; the first isolated SDK costs are kept separate above. No test budget was widened, no required command was blocked by the sandbox, and no test was retried after a final-quick failure.
