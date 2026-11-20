@@ -951,3 +951,11 @@ Android-only: `AirportSearchCacheTests` (5), `AirportSearchSessionTests` (8), `D
 - **9h:** `Route.Wizard(Edit|Duplicate)` → `startTrip`, `isEditing`, `sourceChange` and `acceptSourceReload`.
 - **11a/11b:** the guest members ported here, plus `MemberWizardGeneration` for `GuestWizardGeneration`.
 - **12c:** `FirstTripRemindersOffer.consume`, which reads the `wizardReminders` row this phase writes.
+
+### Delivered by 9b (2026-11-20)
+
+`SessionGraph.wizard` lazily supplies the feature-owned `TripWizardDependencies`; a missing session permit supplies no dependencies. Each entry uses `TripWizardViewModel.factory(entry)` with `TripWizardDependenciesKey` in its current creation extras. The factory captures only the entry. Services are session-owned; each opening gets its own generation service and each ViewModel its own search session over the shared airport service.
+
+9c hosts `state`, `wizard` and `search`, forwarding stateless-screen events through the members above. 9f drives checking/fine-tune intents and the injected-clock model. 9g calls `readyTick` and manual `savePlan`, then handles `Closed(createdTripId)`; successful first-trip saves already queue the reminders offer. 9h passes Edit/Duplicate entries to the factory and renders `LoadFailed` from trip-input loading. 11a reuses the member/guest model and generation protocol. 12c adds `FirstTripRemindersOffer.consume` over the queued `wizardReminders` row.
+
+The latest-wins recovery contract is pinned by `persistenceNeverGoesBackwardsAndEndsOnTheLatestRevision`; clearing the ViewModel cancels generation without discarding recovery, and session-owned pending writes finish. Failed explicit discard stays Active and rethrows. R-A366 is covered at both the service and model/store boundaries: a failed `didCreate` never causes a second server trip on manual retry. Recovery JSON always encodes instance and revision, including revision zero. Decisions are recorded as OQ-A367–OQ-A369, and OQ-A366 records its resolution.
