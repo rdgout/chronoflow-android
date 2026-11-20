@@ -232,29 +232,31 @@ private fun AirportSearchHeader(
         modifier = Modifier.fillMaxWidth().heightIn(min = SheetMetrics.target.dp),
     ) { measurables, constraints ->
         val gap = SheetMetrics.headerGap.dp.roundToPx()
-        val minimumSide =
-            maxOf(
-                measurables[0].minIntrinsicWidth(constraints.maxHeight),
-                measurables[2].minIntrinsicWidth(constraints.maxHeight),
-            )
+        val cancelMinimum = measurables[0].minIntrinsicWidth(constraints.maxHeight)
+        val trailingMinimum = measurables[2].minIntrinsicWidth(constraints.maxHeight)
         val titleWidth =
             minOf(
                 measurables[1].maxIntrinsicWidth(constraints.maxHeight),
                 SheetMetrics.headerTitleMax.dp.roundToPx(),
-                (constraints.maxWidth - 2 * (gap + minimumSide)).coerceAtLeast(0),
+                (constraints.maxWidth - 2 * gap - cancelMinimum - trailingMinimum).coerceAtLeast(0),
             )
         val loose = constraints.copy(minWidth = 0, minHeight = 0)
         val heading = measurables[1].measure(loose.copy(minWidth = titleWidth, maxWidth = titleWidth))
-        val sideWidth = ((constraints.maxWidth - heading.width - 2 * gap) / 2).coerceAtLeast(0)
-        val cancel = measurables[0].measure(loose.copy(maxWidth = sideWidth))
-        val trailing = measurables[2].measure(loose.copy(maxWidth = sideWidth))
+        val remaining = (constraints.maxWidth - heading.width - 2 * gap).coerceAtLeast(0)
+        val leadingWidth =
+            (remaining / 2)
+                .coerceAtLeast(cancelMinimum)
+                .coerceAtMost((remaining - trailingMinimum).coerceAtLeast(0))
+        val trailingWidth = remaining - leadingWidth
+        val cancel = measurables[0].measure(loose.copy(maxWidth = leadingWidth))
+        val trailing = measurables[2].measure(loose.copy(maxWidth = trailingWidth))
         val height =
             maxOf(constraints.minHeight, heading.height, cancel.height, trailing.height)
                 .coerceAtMost(constraints.maxHeight)
         layout(constraints.maxWidth, height) {
             cancel.placeRelative(0, (height - cancel.height) / 2)
-            heading.placeRelative((constraints.maxWidth - heading.width) / 2, (height - heading.height) / 2)
-            trailing.placeRelative(constraints.maxWidth - sideWidth, (height - trailing.height) / 2)
+            heading.placeRelative(leadingWidth + gap, (height - heading.height) / 2)
+            trailing.placeRelative(constraints.maxWidth - trailingWidth, (height - trailing.height) / 2)
         }
     }
 }

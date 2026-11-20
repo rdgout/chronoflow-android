@@ -7,8 +7,10 @@ import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import net.chronoflow.core.designsystem.generated.CfTypeScale
+import net.chronoflow.core.model.config.AppLanguage
 import net.chronoflow.core.testing.DeviceProfile
 import net.chronoflow.core.testing.DeviceProfiles
+import net.chronoflow.core.testing.SafeInsetsDp
 import net.chronoflow.core.testing.compose.ProfileRule
 import net.chronoflow.core.testing.tiers.Layout
 import net.chronoflow.core.wizard.model.WizardAirportSheet
@@ -32,10 +34,11 @@ import org.robolectric.annotation.GraphicsMode
 @Config(sdk = [36])
 class AirportSearchSheetGeometryTest(
     private val profile: DeviceProfile,
+    private val language: AppLanguage,
 ) {
     private val compose = createComposeRule()
 
-    @get:Rule val rules: RuleChain = RuleChain.outerRule(ProfileRule(profile)).around(compose)
+    @get:Rule val rules: RuleChain = RuleChain.outerRule(ProfileRule(profile, language)).around(compose)
 
     private fun bounds(tag: String): Rect =
         compose.onNodeWithTag(tag, useUnmergedTree = true).getUnclippedBoundsInRoot().let {
@@ -75,12 +78,37 @@ class AirportSearchSheetGeometryTest(
             "${profile.name}/$side: title height ${title.height}",
             title.height <= requireNotNull(CfTypeScale.wizardButton.lineHeight) + 0.5f,
         )
-        assertEquals(bounds("wizard.airport-search").center.x, title.center.x, 0.5f)
+        val sheet = bounds("wizard.airport-search")
+        val cancel = bounds("wizard.airport.cancel")
+        val rowStart = sheet.left + 20f
+        val rowWidth = sheet.width - 40f
+        val sharedSide = (rowWidth - title.width - 16f) / 2
+        val leadingSide = maxOf(cancel.width, sharedSide)
+        println(
+            "WizardSheet title: ${profile.name}/$language/$side, heightDp=${title.height}, leftDp=${title.left}, gridLeftDp=${rowStart + leadingSide + 8f}",
+        )
+        assertEquals(rowStart + leadingSide + 8f, title.left, 0.5f)
+        assertTrue("Cancel and title keep their gap", title.left - cancel.right >= 7.5f)
     }
 
     companion object {
         @JvmStatic
-        @ParameterizedRobolectricTestRunner.Parameters(name = "{0}")
-        fun cases() = listOf(DeviceProfiles.pixel8, DeviceProfiles.foldInner)
+        @ParameterizedRobolectricTestRunner.Parameters(name = "{0}-{1}")
+        fun cases(): List<Array<Any>> =
+            listOf(
+                arrayOf(DeviceProfiles.pixel8, AppLanguage.En),
+                arrayOf(DeviceProfiles.foldInner, AppLanguage.En),
+                arrayOf(
+                    DeviceProfiles.pixel8.copy(
+                        name = "wizard390",
+                        widthDp = 390,
+                        heightDp = 844,
+                        density = 3f,
+                        insets = SafeInsetsDp(0f, 0f, 0f, 0f),
+                        source = "Wizard 390 x 844 board",
+                    ),
+                    AppLanguage.Nl,
+                ),
+            )
     }
 }

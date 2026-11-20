@@ -275,3 +275,25 @@ make quick
 Quick's only failures are unchanged cases exceeding the 1 s budget: `net.chronoflow.app.RootThemeTest#rootProvidesReduceMotionAndUsesTheSuppliedFontBarrier` at **1,001 ms**, and `net.chronoflow.feature.onboarding.OnboardingSessionTests#enqueueRejectsAStaleSnapshotWithSessionChanged` at **1,009 ms**. They were not retried, per p9c-i.md. No hangs or missing result files occurred. Quick did not reach its later build-logic/tooling/serial-timing commands after the timing gate failed; no successful full-quick claim is made.
 
 In the final quick run, the slowest three Konsist cases are `HapticsRulesTest#noHapticsInLaunch` (0.554 s), `TodayTestBoundaryTest$Project#allUnitTestsKeepAppBootsAtApprovedBoundaries` (0.447 s), and `KonsistRulesTest#routesAreSerializable` (0.325 s), all within the unchanged budget. Detailed logs, the before/after XML and timing files are retained in `build/phase9c-review1/`. No emulator, performance or profile command ran in this review round. No copy or OQ rows were added.
+
+
+## Review round 2
+
+The header follows the board's auto/min-content grid: the title uses its max-content width, capped at 220 dp and `W − 2 × gap − cancelMinimum − trailingMinimum`. Each side track starts with half the remaining space, keeps its own minimum and gives the remainder to the other side. The title is placed after the leading track and gap; it can sit slightly off-center when Cancel needs more space than the empty trailing track. This corrects round 1's symmetric minimum-width assumption. All measurements stay in `Layout`.
+
+The geometry class now parameterizes language as well as profile, adding Dutch at 390 × 844 dp and density 3. Before the fix, `homeTitleFitsOnOneLine` ran three cases: both existing English cases passed and Dutch Home failed at **44 dp** high. After the fix all twelve geometry cases pass; Dutch Home is **22 dp** high at **105 dp** from the sheet's left edge, matching the independently asserted grid placement and the 8 dp gap after Cancel. No copy is asserted on screen, and the 97-case WizardGuards matrix is unchanged.
+
+`make captures ONLY=WizardAirport,WizardStopSearch` ran once and wrote ten sheet PNGs. The regenerated `WizardAirportHomeDarkNL.png` was inspected: both Annuleren and the title occupy one line. Other existing captures were preserved.
+
+
+| Command | Exact result | Wall time |
+|---|---|---:|
+| `make targeted ONLY="feature:wizard:AirportSearchSheetGeometryTest#homeTitleFitsOnOneLine"` before the fix | Three cases: English pixel8 and fold pass; Dutch 390 Home fails at 44 dp, as required | Tier 7.88 s |
+| `make targeted ONLY="feature:wizard:AirportSearchSheetGeometryTest"` after the fix | Twelve pass; zero timing overruns | Tier 7.33 s |
+| `make format` | Pass | Gradle 15 s |
+| `make captures ONLY=WizardAirport,WizardStopSearch`, once | Ten matching PNGs regenerated; zero timing overruns | Tier 17.39 s |
+| `Scripts/run-tier.sh layout-9c-review2 --results 'feature/wizard/build/test-results/testDebugUnitTest/*.xml' --timings 'feature/wizard/build/cf-timings/testDebugUnitTest/*.json' -- ./gradlew :feature:wizard:testDebugUnitTest -Pcf.tier=layout`, once | 118 pass, including the unchanged 97 WizardGuards cases; zero timing overruns | Tier 11.43 s |
+| `./gradlew :feature:wizard:lintDebug`, once | Pass, warnings treated as errors | Gradle 9 s |
+| `make quick`, once | All assertions pass; Gradle exits 0. Budget check exits 3 and make exits 2 on the untouched Terms case below | Whole command 37.802 s; Gradle 37 s |
+
+Quick's only failure is the untouched `net.chronoflow.feature.onboarding.terms.TermsScreenTest#policyRowStaysEnabledWhileFailed`: **3,464 ms > 3,000 ms** class warm-up allowance. It was not retried. Quick did not reach its later build-logic/tooling/serial-timing commands. Full command output and before/after XML/timings are in `build/phase9c-review2/`. No hangs or missing results occurred. No emulator, performance or profile commands ran; no copy or OQ rows were added.
