@@ -99,10 +99,11 @@ class RootThemeTest {
             }
             compose.mainClock.advanceTimeByFrame()
             compose.mainClock.advanceTimeByFrame()
+            app.ioDispatcher.scheduler.runCurrent()
             compose.runOnIdle {
+                assertEquals(0, app.preloader.calls.get())
                 assertTrue(commit.awaited.get())
                 assertTrue(motion)
-                assertEquals(0, app.preloader.calls.get())
                 completed.complete(Unit)
             }
             compose.waitForIdle()
