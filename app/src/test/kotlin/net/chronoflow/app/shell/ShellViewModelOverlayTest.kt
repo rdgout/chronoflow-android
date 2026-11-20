@@ -36,6 +36,36 @@ class ShellViewModelOverlayTest {
         assertEquals(initial.stacks, holder.state.stacks)
     }
 
+    @Test fun savedWizardSelectsTripsAndOpensItsPageOnlyOnce() {
+        val initial = ShellNav.initial()
+        val holder = ShellViewModel(initial)
+        holder.push(Route.Wizard(WizardMode.Create))
+        val owner = holder.overlayOwner
+        val tracked =
+            ViewModelProvider.create(
+                owner,
+                viewModelFactory {
+                    initializer { TrackedViewModel() }
+                },
+            )[TrackedViewModel::class.java]
+        holder.closeWizard(WizardExit.Saved("t1"))
+        assertNull(holder.state.overlay)
+        assertEquals(ShellTab.Trips, holder.state.selected)
+        assertEquals(
+            listOf(Route.Trips, Route.TripPage("t1", awaitingSync = true)),
+            holder.state.stacks[ShellTab.Trips],
+        )
+        assertEquals(initial.stacks[ShellTab.Today], holder.state.stacks[ShellTab.Today])
+        assertTrue(tracked.cleared)
+        val closed = holder.state
+        holder.closeWizard(WizardExit.Saved("t1"))
+        assertEquals(closed, holder.state)
+        holder.push(Route.TripPage("t2"))
+        val navigated = holder.state
+        holder.closeWizard(WizardExit.Saved("t1"))
+        assertEquals(navigated, holder.state)
+    }
+
     private class TrackedViewModel : ViewModel() {
         var cleared = false
 

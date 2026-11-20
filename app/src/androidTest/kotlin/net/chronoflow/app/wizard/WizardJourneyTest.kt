@@ -4,7 +4,10 @@ package net.chronoflow.app.wizard
 
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.isDisplayed
+import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextReplacement
@@ -66,6 +69,38 @@ class WizardJourneyTest : ScreenTest() {
         instrumentation.runOnMainSync { assertEquals(0, app.graph.ioViolationsForTest) }
         assertTrue(
             "wizard journey took ${(System.nanoTime() - started) / 1_000_000} ms",
+            System.nanoTime() - started < 10_000_000_000L,
+        )
+    }
+
+    @Test fun oneWayReviewSavesAndOpensTheTripPage() {
+        val started = System.nanoTime()
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val app = instrumentation.targetContext.applicationContext as ChronoFlowApp
+        instrumentation.runOnMainSync { app.graph.resetIoViolationsForTest() }
+        launch(
+            mapOf(
+                "CF_AUTH_TEST_SIGNED_IN" to "demo",
+                "CF_AUTH_TEST_WALKTHROUGH_SEEN" to "1",
+                "CF_MOCK_DELAY" to "0",
+                "CF_WIZARD_BOARD_CAPTURE" to "WizardSaveJourney",
+            ),
+        )
+        compose.waitUntilExactlyOneExists(hasTestTag("wizard.choice.one-way"), 5_000)
+        compose.onNodeWithTag("wizard.choice.one-way").performClick()
+        compose.waitUntilExactlyOneExists(hasTestTag("wizard.fine-tune.continue") and isEnabled(), 5_000)
+        compose.waitUntil(5_000) { compose.onNodeWithTag("wizard.fine-tune.continue").isDisplayed() }
+        compose.onNodeWithTag("wizard.fine-tune.continue").performClick()
+        compose.waitUntilExactlyOneExists(hasTestTag("wizard.ready.continue") and isEnabled(), 3_000)
+        compose.waitUntil(3_000) { compose.onNodeWithTag("wizard.ready.continue").isDisplayed() }
+        compose.onNodeWithTag("wizard.ready.continue").performClick()
+        compose.waitUntilExactlyOneExists(hasTestTag("trip.page"), 5_000)
+        compose.onNodeWithTag("wizard.ready").assertDoesNotExist()
+        compose.onNodeWithTag("wizard.calculating").assertDoesNotExist()
+        compose.onNodeWithTag("tab.trips").assertIsSelected()
+        instrumentation.runOnMainSync { assertEquals(0, app.graph.ioViolationsForTest) }
+        assertTrue(
+            "wizard save journey took ${(System.nanoTime() - started) / 1_000_000} ms",
             System.nanoTime() - started < 10_000_000_000L,
         )
     }

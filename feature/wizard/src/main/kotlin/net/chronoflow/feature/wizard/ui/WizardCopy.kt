@@ -12,6 +12,7 @@ internal fun WizardCopy.resolve(): String {
     val resources = LocalResources.current
     val entry =
         CopyIndex.find(CopyTable.Wizard, key)
+            ?: CopyIndex.find(CopyTable.Android, key)
             ?: return resources.getString(R.string.wizard_something_went_wrong_on_our_side_t_208515)
     val count = arguments["count"] ?: arguments["%1"]
     val values =

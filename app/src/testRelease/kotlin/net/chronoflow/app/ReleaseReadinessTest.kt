@@ -34,6 +34,7 @@ class ReleaseReadinessTest {
         missing("net.chronoflow.feature.wizard.debug.WizardBoardCaptureSeed")
         missing("net.chronoflow.feature.wizard.debug.FixedAirportSearch")
         missing("net.chronoflow.feature.wizard.debug.WizardCompletionBoardSeed")
+        missing("net.chronoflow.feature.wizard.debug.WizardSaveJourney")
         missing("net.chronoflow.feature.wizard.debug.WizardCompletionPrompts")
         missing("net.chronoflow.feature.wizard.debug.FrozenCheckingClock")
         val deps =

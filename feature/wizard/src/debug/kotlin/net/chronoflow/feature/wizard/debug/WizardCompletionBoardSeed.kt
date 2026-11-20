@@ -20,10 +20,12 @@ import net.chronoflow.core.model.contracts.CopyLine
 import net.chronoflow.core.model.contracts.PlanStatus
 import net.chronoflow.core.model.contracts.PromptKind
 import net.chronoflow.core.model.contracts.ReviewCreditState
+import net.chronoflow.core.model.contracts.TripDirection
 import net.chronoflow.core.wizard.model.MemberWizardDraft
 import net.chronoflow.core.wizard.model.MemberWizardStep
 import net.chronoflow.core.wizard.model.WizardBusy
 import net.chronoflow.core.wizard.model.WizardCheckingProgress
+import net.chronoflow.core.wizard.model.WizardSaveFailure
 import net.chronoflow.core.wizard.model.WizardSleepOverride
 import net.chronoflow.core.wizard.model.inputFingerprint
 import net.chronoflow.core.wizard.model.reviewInput
@@ -32,6 +34,18 @@ import net.chronoflow.feature.wizard.shell.WizardUiOverride
 internal object WizardCompletionBoardSeed {
     val baseNames =
         listOf(
+            "WizardReady",
+            "WizardReadyReturn",
+            "WizardReadyUnlimited",
+            "WizardReadyFree",
+            "WizardReadyOneFree",
+            "WizardReadyAdjusted",
+            "WizardReadyChecking",
+            "WizardReadyNoCredits",
+            "WizardSaveOffline",
+            "WizardSaveServer",
+            "WizardSaveThrottle",
+            "WizardCalculating",
             "WizardChecking",
             "WizardCheckingAgain",
             "WizardCheckingSlow",
@@ -58,7 +72,8 @@ internal object WizardCompletionBoardSeed {
     val names =
         baseNames.flatMap { board ->
             when (board) {
-                "WizardChecking" -> listOf(board, board + "Dark", board + "NL")
+                "WizardSaveThrottle" -> listOf(board)
+                "WizardReady", "WizardChecking" -> listOf(board, board + "Dark", board + "NL")
                 "WizardFineTune" -> listOf(board, board + "Dark", board + "NL", board + "DarkNL")
                 "WizardSheet" -> listOf(board)
                 else -> listOf(board, board + "DarkNL")
@@ -100,7 +115,8 @@ internal object WizardCompletionBoardSeed {
             )
         }
         return WizardUiOverride(
-            reviewing = board == "WizardFineTuneBusy",
+            reviewing = board == "WizardFineTuneBusy" || board == "WizardReadyChecking",
+            retrySeconds = if (board == "WizardSaveThrottle") 42 else 0,
             answerError =
                 when (board) {
                     "WizardSheetBlueError" -> "Enter a rating between 0.1 and 9.9."
@@ -127,14 +143,14 @@ internal object WizardCompletionBoardSeed {
         }
         var form = base.form
         var state = base.state
-        if (board == "WizardFineTuneMulti") {
+        if (board == "WizardFineTuneMulti" || board == "WizardReadyReturn") {
             form =
                 form
                     .insertStop(state.airports.getValue("DXB"), 0)
                     .updateLeg(0) { it.copy(arriveLocal = "2026-10-12T23:25") }
                     .updateLeg(1) { it.copy(departLocal = "2026-10-13T02:05", arriveLocal = "2026-10-13T16:35") }
         }
-        if (board == "WizardSheetCheckout") {
+        if (board in setOf("WizardSheetCheckout", "WizardReadyReturn", "WizardReadyOneFree")) {
             form =
                 form.addReturn().updateLeg(form.returnBoundary) {
                     it.copy(
@@ -149,7 +165,20 @@ internal object WizardCompletionBoardSeed {
         if (board == "WizardFineTuneSleep") {
             form = form.copy(override = WizardSleepOverride(true, "00:30", "08:30"))
         }
-        form = form.copy(preparation = form.preparation.copy(latestWake = "08:30"))
+        form =
+            form.copy(
+                preparation =
+                    form.preparation.copy(
+                        latestWake =
+                            if (board ==
+                                "WizardReadyAdjusted"
+                            ) {
+                                "08:00"
+                            } else {
+                                "08:30"
+                            },
+                    ),
+            )
         if (board == "WizardSheetRoom" || board == "WizardFineTuneSleep") {
             form =
                 form.copy(
@@ -238,6 +267,10 @@ internal object WizardCompletionBoardSeed {
             prompts = prompts.filter { it.kind in kinds }
         }
         if (board == "WizardFineTuneNone") prompts = emptyList()
+        val unlimited = board == "WizardReadyUnlimited"
+        val free = board == "WizardReadyFree"
+        val noCredits = board == "WizardReadyNoCredits"
+        val adjusted = board == "WizardReadyAdjusted"
         val identity = ApiReviewIdentity("capture", 1, 1, null, null)
         form = form.copy(identity = identity)
         state =
@@ -245,8 +278,17 @@ internal object WizardCompletionBoardSeed {
                 review =
                     ApiTripReview(
                         identity,
-                        PlanStatus.Ok,
-                        emptyList(),
+                        if (adjusted) PlanStatus.Modified else PlanStatus.Ok,
+                        if (adjusted) {
+                            listOf(
+                                CopyLine(
+                                    "You gave no latest wake-up time, so the plan wakes you at most an hour later than usual.",
+                                    emptyList(),
+                                ),
+                            )
+                        } else {
+                            emptyList()
+                        },
                         prompts,
                         ApiReviewSummary(
                             CopyLine(
@@ -265,14 +307,58 @@ internal object WizardCompletionBoardSeed {
                             emptyList(),
                             null,
                         ),
-                        ApiReviewPrice(ReviewCreditState.Create, 1, 3, false, emptyList()),
-                        true,
-                        null,
+                        ApiReviewPrice(
+                            if (unlimited) {
+                                ReviewCreditState.Unlimited
+                            } else if (free) {
+                                ReviewCreditState.Free
+                            } else {
+                                ReviewCreditState.Create
+                            },
+                            if (unlimited || free) {
+                                0
+                            } else if (board == "WizardReadyReturn") {
+                                2
+                            } else {
+                                1
+                            },
+                            if (noCredits) 0 else 3,
+                            unlimited,
+                            if (board == "WizardReadyOneFree") listOf(TripDirection.Return) else emptyList(),
+                        ),
+                        !noCredits,
+                        if (noCredits) "Not enough credits" else null,
                         ApiReviewItinerary(emptyList(), emptyList()),
                     ),
                 reviewedAt = WizardBoardCaptureSeed.now,
                 lastInputStep = MemberWizardStep.returnChoice,
-                step = MemberWizardStep.fineTune,
+                step =
+                    when {
+                        board == "WizardCalculating" -> MemberWizardStep.calculating
+                        board.startsWith("WizardReady") || board.startsWith("WizardSave") -> MemberWizardStep.ready
+                        else -> MemberWizardStep.fineTune
+                    },
+                saveFailure =
+                    when (board) {
+                        "WizardSaveOffline" -> {
+                            WizardSaveFailure(WizardSaveFailure.Kind.offline)
+                        }
+
+                        "WizardSaveServer" -> {
+                            WizardSaveFailure(WizardSaveFailure.Kind.server)
+                        }
+
+                        "WizardSaveThrottle" -> {
+                            WizardSaveFailure(
+                                WizardSaveFailure.Kind.throttle,
+                                WizardBoardCaptureSeed.now.plusSeconds(42),
+                            )
+                        }
+
+                        else -> {
+                            null
+                        }
+                    },
                 promptSheetID = sheets[board]?.let { kind -> prompts.firstOrNull { it.kind == kind }?.id },
                 progressFloor = if (board == "WizardFineTuneNone") 0.95 else null,
             )

@@ -15,6 +15,7 @@ tasks.test {
     inputs
         .files(
             rootProject.file("tools/l10n/names.lock.json"),
+            rootProject.file("tools/l10n/android-only.json"),
             rootProject.file("core/plan/src/main/resources/plan_copy.json"),
         ).withPathSensitivity(PathSensitivity.RELATIVE)
     inputs.dir("src/main/kotlin").withPathSensitivity(PathSensitivity.RELATIVE)

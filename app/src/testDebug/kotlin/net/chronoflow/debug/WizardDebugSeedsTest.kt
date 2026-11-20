@@ -124,4 +124,28 @@ class WizardDebugSeedsTest {
             )
             assertEquals(0L, deps.checkingClock.nowMillis())
         }
+
+    @Test fun saveJourneyKeepsTheSessionStoreClockSearchAndGeneration() =
+        runTest(timeout = 60.seconds) {
+            val base = Dependencies(this)
+            val prepared = WizardDebugSeeds().prepare(seed(board = "WizardSaveJourney"), 1, Locale.ENGLISH)
+            val deps = checkNotNull(prepared.override).dependencies(base)
+            assertTrue(prepared.open)
+            org.junit.Assert.assertSame(base.store, deps.store)
+            org.junit.Assert.assertSame(base.now, deps.now)
+            org.junit.Assert.assertSame(base.airportSearch, deps.airportSearch)
+            org.junit.Assert.assertSame(base.checkingClock, deps.checkingClock)
+            org.junit.Assert.assertSame(base.source, deps.source)
+            assertNull(deps.uiOverride)
+            val draft = deps.start()
+            assertEquals(net.chronoflow.core.wizard.model.MemberWizardStep.returnChoice, draft.state.step)
+            assertEquals(
+                "HND",
+                draft.form.legs
+                    .single()
+                    .toIata,
+            )
+            deps.store.persist(draft)
+            assertEquals(draft, base.store.persisted.single())
+        }
 }

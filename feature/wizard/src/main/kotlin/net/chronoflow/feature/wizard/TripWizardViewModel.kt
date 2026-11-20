@@ -50,6 +50,7 @@ import net.chronoflow.core.wizard.model.beginChecking
 import net.chronoflow.core.wizard.model.changeExcludedAnswers
 import net.chronoflow.core.wizard.model.checkingTitle
 import net.chronoflow.core.wizard.model.chooseReturn
+import net.chronoflow.core.wizard.model.credits
 import net.chronoflow.core.wizard.model.editForm
 import net.chronoflow.core.wizard.model.exclusionWasSaved
 import net.chronoflow.core.wizard.model.finishFineTune
@@ -66,9 +67,12 @@ import net.chronoflow.core.wizard.model.optionalPrompts
 import net.chronoflow.core.wizard.model.popNavigation
 import net.chronoflow.core.wizard.model.preference
 import net.chronoflow.core.wizard.model.progress
+import net.chronoflow.core.wizard.model.readyTick
 import net.chronoflow.core.wizard.model.resumeChecking
 import net.chronoflow.core.wizard.model.resumeCompletion
 import net.chronoflow.core.wizard.model.reviewInput
+import net.chronoflow.core.wizard.model.revisit
+import net.chronoflow.core.wizard.model.savePlan
 import net.chronoflow.core.wizard.model.setDatePart
 import net.chronoflow.core.wizard.model.setPreference
 import net.chronoflow.core.wizard.model.setSleep
@@ -110,6 +114,14 @@ class TripWizardViewModel(
     private val mutableDialog = MutableStateFlow(presentation.discardDialogVisible)
     val discardDialogVisible = mutableDialog.asStateFlow()
     private val mutableExit = MutableStateFlow<WizardExit?>(null)
+    private var savedHapticDelivered = false
+
+    internal fun consumeSavedHaptic(): Boolean {
+        if (mutableExit.value !is WizardExit.Saved || savedHapticDelivered) return false
+        savedHapticDelivered = true
+        return true
+    }
+
     val exit = mutableExit.asStateFlow()
     private var selectedAirport = false
     private var continuing = false
@@ -130,16 +142,19 @@ class TripWizardViewModel(
         }
     private var answerOpenedAt = Instant.EPOCH
     private var answerLanguage: Language = Language.En
+    private val readyLanguage = MutableStateFlow<Language>(Language.En)
     private val mutableAnswer = MutableStateFlow<WizardAnswerSheetState?>(null)
     private val stepPresentation =
         combine(
             timesPresentation,
             mutableAnswer,
+            readyLanguage,
         ) {
             times,
             answer,
+            language,
             ->
-            times to answer
+            Triple(times, answer, language)
         }
     val uiState =
         combine(
@@ -149,7 +164,7 @@ class TripWizardViewModel(
             deps?.timeFormat ?: flowOf(TimeFormat.Value24),
             stepPresentation,
         ) { value, closing, dialog, timeFormat, stepPresentation ->
-            val (times, answer) = stepPresentation
+            val (times, answer, language) = stepPresentation
             (value as? TripWizardUiState.Active)?.let {
                 val step = WizardStepKey(it.wizard.draft.state.step)
                 WizardUiState
@@ -164,6 +179,7 @@ class TripWizardViewModel(
                         openTime = times.third,
                         answerSheet = answer,
                         uiOverride = uiOverride,
+                        language = language,
                     ).let { ui ->
                         ui.copy(
                             sheet = ui.sheet?.copy(seedQuery = presentation.query),
@@ -374,7 +390,10 @@ class TripWizardViewModel(
                         val finished = snapshot.closed && snapshot.createdTripID != null
                         mutableState.value =
                             if (discarded || finished) {
-                                TripWizardUiState.Closed(snapshot.createdTripID).also { exitOnce() }
+                                TripWizardUiState
+                                    .Closed(
+                                        snapshot.createdTripID,
+                                    ).also { exitOnce(snapshot.createdTripID) }
                             } else {
                                 TripWizardUiState.Active(
                                     snapshot,
@@ -384,6 +403,7 @@ class TripWizardViewModel(
                                     exclusionWasSaved = model.exclusionWasSaved,
                                     isEditing = model.isEditing,
                                     optionalPrompts = model.optionalPrompts,
+                                    hasChanges = model.hasChanges,
                                     checkingTitle = model.checkingTitle,
                                     allowsSleepOverride = model.allowsSleepOverride,
                                     preferences =
@@ -435,8 +455,8 @@ class TripWizardViewModel(
         }
     }
 
-    private fun exitOnce() {
-        if (mutableExit.value == null) mutableExit.value = WizardExit.Trips
+    private fun exitOnce(tripId: String? = null) {
+        if (mutableExit.value == null) mutableExit.value = tripId?.let(WizardExit::Saved) ?: WizardExit.Trips
     }
 
     fun openAirport(sheet: WizardAirportSheet) {
@@ -494,6 +514,10 @@ class TripWizardViewModel(
             when (step) {
                 WizardStepKey.Checking -> {
                     if (model.checking.failure != null) model.beginChecking()
+                }
+
+                WizardStepKey.Ready -> {
+                    model.savePlan()
                 }
 
                 WizardStepKey.FineTune -> {
@@ -695,8 +719,42 @@ class TripWizardViewModel(
 
     fun onEvent(event: WizardEvent) {
         when (event) {
+            is WizardEvent.RevisitFromReady -> {
+                val model = wizard ?: return
+                if (closing.value) return
+                val row = event.row
+                val step =
+                    when (row) {
+                        net.chronoflow.feature.wizard.ready.ReadyRow.Route -> MemberWizardStep.whereTo
+                        net.chronoflow.feature.wizard.ready.ReadyRow.Flight -> MemberWizardStep.outbound
+                        net.chronoflow.feature.wizard.ready.ReadyRow.Return -> MemberWizardStep.returnChoice
+                        else -> MemberWizardStep.fineTune
+                    }
+                if (model.draft.state.step != MemberWizardStep.ready || model.reviewing) return
+                model.revisit(step, sleep = row == net.chronoflow.feature.wizard.ready.ReadyRow.Sleep)
+                if (row == net.chronoflow.feature.wizard.ready.ReadyRow.LatestWake) {
+                    model.optionalPrompts.firstOrNull { it.kind == PromptKind.LatestWake }?.let {
+                        model.openPrompt(
+                            it.id,
+                        )
+                    }
+                }
+            }
+
+            WizardEvent.ReadyTick, WizardEvent.ReadyForeground -> {
+                if (!closing.value && uiOverride == null) {
+                    val model = wizard ?: return
+                    model.readyTick(
+                        force =
+                            event == WizardEvent.ReadyForeground &&
+                                model.credits == net.chronoflow.core.wizard.model.WizardCredits.unavailable,
+                    )
+                }
+            }
+
             is WizardEvent.LanguageChanged -> {
                 answerLanguage = event.language
+                readyLanguage.value = event.language
                 mutableAnswer.value = mutableAnswer.value?.withLanguage(event.language)
             }
 

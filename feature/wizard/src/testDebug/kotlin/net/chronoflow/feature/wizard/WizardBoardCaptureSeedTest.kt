@@ -75,7 +75,7 @@ class WizardBoardCaptureSeedTest(
                     (net.chronoflow.feature.wizard.debug.WizardCompletionBoardSeed.baseNames + "WizardSheetFreeSleep")
                         .associateWith { name ->
                             listOf(
-                                if (name == "WizardFineTuneMulti") 3 else 2,
+                                if (name == "WizardFineTuneMulti" || name == "WizardReadyReturn") 3 else 2,
                                 false,
                                 "AMS",
                                 "NRT",
