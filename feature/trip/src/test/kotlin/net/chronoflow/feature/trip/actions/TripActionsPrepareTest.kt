@@ -13,6 +13,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
@@ -140,7 +142,7 @@ class TripActionsPrepareTest {
             },
         ) { vm ->
             val requests = mutableListOf<WizardMode>()
-            backgroundScope.launch { vm.wizardRequests.toList(requests) }
+            backgroundScope.launch { vm.pendingWizardRequest.filterNotNull().toList(requests) }
             vm.startAction(action)
             runCurrent()
             assertEquals(listOf(mode), requests)
@@ -151,11 +153,79 @@ class TripActionsPrepareTest {
 
     @Test fun duplicateEmitsOneWizardRequest() = request(TripAction.Duplicate, WizardMode.Duplicate("t"))
 
+    @Test fun preparedRequestStaysPendingWhenTheWindowDoesNotAcknowledge() =
+        runTest(timeout = 60.seconds) {
+            withActionsModel(TripWizardPreparer { _, _ -> TripWizardPrepareOutcome.Ready }) { vm ->
+                val observed = mutableListOf<WizardMode?>()
+                val disposedWindow = backgroundScope.launch { vm.pendingWizardRequest.toList(observed) }
+                try {
+                    runCurrent()
+                    vm.startAction(TripAction.Edit)
+                    runCurrent()
+                    assertEquals(listOf(null, WizardMode.Edit("t")), observed)
+                } finally {
+                    disposedWindow.cancelAndJoin()
+                }
+                assertEquals(WizardMode.Edit("t"), vm.pendingWizardRequest.value)
+                assertEquals(
+                    "a recreated collector receives the unacknowledged request",
+                    WizardMode.Edit("t"),
+                    vm.pendingWizardRequest.first(),
+                )
+                assertEquals(WizardMode.Edit("t"), vm.pendingWizardRequest.value)
+            }
+        }
+
+    @Test fun acknowledgedRequestDoesNotOpenAgainForARecreatedWindow() =
+        runTest(timeout = 60.seconds) {
+            withActionsModel(TripWizardPreparer { _, _ -> TripWizardPrepareOutcome.Ready }) { vm ->
+                vm.startAction(TripAction.Edit)
+                runCurrent()
+                val opened = mutableListOf<WizardMode>()
+                val mode = checkNotNull(vm.pendingWizardRequest.value)
+                assertTrue(vm.acknowledgeWizardRequest())
+                opened.add(mode)
+                assertNull(vm.pendingWizardRequest.value)
+                assertFalse("a second window cannot acknowledge the same request", vm.acknowledgeWizardRequest())
+                val recreatedWindow =
+                    backgroundScope.launch {
+                        vm.pendingWizardRequest.filterNotNull().collect {
+                            if (vm.acknowledgeWizardRequest()) opened.add(it)
+                        }
+                    }
+                try {
+                    runCurrent()
+                    assertEquals(listOf(WizardMode.Edit("t")), opened)
+                    assertNull(vm.pendingWizardRequest.first())
+                } finally {
+                    recreatedWindow.cancelAndJoin()
+                }
+            }
+        }
+
+    @Test fun anotherActionDoesNotReplaceAnUnacknowledgedRequest() =
+        runTest(timeout = 60.seconds) {
+            var calls = 0
+            withActionsModel(
+                TripWizardPreparer { _, _ ->
+                    calls++
+                    TripWizardPrepareOutcome.Ready
+                },
+            ) { vm ->
+                vm.startAction(TripAction.Edit)
+                runCurrent()
+                vm.startAction(TripAction.Duplicate)
+                runCurrent()
+                assertEquals(1, calls)
+                assertEquals(WizardMode.Edit("t"), vm.pendingWizardRequest.value)
+            }
+        }
+
     @Test fun ignoredDoesNothing() =
         runTest(timeout = 60.seconds) {
             withActionsModel(TripWizardPreparer { _, _ -> TripWizardPrepareOutcome.Ignored }) { vm ->
                 val requests = mutableListOf<WizardMode>()
-                backgroundScope.launch { vm.wizardRequests.toList(requests) }
+                backgroundScope.launch { vm.pendingWizardRequest.filterNotNull().toList(requests) }
                 vm.startAction(TripAction.Edit)
                 runCurrent()
                 assertTrue(requests.isEmpty())

@@ -56,13 +56,15 @@ fun TripPageSheets(
             val actions by vm.tripActions.collectAsStateWithLifecycle()
             actions?.let { ui ->
                 val failure by vm.actionFailure.collectAsStateWithLifecycle()
+                val pendingWizardRequest by vm.pendingWizardRequest.collectAsStateWithLifecycle()
                 net.chronoflow.feature.trip.actions.TripActionsWindow(
                     ui,
                     failure,
                     vm::startAction,
                     vm::dismissSheet,
-                    vm.wizardRequests,
+                    pendingWizardRequest,
                     onWizard,
+                    vm::acknowledgeWizardRequest,
                 )
             }
         }

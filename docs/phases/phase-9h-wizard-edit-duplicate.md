@@ -210,6 +210,10 @@ This phase adds **wiring, the edit/duplicate variants of existing screens, seeds
 
 The orchestrator’s finding 3 permits replacing the sheet directly with the wizard overlay. Consume a prepared wizard request, dismiss the sheet route and invoke `onWizard` without any intervening suspension. This supersedes R3/§5.1’s recommendation to await `sheetState.hide()`: cancellation during that animation can lose a consumed request. Keep `Flow<WizardMode>` and the preparer seam.
 
+### Review round 2 override (2026-11-21)
+
+Retain a prepared mode in the trip ViewModel’s `pendingWizardRequest: StateFlow<WizardMode?>` instead of a channel. A cancelled delivery must leave it available for the recreated window. The window’s `LaunchedEffect(pendingWizardRequest)` atomically acknowledges it immediately before `dismiss()` and `onWizard(mode)`, without any suspension. An already acknowledged request cannot open twice. This supersedes the request-flow transport named above; the preparer seam and overlay guard stay in place.
+
 ---
 
 ## 1. Goal

@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.receiveAsFlow
@@ -182,8 +183,8 @@ class TripPageViewModel(
     private val openingWizard = MutableStateFlow(false)
     private val mutableActionFailure = MutableStateFlow<TripActionFailureEvent?>(null)
     val actionFailure: StateFlow<TripActionFailureEvent?> = mutableActionFailure.asStateFlow()
-    private val wizardRequestEvents = Channel<WizardMode>(Channel.BUFFERED)
-    val wizardRequests: Flow<WizardMode> = wizardRequestEvents.receiveAsFlow()
+    private val mutablePendingWizardRequest = MutableStateFlow<WizardMode?>(null)
+    val pendingWizardRequest: StateFlow<WizardMode?> = mutablePendingWizardRequest.asStateFlow()
 
     val tripActions: StateFlow<TripActionsUi?> =
         combine(ui, online, openingWizard) { page, connected, opening ->
@@ -455,7 +456,7 @@ class TripPageViewModel(
     }
 
     fun startAction(action: TripAction) {
-        if (openingWizard.value) return
+        if (openingWizard.value || mutablePendingWizardRequest.value != null) return
         val actions = tripActions.value ?: return
         if (!actions.availability.copy(busy = false).enabled(action)) return
         mutableActionFailure.value = null
@@ -464,15 +465,12 @@ class TripPageViewModel(
             try {
                 when (val outcome = preparer?.prepare(args.tripId, action) ?: TripWizardPrepareOutcome.Ignored) {
                     TripWizardPrepareOutcome.Ready -> {
-                        wizardRequestEvents.send(
-                            if (action ==
-                                TripAction.Edit
-                            ) {
+                        mutablePendingWizardRequest.value =
+                            if (action == TripAction.Edit) {
                                 WizardMode.Edit(args.tripId)
                             } else {
                                 WizardMode.Duplicate(args.tripId)
-                            },
-                        )
+                            }
                     }
 
                     TripWizardPrepareOutcome.Ignored -> {}
@@ -493,6 +491,8 @@ class TripPageViewModel(
             }
         }
     }
+
+    fun acknowledgeWizardRequest(): Boolean = mutablePendingWizardRequest.getAndUpdate { null } != null
 
     fun dismissSheet() {
         _sheet.value = null

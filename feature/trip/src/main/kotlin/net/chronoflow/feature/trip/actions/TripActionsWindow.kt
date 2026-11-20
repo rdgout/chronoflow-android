@@ -16,8 +16,6 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.launch
 import net.chronoflow.core.designsystem.system.CfModalBottomSheet
 import net.chronoflow.core.designsystem.system.CfSnackbarHost
@@ -30,12 +28,14 @@ internal fun TripActionsWindow(
     failure: TripActionFailureEvent?,
     onAction: (TripAction) -> Unit,
     onDismiss: () -> Unit,
-    wizardRequests: Flow<WizardMode> = emptyFlow(),
+    pendingWizardRequest: WizardMode? = null,
     onWizard: (WizardMode) -> Unit = {},
+    onAcknowledgeWizardRequest: () -> Boolean = { false },
 ) {
     val busy by rememberUpdatedState(ui.availability.busy)
     val dismiss by rememberUpdatedState(onDismiss)
     val openWizard by rememberUpdatedState(onWizard)
+    val acknowledgeWizard by rememberUpdatedState(onAcknowledgeWizardRequest)
     val sheetState =
         rememberModalBottomSheetState(
             skipPartiallyExpanded = true,
@@ -47,9 +47,10 @@ internal fun TripActionsWindow(
     LaunchedEffect(failure) {
         if (message != null && failure.claim()) host.showSnackbar(message, duration = SnackbarDuration.Short)
     }
-    LaunchedEffect(wizardRequests) {
-        wizardRequests.collect { mode ->
-            // No suspension may separate consuming this request from handing it to the shell.
+    LaunchedEffect(pendingWizardRequest) {
+        val mode = pendingWizardRequest ?: return@LaunchedEffect
+        // No suspension may separate acknowledging this request from handing it to the shell.
+        if (acknowledgeWizard()) {
             dismiss()
             openWizard(mode)
         }

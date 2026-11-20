@@ -3021,6 +3021,9 @@ Implementation commits:
 
 **Verification (2026-11-20, review round 1):** All review findings are addressed. The unchanged timeline marker test passes five consecutive loaded executions and the single final `make quick`; 5,097 measured cases have zero budget overruns. Quick takes 71.281 s on this worker, above the 60 s warm target. All 1,150 touched-module layout cases, touched-module lint and the pixel edit journey (4.828 s) pass; both ReturnWeb captures are refreshed. The earlier 185 release cases remain the Phase 9h release evidence. See `docs/wizard.md` for the publication-race evidence, named board differences and host follow-up commands.
 
+**Review round 2 verification (2026-11-21):** Prepared wizard requests remain in ViewModel StateFlow until atomic acknowledgement immediately before opening. Single-scheduler JVM cases prove retention across a disposed collector, no replay after acknowledgement and no overwrite by another action. Targeted trip/window/app entry tests and all 13 timeline invalidation cases pass. `make format` and the single `make quick` pass with zero timing-budget overruns; quick takes 64.543 s on this worker, above the 60 s warm target. Round 1’s host check and timeline performance run are already verified (timeline record `bb5a22cc`). See `docs/wizard.md` for the final request hand-off and evidence.
+
+
 ### Phase 10a: Settings home, sign-out and account pages (`feat/phase-10a-settings-home`)
 
 - **Brief:** [`docs/phases/phase-10a-settings-home.md`](docs/phases/phase-10a-settings-home.md), written by the orchestrator before the phase starts.

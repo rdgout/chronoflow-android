@@ -3,12 +3,11 @@ package net.chronoflow.feature.trip.actions
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.receiveAsFlow
 import net.chronoflow.core.designsystem.theme.ChronoFlowTheme
 import net.chronoflow.core.model.config.AppLanguage
 import net.chronoflow.core.navigation.WizardMode
@@ -59,14 +58,18 @@ class TripActionsBusyTest {
 
     @Test fun removingTheSheetDuringHandoffOpensTheWizardExactlyOnce() {
         val mounted = mutableStateOf(true)
-        val requests = Channel<WizardMode>(Channel.BUFFERED)
-        val flow = requests.receiveAsFlow()
+        val pending = mutableStateOf<WizardMode?>(null)
         val opened = mutableListOf<WizardMode>()
         compose.setContent {
             ProfileHost(DeviceProfiles.pixel8) {
                 ChronoFlowTheme(reduceMotion = false) {
                     if (mounted.value) {
-                        TripActionsWindow(actionsUi(), null, {}, { mounted.value = false }, flow, opened::add)
+                        TripActionsWindow(actionsUi(), null, {
+                        }, { mounted.value = false }, pending.value, opened::add, {
+                            val acknowledged = pending.value != null
+                            pending.value = null
+                            acknowledged
+                        })
                     }
                 }
             }
@@ -74,7 +77,11 @@ class TripActionsBusyTest {
         compose.waitForIdle()
         compose.mainClock.autoAdvance = false
         try {
-            compose.runOnIdle { requests.trySend(WizardMode.Edit("t")) }
+            compose.runOnIdle {
+                pending.value = WizardMode.Edit("t")
+                Snapshot.sendApplyNotifications()
+            }
+            compose.mainClock.advanceTimeByFrame()
             compose.waitForIdle()
             assertEquals("handoff must not wait for a cancellable hide animation", listOf(WizardMode.Edit("t")), opened)
             compose.runOnIdle { mounted.value = true }
@@ -82,7 +89,6 @@ class TripActionsBusyTest {
             compose.waitForIdle()
             assertEquals(listOf(WizardMode.Edit("t")), opened)
         } finally {
-            requests.close()
             compose.mainClock.autoAdvance = true
         }
     }
