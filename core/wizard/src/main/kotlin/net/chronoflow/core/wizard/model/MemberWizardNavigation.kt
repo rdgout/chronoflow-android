@@ -1,5 +1,6 @@
 @file:Suppress(
     "ktlint:standard:max-line-length",
+    "ktlint:standard:max-line-length",
     "ktlint:standard:enum-entry-name-case",
     "ktlint:standard:class-naming",
 )
@@ -91,9 +92,7 @@ val MemberWizardModel.navigationPath: List<MemberWizardDestination> get() {
             if (step == MemberWizardStep.calculating) result.add(MemberWizardDestination.calculating)
         }
 
-        else -> {
-            Unit
-        }
+        else -> {}
     }
     return result
 }
@@ -102,7 +101,7 @@ fun MemberWizardModel.popNavigation(
     to: List<MemberWizardDestination>,
     from: List<MemberWizardDestination>,
 ) {
-    if (state.step == MemberWizardStep.calculating || from != navigationPath || to.size >= from.size ||
+    if (firstScreen || state.step == MemberWizardStep.calculating || from != navigationPath || to.size >= from.size ||
         from.take(to.size) != to
     ) {
         return
@@ -114,3 +113,16 @@ fun MemberWizardModel.popNavigation(
         go(last?.step ?: MemberWizardStep.whereTo)
     }
 }
+
+val MemberWizardModel.firstScreen: Boolean get() =
+    state.step == MemberWizardStep.whereTo ||
+        (
+            state.copiedRoute != null && state.edit == null && state.step == MemberWizardStep.outbound &&
+                state.revisit == null
+        ) ||
+        (state.edit != null && state.step == MemberWizardStep.ready) ||
+        (state.edit != null && state.step == MemberWizardStep.checking && checking.failure != null)
+
+val MemberWizardModel.showsBack: Boolean get() =
+    !firstScreen && state.step != MemberWizardStep.calculating &&
+        !(state.step == MemberWizardStep.checking && checking.failure == null)

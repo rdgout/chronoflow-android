@@ -36,16 +36,25 @@ val MemberWizardModel.sleepComplete: Boolean get() =
     WizardDateTime.isTime(state.profile["habitual_bed"].stringValue) &&
         WizardDateTime.isTime(state.profile["habitual_wake"].stringValue) && state.profile["chronotype"] != null
 val MemberWizardModel.currentQuestion: ApiReviewPrompt? get() = state.questions?.getOrNull(state.questionIndex ?: 0)
-val MemberWizardModel.progress: Double get() = maxOf(state.progressFloor ?: 0.0, stepProgress)
+val MemberWizardModel.progress: Double get() =
+    if (state.edit !=
+        null
+    ) {
+        1.0
+    } else {
+        maxOf(state.progressFloor ?: 0.0, stepProgress)
+    }
 internal val MemberWizardModel.stepProgress: Double get() {
     if (mode == WizardMode.guest) return guestStepProgress
     return when (state.step) {
         MemberWizardStep.whereTo -> if (whereComplete) 0.15 else 0.08
         MemberWizardStep.outbound -> if (outboundComplete) 0.30 else 0.22
-        MemberWizardStep.returnChoice, MemberWizardStep.returnRoute, MemberWizardStep.returnFlight -> 0.45
+        MemberWizardStep.returnChoice -> 0.45
+        MemberWizardStep.returnRoute -> 0.50
+        MemberWizardStep.returnFlight -> 0.55
         MemberWizardStep.sleep -> 0.50
-        MemberWizardStep.checking, MemberWizardStep.excluded -> if (state.checkingAnswers == true) 0.70 else 0.52
-        MemberWizardStep.question -> 0.54 + 0.16 * (state.questionIndex ?: 0) / maxOf(1, state.questions?.size ?: 1)
+        MemberWizardStep.checking, MemberWizardStep.excluded -> if (state.checkingAnswers == true) 0.70 else 0.60
+        MemberWizardStep.question -> 0.60 + 0.10 * (state.questionIndex ?: 0) / maxOf(1, state.questions?.size ?: 1)
         MemberWizardStep.continuation, MemberWizardStep.fineTune -> 0.80
         MemberWizardStep.ready -> 0.95
         MemberWizardStep.calculating -> 1.0

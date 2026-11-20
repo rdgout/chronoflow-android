@@ -271,4 +271,37 @@ class GuestWizardModeTests {
                 listOf("identity", "emptyToken", "failure", "saveFailure", "fingerprint", "expired", "unchecked")
         }
     }
+
+    class BoardProgress {
+        @Test fun guestWeightsAndForwardProgressFloor() =
+            runTest(timeout = 60.seconds) {
+                // 06 §11.1: guest progress follows the board values.
+                val fixture = WizardModelFixture(backgroundScope, testScheduler, guest = true)
+                val model = fixture.model
+                model.form = model.form.updateLeg(0) { it.copy(toIata = "") }
+                assertEquals(0.09, model.progress, 0.0)
+                model.form = model.form.updateLeg(0) { it.copy(toIata = "HND") }
+                assertEquals(0.09, model.progress, 0.0)
+                model.go(MemberWizardStep.outbound)
+                assertEquals(0.18, model.progress, 0.0)
+                model.go(MemberWizardStep.sleep)
+                assertEquals(0.30, model.progress, 0.0)
+                model.go(MemberWizardStep.checking)
+                assertEquals(0.42, model.progress, 0.0)
+                model.go(MemberWizardStep.question)
+                assertEquals(0.54, model.progress, 0.0)
+                model.state = model.state.copy(questionIndex = 1)
+                assertEquals(0.64, model.progress, 0.0)
+                model.state = model.state.copy(checkingAnswers = true)
+                model.go(MemberWizardStep.checking)
+                assertEquals(0.64, model.progress, 0.0)
+                model.go(MemberWizardStep.fineTune)
+                assertEquals(0.86, model.progress, 0.0)
+                model.go(MemberWizardStep.ready)
+                assertEquals(0.95, model.progress, 0.0)
+                model.go(MemberWizardStep.checking)
+                assertEquals(0.95, model.progress, 0.0)
+                fixture.close()
+            }
+    }
 }

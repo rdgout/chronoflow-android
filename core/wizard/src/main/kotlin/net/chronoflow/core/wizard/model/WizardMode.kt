@@ -103,15 +103,16 @@ fun MemberWizardModel.finishOutboundStep() {
 
 internal val MemberWizardModel.guestStepProgress: Double get() =
     when (state.step) {
-        MemberWizardStep.whereTo -> if (whereComplete) 0.18 else 0.09
-        MemberWizardStep.outbound -> 0.30
-        MemberWizardStep.sleep -> 0.42
-        MemberWizardStep.checking, MemberWizardStep.excluded -> if (state.checkingAnswers == true) 0.64 else 0.54
+        MemberWizardStep.whereTo -> 0.09
+        MemberWizardStep.outbound -> 0.18
+        MemberWizardStep.sleep -> 0.30
+        MemberWizardStep.checking -> if (state.checkingAnswers == true) 0.64 else 0.42
+        MemberWizardStep.excluded -> if (state.checkingAnswers == true) 0.64 else 0.60
         MemberWizardStep.question -> if ((state.questionIndex ?: 0) == 0) 0.54 else 0.64
         MemberWizardStep.continuation, MemberWizardStep.fineTune -> 0.86
         MemberWizardStep.ready -> 0.95
         MemberWizardStep.calculating -> 1.0
-        MemberWizardStep.returnChoice, MemberWizardStep.returnRoute, MemberWizardStep.returnFlight -> 0.30
+        MemberWizardStep.returnChoice, MemberWizardStep.returnRoute, MemberWizardStep.returnFlight -> 0.18
     }
 
 internal fun MemberWizardModel.recheckGuestReady() {
