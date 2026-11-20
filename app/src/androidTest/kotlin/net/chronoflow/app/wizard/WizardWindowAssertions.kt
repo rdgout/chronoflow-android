@@ -19,7 +19,12 @@ internal fun focusedWizardWindow(): View {
     return view
 }
 
-internal fun ComposeTestRule.assertWizardKeyboardGeometry(decor: View) {
+internal fun ComposeTestRule.assertWizardKeyboardGeometry(
+    decor: View,
+    queryTag: String = "wizard.airport.query",
+    resultTag: String = "wizard.airport.DXB",
+    sheetTag: String = "wizard.airport-search",
+) {
     fun keyboard(): KeyboardGeometry {
         lateinit var value: KeyboardGeometry
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
@@ -49,7 +54,7 @@ internal fun ComposeTestRule.assertWizardKeyboardGeometry(decor: View) {
     var previous: WizardWindowGeometry? = null
     lateinit var stable: WizardWindowGeometry
     waitUntil(5_000) {
-        val current = WizardWindowGeometry(bounds("wizard.airport.query"), bounds("wizard.airport.DXB"), keyboard())
+        val current = WizardWindowGeometry(bounds(queryTag), bounds(resultTag), keyboard())
         val settled = current.keyboard.visible && current == previous
         previous = current
         if (settled) stable = current
@@ -57,7 +62,7 @@ internal fun ComposeTestRule.assertWizardKeyboardGeometry(decor: View) {
     }
     assertTrue("query above keyboard", stable.query.bottom <= stable.keyboard.top)
     assertTrue("first result above keyboard", stable.result.bottom <= stable.keyboard.top)
-    assertTrue("sheet below status bar", bounds("wizard.airport-search").top >= stable.keyboard.statusBottom)
+    assertTrue("sheet below status bar", bounds(sheetTag).top >= stable.keyboard.statusBottom)
     assertTrue("query has its full height", stable.query.height > 0)
     assertTrue("first result has its full height", stable.result.height > 0)
 }
