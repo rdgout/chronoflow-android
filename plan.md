@@ -2728,7 +2728,7 @@ Implementation commits (brief §7):
   - The discard alert (`WizardDiscard`), and quiet recovery when the wizard is reopened.
 - [x] **Where** (`WizardWhere*`): From, To, stops, swap, the same-airport error, and the flight-home route (`WizardHomeRoute`, `WizardHomeRouteStop`).
 - [x] **Search sheets.** Full-height `CfModalBottomSheet`s for airport and stop search (`WizardAirportFrom`, `WizardAirportHome`, `WizardStopSearch`, `WizardStopSearchSecond`, `WizardStopSearchHome`, `TripAirportSearch`), with every `TripSearchStates` state.
-- [ ] **Entry.** New trip on My trips opens the wizard. The `CF_WIZARD_AUTO_OPEN` and `CF_WIZARD_BOARD_CAPTURE` seeds work.
+- [x] **Entry.** New trip on My trips opens the wizard. The `CF_WIZARD_AUTO_OPEN` and `CF_WIZARD_BOARD_CAPTURE` seeds work.
 - [ ] **Tests.**
   - ViewModel cases for route editing through the UI state.
   - Guards for each board and its DarkNL wrapper.

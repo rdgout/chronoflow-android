@@ -43,8 +43,10 @@ internal fun AppShell(
     val holder = rememberShellViewModel(root)
     val launcher = remember(holder) { WizardLauncher({ holder.state.overlay }, holder::push) }
     LaunchedEffect(holder.state.overlay) { launcher.overlayChanged() }
+    val wizardLocale = rememberUpdatedState(LocalConfiguration.current.locales[0])
     LaunchedEffect(sessionGraph?.epoch) {
         val epoch = sessionGraph?.epoch ?: return@LaunchedEffect
+        if (LaunchPlatform.prepareWizard(graph, epoch, wizardLocale.value)) launcher.open()
         if (graph.wizardRecoveryCheck.shouldOpen(epoch)) launcher.open()
     }
     LaunchedEffect(holder) { LaunchPlatform.shellStart()?.let(holder::seed) }
@@ -109,18 +111,32 @@ internal fun AppShell(
             overlay = { route ->
                 if (route is Route.Wizard && route.mode == WizardMode.Create) {
                     val owner = checkNotNull(LocalViewModelStoreOwner.current)
-                    val deps = sessionGraph?.wizard
+                    val startOverride = graph.wizardStartOverride
+                    val sessionDeps = sessionGraph?.wizard
+                    val deps =
+                        remember(sessionDeps, startOverride) {
+                            sessionDeps?.let {
+                                startOverride?.dependencies(it)
+                                    ?: it
+                            }
+                        }
                     val extras =
-                        remember(owner, deps) {
+                        remember(owner, deps, startOverride) {
                             MutableCreationExtras(
                                 (owner as? HasDefaultViewModelProviderFactory)?.defaultViewModelCreationExtras
                                     ?: CreationExtras.Empty,
                             ).apply {
                                 deps?.let { set(TripWizardDependenciesKey, it) }
+                                startOverride?.let {
+                                    set(
+                                        net.chronoflow.feature.wizard.ui.WizardInitialPresentationKey,
+                                        it.presentation,
+                                    )
+                                }
                             }
                         }
                     WizardRoot(
-                        viewModel(factory = TripWizardViewModel.factory(route.mode), extras = extras),
+                        rememberOverlayViewModel(route.mode, TripWizardViewModel.factory(route.mode), extras),
                         holder::closeWizard,
                     )
                 } else {

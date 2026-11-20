@@ -17,12 +17,14 @@ import net.chronoflow.core.navigation.shell.ShellTab
 internal class ShellViewModel(
     initial: ShellNavState,
 ) : ViewModel() {
-    val overlayOwner = TabViewModelStoreOwner()
+    private var overlayStoreOwner = TabViewModelStoreOwner()
+    val overlayOwner: TabViewModelStoreOwner get() = overlayStoreOwner
     private var mutableState by mutableStateOf(initial)
     var state: ShellNavState
         get() = mutableState
         private set(value) {
             val closed = mutableState.overlay != null && value.overlay == null
+            if (mutableState.overlay == null && value.overlay != null) overlayStoreOwner = TabViewModelStoreOwner()
             mutableState = value
             if (closed) overlayOwner.viewModelStore.clear()
         }

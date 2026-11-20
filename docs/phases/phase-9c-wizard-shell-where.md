@@ -828,6 +828,8 @@ Add to `core/navigation/…/shell/ShellNavStateTest.kt` only what it lacks (it a
 
 No Robolectric entry test: composing `AppShell` needs `ChronoFlowApp.graph` and a session, which AGENTS "Tests" 1 and the Konsist app-boot allowlist forbid for this logic. The launcher, the overlay owner and `closeWizard` are covered on the JVM above, and the real New trip → wizard → close path is Task 11's emulator journey.
 
+**Task 9 implementation notes (2026-11-20):** a frozen `now` plus `sleep = {}` would spin in 9b’s pacing loop on a second query. The debug override keeps the wizard clock fixed and uses a separate advancing in-memory search clock with `yield()`; production search is unchanged. The explicitly required `WizardStartOverride` supplies memory-only `WizardInitialPresentation` through creation extras for the seed query and discard alert; those values never enter recovery or saved state. `AppGraph.wizardStartOverride` delegates to a lazy `WizardStartOverrides` holder, whose default is tested without constructing a graph. The release seam facade remains empty; its debug rendering object is separately absent on release. The overlay lookup is remembered per owner/key during the outgoing slide so clearing its store cannot recreate the ViewModel and recovery row. Each later opening gets a fresh owner; `OverlayViewModelTest` guards the cleared-store case without booting an app root.
+
 ### Task 9: Debug seeds (`feat(debug): seed wizard board captures and auto open`) [ticks "Entry"]
 
 **Change.**

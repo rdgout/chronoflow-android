@@ -163,6 +163,7 @@ internal class FakeWizardDependencies(
 internal class WizardViewModelFixture(
     deps: TripWizardDependencies?,
     entry: WizardEntry,
+    presentation: net.chronoflow.feature.wizard.ui.WizardInitialPresentation? = null,
 ) {
     val store = ViewModelStore()
     val model =
@@ -173,6 +174,7 @@ internal class WizardViewModelFixture(
             ),
             MutableCreationExtras().apply {
                 deps?.let { set(TripWizardDependenciesKey, it) }
+                presentation?.let { set(net.chronoflow.feature.wizard.ui.WizardInitialPresentationKey, it) }
             },
         )[TripWizardViewModel::class.java]
 

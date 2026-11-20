@@ -48,6 +48,8 @@ import net.chronoflow.feature.wizard.shell.WizardExit
 import net.chronoflow.feature.wizard.shell.WizardStepKey
 import net.chronoflow.feature.wizard.ui.AirportRowUi
 import net.chronoflow.feature.wizard.ui.AirportSearchUi
+import net.chronoflow.feature.wizard.ui.WizardInitialPresentation
+import net.chronoflow.feature.wizard.ui.WizardInitialPresentationKey
 import net.chronoflow.feature.wizard.ui.WizardUiState
 import java.io.IOException
 import java.security.GeneralSecurityException
@@ -58,10 +60,11 @@ import net.chronoflow.core.navigation.WizardMode as WizardEntry
 class TripWizardViewModel(
     entry: WizardEntry,
     deps: TripWizardDependencies?,
+    presentation: WizardInitialPresentation = WizardInitialPresentation(),
 ) : ViewModel() {
     private val mutableClosing = MutableStateFlow(false)
     val closing = mutableClosing.asStateFlow()
-    private val mutableDialog = MutableStateFlow(false)
+    private val mutableDialog = MutableStateFlow(presentation.discardDialogVisible)
     val discardDialogVisible = mutableDialog.asStateFlow()
     private val mutableExit = MutableStateFlow<WizardExit?>(null)
     val exit = mutableExit.asStateFlow()
@@ -74,6 +77,7 @@ class TripWizardViewModel(
             (value as? TripWizardUiState.Active)?.let {
                 WizardUiState.from(it, closing, dialog).let { ui ->
                     ui.copy(
+                        sheet = ui.sheet?.copy(seedQuery = presentation.query),
                         chrome =
                             ui.chrome.copy(
                                 showBack =
@@ -402,7 +406,13 @@ class TripWizardViewModel(
     companion object {
         fun factory(entry: WizardEntry): ViewModelProvider.Factory =
             viewModelFactory {
-                initializer { TripWizardViewModel(entry, this[TripWizardDependenciesKey]) }
+                initializer {
+                    TripWizardViewModel(
+                        entry,
+                        this[TripWizardDependenciesKey],
+                        this[WizardInitialPresentationKey] ?: WizardInitialPresentation(),
+                    )
+                }
             }
     }
 }

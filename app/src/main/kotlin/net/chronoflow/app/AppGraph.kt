@@ -73,6 +73,15 @@ class AppGraph(
     val overrides: GraphOverrides = GraphOverrides.None,
     private val suppliedDispatchers: AppDispatchers = AppDispatchers(),
 ) {
+    private val wizardOverrides by lazy {
+        net.chronoflow.app.wizard
+            .WizardStartOverrides()
+    }
+    var wizardStartOverride: net.chronoflow.app.wizard.WizardStartOverride?
+        get() = wizardOverrides.wizardStartOverride
+        internal set(value) {
+            wizardOverrides.wizardStartOverride = value
+        }
     internal val wizardRecoveryCheck by lazy {
         net.chronoflow.app.wizard.WizardRecoveryCheck(
             dispatchers,

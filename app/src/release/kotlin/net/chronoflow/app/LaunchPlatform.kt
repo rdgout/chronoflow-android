@@ -7,6 +7,13 @@ import net.chronoflow.core.navigation.RootNavigator
 import net.chronoflow.feature.launch.LaunchOverrides
 
 internal object LaunchPlatform {
+    @Suppress("UNUSED_PARAMETER")
+    fun prepareWizard(
+        graph: AppGraph,
+        epoch: Long,
+        locale: java.util.Locale,
+    ): Boolean = false
+
     val wizardBoardCapture: String? = null
     val frozenTripInstant: java.time.Instant? = null
     val initialTripSheet: net.chronoflow.core.navigation.TripSheet? = null

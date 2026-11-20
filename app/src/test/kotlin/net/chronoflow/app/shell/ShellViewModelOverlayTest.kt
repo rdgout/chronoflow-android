@@ -48,10 +48,12 @@ class ShellViewModelOverlayTest {
         val holder = ShellViewModel(ShellNav.initial())
         val factory = viewModelFactory { initializer { Tracked() } }
         holder.push(Route.Wizard(WizardMode.Create))
-        val first = ViewModelProvider.create(holder.overlayOwner, factory)[Tracked::class.java]
+        val firstOwner = holder.overlayOwner
+        val first = ViewModelProvider.create(firstOwner, factory)[Tracked::class.java]
         holder.closeWizard(WizardExit.Trips)
         assertTrue(first.cleared)
         holder.push(Route.Wizard(WizardMode.Create))
+        assertNotSame(firstOwner, holder.overlayOwner)
         val next = ViewModelProvider.create(holder.overlayOwner, factory)[Tracked::class.java]
         assertNotSame(first, next)
         holder.closeWizard(WizardExit.Trips)
