@@ -3052,7 +3052,7 @@ Implementation commits:
   - From 600 dp, a 560 dp column (OQ-A37).
 - [x] **Sign out with pending changes** (`SignOutPending`, `SignOutPendingSettings`): Stay or Discard, through `SessionController.signOut`.
   - Also fill the Terms `signOutConfirmation` slot (Phase 8).
-- [ ] **Shared states** (`SetStates`, `SetStatesMore`): loading, account not on this phone, saved and failed messages (Snackbar), refused change, and rows disabled offline.
+- [x] **Shared states** (`SetStates`, `SetStatesMore`): loading, account not on this phone and offline-disabled rows (10a Task 7). Generic saved/failed toasts and refusal Details stay out per brief OQ-10a-7/-8; the shell already owns refusal feedback (OQ-A296).
 - [ ] **Account** (`SetAccount`), **Profile** (`SetProfile`) and **Language** (`SetLanguage`).
   - The language choice is `system`, `en` or `nl`. It goes through `LocaleManager` on API 33+, or the `device-config` file below 33, and recreates the activity.
   - With `system`, a later change of the phone language is followed (OQ-A25).
@@ -3070,7 +3070,7 @@ Implementation commits:
 - [x] **10a Task 4**: page scaffold and components.
 - [x] **10a Task 5**: settings home screen.
 - [x] **10a Task 6**: pending sign-out sheet and Terms slot.
-- [ ] **10a Task 7**: stored and loading states.
+- [x] **10a Task 7**: stored and loading states.
 - [ ] **10a Task 8**: account and profile pages.
 - [ ] **10a Task 9**: language page and applier.
 - [ ] **10a Task 10**: settings routes and seed paths.
