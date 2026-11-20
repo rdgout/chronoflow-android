@@ -474,7 +474,8 @@ Each task is one atomic Conventional Commit with no trailer. Tick the `plan.md` 
     - `busyDisablesSkipAndDoneAndCompletesOnce`: tap Skip, assert both disabled, tap again, then complete the deferred; `enqueue` was called once.
     - `titleIsAHeadingAndAPoliteLiveRegion`.
     - `previewIsHiddenFromAccessibility`: no node with text "Sleep" in the unmerged tree on page 2.
-    - `reduceMotionSnapsTheDots`: `LocalReduceMotion provides true`, `mainClock.autoAdvance = false`; after Next, dot 2 is 24 dp wide with no clock advance.
+    - `dotsAreHiddenFromAccessibility`: assert cleared semantics on the dots container only.
+  - `WalkthroughDotPolicyTest` (JVM): `reduceMotionSnapsTheDots` proves zero-duration snapping; `normalMotionUsesTokenDurationAndEaseInOut` proves the token duration/easing and an intermediate width strictly between 8 and 24. The orchestrator diagnosed the prior manual-frame/descendant-semantics test as unable to observe the state change (2026-11-20); no descendant of the cleared dots container is queried.
     - `loadingShowsOnlyTheBackground`: `sessions` never emits, so no `walkthrough.skip`.
   - `WalkthroughReplayTest` (`@Logic`): replay mode with an `enqueue` that fails the test if called. Skip, Done (after two Nexts) and `Espresso.pressBack()` (or `activity.onBackPressedDispatcher.onBackPressed()`) each call `onFinish` exactly once on fresh screens.
   - `WalkthroughScreenGuardsTest` (`@Layout`, `ParameterizedRobolectricTestRunner`, one case per page {1, 2, 3} × {`small` nl, `largeFont` nl, `pixel8` en, `foldInner` en, `landscapeSideNav` en}, light only = 15 cases (standard acceptance #5); each < 1 s warm):
