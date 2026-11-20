@@ -270,18 +270,11 @@ data class WizardChromeUi(
         fun from(
             active: TripWizardUiState.Active,
             closing: Boolean = false,
+            checking: net.chronoflow.feature.wizard.checking.WizardCheckingUi? = null,
+            fineTune: net.chronoflow.feature.wizard.finetune.WizardFineTuneUi? = null,
         ): WizardChromeUi {
             val step = active.wizard.draft.state.step
             val where = step == MemberWizardStep.whereTo || step == MemberWizardStep.returnRoute
-            val checking =
-                net.chronoflow.feature.wizard.checking.WizardCheckingUi
-                    .from(active)
-            val fineTune =
-                net.chronoflow.feature.wizard.finetune.WizardFineTuneUi.from(
-                    active,
-                    net.chronoflow.core.model.contracts.TimeFormat.Value24,
-                    null,
-                )
             val complete =
                 when (step) {
                     MemberWizardStep.fineTune -> {
@@ -505,22 +498,21 @@ data class WizardUiState(
                         null
                     },
                 )
+            val checking =
+                net.chronoflow.feature.wizard.checking.WizardCheckingUi
+                    .from(effective)
+            val fineTune =
+                net.chronoflow.feature.wizard.finetune.WizardFineTuneUi
+                    .from(effective, timeFormat, openTime)
             return WizardUiState(
-                WizardChromeUi.from(effective, closing),
+                WizardChromeUi.from(effective, closing, checking, fineTune),
                 key,
                 if (key == WizardStepKey.Where || key == WizardStepKey.ReturnRoute) WhereUi.from(draft) else null,
                 AirportSheetUi.from(draft),
                 dialog,
                 active.path.map(WizardStepKey::from),
-                checking =
-                    net.chronoflow.feature.wizard.checking.WizardCheckingUi
-                        .from(effective),
-                fineTune =
-                    net.chronoflow.feature.wizard.finetune.WizardFineTuneUi.from(
-                        effective,
-                        timeFormat,
-                        openTime,
-                    ),
+                checking = checking,
+                fineTune = fineTune,
                 cue = active.cue,
                 discardMessage =
                     WizardCopy(
