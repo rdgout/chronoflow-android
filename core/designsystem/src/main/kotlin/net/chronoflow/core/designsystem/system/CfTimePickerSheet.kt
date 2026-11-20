@@ -20,7 +20,10 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,6 +34,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
 import net.chronoflow.core.designsystem.component.CfButton
 import net.chronoflow.core.designsystem.component.CfButtonSize
@@ -62,6 +66,10 @@ fun CfTimePickerSheet(
     val pickerScheme = remember(scheme, colors.card) { scheme.copy(surface = colors.card) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val titleFocus = remember { FocusRequester() }
+    var touched by remember(state) { mutableStateOf(false) }
+    LaunchedEffect(state) {
+        snapshotFlow { state.hour to state.minute }.drop(1).collect { touched = true }
+    }
     LaunchedEffect(sheetState) {
         snapshotFlow { sheetState.currentValue }.first { it == SheetValue.Expanded }
         titleFocus.requestFocus()
@@ -122,7 +130,7 @@ fun CfTimePickerSheet(
             Column(verticalArrangement = Arrangement.spacedBy(PlanUITokens.space2.dp)) {
                 CfButton(
                     confirmLabel,
-                    { onConfirm(state.hour, state.minute, state.hour != initialHour || state.minute != initialMinute) },
+                    { onConfirm(state.hour, state.minute, touched) },
                     Modifier.testTag(confirmTag),
                     size = CfButtonSize.Lg,
                     minHeight = PlanUITokens.actionMinHeight.dp,

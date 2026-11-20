@@ -47,7 +47,10 @@ class CfTimePickerSheetGuardsTest {
     private var confirmed: Triple<Int, Int, Boolean>? = null
     private var dismissed = 0
 
-    private fun show() {
+    private fun show(
+        initialHour: Int = 22,
+        initialMinute: Int = 30,
+    ) {
         compose.setContent {
             ProfileHost(DeviceProfiles.pixel8) {
                 ChronoFlowTheme(darkTheme = false, reduceMotion = true) {
@@ -55,8 +58,8 @@ class CfTimePickerSheetGuardsTest {
                         title = "Title",
                         subtitle = if (supporting.value) "Subtitle" else null,
                         footnote = if (supporting.value) "Footnote" else null,
-                        initialHour = 22,
-                        initialMinute = 30,
+                        initialHour = initialHour,
+                        initialMinute = initialMinute,
                         is24Hour = true,
                         confirmLabel = "Done",
                         dismissLabel = "Cancel",
@@ -96,6 +99,16 @@ class CfTimePickerSheetGuardsTest {
         }
         compose.onNodeWithTag("custom.done").performClick()
         assertEquals(Triple(7, 13, true), confirmed)
+    }
+
+    @Test fun returningToTheInitialNoonStillCountsAsInteraction() {
+        state.hour = 12
+        state.minute = 0
+        show(initialHour = 12, initialMinute = 0)
+        compose.runOnIdle { state.hour = 13 }
+        compose.runOnIdle { state.hour = 12 }
+        compose.onNodeWithTag("custom.done").performClick()
+        assertEquals(Triple(12, 0, true), confirmed)
     }
 
     @Test fun dismissCallsOnlyOnDismiss() {
