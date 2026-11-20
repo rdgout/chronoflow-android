@@ -9,12 +9,14 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.HasDefaultViewModelProviderFactory
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.viewmodel.MutableCreationExtras
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import net.chronoflow.app.ChronoFlowApp
 import net.chronoflow.app.LaunchPlatform
 import net.chronoflow.app.trip.TripPageRoute
+import net.chronoflow.app.wizard.WizardLauncher
 import net.chronoflow.core.model.contracts.Language
 import net.chronoflow.core.navigation.Route
 import net.chronoflow.core.navigation.WizardMode
@@ -25,6 +27,9 @@ import net.chronoflow.feature.trips.TripsDependenciesKey
 import net.chronoflow.feature.trips.TripsScreen
 import net.chronoflow.feature.trips.TripsUiState
 import net.chronoflow.feature.trips.TripsViewModel
+import net.chronoflow.feature.wizard.TripWizardDependenciesKey
+import net.chronoflow.feature.wizard.TripWizardViewModel
+import net.chronoflow.feature.wizard.shell.WizardRoot
 
 @Composable
 internal fun AppShell(
@@ -36,6 +41,12 @@ internal fun AppShell(
     val sessionGraph by graph.sessionGraphs.current.collectAsStateWithLifecycle()
     val render = rememberUpdatedState(placeholder)
     val holder = rememberShellViewModel(root)
+    val launcher = remember(holder) { WizardLauncher({ holder.state.overlay }, holder::push) }
+    LaunchedEffect(holder.state.overlay) { launcher.overlayChanged() }
+    LaunchedEffect(sessionGraph?.epoch) {
+        val epoch = sessionGraph?.epoch ?: return@LaunchedEffect
+        if (graph.wizardRecoveryCheck.shouldOpen(epoch)) launcher.open()
+    }
     LaunchedEffect(holder) { LaunchPlatform.shellStart()?.let(holder::seed) }
     androidx.compose.runtime.CompositionLocalProvider(
         net.chronoflow.core.ui.plan.LocalRefusedChanges provides sessionGraph?.refusedChanges,
@@ -43,6 +54,7 @@ internal fun AppShell(
         AppShellScaffold(
             holder,
             onRootBack = onRootBack,
+            overlayOwnsBack = holder.state.overlay.let { it is Route.Wizard && it.mode == WizardMode.Create },
             today = { TodayTab(graph, sessionGraph, holder) },
             trips = {
                 val session = sessionGraph
@@ -56,7 +68,7 @@ internal fun AppShell(
                         {},
                         {},
                         holder::openTrip,
-                        { holder.push(Route.Wizard(WizardMode.Create)) },
+                        launcher::open,
                         refreshProbe = LaunchPlatform.refreshProbe,
                     )
                 } else {
@@ -71,7 +83,7 @@ internal fun AppShell(
                     TripsScreen(
                         viewModel(factory = TripsViewModel.Factory, extras = extras),
                         holder::openTrip,
-                        { holder.push(Route.Wizard(WizardMode.Create)) },
+                        launcher::open,
                     )
                 }
             },
@@ -94,7 +106,27 @@ internal fun AppShell(
                     render.value(route)
                 }
             },
-            overlay = { render.value(it) },
+            overlay = { route ->
+                if (route is Route.Wizard && route.mode == WizardMode.Create) {
+                    val owner = checkNotNull(LocalViewModelStoreOwner.current)
+                    val deps = sessionGraph?.wizard
+                    val extras =
+                        remember(owner, deps) {
+                            MutableCreationExtras(
+                                (owner as? HasDefaultViewModelProviderFactory)?.defaultViewModelCreationExtras
+                                    ?: CreationExtras.Empty,
+                            ).apply {
+                                deps?.let { set(TripWizardDependenciesKey, it) }
+                            }
+                        }
+                    WizardRoot(
+                        viewModel(factory = TripWizardViewModel.factory(route.mode), extras = extras),
+                        holder::closeWizard,
+                    )
+                } else {
+                    render.value(route)
+                }
+            },
         )
     }
 }

@@ -802,6 +802,8 @@ The close and discard logic is JVM-tested in Task 2's `TripWizardViewModelCloseT
 - the code column is 44 wide;
 - the results card radius 16 is checked in the capture.
 
+**Task 8 implementation note (2026-11-20):** `TabViewModelStoreOwner` implements only `ViewModelStoreOwner`. The overlay extras use its defaults when available and `CreationExtras.Empty` otherwise, while retaining the explicit wizard factory and dependency key. The recovery checker is lazy on `AppGraph` so its epoch guard survives activity or shell recomposition. `AppShellScaffold` takes `overlayOwnsBack` (default false); `AppShell` sets it for the Create content that renders `WizardRoot`. This preserves 6a’s unchanged `AppShellTest.wizardOverlayCoversTabsAndBackCloses` fake-overlay contract while disabling the shell back handler for the real wizard.
+
 ### Task 8: Entry and quiet recovery (`feat(app): open the wizard from my trips and recover it quietly`) [ticks "Entry" with Task 9]
 
 **Change.** §5.8 entry (the overlay lambda, `overlayOwner`, `closeWizard`, the `AnimatedContent`, the overlay `BackHandler` condition), `WizardLauncher` and `WizardRecoveryCheck`.

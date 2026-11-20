@@ -17,8 +17,15 @@ import net.chronoflow.core.navigation.shell.ShellTab
 internal class ShellViewModel(
     initial: ShellNavState,
 ) : ViewModel() {
-    var state by mutableStateOf(initial)
-        private set
+    val overlayOwner = TabViewModelStoreOwner()
+    private var mutableState by mutableStateOf(initial)
+    var state: ShellNavState
+        get() = mutableState
+        private set(value) {
+            val closed = mutableState.overlay != null && value.overlay == null
+            mutableState = value
+            if (closed) overlayOwner.viewModelStore.clear()
+        }
     private val owners = ShellTab.entries.associateWith { TabViewModelStoreOwner() }
 
     fun owner(tab: ShellTab): TabViewModelStoreOwner = owners.getValue(tab)
@@ -65,7 +72,14 @@ internal class ShellViewModel(
         return handled
     }
 
+    fun closeWizard(exit: net.chronoflow.feature.wizard.shell.WizardExit) {
+        when (exit) {
+            net.chronoflow.feature.wizard.shell.WizardExit.Trips -> if (state.overlay is Route.Wizard) back()
+        }
+    }
+
     override fun onCleared() {
+        overlayOwner.viewModelStore.clear()
         owners.values.forEach { it.viewModelStore.clear() }
     }
 }

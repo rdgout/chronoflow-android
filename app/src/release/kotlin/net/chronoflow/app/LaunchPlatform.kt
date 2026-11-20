@@ -7,6 +7,7 @@ import net.chronoflow.core.navigation.RootNavigator
 import net.chronoflow.feature.launch.LaunchOverrides
 
 internal object LaunchPlatform {
+    val wizardBoardCapture: String? = null
     val frozenTripInstant: java.time.Instant? = null
     val initialTripSheet: net.chronoflow.core.navigation.TripSheet? = null
     val startTripInList = false

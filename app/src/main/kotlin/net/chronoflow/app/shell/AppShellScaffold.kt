@@ -1,6 +1,13 @@
 package net.chronoflow.app.shell
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsetsSides
@@ -34,6 +41,7 @@ import net.chronoflow.core.designsystem.system.CfNavItem
 import net.chronoflow.core.designsystem.system.CfNavLayout
 import net.chronoflow.core.designsystem.system.CfNavigationSuiteScaffold
 import net.chronoflow.core.designsystem.theme.CfTheme
+import net.chronoflow.core.designsystem.theme.LocalReduceMotion
 import net.chronoflow.core.navigation.Route
 import net.chronoflow.core.navigation.hidesShellChrome
 import net.chronoflow.core.navigation.shell.ShellTab
@@ -52,6 +60,7 @@ internal fun AppShellScaffold(
     page: @Composable (Route) -> Unit,
     overlay: @Composable (Route) -> Unit,
     modifier: Modifier = Modifier,
+    overlayOwnsBack: Boolean = false,
 ) {
     val onBack: () -> Unit = { if (!holder.back()) onRootBack() }
     val state = holder.state
@@ -122,47 +131,68 @@ internal fun AppShellScaffold(
             }
         }
     val currentOverlay = state.overlay
-    if (currentOverlay == null) {
-        CfNavigationSuiteScaffold(
-            layout,
-            items,
-            state.selected.ordinal,
-            { holder.select(ShellTab.entries[it]) },
-            modifier.fillMaxSize(),
-        ) {
-            CompositionLocalProvider(
-                LocalSafeInsets provides contentInsets,
-                LocalViewModelStoreOwner provides holder.owner(state.selected),
+    val reduceMotion = LocalReduceMotion.current
+    AnimatedContent(
+        targetState = currentOverlay,
+        modifier = modifier.fillMaxSize(),
+        contentKey = { it != null },
+        transitionSpec = {
+            val transition =
+                if (reduceMotion) {
+                    EnterTransition.None togetherWith ExitTransition.None
+                } else if (targetState != null) {
+                    slideInVertically(tween(300)) { it } togetherWith ExitTransition.None
+                } else {
+                    EnterTransition.None togetherWith slideOutVertically(tween(300)) { it }
+                }
+            transition.apply { targetContentZIndex = if (targetState != null) 1f else 0f }
+        },
+        label = "wizard.overlay",
+    ) { shownOverlay ->
+        if (shownOverlay == null) {
+            CfNavigationSuiteScaffold(
+                layout,
+                items,
+                state.selected.ordinal,
+                { holder.select(ShellTab.entries[it]) },
+                Modifier.fillMaxSize(),
             ) {
-                saveable.SaveableStateProvider(state.selected.name) {
-                    androidx.compose.material3.Scaffold(
-                        containerColor = CfTheme.colors.background,
-                        contentWindowInsets =
-                            androidx.compose.foundation.layout
-                                .WindowInsets(0, 0, 0, 0),
-                        snackbarHost = {
-                            net.chronoflow.core.ui.plan
-                                .RefusedChangeFeedback(
-                                    Modifier.windowInsetsPadding(
-                                        contentInsets.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal),
-                                    ),
-                                )
-                        },
-                    ) { padding ->
-                        Box(Modifier.fillMaxSize().padding(padding)) {
-                            NavDisplay(entries = entries.getValue(state.selected), onBack = onBack)
+                CompositionLocalProvider(
+                    LocalSafeInsets provides contentInsets,
+                    LocalViewModelStoreOwner provides holder.owner(state.selected),
+                ) {
+                    saveable.SaveableStateProvider(state.selected.name) {
+                        androidx.compose.material3.Scaffold(
+                            containerColor = CfTheme.colors.background,
+                            contentWindowInsets =
+                                androidx.compose.foundation.layout
+                                    .WindowInsets(0, 0, 0, 0),
+                            snackbarHost = {
+                                net.chronoflow.core.ui.plan
+                                    .RefusedChangeFeedback(
+                                        Modifier.windowInsetsPadding(
+                                            contentInsets.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal),
+                                        ),
+                                    )
+                            },
+                        ) { padding ->
+                            Box(Modifier.fillMaxSize().padding(padding)) {
+                                NavDisplay(entries = entries.getValue(state.selected), onBack = onBack)
+                            }
                         }
                     }
                 }
             }
+        } else {
+            CompositionLocalProvider(LocalViewModelStoreOwner provides holder.overlayOwner) {
+                Box(Modifier.fillMaxSize().background(CfTheme.colors.background)) { overlay(shownOverlay) }
+            }
         }
-    } else {
-        Box(modifier.fillMaxSize().background(CfTheme.colors.background)) { overlay(currentOverlay) }
     }
     val atTabRoot = state.stacks.getValue(state.selected).size == 1
     val backSelectsToday = currentOverlay == null && atTabRoot && state.selected != ShellTab.Today
     BackHandler(enabled = backSelectsToday, onBack = onBack)
-    BackHandler(enabled = currentOverlay != null, onBack = onBack)
+    BackHandler(enabled = currentOverlay != null && !overlayOwnsBack, onBack = onBack)
 }
 
 @Composable

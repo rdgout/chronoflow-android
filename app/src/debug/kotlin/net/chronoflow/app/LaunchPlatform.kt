@@ -8,6 +8,9 @@ import net.chronoflow.debug.DebugRouteLabel
 import net.chronoflow.feature.launch.LaunchController
 
 internal object LaunchPlatform {
+    val wizardBoardCapture: String? get() =
+        net.chronoflow.debug.DebugSeedRouting.current
+            ?.wizardBoardCapture
     val frozenTripInstant: java.time.Instant? get() =
         net.chronoflow.app.perf.perfClockInstant(
             net.chronoflow.debug.DebugSeedRouting.current
