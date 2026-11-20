@@ -974,6 +974,23 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A380 | (9c OQ-9c-11) 9b's `Searching(query, stale)` carries the last results; `TripSearchStates` draws only the status row and skeletons. | Show the board's Searching state (status + skeletons) and ignore `stale`. | 9c |
 | OQ-A381 | (9c OQ-9c-12) 6a's overlay `Box` owns no `ViewModelStore` (it uses the root entry's owner), and it replaces the tab scaffold without a transition. | 9c adds `ShellViewModel.overlayOwner`, cleared when the overlay closes, and an `AnimatedContent` slide between scaffold and overlay (9c brief §5.8). The scaffold is already out of the semantics tree while the overlay shows. | 9c |
 | OQ-A382 | (9c, orchestrator) `welcomeInteractiveMs` missed its emulator hard gate (2550 ms + one 60 Hz frame + 1 ms = 2567.7) by 0.7–1.4 ms on one iteration of ten in 4e, 7, 8 and 9c, with the welcome path unchanged since 3c; `introLastItemMs`, gated the same way, always passes (3200–3203). | Amends OQ-A105 for `welcomeInteractiveMs` only: emulator tolerance is two frames (`hard` 2584.3 ms in `benchmark/budgets.json`); `min` 2549 and every other gate stay. Device gates are unaffected (OQ-A22). Revisit with a physical device. | 9c |
+| OQ-A383 | (9d OQ-9d-1) Two pills cannot write a complete value at once; where do half values live? | A `pendingDateTimes` map in the draft state, keyed by leg id + field, persisted, dropped on route edits, never sent (§5.1). | 9d |
+| OQ-A384 | (9d OQ-9d-2) Error ring: the board rings only the date pill; iOS ringed its single pill. | Board: the date pill of the field in error. | 9d |
+| OQ-A385 | (9d OQ-9d-3) Pill radius: board 8, iOS `radiusSm` 10. | Board 8 dp via `WizardMetrics` (looks come from the boards). | 9d |
+| OQ-A386 | (9d OQ-9d-4) Durations: WizardCopy "3 h" / "45 min"; the iOS catalog has only `{{hours}} h {{minutes}} min` ("3 h 0 min"). | iOS key for every value (copy comes from the catalog). Recommend adding the two WizardCopy forms as Android-only copy once approved. | 9d |
+| OQ-A387 | (9d OQ-9d-5) WizardCopy "{from} to {to}" route label and spoken durations have no iOS key. | Not built; TalkBack reads "AMS → NRT" and "2 h 40 min" (iOS parity). | 9d |
+| OQ-A388 | (9d OQ-9d-6) Coming back? first visit: the board draws neither card selected; iOS selects One way (the default end). | iOS (the selection reflects the model; WizardSpec's "preselected" implies it). | 9d |
+| OQ-A389 | (9d OQ-9d-7) Disabled look while the 250 ms pause runs and for Add return at 16 flights. | No visual change, semantics disabled only (iOS). | 9d |
+| OQ-A390 | (9d OQ-9d-8) 12-hour pill text: the wizard helper (en "2:40 PM", nl "02:40 p.m.") or the plan copy's zero-padded "03:00 PM" (1a). | The iOS wizard helper `formatWeekdayTime`. | 9d |
+| OQ-A391 | (9d OQ-9d-9) Overnight board times contain no complete night. | Seed the iOS values (22:25 arrival), so the chip is real; the capture shows 22:25. | 9d |
+| OQ-A392 | (9d OQ-9d-10) NL boards show "Tokio"; server airport data is English. | Seeds use "Tokio" for nl (iOS seed); real trips show the server city. | 9d |
+| OQ-A393 | (9d OQ-9d-11) `StopEmpty`/`Three` draw `pct` 30 with incomplete times; the model gives 22. | The 9a model; record the capture difference. | 9d |
+| OQ-A394 | (9d OQ-9d-12) The M3 date dialog highlights the phone's today, not the airport's. | Accept (system component). | 9d |
+| OQ-A395 | (9d OQ-9d-13) WizardCopy: "After Continue with errors, focus goes to the first error." Compose cannot move TalkBack focus programmatically. | Scroll the first error group into view; error lines are polite live regions; `Warning` haptic. | 9d |
+| OQ-A396 | (9d OQ-9d-14) Dialog title and context: the `PickerDateTime` title "Flight 1 departs", "Local time at …", summary chip. | Catalog titles "Departure date/time", "Arrival date/time" + "Time in {{city}}"; no summary chip (iOS dropped it). | 9d |
+| OQ-A397 | (9d OQ-9d-15) Time dialog: dial only, or also the M3 keyboard-input toggle. | Whatever the Phase 2 wrapper offers (dial by default); revisit with 9e OQ-A8. | 9d |
+| OQ-A398 | (9d OQ-9d-16) Pill wrapping: WizardCopy wraps from AX1, which the 1.3 font cap never reaches; narrow widths still overflow. | Wrap when the inline row does not fit (iOS `ViewThatFits`), checked by the 280 dp + 1.3 guard. | 9d |
+| OQ-A399 | (9d OQ-9d-17) iOS `fieldCopy` looks a key up in the plan-copy catalog before the wizard table; the wizard has no plan-catalog formatter on this stack. | 9d resolves wizard-table keys (every key 9d produces) and shows the generic fallback otherwise; 9f adds the plan-catalog lookup when it routes server review errors back to Times. | 9d |
 | OQ-0a-22 | Native libraries in the bundle? | Allow only `libandroidx.graphics.path.so` (Compose graphics-path; excluding it breaks Path conversion below API 34); fail on any other `.so` | 0a, 13 |
 | OQ-0b-1 | Where does `PlanMetrics` live? `08 §3.1` lists it inside `CfDimens`, but its consumer `:core:plan` is a JVM module that cannot depend on `:core:designsystem` | `core/plan/…/generated/PlanMetrics.generated.kt` (Double, dp), as iOS keeps it in `PlanCore` | 0b, 1b, 1c |
 | OQ-0b-2 | Port all iOS TokenGen outputs now (Auth, Settings, Terms, Welcome, PlanUI, Press, LaunchPaint, TypeMetrics), or only colors, sky and type? | All of them now (the iOS files are exact goldens and Phases 2, 3a, 3c, 5a, 9 and 10 need them) | 0b |
@@ -2785,6 +2802,8 @@ Implementation commits (brief §7):
   - [x] Date and time bounds on the JVM (9d Task 2).
   - [x] Guards for each board and 29 Robolectric captures (9d Task 8).
   - [x] On the emulator: the date and time dialogs keep the app language and the phone's 12/24-hour setting.
+
+- [x] **Acceptance record**: `docs/wizard.md`, capture handoff and OQ-A383–OQ-A399 (9d Task 10).
 
 **Acceptance**
 - The bounds and the 12/24-hour rules hold.
