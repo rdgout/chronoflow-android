@@ -4,11 +4,13 @@ package net.chronoflow.feature.onboarding.walkthrough
 
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.job
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import net.chronoflow.feature.onboarding.support.FakeOnboardingSessions
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -52,9 +54,11 @@ class WalkthroughReplayTest(
                 assertEquals(1, returns)
                 assertFalse(model.state.value!!.busy)
             } finally {
-                store.clear()
-                model.viewModelScope.coroutineContext.job
-                    .cancelAndJoin()
+                withContext(NonCancellable) {
+                    store.clear()
+                    model.viewModelScope.coroutineContext.job
+                        .cancelAndJoin()
+                }
             }
         }
 

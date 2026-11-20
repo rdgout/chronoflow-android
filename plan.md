@@ -2571,7 +2571,7 @@ Implementation commits (brief §7):
   - Accept posts the change, with a failed state and retry.
   - Policy pages (`PolicyReader`) open in a Custom Tab (`androidx.browser`, OQ-A32).
   - Terms come before the walkthrough, and missing policies keep the gate loading.
-- [ ] **Tests.**
+- [x] **Tests.**
   - The ported 17f and 17g cases, including a walkthrough POST 401 that keeps its row.
   - Guards.
   - One emulator journey: accept terms → walkthrough → Today.

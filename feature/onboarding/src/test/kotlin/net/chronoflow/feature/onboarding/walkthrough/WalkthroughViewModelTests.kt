@@ -5,6 +5,7 @@ package net.chronoflow.feature.onboarding.walkthrough
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.flow
@@ -12,6 +13,7 @@ import kotlinx.coroutines.job
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import net.chronoflow.feature.onboarding.OnboardingSessions
 import net.chronoflow.feature.onboarding.support.FakeOnboardingSessions
 import org.junit.Assert.assertEquals
@@ -36,9 +38,11 @@ class WalkthroughViewModelTests {
                 runCurrent()
                 assertEquals(WalkthroughModel.Page.Progress, model.state.value?.page)
             } finally {
-                store.clear()
-                model.viewModelScope.coroutineContext.job
-                    .cancelAndJoin()
+                withContext(NonCancellable) {
+                    store.clear()
+                    model.viewModelScope.coroutineContext.job
+                        .cancelAndJoin()
+                }
             }
         }
 
@@ -71,9 +75,11 @@ class WalkthroughViewModelTests {
                 assertTrue(model.state.value!!.completed)
                 assertFalse(model.takeFinish())
             } finally {
-                store.clear()
-                model.viewModelScope.coroutineContext.job
-                    .cancelAndJoin()
+                withContext(NonCancellable) {
+                    store.clear()
+                    model.viewModelScope.coroutineContext.job
+                        .cancelAndJoin()
+                }
             }
         }
 
@@ -90,9 +96,11 @@ class WalkthroughViewModelTests {
                 runCurrent()
                 assertNull(model.state.value)
             } finally {
-                store.clear()
-                model.viewModelScope.coroutineContext.job
-                    .cancelAndJoin()
+                withContext(NonCancellable) {
+                    store.clear()
+                    model.viewModelScope.coroutineContext.job
+                        .cancelAndJoin()
+                }
             }
         }
 }

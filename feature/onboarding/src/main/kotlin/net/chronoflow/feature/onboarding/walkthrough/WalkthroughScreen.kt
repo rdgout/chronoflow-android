@@ -188,7 +188,8 @@ fun WalkthroughScreen(
                         size = CfButtonSize.Lg,
                         fillWidth = true,
                         enabled = !state.busy && !state.completed,
-                        minHeight = PlanUITokens.actionMinHeight.dp,
+                        minHeight =
+                            if (done) PlanUITokens.walkthroughDoneHeight.dp else PlanUITokens.walkthroughNextHeight.dp,
                     )
                 }
             }

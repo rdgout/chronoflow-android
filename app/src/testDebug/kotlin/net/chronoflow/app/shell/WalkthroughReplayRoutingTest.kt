@@ -148,8 +148,10 @@ class WalkthroughReplayRoutingTest(
         host()
         compose.runOnIdle { holder.push(Route.Walkthrough(true)) }
         compose.onNodeWithTag("walkthrough.screen").assertExists()
+        val replay = current
         compose.runOnIdle { activity.onBackPressedDispatcher.onBackPressed() }
         compose.onNodeWithTag("route.settings").assertExists()
+        assertEquals(true, replay.state.value!!.completed)
         assertEquals(0, writes)
     }
 

@@ -44,7 +44,9 @@ class WalkthroughScreenGuardsTest(
         compose.onNodeWithTag(WalkthroughTags.SKIP).assertIsDisplayed()
         val skipTouch = compose.onNodeWithTag(WalkthroughTags.SKIP).fetchSemanticsNode().touchBoundsInRoot
         with(compose.density) { assertTrue(skipTouch.height >= 48.dp.toPx() - 1f) }
-        compose.onNodeWithTag(button).assertIsDisplayed().assertHeightIsAtLeast(48.dp)
+        compose.onNodeWithTag(button).assertIsDisplayed()
+        val buttonTouch = compose.onNodeWithTag(button).fetchSemanticsNode().touchBoundsInRoot
+        with(compose.density) { assertTrue(buttonTouch.height >= 48.dp.toPx() - 1f) }
         val bounds = compose.onNodeWithTag(button).fetchSemanticsNode().boundsInRoot
         with(compose.density) {
             assertTrue(bounds.bottom <= (case.profile.heightDp - case.profile.insets.bottom).dp.toPx() + 1f)
