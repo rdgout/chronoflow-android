@@ -89,8 +89,6 @@ class TermsViewModel(
                     session = current
                     if (current == null) {
                         model = null
-                        signOutState.value = SignOutState()
-                        mutableState.value = null
                     } else {
                         observePolicies(current)
                     }

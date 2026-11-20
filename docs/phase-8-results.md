@@ -134,3 +134,21 @@ Three JVM regression cases were added before the fix. All failed against the ori
 | Onboarding layout tier plus `:app:lintDebug :feature:onboarding:lintDebug` | Passed | 16.30 s |
 
 Raw review logs and red/green JVM reports are retained locally under `build/phase8-review1/`. No brief patch, new open question, copy change or dependency change was needed.
+
+## Review round 2
+
+The settings read path is `SettingsRepository.values` → `AccountDatabase.observe` → `fetchSettings` → SQLDelight's query. It does not translate query failures: the Android driver passes through `android.database.SQLException` and its SQLite subclasses, while the JVM JDBC driver can throw `java.sql.SQLException`. The loader now retries both families after 100 ms, alongside the existing decoding, store and I/O failures. A foreign cancellation also retries while the caller remains active; caller cancellation propagates. Normally completed observations resubscribe after the same delay. Session changes still stop observation, while Terms retains its last displayed policies and sign-out busy state during exit.
+
+Nine regression cases failed before production changes: five SQL failure variants, foreign cancellation, normal policy completion, session-end state retention, and the updated session-change retention guard. The caller-cancellation control initially assumed exception identity; coroutine stack-trace recovery wraps it. Its corrected assertion accepts the original exception or a wrapper caused by that original, and passed before the loader changed. All cases use JVM tests and virtual time.
+
+| Command / selection | Result | Wall time |
+|---|---|---|
+| New/updated methods through `make targeted`, before the fix | 9 expected regression failures and the control assertion above | 4.13 s |
+| Focused caller-cancellation control, before the fix | Passed | 3.06 s |
+| Same ten selected cases after the fix | 10 passed | 2.09 s |
+| `make targeted ONLY="feature:onboarding:OnboardingLoadTests feature:onboarding:TermsViewModelTests feature:onboarding:WalkthroughViewModelTests"` | 22 passed; maximum case 364 ms | 4.04 s |
+| `make format` | Passed | 12.24 s |
+| `make quick` (one invocation for this review) | Passed; 570 measured cases plus reused outputs, zero budget overruns or hangs; tooling and timing steps passed | 41.66 s |
+| Onboarding layout tier plus `:app:lintDebug :feature:onboarding:lintDebug` | 25 layout cases and both Lint tasks passed | 14.60 s |
+
+Raw logs and red/green JVM reports are retained locally under `build/phase8-review2/`. No brief patch, new open question, copy change or dependency change was needed.

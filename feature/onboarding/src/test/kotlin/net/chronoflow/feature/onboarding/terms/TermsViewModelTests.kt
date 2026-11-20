@@ -86,7 +86,7 @@ class TermsViewModelTests {
             }
         }
 
-    @Test fun sessionChangeStopsPolicyRetriesAndClearsTheOldState() =
+    @Test fun sessionChangeStopsPolicyRetriesAndKeepsLastGoodState() =
         runTest(timeout = 60.seconds) {
             val fake = FakeOnboardingSessions().session
             val policies = AccountPolicies("1", "1")
@@ -119,13 +119,85 @@ class TermsViewModelTests {
                         fake.signOut,
                     )
                 runCurrent()
-                assertNull(model.state.value)
+                assertEquals(policies, model.state.value?.policies)
                 model.accept()
                 advanceTimeBy(1_000)
                 runCurrent()
                 assertEquals(1, subscriptions)
                 assertEquals(0, writes)
-                assertNull(model.state.value)
+                assertEquals(policies, model.state.value?.policies)
+            } finally {
+                withContext(NonCancellable) {
+                    store.clear()
+                    model.viewModelScope.coroutineContext.job
+                        .cancelAndJoin()
+                }
+            }
+        }
+
+    @Test fun sessionEndKeepsPoliciesAndSignOutBusy() =
+        runTest(timeout = 60.seconds) {
+            val signOut = CompletableDeferred<SignOutResult>()
+            val fake = FakeOnboardingSessions(signOut = { signOut.await() })
+            val policies = AccountPolicies("1", "1")
+            fake.policies.value = policies
+            val sessions = MutableStateFlow<OnboardingSession?>(fake.session)
+            val model = TermsViewModel(OnboardingSessions { sessions }, StandardTestDispatcher(testScheduler))
+            val store = ViewModelStore().apply { put("terms", model) }
+            backgroundScope.launch { model.state.collect {} }
+            try {
+                runCurrent()
+                model.signOut()
+                runCurrent()
+                assertEquals(policies, model.state.value?.policies)
+                assertTrue(model.state.value!!.signOutBusy)
+                val lastGoodState = model.state.value
+                sessions.value = null
+                runCurrent()
+                assertEquals(lastGoodState, model.state.value)
+                advanceTimeBy(1_000)
+                runCurrent()
+                assertEquals(lastGoodState, model.state.value)
+            } finally {
+                withContext(NonCancellable) {
+                    store.clear()
+                    model.viewModelScope.coroutineContext.job
+                        .cancelAndJoin()
+                }
+            }
+        }
+
+    @Test fun completedPoliciesResubscribeAfter100MillisecondsWhileSessionUnchanged() =
+        runTest(timeout = 60.seconds) {
+            val fake = FakeOnboardingSessions().session
+            val initial = AccountPolicies("1", "1")
+            val recovered = AccountPolicies("2", "2")
+            var subscriptions = 0
+            val session =
+                OnboardingSession(
+                    fake.snapshot,
+                    fake.enqueue,
+                    flow {
+                        subscriptions++
+                        emit(if (subscriptions == 1) initial else recovered)
+                        if (subscriptions > 1) awaitCancellation()
+                    },
+                    fake.signOut,
+                )
+            val model = TermsViewModel(OnboardingSessions { flowOf(session) }, StandardTestDispatcher(testScheduler))
+            val store = ViewModelStore().apply { put("terms", model) }
+            backgroundScope.launch { model.state.collect {} }
+            try {
+                runCurrent()
+                assertEquals(initial, model.state.value?.policies)
+                advanceTimeBy(99)
+                runCurrent()
+                assertEquals(1, subscriptions)
+                assertEquals(initial, model.state.value?.policies)
+                advanceTimeBy(1)
+                runCurrent()
+                assertEquals(2, subscriptions)
+                assertEquals(recovered, model.state.value?.policies)
             } finally {
                 withContext(NonCancellable) {
                     store.clear()
