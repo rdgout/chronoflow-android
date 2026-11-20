@@ -415,7 +415,7 @@ Each task is one atomic Conventional Commit with no trailer. Tick the `plan.md` 
 
 ### Task 2: `feat(tools): add the file-text lucide glyph`
 - Add `"file-text": {"source": "board", "board": "TermsUpdate", "first": "M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"}` under `"glyphs"` in `tools/icons/lucide.json` (Phase 2 l.329 format; the board svg has five paths), run `make generate`, and commit the regenerated `LucideGlyphs.generated.kt`.
-- Update the glyph count in `LucideGlyphsTest` (43 → 44) and assert `LucideGlyphs.FileText.paths.size == 5`.
+- Update the glyph counts in `LucideGlyphsTest` and `tools/icons/test_generate_icons.py` (43 → 44) and assert `LucideGlyphs.FileText.paths.size == 5`.
 - `make generators-check` passes.
 
 ### Task 3: removed
