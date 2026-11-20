@@ -2668,7 +2668,7 @@ Implementation commits (brief §7):
 9a already ships `MemberWizardModel`, `WizardChecking.run` and the 250 ms choice delay; 9b hosts the model, wires the store and service, and ports the remaining suites (9a brief §10.2).
 
 **Tasks**
-- [ ] **Generation** (`core/wizard/…/generation/`).
+- [x] **Generation** (`core/wizard/…/generation/`).
   - Review, save and edit-input calls, with a 90 s HTTP timeout and the review operation capped at 30 s. Saves are never retried automatically.
   - An in-flight map keyed by `(instance, fingerprint, token, reviewRevision, edit)`, guarded by a `Mutex`, and the expiry retry.
   - Checking timers: ticks at 0.4, 0.8 and ≥ 1.2 s, a 0.3 s pause, slow at 10 s, failure at 30 s.
