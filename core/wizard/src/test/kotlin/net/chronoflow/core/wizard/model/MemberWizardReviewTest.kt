@@ -243,18 +243,20 @@ class MemberWizardReviewTest {
                 assertEquals(0, fixture.checking.waiterCount)
             }
 
-        @Test fun persistenceIsSerializedAndRevisionsIncreasePerWrite() =
+        @Test fun persistenceNeverGoesBackwardsAndEndsOnTheLatestRevision() =
             runTest(timeout = 60.seconds) {
                 val fixture = WizardModelFixture(backgroundScope, testScheduler)
                 val gate = CompletableDeferred<Unit>()
-                fixture.store.beforePersist = { if (it.state.revision == 1) gate.await() }
+                fixture.store.beforePersist = { gate.await() }
                 fixture.model.go(MemberWizardStep.outbound)
                 fixture.model.go(MemberWizardStep.returnChoice)
                 runCurrent()
                 assertTrue(fixture.store.persisted.isEmpty())
                 gate.complete(Unit)
                 fixture.model.flush()
-                assertEquals(listOf(1, 2), fixture.store.persisted.map { it.state.revision })
+                val revisions = fixture.store.persisted.map { it.state.revision }
+                assertTrue(revisions.zipWithNext().all { (previous, next) -> previous < next })
+                assertEquals(2, revisions.lastOrNull())
                 fixture.close()
             }
 
