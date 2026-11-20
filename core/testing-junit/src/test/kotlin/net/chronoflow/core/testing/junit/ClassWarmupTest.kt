@@ -3,10 +3,14 @@ package net.chronoflow.core.testing.junit
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 import java.nio.file.Files
 
 class ClassWarmupTest {
+    @get:Rule val temporary = TemporaryFolder.builder().assureDeletion().build()
+
     @Test fun recordsWarmupSeparatelyAndPreservesTheResult() =
         withDirectory {
             assertEquals(42, measureClassWarmup(javaClass, 36, "native \"fonts\"") { 42 })
@@ -30,12 +34,7 @@ class ClassWarmupTest {
         }
 
     private fun withDirectory(block: (java.nio.file.Path) -> Unit) {
-        val directory =
-            Files.createTempDirectory(
-                java.nio.file.Path
-                    .of("build"),
-                "class-warmup-proof-",
-            )
+        val directory = temporary.newFolder().toPath()
         val previous = System.getProperty("cf.timingsDir")
         try {
             System.setProperty("cf.timingsDir", directory.toString())
