@@ -32,12 +32,13 @@ import net.chronoflow.core.model.contracts.ApiTripSaveResult
 import net.chronoflow.core.model.contracts.TripDetailResponse
 import net.chronoflow.core.model.contracts.TripListItem
 import net.chronoflow.core.wizard.generation.TripEditContext
+import java.util.concurrent.ConcurrentHashMap
 
 class GenerationSource(
     val mock: DataSource? = null,
 ) : DataSource {
     private val mutex = Mutex()
-    private val counts = mutableMapOf<String, Int>()
+    private val counts = ConcurrentHashMap<String, Int>()
     private val inputs = mutableListOf<ApiTripReviewInput>()
     private val guests = mutableListOf<ApiGuestTripReviewInput>()
     private val edits = mutableListOf<TripEditContext>()
@@ -81,7 +82,7 @@ class GenerationSource(
         this.beforeSave = beforeSave
     }
 
-    suspend fun count(method: String): Int = mutex.withLock { counts[method] ?: 0 }
+    suspend fun count(method: String): Int = counts[method] ?: 0
 
     suspend fun queueReviews(results: List<Result<ApiTripReview>>) {
         mutex.withLock {
