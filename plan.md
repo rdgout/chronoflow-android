@@ -2886,7 +2886,7 @@ Implementation commits (brief §7):
   - [x] Failure cards for offline, server and throttle, with a countdown (`WizardCheckOffline`, `WizardCheckServer`, `WizardCheckThrottle`).
   - [x] No back while checking.
   - [x] TalkBack hears progress through a polite live region.
-- [ ] **Fine-tune** (`WizardFineTune*`):
+- [x] **Fine-tune** (`WizardFineTune*`):
   - member rows, plus per-stay and per-flight rows;
   - the different-sleep-times switch (`WizardFineTuneSleep`);
   - the busy (`WizardFineTuneBusy`), none (`WizardFineTuneNone`) and multi (`WizardFineTuneMulti`) states.

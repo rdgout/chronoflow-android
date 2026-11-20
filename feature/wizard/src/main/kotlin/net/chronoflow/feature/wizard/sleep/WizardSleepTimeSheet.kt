@@ -28,15 +28,23 @@ internal fun WizardSleepTimeSheet(
     key(ui.field) {
         CfTimePickerSheet(
             title = ui.label.resolve(),
-            subtitle = if (ui.usual) stringResource(R.string.settings_on_a_normal_work_or_school_day) else null,
-            footnote = stringResource(R.string.android_wizard_time_sheet_steps),
+            subtitle =
+                ui.subtitle?.resolve()
+                    ?: if (ui.usual) stringResource(R.string.settings_on_a_normal_work_or_school_day) else null,
+            footnote = if (ui.minutePrecision) null else stringResource(R.string.android_wizard_time_sheet_steps),
             initialHour = ui.initialHour,
             initialMinute = ui.initialMinute,
             is24Hour = is24Hour,
             confirmLabel = WizardCopy("Done").resolve(),
             dismissLabel = WizardCopy("Cancel").resolve(),
             onConfirm = { hour, minute, touched ->
-                if (WizardClockRounding.change(ui.stored, hour, minute, touched) != null) {
+                if (if (ui.minutePrecision) {
+                        touched && clockString(hour, minute) != ui.stored
+                    } else {
+                        WizardClockRounding.change(ui.stored, hour, minute, touched) !=
+                            null
+                    }
+                ) {
                     haptics.perform(HapticEvent.Selection)
                 }
                 onEvent(WizardEvent.ConfirmTimeSheet(ui.field, hour, minute, touched))

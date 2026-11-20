@@ -43,6 +43,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
@@ -79,6 +80,7 @@ import net.chronoflow.feature.wizard.checking.CheckingOutcome
 import net.chronoflow.feature.wizard.checking.WizardCheckingStep
 import net.chronoflow.feature.wizard.components.rememberServerCopy
 import net.chronoflow.feature.wizard.excluded.WizardExcludedStep
+import net.chronoflow.feature.wizard.finetune.WizardFineTuneStep
 import net.chronoflow.feature.wizard.questions.WizardQuestionStep
 import net.chronoflow.feature.wizard.returnchoice.WizardReturnStep
 import net.chronoflow.feature.wizard.search.AirportSearchSheet
@@ -144,6 +146,7 @@ fun WizardScreen(
     WizardBackHandling(state, onEvent)
     state.sheet?.let { AirportSearchSheet(it, state.search, state.retryEnabled, onEvent) }
     state.sleep?.openTime?.let { WizardSleepTimeSheet(it, onEvent) }
+    state.fineTune?.openTime?.let { WizardSleepTimeSheet(it, onEvent) }
     WizardAnswerSheetHost(state.answerSheet, onEvent, copyFormatter)
 }
 
@@ -338,7 +341,12 @@ internal fun WizardFooter(
             {
                 onEvent(WizardEvent.Continue(step))
             },
-            Modifier.testTag("wizard.$id.continue"),
+            Modifier.testTag("wizard.$id.continue").semantics {
+                if (chrome.primaryBusy) {
+                    progressBarRangeInfo =
+                        androidx.compose.ui.semantics.ProgressBarRangeInfo.Indeterminate
+                }
+            },
             fillWidth = true,
             minHeight = PlanUITokens.wizardButtonHeight.dp,
             textStyle = CfTheme.type.style(CfTypeScale.wizardButton),
@@ -428,6 +436,11 @@ private fun WizardStepContent(
     onEvent: (WizardEvent) -> Unit,
     copyFormatter: CopyLineFormatter?,
 ) {
+    val fineTuneViewport =
+        remember {
+            net.chronoflow.feature.wizard.finetune
+                .WizardFineTuneViewport()
+        }
     Column(Modifier.fillMaxSize().wizardBuiltStepBoundary(key)) {
         Column(
             Modifier
@@ -435,7 +448,19 @@ private fun WizardStepContent(
                     1f,
                 ).fillMaxWidth()
                 .testTag("wizard.scroll")
-                .verticalScroll(
+                .then(
+                    if (state.fineTune == null) {
+                        Modifier
+                    } else {
+                        Modifier.layout { measurable, constraints ->
+                            fineTuneViewport.height =
+                                (constraints.maxHeight - WizardMetrics.contentTop.dp.roundToPx() * 2).coerceAtLeast(0)
+                            fineTuneViewport.heading = 0
+                            val content = measurable.measure(constraints)
+                            layout(content.width, content.height) { content.placeRelative(0, 0) }
+                        }
+                    },
+                ).verticalScroll(
                     rememberScrollState(),
                 ).padding(horizontal = WizardMetrics.gutter.dp, vertical = WizardMetrics.contentTop.dp),
             verticalArrangement = Arrangement.spacedBy(PlanUITokens.wizardContentGap.dp),
@@ -444,8 +469,10 @@ private fun WizardStepContent(
             val times = state.times
             val titleCopy =
                 where?.title ?: times?.title ?: state.returnChoice?.title ?: state.sleep?.title ?: state.excluded?.title
-                    ?: state.checking?.title
-            val subtitleCopy = where?.subtitle ?: times?.subtitle ?: state.sleep?.subtitle ?: state.checking?.subtitle
+                    ?: state.checking?.title ?: state.fineTune?.title
+            val subtitleCopy =
+                where?.subtitle ?: times?.subtitle ?: state.sleep?.subtitle ?: state.checking?.subtitle
+                    ?: state.fineTune?.subtitle
             val serverCopy = rememberServerCopy(copyFormatter)
             val title = titleCopy?.resolve() ?: state.question?.let { serverCopy(it.title) }
             val locale = LocalConfiguration.current.locales[0]
@@ -453,7 +480,18 @@ private fun WizardStepContent(
                 val titleFocus = remember { FocusRequester() }
                 Column(
                     verticalArrangement = Arrangement.spacedBy(WizardMetrics.titleGap.dp),
-                    modifier = Modifier.padding(bottom = WizardMetrics.titleExtra.dp),
+                    modifier =
+                        Modifier.padding(bottom = WizardMetrics.titleExtra.dp).then(
+                            if (state.fineTune == null) {
+                                Modifier
+                            } else {
+                                Modifier.layout { measurable, constraints ->
+                                    val content = measurable.measure(constraints)
+                                    fineTuneViewport.heading = content.height + WizardMetrics.titleExtra.dp.roundToPx()
+                                    layout(content.width, content.height) { content.placeRelative(0, 0) }
+                                }
+                            },
+                        ),
                 ) {
                     state.question?.eyebrow?.let {
                         Text(
@@ -493,13 +531,42 @@ private fun WizardStepContent(
                 }
                 LaunchedEffect(key) { titleFocus.requestFocus() }
                 when {
-                    state.checking != null -> WizardCheckingStep(state.checking)
-                    state.sleep != null -> WizardSleepStep(state.sleep, onEvent, copyFormatter)
-                    state.question != null -> WizardQuestionStep(state.question, onEvent)
-                    state.excluded != null -> WizardExcludedStep(state.excluded, copyFormatter)
-                    where != null -> WhereStep(where, copyFormatter, onEvent)
-                    times != null -> WizardTimesStep(times, onEvent, copyFormatter)
-                    state.returnChoice != null -> WizardReturnStep(state.returnChoice, onEvent)
+                    state.fineTune != null -> {
+                        WizardFineTuneStep(
+                            state.fineTune,
+                            copyFormatter,
+                            onEvent,
+                            fineTuneViewport,
+                        )
+                    }
+
+                    state.checking != null -> {
+                        WizardCheckingStep(state.checking)
+                    }
+
+                    state.sleep != null -> {
+                        WizardSleepStep(state.sleep, onEvent, copyFormatter)
+                    }
+
+                    state.question != null -> {
+                        WizardQuestionStep(state.question, onEvent)
+                    }
+
+                    state.excluded != null -> {
+                        WizardExcludedStep(state.excluded, copyFormatter)
+                    }
+
+                    where != null -> {
+                        WhereStep(where, copyFormatter, onEvent)
+                    }
+
+                    times != null -> {
+                        WizardTimesStep(times, onEvent, copyFormatter)
+                    }
+
+                    state.returnChoice != null -> {
+                        WizardReturnStep(state.returnChoice, onEvent)
+                    }
                 }
             } else if (key.step != MemberWizardStep.question) {
                 WizardStepSeam(key)
