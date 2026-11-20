@@ -5,6 +5,7 @@ import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontSynthesis
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.unit.TextUnit
@@ -37,7 +38,7 @@ fun CfFace.fontFamily(): FontFamily =
     when (this) {
         CfFace.System400 -> FontFamily.Default
         CfFace.Figtree400, CfFace.Figtree500, CfFace.Figtree600, CfFace.Figtree700 -> Figtree
-        CfFace.Fraunces400Opsz20, CfFace.Fraunces500Opsz20, CfFace.Fraunces600Opsz20 -> Fraunces20
+        CfFace.Fraunces400Opsz20, CfFace.Fraunces500Opsz20 -> Fraunces20
         CfFace.Fraunces400Opsz32, CfFace.Fraunces500Opsz32 -> Fraunces32
         CfFace.Fraunces400Opsz48, CfFace.Fraunces500Opsz48 -> Fraunces48
     }
@@ -57,7 +58,7 @@ fun CfFace.fontWeight(): FontWeight =
         CfFace.Fraunces500Opsz48,
         -> FontWeight.W500
 
-        CfFace.Figtree600, CfFace.Fraunces600Opsz20 -> FontWeight.W600
+        CfFace.Figtree600 -> FontWeight.W600
 
         CfFace.Figtree700 -> FontWeight.W700
     }
@@ -66,6 +67,7 @@ fun CfTypeSpec.toTextStyle(): TextStyle =
     TextStyle(
         fontFamily = face.fontFamily(),
         fontWeight = face.fontWeight(),
+        fontSynthesis = if (allowFontSynthesis) null else FontSynthesis.None,
         fontSize = size.sp,
         lineHeight = lineHeight?.sp ?: TextUnit.Unspecified,
         letterSpacing = letterSpacingEm.em,

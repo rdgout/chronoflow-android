@@ -1,6 +1,7 @@
 package net.chronoflow.tools.tokengen
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Test
 
@@ -44,10 +45,20 @@ class TypeScaleGoldenTest {
     @Test
     fun wizardSheetTitleUsesTheBoardsInheritedDisplayFace() {
         val title = ui.style("wizardSheetTitle")
-        assertEquals("Fraunces600Opsz20", title.face)
+        assertEquals("Fraunces500Opsz20", title.face)
+        assertFalse(title.allowFontSynthesis)
         assertEquals(17.0, title.size, 0.0)
         assertEquals(22.0, title.lineHeight!!, 0.0)
         assertEquals(-0.17, title.trackingPt, 1e-9)
+    }
+
+    @Test
+    fun requestedFrauncesWeightsAboveTheShippedSetResolveTo500() {
+        assertEquals("Fraunces500Opsz20", face("Fraunces600Opsz20"))
+        assertEquals("Fraunces500Opsz32", face("Fraunces700Opsz32"))
+        assertEquals("Fraunces500Opsz48", face("Fraunces900Opsz48"))
+        assertEquals("Fraunces400Opsz20", face("Fraunces400Opsz20"))
+        assertEquals("Figtree600", face("Figtree600"))
     }
 
     @Test

@@ -162,5 +162,12 @@ private fun wizardSheetTitleStyle(root: Path): TypeEntry {
     val line = firstCapture("""line-height:\s*([\d.]+)px""", heading).toDouble()
     val weight = firstCapture("""font-weight:\s*(\d+)""", heading)
     val tracking = firstCapture("""letter-spacing:\s*(-?[\d.]+)em""", inherited).toDouble()
-    return TypeEntry("wizardSheetTitle", face("Fraunces${weight}Opsz20"), size, line, tracking * size)
+    return TypeEntry(
+        "wizardSheetTitle",
+        face("Fraunces${weight}Opsz20"),
+        size,
+        line,
+        tracking * size,
+        allowFontSynthesis = false,
+    )
 }

@@ -14,7 +14,6 @@ private val FACE_ORDER =
         "Fraunces500Opsz20",
         "Fraunces500Opsz32",
         "Fraunces500Opsz48",
-        "Fraunces600Opsz20",
         "System400",
     )
 
@@ -69,7 +68,7 @@ fun renderTypeScale(
         "class CfTypeMetrics(\n    val size: Float,\n    val lineHeight: Float?,\n    val letterSpacingEm: Float,\n)\n\n",
     )
     out.append(
-        "class CfTypeSpec(\n    val face: CfFace,\n    val size: Float,\n    val lineHeight: Float?,\n    val letterSpacingEm: Float,\n)\n\n",
+        "class CfTypeSpec(\n    val face: CfFace,\n    val size: Float,\n    val lineHeight: Float?,\n    val letterSpacingEm: Float,\n    val allowFontSynthesis: Boolean = true,\n)\n\n",
     )
     out.append("object TypeMetrics {\n")
     for (entry in fonts) {
@@ -88,9 +87,10 @@ fun renderTypeScale(
     }
     out.append("}\n\nobject CfTypeScale {\n")
     for (entry in planUI.styles + auth.styles + settings.styles + terms.styles) {
+        val synthesis = if (entry.allowFontSynthesis) "" else ", allowFontSynthesis = false"
         out.append(
             "    val ${entry.name} = CfTypeSpec(${faceLiteral(entry.face)}, ${floatLiteral(entry.size)}, " +
-                "${nullable(entry.lineHeight)}, ${em(entry)})\n",
+                "${nullable(entry.lineHeight)}, ${em(entry)}$synthesis)\n",
         )
     }
     out.append("}\n")

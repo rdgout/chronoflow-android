@@ -2,6 +2,7 @@ package net.chronoflow.core.designsystem
 
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontSynthesis
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.em
@@ -34,8 +35,6 @@ class CfTypeTest {
     @Test fun facesAndStylesKeepTheIosMetrics() {
         assertSame(Fraunces48, CfFace.Fraunces400Opsz48.fontFamily())
         assertEquals(FontWeight.W500, CfFace.Fraunces500Opsz20.fontWeight())
-        assertSame(Fraunces20, CfFace.Fraunces600Opsz20.fontFamily())
-        assertEquals(FontWeight.W600, CfFace.Fraunces600Opsz20.fontWeight())
         val label = CfTypeScale.authLabel.toTextStyle()
         assertSame(Figtree, label.fontFamily)
         assertEquals(FontWeight.W500, label.fontWeight)
@@ -48,5 +47,15 @@ class CfTypeTest {
         assertEquals(26.sp, type.planDayTitle.lineHeight)
         assertSame(type.authLabel, type.style(CfTypeScale.authLabel))
         assertEquals("tnum", TextStyle.Default.tnum().fontFeatureSettings)
+    }
+
+    @Test fun wizardSheetTitleUsesTheHeaviestShippedFaceWithoutSynthesis() {
+        val title = CfTypeScale.wizardSheetTitle.toTextStyle()
+        assertSame(Fraunces20, title.fontFamily)
+        assertEquals(FontWeight.W500, title.fontWeight)
+        assertEquals(FontSynthesis.None, title.fontSynthesis)
+        assertEquals(17.sp, title.fontSize)
+        assertEquals(22.sp, title.lineHeight)
+        assertEquals((-0.01).em, title.letterSpacing)
     }
 }

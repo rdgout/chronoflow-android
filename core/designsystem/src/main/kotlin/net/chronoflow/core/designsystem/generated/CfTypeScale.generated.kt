@@ -12,7 +12,6 @@ enum class CfFace {
     Fraunces500Opsz20,
     Fraunces500Opsz32,
     Fraunces500Opsz48,
-    Fraunces600Opsz20,
     System400,
 }
 
@@ -27,6 +26,7 @@ class CfTypeSpec(
     val size: Float,
     val lineHeight: Float?,
     val letterSpacingEm: Float,
+    val allowFontSynthesis: Boolean = true,
 )
 
 object TypeMetrics {
@@ -102,7 +102,7 @@ object CfTypeScale {
     val wizardChoice = CfTypeSpec(CfFace.Figtree600, 18f, 24f, 0f)
     val wizardRoute = CfTypeSpec(CfFace.Figtree600, 15f, 20f, 0f)
     val wizardPicker = CfTypeSpec(CfFace.System400, 17f, 22f, -0.01f)
-    val wizardSheetTitle = CfTypeSpec(CfFace.Fraunces600Opsz20, 17f, 22f, -0.01f)
+    val wizardSheetTitle = CfTypeSpec(CfFace.Fraunces500Opsz20, 17f, 22f, -0.01f, allowFontSynthesis = false)
     val authBrand = CfTypeSpec(CfFace.Fraunces400Opsz20, 18f, 24f, 0f)
     val authHeading = CfTypeSpec(CfFace.Fraunces400Opsz32, 36f, 40f, -0.01f)
     val authBody = CfTypeSpec(CfFace.Figtree400, 16f, 24f, 0f)

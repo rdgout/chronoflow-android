@@ -645,6 +645,7 @@ Lint and generation verification used `./gradlew --console=plain :feature:wizard
 ### Review round 2
 
 1. The time sheet saves its interaction flag alongside M3's saveable dial state. `StateRestorationTester` reconstructs a new dial instance: changing it to 07:13, restoring and confirming failed with `touched = false` before the fix and now retains true. Opening, recomposing, restoring and confirming an untouched dial retains false. The first `snapshotFlow` emission remains ignored, so restoration itself never marks the dial touched. The saveable flag contains no copy, identity or secret.
+2. OQ-A419 records the orchestrator's decision superseding round 1's synthesized 600: sheet headings use shipped Fraunces 500 opsz20 at 17/22, −0.01 em, with synthesis explicitly disabled by the generated token. Tokengen resolves requested Fraunces weights above 500 to 500 while retaining the optical size. The unsupported 600 face was removed; no font was added. Both header tests now assert the concrete Fraunces20 family, weight 500 and `FontSynthesis.None`, independently of the token's requested name. Both failed against round 1's 600 before this fix. Generator goldens cover the resolved face and synthesis flag, plus higher-weight resolution at all three optical sizes.
 
 ### Sleep clocks and state
 
