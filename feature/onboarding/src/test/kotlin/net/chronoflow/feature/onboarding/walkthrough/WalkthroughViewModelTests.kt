@@ -10,10 +10,13 @@ import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.job
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
+import net.chronoflow.core.model.store.StoreFailure
 import net.chronoflow.feature.onboarding.OnboardingSessions
 import net.chronoflow.feature.onboarding.support.FakeOnboardingSessions
 import org.junit.Assert.assertEquals
@@ -24,6 +27,45 @@ import org.junit.Test
 import kotlin.time.Duration.Companion.seconds
 
 class WalkthroughViewModelTests {
+    @Test fun closedSessionLookupRetriesAfter100Milliseconds() =
+        runTest(timeout = 60.seconds) {
+            val fake = FakeOnboardingSessions()
+            var subscriptions = 0
+            val sessions =
+                OnboardingSessions {
+                    flow {
+                        subscriptions++
+                        emit(null)
+                        if (subscriptions == 1) throw StoreFailure.Closed
+                        emit(fake.session)
+                        awaitCancellation()
+                    }
+                }
+            val model = WalkthroughViewModel(false, sessions, StandardTestDispatcher(testScheduler))
+            val store = ViewModelStore().apply { put("walkthrough", model) }
+            val observed = mutableListOf<WalkthroughUiState?>()
+            backgroundScope.launch { model.state.collect { observed += it } }
+            try {
+                runCurrent()
+                assertNull(model.state.value)
+                advanceTimeBy(99)
+                runCurrent()
+                assertEquals(1, subscriptions)
+                assertNull(model.state.value)
+                advanceTimeBy(1)
+                runCurrent()
+                assertEquals(2, subscriptions)
+                assertEquals(WalkthroughModel.Page.Timeline, observed.last()?.page)
+                assertNull(model.state.value?.failure)
+            } finally {
+                withContext(NonCancellable) {
+                    store.clear()
+                    model.viewModelScope.coroutineContext.job
+                        .cancelAndJoin()
+                }
+            }
+        }
+
     @Test fun counterAndButtonFollowThePage() =
         runTest(timeout = 60.seconds) {
             val model = WalkthroughViewModel(false, FakeOnboardingSessions(), StandardTestDispatcher(testScheduler))

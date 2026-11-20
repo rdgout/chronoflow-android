@@ -9,12 +9,14 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.distinctUntilChangedBy
+import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -23,6 +25,7 @@ import net.chronoflow.core.model.OutboxChange
 import net.chronoflow.core.model.api.AccountPolicies
 import net.chronoflow.core.model.device.DeviceIdentityFailure
 import net.chronoflow.core.model.session.SessionFailure
+import net.chronoflow.core.model.session.SessionSnapshot
 import net.chronoflow.core.model.session.SignOutResult
 import net.chronoflow.core.model.session.StaleSessionException
 import net.chronoflow.core.model.store.LocalMutationFailure
@@ -32,6 +35,7 @@ import net.chronoflow.feature.onboarding.OnboardingSession
 import net.chronoflow.feature.onboarding.OnboardingSessions
 import net.chronoflow.feature.onboarding.OnboardingSessionsKey
 import net.chronoflow.feature.onboarding.SessionChangedException
+import net.chronoflow.feature.onboarding.retryOnboardingLoad
 import java.io.IOException
 import java.security.GeneralSecurityException
 
@@ -73,8 +77,29 @@ class TermsViewModel(
 
     init {
         viewModelScope.launch {
-            val session = sessions.current().filterNotNull().first()
-            this@TermsViewModel.session = session
+            var boundSession: SessionSnapshot? = null
+            retryOnboardingLoad(sessions::current)
+                .transformWhile { current ->
+                    val unchanged = boundSession == null || current?.snapshot == boundSession
+                    if (current != null && boundSession == null) boundSession = current.snapshot
+                    emit(current.takeIf { unchanged })
+                    unchanged
+                }.distinctUntilChangedBy { it?.snapshot }
+                .collectLatest { current ->
+                    session = current
+                    if (current == null) {
+                        model = null
+                        signOutState.value = SignOutState()
+                        mutableState.value = null
+                    } else {
+                        observePolicies(current)
+                    }
+                }
+        }
+    }
+
+    private suspend fun observePolicies(session: OnboardingSession) =
+        coroutineScope {
             val terms = TermsUpdateModel { session.enqueue(OutboxChange.Policies(it)) }
             model = terms
             launch {
@@ -90,9 +115,8 @@ class TermsViewModel(
                     )
                 }.collect { mutableState.value = it }
             }
-            session.policies.collect(terms::update)
+            retryOnboardingLoad { session.policies }.collect(terms::update)
         }
-    }
 
     fun onEvent(event: TermsEvent) {
         when (event) {

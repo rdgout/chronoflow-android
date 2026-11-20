@@ -6,11 +6,16 @@ import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.job
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
@@ -19,7 +24,9 @@ import kotlinx.serialization.json.JsonPrimitive
 import net.chronoflow.core.model.OutboxChange
 import net.chronoflow.core.model.SettingsSection
 import net.chronoflow.core.model.api.AccountPolicies
+import net.chronoflow.core.model.api.ApiJson
 import net.chronoflow.core.model.session.SignOutResult
+import net.chronoflow.feature.onboarding.OnboardingSession
 import net.chronoflow.feature.onboarding.OnboardingSessions
 import net.chronoflow.feature.onboarding.support.FakeOnboardingSessions
 import net.chronoflow.feature.onboarding.support.withOnboardingFixture
@@ -32,6 +39,102 @@ import org.junit.Test
 import kotlin.time.Duration.Companion.seconds
 
 class TermsViewModelTests {
+    @Test fun malformedPoliciesRetryAfter100MillisecondsAndKeepLastGoodState() =
+        runTest(timeout = 60.seconds) {
+            val initial = AccountPolicies("1", "1")
+            val recovered = AccountPolicies("2", "2")
+            var subscriptions = 0
+            val fake = FakeOnboardingSessions().session
+            val session =
+                OnboardingSession(
+                    fake.snapshot,
+                    fake.enqueue,
+                    flow {
+                        subscriptions++
+                        emit(if (subscriptions == 1) initial else recovered)
+                        if (subscriptions == 1) {
+                            emit(ApiJson.response.decodeFromString(AccountPolicies.serializer(), "{}"))
+                        }
+                        awaitCancellation()
+                    },
+                    fake.signOut,
+                )
+            val model = TermsViewModel(OnboardingSessions { flowOf(session) }, StandardTestDispatcher(testScheduler))
+            val store = ViewModelStore().apply { put("terms", model) }
+            val observed = mutableListOf<TermsUiState?>()
+            backgroundScope.launch { model.state.collect { observed += it } }
+            try {
+                runCurrent()
+                assertEquals(initial, model.state.value?.policies)
+                assertFalse(model.state.value!!.failed)
+                advanceTimeBy(99)
+                runCurrent()
+                assertEquals(1, subscriptions)
+                assertEquals(initial, model.state.value?.policies)
+                advanceTimeBy(1)
+                runCurrent()
+                assertEquals(2, subscriptions)
+                assertEquals(recovered, observed.last()?.policies)
+                assertTrue(model.state.value!!.acceptEnabled)
+                assertFalse(model.state.value!!.failed)
+            } finally {
+                withContext(NonCancellable) {
+                    store.clear()
+                    model.viewModelScope.coroutineContext.job
+                        .cancelAndJoin()
+                }
+            }
+        }
+
+    @Test fun sessionChangeStopsPolicyRetriesAndClearsTheOldState() =
+        runTest(timeout = 60.seconds) {
+            val fake = FakeOnboardingSessions().session
+            val policies = AccountPolicies("1", "1")
+            var subscriptions = 0
+            var writes = 0
+            val session =
+                OnboardingSession(
+                    fake.snapshot,
+                    { writes++ },
+                    flow {
+                        subscriptions++
+                        emit(policies)
+                        emit(ApiJson.response.decodeFromString(AccountPolicies.serializer(), "{}"))
+                    },
+                    fake.signOut,
+                )
+            val sessions = MutableStateFlow<OnboardingSession?>(session)
+            val model = TermsViewModel(OnboardingSessions { sessions }, StandardTestDispatcher(testScheduler))
+            val store = ViewModelStore().apply { put("terms", model) }
+            backgroundScope.launch { model.state.collect {} }
+            try {
+                runCurrent()
+                assertEquals(policies, model.state.value?.policies)
+                advanceTimeBy(50)
+                sessions.value =
+                    OnboardingSession(
+                        fake.snapshot.copy(epoch = fake.snapshot.epoch + 1),
+                        fake.enqueue,
+                        fake.policies,
+                        fake.signOut,
+                    )
+                runCurrent()
+                assertNull(model.state.value)
+                model.accept()
+                advanceTimeBy(1_000)
+                runCurrent()
+                assertEquals(1, subscriptions)
+                assertEquals(0, writes)
+                assertNull(model.state.value)
+            } finally {
+                withContext(NonCancellable) {
+                    store.clear()
+                    model.viewModelScope.coroutineContext.job
+                        .cancelAndJoin()
+                }
+            }
+        }
+
     @Test fun acceptDisabledUntilPoliciesLoadAndWhenAlreadyAccepted() =
         runTest(timeout = 60.seconds) {
             val fake = FakeOnboardingSessions()

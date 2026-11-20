@@ -17,6 +17,7 @@ import net.chronoflow.core.model.OutboxChange
 import net.chronoflow.feature.onboarding.OnboardingMainKey
 import net.chronoflow.feature.onboarding.OnboardingSessions
 import net.chronoflow.feature.onboarding.OnboardingSessionsKey
+import net.chronoflow.feature.onboarding.retryOnboardingLoad
 
 typealias WalkthroughUiState = WalkthroughModel.State
 
@@ -38,7 +39,7 @@ class WalkthroughViewModel(
                 if (replay) {
                     WalkthroughModel(WalkthroughModel.Mode.Replay, complete = {})
                 } else {
-                    val session = sessions.current().filterNotNull().first()
+                    val session = retryOnboardingLoad(sessions::current).filterNotNull().first()
                     WalkthroughModel(complete = { session.enqueue(OutboxChange.Walkthrough) })
                 }
             model = resolved

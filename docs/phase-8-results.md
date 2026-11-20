@@ -115,3 +115,22 @@ make perf
 ```
 
 No timeline implementation or benchmark journey was changed. The emulator remains running. No push, rebase or post-task history rewrite was performed.
+
+## Review round 1
+
+The orchestrator subsequently ran `make check` on the host: **2:57, passed, no budget overruns**. This confirms the earlier Haptics timing overrun was sandbox load.
+
+Both gate ViewModels now retry session lookup failures after 100 ms. Terms also retries policy decoding/observation failures, retains its last good policies, and cancels the old observer and clears its state when the bound session changes. Only decoding (`IllegalArgumentException`, including `SerializationException`), store and I/O failures retry; cancellation is rethrown and other failures propagate. Normal observation remains reactive.
+
+Three JVM regression cases were added before the fix. All failed against the original code: the two Terms cases recorded the actual `MissingFieldException`, and the Walkthrough case recorded `StoreFailure.Closed`. With the fix, virtual-time assertions prove no resubscription at 99 ms, resubscription at 100 ms, retained/recovered policy state, and no further retry or write after a session change. Every ViewModel scope is cancelled and joined in non-cancellable teardown.
+
+| Command / selection | Result | Wall time |
+|---|---|---|
+| New regression methods through `make targeted` before the fix | 3 expected failures, with the uncaught load failures present in the reports | 3 s (Gradle) |
+| Same three regression methods after the fix | 3 passed | 3.05 s |
+| `make targeted ONLY="feature:onboarding:TermsViewModelTests feature:onboarding:WalkthroughViewModelTests"` | 13 passed; maximum case 361 ms | 4.57 s |
+| `make format` | Passed | 12.73 s |
+| `make quick` (one invocation for this review) | Passed; 2,444 measured cases, zero budget overruns or hangs; tooling and timing steps passed | 56.30 s |
+| Onboarding layout tier plus `:app:lintDebug :feature:onboarding:lintDebug` | Passed | 16.30 s |
+
+Raw review logs and red/green JVM reports are retained locally under `build/phase8-review1/`. No brief patch, new open question, copy change or dependency change was needed.
