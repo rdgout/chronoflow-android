@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.transformLatest
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import net.chronoflow.core.model.DataFailure
 import net.chronoflow.core.model.contracts.ApiAirportSuggestion
@@ -80,7 +81,7 @@ class TripWizardViewModel(
     private var continuing = false
     private val mutableState = MutableStateFlow<TripWizardUiState>(TripWizardUiState.Loading)
     val state: StateFlow<TripWizardUiState> = mutableState.asStateFlow()
-    private val continueFailures = MutableStateFlow(0)
+    private val continueFailures = MutableStateFlow<Map<WizardStepKey, Int>>(emptyMap())
 
     private data class OpenPicker(
         val picker: WizardPicker,
@@ -98,6 +99,7 @@ class TripWizardViewModel(
             timesPresentation,
         ) { value, closing, dialog, timeFormat, times ->
             (value as? TripWizardUiState.Active)?.let {
+                val step = WizardStepKey(it.wizard.draft.state.step)
                 WizardUiState
                     .from(
                         it,
@@ -105,7 +107,7 @@ class TripWizardViewModel(
                         dialog,
                         timeFormat,
                         times.second?.openedAt ?: Instant.EPOCH,
-                        times.first,
+                        times.first[step] ?: 0,
                         times.second?.picker,
                     ).let { ui ->
                         ui.copy(
@@ -351,7 +353,7 @@ class TripWizardViewModel(
                     if (model.finishOutbound()) {
                         if (model.draft.state.revisit != null) model.finishFlightInput() else model.finishOutboundStep()
                     } else {
-                        continueFailures.value++
+                        continueFailures.update { it + (step to ((it[step] ?: 0) + 1)) }
                     }
                 }
 
@@ -359,7 +361,7 @@ class TripWizardViewModel(
                     if (model.finishReturn()) {
                         model.finishFlightInput()
                     } else {
-                        continueFailures.value++
+                        continueFailures.update { it + (step to ((it[step] ?: 0) + 1)) }
                     }
                 }
 

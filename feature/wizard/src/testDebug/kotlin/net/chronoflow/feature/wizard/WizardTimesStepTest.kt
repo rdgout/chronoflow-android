@@ -1,10 +1,17 @@
 package net.chronoflow.feature.wizard
 
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
@@ -25,6 +32,8 @@ import net.chronoflow.core.testing.compose.ProfileRule
 import net.chronoflow.core.testing.compose.RecordingHaptics
 import net.chronoflow.core.testing.tiers.Logic
 import net.chronoflow.feature.wizard.shell.WizardScreen
+import net.chronoflow.feature.wizard.shell.WizardStepKey
+import net.chronoflow.feature.wizard.times.WizardTimesStep
 import net.chronoflow.feature.wizard.ui.WizardUiState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -127,6 +136,53 @@ class WizardTimesStepTest {
                 state.value.copy(retryEnabled = false)
         }
         compose.runOnIdle { assertEquals(listOf(HapticEvent.Warning), haptics.events) }
+    }
+
+    @Test fun returningToOutboundDoesNotReplayHomeFailureFeedback() {
+        lateinit var outbound: WizardUiState
+        lateinit var home: WizardUiState
+        lateinit var choice: WizardUiState
+        runTest(timeout = 60.seconds) {
+            outbound = boardState("WizardOutboundScrollErrors", Locale.ENGLISH)
+            home = boardState("WizardReturnFlight", Locale.ENGLISH)
+            choice = boardState("WizardReturn", Locale.ENGLISH)
+        }
+        val state = mutableStateOf(outbound)
+        val haptics = RecordingHaptics()
+        compose.setContent {
+            WizardTestHost {
+                CompositionLocalProvider(LocalHaptics provides haptics) {
+                    val holder = rememberSaveableStateHolder()
+                    val current = state.value
+                    holder.SaveableStateProvider(current.step.debugName) {
+                        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).testTag("wizard.scroll")) {
+                            current.times?.let { WizardTimesStep(it, {}) }
+                        }
+                    }
+                }
+            }
+        }
+        compose.onNodeWithTag("wizard.scroll").performSemanticsAction(SemanticsActions.ScrollBy) { it(0f, 100_000f) }
+        compose.waitForIdle()
+        val before = compose.onNodeWithTag("wizard.flight.errors.0").getUnclippedBoundsInRoot()
+        val viewport = compose.onNodeWithTag("wizard.scroll").getUnclippedBoundsInRoot()
+        assertTrue(before.bottom < viewport.top)
+        compose.runOnIdle { state.value = home }
+        compose.waitForIdle()
+        compose.runOnIdle { state.value = home.copy(times = home.times!!.copy(continueFailures = 1)) }
+        compose.waitForIdle()
+        compose.runOnIdle {
+            assertEquals(listOf(HapticEvent.Warning), haptics.events)
+            state.value = choice
+        }
+        compose.waitForIdle()
+        compose.runOnIdle { state.value = outbound }
+        compose.waitForIdle()
+        compose.runOnIdle {
+            assertEquals(WizardStepKey.Outbound, state.value.step)
+            assertEquals(listOf(HapticEvent.Warning), haptics.events)
+        }
+        assertEquals(before, compose.onNodeWithTag("wizard.flight.errors.0").getUnclippedBoundsInRoot())
     }
 
     @Test fun firstFailureAfterRestorationWarnsOnceAndRevealsTheFirstError() {

@@ -4,6 +4,7 @@ package net.chronoflow.feature.wizard
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import net.chronoflow.core.model.contracts.TimeFormat
@@ -91,6 +92,72 @@ class TripWizardViewModelTimesTest {
                     f.model.wizard!!
                         .draft.fieldErrors["legs.0.arriveLocal"],
                 )
+                assertEquals(
+                    1,
+                    f.model.uiState.value!!
+                        .times!!
+                        .continueFailures,
+                )
+            }
+        }
+
+    @Test fun homeFailureDoesNotFollowBackToOutbound() =
+        runTest(timeout = 60.seconds) {
+            withWizard(configure = {
+                val home = flightDraft(home = true)
+                draft = home.copy(state = home.state.copy(step = MemberWizardStep.outbound))
+            }) { f ->
+                runCurrent()
+                f.model.onEvent(WizardEvent.Continue(WizardStepKey.Outbound))
+                runCurrent()
+                assertEquals(
+                    WizardStepKey.ReturnChoice,
+                    f.model.uiState.value!!
+                        .step,
+                )
+                f.model.onEvent(WizardEvent.ChooseReturn("return_legs"))
+                advanceTimeBy(250)
+                runCurrent()
+                f.model.onEvent(WizardEvent.Continue(WizardStepKey.ReturnRoute))
+                runCurrent()
+                assertEquals(
+                    WizardStepKey.ReturnFlight,
+                    f.model.uiState.value!!
+                        .step,
+                )
+                f.model.onEvent(WizardEvent.SetDatePart(1, true, LocalDate.of(2026, 10, 21)))
+                f.model.onEvent(WizardEvent.Continue(WizardStepKey.ReturnFlight))
+                runCurrent()
+                assertEquals(
+                    1,
+                    f.model.uiState.value!!
+                        .times!!
+                        .continueFailures,
+                )
+                f.model.onEvent(WizardEvent.Back)
+                f.model.onEvent(WizardEvent.Back)
+                runCurrent()
+                assertEquals(
+                    WizardStepKey.ReturnChoice,
+                    f.model.uiState.value!!
+                        .step,
+                )
+                f.model.onEvent(WizardEvent.Back)
+                runCurrent()
+                assertEquals(
+                    WizardStepKey.Outbound,
+                    f.model.uiState.value!!
+                        .step,
+                )
+                assertEquals(
+                    0,
+                    f.model.uiState.value!!
+                        .times!!
+                        .continueFailures,
+                )
+                f.model.onEvent(WizardEvent.SetDatePart(0, true, LocalDate.of(2026, 10, 11)))
+                f.model.onEvent(WizardEvent.Continue(WizardStepKey.Outbound))
+                runCurrent()
                 assertEquals(
                     1,
                     f.model.uiState.value!!
