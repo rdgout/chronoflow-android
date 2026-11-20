@@ -8,6 +8,7 @@ android {
 
 dependencies {
     implementation(libs.androidx.browser)
+    implementation(libs.androidx.core.ktx)
     api(project(":core:designsystem"))
     implementation(project(":core:plan"))
     implementation(project(":core:sync"))
