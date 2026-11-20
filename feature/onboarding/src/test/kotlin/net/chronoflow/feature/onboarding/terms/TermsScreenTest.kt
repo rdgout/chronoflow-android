@@ -23,9 +23,7 @@ import org.junit.BeforeClass
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.RuleChain
-import org.junit.rules.TestRule
 import org.junit.runner.RunWith
-import org.junit.runners.model.Statement
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
@@ -40,37 +38,14 @@ import org.robolectric.annotation.GraphicsMode
 class TermsScreenTest {
     private val compose = createEmptyComposeRule()
 
-    @get:Rule val rules: RuleChain =
-        RuleChain
-            .outerRule(timedRule("profile-and-compose"))
-            .around(ProfileRule(DeviceProfiles.pixel8))
-            .around(timedRule("compose"))
-            .around(compose)
-            .around(timedRule("body"))
-
-    private fun timedRule(step: String) =
-        TestRule { base, description ->
-            object : Statement() {
-                override fun evaluate() {
-                    val started = System.nanoTime()
-                    try {
-                        base.evaluate()
-                    } finally {
-                        val elapsed = (System.nanoTime() - started) / 1_000_000.0
-                        println("terms case=${description.methodName} step=$step ms=$elapsed")
-                    }
-                }
-            }
-        }
+    @get:Rule val rules: RuleChain = RuleChain.outerRule(ProfileRule(DeviceProfiles.pixel8)).around(compose)
 
     private lateinit var activity: ComponentActivity
     private lateinit var host: ActivityController<ComponentActivity>
 
     @Before fun createHost() {
-        val started = System.nanoTime()
         host = Robolectric.buildActivity(ComponentActivity::class.java).setup()
         activity = host.get()
-        println("terms step=activity-setup ms=${(System.nanoTime() - started) / 1_000_000.0}")
     }
 
     @After fun closeHost() {
@@ -98,16 +73,9 @@ class TermsScreenTest {
     }
 
     @Test fun policyRowStaysEnabledWhileFailed() {
-        val started = System.nanoTime()
         show(TermsUiState(failed = true))
-        val shown = System.nanoTime()
         compose.onNodeWithTag(TermsTags.FAILURE).assertExists()
-        val found = System.nanoTime()
         compose.onNodeWithTag(TermsTags.POLICY).performScrollTo().assertIsEnabled()
-        val ended = System.nanoTime()
-        println("terms step=set-content ms=${(shown - started) / 1_000_000.0}")
-        println("terms step=failure-node ms=${(found - shown) / 1_000_000.0}")
-        println("terms step=scroll-and-enabled ms=${(ended - found) / 1_000_000.0}")
     }
 
     @Test fun signOutFailureAndDisabledButtonsFollowTheState() {

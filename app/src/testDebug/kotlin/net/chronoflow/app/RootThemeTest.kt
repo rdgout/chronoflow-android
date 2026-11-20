@@ -105,13 +105,6 @@ class RootThemeTest {
     @Test
     fun themeContentProvidesReduceMotionAndUsesTheSuppliedFontBarrier() =
         runTest(timeout = 60.seconds) {
-            var checkpoint = System.nanoTime()
-
-            fun mark(step: String) {
-                val now = System.nanoTime()
-                println("rootTheme step=$step ms=${(now - checkpoint) / 1_000_000.0}")
-                checkpoint = now
-            }
             val dispatcher = StandardTestDispatcher(testScheduler)
             val preloader = RecordingFontPreloader().apply { expectedDispatcher = dispatcher }
             val launch =
@@ -132,7 +125,6 @@ class RootThemeTest {
                 }
             val inputs = graph.rootThemeInputs(true, commit)
             var motion = false
-            mark("runtime-fixture")
             try {
                 composition.setContent {
                     CompositionLocalProvider(
@@ -146,10 +138,8 @@ class RootThemeTest {
                     }
                 }
                 runCurrent()
-                mark("set-content")
                 frameClock.sendFrame(0L)
                 runCurrent()
-                mark("first-frame")
                 assertEquals(0, preloader.calls.get())
                 assertTrue(commit.awaited.get())
                 assertTrue(motion)
@@ -158,14 +148,12 @@ class RootThemeTest {
                 runCurrent()
                 assertEquals(4, preloader.calls.get())
                 assertTrue(launch.fontsReady)
-                mark("commit-and-font-assertions")
             } finally {
                 withContext(NonCancellable) {
                     composition.dispose()
                     recomposer.cancel()
                     recomposing.cancelAndJoin()
                 }
-                mark("teardown")
             }
         }
 
