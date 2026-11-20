@@ -138,6 +138,14 @@ class WizardSleepQuestionSeedTest(
             )
         }
 
+    @Test fun retiredBoardsAreNeverKnown() {
+        assertFalse(WizardBoardCaptureSeed.knows("WizardQBipolar"))
+        assertFalse(WizardBoardCaptureSeed.knows("WizardQCaffeine"))
+        assertFalse(WizardBoardCaptureSeed.knows("WizardQClot"))
+        assertFalse(WizardBoardCaptureSeed.knows("WizardQEye"))
+        assertFalse(WizardBoardCaptureSeed.knows("WizardQPregnant"))
+    }
+
     companion object {
         private val SHIFT_REASON =
             "This plan is not available if, in the past 14 days, you have worked " +
