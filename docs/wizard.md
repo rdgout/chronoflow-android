@@ -646,6 +646,37 @@ Lint and generation verification used `./gradlew --console=plain :feature:wizard
 
 1. The time sheet saves its interaction flag alongside M3's saveable dial state. `StateRestorationTester` reconstructs a new dial instance: changing it to 07:13, restoring and confirming failed with `touched = false` before the fix and now retains true. Opening, recomposing, restoring and confirming an untouched dial retains false. The first `snapshotFlow` emission remains ignored, so restoration itself never marks the dial touched. The saveable flag contains no copy, identity or secret.
 2. OQ-A419 records the orchestrator's decision superseding round 1's synthesized 600: sheet headings use shipped Fraunces 500 opsz20 at 17/22, −0.01 em, with synthesis explicitly disabled by the generated token. Tokengen resolves requested Fraunces weights above 500 to 500 while retaining the optical size. The unsupported 600 face was removed; no font was added. Both header tests now assert the concrete Fraunces20 family, weight 500 and `FontSynthesis.None`, independently of the token's requested name. Both failed against round 1's 600 before this fix. Generator goldens cover the resolved face and synthesis flag, plus higher-weight resolution at all three optical sizes.
+3. `AirportSearchSheetGeometryTest` measures a title line against `wizardSheetTitle.lineHeight`, so it follows the rendered heading's token instead of the button token. Both currently specify 22 sp; the three profiles × four geometry cases pass.
+
+Round 2 verification (command wall times unless marked tier):
+
+| Command | Result |
+|---|---|
+| `make targeted ONLY='core:ui:CfTimePickerSheetGuardsTest'` | Nine pass, **6.10 s** (5.99 s tier); SDK warm-up 2.602 s, warm cases 55–138 ms. The two restoration methods were first run alone: changed failed before the fix, untouched passed; both passed after the fix. |
+| `make targeted ONLY='tools:tokengen:TypeScaleGoldenTest tools:tokengen:DeterminismTest tools:tokengen:OutputsTest core:designsystem:CfTypeTest feature:wizard:AirportSearchSheetTest feature:wizard:WizardAnswerSheetTest'` | 11 generator + 3 type + 20 sheet cases pass, **10.59 s**; wizard tier 6.47 s, zero overruns. Both header methods were first proven red (500 expected, 600 actual), then green. |
+| `make targeted ONLY='feature:wizard:AirportSearchSheetGeometryTest'` | 12 pass, **6.68 s** (6.60 s tier); SDK warm-up 2.547 s, slowest warm case 92 ms. |
+| `make captures ONLY=WizardSheetFreeSleep,WizardAirport,WizardStopSearch`, once | Pass, **16.38 s** (16.32 s tier); exactly **12 PNGs**: two free-day, four airport and six stop-search states. Inspected light/dark free-day and airport/stop headings. No second capture run. |
+| Wizard + core UI + design-system layout tier, once | 246 + 263 + 8 = **517 pass**, **19.19 s** (19.15 s tier), zero overruns/hangs; SDK warm-ups 2.528/2.124/2.273 s, slowest warm case 178 ms. |
+| App + touched-module lint and token verification, once | Pass, **16.62 s**. |
+| `make quick`, once | Gradle assertions and Spotless pass; the tier fails only two untouched timing gates, listed below. **37.59 s** command wall. No retry; build-logic, tooling and serial timing were not reached. |
+
+Layout used:
+
+```sh
+Scripts/run-tier.sh 9e-review2-layout --results 'feature/wizard/build/test-results/testDebugUnitTest/*.xml' --results 'core/ui/build/test-results/testDebugUnitTest/*.xml' --results 'core/designsystem/build/test-results/testDebugUnitTest/*.xml' --timings 'feature/wizard/build/cf-timings/testDebugUnitTest/*.json' --timings 'core/ui/build/cf-timings/testDebugUnitTest/*.json' --timings 'core/designsystem/build/cf-timings/testDebugUnitTest/*.json' -- ./gradlew --console=plain :feature:wizard:testDebugUnitTest :core:ui:testDebugUnitTest :core:designsystem:testDebugUnitTest -Pcf.tier=layout
+```
+
+The quick tier reported exactly:
+
+```text
+run-tier: over budget: robolectric net.chronoflow.app.RootThemeTest#rootProvidesReduceMotionAndUsesTheSuppliedFontBarrier 1273 ms > 1000 ms
+run-tier: over budget: robolectric net.chronoflow.feature.onboarding.terms.TermsScreenTest#policyRowStaysEnabledWhileFailed 3356 ms > 3000 ms
+make: *** [quick] Error 3
+```
+
+The second gate is the first-case-per-class warm-up allowance, not the 1 s warm-case budget. Neither test was changed; neither was retried. The tier measured 3,171 cases and collected or reused 4,842 results; there were no assertion failures or hangs. The slowest warm case among the touched classes was 393 ms.
+
+Lint and token verification used `./gradlew --console=plain :app:lintDebug :feature:wizard:lintDebug :core:designsystem:lintDebug :core:ui:lintDebug :tools:tokengen:verifyTokens`. `make tokens` regenerated the token output in 1.77 s. Evidence, timing ledgers and the capture manifest are under `build/phase9e-review2-evidence/`. No new copy or brief patch was needed; OQ-A419 is the only added OQ. No emulator, perf, profile or `make check` tier ran in this review round.
 
 ### Sleep clocks and state
 
