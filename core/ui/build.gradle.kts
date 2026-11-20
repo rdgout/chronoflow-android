@@ -7,6 +7,7 @@ android {
 }
 
 dependencies {
+    implementation(libs.androidx.browser)
     api(project(":core:designsystem"))
     implementation(project(":core:plan"))
     implementation(project(":core:sync"))
