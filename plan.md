@@ -2986,7 +2986,7 @@ Implementation commits (brief §7):
   - The edit checking and failure cards (`WizardCheckingEdit`, `WizardCheckOfflineEdit`, `WizardCheckServerEdit`) and `WizardExcludedEdit`.
   - The discard-changes alert (`WizardDiscardEdit`).
 - [x] **Duplicate** (`WizardDuplicate`): opens on the times step with empty dates and the copied-from line.
-- [ ] **Tests.**
+- [x] **Tests.**
   - The ported 17d cases.
   - Guards.
   - One emulator journey: edit a trip → save → the trip page shows the new revision.
@@ -3001,7 +3001,7 @@ Implementation commits:
 - [x] Task 7: edit and duplicate board seeds.
 - [x] Task 8: guards and board captures.
 - [x] Task 9: actions-to-wizard entry tests.
-- [ ] Task 10: edit emulator journey.
+- [x] Task 10: edit emulator journey.
 - [ ] Task 11: acceptance documentation and open questions.
 
 **Acceptance**
