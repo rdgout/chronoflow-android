@@ -1336,3 +1336,16 @@ The host's complete `make check` passed after round 1. This round computes the c
 The native animation repeats every 6,000 ms. Global rotation is **0.18° × t**; additional rotation rises by 90° over the first 300 ms of each 1,500 ms interval, with cubic Bézier easing `(0.05, 0.7, 0.1, 1)`, and holds between rises. Sweep grows linearly from **36°** to **313.2°** in the first 3,000 ms, then shrinks with cubic Bézier easing `(0.2, 0, 0, 1)`. The exact 288° sweep occurs near **2,727 ms** and **3,241 ms**, with start angles **310.9°** and **132.9°**; neither matches the board's 0° start.
 
 Minimizing the sum of squared circular errors at the two arc endpoints over one full cycle gives **2,935.6 ms**, rounded to **2,936 ms**. In that held-rotation interval, start is `0.18t + 180` modulo 360 and sweep is `36 + 0.0924t`. The captured start is **348.48°** and the sweep **307.2864°**, ending at **295.7664°**. The gap is now upper-right; the remaining start and end errors are approximately **−11.52°** and **+7.77°**, so the native arc is **19.29° longer** than the board. This difference applies to **WizardCalculating**, **WizardCalculatingDarkNL**, **WizardReadyChecking** and **WizardReadyCheckingDarkNL**, as their table rows record.
+
+The save-lock why-comment now identifies `BoxWithConstraints` as the component that subcomposes the whole `WizardStepHost`. The handler shares that subcomposition and registers after `NavDisplay` to win back dispatch; its behaviour is unchanged.
+
+`make captures ONLY=WizardCalculating,WizardReadyChecking` ran once this round. All four new PNGs were produced, their light variants were inspected for the upper-right gap, and the other reviewed captures were preserved. Logs, timing JSON and the phase calculation are retained under `build/phase-9g-review-round-2/`. No brief patch or new OQ was needed.
+
+| Command | Result / wall time |
+|---|---|
+| `make targeted ONLY='feature:wizard:CalculatingStepTest feature:wizard:ReadyStepTest feature:wizard:WizardBackHandlingTest'` | 15 passed; **7.77 s**; cold first case 2.044 s; slowest warm case 54 ms; no timing overrun |
+| `make captures ONLY=WizardCalculating,WizardReadyChecking` | Four passed captures, 502 prefix-filtered skips; **16.77 s**; four PNGs refreshed |
+| `make format` | Passed; **14 s Gradle** |
+| `./gradlew :app:lintDebug :feature:wizard:lintDebug --console=plain` | Passed; **23.23 s** |
+| `Scripts/run-tier.sh phase-9g-review-2-layout --results 'feature/wizard/build/test-results/testDebugUnitTest/*.xml' --timings 'feature/wizard/build/cf-timings/testDebugUnitTest/*.json' -- ./gradlew --console=plain :feature:wizard:testDebugUnitTest -Pcf.tier=layout` | 548 passed; **18.16 s**; slowest warm case 92 ms; no timing overrun |
+| `make quick` (once this round) | Passed; **62.01 s** total; 5,148 passing JVM/Robolectric results (3,330 measured this run), 37 build-logic results, all 255 tooling tests and seven certified timing cases; no overrun or hang |

@@ -455,7 +455,7 @@ internal fun WizardStepHost(
             }
         },
     )
-    // NavDisplay is subcomposed, so the save lock must register after it in this same composition.
+    // BoxWithConstraints subcomposes this host; register the save lock after NavDisplay so it wins back dispatch.
     BackHandler(enabled = state.step == WizardStepKey.Calculating) {}
 }
 
