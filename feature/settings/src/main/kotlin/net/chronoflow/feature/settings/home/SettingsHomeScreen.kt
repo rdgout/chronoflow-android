@@ -43,6 +43,7 @@ import net.chronoflow.core.plan.PlanClock
 import net.chronoflow.core.ui.R
 import net.chronoflow.feature.settings.components.SettingsDestinationRow
 import net.chronoflow.feature.settings.components.SettingsPage
+import net.chronoflow.feature.settings.signout.SignOutPendingSheet
 import java.time.ZoneId
 
 @BoardMetrics("SetHome")
@@ -207,6 +208,14 @@ fun SettingsHomeScreen(
             enabled = !state.ui.busy && state.ui.state.account != null,
             loading = state.ui.busy,
             loadingDescription = signOut,
+        )
+    }
+    if (state.ui.showsPending) {
+        SignOutPendingSheet(
+            state.ui.state.pending,
+            state.ui.busy,
+            { onEvent(SettingsHomeEvent.Stay) },
+            { onEvent(SettingsHomeEvent.Discard) },
         )
     }
 }

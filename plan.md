@@ -3050,7 +3050,7 @@ Implementation commits:
   - The live sync line with its age table (`SettingsHomeState.swift:113-140`).
   - Rows with subtitles and badges, and the sign-out pill.
   - From 600 dp, a 560 dp column (OQ-A37).
-- [ ] **Sign out with pending changes** (`SignOutPending`, `SignOutPendingSettings`): Stay or Discard, through `SessionController.signOut`.
+- [x] **Sign out with pending changes** (`SignOutPending`, `SignOutPendingSettings`): Stay or Discard, through `SessionController.signOut`.
   - Also fill the Terms `signOutConfirmation` slot (Phase 8).
 - [ ] **Shared states** (`SetStates`, `SetStatesMore`): loading, account not on this phone, saved and failed messages (Snackbar), refused change, and rows disabled offline.
 - [ ] **Account** (`SetAccount`), **Profile** (`SetProfile`) and **Language** (`SetLanguage`).
@@ -3069,7 +3069,7 @@ Implementation commits:
 - [x] **10a Task 3**: home model and sign-out flow.
 - [x] **10a Task 4**: page scaffold and components.
 - [x] **10a Task 5**: settings home screen.
-- [ ] **10a Task 6**: pending sign-out sheet and Terms slot.
+- [x] **10a Task 6**: pending sign-out sheet and Terms slot.
 - [ ] **10a Task 7**: stored and loading states.
 - [ ] **10a Task 8**: account and profile pages.
 - [ ] **10a Task 9**: language page and applier.
