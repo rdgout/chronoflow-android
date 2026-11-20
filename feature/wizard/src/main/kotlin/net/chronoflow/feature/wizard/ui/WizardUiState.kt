@@ -265,6 +265,7 @@ data class WizardChromeUi(
     val primaryLabel: WizardCopy? = null,
     val primaryBusy: Boolean = false,
     val secondaryRequestsClose: Boolean = false,
+    val readyFooter: net.chronoflow.feature.wizard.ready.ReadyFooterUi? = null,
 ) {
     companion object {
         fun from(
@@ -272,11 +273,16 @@ data class WizardChromeUi(
             closing: Boolean = false,
             checking: net.chronoflow.feature.wizard.checking.WizardCheckingUi? = null,
             fineTune: net.chronoflow.feature.wizard.finetune.WizardFineTuneUi? = null,
+            ready: net.chronoflow.feature.wizard.ready.ReadyUi? = null,
         ): WizardChromeUi {
             val step = active.wizard.draft.state.step
             val where = step == MemberWizardStep.whereTo || step == MemberWizardStep.returnRoute
             val complete =
                 when (step) {
+                    MemberWizardStep.ready -> {
+                        (ready?.footer as? net.chronoflow.feature.wizard.ready.ReadyFooterUi.Primary)?.enabled == true
+                    }
+
                     MemberWizardStep.fineTune -> {
                         !active.wizard.reviewing
                     }
@@ -319,6 +325,7 @@ data class WizardChromeUi(
                 ).toInt(),
                 when (step) {
                     MemberWizardStep.checking -> if (checking?.failure != null) "checking" else null
+                    MemberWizardStep.ready -> "ready"
                     MemberWizardStep.fineTune -> "fine-tune"
                     MemberWizardStep.whereTo -> "where"
                     MemberWizardStep.returnRoute -> "return-route"
@@ -332,8 +339,14 @@ data class WizardChromeUi(
                 complete,
                 secondaryClose = step == MemberWizardStep.excluded || checking?.failure != null,
                 secondaryRequestsClose = step == MemberWizardStep.checking,
-                primaryLabel = checking?.button ?: fineTune?.button,
-                primaryBusy = fineTune?.reviewing == true,
+                primaryLabel =
+                    (ready?.footer as? net.chronoflow.feature.wizard.ready.ReadyFooterUi.Primary)?.label?.copy
+                        ?: checking?.button
+                        ?: fineTune?.button,
+                readyFooter = ready?.footer,
+                primaryBusy =
+                    fineTune?.reviewing == true ||
+                        (ready?.footer as? net.chronoflow.feature.wizard.ready.ReadyFooterUi.Primary)?.busy == true,
                 primaryPlain = step == MemberWizardStep.excluded,
                 closeEnabled = !closing,
                 footerHint =
@@ -461,6 +474,8 @@ data class WizardUiState(
     val excluded: WizardExcludedUi? = null,
     val checking: net.chronoflow.feature.wizard.checking.WizardCheckingUi? = null,
     val fineTune: net.chronoflow.feature.wizard.finetune.WizardFineTuneUi? = null,
+    val ready: net.chronoflow.feature.wizard.ready.ReadyUi? = null,
+    val calculating: net.chronoflow.feature.wizard.calculating.CalculatingUi? = null,
     val cue: net.chronoflow.feature.wizard.checking.WizardHapticCue? = null,
     val discardMessage: WizardCopy = WizardCopy("What you entered is not saved."),
     val discardTitle: WizardCopy = WizardCopy("Discard this trip?"),
@@ -478,6 +493,7 @@ data class WizardUiState(
             openTime: String? = null,
             answerSheet: WizardAnswerSheetState? = null,
             uiOverride: net.chronoflow.feature.wizard.shell.WizardUiOverride? = null,
+            language: net.chronoflow.core.model.contracts.Language = net.chronoflow.core.model.contracts.Language.En,
         ): WizardUiState {
             val effective =
                 active.copy(
@@ -506,8 +522,11 @@ data class WizardUiState(
             val fineTune =
                 net.chronoflow.feature.wizard.finetune.WizardFineTuneUi
                     .from(effective, timeFormat, openTime)
+            val ready =
+                net.chronoflow.feature.wizard.ready.ReadyUiMapper
+                    .map(effective, language)
             return WizardUiState(
-                WizardChromeUi.from(effective, closing, checking, fineTune),
+                WizardChromeUi.from(effective, closing, checking, fineTune, ready),
                 key,
                 if (key == WizardStepKey.Where || key == WizardStepKey.ReturnRoute) WhereUi.from(draft) else null,
                 AirportSheetUi.from(draft),
@@ -515,6 +534,10 @@ data class WizardUiState(
                 active.path.map(WizardStepKey::from),
                 checking = checking,
                 fineTune = fineTune,
+                ready = ready,
+                calculating =
+                    net.chronoflow.feature.wizard.calculating.CalculatingUi
+                        .from(draft),
                 cue = active.cue,
                 discardTitle = WizardCopy(if (active.isEditing) "Discard your changes?" else "Discard this trip?"),
                 discardConfirmLabel = WizardCopy(if (active.isEditing) "Discard changes" else "Discard"),

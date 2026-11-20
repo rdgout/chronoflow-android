@@ -13,6 +13,8 @@ data class WizardStepKey(
     val debugName: String get() = if (step == MemberWizardStep.question) "question${questionIndex ?: 0}" else step.name
 
     companion object {
+        val Ready = WizardStepKey(MemberWizardStep.ready)
+        val Calculating = WizardStepKey(MemberWizardStep.calculating)
         val Checking = WizardStepKey(MemberWizardStep.checking)
         val FineTune = WizardStepKey(MemberWizardStep.fineTune)
         val Excluded = WizardStepKey(MemberWizardStep.excluded)
@@ -28,4 +30,10 @@ data class WizardStepKey(
     }
 }
 
-enum class WizardExit { Trips }
+sealed interface WizardExit {
+    data object Trips : WizardExit
+
+    data class Saved(
+        val tripId: String,
+    ) : WizardExit
+}

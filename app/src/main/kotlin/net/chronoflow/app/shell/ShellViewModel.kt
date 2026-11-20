@@ -76,7 +76,17 @@ internal class ShellViewModel(
 
     fun closeWizard(exit: net.chronoflow.feature.wizard.shell.WizardExit) {
         when (exit) {
-            net.chronoflow.feature.wizard.shell.WizardExit.Trips -> if (state.overlay is Route.Wizard) back()
+            is net.chronoflow.feature.wizard.shell.WizardExit.Saved -> {
+                if (state.overlay is Route.Wizard) {
+                    wizardSaved(
+                        exit.tripId,
+                    )
+                }
+            }
+
+            net.chronoflow.feature.wizard.shell.WizardExit.Trips -> {
+                if (state.overlay is Route.Wizard) back()
+            }
         }
     }
 
