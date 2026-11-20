@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
-import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -151,13 +150,13 @@ private fun WizardDateTimePill(
             }.cfClickable(
                 onClick,
                 focusShape = shape,
-            ).sizeIn(minWidth = AuthTokens.touch.dp, minHeight = AuthTokens.touch.dp)
-            .minimumInteractiveComponentSize(),
+            ).sizeIn(minHeight = WizardMetrics.target.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text ?: WizardCopy(if (date) "Date" else "Time").resolve(),
             Modifier
+                .testTag("${field.tag}.${if (date) "date" else "time"}.visual")
                 .fillMaxWidth()
                 .background(CfTheme.colors.wizardPickerFill, shape)
                 .then(
@@ -175,7 +174,7 @@ private fun WizardDateTimePill(
                     text == null -> CfTheme.colors.mutedForeground
                     else -> CfTheme.colors.foreground
                 },
-            style = CfTheme.type.style(CfTypeScale.wizardRow).copy(fontFeatureSettings = "tnum"),
+            style = CfTheme.type.style(CfTypeScale.wizardPicker).copy(fontFeatureSettings = "tnum"),
             softWrap = false,
             maxLines = 1,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
