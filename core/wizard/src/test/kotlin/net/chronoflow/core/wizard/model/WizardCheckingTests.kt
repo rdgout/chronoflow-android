@@ -3,10 +3,13 @@
 package net.chronoflow.core.wizard.model
 
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import net.chronoflow.core.model.DataFailure
 import net.chronoflow.core.model.api.ApiTripReviewInput
 import net.chronoflow.core.wizard.generation.TripGenerationReviewResult
@@ -119,6 +122,28 @@ class WizardCheckingTests {
             }
             assertEquals(DataFailure.Server(null), failure)
             assertEquals(0L, clock.now)
+            assertEquals(0, clock.waiterCount)
+        }
+
+    @Test fun cancellationDropsAForeignFailureFromARequest() =
+        runTest(timeout = 60.seconds) {
+            val clock = CheckingTestClock(testScheduler)
+            val gate = CompletableDeferred<Unit>()
+            val events = mutableListOf<WizardChecking.Event>()
+            val task =
+                backgroundScope.launch {
+                    WizardChecking.run(clock.clock, {
+                        withContext(NonCancellable) { gate.await() }
+                        throw DataFailure.Offline
+                    }, events::add)
+                }
+            runCurrent()
+            task.cancel()
+            gate.complete(Unit)
+            runCurrent()
+            task.join()
+            assertTrue(task.isCancelled)
+            assertTrue(events.isEmpty())
             assertEquals(0, clock.waiterCount)
         }
 }

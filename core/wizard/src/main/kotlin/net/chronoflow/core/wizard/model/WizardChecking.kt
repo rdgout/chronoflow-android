@@ -80,8 +80,10 @@ object WizardChecking {
                     currentCoroutineContext().ensureActive()
                     receive(Event.Failed(DataFailure.Server(null)))
                 } catch (failure: DataFailure) {
+                    currentCoroutineContext().ensureActive()
                     receive(Event.Failed(failure))
                 } catch (_: Exception) {
+                    currentCoroutineContext().ensureActive()
                     receive(Event.Failed(DataFailure.Server(null)))
                 }
             }.invokeOnCompletion { finished.complete(Unit) }
