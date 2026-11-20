@@ -1196,24 +1196,28 @@ Ready sends its initial tick and then one each second while composed. The foregr
 
 All completion boards use the existing debug override and frozen clock. `WizardSaveJourney` is accepted outside the capture name list and overrides only the starting draft: HND, now + 30 days, an arrival 18 local hours later, Return choice. It retains the session store, airport search, generation service and clock. The release test proves the journey seed class and board helpers are absent and the production override is null.
 
-`make captures ONLY=WizardReady,WizardSave,WizardCalculating` ran once and wrote these 24 PNGs under `build/captures/`. Calculating and ReadyChecking use motion enabled with a paused capture clock. There are no stored snapshot references. The generated Ready, ReadyReturnDarkNL and Calculating images were inspected for content; the host reviewer still needs to render the boards and compare all 24. No pixel-match claim is made here.
+`make captures ONLY=WizardReady,WizardSave,WizardCalculating` ran once and wrote these 24 PNGs under `build/captures/`: 23 designer boards and the supplemental throttle state. The host rendered and reviewed all 23 boards. The results below record that review: no other layout, spacing, colour or type differences were found beyond the accepted differences listed here and the spinner capture phase corrected in review round 1. There are no stored snapshot references.
+
+For every Ready and Save board below, the footer sits lower in the capture because the capture supplies zero safe insets. Their ‹/× toolbar chip difference predates 9g and belongs to the landed 9c chrome. Calculating has neither footer nor toolbar actions.
 
 | Capture names (each `.png`) | Seed / expected source differences | Board comparison |
 |---|---|---|
-| WizardReady, WizardReadyDark, WizardReadyNL | Create, cost 1, balance 3 | Pending host review |
-| WizardReadyReturn, WizardReadyReturnDarkNL | DXB stop and confirmed return; pinned seed cost **2**, board sample **1** | Pending host review |
-| WizardReadyUnlimited, WizardReadyUnlimitedDarkNL | Unlimited, no balance | Pending host review |
-| WizardReadyFree, WizardReadyFreeDarkNL | Free-trip line | Pending host review |
-| WizardReadyOneFree, WizardReadyOneFreeDarkNL | Return direction free, balance 3 | Pending host review |
-| WizardReadyAdjusted, WizardReadyAdjustedDarkNL | Modified review, Latest wake-up 08:00; body is the server reason, rather than the board's illustrative sentence | Pending host review |
-| WizardReadyChecking, WizardReadyCheckingDarkNL | Busy primary at 0.7 alpha | Pending host review |
-| WizardReadyNoCredits, WizardReadyNoCreditsDarkNL | Close only under A14; website action intentionally absent | Pending host review |
-| WizardSaveOffline, WizardSaveOfflineDarkNL | Offline failure | Pending host review |
-| WizardSaveServer, WizardSaveServerDarkNL | Server failure | Pending host review |
-| WizardCalculating, WizardCalculatingDarkNL | Native spinner; computed **10** days from 9–18 Oct inclusive, versus board sample **6** | Pending host review |
+| WizardReady, WizardReadyDark, WizardReadyNL | Create, cost 1, balance 3 | Host reviewed: matches apart from pinned seed data, zero-inset footer and 9c chips described here |
+| WizardReadyReturn, WizardReadyReturnDarkNL | DXB stop and confirmed return; pinned seed cost **2**, board sample **1** | Host reviewed: uses the pinned one-way summary instead of the board's return summary; end date **Sun 18 Oct / zo 18 okt**, versus **Mon 26 Oct / ma 26 okt**; zero-inset footer and 9c chips |
+| WizardReadyUnlimited, WizardReadyUnlimitedDarkNL | Unlimited, no balance | Host reviewed: matches apart from pinned seed data, zero-inset footer and 9c chips |
+| WizardReadyFree, WizardReadyFreeDarkNL | Free-trip line | Host reviewed: matches apart from pinned seed data, zero-inset footer and 9c chips |
+| WizardReadyOneFree, WizardReadyOneFreeDarkNL | Return direction free, balance 3 | Host reviewed: matches apart from pinned seed data, zero-inset footer and 9c chips |
+| WizardReadyAdjusted, WizardReadyAdjustedDarkNL | Modified review, Latest wake-up 08:00; body is the server reason, rather than the board's illustrative sentence | Host reviewed: server reason and seed data follow iOS; zero-inset footer and 9c chips |
+| WizardReadyChecking, WizardReadyCheckingDarkNL | Busy primary at 0.7 alpha | Host layout review passed with the documented seed, footer and chip differences; frame-zero spinner corrected and both captures refreshed in round 1 |
+| WizardReadyNoCredits, WizardReadyNoCreditsDarkNL | Close only under A14; website action intentionally absent | Host reviewed: Close only follows A14; pinned seed data, zero-inset footer and 9c chips as above |
+| WizardSaveOffline, WizardSaveOfflineDarkNL | Offline failure | Host reviewed: matches apart from pinned seed data, zero-inset footer and 9c chips |
+| WizardSaveServer, WizardSaveServerDarkNL | Server failure | Host reviewed: matches apart from pinned seed data, zero-inset footer and 9c chips |
+| WizardCalculating, WizardCalculatingDarkNL | Native spinner; computed **10** days from 9–18 Oct inclusive, versus board sample **6** | Host layout review passed with the seed's day count; frame-zero spinner corrected and both captures refreshed in round 1 |
 | WizardSaveThrottle_noBoard | 42-second lockout with the server-failure banner look | No designer board |
 
 All Ready date lines use `planDateSummary` on the pinned seed summary (9–18 Oct), rather than the board's sample end date. The pinned CopyLine contains `shift` of kind minutes with value 420, so PlanCore formats **420 min**, as pinned iOS `CopyLineFormatter.formatMinutes(duration: false)` does, rather than the board's illustrative 7-hour wording. Extras counts all answered non-blocking prompts from the pinned seed and saved-profile defaults: 7 in the base capture and 11 with the multi-flight return; these differ from the boards' illustrative answer counts. These are source-data differences, not substitute visual designs.
+
+Specifically, `WizardReadyReturn` and `WizardReadyReturnDarkNL` retain the same one-way summary line as the other seeds: the Dutch capture says “420 min vroeger, vanaf 3 dagen voor je vertrek” rather than the board's return line. Pinned iOS `App/Debug/WizardCompletionBoardSeed.swift:111–122` supplies that line and `planEndDate = 2026-10-18` even for the return seed. Its dates therefore end on **zo 18 okt**, rather than the board's **ma 26 okt**. The host accepted these pinned-source differences.
 
 ### Recovery and release evidence
 
@@ -1296,10 +1300,31 @@ python3 -I -m unittest discover -s tools/l10n -t tools/l10n -p 'test_*.py'
 python3 -I -m unittest discover -s tools/icons -t tools/icons -p 'test_*.py'
 ```
 
-All three passed. The quick worker's exit 137 remains a failed full-quick result even though the missing tier and skipped stages now have passing evidence. A clean full gate still needs the user's later run; the phase did not change test budgets or build-wide worker settings.
+All three passed. The original quick worker's exit 137 remains recorded as a failed result; the host subsequently ran the complete `make check` successfully in **3:18** before review round 1. The phase did not change test budgets or build-wide worker settings.
 
 The emulator journey asserted the debug main-thread IO counter was zero; its per-test logcat also contains no StrictMode/disk/network/launch-path violation. Both native tests ran once. No required command was blocked by adb or the sandbox. `pixel` remains running.
 
-The brief's `make check` acceptance command and all perf/profile tiers are excluded by the user's run instructions. Wizard profiles belong to Phase 13. This phase adds no runtime dependency or manifest entry; release manifest and R8 configuration analysis passed. The remaining external acceptance work is a clean full quick/commit gate and the host's board comparison above.
+The brief's `make check` acceptance command and all perf/profile tiers are excluded from the sandbox run instructions. The host's complete `make check` and board comparison are recorded above. Wizard profiles belong to Phase 13. This phase adds no runtime dependency or manifest entry; release manifest and R8 configuration analysis passed.
 
 The optional signature-status read `git log cf403752..HEAD --format='%h %G? %s'` produced no output and was interrupted with Ctrl-C (exit 130). Every `git commit -S` succeeded, and direct `git cat-file commit` inspection confirmed a PGP signature header on every phase commit. Cryptographic status verification was not completed by that optional log command.
+
+### Review round 1
+
+2026-11-20. Host acceptance before this round: `make check` passed in **3:18**, and all 23 designer boards were rendered and compared as recorded above.
+
+The Calculating back lock now registers immediately after `NavDisplay` inside `WizardStepHost`. Navigation 3 1.2.1 exposes no enable flag on this `NavDisplay` overload. Registering the consuming handler in the same subcomposition, after the display, gives it precedence over the display's handler and prevents the previous scene from owning predictive back.
+
+`CalculatingStepTest.calculatingOwnsTheNavigationBackHandler` checks the dispatcher's selected navigation history: its current entry is not a Nav3 `SceneInfo`, and it contains one entry, with no previous scene to preview. Restoring both production files to their original handler order made this exact test fail at the `SceneInfo` assertion (**4 s Gradle**, expected failure). Restoring the fix passed. The existing consumed-back and no-toolbar/footer checks remain unchanged.
+
+Calculating and ReadyChecking captures keep motion enabled and pause the test clock. They now establish the animation's first frame, then advance **2,532 ms** to the native Material 3 indicator's three-quarter sweep before capture. `make captures ONLY=WizardCalculating,WizardReadyChecking` ran once and refreshed `WizardCalculating.png`, `WizardCalculatingDarkNL.png`, `WizardReadyChecking.png` and `WizardReadyCheckingDarkNL.png`; the other reviewed PNGs were preserved. The new light captures were inspected and show the intended arc. The board table records the host's layout review separately from this spinner refresh.
+
+Round logs, the expected-failure XML and timing JSON are retained in `build/phase-9g-review-round-1/`. No brief patch, new OQ, runtime dependency or manifest change was needed.
+
+| Command | Result / wall time |
+|---|---|
+| `make targeted ONLY='feature:wizard:CalculatingStepTest feature:wizard:WizardBackHandlingTest'` | 10 passed; **5.46 s**; regression 33 ms warm, cold first case 2.048 s; no timing overrun |
+| `make captures ONLY=WizardCalculating,WizardReadyChecking` | Four passed captures, 502 prefix-filtered skips; **18.57 s**; four PNGs refreshed |
+| `make format` | Passed; **12 s Gradle** final formatting run |
+| `./gradlew :app:lintDebug :feature:wizard:lintDebug --console=plain` | Passed; **17.16 s** |
+| `Scripts/run-tier.sh phase-9g-review-layout --results 'feature/wizard/build/test-results/testDebugUnitTest/*.xml' --timings 'feature/wizard/build/cf-timings/testDebugUnitTest/*.json' -- ./gradlew --console=plain :feature:wizard:testDebugUnitTest -Pcf.tier=layout` | 548 passed; **18.56 s**; slowest warm case 91 ms; no timing overrun |
+| `make quick` (once this round) | Passed; **61.29 s** total: 5,148 passing JVM/Robolectric results (3,330 measured this run), 37 build-logic results, tooling tests and seven certified timing cases; no overrun or hang; slowest warm case 630 ms |
