@@ -43,6 +43,7 @@ internal fun WizardFlightCard(
     errorRequester: BringIntoViewRequester,
     onPick: (WizardDateTimeFieldUi, WizardPickerKind) -> Unit,
 ) {
+    val route = "${ui.fromIata} → ${ui.toIata}"
     val shape = RoundedCornerShape(PlanUITokens.wizardCardRadius.dp)
     Column(
         Modifier.fillMaxWidth().testTag("wizard.flight.${ui.index}"),
@@ -69,7 +70,7 @@ internal fun WizardFlightCard(
                 tint = CfTheme.colors.dawnText,
             )
             Text(
-                "${ui.fromIata} → ${ui.toIata}",
+                route,
                 color = CfTheme.colors.foreground,
                 style = CfTheme.type.style(CfTypeScale.wizardRoute),
             )
