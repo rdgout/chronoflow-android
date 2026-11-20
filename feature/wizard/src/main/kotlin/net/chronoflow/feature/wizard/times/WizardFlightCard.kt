@@ -29,10 +29,10 @@ import net.chronoflow.core.designsystem.icon.LucideGlyphs
 import net.chronoflow.core.designsystem.icon.imageVector
 import net.chronoflow.core.designsystem.theme.CfTheme
 import net.chronoflow.core.model.contracts.TimeFormat
+import net.chronoflow.core.plan.CopyLineFormatter
 import net.chronoflow.feature.wizard.components.WizardErrorLine
+import net.chronoflow.feature.wizard.components.fieldCopy
 import net.chronoflow.feature.wizard.shell.WizardMetrics
-import net.chronoflow.feature.wizard.ui.resolve
-import net.chronoflow.feature.wizard.ui.wizardCopy
 
 @Composable
 internal fun WizardFlightCard(
@@ -40,6 +40,7 @@ internal fun WizardFlightCard(
     timeFormat: TimeFormat,
     errorRequester: BringIntoViewRequester,
     onPick: (WizardDateTimeFieldUi, WizardPickerKind) -> Unit,
+    copyFormatter: CopyLineFormatter? = null,
 ) {
     val route = "${ui.fromIata} → ${ui.toIata}"
     val shape = RoundedCornerShape(PlanUITokens.wizardCardRadius.dp)
@@ -81,9 +82,9 @@ internal fun WizardFlightCard(
                 ).background(CfTheme.colors.card)
                 .border(AuthTokens.borderWidth.dp, CfTheme.colors.border, shape),
         ) {
-            WizardDateTimeRow(ui.departure, timeFormat, onPick)
+            WizardDateTimeRow(ui.departure, timeFormat, onPick, copyFormatter)
             CfDivider()
-            WizardDateTimeRow(ui.arrival, timeFormat, onPick)
+            WizardDateTimeRow(ui.arrival, timeFormat, onPick, copyFormatter)
         }
         if (ui.hasErrors) {
             Column(
@@ -96,11 +97,16 @@ internal fun WizardFlightCard(
             ) {
                 ui.departure.error?.let {
                     WizardErrorLine(
-                        it.wizardCopy().resolve(),
+                        fieldCopy(it, copyFormatter),
                         "wizard.${ui.index}.departure.error",
                     )
                 }
-                ui.arrival.error?.let { WizardErrorLine(it.wizardCopy().resolve(), "wizard.${ui.index}.arrival.error") }
+                ui.arrival.error?.let {
+                    WizardErrorLine(
+                        fieldCopy(it, copyFormatter),
+                        "wizard.${ui.index}.arrival.error",
+                    )
+                }
             }
         }
     }

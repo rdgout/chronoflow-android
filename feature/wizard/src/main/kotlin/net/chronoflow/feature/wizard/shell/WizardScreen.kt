@@ -460,11 +460,11 @@ private fun WizardStepContent(
                 }
                 LaunchedEffect(key) { titleFocus.requestFocus() }
                 when {
-                    state.sleep != null -> WizardSleepStep(state.sleep, onEvent)
+                    state.sleep != null -> WizardSleepStep(state.sleep, onEvent, copyFormatter)
                     state.question != null -> WizardQuestionStep(state.question, onEvent)
                     state.excluded != null -> WizardExcludedStep(state.excluded, copyFormatter)
                     where != null -> WhereStep(where, copyFormatter, onEvent)
-                    times != null -> WizardTimesStep(times, onEvent)
+                    times != null -> WizardTimesStep(times, onEvent, copyFormatter)
                     state.returnChoice != null -> WizardReturnStep(state.returnChoice, onEvent)
                 }
             } else if (key.step != MemberWizardStep.question) {
