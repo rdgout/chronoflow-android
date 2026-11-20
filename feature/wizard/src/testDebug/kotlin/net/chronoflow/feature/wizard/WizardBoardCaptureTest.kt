@@ -82,9 +82,11 @@ class WizardBoardCaptureTest(
             state = boardState(board, Locale.forLanguageTag(language.tag))
             formatter = wizardCopyFormatter()
         }
+        val motion = board.startsWith("WizardCalculating") || board.startsWith("WizardReadyChecking")
+        if (motion) compose.mainClock.autoAdvance = false
         compose.setContent {
             ProfileHost(profile) {
-                ChronoFlowTheme(darkTheme = dark, reduceMotion = true) {
+                ChronoFlowTheme(darkTheme = dark, reduceMotion = !motion) {
                     val controller = LocalSoftwareKeyboardController.current
                     SideEffect { keyboard = controller }
                     WizardScreen(state, formatter, {})
@@ -106,6 +108,7 @@ class WizardBoardCaptureTest(
             compose,
             if (board in
                 setOf(
+                    "WizardSaveThrottle",
                     "WizardWhereLimit",
                     "WizardOutboundScrollErrors",
                     "WizardSleepMember",
