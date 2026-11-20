@@ -199,6 +199,8 @@ These notes **override the body**. They were checked with `git grep` and file re
 
 OQ-9h-10 is already resolved and is not appended.
 
+**R7. Progress settlement (orchestrator, 2026-11-20).** OQ-A351's all-edit-step 1.0 was a plan default. OQ-A461 settles it: keep the initial edit floor 1.0; use pinned iOS's `max(progressFloor ?: 0, stepProgress)` so the existing `go()` clearing rule takes effect after revisiting an input step. A revisited Coming back? is 0.45, including `WizardReturnWeb`; later Checking/Ready use their step weights. Port and JVM-test this in a separate signed `fix(wizard): clear the edit progress floor on revisited input steps` commit before completing Task 7.
+
 **R6. Blockers.** None. Every behaviour has an iOS source or a board. The gaps named in R3 are build work inside this phase: first-screen system back, `recover()`, the `boardState` `hasChanges`, the edit seed overrides and the preparer wiring.
 
 This phase adds **wiring, the edit/duplicate variants of existing screens, seeds and tests**. The edit and duplicate *model* is already ported: 9a has `loadTrip`, `clearDuplicateDates`, `inputFingerprint`, `hasChanges`, `isEditing`, `checkingTitle`, `acceptSourceReload`, `SourceChange`, `sourceChangeSummary`; 9b has `MemberWizardStore.startTrip`, the edit source refresh (`refreshSource`, one re-review on a revision mismatch), `reviewTripEdit`, `PUT` through `updateTrip`, and all 5 iOS `TripWizardActionsTests` (1 in 9a, 4 in 9b). **Do not re-port or duplicate those model tests.** If a model rule below is missing from 9a/9b, port it into `:core:wizard` with its iOS test in a separate `fix(wizard): …` commit that names the Swift line, and report it.
