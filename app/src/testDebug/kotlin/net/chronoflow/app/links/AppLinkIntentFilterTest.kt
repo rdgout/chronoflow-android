@@ -1,10 +1,10 @@
 package net.chronoflow.app.links
 
+import android.app.Application
 import android.content.Intent
 import android.net.Uri
 import androidx.test.core.app.ApplicationProvider
 import net.chronoflow.app.MainActivity
-import net.chronoflow.app.SessionTestApplication
 import net.chronoflow.core.testing.AuthLinkUrls
 import net.chronoflow.core.testing.tiers.Logic
 import org.junit.Assert.assertEquals
@@ -15,14 +15,14 @@ import org.robolectric.annotation.Config
 
 @Logic
 @RunWith(ParameterizedRobolectricTestRunner::class)
-@Config(sdk = [36], application = SessionTestApplication::class)
+@Config(sdk = [36], application = Application::class)
 class AppLinkIntentFilterTest(
     private val name: String,
     private val url: String,
     private val resolves: Boolean,
 ) {
     @Test fun onlyTheDeclaredHttpsAuthPrefixesResolveToMainActivity() {
-        val context = ApplicationProvider.getApplicationContext<SessionTestApplication>()
+        val context = ApplicationProvider.getApplicationContext<Application>()
         val intent =
             Intent(
                 Intent.ACTION_VIEW,

@@ -21,7 +21,7 @@ import org.robolectric.annotation.GraphicsMode
 
 @Layout
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [36], application = SessionTestApplication::class)
+@Config(sdk = [36], application = android.app.Application::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class RootContentTest {
     @get:Rule val compose = createComposeRule()
@@ -58,9 +58,14 @@ class RootContentTest {
         compose.runOnIdle { assertEquals(first + 1, presented) }
     }
 
-    @Test fun recreationKeepsTheProcessRouteWithoutAnotherNavigation() {
+    @Config(application = SessionTestApplication::class)
+    @Test
+    fun recreationKeepsTheProcessRouteWithoutAnotherNavigation() {
         val app = ApplicationProvider.getApplicationContext<SessionTestApplication>()
-        val intent = Intent(app, MainActivity::class.java).putExtra("cf.mode", "ready").putExtra("cf.freezeAt", "2300")
+        val intent =
+            Intent(app, MainActivity::class.java)
+                .putExtra("CF_AUTH_TEST_ID", "0199a3c0-0000-7000-8000-000000000000")
+                .putExtra("CF_UI_TEST_PROFILE", "screen")
         ActivityScenario.launch<MainActivity>(intent).use { scenario ->
             scenario.onActivity { app.graph.rootNavigator.navigate(Route.Terms) }
             compose.onNodeWithTag("route.terms").assertExists()

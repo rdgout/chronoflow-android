@@ -9,26 +9,33 @@ import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 
 internal const val JVM_BUDGET_MS = 1_000L
-internal const val ROBOLECTRIC_BUDGET_MS = 5_000L
+internal const val ROBOLECTRIC_BUDGET_MS = 1_000L
 internal const val ROBOLECTRIC_WARMUP_MS = 20_000L
+internal const val ROBOLECTRIC_CLASS_WARMUP_MS = 3_000L
 
-/** Returns the budget in ms (null when exempt) and the status: ok, over, warmup or exempt. */
+/** Returns the budget in ms (null when exempt) and its warm-up, pass or failure status. */
 internal fun classify(
     kind: String,
     sdk: String,
     ms: Long,
     perfBudget: Boolean,
     firstForSdk: Boolean,
+    firstForClass: Boolean = false,
 ): Pair<Long?, String> {
     if (perfBudget) return null to "exempt"
     if (kind == "robolectric" && firstForSdk) {
         return ROBOLECTRIC_WARMUP_MS to if (ms > ROBOLECTRIC_WARMUP_MS) "over" else "warmup"
     }
+    if (kind == "robolectric" && firstForClass) {
+        return ROBOLECTRIC_CLASS_WARMUP_MS to if (ms > ROBOLECTRIC_CLASS_WARMUP_MS) "over" else "class-warmup"
+    }
     val budget = if (kind == "robolectric") ROBOLECTRIC_BUDGET_MS else JVM_BUDGET_MS
     return budget to if (ms > budget) "over" else "ok"
 }
 
-private val sdkSuffix = Regex("""\[(\d+)]$""")
+private val sdkMarker = Regex("""\[(\d+)](?=\[|$)""")
+
+internal fun sdkFromDisplayName(name: String): String = sdkMarker.find(name)?.groupValues?.get(1) ?: "default"
 
 class TestTimingListener : TestExecutionListener {
     private data class TestStart(
@@ -37,6 +44,7 @@ class TestTimingListener : TestExecutionListener {
         val testClass: Class<*>?,
         val sdk: String,
         val firstForSdk: Boolean,
+        val firstForClass: Boolean,
     )
 
     private val tier = System.getProperty("cf.tier") ?: "quick"
@@ -47,6 +55,7 @@ class TestTimingListener : TestExecutionListener {
         }
     private val starts = ConcurrentHashMap<String, TestStart>()
     private val seenSdks = ConcurrentHashMap.newKeySet<String>()
+    private val seenClassSdks = ConcurrentHashMap.newKeySet<Pair<String, String>>()
     private val entries = java.util.Collections.synchronizedList(mutableListOf<String>())
 
     override fun executionStarted(identifier: TestIdentifier) {
@@ -62,9 +71,10 @@ class TestTimingListener : TestExecutionListener {
                         null
                     }
                 }
-            val sdk = sdkSuffix.find(identifier.displayName)?.groupValues?.get(1) ?: "default"
+            val sdk = sdkFromDisplayName(identifier.displayName)
             val first = clazz?.isRobolectric() == true && seenSdks.add(sdk)
-            starts[identifier.uniqueId] = TestStart(System.nanoTime(), source, clazz, sdk, first)
+            val firstForClass = clazz?.isRobolectric() == true && seenClassSdks.add(clazz.name to sdk)
+            starts[identifier.uniqueId] = TestStart(System.nanoTime(), source, clazz, sdk, first, firstForClass)
             watchdog?.started(identifier.uniqueId, first)
         }
     }
@@ -84,7 +94,7 @@ class TestTimingListener : TestExecutionListener {
         val exempt =
             clazz.hasPerfBudget() || clazz.tierName() == "TimingGate" ||
                 clazz.methods.any { it.name == source.methodName.substringBefore('[') && it.hasPerfBudget() }
-        val (budget, status) = classify(kind, sdk, ms, exempt, start.firstForSdk)
+        val (budget, status) = classify(kind, sdk, ms, exempt, start.firstForSdk, start.firstForClass)
         entries +=
             "{\"class\":${quote(source.className)},\"method\":${quote(source.methodName)},\"kind\":\"$kind\"," +
             "\"sdk\":\"$sdk\",\"ms\":$ms,\"budgetMs\":${budget ?: "null"},\"status\":\"$status\"}"

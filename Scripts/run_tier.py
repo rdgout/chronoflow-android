@@ -25,7 +25,8 @@ def load_device_lock():
     return module
 
 
-BUDGETS = {"jvm": 1000, "robolectric": 5000, "robolectricWarmup": 20000, "emulator": 10000}
+BUDGETS = {"jvm": 1000, "robolectric": 1000, "robolectricWarmup": 20000,
+           "robolectricClassWarmup": 3000, "emulator": 10000}
 FAILED_GATE_SUFFIX = ".gate-failed"
 PASSED_GATE_SUFFIX = ".gate-passed"
 

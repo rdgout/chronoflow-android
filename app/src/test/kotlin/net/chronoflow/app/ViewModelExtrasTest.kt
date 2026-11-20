@@ -20,14 +20,22 @@ class ViewModelExtrasTest {
     ) : ViewModel()
 
     @Test fun initializerReceivesTheApplicationGraph() {
-        val controller = Robolectric.buildActivity(MainActivity::class.java).setup()
+        val app =
+            androidx.test.core.app.ApplicationProvider
+                .getApplicationContext<SessionTestApplication>()
+        val intent =
+            android.content
+                .Intent(app, MainActivity::class.java)
+                .putExtra("CF_AUTH_TEST_ID", "0199a3c0-0000-7000-8000-000000000000")
+                .putExtra("CF_UI_TEST_PROFILE", "screen")
+        val controller = Robolectric.buildActivity(MainActivity::class.java, intent).create()
         try {
             val activity = controller.get()
             val factory = viewModelFactory { initializer { GraphViewModel(checkNotNull(this[AppGraphKey])) } }
             val model = factory.create(GraphViewModel::class.java, activity.defaultViewModelCreationExtras)
             assertSame((activity.application as ChronoFlowApp).graph, model.graph)
         } finally {
-            controller.pause().stop().destroy()
+            controller.destroy()
         }
     }
 }

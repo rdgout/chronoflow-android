@@ -58,7 +58,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 @Logic
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [36], qualifiers = "w411dp-h914dp-420dpi")
+@Config(sdk = [36], application = android.app.Application::class, qualifiers = "w411dp-h914dp-420dpi")
 class AppShellTest {
     @get:Rule val compose = createComposeRule()
     private lateinit var holder: ShellViewModel

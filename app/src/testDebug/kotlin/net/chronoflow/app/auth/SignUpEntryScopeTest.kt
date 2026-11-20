@@ -17,18 +17,13 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import androidx.test.core.app.ApplicationProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestCoroutineScheduler
-import kotlinx.coroutines.test.runTest
 import net.chronoflow.app.AppDispatchers
-import net.chronoflow.app.AppGraph
-import net.chronoflow.app.GraphOverrides
 import net.chronoflow.app.RootContent
-import net.chronoflow.app.SessionTestApplication
-import net.chronoflow.app.SoftwareSessionCipher
 import net.chronoflow.core.designsystem.layout.LocalSafeInsets
 import net.chronoflow.core.designsystem.theme.ChronoFlowTheme
 import net.chronoflow.core.navigation.Route
@@ -48,42 +43,48 @@ import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
-import kotlin.time.Duration.Companion.seconds
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 @Logic
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
-@Config(sdk = [36], application = SessionTestApplication::class)
+@Config(sdk = [36], application = android.app.Application::class)
 class SignUpEntryScopeTest {
     @get:Rule val compose = createEmptyComposeRule()
 
     @Test fun removedEntryIsClearedAndARecreatedActivityKeepsItsCurrentEntry() {
         val scheduler = TestCoroutineScheduler()
         val dispatcher = StandardTestDispatcher(scheduler)
-        val app = ApplicationProvider.getApplicationContext<SessionTestApplication>()
-        val graph =
-            AppGraph(
-                app,
-                overrides =
-                    GraphOverrides(
-                        sessionCipher = SoftwareSessionCipher(),
-                        dispatchers = AppDispatchers(dispatcher, dispatcher, dispatcher),
-                    ),
+        val scope = CoroutineScope(SupervisorJob() + dispatcher)
+        val navigator =
+            net.chronoflow.core.navigation
+                .RootNavigator()
+        val services =
+            AuthServices(
+                navigator,
+                scope,
+                AppDispatchers(dispatcher, dispatcher, dispatcher),
+                net.chronoflow.core.testing.sync
+                    .ScriptedSource(),
+                net.chronoflow.feature.auth.model
+                    .SessionAcceptor {},
+                { "id" },
+                { "test" },
+                {},
             )
         val fixture =
             EntryScopeFixture(
-                graph,
+                navigator,
                 viewModelFactory {
                     initializer {
-                        val model = graph.auth.signIn.makeSignUpModel { graph.rootNavigator.navigate(Route.SignIn) }
+                        val model = services.signIn.makeSignUpModel { navigator.navigate(Route.SignIn) }
                         EntryScopeActivity.fixture.lastModel = model
                         SignUpViewModel(model, CoroutineScope(SupervisorJob() + dispatcher))
                     }
                 },
             )
         EntryScopeActivity.fixture = fixture
-        graph.rootNavigator.navigate(Route.SignUp)
+        navigator.navigate(Route.SignUp)
         val controller = Robolectric.buildActivity(EntryScopeActivity::class.java).setup()
 
         fun flush() {
@@ -96,11 +97,11 @@ class SignUpEntryScopeTest {
             flush()
             val first = fixture.vm
             val firstModel = checkNotNull(fixture.lastModel)
-            compose.runOnIdle { graph.rootNavigator.navigate(Route.SignIn) }
+            compose.runOnIdle { navigator.navigate(Route.SignIn) }
             flush()
             firstModel.editName("ignored")
             assertEquals("first", firstModel.name.value)
-            compose.runOnIdle { graph.rootNavigator.navigate(Route.SignUp) }
+            compose.runOnIdle { navigator.navigate(Route.SignUp) }
             flush()
             assertNotSame(first, fixture.vm)
             assertEquals("", fixture.lastModel!!.name.value)
@@ -114,13 +115,14 @@ class SignUpEntryScopeTest {
             compose.onNodeWithTag("sign-up.name").assertExists()
         } finally {
             controller.pause().stop().destroy()
-            runTest(dispatcher, timeout = 60.seconds) { graph.close() }
+            scope.cancel()
+            scheduler.runCurrent()
         }
     }
 }
 
 class EntryScopeFixture(
-    val graph: AppGraph,
+    val navigator: net.chronoflow.core.navigation.RootNavigator,
     val factory: ViewModelProvider.Factory,
 ) {
     var lastModel: SignUpModel? = null
@@ -131,7 +133,7 @@ class EntryScopeActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            val state by fixture.graph.rootNavigator.state
+            val state by fixture.navigator.state
                 .collectAsState()
             ChronoFlowTheme {
                 CompositionLocalProvider(

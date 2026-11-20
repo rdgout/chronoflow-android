@@ -17,7 +17,7 @@ import java.io.File
 
 @Layout
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [29, 32, 33, 36])
+@Config(sdk = [29, 32, 33, 36], application = android.app.Application::class)
 class ConfigurationPolicyTest {
     private val base: Context get() = RuntimeEnvironment.getApplication()
 

@@ -16,6 +16,14 @@ class TodayActionsTest {
 
     @After fun close() = store.clear()
 
+    @Test fun heroPushesOnTodayAndBackReturns() {
+        actions.openTrip("hero")
+        assertEquals(ShellTab.Today, holder.state.selected)
+        assertEquals(listOf(Route.Today, Route.TripPage("hero")), holder.state.stacks.getValue(ShellTab.Today))
+        org.junit.Assert.assertTrue(holder.back())
+        assertEquals(listOf(Route.Today), holder.state.stacks.getValue(ShellTab.Today))
+    }
+
     @Test fun settingsSelectsItsTabAndKeepsTheTodayStack() {
         holder.openTrip("today-trip")
         actions.settings()

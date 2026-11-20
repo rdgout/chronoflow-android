@@ -23,7 +23,7 @@ import java.io.File
 
 @Logic
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [36])
+@Config(sdk = [36], application = android.app.Application::class)
 class StoragePathsTest {
     private val context = ApplicationProvider.getApplicationContext<Context>()
     private val root = context.noBackupFilesDir

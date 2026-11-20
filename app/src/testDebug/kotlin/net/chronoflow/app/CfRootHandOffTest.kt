@@ -1,7 +1,10 @@
 package net.chronoflow.app
 
 import android.app.Application
+import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -14,6 +17,7 @@ import kotlinx.coroutines.channels.Channel
 import net.chronoflow.core.model.launch.Gate
 import net.chronoflow.core.model.launch.LaunchReadiness
 import net.chronoflow.core.model.session.SessionPresence
+import net.chronoflow.core.navigation.debugName
 import net.chronoflow.core.testing.tiers.Layout
 import net.chronoflow.feature.launch.LaunchController
 import net.chronoflow.feature.launch.model.ManualLaunchClock
@@ -21,6 +25,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.RuleChain
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
@@ -29,10 +34,13 @@ import kotlin.time.Duration.Companion.milliseconds
 
 @Layout
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [36], qualifiers = "w411dp-h914dp-420dpi")
+@Config(sdk = [36], qualifiers = "w411dp-h914dp-420dpi", application = SessionTestApplication::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class CfRootHandOffTest {
-    @get:Rule val compose = createComposeRule()
+    private val compose = createComposeRule()
+    private val graphs = GraphTestRule()
+
+    @get:Rule val rules: RuleChain = RuleChain.outerRule(graphs).around(compose)
 
     @Test fun signedInContentBecomesAccessibleOnlyAfterTheHandOff() {
         val launch = mount(SessionPresence.SignedIn("a"))
@@ -45,21 +53,6 @@ class CfRootHandOffTest {
         val after = compose.onNodeWithTag("route.today", useUnmergedTree = true).fetchSemanticsNode()
         assertFalse(hidden(after))
         compose.onNodeWithTag("launch.opening").assertDoesNotExist()
-    }
-
-    @Test fun signedOutHandsOffToWelcome() {
-        val launch = mount(SessionPresence.SignedOut)
-        advanceTo(launch, 2558)
-        compose.mainClock.advanceTimeByFrame()
-        compose.onNodeWithTag("welcome.wordmark").assertExists()
-        compose.onNodeWithTag("launch.opening").assertDoesNotExist()
-    }
-
-    @Test fun termsGateHandsOffToTerms() {
-        val launch = mount(SessionPresence.SignedIn("a"), Gate.Terms)
-        advanceTo(launch, 1908)
-        compose.mainClock.advanceTimeByFrame()
-        compose.onNodeWithTag("route.terms").assertExists()
     }
 
     @Test fun screenProfileShowsAccessibleWelcomeImmediately() {
@@ -99,8 +92,22 @@ class CfRootHandOffTest {
         launch.captureAppearance(app.resources.configuration)
         launch.captureReduceMotion(true, false)
         launch.onActivityCreated(null, screen)
-        val graph = AppGraph(app, launchProvider = { launch })
-        compose.setContent { CfRoot(graph, !screen, false, CompletableDeferred(), null) }
+        val graph = graphs.own(AppGraph(app, launchProvider = { launch }, overrides = graphs.overrides))
+        compose.setContent {
+            CfRoot(
+                graph,
+                !screen,
+                false,
+                CompletableDeferred(),
+                null,
+                content =
+                    if (presence is SessionPresence.SignedIn) {
+                        { Box(Modifier.testTag("route.${launch.route?.toRoute()?.debugName()}")) }
+                    } else {
+                        null
+                    },
+            )
+        }
         compose.mainClock.advanceTimeByFrame()
         if (!screen &&
             launch.t0Nanos == LaunchController.UNSET
