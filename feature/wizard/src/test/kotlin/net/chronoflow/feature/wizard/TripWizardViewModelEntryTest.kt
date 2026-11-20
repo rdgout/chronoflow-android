@@ -87,4 +87,12 @@ class TripWizardViewModelEntryTest {
             vm.onEvent(net.chronoflow.feature.wizard.shell.WizardEvent.RequestClose)
             assertEquals(WizardExit.Trips, vm.exit.value)
         }
+    @Test fun duplicateLoadFailureClosesQuietly() =
+        checkEntry(WizardMode.Duplicate("t1"), null, DataFailure.Offline) { fake, vm ->
+            assertEquals(listOf("t1" to TripWizardAction.duplicate), fake.tripStarts)
+            assertEquals(WizardExit.Trips, vm.exit.value)
+            vm.onEvent(net.chronoflow.feature.wizard.shell.WizardEvent.RequestClose)
+            assertEquals(WizardExit.Trips, vm.exit.value)
+        }
+
 }
