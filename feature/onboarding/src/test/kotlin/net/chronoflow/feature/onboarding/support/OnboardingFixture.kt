@@ -106,6 +106,11 @@ internal class OnboardingFixture private constructor(
 
     fun walkthroughModel() = WalkthroughModel(complete = { outbox.enqueue(OutboxChange.Walkthrough, permit) })
 
+    fun termsModel() =
+        net.chronoflow.feature.onboarding.terms.TermsUpdateModel(result.account.policies) {
+            outbox.enqueue(OutboxChange.Policies(it), permit)
+        }
+
     suspend fun gate() = AccountReadinessRepository(database).values(result.account.id).first()?.gate
 
     fun engine() =
