@@ -2839,6 +2839,7 @@ Implementation commits (brief §7):
 - [x] **Route errors**: scoped server errors on Where and the home route, with catalog-first field copy (9e Task 8).
 - [x] **No retired questions.** A test proves that no retired health question is referenced; `WizardQBipolar`, `WizardQCaffeine`, `WizardQClot`, `WizardQEye` and `WizardQPregnant` stay unbuilt.
 - [x] **Tests.** Rounding and validation, plus guards for each board.
+- [x] **Device check**: bedtime-sheet app language, phone hour cycle and IO StrictMode on `pixel` (9e Task 11).
 
 **Acceptance**
 - Values round to 5 min.
