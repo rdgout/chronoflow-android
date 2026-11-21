@@ -16,5 +16,7 @@ interface MemberWizardGeneration {
 
     suspend fun cancelReviews(instance: String)
 
+    fun cancelNow()
+
     suspend fun cancel()
 }

@@ -31,7 +31,7 @@ import net.chronoflow.core.model.contracts.TimeFormat
 import net.chronoflow.core.model.device.DeviceIdentityFailure
 import net.chronoflow.core.model.session.SessionFailure
 import net.chronoflow.core.model.store.StoreFailure
-import net.chronoflow.core.wizard.generation.TripGenerationService
+import net.chronoflow.core.wizard.generation.MemberWizardGeneration
 import net.chronoflow.core.wizard.model.AirportSearchService
 import net.chronoflow.core.wizard.model.AirportSearchSession
 import net.chronoflow.core.wizard.model.AirportSearchState
@@ -215,7 +215,7 @@ class TripWizardViewModel(
             SharingStarted.Eagerly,
             null,
         )
-    private var generation: TripGenerationService? = null
+    private var generation: MemberWizardGeneration? = null
     private var discarded = false
     var wizard: MemberWizardModel? = null
         private set

@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import net.chronoflow.core.model.DataSource
 import net.chronoflow.core.model.contracts.TimeFormat
-import net.chronoflow.core.wizard.generation.TripGenerationService
+import net.chronoflow.core.wizard.generation.MemberWizardGeneration
 import net.chronoflow.core.wizard.model.AirportSearchService
 import net.chronoflow.core.wizard.model.MemberWizardDraft
 import net.chronoflow.core.wizard.model.TripWizardAction
@@ -35,7 +35,7 @@ interface TripWizardDependencies {
         action: TripWizardAction,
     ): MemberWizardDraft
 
-    fun newGeneration(): TripGenerationService
+    fun newGeneration(): MemberWizardGeneration
 }
 
 object TripWizardDependenciesKey : CreationExtras.Key<TripWizardDependencies>
