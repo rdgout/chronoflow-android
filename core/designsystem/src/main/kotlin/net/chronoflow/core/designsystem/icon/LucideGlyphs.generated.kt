@@ -159,6 +159,15 @@ object LucideGlyphs {
             ),
         )
 
+    val CloudCheck =
+        LucideGlyph(
+            "cloud-check",
+            listOf(
+                LucidePath("M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z", false),
+                LucidePath("m9 14 2 2 4-4", false),
+            ),
+        )
+
     val CloudOff =
         LucideGlyph(
             "cloud-off",
@@ -209,6 +218,15 @@ object LucideGlyphs {
             listOf(
                 LucidePath("M10 8h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-10a2 2 0 0 1-2-2v-10a2 2 0 0 1 2-2Z", false),
                 LucidePath("M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2", false),
+            ),
+        )
+
+    val CreditCard =
+        LucideGlyph(
+            "credit-card",
+            listOf(
+                LucidePath("M4 5h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-16a2 2 0 0 1-2-2v-10a2 2 0 0 1 2-2Z", false),
+                LucidePath("M2 10L22 10", false),
             ),
         )
 
@@ -414,6 +432,14 @@ object LucideGlyphs {
             ),
         )
 
+    val Shield =
+        LucideGlyph(
+            "shield",
+            listOf(
+                LucidePath("M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z", false),
+            ),
+        )
+
     val ShieldCheck =
         LucideGlyph(
             "shield-check",
@@ -429,6 +455,22 @@ object LucideGlyphs {
             listOf(
                 LucidePath("M5 4 L15 12 L5 20 L5 4Z", false),
                 LucidePath("M19 5L19 19", false),
+            ),
+        )
+
+    val SlidersHorizontal =
+        LucideGlyph(
+            "sliders-horizontal",
+            listOf(
+                LucidePath("M21 4L14 4", false),
+                LucidePath("M10 4L3 4", false),
+                LucidePath("M21 12L12 12", false),
+                LucidePath("M8 12L3 12", false),
+                LucidePath("M21 20L16 20", false),
+                LucidePath("M12 20L3 20", false),
+                LucidePath("M14 2L14 6", false),
+                LucidePath("M8 10L8 14", false),
+                LucidePath("M16 18L16 22", false),
             ),
         )
 
@@ -496,6 +538,15 @@ object LucideGlyphs {
                 LucidePath("m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3", false),
                 LucidePath("M12 9v4", false),
                 LucidePath("M12 17h.01", false),
+            ),
+        )
+
+    val User =
+        LucideGlyph(
+            "user",
+            listOf(
+                LucidePath("M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2", false),
+                LucidePath("M8 7a4 4 0 1 0 8 0a4 4 0 1 0-8 0Z", false),
             ),
         )
 

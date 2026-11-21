@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.flowOf
 import java.time.Instant
 
 class FixedPlanClock(
-    val now: Instant,
+    override val now: Instant,
 ) : PlanClock {
     override fun values(): Flow<Instant> = flowOf(now)
 }

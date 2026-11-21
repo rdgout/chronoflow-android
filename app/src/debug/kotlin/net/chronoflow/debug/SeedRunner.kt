@@ -28,6 +28,7 @@ internal class SeedRunner(
         signedIn: SeedAccount?,
         testId: String,
         termsChangesPending: Boolean = false,
+        settingsPending: Boolean = false,
     ) = withContext(io) {
         MockSessionSeed.reset(storageDir, credentials, io)
         storageDir.mkdirs()
@@ -54,6 +55,7 @@ internal class SeedRunner(
                 io,
                 onSessionReady = { database, permit ->
                     if (termsChangesPending) seedTermsChangesPending(database, permit)
+                    if (settingsPending) seedSettingsPending(database, permit)
                 },
             )
         }

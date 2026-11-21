@@ -27,6 +27,7 @@ class OnboardingSeedFlagsTest(
                 arrayOf<Any?>("CF_WALKTHROUGH_TEST_PENDING", true),
                 arrayOf<Any?>("CF_AUTH_TEST_TERMS_PENDING", true),
                 arrayOf<Any?>("CF_AUTH_TEST_TERMS_CHANGES_PENDING", false),
+                arrayOf<Any?>("CF_SETTINGS_TEST_PENDING", true),
                 arrayOf<Any?>(null, false),
             )
     }
