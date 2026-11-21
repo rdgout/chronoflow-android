@@ -25,6 +25,67 @@ import org.junit.Test
 import kotlin.time.Duration.Companion.seconds
 
 class SessionSettingsSecurityTests : SettingsFixtureTest() {
+    @Test fun sessionCancelledDuringConfirmationRemainsSilentWithTheViewModelAlive() =
+        cancelledSessionRemainsSilent(alreadyCancelled = false)
+
+    @Test fun alreadyCancelledSessionRemainsSilentWhenTheViewModelSubmits() =
+        cancelledSessionRemainsSilent(alreadyCancelled = true)
+
+    private fun cancelledSessionRemainsSilent(alreadyCancelled: Boolean) =
+        runTest(timeout = 60.seconds) {
+            withSettingsFixture(mutationsOffline = false) { f ->
+                val entered = CompletableDeferred<Unit>()
+                val release = CompletableDeferred<Unit>()
+                f.syncSource =
+                    object : DataSource by f.source {
+                        override suspend fun accountSecurity(change: AccountSecurityChange): AccountSecurityResult {
+                            if (change is AccountSecurityChange.ConfirmTwoFactor) {
+                                entered.complete(Unit)
+                                release.await()
+                            }
+                            return f.source.accountSecurity(change)
+                        }
+                    }
+                val vm = SecurityViewModel(f.deps, f.io, f.io, f.io)
+                f.store.put("security", vm)
+                f.viewModels += vm
+                runCurrent()
+                vm.showPrompt(SettingsSecurityPrompt.Enable)
+                vm.submitPrompt(FakeSecretField("password"))
+                runCurrent()
+                assertNotNull(vm.state.value.setup)
+                val syncRequests = f.securitySyncRequests
+                val securityBefore = f.settings.settings().first { it.section == "security" }
+
+                if (alreadyCancelled) {
+                    f.securityScope.coroutineContext.job
+                        .cancelAndJoin()
+                }
+                vm.confirm(FakeSecretField("123456"))
+                runCurrent()
+                if (!alreadyCancelled) {
+                    assertTrue(entered.isCompleted)
+                    assertTrue(vm.state.value.busy)
+                    f.securityScope.coroutineContext.job
+                        .cancelAndJoin()
+                }
+                release.complete(Unit)
+                runCurrent()
+
+                assertEquals(!alreadyCancelled, entered.isCompleted)
+                assertTrue(vm.viewModelScope.coroutineContext.job.isActive)
+                assertFalse(vm.state.value.busy)
+                assertNull(vm.state.value.message)
+                assertNull(vm.ui.value.feedback)
+                assertTrue(
+                    vm.state.value.codes
+                        .isEmpty(),
+                )
+                assertEquals(securityBefore, f.settings.settings().first { it.section == "security" })
+                assertEquals(syncRequests, f.securitySyncRequests)
+            }
+        }
+
     @Test fun disposingTheEntryStillAppliesConfirmationAndRequestsSync() = finishConfirmationAfterEntryDisposal(false)
 
     @Test fun cancellingTheSessionStopsConfirmationBeforeStoreApplyAndSync() =

@@ -1,10 +1,13 @@
 package net.chronoflow.feature.settings
 
 import androidx.lifecycle.viewmodel.CreationExtras
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.isActive
 import kotlinx.serialization.json.JsonObject
 import net.chronoflow.core.model.SettingsSection
 import net.chronoflow.core.model.api.AccountSecurityChange
@@ -12,6 +15,7 @@ import net.chronoflow.core.model.api.AccountSecurityResult
 import net.chronoflow.core.model.session.SessionSnapshot
 import net.chronoflow.core.model.session.SessionUpdate
 import net.chronoflow.core.model.session.SignOutResult
+import net.chronoflow.core.model.session.StaleSessionException
 import net.chronoflow.core.model.store.AccountRecord
 import net.chronoflow.core.model.store.OutboxRecord
 import net.chronoflow.core.model.store.SettingsRecord
@@ -25,7 +29,12 @@ interface SettingsDependencies {
 
     // Entry disposal must not skip a submitted mutation's local apply and sync request.
     suspend fun performSecurity(change: AccountSecurityChange): AccountSecurityResult =
-        securityScope.async { requestSecurity(change) }.await()
+        try {
+            securityScope.async { requestSecurity(change) }.await()
+        } catch (failure: CancellationException) {
+            if (currentCoroutineContext().isActive) throw StaleSessionException()
+            throw failure
+        }
 
     suspend fun requestSecurity(change: AccountSecurityChange): AccountSecurityResult
 

@@ -138,17 +138,14 @@ class SecurityViewModelTests {
             }
         }
 
-    @Test fun foreignCancellationBecomesFeedback() =
+    @Test fun foreignRequestCancellationRemainsSilent() =
         runTest(timeout = 60.seconds) {
             withModel { vm, deps ->
                 deps.security = { throw kotlinx.coroutines.CancellationException() }
                 vm.changePassword(FakeSecretField("password"), FakeSecretField("new"), FakeSecretField("new"))
                 runCurrent()
-                assertEquals(
-                    "Something went wrong",
-                    vm.ui.value.feedback
-                        ?.key,
-                )
+                assertNull(vm.state.value.message)
+                assertNull(vm.ui.value.feedback)
                 assertFalse(vm.state.value.busy)
             }
         }
