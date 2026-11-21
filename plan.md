@@ -3199,7 +3199,7 @@ Implementation commits:
 - [x] **Password prompt** (`PasswordPrompt*`).
   - A sheet on phones; on wide windows a 560 dp dialog, at most 90% of the height (`PasswordPromptWide`).
   - States: checking, wrong, locked with a countdown, forgot, 2FA on, new codes, and NL.
-- [ ] **Two-factor** (`Set2FA*`).
+- [x] **Two-factor** (`Set2FA*`).
   - The intro, with the Android copy (OQ-A12).
   - Setup: the QR code, drawn on the device from `otpauthUrl` on a white tile (`03 §7`), and the setup key.
     - [x] Add `com.google.zxing:core` (Apache-2.0) to the catalog, pinned to the latest stable release that is at least two weeks old (3.5.4, published 2025-11-11).

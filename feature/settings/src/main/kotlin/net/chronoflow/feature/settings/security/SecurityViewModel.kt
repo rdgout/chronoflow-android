@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.google.zxing.WriterException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -15,12 +16,14 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import net.chronoflow.core.model.DataFailure
 import net.chronoflow.core.model.api.AccountSecurityChange
 import net.chronoflow.core.model.api.AccountSecurityResult
@@ -49,7 +52,7 @@ data class SecurityUiState(
 class SecurityViewModel(
     private val deps: SettingsDependencies,
     main: CoroutineDispatcher,
-    compute: CoroutineDispatcher = Dispatchers.Default,
+    private val compute: CoroutineDispatcher = Dispatchers.Default,
     internal val io: CoroutineDispatcher = Dispatchers.IO,
 ) : ViewModel(CoroutineScope(SupervisorJob() + main)) {
     private val pages = SettingsPagesModel(deps, viewModelScope)
@@ -58,6 +61,9 @@ class SecurityViewModel(
     val now: () -> Instant = { deps.clock.now }
     private val acknowledged = MutableStateFlow(0L)
     private var request: Job? = null
+    private val mutableQr = MutableStateFlow<QrMatrix?>(null)
+    val qr: kotlinx.coroutines.flow.StateFlow<QrMatrix?> = mutableQr
+    private var seeded = false
     val summary =
         pages.ui
             .map { SecuritySummary.from(it.section("security")) }
@@ -85,6 +91,22 @@ class SecurityViewModel(
 
     init {
         pages.start()
+        viewModelScope.launch {
+            state.map { it.setup }.distinctUntilChanged().collectLatest { setup ->
+                mutableQr.value = null
+                if (setup != null) {
+                    val matrix =
+                        try {
+                            withContext(compute) { QrMatrix.encode(setup.otpauthUrl) }
+                        } catch (_: WriterException) {
+                            null
+                        } catch (_: IllegalArgumentException) {
+                            null
+                        }
+                    if (state.value.setup == setup) mutableQr.value = matrix
+                }
+            }
+        }
         viewModelScope.launch {
             state.map { it.retryAt }.distinctUntilChanged().collect { retryAt ->
                 if (retryAt != null) {
@@ -137,13 +159,67 @@ class SecurityViewModel(
         if (state.value.feedbackRevision == id) acknowledged.value = id
     }
 
+    fun startTwoFactor() {
+        if (seeded) return
+        seeded = true
+        deps.passwordPromptSeed?.let { password ->
+            showPrompt(SettingsSecurityPrompt.Enable)
+            submitPrompt(
+                object : SecretField {
+                    override fun read() = password
+
+                    override fun clear() = Unit
+
+                    override fun toString() = "SecretField(***)"
+                },
+            )
+        }
+    }
+
+    fun copySecret() {
+        state.value.setup
+            ?.secretKey
+            ?.let(deps.clipboard::copy)
+    }
+
+    fun copyCodes() {
+        if (state.value.codes.isNotEmpty()) deps.clipboard.copy(state.value.codes.joinToString("\n"))
+    }
+
+    fun download(
+        uri: android.net.Uri,
+        resolver: android.content.ContentResolver,
+    ) {
+        viewModelScope.launch {
+            settingsAttempt(failed = { model.message("Something went wrong") }, cancelled = {}) {
+                withContext(io) { writeRecoveryCodes(resolver, uri) { state.value.codes } }
+            }
+        }
+    }
+
+    suspend fun confirmedDate(language: net.chronoflow.core.model.contracts.Language): String? {
+        val raw = summary.value?.twoFactorConfirmedAt ?: return null
+        try {
+            Instant.parse(raw)
+        } catch (_: java.time.format.DateTimeParseException) {
+            return null
+        }
+        var result: String? = null
+        settingsAttempt(failed = { model.message("Something went wrong") }, cancelled = {}) {
+            result = withContext(compute) { deps.formatter().formatDate(raw, language, deps.zone.id) }
+        }
+        return result
+    }
+
     fun clearSecrets() {
+        mutableQr.value = null
         model.clearSecrets()
         request?.cancel()
         request = null
     }
 
     override fun onCleared() {
+        mutableQr.value = null
         model.clearSecrets()
         pages.stop()
     }

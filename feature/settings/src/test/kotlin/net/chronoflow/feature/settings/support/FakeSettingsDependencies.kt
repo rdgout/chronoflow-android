@@ -100,7 +100,9 @@ class FakeSettingsDependencies(
     override val clock = FakePlanClock(settingsNow)
     override val zone = ZoneOffset.UTC
 
-    override suspend fun formatter(): Nothing = error("No old sync date in this fixture")
+    override suspend fun formatter() =
+        net.chronoflow.core.plan
+            .CopyLineFormatter(SettingsFixture.catalog)
 
     override suspend fun enqueueSettings(
         section: SettingsSection,
