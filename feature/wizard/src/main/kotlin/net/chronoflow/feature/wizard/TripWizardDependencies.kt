@@ -15,6 +15,7 @@ import net.chronoflow.core.wizard.model.WizardDraftStore
 import java.time.Instant
 
 interface TripWizardDependencies {
+    val guest: Boolean get() = false
     val store: WizardDraftStore
     val airportSearch: AirportSearchService
     val source: DataSource

@@ -216,6 +216,7 @@ class TripWizardViewModel(
             null,
         )
     private var generation: MemberWizardGeneration? = null
+    private val guestEntry = deps?.guest == true
     private var discarded = false
     var wizard: MemberWizardModel? = null
         private set
@@ -457,7 +458,14 @@ class TripWizardViewModel(
     }
 
     private fun exitOnce(tripId: String? = null) {
-        if (mutableExit.value == null) mutableExit.value = tripId?.let(WizardExit::Saved) ?: WizardExit.Trips
+        if (mutableExit.value == null) {
+            mutableExit.value =
+                when {
+                    tripId != null -> WizardExit.Saved(tripId)
+                    guestEntry || wizard?.draft?.state?.mode == WizardMode.guest -> WizardExit.Welcome
+                    else -> WizardExit.Trips
+                }
+        }
     }
 
     fun openAirport(sheet: WizardAirportSheet) {

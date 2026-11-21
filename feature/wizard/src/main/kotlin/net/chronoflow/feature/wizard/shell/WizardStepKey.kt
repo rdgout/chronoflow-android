@@ -31,6 +31,8 @@ data class WizardStepKey(
 }
 
 sealed interface WizardExit {
+    data object Welcome : WizardExit
+
     data object Trips : WizardExit
 
     data class Saved(
