@@ -187,6 +187,10 @@ class SettingsProfileTests : SettingsFixtureTest() {
                     vm.ui.value.editor!!
                         .saved,
                 )
+                assertNull(
+                    vm.ui.value.editor
+                        ?.error,
+                )
                 assertEquals(
                     "Saved offline",
                     f.account
@@ -211,6 +215,35 @@ class SettingsProfileTests : SettingsFixtureTest() {
                         ?.error,
                 )
                 assertEquals(0, deps.saves)
+            }
+        }
+
+    @Test fun notCurrentSessionDoesNotSaveOrShowAnError() =
+        runTest(timeout = 60.seconds) {
+            val deps = FakeSettingsDependencies()
+            withProfile(deps) { vm ->
+                deps.current = false
+                vm.edit("Edited")
+                vm.submit()
+                runCurrent()
+                assertEquals(0, deps.saves)
+                assertEquals(
+                    "Edited",
+                    vm.ui.value.editor
+                        ?.name,
+                )
+                assertNull(
+                    vm.ui.value.editor
+                        ?.error,
+                )
+                assertFalse(
+                    vm.ui.value.editor!!
+                        .busy,
+                )
+                assertFalse(
+                    vm.ui.value.editor!!
+                        .saved,
+                )
             }
         }
 

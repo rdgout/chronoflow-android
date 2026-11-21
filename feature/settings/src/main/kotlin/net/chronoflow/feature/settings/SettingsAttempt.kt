@@ -14,13 +14,14 @@ import java.sql.SQLException
 
 internal suspend fun settingsAttempt(
     failed: (Throwable) -> Unit,
+    cancelled: (CancellationException) -> Unit = failed,
     block: suspend () -> Unit,
 ) {
     try {
         block()
     } catch (failure: CancellationException) {
         if (!currentCoroutineContext().isActive) throw failure
-        failed(failure)
+        cancelled(failure)
     } catch (failure: SessionFailure) {
         failed(failure)
     } catch (failure: DataFailure) {

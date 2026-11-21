@@ -8,6 +8,7 @@ import kotlinx.coroutines.test.runTest
 import net.chronoflow.core.model.DataFailure
 import net.chronoflow.core.model.device.DeviceIdentityFailure
 import net.chronoflow.core.model.session.SessionFailure
+import net.chronoflow.core.model.session.StaleSessionException
 import net.chronoflow.core.model.store.LocalMutationFailure
 import net.chronoflow.core.model.store.StoreFailure
 import net.chronoflow.feature.settings.support.FakeSettingsDependencies
@@ -35,7 +36,7 @@ class ProfileSubmitFailureTests(
                 runCurrent()
                 assertEquals(
                     name,
-                    ProfileError.CouldNotSave,
+                    if (failure is CancellationException) null else ProfileError.CouldNotSave,
                     vm.ui.value.editor
                         ?.error,
                 )
@@ -66,6 +67,7 @@ class ProfileSubmitFailureTests(
                 arrayOf("sql", SQLException()),
                 arrayOf("runtime", IllegalStateException()),
                 arrayOf("foreign-cancellation", CancellationException()),
+                arrayOf("stale-session", StaleSessionException()),
             )
     }
 }

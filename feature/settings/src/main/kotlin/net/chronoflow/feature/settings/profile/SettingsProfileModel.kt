@@ -49,7 +49,10 @@ class SettingsProfileModel(
         }
         mutableUi.update { it.copy(busy = true, saved = false) }
         try {
-            settingsAttempt({ mutableUi.update { it.copy(error = ProfileError.CouldNotSave) } }) {
+            settingsAttempt(
+                failed = { mutableUi.update { it.copy(error = ProfileError.CouldNotSave) } },
+                cancelled = {},
+            ) {
                 save(value)
                 storedName = value
                 mutableUi.update { it.copy(name = value, error = null, saved = true) }
