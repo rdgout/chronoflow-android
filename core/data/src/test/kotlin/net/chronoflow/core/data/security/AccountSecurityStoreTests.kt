@@ -91,6 +91,38 @@ class AccountSecurityStoreTests {
             }
         }
 
+    @Test fun listingStoresThePasskeyCountThatGatesTheSecurityRow() =
+        runTest(timeout = 60.seconds) {
+            withStore { f ->
+                val settings = SettingsRepository(f.database)
+                settings.upsert(
+                    net.chronoflow.core.model.store.SettingsRecord(
+                        "security",
+                        """{"twoFactorEnabled":false,"passwordRules":"minlength: 10;"}""",
+                    ),
+                )
+                AccountSecurityStore(f.database, settings).apply(
+                    AccountSecurityChange.ListPasskeys,
+                    AccountSecurityResult.Passkeys(
+                        listOf(
+                            net.chronoflow.core.model.api
+                                .ApiPasskey(1, "iPhone", null, "2026-09-14T08:00:00Z", null),
+                        ),
+                    ),
+                    SessionMutationPermit(),
+                )
+                val security =
+                    net.chronoflow.core.model.api.ApiJson.response
+                        .parseToJsonElement(settings.settings().single { it.section == "security" }.value)
+                assertEquals(
+                    net.chronoflow.core.model.api.ApiJson.response.parseToJsonElement(
+                        """{"twoFactorEnabled":false,"passwordRules":"minlength: 10;","passkeyCount":1}""",
+                    ),
+                    security,
+                )
+            }
+        }
+
     @Test fun revokedPermitWritesNothing() =
         runTest(timeout = 60.seconds) {
             withStore { f ->

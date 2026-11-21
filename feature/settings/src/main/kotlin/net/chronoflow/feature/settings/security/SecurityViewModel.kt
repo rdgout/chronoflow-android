@@ -62,7 +62,7 @@ class SecurityViewModel(
     internal val io: CoroutineDispatcher = Dispatchers.IO,
 ) : ViewModel(CoroutineScope(SupervisorJob() + main)) {
     private val pages = SettingsPagesModel(deps, viewModelScope)
-    internal val model = SettingsSecurityModel(::perform) { deps.clock.now }
+    internal val model = SettingsSecurityModel(::perform, now = { deps.clock.now })
     val state = model.state
     val now: () -> Instant = { deps.clock.now }
     private val acknowledged = MutableStateFlow(0L)

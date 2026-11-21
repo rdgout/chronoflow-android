@@ -24,7 +24,7 @@ import kotlin.time.Duration.Companion.seconds
 class SettingsSecurityEdgeTests {
     private val script = ScriptedSecurity()
     private var now = Instant.ofEpochSecond(100)
-    private val model = SettingsSecurityModel(script::perform) { now }
+    private val model = SettingsSecurityModel(script::perform, now = { now })
 
     @Test fun offlineInPromptKeepsPromptOpen() =
         runTest(timeout = 60.seconds) {

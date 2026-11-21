@@ -34,7 +34,7 @@ class SecurityConflictTests(
                     } else {
                         AccountSecurityResult.Codes(ApiRecoveryCodes(listOf("secret-code")))
                     }
-                }) { Instant.ofEpochSecond(100) }
+                }, now = { Instant.ofEpochSecond(100) })
             model.showPrompt(SettingsSecurityPrompt.Enable)
             model.submitPrompt(FakeSecretField("pw"))
             assertTrue(

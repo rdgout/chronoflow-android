@@ -23,7 +23,7 @@ class SecurityCodeTests(
     @Test fun codeMustBeSixAsciiDigits() =
         runTest(timeout = 60.seconds) {
             val moment = Instant.ofEpochSecond(100)
-            val model = SettingsSecurityModel({ error("Invalid code reached the server") }) { moment }
+            val model = SettingsSecurityModel({ error("Invalid code reached the server") }, now = { moment })
             val code = FakeSecretField(value)
             model.confirm(code)
             assertEquals("Enter the 6-digit code from your authenticator app.", model.state.value.errors["code"])
