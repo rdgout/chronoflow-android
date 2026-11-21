@@ -50,8 +50,9 @@ data class TestSeed(
     val authTestLink: String? = null,
     val walkthroughPending: Boolean = false,
     val termsChangesPending: Boolean = false,
+    val settingsPending: Boolean = false,
 ) {
-    val mutationsOffline: Boolean get() = walkthroughPending || termsPending
+    val mutationsOffline: Boolean get() = walkthroughPending || termsPending || settingsPending
 
     override fun toString(): String = "TestSeed(testId=$testId, profile=$profile, keys=${raw.keys})"
 
@@ -119,6 +120,7 @@ data class TestSeed(
             val termsPending = flag("CF_AUTH_TEST_TERMS_PENDING")
             val walkthroughPending = flag("CF_WALKTHROUGH_TEST_PENDING")
             val termsChangesPending = flag("CF_AUTH_TEST_TERMS_CHANGES_PENDING")
+            val settingsPending = flag("CF_SETTINGS_TEST_PENDING")
             val unverified = flag("CF_AUTH_TEST_UNVERIFIED")
             val mockDelay =
                 parsed("CF_MOCK_DELAY") {
@@ -188,6 +190,7 @@ data class TestSeed(
                 termsPending = termsPending,
                 walkthroughPending = walkthroughPending,
                 termsChangesPending = termsChangesPending,
+                settingsPending = settingsPending,
                 unverified = unverified,
                 authTestLink = parsed("CF_AUTH_TEST_LINK") { it.takeIf { url -> url.startsWith("https:") } },
                 auditScreen = accepted["CF_AUTH_TEST_AUDIT_SCREEN"],
