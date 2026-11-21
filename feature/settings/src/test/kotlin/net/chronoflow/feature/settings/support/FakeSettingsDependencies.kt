@@ -2,8 +2,10 @@ package net.chronoflow.feature.settings.support
 
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.serialization.json.JsonObject
 import net.chronoflow.core.model.OutboxChange
 import net.chronoflow.core.model.ProfileChange
+import net.chronoflow.core.model.SettingsSection
 import net.chronoflow.core.model.session.SessionPresence
 import net.chronoflow.core.model.session.SessionSnapshot
 import net.chronoflow.core.model.session.SessionUpdate
@@ -34,6 +36,16 @@ class FakeSettingsDependencies : SettingsDependencies {
         val change = OutboxChange.Profile(ProfileChange(name, email))
         rows.value += OutboxPayload.record(change, "profile-$saves", "now")
         account.value = account.value?.copy(name = name)
+    }
+    var settingsSaves = 0
+    var saveSettings: suspend (SettingsSection, JsonObject) -> Unit = { section, patch ->
+        settingsSaves++
+        rows.value +=
+            OutboxPayload.record(
+                OutboxChange.Settings(section, patch),
+                "settings-$settingsSaves",
+                clock.now.toString(),
+            )
     }
 
     override fun account() = account
@@ -70,4 +82,9 @@ class FakeSettingsDependencies : SettingsDependencies {
     override val zone = ZoneOffset.UTC
 
     override suspend fun formatter(): Nothing = error("No old sync date in this fixture")
+
+    override suspend fun enqueueSettings(
+        section: SettingsSection,
+        patch: JsonObject,
+    ) = saveSettings(section, patch)
 }

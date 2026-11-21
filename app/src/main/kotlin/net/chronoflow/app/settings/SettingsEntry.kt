@@ -27,6 +27,9 @@ import net.chronoflow.feature.settings.home.SettingsHomeViewModel
 import net.chronoflow.feature.settings.language.LanguageDependenciesKey
 import net.chronoflow.feature.settings.language.LanguageRoute
 import net.chronoflow.feature.settings.language.LanguageSettingsViewModel
+import net.chronoflow.feature.settings.preferences.PreferencesRoute
+import net.chronoflow.feature.settings.preferences.PreferencesViewModel
+import net.chronoflow.feature.settings.preferences.ThemeDependenciesKey
 import net.chronoflow.feature.settings.profile.ProfileRoute
 import net.chronoflow.feature.settings.profile.ProfileViewModel
 import java.io.IOException
@@ -46,10 +49,6 @@ internal fun SettingsEntry(
             MutableCreationExtras(owner.defaultViewModelCreationExtras).apply {
                 set(LanguageDependenciesKey, graph.languageApplier)
                 set(SettingsMainKey, graph.dispatchers.main)
-                set(
-                    net.chronoflow.feature.settings.preferences.ThemeDependenciesKey,
-                    AppThemeDependencies(graph.deviceAppearance),
-                )
             }
         }
     if (route == Route.Language) {
@@ -61,6 +60,7 @@ internal fun SettingsEntry(
             when (route) {
                 Route.Account -> R.string.settings_account
                 Route.Profile -> R.string.settings_profile
+                Route.Preferences -> R.string.settings_preferences
                 else -> R.string.settings_settings
             },
             onBack.takeUnless { route == Route.Settings },
@@ -75,6 +75,10 @@ internal fun SettingsEntry(
             MutableCreationExtras(owner.defaultViewModelCreationExtras).apply {
                 set(SettingsDependenciesKey, deps)
                 set(SettingsMainKey, graph.dispatchers.main)
+                set(
+                    ThemeDependenciesKey,
+                    AppThemeDependencies(graph.deviceAppearance),
+                )
             }
         }
     when (route) {
@@ -106,6 +110,15 @@ internal fun SettingsEntry(
                 viewModel(factory = AccountViewModel.Factory, extras = extras),
                 language.choice ?: LanguageChoice.System,
                 language.phone,
+                onBack,
+                onNavigate,
+                modifier,
+            )
+        }
+
+        Route.Preferences -> {
+            PreferencesRoute(
+                viewModel(factory = PreferencesViewModel.Factory, extras = extras),
                 onBack,
                 onNavigate,
                 modifier,

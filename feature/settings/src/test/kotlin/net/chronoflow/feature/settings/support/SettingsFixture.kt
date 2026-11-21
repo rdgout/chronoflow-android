@@ -176,6 +176,13 @@ internal class SettingsFixture(
             override val zone = ZoneOffset.UTC
 
             override suspend fun formatter() = CopyLineFormatter(catalog)
+
+            override suspend fun enqueueSettings(
+                section: net.chronoflow.core.model.SettingsSection,
+                patch: kotlinx.serialization.json.JsonObject,
+            ) {
+                outbox.enqueue(OutboxChange.Settings(section, patch), permit, now = settingsNow)
+            }
         }
     val store = ViewModelStore()
     val viewModels = mutableListOf<androidx.lifecycle.ViewModel>()
@@ -189,6 +196,12 @@ internal class SettingsFixture(
     fun profile(): net.chronoflow.feature.settings.profile.ProfileViewModel =
         net.chronoflow.feature.settings.profile.ProfileViewModel(deps, androidx.lifecycle.SavedStateHandle(), io).also {
             store.put("profile-${viewModels.size}", it)
+            viewModels += it
+        }
+
+    fun preferences(): net.chronoflow.feature.settings.preferences.PreferencesViewModel =
+        net.chronoflow.feature.settings.preferences.PreferencesViewModel(deps, FakeThemeDependencies(), io).also {
+            store.put("preferences-${viewModels.size}", it)
             viewModels += it
         }
 

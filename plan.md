@@ -3138,7 +3138,7 @@ Implementation commits:
 - [ ] Task 12: check the theme on the emulator (Tests below).
 - [ ] Task 13: record phase 10b results and open questions.
 
-- [ ] **Preferences** (`SetPreferences`, `SetPreferencesNL`).
+- [x] **Preferences** (`SetPreferences`, `SetPreferencesNL`).
   - Theme pills: a device setting in DataStore, mirrored to `UiModeManager` on API 31+.
   - Time format and hidden categories: account settings, saved through the outbox.
   - The reminders row, which routes to 12c (a placeholder until then).

@@ -107,6 +107,7 @@ enum class SettingsDestination(
         R.string.settings_preferences,
         R.string.settings_appearance_timeline_reminders,
         "settings.preferences",
+        true,
     ),
     Plan(Route.Plan, LucideGlyphs.CreditCard, R.string.settings_plan_credits, null, "settings.plan"),
 }
