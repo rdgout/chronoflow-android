@@ -1,6 +1,5 @@
 package net.chronoflow.app
 
-import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.ReportDrawnWhen
 import androidx.compose.foundation.background
@@ -78,12 +77,10 @@ internal fun CfRoot(
     initialTheme: ThemeChoice = ThemeChoice.System,
     content: (@Composable () -> Unit)? = null,
 ) {
-    val seam = destinations.seam
     val root by graph.rootNavigator.state.collectAsState()
     val displayedRoute = root.route ?: graph.launch.route?.toRoute()
     val activity = LocalActivity.current
     val onRootBack: () -> Unit = { activity?.finish() }
-    BackHandler(enabled = seam != null) { destinations.closeSeam() }
     val theme = rememberDeviceTheme(initialTheme) { graph.deviceAppearance.theme }
     val night = theme.resolve(isSystemInDarkTheme())
     RootThemeContent(night, graph.rootThemeInputs(reduceMotion, firstCommit)) {
@@ -141,9 +138,7 @@ internal fun CfRoot(
                             ) { route ->
                                 when (route) {
                                     Route.Welcome -> {
-                                        if (seam != null) {
-                                            RoutePlaceholder(seam, LaunchPlatform.routeLabel)
-                                        } else if (!overlayShowing || graph.launch.fontsReady) {
+                                        if (!overlayShowing || graph.launch.fontsReady) {
                                             WelcomeScreen(
                                                 graph.launch.launchIntro,
                                                 graph.launch.moonAnchorStore,
@@ -212,6 +207,11 @@ internal fun CfRoot(
                                             viewModel(factory = SignUpViewModelFactory, extras = extras),
                                             opener,
                                         )
+                                    }
+
+                                    Route.GuestWizard -> {
+                                        net.chronoflow.app.guest
+                                            .GuestWizardRoute(graph, root.revision)
                                     }
 
                                     Route.Terms -> {

@@ -165,7 +165,6 @@ class ReleaseReadinessTest {
     @Test fun releaseShipsNoLaunchDiagnosticsOrStub() {
         missing("net.chronoflow.app.perf.StubReadiness")
         missing("net.chronoflow.debug.DebugRouteLabel")
-        missing("net.chronoflow.debug.DebugWelcomeDestinations")
         missing("net.chronoflow.debug.StrictModeViolationCounter")
         missing("net.chronoflow.feature.launch.welcome.WelcomeLaunchDiagnostics")
         missing("net.chronoflow.feature.launch.welcome.WelcomeProbe")

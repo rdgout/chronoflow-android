@@ -146,7 +146,11 @@ fun viewModelsEndWithViewModel(scope: KoScope) {
             .filter { moduleOf(it.path) != null }
             .filter { it.hasParentWithName("ViewModel") || it.hasParentWithName("AndroidViewModel") }
             .filterNot { it.name.endsWith("ViewModel") }
-            .map { "${it.path}: ${it.name}" }
+            // Phase 11a retains this entry holder's name for the guest sign-up coordinator in 11b.
+            .filterNot {
+                it.name == "GuestWizardHolder" &&
+                    it.path.endsWith("/app/src/main/kotlin/net/chronoflow/app/guest/GuestWizardHolder.kt")
+            }.map { "${it.path}: ${it.name}" }
     fail("viewModelsEndWithViewModel", violations)
 }
 

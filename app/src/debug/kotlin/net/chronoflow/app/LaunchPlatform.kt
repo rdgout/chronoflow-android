@@ -88,8 +88,9 @@ internal object LaunchPlatform {
             null
         }
 
-    fun welcomeDestinations(navigator: RootNavigator): WelcomeDestinations =
-        net.chronoflow.debug.DebugWelcomeDestinations(navigator)
+    val guestSignUpRequested: () -> Unit = net.chronoflow.debug.GuestWizardDebugCounters::requested
+
+    fun welcomeDestinations(navigator: RootNavigator): WelcomeDestinations = RoutedWelcomeDestinations(navigator)
 
     val ioViolationSink: (Boolean, List<String>) -> Unit = net.chronoflow.debug.StrictModeViolationCounter::record
     val routeLabel: (@Composable (String) -> Unit)? = { DebugRouteLabel(it) }
@@ -126,7 +127,6 @@ internal object LaunchPlatform {
         check(BuildConfig.DEBUG)
         current?.onActivityDestroyed()
         current = newLaunchController(graph)
-        graph.welcomeDestinations.closeSeam()
     }
 }
 

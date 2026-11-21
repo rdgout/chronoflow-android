@@ -167,7 +167,10 @@ class KonsistRulesTest : KonsistTest() {
     @Test fun viewModelsEndWithViewModelRejectsPlantedViolation() {
         assertFailure {
             viewModelsEndWithViewModel(violations("viewModelsEndWithViewModel"))
-        }.messageContains("viewModelsEndWithViewModel violated")
+        }.all {
+            messageContains("viewModelsEndWithViewModel violated")
+            messageContains("GuestWizardHolder")
+        }
     }
 
     @Test fun routesAreSerializable() = routesAreSerializable(projectScope)

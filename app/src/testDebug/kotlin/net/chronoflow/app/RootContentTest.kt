@@ -4,8 +4,10 @@ import android.content.Intent
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.waitUntilExactlyOneExists
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import net.chronoflow.core.navigation.RootState
@@ -18,7 +20,9 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
+import kotlin.time.Duration.Companion.seconds
 
+@OptIn(androidx.compose.ui.test.ExperimentalTestApi::class)
 @Layout
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [36], application = android.app.Application::class)
@@ -66,12 +70,15 @@ class RootContentTest {
             Intent(app, MainActivity::class.java)
                 .putExtra("CF_AUTH_TEST_ID", "0199a3c0-0000-7000-8000-000000000000")
                 .putExtra("CF_UI_TEST_PROFILE", "screen")
+        kotlinx.coroutines.test.runTest(app.graph.dispatchers.main, timeout = 60.seconds) {
+            app.graph.controller.restore()
+        }
         ActivityScenario.launch<MainActivity>(intent).use { scenario ->
             scenario.onActivity { app.graph.rootNavigator.navigate(Route.GuestWizard) }
-            compose.onNodeWithTag("route.guestWizard").assertExists()
+            compose.waitUntilExactlyOneExists(hasTestTag("wizard.where.continue"), 5_000)
             val revision = app.graph.rootNavigator.state.value.revision
             scenario.recreate()
-            compose.onNodeWithTag("route.guestWizard").assertExists()
+            compose.waitUntilExactlyOneExists(hasTestTag("wizard.where.continue"), 5_000)
             assertEquals(RootState(Route.GuestWizard, revision), app.graph.rootNavigator.state.value)
         }
     }

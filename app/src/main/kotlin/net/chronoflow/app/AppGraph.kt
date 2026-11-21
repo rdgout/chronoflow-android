@@ -216,7 +216,10 @@ class AppGraph(
         }, dispatchers.io)
     }
     val accountModel by lazy { AccountModel(appScope) }
-    val hooks: SessionHooks by lazy { NoopSessionHooks }
+    val hooks: SessionHooks by lazy {
+        net.chronoflow.app.guest
+            .GuestSessionHooks(guestWizardStore, NoopSessionHooks)
+    }
     val rootNavigator by lazy { RootNavigator() }
     val welcomeDestinations: WelcomeDestinations by lazy { LaunchPlatform.welcomeDestinations(rootNavigator) }
     val passkeyAnchor: PasskeyAnchor by lazy { PasskeyAnchor() }

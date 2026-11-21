@@ -35,6 +35,8 @@ internal object LaunchPlatform {
     @Suppress("UNUSED_PARAMETER")
     fun verificationMail(graph: AppGraph): net.chronoflow.feature.auth.verify.VerificationMail? = null
 
+    val guestSignUpRequested: () -> Unit = {}
+
     fun welcomeDestinations(navigator: RootNavigator): WelcomeDestinations = RoutedWelcomeDestinations(navigator)
 
     val ioViolationSink: (Boolean, List<String>) -> Unit = { _, _ -> }

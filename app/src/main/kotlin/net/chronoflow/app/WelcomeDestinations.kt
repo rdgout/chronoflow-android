@@ -7,16 +7,14 @@ interface WelcomeDestinations {
     fun planMyTrip()
 
     fun signIn()
-
-    val seam: String? get() = null
-
-    fun closeSeam() {}
 }
 
 class RoutedWelcomeDestinations(
     private val navigator: RootNavigator,
 ) : WelcomeDestinations {
-    override fun planMyTrip() {}
+    override fun planMyTrip() {
+        navigator.navigate(Route.GuestWizard)
+    }
 
     override fun signIn() {
         navigator.navigate(Route.SignIn)
