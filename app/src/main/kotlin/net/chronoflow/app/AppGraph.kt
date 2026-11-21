@@ -148,6 +148,14 @@ class AppGraph(
         }
     }
     val devicePreferences by lazy { DevicePreferences.shared(app) }
+    val deviceAppearance by lazy {
+        net.chronoflow.core.datastore.DeviceAppearance(
+            devicePreferences,
+            net.chronoflow.core.datastore
+                .UiModeNightModeSink(app),
+            dispatchers.io,
+        )
+    }
     val languageFeedback by lazy {
         net.chronoflow.app.settings
             .LanguageFeedback()

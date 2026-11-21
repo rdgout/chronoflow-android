@@ -46,6 +46,10 @@ internal fun SettingsEntry(
             MutableCreationExtras(owner.defaultViewModelCreationExtras).apply {
                 set(LanguageDependenciesKey, graph.languageApplier)
                 set(SettingsMainKey, graph.dispatchers.main)
+                set(
+                    net.chronoflow.feature.settings.preferences.ThemeDependenciesKey,
+                    AppThemeDependencies(graph.deviceAppearance),
+                )
             }
         }
     if (route == Route.Language) {

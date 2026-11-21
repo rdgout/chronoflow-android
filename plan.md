@@ -3129,7 +3129,7 @@ Implementation commits:
 - [x] Task 3: port the preferences model.
 - [x] Task 4: pin pending protection for settings sections.
 - Task 5 was removed; reuse 9e's time picker.
-- [ ] Task 6: apply the theme per device.
+- [x] Task 6: apply the theme per device.
 - [ ] Task 7: add body clock and preference components.
 - [ ] Task 10: seed body clock board states.
 - [ ] Task 11: add guards and board captures.
