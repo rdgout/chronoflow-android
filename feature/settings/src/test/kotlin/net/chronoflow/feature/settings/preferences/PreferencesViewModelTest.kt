@@ -8,6 +8,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.job
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runCurrent
@@ -137,6 +138,35 @@ class PreferencesViewModelTest {
             }
         }
 
+    @Test fun themeReadFailureLogsAndFallsBackToSystemWithoutASaveError() =
+        runTest(timeout = 60.seconds) {
+            val failRead = CompletableDeferred<Unit>()
+            var readFailures = 0
+            val theme = object : ThemeDependencies {
+                override val theme = flow {
+                    emit(ThemeChoice.Dark)
+                    failRead.await()
+                    throw IOException()
+                }
+
+                override suspend fun setTheme(choice: ThemeChoice) = Unit
+
+                override fun reportThemeReadFailure() {
+                    readFailures++
+                }
+            }
+            val deps = preferencesDeps()
+            withPreferences(deps, theme) { vm ->
+                assertEquals(ThemeChoice.Dark, vm.ui.value.theme)
+                failRead.complete(Unit)
+                runCurrent()
+                assertEquals(ThemeChoice.System, vm.ui.value.theme)
+                assertEquals(1, readFailures)
+                assertFalse(vm.ui.value.failure)
+                assertTrue(deps.rows.value.isEmpty())
+            }
+        }
+
     @Test fun staleSessionEnqueuesNothingAndFailureStaysFalse() =
         runTest(timeout = 60.seconds) {
             val deps = preferencesDeps().apply { current = false }
@@ -193,7 +223,7 @@ private fun preferencesDeps() =
 
 internal suspend fun TestScope.withPreferences(
     deps: FakeSettingsDependencies,
-    theme: FakeThemeDependencies = FakeThemeDependencies(),
+    theme: ThemeDependencies = FakeThemeDependencies(),
     block: suspend (PreferencesViewModel) -> Unit,
 ) {
     val vm = PreferencesViewModel(deps, theme, StandardTestDispatcher(testScheduler))

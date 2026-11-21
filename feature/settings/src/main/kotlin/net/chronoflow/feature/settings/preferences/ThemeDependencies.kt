@@ -8,6 +8,8 @@ interface ThemeDependencies {
     val theme: Flow<ThemeChoice>
 
     suspend fun setTheme(choice: ThemeChoice)
+
+    fun reportThemeReadFailure()
 }
 
 object ThemeDependenciesKey : CreationExtras.Key<ThemeDependencies>

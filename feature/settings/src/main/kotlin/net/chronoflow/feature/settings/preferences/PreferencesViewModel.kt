@@ -71,7 +71,10 @@ class PreferencesViewModel(
             }
         }
         viewModelScope.launch {
-            settingsAttempt(failed = { mutableUi.update { it.copy(themeFailure = true) } }, cancelled = {}) {
+            settingsAttempt(failed = {
+                theme.reportThemeReadFailure()
+                mutableUi.update { it.copy(theme = ThemeChoice.System) }
+            }) {
                 theme.theme.collect { choice -> mutableUi.update { it.copy(theme = choice) } }
             }
         }

@@ -8,6 +8,11 @@ class FakeThemeDependencies : ThemeDependencies {
     override val theme = MutableStateFlow(ThemeChoice.System)
     val choices = mutableListOf<ThemeChoice>()
     var failure: Throwable? = null
+    var readFailures = 0
+
+    override fun reportThemeReadFailure() {
+        readFailures++
+    }
 
     override suspend fun setTheme(choice: ThemeChoice) {
         failure?.let { throw it }
