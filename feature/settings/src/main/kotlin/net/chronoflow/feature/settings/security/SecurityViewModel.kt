@@ -216,8 +216,6 @@ class SecurityViewModel(
     fun clearSecrets() {
         mutableQr.value = null
         model.clearSecrets()
-        request?.cancel()
-        request = null
     }
 
     override fun onCleared() {

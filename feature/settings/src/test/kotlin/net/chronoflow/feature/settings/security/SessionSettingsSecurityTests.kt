@@ -22,6 +22,61 @@ import org.junit.Test
 import kotlin.time.Duration.Companion.seconds
 
 class SessionSettingsSecurityTests : SettingsFixtureTest() {
+    @Test fun clearingSecretsDuringConfirmationStillAppliesTheStoreAndDiscardsLateUiResults() =
+        runTest(timeout = 60.seconds) {
+            withSettingsFixture(mutationsOffline = false) { f ->
+                val entered = CompletableDeferred<Unit>()
+                val release = CompletableDeferred<Unit>()
+                f.syncSource =
+                    object : DataSource by f.source {
+                        override suspend fun accountSecurity(change: AccountSecurityChange): AccountSecurityResult {
+                            if (change is AccountSecurityChange.ConfirmTwoFactor) {
+                                entered.complete(Unit)
+                                release.await()
+                            }
+                            return f.source.accountSecurity(change)
+                        }
+                    }
+                val dependencies = f.deps
+                var confirmationCompleted = false
+                val observed =
+                    object : net.chronoflow.feature.settings.SettingsDependencies by dependencies {
+                        override suspend fun performSecurity(change: AccountSecurityChange): AccountSecurityResult {
+                            val result = dependencies.performSecurity(change)
+                            if (change is AccountSecurityChange.ConfirmTwoFactor) confirmationCompleted = true
+                            return result
+                        }
+                    }
+                val vm = SecurityViewModel(observed, f.io, f.io, f.io)
+                f.store.put("security", vm)
+                f.viewModels += vm
+                runCurrent()
+                vm.showPrompt(SettingsSecurityPrompt.Enable)
+                vm.submitPrompt(FakeSecretField("password"))
+                runCurrent()
+                assertNotNull(vm.state.value.setup)
+                assertEquals(false, SecuritySummary.from(f.settings.settings())?.twoFactorEnabled)
+
+                vm.confirm(FakeSecretField("123456"))
+                entered.await()
+                vm.clearSecrets()
+                release.complete(Unit)
+                runCurrent()
+
+                assertTrue("performSecurity must finish after its store apply and sync request", confirmationCompleted)
+                assertEquals(true, SecuritySummary.from(f.settings.settings())?.twoFactorEnabled)
+                assertNull(vm.state.value.setup)
+                assertTrue(
+                    vm.state.value.codes
+                        .isEmpty(),
+                )
+                assertNull(vm.state.value.prompt)
+                assertNull(vm.state.value.message)
+                assertNull(vm.ui.value.feedback)
+                assertFalse(vm.state.value.busy)
+            }
+        }
+
     @Test fun disableSnapshotClearsSecretsAndObservedEnabledStateForIntroduction() = disable(retainSetup = true)
 
     @Test fun disableSnapshotClearsSecretsAndObservedEnabledStateForIntroductionAfterConfirmation() =
