@@ -3125,7 +3125,7 @@ Implementation commits:
 
 **Tasks**
 - [x] Task 1: port the body clock model and its JVM tests.
-- [ ] Task 2: add body clock readiness and choice rules.
+- [x] Task 2: add body clock readiness and choice rules.
 - [ ] Task 3: port the preferences model.
 - [ ] Task 4: pin pending protection for settings sections.
 - Task 5 was removed; reuse 9e's time picker.
