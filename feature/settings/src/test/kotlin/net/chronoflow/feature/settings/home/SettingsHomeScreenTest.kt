@@ -53,7 +53,7 @@ class SettingsHomeScreenTest : SettingsScreenTest() {
         show { SettingsHomeScreen(state(showUnbuilt = false), {}) }
         compose.onNodeWithTag("settings.account").assertExists()
         compose.onNodeWithTag("settings.security").assertDoesNotExist()
-        compose.onNodeWithTag("settings.bodyClock").assertDoesNotExist()
+        compose.onNodeWithTag("settings.bodyClock").assertExists()
         compose.onNodeWithTag("settings.preferences").assertExists()
         compose.onNodeWithTag("settings.plan").assertDoesNotExist()
     }

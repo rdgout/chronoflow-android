@@ -56,6 +56,7 @@ enum class BodyClockGroup(
 
 class SettingsBodyClockModel(
     answers: JsonObject,
+    private val onSaved: (BodyClockGroup) -> Unit = {},
     private val save: suspend (JsonObject) -> Unit,
 ) {
     data class State(
@@ -107,6 +108,8 @@ class SettingsBodyClockModel(
                 mutableState.update {
                     it.copy(saved = if (revisions[group] == revision) it.saved + group else it.saved, failure = false)
                 }
+                // StateFlow may coalesce removing and re-adding the same saved group.
+                if (revisions[group] == revision) onSaved(group)
             }
         }
     }

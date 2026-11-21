@@ -205,6 +205,12 @@ internal class SettingsFixture(
             viewModels += it
         }
 
+    fun bodyClock(): net.chronoflow.feature.settings.bodyclock.BodyClockViewModel =
+        net.chronoflow.feature.settings.bodyclock.BodyClockViewModel(deps, io).also {
+            store.put("bodyClock-${viewModels.size}", it)
+            viewModels += it
+        }
+
     suspend fun reopen() {
         store.clear()
         viewModels.forEach {

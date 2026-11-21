@@ -20,6 +20,8 @@ import net.chronoflow.feature.settings.SettingsDependenciesKey
 import net.chronoflow.feature.settings.SettingsMainKey
 import net.chronoflow.feature.settings.account.AccountRoute
 import net.chronoflow.feature.settings.account.AccountViewModel
+import net.chronoflow.feature.settings.bodyclock.BodyClockRoute
+import net.chronoflow.feature.settings.bodyclock.BodyClockViewModel
 import net.chronoflow.feature.settings.components.SettingsLoadingRows
 import net.chronoflow.feature.settings.components.SettingsPage
 import net.chronoflow.feature.settings.home.SettingsHomeRoute
@@ -61,6 +63,7 @@ internal fun SettingsEntry(
                 Route.Account -> R.string.settings_account
                 Route.Profile -> R.string.settings_profile
                 Route.Preferences -> R.string.settings_preferences
+                Route.BodyClock -> R.string.settings_body_clock
                 else -> R.string.settings_settings
             },
             onBack.takeUnless { route == Route.Settings },
@@ -114,6 +117,10 @@ internal fun SettingsEntry(
                 onNavigate,
                 modifier,
             )
+        }
+
+        Route.BodyClock -> {
+            BodyClockRoute(viewModel(factory = BodyClockViewModel.Factory, extras = extras), onBack, modifier)
         }
 
         Route.Preferences -> {

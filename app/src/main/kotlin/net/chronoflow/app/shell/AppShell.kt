@@ -108,7 +108,7 @@ internal fun AppShell(
                     net.chronoflow.app.onboarding
                         .WalkthroughEntry(graph, replay = true) { holder.back() }
                 } else if (route == Route.Account || route == Route.Profile ||
-                    route == Route.Language || route == Route.Preferences
+                    route == Route.Language || route == Route.Preferences || route == Route.BodyClock
                 ) {
                     net.chronoflow.app.settings.SettingsEntry(
                         graph,

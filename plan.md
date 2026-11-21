@@ -3144,7 +3144,7 @@ Implementation commits:
   - The reminders row, which routes to 12c (a placeholder until then).
   - Replay walkthrough, through `Walkthrough(replay = true)`.
     - Call `holder.push(Route.Walkthrough(replay = true))` from Preferences (Phase 8 tab entry, `hidesShellChrome`, `CfNavLayout.None`).
-- [ ] **Body clock** (`SetBodyClock`, `DarkSetBodyClock`).
+- [x] **Body clock** (`SetBodyClock`, `DarkSetBodyClock`).
   - Readiness variants and the sections about, sleep, caffeine, light and health, under the no-health-data rules.
   - Validation.
   - Pending values are protected from a server overwrite (the 4d upsert).

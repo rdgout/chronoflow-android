@@ -10,6 +10,7 @@ dependencies {
     implementation(project(":core:plan"))
     implementation(project(":core:sync"))
     implementation(project(":core:data"))
+    implementation(project(":core:wizard"))
     implementation(libs.androidx.activity.compose)
     testImplementation(project(":core:testing"))
     testImplementation(project(":core:testing-junit"))

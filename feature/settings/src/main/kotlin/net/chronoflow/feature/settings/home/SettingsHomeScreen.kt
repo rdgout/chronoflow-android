@@ -100,6 +100,7 @@ enum class SettingsDestination(
         R.string.settings_body_clock,
         R.string.settings_the_answers_every_plan_is_built_from,
         "settings.bodyClock",
+        true,
     ),
     Preferences(
         Route.Preferences,
