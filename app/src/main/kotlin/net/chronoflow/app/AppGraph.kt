@@ -176,6 +176,16 @@ class AppGraph(
             dispatchers.io,
         )
     }
+    val guestWizardStore by lazy {
+        net.chronoflow.core.wizard.model.GuestWizardStore(
+            file = {
+                net.chronoflow.core.model.guest.GuestRecoveryLocation
+                    .file(storageRoot(), namespace)
+            },
+            io = dispatchers.io,
+            now = { planClock.now },
+        )
+    }
     val wiper by lazy {
         AccountWiper(
             storageRoot,
