@@ -68,6 +68,7 @@ internal fun SettingsEntry(
     if (session == null) {
         SettingsPage(
             when (route) {
+                Route.Plan -> R.string.settings_plan_credits
                 Route.Passkeys -> R.string.settings_passkeys
                 Route.Account -> R.string.settings_account
                 Route.Profile -> R.string.settings_profile
@@ -150,6 +151,14 @@ internal fun SettingsEntry(
                 graph.passkeyCapability.enabled,
                 onBack,
                 onNavigate,
+                modifier,
+            )
+        }
+
+        Route.Plan -> {
+            net.chronoflow.feature.settings.plan.PlanRoute(
+                viewModel(factory = net.chronoflow.feature.settings.plan.PlanViewModel.Factory, extras = extras),
+                onBack,
                 modifier,
             )
         }

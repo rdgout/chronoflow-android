@@ -110,7 +110,8 @@ internal fun AppShell(
                 } else if (route == Route.Account || route == Route.Profile ||
                     route == Route.Security || route == Route.Password || route == Route.TwoFactorSettings ||
                     route == Route.Language || route == Route.Preferences || route == Route.BodyClock ||
-                    route == Route.Passkeys
+                    route == Route.Passkeys ||
+                    route == Route.Plan
                 ) {
                     net.chronoflow.app.settings.SettingsEntry(
                         graph,

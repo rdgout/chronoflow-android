@@ -3268,7 +3268,7 @@ Acceptance evidence and the pending host checks are recorded in [`docs/settings-
   - The sheet → the password prompt → `DELETE` → a wipe through `SessionController` → Welcome.
   - The billing error copy.
   - The verified-email limit (Risk 4, S4).
-- [ ] **Plan & credits** (`SetPlan`, `SetPlanCredits`, `SetPlanLoading`, `SetPlanNoLink`, `SetPlanOffline`, `DarkSetPlan`).
+- [x] **Plan & credits** (`SetPlan`, `SetPlanCredits`, `SetPlanLoading`, `SetPlanNoLink`, `SetPlanOffline`, `DarkSetPlan`).
   - Balances from the server.
   - The NoLink copy, with no purchase or website hand-off (A14).
   - Pull to refresh.

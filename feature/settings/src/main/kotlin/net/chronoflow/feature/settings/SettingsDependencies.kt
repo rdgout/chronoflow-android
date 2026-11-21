@@ -43,6 +43,8 @@ interface SettingsDependencies {
 
     suspend fun requestSecurity(change: AccountSecurityChange): AccountSecurityResult
 
+    suspend fun refreshNow()
+
     suspend fun deleteAccount(password: String)
 
     val deleteSheetSeed: Boolean

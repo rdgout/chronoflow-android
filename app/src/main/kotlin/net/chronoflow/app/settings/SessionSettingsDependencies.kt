@@ -52,6 +52,13 @@ internal class SessionSettingsDependencies(
             result
         }
 
+    override suspend fun refreshNow() =
+        withContext(app.dispatchers.io) {
+            if (!isCurrent()) throw StaleSessionException()
+            session.sync.refreshNow()
+            Unit
+        }
+
     override val deleteSheetSeed get() = net.chronoflow.app.LaunchPlatform.deleteSheetSeed
 
     override suspend fun deleteAccount(password: String) {

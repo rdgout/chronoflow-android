@@ -42,6 +42,10 @@ class FakeSettingsDependencies(
 
     override suspend fun requestSecurity(change: net.chronoflow.core.model.api.AccountSecurityChange) = security(change)
 
+    var refresh: suspend () -> Unit = {}
+
+    override suspend fun refreshNow() = refresh()
+
     override var deleteSheetSeed = false
     var delete: suspend (String) -> Unit = {}
 

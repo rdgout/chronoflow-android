@@ -146,6 +146,9 @@ internal class SettingsFixture(
 
             override val securityScope get() = this@SettingsFixture.securityScope
             override val snapshot = this@SettingsFixture.snapshot
+
+            override suspend fun refreshNow() = Unit
+
             override val deleteSheetSeed = false
 
             override suspend fun deleteAccount(password: String): Unit = error("Unused delete")
