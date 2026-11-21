@@ -3124,6 +3124,18 @@ Implementation commits:
 **Delivers.** Builds Preferences: theme pills stored per device, the account time format and hidden categories saved through the outbox, the reminders row and Replay walkthrough. It builds Body clock with its readiness variants and sections (about, sleep, caffeine, light, health), validation, pending-value protection and the needs-an-answer badges. Everything follows the no-health-data rules.
 
 **Tasks**
+- [x] Task 1: port the body clock model and its JVM tests.
+- [ ] Task 2: add body clock readiness and choice rules.
+- [ ] Task 3: port the preferences model.
+- [ ] Task 4: pin pending protection for settings sections.
+- Task 5 was removed; reuse 9e's time picker.
+- [ ] Task 6: apply the theme per device.
+- [ ] Task 7: add body clock and preference components.
+- [ ] Task 10: seed body clock board states.
+- [ ] Task 11: add guards and board captures.
+- [ ] Task 12: check the theme on the emulator (Tests below).
+- [ ] Task 13: record phase 10b results and open questions.
+
 - [ ] **Preferences** (`SetPreferences`, `SetPreferencesNL`).
   - Theme pills: a device setting in DataStore, mirrored to `UiModeManager` on API 31+.
   - Time format and hidden categories: account settings, saved through the outbox.
