@@ -535,3 +535,7 @@ The timing collector initially counted the ignored JUnit case as executed and re
 ### Task 12 capture and guard boundaries (2026-11-21)
 
 `SignOutPending` over Terms is captured by `:app`'s `SettingsTermsCaptureTest`; the remaining boards use `:feature:settings`'s `SettingsCaptureTest`. This keeps the prohibition on feature-to-feature imports. The native sheet and activity renders are composited with their window dim/gravity for the two overlay boards. Feature guards host Settings content with all fixture insets; captures include the native phone shell. Robolectric does not project the fixture's top inset into a native navigation rail, so the existing shell/native-control tests retain that responsibility.
+
+### Task 13 tag note (2026-11-21)
+
+The landed Android Sign-in screen exposes `sign-in.scroll`, not `auth.signIn`. The device tests query that existing structural tag and leave the auth feature unchanged. The no-pending test also checks the existing launch frame counter and t0 remain unchanged, so a transient replay cannot pass through a final absence assertion.
