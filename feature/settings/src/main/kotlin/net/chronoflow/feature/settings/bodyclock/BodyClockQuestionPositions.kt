@@ -1,10 +1,8 @@
 package net.chronoflow.feature.settings.bodyclock
 
 import androidx.compose.runtime.Stable
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.LayoutCoordinates
-import androidx.compose.ui.layout.onPlaced
 import kotlin.math.roundToInt
 
 @Stable
@@ -12,9 +10,13 @@ internal class BodyClockQuestionPositions {
     private val sections = mutableMapOf<BodyClockGroup, LayoutCoordinates>()
     private val questions = mutableMapOf<String, LayoutCoordinates>()
 
-    fun section(group: BodyClockGroup): Modifier = Modifier.onPlaced { sections[group] = it }
+    fun sectionPlaced(group: BodyClockGroup, coordinates: LayoutCoordinates) {
+        sections[group] = coordinates
+    }
 
-    fun question(field: String): Modifier = Modifier.onPlaced { questions[field] = it }
+    fun questionPlaced(field: String, coordinates: LayoutCoordinates) {
+        questions[field] = coordinates
+    }
 
     fun offset(group: BodyClockGroup, field: String): Int? {
         val section = sections[group]?.takeIf { it.isAttached } ?: return null

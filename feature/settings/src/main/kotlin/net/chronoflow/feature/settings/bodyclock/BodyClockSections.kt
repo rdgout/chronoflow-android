@@ -11,6 +11,7 @@ import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -47,7 +48,7 @@ internal fun BodyClockSection(
     onEvent: (BodyClockEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    CfCard(modifier.then(positions.section(state.group)).testTag("settings.bodyClock.section.${state.group.raw}")) {
+    CfCard(modifier.onPlaced { positions.sectionPlaced(state.group, it) }.testTag("settings.bodyClock.section.${state.group.raw}")) {
         if (state.group == BodyClockGroup.Light) {
             Column(verticalArrangement = Arrangement.spacedBy(PlanUITokens.space1.dp)) {
                 BodyGroupHeader(state)
@@ -84,7 +85,7 @@ private fun ColumnScope.BodyClockAbout(
     positions: BodyClockQuestionPositions,
     onEvent: (BodyClockEvent) -> Unit,
 ) {
-    Column(positions.question("chronotype"), verticalArrangement = Arrangement.spacedBy(PlanUITokens.space2.dp)) {
+    Column(Modifier.onPlaced { positions.questionPlaced("chronotype", it) }, verticalArrangement = Arrangement.spacedBy(PlanUITokens.space2.dp)) {
         Text(
             stringResource(R.string.settings_when_do_you_naturally_feel_most_awake),
             style = CfTheme.type.style(CfTypeScale.settingsRow),
@@ -311,7 +312,7 @@ private fun BodyChoiceQuestion(
         stringResource(title),
         key in state.missing,
         tag,
-        positions.question(key),
+        Modifier.onPlaced { positions.questionPlaced(key, it) },
         hint = hint?.let { stringResource(it) },
         error = state.errors[key]?.let { settingsText(it) },
     ) {
@@ -358,7 +359,7 @@ private fun BodyTimeTile(
             state.answers[field].stringValue(),
             { onEvent(BodyClockEvent.OpenTime(field)) },
             "settings.bodyClock.$field",
-            modifier = positions.question(field),
+            modifier = Modifier.onPlaced { positions.questionPlaced(field, it) },
         )
         state.errors[field]?.let {
             SettingsError(settingsText(it), Modifier.testTag("settings.bodyClock.$field.error"))
