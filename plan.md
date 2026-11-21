@@ -365,7 +365,7 @@ chronoflow-android/
 | Trip page | Timeline/list toggle | Side by side: list 280 dp, 320 dp from 900 dp; no toggle | PlanWide*, PlanRemoteWide* |
 | Wizard | Phone | Column max 520 dp, centred from 669 dp | WizardCopy |
 | Settings | Phone | Column max 560 dp | Set2FAWide, Set2FAManageWide |
-| Password prompt | Bottom sheet | Centred 560 dp dialog, max height 90% | PasswordPromptWide |
+| Password prompt | Bottom sheet | Centred 540 dp dialog, max height 90% | PasswordPromptWide |
 | Bottom sheets | `ModalBottomSheet` | `sheetMaxWidth = 640.dp` | — |
 
 Every screen scrolls when height-constrained. The minimum width is 280 dp; below the timeline's minimum lane widths, a day scrolls horizontally, as on iOS. A fold is a width change: no posture UI, and the anchor and sheets survive (`14 §3.3`).
@@ -573,6 +573,8 @@ Every perf run is recorded in `docs/perf-timeline.md` or `docs/perf-startup.md`:
 
    Passkeys and App Links stay hidden or untestable end-to-end until then. Publishing assetlinks before the applicationId and signing key are final means redoing it (`14` risk 5).
 4. **Play account-deletion policy:** the delete routes require a verified email (S4), so an unverified account cannot delete in-app. Track it in the Play checklist (P-items, `14 §10`).
+
+   10d: no in-app path for unverified accounts; verified accounts delete through Settings › Account (Play P3).
 5. **Configuration override mistakes affect every screen** (font cap, locale coercion, LTR, `14` risk 4). Mitigation: the 0e spike plus Robolectric locale tests (`ar-rEG`, `de-rDE`) and font-scale tests.
 6. **Slow tiers.** iOS `make check` never met 5 min. Mitigation: measure in 0a, keep the cheapest layer, and fail review when a test needs more time.
 7. **Worker sandbox.** It may not run Gradle daemons, adb or the emulator (`13` I15). Mitigation: prove `make quick` in the sandbox in 0a; otherwise the orchestrator runs those tiers.
@@ -1112,6 +1114,20 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A516 | (10c OQ-10c-15) iOS 2FA action rows are `SettingsRow` (64, subtitle 14/20); the boards draw 60 min, title 16/22, subtitle 13/18, no disc. | `CfRow(lock = true)` as iOS; record the 4 dp difference. The "Recovery codes" eyebrow-to-card gap follows the board (8) rather than iOS `space3` (12); record it. | 10c |
 | OQ-A517 | (10c OQ-10c-16) The Download emulator test stubs the document picker with Espresso-Intents instead of driving DocumentsUI (another app's UI, flaky). | Stub; the real picker is checked by hand once on `pixel` and noted in the PR. | 10c |
 | OQ-A518 | (10c OQ-10c-17) Clipboard clear when the app is in the background at 60 s (Android 10+ hides the clip from background apps). | Clear on the next foreground if the clip is still ours; a process death leaves it (the system clears clips after an hour on 13+). | 10c |
+| OQ-A519 | (10d OQ-10d-1) Payment-failed notice: iOS and `SetPlan` say "Update your payment method **on the website** to keep unlimited trips (after {{date}})." Play restricts steering to web payments (A14, `07` §6.7, risk 1). | Use the website-free iOS catalog line "Update your payment method to keep unlimited trips." (nl "Werk je betaalmethode bij om onbeperkt reizen te behouden."), without the date. | 10d |
+| OQ-A520 | (10d OQ-10d-2) After a successful delete, iOS lands on **Sign in** (its generic `signedOut` route, `SceneDelegate.swift:418`); `plan.md` 10d and the board (`PasswordPrompt` BG `delete` → `Main.dc.html` = Welcome) say **Welcome**. | Welcome (plan + board); a one-line override after `signOut`. Tell iOS. | 10d |
+| OQ-A521 | (10d OQ-10d-3) "Enter your password to add a passkey on this phone." has no board, RN, web or Phase 20 source; iOS ships it awaiting approval. | Ship it (catalog en/nl). | 10d |
+| OQ-A522 | (10d OQ-10d-4) Registration `transports`: iOS sends the constant `["internal","hybrid"]`; Credential Manager returns its own list. | Pass Credential Manager's list through, filtered to ≤ 8 strings of 1–32 chars; omit when empty. | 10d |
+| OQ-A523 | (10d OQ-10d-5) A14 names a `BILLING_LINK_OUT=false` flag; there is no billing code path to guard. | Add no flag; `NoBillingHandOffTest` enforces "no link-out". | 10d |
+| OQ-A524 | (10d OQ-10d-6) `SetPlanCredits` (`credits`), `SetPlan` and `SetPlanOffline` draw Billing rows, a Buy button and an "Action needed" badge. | Omit all of them (iOS, A14); captures note the deviation (§5.8). | 10d |
+| OQ-A525 | (10d OQ-10d-7) Unverified accounts cannot delete (server `verified`, S4; Play P3). | No Android UI; 403 → Verify gate; tracked in Risk 4 until S4 ships. | 10d |
+| OQ-A526 | (10d OQ-10d-8) Removing a passkey: no confirm board other than the web/iOS sentence. | iOS: the password prompt carries the "Are you sure …" sentence and a destructive "Remove passkey" button; no separate alert. | 10d |
+| OQ-A527 | (10d OQ-10d-9) A `passkeys` seed route for device checks. | None (iOS has none); Robolectric covers the page; `cf.passkeyCapability=1` + manual navigation for device checks. | 10d |
+| OQ-A528 | (10d OQ-10d-10) Plan offline line also shows on a credits account and while the stored state is shown. | Yes, as iOS (`SettingsPlanView.swift:48–51`). | 10d |
+| OQ-A529 | (10d OQ-10d-11) Passkey `name` sent to the server. | The device name 5b uses: `androidDeviceName` → `DeviceIdentityStore.deviceName(Settings.Global.DEVICE_NAME, Build.MODEL)` (trimmed, `Build.MODEL` when blank, ≤ 255 code points). | 10d |
+| OQ-A530 | (10d OQ-10d-12) Settings home Security subtitle with passkeys ("Password, passkeys, two-factor" exists in the catalog). | Keep "Password, two-factor" (iOS), as OQ-A513 already decided (it superseded OQ-A462's "10c switches" clause); 10d changes no subtitle. | 10d |
+| OQ-A531 | (10d OQ-10d-13) No wide boards for Passkeys, Delete or Plan. | 560 dp column (OQ-A37); delete confirmation as a 640 dp-max sheet; the prompt uses 10c's 540 dp dialog (OQ-10c-1 = OQ-A502). | 10d |
+| OQ-A532 | (10d OQ-10d-14) After the delete's sign-out, `AppGraph.onSignedOut()` (called from the teardown and again, asynchronously, from `SessionGateRouter`) navigates to Sign in unless already there, which can replace the Welcome navigation. | `onSignedOut()` also leaves `Route.Welcome` alone (a signed-out destination); the delete test asserts Welcome with the gate router running. | 10d |
 | OQ-0a-22 | Native libraries in the bundle? | Allow only `libandroidx.graphics.path.so` (Compose graphics-path; excluding it breaks Path conversion below API 34); fail on any other `.so` | 0a, 13 |
 | OQ-0b-1 | Where does `PlanMetrics` live? `08 §3.1` lists it inside `CfDimens`, but its consumer `:core:plan` is a JVM module that cannot depend on `:core:designsystem` | `core/plan/…/generated/PlanMetrics.generated.kt` (Double, dp), as iOS keeps it in `PlanCore` | 0b, 1b, 1c |
 | OQ-0b-2 | Port all iOS TokenGen outputs now (Auth, Settings, Terms, Welcome, PlanUI, Press, LaunchPaint, TypeMetrics), or only colors, sky and type? | All of them now (the iOS files are exact goldens and Phases 2, 3a, 3c, 5a, 9 and 10 need them) | 0b |
