@@ -3209,6 +3209,7 @@ Implementation commits:
   - Copy uses `ClipData` with `EXTRA_IS_SENSITIVE` on API 33+, cleared after 60 s.
   - Download uses `CreateDocument("text/plain")` with the name "Recovery codes.txt", UTF-8 without a BOM and with LF line ends; the fallback is `ACTION_SEND`.
   - The wide variants.
+- [x] Port the settings security model and its iOS model tests.
 - [x] Apply account-security summaries and snapshots under a session mutation permit without persisting secrets.
 - [ ] **Secrets.** Nothing secret goes into saved state. Setup and recovery codes live only in the ViewModel (`14 §3.4`).
 - [ ] **Tests.**
