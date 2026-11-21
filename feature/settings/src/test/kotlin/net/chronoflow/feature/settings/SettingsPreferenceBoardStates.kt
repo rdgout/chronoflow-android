@@ -5,7 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.relocation.BringIntoViewRequester
+import net.chronoflow.feature.settings.bodyclock.BodyClockQuestionPositions
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.verticalScroll
@@ -93,8 +93,7 @@ internal fun SettingsBodySectionCapture(
 ) {
     val ui = remember(state) { SettingsPreferenceBoardStates.bodyClock(state) }
     val rating = remember { TextFieldState() }
-    val requesters =
-        remember { BodyClockGroup.entries.flatMap { it.fields }.associateWith { BringIntoViewRequester() } }
+    val positions = remember { BodyClockQuestionPositions() }
     Box(
         Modifier
             .fillMaxSize()
@@ -104,6 +103,6 @@ internal fun SettingsBodySectionCapture(
             .padding(horizontal = PlanUITokens.space4.dp)
             .padding(top = PlanUITokens.space1.dp, bottom = SettingsTokens.pageBottom.dp),
     ) {
-        BodyClockSection(ui.sections.getValue(group), rating, requesters, {})
+        BodyClockSection(ui.sections.getValue(group), rating, positions, {})
     }
 }

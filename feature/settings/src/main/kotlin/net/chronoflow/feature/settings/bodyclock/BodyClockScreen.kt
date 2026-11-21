@@ -1,7 +1,6 @@
 package net.chronoflow.feature.settings.bodyclock
 
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -12,13 +11,11 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.MotionDurationScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.withContext
 import net.chronoflow.core.designsystem.generated.CfTypeScale
 import net.chronoflow.core.designsystem.theme.CfTheme
 import net.chronoflow.core.designsystem.theme.LocalReduceMotion
@@ -27,16 +24,11 @@ import net.chronoflow.feature.settings.components.SettingsError
 import net.chronoflow.feature.settings.components.SettingsLazyPage
 import net.chronoflow.feature.settings.components.SettingsReadinessView
 import net.chronoflow.feature.settings.components.SettingsStoredState
-import kotlin.coroutines.EmptyCoroutineContext
 
 data class BodyClockScreenState(
     val ui: BodyClockUiState,
     val rating: TextFieldState,
 )
-
-private object InstantSettingsScroll : MotionDurationScale {
-    override val scaleFactor = 0f
-}
 
 @Composable
 fun BodyClockScreen(
@@ -45,10 +37,7 @@ fun BodyClockScreen(
     modifier: Modifier = Modifier,
 ) {
     val list = rememberLazyListState()
-    val requesters =
-        remember {
-            BodyClockGroup.entries.flatMap { it.fields }.associateWith { BringIntoViewRequester() }
-        }
+    val positions = remember { BodyClockQuestionPositions() }
     val current by rememberUpdatedState(state.ui)
     val event by rememberUpdatedState(onEvent)
     val reduce by rememberUpdatedState(LocalReduceMotion.current)
@@ -61,9 +50,8 @@ fun BodyClockScreen(
                 if (reduce) list.scrollToItem(index) else list.animateScrollToItem(index)
                 request.fieldKey?.let { field ->
                     withFrameNanos { }
-                    withContext(if (reduce) InstantSettingsScroll else EmptyCoroutineContext) {
-                        requesters[field]?.bringIntoView()
-                    }
+                    val offset = positions.offset(request.group, field) ?: return@collectLatest
+                    if (reduce) list.scrollToItem(index, offset) else list.animateScrollToItem(index, offset)
                 }
                 event(BodyClockEvent.ScrollHandled(request.id))
             }
@@ -99,7 +87,7 @@ fun BodyClockScreen(
             }
             BodyClockGroup.entries.forEach { group ->
                 item(group.raw, group.raw) {
-                    BodyClockSection(state.ui.sections.getValue(group), state.rating, requesters, onEvent)
+                    BodyClockSection(state.ui.sections.getValue(group), state.rating, positions, onEvent)
                 }
             }
             if (state.ui.editor.failure) {

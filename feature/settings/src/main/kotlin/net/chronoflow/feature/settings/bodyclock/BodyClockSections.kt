@@ -6,8 +6,6 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.relocation.BringIntoViewRequester
-import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material3.Text
@@ -45,11 +43,11 @@ import net.chronoflow.feature.settings.components.settingsText
 internal fun BodyClockSection(
     state: BodyClockSectionState,
     rating: TextFieldState,
-    requesters: Map<String, BringIntoViewRequester>,
+    positions: BodyClockQuestionPositions,
     onEvent: (BodyClockEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    CfCard(modifier.testTag("settings.bodyClock.section.${state.group.raw}")) {
+    CfCard(modifier.then(positions.section(state.group)).testTag("settings.bodyClock.section.${state.group.raw}")) {
         if (state.group == BodyClockGroup.Light) {
             Column(verticalArrangement = Arrangement.spacedBy(PlanUITokens.space1.dp)) {
                 BodyGroupHeader(state)
@@ -59,11 +57,11 @@ internal fun BodyClockSection(
             BodyGroupHeader(state)
         }
         when (state.group) {
-            BodyClockGroup.About -> BodyClockAbout(state, requesters, onEvent)
-            BodyClockGroup.Sleep -> BodyClockSleep(state, requesters, onEvent)
-            BodyClockGroup.Caffeine -> BodyClockCaffeine(state, requesters, onEvent)
-            BodyClockGroup.Light -> BodyClockLight(state, rating, requesters, onEvent)
-            BodyClockGroup.Health -> BodyClockHealth(state, requesters, onEvent)
+            BodyClockGroup.About -> BodyClockAbout(state, positions, onEvent)
+            BodyClockGroup.Sleep -> BodyClockSleep(state, positions, onEvent)
+            BodyClockGroup.Caffeine -> BodyClockCaffeine(state, positions, onEvent)
+            BodyClockGroup.Light -> BodyClockLight(state, rating, positions, onEvent)
+            BodyClockGroup.Health -> BodyClockHealth(state, positions, onEvent)
         }
     }
 }
@@ -83,10 +81,10 @@ private fun BodyGroupHeader(state: BodyClockSectionState) {
 @Composable
 private fun ColumnScope.BodyClockAbout(
     state: BodyClockSectionState,
-    requesters: Map<String, BringIntoViewRequester>,
+    positions: BodyClockQuestionPositions,
     onEvent: (BodyClockEvent) -> Unit,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(PlanUITokens.space2.dp)) {
+    Column(positions.question("chronotype"), verticalArrangement = Arrangement.spacedBy(PlanUITokens.space2.dp)) {
         Text(
             stringResource(R.string.settings_when_do_you_naturally_feel_most_awake),
             style = CfTheme.type.style(CfTypeScale.settingsRow),
@@ -128,7 +126,7 @@ private fun ColumnScope.BodyClockAbout(
             "18_64" to R.string.settings_1864,
             "65_plus" to R.string.settings_65_or_older,
         ),
-        requesters,
+        positions,
         onEvent,
     )
 }
@@ -136,7 +134,7 @@ private fun ColumnScope.BodyClockAbout(
 @Composable
 private fun ColumnScope.BodyClockSleep(
     state: BodyClockSectionState,
-    requesters: Map<String, BringIntoViewRequester>,
+    positions: BodyClockQuestionPositions,
     onEvent: (BodyClockEvent) -> Unit,
 ) {
     BodyCaption(R.string.settings_on_a_normal_work_or_school_day)
@@ -146,6 +144,7 @@ private fun ColumnScope.BodyClockSleep(
         R.string.settings_usual_bedtime,
         "habitualWake",
         R.string.settings_usual_wake_time,
+        positions,
         onEvent,
     )
     BodyChoiceQuestion(
@@ -153,7 +152,7 @@ private fun ColumnScope.BodyClockSleep(
         "freeDayStatus",
         R.string.settings_do_your_free_days_follow_the_sam_b9315b,
         listOf("same_as_workdays" to R.string.settings_yes, "declared" to R.string.settings_no),
-        requesters,
+        positions,
         onEvent,
     )
     if (state.answers["freeDayStatus"].stringValue() == "declared") {
@@ -165,6 +164,7 @@ private fun ColumnScope.BodyClockSleep(
                 R.string.settings_bedtime,
                 "freeDayWake",
                 R.string.settings_wake_time,
+                positions,
                 onEvent,
             )
         }
@@ -174,7 +174,7 @@ private fun ColumnScope.BodyClockSleep(
 @Composable
 private fun ColumnScope.BodyClockCaffeine(
     state: BodyClockSectionState,
-    requesters: Map<String, BringIntoViewRequester>,
+    positions: BodyClockQuestionPositions,
     onEvent: (BodyClockEvent) -> Unit,
 ) {
     BodyChoiceQuestion(
@@ -182,7 +182,7 @@ private fun ColumnScope.BodyClockCaffeine(
         "caffeineHabit",
         R.string.settings_do_you_usually_drink_caffeine,
         listOf("cups" to R.string.settings_yes, "non_user" to R.string.settings_no),
-        requesters,
+        positions,
         onEvent,
     )
     if (state.answers["caffeineHabit"].stringValue() == "cups") {
@@ -201,7 +201,7 @@ private fun ColumnScope.BodyClockCaffeine(
         "caffeineSensitive",
         R.string.settings_does_caffeine_affect_you_strongly,
         yesNo(),
-        requesters,
+        positions,
         onEvent,
         boolean = true,
         hint = R.string.settings_for_example_one_cup_keeps_you_aw_4b60de,
@@ -219,7 +219,7 @@ private fun ColumnScope.BodyClockCaffeine(
 private fun ColumnScope.BodyClockLight(
     state: BodyClockSectionState,
     rating: TextFieldState,
-    requesters: Map<String, BringIntoViewRequester>,
+    positions: BodyClockQuestionPositions,
     onEvent: (BodyClockEvent) -> Unit,
 ) {
     BodyChoiceQuestion(
@@ -231,7 +231,7 @@ private fun ColumnScope.BodyClockLight(
             "box" to R.string.settings_light_box_or_visor,
             "glasses" to R.string.settings_light_glasses,
         ),
-        requesters,
+        positions,
         onEvent,
     )
     BodyCaption(
@@ -247,7 +247,7 @@ private fun ColumnScope.BodyClockLight(
             "unrated" to R.string.settings_yes_rating_unknown,
             "rated" to R.string.settings_yes_i_know_the_rating,
         ),
-        requesters,
+        positions,
         onEvent,
     )
     if (state.answers["blueBlockers"].stringValue() == "rated") {
@@ -267,7 +267,7 @@ private fun ColumnScope.BodyClockLight(
 @Composable
 private fun ColumnScope.BodyClockHealth(
     state: BodyClockSectionState,
-    requesters: Map<String, BringIntoViewRequester>,
+    positions: BodyClockQuestionPositions,
     onEvent: (BodyClockEvent) -> Unit,
 ) {
     BodyChoiceQuestion(
@@ -275,7 +275,7 @@ private fun ColumnScope.BodyClockHealth(
         "shiftWork",
         R.string.settings_in_the_past_14_days_have_you_wor_f04fc5,
         yesNo(),
-        requesters,
+        positions,
         onEvent,
         boolean = true,
     )
@@ -301,7 +301,7 @@ private fun BodyChoiceQuestion(
     key: String,
     title: Int,
     options: List<Pair<String, Int>>,
-    requesters: Map<String, BringIntoViewRequester>,
+    positions: BodyClockQuestionPositions,
     onEvent: (BodyClockEvent) -> Unit,
     boolean: Boolean = false,
     hint: Int? = null,
@@ -311,7 +311,7 @@ private fun BodyChoiceQuestion(
         stringResource(title),
         key in state.missing,
         tag,
-        Modifier.bringIntoViewRequester(requesters.getValue(key)),
+        positions.question(key),
         hint = hint?.let { stringResource(it) },
         error = state.errors[key]?.let { settingsText(it) },
     ) {
@@ -335,11 +335,12 @@ private fun BodyTimePair(
     firstLabel: Int,
     second: String,
     secondLabel: Int,
+    positions: BodyClockQuestionPositions,
     onEvent: (BodyClockEvent) -> Unit,
 ) {
     SettingsTimeTilePair(
-        first = { BodyTimeTile(state, first, firstLabel, onEvent) },
-        second = { BodyTimeTile(state, second, secondLabel, onEvent) },
+        first = { BodyTimeTile(state, first, firstLabel, positions, onEvent) },
+        second = { BodyTimeTile(state, second, secondLabel, positions, onEvent) },
     )
 }
 
@@ -348,6 +349,7 @@ private fun BodyTimeTile(
     state: BodyClockSectionState,
     field: String,
     label: Int,
+    positions: BodyClockQuestionPositions,
     onEvent: (BodyClockEvent) -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(PlanUITokens.space1.dp)) {
@@ -356,6 +358,7 @@ private fun BodyTimeTile(
             state.answers[field].stringValue(),
             { onEvent(BodyClockEvent.OpenTime(field)) },
             "settings.bodyClock.$field",
+            modifier = positions.question(field),
         )
         state.errors[field]?.let {
             SettingsError(settingsText(it), Modifier.testTag("settings.bodyClock.$field.error"))
