@@ -3134,7 +3134,7 @@ Implementation commits:
 - [x] Task 6: apply the theme per device.
 - [x] Task 7: add body clock and preference components.
 - [x] Task 10: seed body clock board states.
-- [ ] Task 11: add guards and board captures.
+- [x] Task 11: add guards and board captures.
 - [ ] Task 12: check the theme on the emulator (Tests below).
 - [ ] Task 13: record phase 10b results and open questions.
 

@@ -27,6 +27,9 @@ import net.chronoflow.core.testing.FakePlanClock
 import net.chronoflow.core.ui.R
 import net.chronoflow.feature.settings.account.AccountScreen
 import net.chronoflow.feature.settings.account.AccountScreenState
+import net.chronoflow.feature.settings.bodyclock.BodyClockGroup
+import net.chronoflow.feature.settings.bodyclock.BodyClockScreen
+import net.chronoflow.feature.settings.bodyclock.BodyClockScreenState
 import net.chronoflow.feature.settings.components.SettingsDestinationRow
 import net.chronoflow.feature.settings.components.SettingsLoadingRows
 import net.chronoflow.feature.settings.components.SettingsOfflineCard
@@ -41,6 +44,7 @@ import net.chronoflow.feature.settings.home.SettingsHomeUi
 import net.chronoflow.feature.settings.home.SettingsSyncLine
 import net.chronoflow.feature.settings.language.LanguageScreen
 import net.chronoflow.feature.settings.language.LanguageUiState
+import net.chronoflow.feature.settings.preferences.PreferencesScreen
 import net.chronoflow.feature.settings.profile.ProfileError
 import net.chronoflow.feature.settings.profile.ProfileScreen
 import net.chronoflow.feature.settings.profile.ProfileScreenState
@@ -68,6 +72,11 @@ internal fun SettingsBoardFixture(
     nativeSheet: Boolean = false,
     shell: Boolean = false,
 ) {
+    val bodySection = state.substringAfter('-', "").takeIf { state.startsWith("body") }
+    BodyClockGroup.entries.firstOrNull { it.raw == bodySection }?.let {
+        SettingsBodySectionCapture(state, it)
+        return
+    }
     val clock = remember { FakePlanClock(SettingsBoardFixture.now) }
     val safe = LocalSafeInsets.current
     if (state == "Sheet") {
@@ -134,6 +143,16 @@ internal fun SettingsBoardFixture(
         ) {
             CompositionLocalProvider(LocalSafeInsets provides contentInsets) {
                 when {
+                    state == "Preferences" -> {
+                        PreferencesScreen(SettingsPreferenceBoardStates.preferences(), {})
+                    }
+
+                    state.startsWith("body") -> {
+                        val ui = remember(state) { SettingsPreferenceBoardStates.bodyClock(state) }
+                        val rating = remember { TextFieldState() }
+                        BodyClockScreen(BodyClockScreenState(ui, rating), {})
+                    }
+
                     state.startsWith("Home") || state == "PendingSheet" -> {
                         val home =
                             SettingsBoardFixture.home.let {
