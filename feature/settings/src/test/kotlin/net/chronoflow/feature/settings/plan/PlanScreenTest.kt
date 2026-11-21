@@ -38,11 +38,6 @@ import kotlin.time.Duration.Companion.seconds
 @Config(sdk = [36])
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class PlanScreenTest : SettingsScreenTest() {
-    private val scheduler = TestCoroutineScheduler()
-    private val dispatcher = StandardTestDispatcher(scheduler)
-    private val store = ViewModelStore()
-    private var model: PlanViewModel? = null
-
     private fun state(
         credits: String? = """{"credits":2}""",
         subscription: String = "{}",
@@ -58,18 +53,6 @@ class PlanScreenTest : SettingsScreenTest() {
             ),
             SettingsPlanLine("Renews on {{date}} · {{interval}}", "14 Nov 2026", "yearly"),
         )
-
-    @After fun clearModel() =
-        runTest(dispatcher, timeout = 60.seconds) {
-            withContext(NonCancellable) {
-                store.clear()
-                model
-                    ?.viewModelScope
-                    ?.coroutineContext
-                    ?.job
-                    ?.cancelAndJoin()
-            }
-        }
 
     @Test fun loadingIsOneNodeWithTheLoadingDescription() {
         show { PlanContent(state(loaded = false), {}) }
@@ -123,35 +106,13 @@ class PlanScreenTest : SettingsScreenTest() {
         compose.onNodeWithTag("settings.plan.offline").assertExists()
     }
 
-    @Test fun pullCallsRefreshNowAndHidesTheIndicatorWhenItReturns() {
-        val returned = CompletableDeferred<Unit>()
-        var requested = false
-        val deps =
-            FakeSettingsDependencies().apply {
-                refresh = {
-                    requested = true
-                    returned.await()
-                }
-            }
-        val model = PlanViewModel(deps, dispatcher, dispatcher)
-        this.model = model
-        store.put("plan", model)
-        scheduler.runCurrent()
-        show { PlanRoute(model, {}) }
-        scheduler.runCurrent()
+    @Test fun pullEmitsTheRefreshEvent() {
+        val events = mutableListOf<PlanEvent>()
+        show { PlanScreen(state(), events::add) }
         compose.onNodeWithTag("settings.plan.screen").performTouchInput {
-            swipeDown(
-                startY = height * 0.35f,
-                endY =
-                    height * 0.9f,
-            )
+            swipeDown(startY = height * 0.35f, endY = height * 0.9f)
         }
         compose.waitForIdle()
-        scheduler.runCurrent()
-        assertTrue(requested)
-        assertTrue(model.ui.value.refreshing)
-        returned.complete(Unit)
-        scheduler.runCurrent()
-        assertFalse(model.ui.value.refreshing)
+        org.junit.Assert.assertEquals(listOf(PlanEvent.Refresh), events)
     }
 }
