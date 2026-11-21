@@ -88,6 +88,8 @@ internal object LaunchPlatform {
             null
         }
 
+    val guestRecoveryAllowed: Boolean get() = wizardBoardCapture == null
+
     val guestSignUpRequested: () -> Unit = net.chronoflow.debug.GuestWizardDebugCounters::requested
 
     fun welcomeDestinations(navigator: RootNavigator): WelcomeDestinations = RoutedWelcomeDestinations(navigator)

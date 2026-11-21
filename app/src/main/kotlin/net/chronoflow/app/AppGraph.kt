@@ -221,6 +221,16 @@ class AppGraph(
             .GuestSessionHooks(guestWizardStore, NoopSessionHooks)
     }
     val rootNavigator by lazy { RootNavigator() }
+    internal val guestRecoveryScheduler by lazy {
+        net.chronoflow.app.guest.GuestRecoveryScheduler(
+            dispatchers,
+            guestWizardStore,
+            rootNavigator,
+            { controller.presence },
+            { controller.updates.value?.epoch },
+            { LaunchPlatform.guestRecoveryAllowed },
+        )
+    }
     val welcomeDestinations: WelcomeDestinations by lazy { LaunchPlatform.welcomeDestinations(rootNavigator) }
     val passkeyAnchor: PasskeyAnchor by lazy { PasskeyAnchor() }
     val credentialClient: CredentialClient by lazy { CredentialManagerClient(app, passkeyAnchor) }

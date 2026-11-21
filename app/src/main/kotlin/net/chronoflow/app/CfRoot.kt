@@ -100,6 +100,13 @@ internal fun CfRoot(
         LaunchedEffect(graph, overlayShowing, displayedRoute) {
             if (!overlayShowing && displayedRoute != null) graph.finishLaunch()
         }
+        if (displayedRoute == Route.Welcome && graph.launch.handOffComplete) {
+            val update by graph.controller.updates.collectAsState()
+            val intro = graph.launch.launchIntro
+            LaunchedEffect(graph, root.revision, update?.epoch, intro) {
+                graph.guestRecoveryScheduler.recover(true, intro)
+            }
+        }
         val currentRoute = rememberUpdatedState(displayedRoute)
         // Replacing the predicate disposes its reporter and can report before the overlay exits.
         ReportDrawnWhen(remember(graph) { { !graph.launch.overlayActive && currentRoute.value != null } })
