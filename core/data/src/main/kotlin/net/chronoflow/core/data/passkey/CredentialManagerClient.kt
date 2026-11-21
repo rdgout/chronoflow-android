@@ -2,6 +2,12 @@ package net.chronoflow.core.data.passkey
 
 import android.content.Context
 import androidx.credentials.CredentialManager
+import androidx.credentials.CreatePublicKeyCredentialRequest
+import androidx.credentials.CreatePublicKeyCredentialResponse
+import androidx.credentials.exceptions.CreateCredentialException
+import androidx.credentials.exceptions.CreateCredentialCancellationException
+import androidx.credentials.exceptions.domerrors.InvalidStateError
+import androidx.credentials.exceptions.publickeycredential.CreatePublicKeyCredentialDomException
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.GetPublicKeyCredentialOption
 import androidx.credentials.PublicKeyCredential
@@ -18,6 +24,20 @@ class CredentialManagerClient(
 ) : CredentialClient {
     private val credentialManager by lazy { CredentialManager.create(appContext.applicationContext) }
     private val pending = AtomicBoolean(false)
+
+    override suspend fun createPasskey(requestJson: String): String {
+        val activity = anchor.current() ?: throw PasskeyFailure.Unavailable
+        if (!pending.compareAndSet(false, true)) throw PasskeyFailure.Busy
+        try {
+            val response = credentialManager.createCredential(activity, CreatePublicKeyCredentialRequest(requestJson))
+            val credential = response as? CreatePublicKeyCredentialResponse ?: throw PasskeyFailure.Unavailable
+            return credential.registrationResponseJson
+        } catch (failure: CreateCredentialException) {
+            throw failure.toPasskeyFailure()
+        } finally {
+            pending.set(false)
+        }
+    }
 
     override suspend fun getPasskey(requestJson: String): String {
         val activity = anchor.current() ?: throw PasskeyFailure.Unavailable
@@ -38,6 +58,15 @@ class CredentialManagerClient(
         }
     }
 }
+
+internal fun CreateCredentialException.toPasskeyFailure(): PasskeyFailure =
+    when {
+        this is CreateCredentialCancellationException -> PasskeyFailure.Canceled
+        this is CreatePublicKeyCredentialDomException && domError is InvalidStateError -> {
+            PasskeyFailure.AlreadyRegistered
+        }
+        else -> PasskeyFailure.Unavailable
+    }
 
 internal fun GetCredentialException.toPasskeyFailure(): PasskeyFailure =
     when (this) {
