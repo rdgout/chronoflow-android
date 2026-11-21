@@ -91,6 +91,23 @@ internal class AppSessionFixture private constructor(
     }
 
     companion object {
+        fun graph(
+            app: android.app.Application,
+            root: File,
+            dispatcher: CoroutineDispatcher,
+        ): AppGraph =
+            AppGraph(
+                app,
+                overrides =
+                    GraphOverrides(
+                        storageDir = root,
+                        mockDelay = kotlin.time.Duration.ZERO,
+                        mockSeed = MockSeedFlags(unverified = false, walkthroughSeen = true, termsPending = false),
+                        sessionCipher = SoftwareSessionCipher(),
+                        dispatchers = AppDispatchers(dispatcher, dispatcher, dispatcher),
+                    ),
+            )
+
         suspend operator fun invoke(
             io: CoroutineDispatcher,
             scope: CoroutineScope,

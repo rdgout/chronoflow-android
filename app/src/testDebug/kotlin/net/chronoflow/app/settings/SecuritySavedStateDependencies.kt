@@ -39,6 +39,10 @@ internal class SecuritySavedStateDependencies(
             "p5ma-6evk",
         )
     override val snapshot = SessionSnapshot(StoredSession("fixture", "0199a3c0-0000-7000-8000-000000000001"), 1)
+    override val deleteSheetSeed = false
+
+    override suspend fun deleteAccount(password: String): Unit = error("Unused delete")
+
     override val passwordPromptSeed: String? = null
     override val clipboard: SensitiveClipboard get() = error("Unused clipboard")
 

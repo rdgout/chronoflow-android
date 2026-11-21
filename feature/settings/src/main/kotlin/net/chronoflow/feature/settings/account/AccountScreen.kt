@@ -1,13 +1,25 @@
 package net.chronoflow.feature.settings.account
 
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.chronoflow.core.designsystem.component.CfCard
 import net.chronoflow.core.designsystem.component.CfDivider
+import net.chronoflow.core.designsystem.effect.cfClickable
+import net.chronoflow.core.designsystem.generated.CfTypeScale
+import net.chronoflow.core.designsystem.generated.PlanUITokens
+import net.chronoflow.core.designsystem.generated.SettingsTokens
 import net.chronoflow.core.designsystem.icon.LucideGlyphs
+import net.chronoflow.core.designsystem.icon.imageVector
+import net.chronoflow.core.designsystem.theme.CfTheme
 import net.chronoflow.core.model.config.LanguageChoice
 import net.chronoflow.core.navigation.Route
 import net.chronoflow.core.ui.R
@@ -22,7 +34,7 @@ data class AccountScreenState(
     val phone: String = "en",
 )
 
-enum class AccountEvent { Back, Profile, Language, Retry }
+enum class AccountEvent { Back, Profile, Language, Retry, Delete }
 
 @Composable
 fun AccountScreen(
@@ -55,6 +67,40 @@ fun AccountScreen(
                     subtitle = languageSubtitle(state.language, state.phone),
                 )
             }
+            AccountDeleteRow { onEvent(AccountEvent.Delete) }
+        }
+    }
+}
+
+@Composable
+private fun AccountDeleteRow(onDelete: () -> Unit) {
+    CfCard(rows = true) {
+        androidx.compose.foundation.layout.Row(
+            Modifier
+                .fillMaxWidth()
+                .heightIn(min = SettingsTokens.destructiveRowHeight.dp)
+                .cfClickable(onDelete)
+                .testTag("settings.account.delete")
+                .padding(
+                    horizontal = PlanUITokens.space4.dp,
+                    vertical = net.chronoflow.feature.settings.delete.DeleteAccountMetrics.ROW_VERTICAL.dp,
+                ),
+            horizontalArrangement =
+                androidx.compose.foundation.layout.Arrangement
+                    .spacedBy(PlanUITokens.space3.dp),
+            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+        ) {
+            androidx.compose.material3.Icon(
+                LucideGlyphs.Trash.imageVector(),
+                null,
+                Modifier.size(PlanUITokens.space5.dp),
+                tint = CfTheme.colors.destructive,
+            )
+            androidx.compose.material3.Text(
+                stringResource(R.string.settings_delete_account),
+                style = CfTheme.type.style(CfTypeScale.settingsRow),
+                color = CfTheme.colors.destructive,
+            )
         }
     }
 }
@@ -97,6 +143,7 @@ fun AccountRoute(
             AccountEvent.Profile -> onNavigate(Route.Profile)
             AccountEvent.Language -> onNavigate(Route.Language)
             AccountEvent.Retry -> viewModel.retry()
+            AccountEvent.Delete -> viewModel.showDelete()
         }
     }, modifier)
 }

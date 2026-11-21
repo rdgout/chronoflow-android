@@ -42,6 +42,11 @@ class FakeSettingsDependencies(
 
     override suspend fun requestSecurity(change: net.chronoflow.core.model.api.AccountSecurityChange) = security(change)
 
+    override var deleteSheetSeed = false
+    var delete: suspend (String) -> Unit = {}
+
+    override suspend fun deleteAccount(password: String) = delete(password)
+
     override var passwordPromptSeed: String? = null
     val clipboardPort = RecordingClipboardPort()
     override val clipboard by lazy {

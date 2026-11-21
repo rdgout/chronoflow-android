@@ -1,9 +1,11 @@
 package net.chronoflow.app.settings
 
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.async
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonObject
 import net.chronoflow.app.AppGraph
@@ -49,6 +51,32 @@ internal class SessionSettingsDependencies(
             session.sync.requestSync()
             result
         }
+
+    override val deleteSheetSeed get() = net.chronoflow.app.LaunchPlatform.deleteSheetSeed
+
+    override suspend fun deleteAccount(password: String) {
+        if (!isCurrent()) throw StaleSessionException()
+        try {
+            app.appScope
+                .async {
+                    withContext(app.dispatchers.io) {
+                        if (!isCurrent()) throw StaleSessionException()
+                        try {
+                            session.sync.deleteAccount(password, snapshot.session, snapshot.epoch)
+                        } catch (_: CancellationException) {
+                            currentCoroutineContext().ensureActive()
+                            throw StaleSessionException()
+                        }
+                    }
+                    // A server-side deletion must finish its local wipe even when this entry is disposed.
+                    app.controller.signOut(snapshot, discardPending = true)
+                    app.rootNavigator.navigate(net.chronoflow.core.navigation.Route.Welcome)
+                }.await()
+        } catch (failure: CancellationException) {
+            if (kotlinx.coroutines.currentCoroutineContext().isActive) throw StaleSessionException()
+            throw failure
+        }
+    }
 
     override fun account() = session.accounts.values()
 

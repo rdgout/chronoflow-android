@@ -430,8 +430,10 @@ class AppGraph(
     private fun onSignedOut() {
         val route = rootNavigator.state.value.route
         // Both session observers can arrive after the pending link has opened its reset route.
-        if (route is Route.Reset && auth.resetModel?.isActive == true) return
-        if (route != Route.SignIn) rootNavigator.navigate(Route.SignIn)
+        val resetting = route is Route.Reset && auth.resetModel?.isActive == true
+        net.chronoflow.app.settings
+            .signedOutDestination(route, resetting)
+            ?.let(rootNavigator::navigate)
     }
 
     suspend fun onVerify(epoch: Long) {

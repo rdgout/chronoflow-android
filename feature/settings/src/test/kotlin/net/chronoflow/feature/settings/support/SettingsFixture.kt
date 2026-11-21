@@ -146,6 +146,10 @@ internal class SettingsFixture(
 
             override val securityScope get() = this@SettingsFixture.securityScope
             override val snapshot = this@SettingsFixture.snapshot
+            override val deleteSheetSeed = false
+
+            override suspend fun deleteAccount(password: String): Unit = error("Unused delete")
+
             override val passwordPromptSeed: String? = null
             override val clipboard: net.chronoflow.feature.settings.security.SensitiveClipboard
                 get() = error("Clipboard is not used by the store fixture")

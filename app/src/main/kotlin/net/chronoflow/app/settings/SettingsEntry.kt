@@ -123,14 +123,25 @@ internal fun SettingsEntry(
                     extras = languageExtras,
                 )
             val language by languageModel.ui.collectAsStateWithLifecycle()
+            val accountModel: AccountViewModel = viewModel(factory = AccountViewModel.Factory, extras = extras)
             AccountRoute(
-                viewModel(factory = AccountViewModel.Factory, extras = extras),
+                accountModel,
                 language.choice ?: LanguageChoice.System,
                 language.phone,
                 onBack,
                 onNavigate,
                 modifier,
             )
+            val showingDelete by accountModel.showingDelete.collectAsStateWithLifecycle()
+            if (showingDelete) {
+                net.chronoflow.feature.settings.delete.DeleteAccountRoute(
+                    viewModel(
+                        factory = net.chronoflow.feature.settings.delete.DeleteAccountViewModel.Factory,
+                        extras = extras,
+                    ),
+                    accountModel::dismissDelete,
+                )
+            }
         }
 
         Route.Security -> {

@@ -92,6 +92,8 @@ Checked against the code at `027b38cf` (phases 0a–10c), iOS at `f391a1fa`, web
 - `android_passkeys_intro` exists in `tools/l10n/android-only.json`, generated `strings_android.xml` (en/nl), and `CopyIndex`; Android-only keys are not in `names.lock.json`. Verify it through those outputs instead. No copy is missing or needs adding.
 - The registration DTOs in `PasskeyManagementContracts.kt` still use generated data-class descriptions for creation options, user entity, descriptors, attestation and its response; the challenge and registration-input descriptions interpolate those objects. Task 2 adds redacted descriptions for these registration payloads, following the existing assertion DTOs, and a JVM guard. Serialization and API behaviour stay unchanged; challenge/credential data must never enter `toString()`.
 
+**Task 7 wiring notes (2026-11-21).** `SettingsEntry` hosts `DeleteAccountRoute` beside `AccountRoute`, observing the Account ViewModel's sheet flag; forwarding a second ViewModel through `AccountRoute` violates the existing Compose lint rule. The integration test obtains its real graph from `AppSessionFixture.graph`, reusing that already-approved graph boundary without expanding Konsist's allowlist. Its fixture enables SessionSync immediately before the request (the sign-out-only reference test keeps it disabled). `SettingsDeleteRoutingTest` separately pins Welcome preservation in the pure routing policy used by `AppGraph.onSignedOut()`.
+
 Precedence when sources disagree: a user decision, then **iOS behaviour**, then **board looks**, then this brief's [R] rules. Never invent a screen, row or copy line that has no board and no iOS string. Every deviation is listed in §9 with its default.
 
 ---

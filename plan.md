@@ -3264,7 +3264,7 @@ Acceptance evidence and the pending host checks are recorded in [`docs/settings-
   - Add through `CredentialManager.createCredential(CreatePublicKeyCredentialRequest(json))` (rpId `app.chronoflow.net`).
   - Remove after the password prompt.
   - Messages, errors, and the Android copy (OQ-A12).
-- [ ] **Delete account** (`SetDelete`, `PasswordPromptDelete`).
+- [x] **Delete account** (`SetDelete`, `PasswordPromptDelete`).
   - The sheet → the password prompt → `DELETE` → a wipe through `SessionController` → Welcome.
   - The billing error copy.
   - The verified-email limit (Risk 4, S4).

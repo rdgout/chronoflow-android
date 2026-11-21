@@ -43,6 +43,10 @@ interface SettingsDependencies {
 
     suspend fun requestSecurity(change: AccountSecurityChange): AccountSecurityResult
 
+    suspend fun deleteAccount(password: String)
+
+    val deleteSheetSeed: Boolean
+
     val passwordPromptSeed: String?
     val clipboard: net.chronoflow.feature.settings.security.SensitiveClipboard
 
