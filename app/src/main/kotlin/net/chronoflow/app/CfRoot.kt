@@ -45,6 +45,7 @@ import net.chronoflow.core.designsystem.effect.skyBackground
 import net.chronoflow.core.designsystem.layout.LocalSafeInsets
 import net.chronoflow.core.designsystem.theme.CfTheme
 import net.chronoflow.core.model.config.ThemeChoice
+import net.chronoflow.core.model.config.resolve
 import net.chronoflow.core.navigation.RootState
 import net.chronoflow.core.navigation.Route
 import net.chronoflow.core.ui.window.LocalWindowSize
@@ -82,25 +83,26 @@ internal fun CfRoot(
     val displayedRoute = root.route ?: graph.launch.route?.toRoute()
     val activity = LocalActivity.current
     val onRootBack: () -> Unit = { activity?.finish() }
-    LaunchedEffect(graph, graph.launch.overlayActive, displayedRoute) {
-        if (!graph.launch.overlayActive && displayedRoute != null) graph.finishLaunch()
-    }
     BackHandler(enabled = seam != null) { destinations.closeSeam() }
     val theme = rememberDeviceTheme(initialTheme) { graph.deviceAppearance.theme }
-    val overlayShowing = graph.launch.overlayActive
-    // Skipped overlays wait for first commit before readiness can select a route.
-    val launchSky =
-        content == null &&
-            (
-                displayedRoute == null || displayedRoute == Route.Welcome ||
-                    (
-                        displayedRoute == Route.SignIn || displayedRoute == Route.TwoFactor ||
-                            displayedRoute == Route.Forgot || displayedRoute is Route.Reset ||
-                            displayedRoute == Route.SignUp || displayedRoute == Route.Verify
-                    )
-            )
-    val night = rememberDeviceNight(theme, isSystemInDarkTheme(), overlayShowing, onSky || launchSky, onSystemBars)
+    val night = theme.resolve(isSystemInDarkTheme())
     RootThemeContent(night, graph.rootThemeInputs(reduceMotion, firstCommit)) {
+        val overlayShowing = graph.launch.overlayActive
+        // Skipped overlays wait for first commit before readiness can select a route.
+        val launchSky =
+            content == null &&
+                (
+                    displayedRoute == null || displayedRoute == Route.Welcome ||
+                        (
+                            displayedRoute == Route.SignIn || displayedRoute == Route.TwoFactor ||
+                                displayedRoute == Route.Forgot || displayedRoute is Route.Reset ||
+                                displayedRoute == Route.SignUp || displayedRoute == Route.Verify
+                        )
+                )
+        rememberDeviceNight(theme, isSystemInDarkTheme(), overlayShowing, onSky || launchSky, onSystemBars)
+        LaunchedEffect(graph, overlayShowing, displayedRoute) {
+            if (!overlayShowing && displayedRoute != null) graph.finishLaunch()
+        }
         val currentRoute = rememberUpdatedState(displayedRoute)
         // Replacing the predicate disposes its reporter and can report before the overlay exits.
         ReportDrawnWhen(remember(graph) { { !graph.launch.overlayActive && currentRoute.value != null } })
