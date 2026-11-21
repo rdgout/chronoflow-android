@@ -40,7 +40,7 @@ data class SettingsHomeState(
                 account
                     ?.name
                     .orEmpty()
-                    .split(Regex("\\s+"))
+                    .split(Regex("[\\s\\p{Z}\\u0085]+"))
                     .filter(String::isNotEmpty)
             return (
                 words.firstOrNull()?.firstGrapheme().orEmpty() +
@@ -61,7 +61,7 @@ data class SettingsHomeState(
                     0
                 },
             credits =
-                if ((plan?.get("unlimited") as? JsonPrimitive)?.booleanOrNull == true) {
+                if ((plan?.get("unlimited") as? JsonPrimitive)?.takeUnless { it.isString }?.booleanOrNull == true) {
                     null
                 } else {
                     number?.takeIf { it.isFinite() && it >= 0 && it < Int.MAX_VALUE }?.toInt()

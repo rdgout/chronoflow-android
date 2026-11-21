@@ -25,6 +25,18 @@ class SettingsHomeStateEdgeTests {
         assertNull(state.credits)
     }
 
+    @Test fun stringUnlimitedFlagDoesNotHideNumericCredits() {
+        val state =
+            SettingsHomeState().apply(
+                settings = listOf(SettingsRecord("planCredits", """{"credits":2,"unlimited":"true"}""")),
+            )
+        assertEquals(2, state.credits)
+    }
+
+    @Test fun unicodeWhitespaceSeparatesInitials() {
+        assertEquals("RG", SettingsHomeState(account = account("Rick\u00a0Gout")).initials)
+    }
+
     @Test fun negativeCreditsAreAbsent() {
         assertNull(
             SettingsHomeState().apply(settings = listOf(SettingsRecord("planCredits", """{"credits":-1}"""))).credits,
