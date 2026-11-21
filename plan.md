@@ -3259,7 +3259,7 @@ Acceptance evidence and the pending host checks are recorded in [`docs/settings-
 **Delivers.** Builds passkey management behind PasskeyCapability: the list, the empty state, adding through Credential Manager, removing with the password, and its messages and errors. It builds account deletion: the sheet, the password prompt, the DELETE call, the wipe and the billing error copy. It builds Plan & credits in all its states, with the NoLink copy and no purchase or website hand-off.
 
 **Tasks**
-- [ ] **Passkeys** (`SetPasskeys`, `SetPasskeysEmpty`), behind `PasskeyCapability`.
+- [x] **Passkeys** (`SetPasskeys`, `SetPasskeysEmpty`), behind `PasskeyCapability`.
   - The list and its empty state.
   - Add through `CredentialManager.createCredential(CreatePublicKeyCredentialRequest(json))` (rpId `app.chronoflow.net`).
   - Remove after the password prompt.

@@ -23,6 +23,11 @@ internal class SessionSettingsDependencies(
     private val app: AppGraph,
     private val session: SessionGraph,
 ) : SettingsDependencies {
+    override val passkeyCapability get() = app.passkeyCapability
+    override val passkeyRegistration get() = app.passkeyRegistration
+
+    override suspend fun deviceName() = app.settingsDeviceName()
+
     override val securityScope get() = session.scope
     override val snapshot = session.snapshot
     override val passwordPromptSeed: String? get() = net.chronoflow.app.LaunchPlatform.passwordPromptSeed

@@ -26,6 +26,11 @@ import java.time.ZoneOffset
 class FakeSettingsDependencies(
     private val clipboardScope: kotlinx.coroutines.CoroutineScope? = null,
 ) : SettingsDependencies {
+    override var passkeyCapability = net.chronoflow.core.model.passkey.PasskeyCapability.Shipped
+    override var passkeyRegistration: net.chronoflow.core.model.passkey.PasskeyRegistrationProviding? = null
+
+    override suspend fun deviceName() = "Android"
+
     override val securityScope by lazy {
         val owner = checkNotNull(clipboardScope)
         CoroutineScope(owner.coroutineContext + SupervisorJob(owner.coroutineContext.job))

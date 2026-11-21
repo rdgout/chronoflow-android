@@ -109,7 +109,8 @@ internal fun AppShell(
                         .WalkthroughEntry(graph, replay = true) { holder.back() }
                 } else if (route == Route.Account || route == Route.Profile ||
                     route == Route.Security || route == Route.Password || route == Route.TwoFactorSettings ||
-                    route == Route.Language || route == Route.Preferences || route == Route.BodyClock
+                    route == Route.Language || route == Route.Preferences || route == Route.BodyClock ||
+                    route == Route.Passkeys
                 ) {
                     net.chronoflow.app.settings.SettingsEntry(
                         graph,

@@ -19,7 +19,12 @@ import org.robolectric.annotation.GraphicsMode
 class SecurityScreenTest : SettingsScreenTest() {
     @Test fun rowsNavigateToPasswordAndTwoFactor() {
         val events = mutableListOf<SecurityEvent>()
-        show { SecurityScreen(SecurityScreenState(SecuritySummary(false, null, 2), showUnbuilt = true), events::add) }
+        show {
+            SecurityScreen(
+                SecurityScreenState(SecuritySummary(false, null, 2), passkeysEnabled = true),
+                events::add,
+            )
+        }
         compose.onNodeWithTag("settings.security.passkeys").assertExists()
         compose.onNodeWithTag("settings.security.password").performClick()
         compose.onNodeWithTag("settings.security.twoFactor").performClick()
@@ -30,7 +35,7 @@ class SecurityScreenTest : SettingsScreenTest() {
     }
 
     @Test fun missingCountHidesPasskeys() {
-        show { SecurityScreen(SecurityScreenState(SecuritySummary(false, null, null), showUnbuilt = true), {}) }
+        show { SecurityScreen(SecurityScreenState(SecuritySummary(false, null, null), passkeysEnabled = true), {}) }
         compose.onNodeWithTag("settings.security.passkeys").assertDoesNotExist()
     }
 

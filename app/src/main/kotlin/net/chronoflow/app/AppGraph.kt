@@ -190,6 +190,18 @@ class AppGraph(
     val passkeyAnchor: PasskeyAnchor by lazy { PasskeyAnchor() }
     val credentialClient: CredentialClient by lazy { CredentialManagerClient(app, passkeyAnchor) }
     val passkeyCapability: PasskeyCapability get() = LaunchPlatform.passkeyCapability
+    val passkeyRegistration: net.chronoflow.core.model.passkey.PasskeyRegistrationProviding by lazy {
+        if (selection.source == DataSourceFactory.Source.Mock) {
+            net.chronoflow.core.model.passkey
+                .DeterministicRegistrationProvider()
+        } else {
+            net.chronoflow.core.model.passkey
+                .SystemPasskeyRegistrationProvider(credentialClient)
+        }
+    }
+
+    suspend fun settingsDeviceName(): String = androidDeviceName(app, dispatchers.io)
+
     val auth: AuthServices by lazy {
         AuthServices(
             rootNavigator,

@@ -139,6 +139,11 @@ internal class SettingsFixture(
     var securitySyncRequests = 0
     val deps: SettingsDependencies get() =
         object : SettingsDependencies {
+            override val passkeyCapability = net.chronoflow.core.model.passkey.PasskeyCapability.Shipped
+            override val passkeyRegistration: net.chronoflow.core.model.passkey.PasskeyRegistrationProviding? = null
+
+            override suspend fun deviceName() = "Android"
+
             override val securityScope get() = this@SettingsFixture.securityScope
             override val snapshot = this@SettingsFixture.snapshot
             override val passwordPromptSeed: String? = null

@@ -100,7 +100,7 @@ internal fun SettingsSecurityBoard(state: String) {
     val inputs = remember { TwoFactorInputs() }
     val summary = SecuritySummary(false, "2026-10-30T08:00:00Z", 2)
     if (state == "Security") {
-        SecurityScreen(SecurityScreenState(summary, loaded = true, showUnbuilt = true), {})
+        SecurityScreen(SecurityScreenState(summary, loaded = true, passkeysEnabled = true), {})
     } else if (state.startsWith("Password")) {
         val security =
             SecurityState(

@@ -21,6 +21,11 @@ import java.time.ZoneOffset
 internal class SecuritySavedStateDependencies(
     override val securityScope: kotlinx.coroutines.CoroutineScope,
 ) : SettingsDependencies {
+    override val passkeyCapability = net.chronoflow.core.model.passkey.PasskeyCapability.Shipped
+    override val passkeyRegistration: net.chronoflow.core.model.passkey.PasskeyRegistrationProviding? = null
+
+    override suspend fun deviceName() = "Android"
+
     val setup = ApiTwoFactorSetup("JBSWY3DPEHPK3PXP", "otpauth://totp/ChronoFlow?secret=JBSWY3DPEHPK3PXP")
     val codes =
         listOf(

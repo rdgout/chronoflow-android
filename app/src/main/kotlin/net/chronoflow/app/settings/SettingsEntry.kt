@@ -68,6 +68,7 @@ internal fun SettingsEntry(
     if (session == null) {
         SettingsPage(
             when (route) {
+                Route.Passkeys -> R.string.settings_passkeys
                 Route.Account -> R.string.settings_account
                 Route.Profile -> R.string.settings_profile
                 Route.Preferences -> R.string.settings_preferences
@@ -135,9 +136,20 @@ internal fun SettingsEntry(
         Route.Security -> {
             SecurityRoute(
                 viewModel(factory = SecurityViewModel.Factory, extras = extras),
-                LaunchPlatform.routeLabel != null,
+                graph.passkeyCapability.enabled,
                 onBack,
                 onNavigate,
+                modifier,
+            )
+        }
+
+        Route.Passkeys -> {
+            net.chronoflow.feature.settings.passkeys.PasskeysRoute(
+                viewModel(
+                    factory = net.chronoflow.feature.settings.passkeys.PasskeysViewModel.Factory,
+                    extras = extras,
+                ),
+                onBack,
                 modifier,
             )
         }

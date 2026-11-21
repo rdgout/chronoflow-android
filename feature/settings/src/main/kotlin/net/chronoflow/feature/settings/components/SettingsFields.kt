@@ -85,10 +85,13 @@ fun SettingsOfflineCard(
 }
 
 @Composable
-private fun SettingsNeedsConnection(modifier: Modifier = Modifier) {
+internal fun SettingsNeedsConnection(
+    modifier: Modifier = Modifier,
+    testTag: String = "settings.needsConnection",
+) {
     Text(
         stringResource(R.string.settings_needs_a_connection),
-        modifier.testTag("settings.needsConnection"),
+        modifier.testTag(testTag),
         style = CfTheme.type.screenBody,
         color = CfTheme.colors.mutedForeground,
     )
