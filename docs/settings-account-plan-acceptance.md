@@ -43,7 +43,7 @@ The capture command ran once and wrote these eleven files under `build/captures/
 | Board | Deliberate difference |
 |---|---|
 | `SetPasskeys` | Generated Android fingerprint/face/screen-lock intro replaces Face ID copy. |
-| `SetPlanCredits` | The credit state is the NoLink hero and paragraph, as `SetPlanNoLink`; no board purchase button, caption or Billing section. |
+| `SetPlanCredits` | Pending-checkout notice, credits hero and NoLink paragraph; no board purchase button, caption or Billing section. |
 | `SetPlan`, `DarkSetPlan` | Website-free payment-failed sentence; no date in that notice, Billing rows or Action needed badge. |
 | `SetPlanOffline` | Cancelled hero and ends line, with the offline paragraph below; no disabled Billing rows. |
 | `PasswordPromptDelete`, `PasswordPromptLocked`, `SetDelete` | Shared native sheet/dialog chrome, safe insets and the existing 540 dp wide prompt. |
@@ -95,7 +95,7 @@ No tests found for given includes: [*AccountPlanGuardsTest*DeleteConfirmation*sm
 
 The supported method selector then ran all 360 parameters successfully. The initial layout evidence remains under `build/test-results/layout-10d/`; passing account/plan, capture and device evidence are archived under `10d-account-plan-layout`, `10d-board-captures` and `10d-delete-device` respectively. Near-budget cases were only first-class warm-ups (2.352 s account/plan; 2.306 s root hand-off; 2.142 s button); no budget was loosened.
 
-The single `make quick` invocation remains recorded as failed; it was not repeated. The two stale expectations were corrected in separate signed test commits, and only their methods were rerun. All other assertions in those runs passed. The remaining build-logic, tooling and serial timing stages passed separately, as recorded above.
+The single `make quick` invocation remains recorded as failed; it was not repeated. The two stale expectations were corrected and their methods rerun; before review, those fixes were folded into the implementation commits that introduced the changes. All other assertions in those runs passed. The remaining build-logic, tooling and serial timing stages passed separately, as recorded above.
 
 Other resolved build/fix rounds were compiler unused-Unit warnings, explicit parameter-array types, a nullable Java system-property warning, the Account route argument migration, and formatting. The direct tooling-script invocation initially lacked Make's exports:
 
@@ -124,18 +124,46 @@ The deletion test types a password only in the credential-check prompt under tes
 | Commit | Subject |
 |---|---|
 | `b7fc55ca` | docs(phases): refresh the 10d brief against 10c |
-| `ba4dc470` | feat(designsystem): add the trash glyph |
-| `ecc688a5` | feat(model): add passkey registration json and providers |
-| `ab094903` | feat(data): create passkeys through credential manager |
-| `65f5ce82` | feat(settings): port the passkey model |
-| `eb3c2f52` | feat(settings): add the passkeys page and security row |
-| `816a70e1` | feat(settings): port account deletion |
-| `23dc2913` | feat(settings): add the delete account sheet and prompt |
-| `7b2fc3ae` | feat(settings): port plan and credits state |
-| `b4d68113` | feat(settings): add the plan and credits page |
-| `dc33322f` | test(settings): guard and capture the account and plan boards |
-| `29e52e2d` | test(app): delete the account on the device |
-| `ba3bde2a` | test(designsystem): update the glyph cache count |
-| `2b1960bc` | test(settings): expect the account deletion row |
+| `25048e18` | feat(designsystem): add the trash glyph |
+| `82e9d1e9` | feat(model): add passkey registration json and providers |
+| `98a37e1a` | feat(data): create passkeys through credential manager |
+| `32bfc6f3` | feat(settings): port the passkey model |
+| `de4c1a37` | feat(settings): add the passkeys page and security row |
+| `cdfd32df` | feat(settings): port account deletion |
+| `8ce025d4` | feat(settings): add the delete account sheet and prompt |
+| `2b29ac82` | feat(settings): port plan and credits state |
+| `774aef4c` | feat(settings): add the plan and credits page |
+| `5dee2a21` | test(settings): guard and capture the account and plan boards |
+| `87a6abe5` | test(app): delete the account on the device |
+| `31063321` | docs(settings): record passkeys, delete and plan acceptance |
 
-The final `docs(settings): record passkeys, delete and plan acceptance` commit contains this report, the PR draft and OQ rows. All implementation and correction commits have a GPG signature.
+`31063321` records this report and the OQ rows. All implementation commits have a GPG signature.
+
+## Review round 1
+
+All five findings are fixed in separate signed commits: `37f07002` adds JVM coverage for the three ViewModels and leaves the Plan swipe testing event wiring; `aec206f3` directs delete sign-out to Welcome; `02f857f0` restores the pending checkout in `SetPlanCredits`; `faf13d41` updates the Account capture/documentation; `d25e5b9d` updates passkey metadata when the injected clock's local date changes. Ordinary minute ticks do not reformat metadata. Resource lookup lives in the route adapter, so the ViewModel clock test runs on the JVM with one scheduler.
+
+The running gate-router regression test records every route: before the routing fix it failed with `[Today, SignIn, Welcome]`; afterwards it passes with `[Today, Welcome]`. Normal sign-out tests remain unchanged and pass. `SetPlanCredits_pixel8_en_light.png` now shows Payment processing and differs from NoLink; `SetAccount_pixel8_en_light.png` shows Delete account. Both regenerated PNGs are in `build/captures/`. The pending Plan state also joins the profile/language/theme layout matrix.
+
+| Validation | Result / wall time |
+|---|---|
+| Plan, Passkeys and Delete ViewModels, delete failure matrix, Plan screen | 36 passed; 11.93 s. Strengthened formatter guards: two passed, 4 s; two added reset cases passed, 4 s. |
+| Delete dependency, routing and normal sign-out wiring | Ten passed; 9.43 s. The expected pre-fix regression failed once, 6 s. |
+| Pending-checkout fixture and notice structure | Three passed; 6.96 s. |
+| Account row structure/event | One passed; 5.57 s. |
+| Passkeys ViewModel, screen, capability and model | 32 passed; 8.88 s. Final midnight/capability methods: two passed, 4.39 s. |
+| `make captures ONLY=SetPlanCredits` / `make captures ONLY=SetAccount` | One PNG each; 20.94 s / 20.75 s. |
+| `./gradlew :app:lintDebug :feature:settings:lintDebug` | Passed; 24 s. |
+| App/settings layout tier | 1,316 passed, one skipped; 68.07 s; no budget overrun or hang. |
+| `make quick` (one invocation this review) | All assertions passed (3,921 measured cases); 43.45 s. Timing gate failed only unchanged `TermsScreenTest#policyRowStaysEnabledWhileFailed`: 3,056 ms > 3,000 ms class warm-up allowance. Not retried. |
+| Remaining quick stages, run once after the gate stopped Make | Build logic: 37 passed, 2.89 s (up-to-date). Tooling: 256 passed, batches 19.853 / 0.109 / 0.017 / 0.090 s. Serial timing: seven valid up-to-date results, 2.78 s. |
+
+The failing command was `env 'ORG_GRADLE_PROJECT_kotlin.compiler.execution.strategy=in-process' make quick`; its final output was:
+
+```text
+BUILD SUCCESSFUL in 42s
+run-tier: over budget: robolectric net.chronoflow.feature.onboarding.terms.TermsScreenTest#policyRowStaysEnabledWhileFailed 3056 ms > 3000 ms
+make: *** [quick] Error 3
+```
+
+Logs and focused timing evidence are under `build/test-results/10d-r1-*`. No new OQ or copy was needed. No perf tier, `make check`, push, history rewrite or emulator shutdown was performed. No sandbox blocker remains; the unrelated quick timing overrun above remains recorded as a failure.
