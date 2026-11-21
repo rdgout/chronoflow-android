@@ -1055,6 +1055,27 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A459 | (9h OQ-9h-11) "Ends after {{count}} nights" has no singular in the iOS catalog ("Ends after 1 nights"). | Use the catalog string as is; report to the iOS session; nights < 2 is rare on web trips. | 9h |
 | OQ-A460 | (9h OQ-9h-12) iOS checks `canEdit`/`canDuplicate` from the card; the plan and 6d keep that. A trip whose `tripInput` shape fails `loadTrip` (legs > 16, bad boundary) throws `Server(null)`. | Treated as "other" failure (edit: server copy; duplicate: duplicate copy). | 9h |
 | OQ-A461 | (9h) OQ-A351 requires 1.0 on every edit step, but pinned iOS clears the floor on revisited input steps and WizardReturnWeb draws 45%. | Orchestrator decision, 2026-11-20: OQ-A351 was a plan default. Keep the 1.0 floor on initial edit Checking, its failures and first Ready (the recorded difference from iOS 0.95); after a revisit, use iOS `go()` floor clearing and `max(progressFloor ?: 0, stepProgress)`. Coming back? is 0.45, and later Checking/Ready use their step weights. | 9a, 9h |
+| OQ-A462 | (10a OQ-10a-1) Security subtitle: board says "Password, passkeys, two-factor", iOS "Password, two-factor". | iOS until passkeys ship (10c switches to `settings_password_passkeys_two_factor`). | 10a |
+| OQ-A463 | (10a OQ-10a-2) Pending item text is 15/22 on the board; no token. | `screenBody` 14/20. | 10a |
+| OQ-A464 | (10a OQ-10a-3) Sync line 13/18 (board) vs iOS 12/16. | Board: `settingsHint` 13/18. | 10a |
+| OQ-A465 | (10a OQ-10a-4) Sign-out pill 40 dp (board `h-10`) vs iOS 44/48. | Board 40 (`CfButtonSize.Lg` *[Refresh]*); touch target still 48 via M3 minimum interactive size. | 10a |
+| OQ-A466 | (10a OQ-10a-5) Home bottom padding 120 (board) vs 40. | 40; Android's bar is not overlaid. | 10a |
+| OQ-A467 | (10a OQ-10a-6) "Syncing…" glyph: board shows `loader-circle`; animate? | Static glyph (reduced motion safe). | 10a |
+| OQ-A468 | (10a OQ-10a-7) Generic "Saved" / "Couldn't save…" toasts on `SetStates`. | Not built; no iOS use. | 10a |
+| OQ-A469 | (10a OQ-10a-8) Refused-change "Details" action. | Not built; iOS has none. | 10a |
+| OQ-A470 | (10a OQ-10a-9) iOS hour-cycle override test. | Not ported; Android has no locale hour-cycle extension. | 10a |
+| OQ-A471 | (10a OQ-10a-10) Language saved toast style. | `CfSnackbarHost` (OQ-A5) with board tokens where the host allows. | 10a |
+| OQ-A472 | (10a OQ-10a-11) App bar on wide windows. | Full width; only content is 560. | 10a |
+| OQ-A473 | (10a OQ-10a-12) Notification channel names after an in-app locale change. | 12b re-localises them. | 10a |
+| OQ-A474 | (10a OQ-10a-13) Delete account row before 10d. | Hidden. | 10a |
+| OQ-A475 | (10a OQ-10a-14) "Your data & policies" row. | Omitted (OQ-3). | 10a |
+| OQ-A476 | (10a OQ-10a-15) Email change on Profile. | Deferred (OQ-5); email read-only, "Save changes". | 10a |
+| OQ-A477 | (10a OQ-10a-16) `SetProfile` board shows the email flow. | Capture name-only as `SetProfile` and note the difference. | 10a |
+| OQ-A478 | (10a OQ-10a-17) Footer type: iOS `screenMeta` 12/16, board 13/18. | Board 13/18 (`settingsHint`). | 10a |
+| OQ-A479 | (10a OQ-10a-18) Body clock badge: English `SetHome` draws it trailing (before the chevron); `SetHomeNL` and iOS put it below the subtitle. | Below the subtitle in both languages (iOS behaviour, and the NL board). | 10a |
+| OQ-A480 | (10a OQ-10a-19) Name length: iOS counts graphemes (`String.count`), Laravel `max:255` counts code points. | Count code points, so the server never refuses a name the app accepted. | 10a |
+| OQ-A481 | (10a refresh) Loading rows: the `SetStatesMore` board draws bars 140/180/120 in 64 dp rows; iOS `SettingsLoadingRows` uses the generated `SettingsTokens.skeletonRowWidths` 150/190/130 in `counterHeight` 60 rows. | iOS and the generated tokens (sources order; values only from generated tokens); record the board difference. | 10a |
+| OQ-A482 | (10a refresh) Disabled row alpha: board 0.5 (= `AuthTokens.disabledOpacity`) vs `SettingsTokens.disabledOpacity` 0.45 (iOS password prompt). | `AuthTokens.disabledOpacity` 0.5 for rows (board; also `CfButton`'s default). | 10a |
 | OQ-A483 | (10a) Robolectric 4.18's ShadowLocaleManager stores application locales but does not project them into Activity configuration or dispatch locale recreation. | Keep the API 36 configuration projection case ignored (`needs ShadowLocaleManager`); verify its read/write and preference reconciliation on Robolectric, and its real activity locale/recreation with the seeded pixel language test. API 29 retains the full device-config/recreation guard. | 10a |
 | OQ-0a-22 | Native libraries in the bundle? | Allow only `libandroidx.graphics.path.so` (Compose graphics-path; excluding it breaks Path conversion below API 34); fail on any other `.so` | 0a, 13 |
 | OQ-0b-1 | Where does `PlanMetrics` live? `08 §3.1` lists it inside `CfDimens`, but its consumer `:core:plan` is a JVM module that cannot depend on `:core:designsystem` | `core/plan/…/generated/PlanMetrics.generated.kt` (Double, dp), as iOS keeps it in `PlanCore` | 0b, 1b, 1c |
@@ -3057,7 +3078,7 @@ Implementation commits:
 - [x] **Account** (`SetAccount`), **Profile** (`SetProfile`) and **Language** (`SetLanguage`) (10a Tasks 8–9).
   - The language choice is `system`, `en` or `nl`. It goes through `LocaleManager` on API 33+, or the `device-config` file below 33, and recreates the activity.
   - With `system`, a later change of the phone language is followed (OQ-A25).
-- [ ] **Tests.**
+- [x] **Tests.**
   - The ported 17e and 17h cases.
   - Guards.
   - One emulator journey: sign out with a pending change → Stay → Discard.
@@ -3078,11 +3099,12 @@ Implementation commits:
 - [x] **10a Task 11**: pending-change seed.
 - [x] **10a Task 12**: board guards and captures.
 - [x] **10a Task 13**: device sign-out and language checks.
-- [ ] **10a Task 14**: acceptance record.
+- [x] **10a Task 14**: acceptance record.
 
 **Acceptance**
 - Sign-out with pending changes matches both `SignOutPending` boards.
 - The language switch works on API 29 and 36, through Robolectric and the `pixel` emulator.
+- [Acceptance record](docs/settings-home.md): captures, board differences, OQ-A462–A483, targeted tests, lint, release and layout evidence. The single quick run's test-tier annotation failure was fixed and verified narrowly; its remaining stages passed separately. Startup measurements and final host board review are handed to the user as requested.
 
 ### Phase 10b: Preferences and body clock (`feat/phase-10b-settings-preferences-body-clock`)
 
