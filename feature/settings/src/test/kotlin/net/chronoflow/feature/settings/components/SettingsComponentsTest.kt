@@ -16,7 +16,6 @@ import net.chronoflow.core.testing.DeviceProfiles
 import net.chronoflow.core.testing.compose.Guards
 import net.chronoflow.core.testing.tiers.Layout
 import net.chronoflow.core.ui.R
-import net.chronoflow.feature.settings.SettingsBoardFixture
 import net.chronoflow.feature.settings.support.SettingsScreenTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -77,12 +76,24 @@ class SettingsComponentsTest : SettingsScreenTest(DeviceProfiles.largeFont) {
     }
 
     @Test fun offlineDisabledRowHasNoChevronAndHintGapIsTwelveDp() {
-        show { SettingsBoardFixture("SyncStates") }
+        show {
+            SettingsPage(R.string.settings_settings, null, "page") {
+                SettingsOfflineCard {
+                    SettingsDestinationRow(
+                        stringResource(R.string.settings_add_a_passkey),
+                        LucideGlyphs.KeyRound,
+                        "settings.disabled",
+                        {},
+                        enabled = false,
+                    )
+                }
+            }
+        }
         compose.onNodeWithTag("settings.disabled.chevron", useUnmergedTree = true).assertDoesNotExist()
         val card =
             compose
                 .onNodeWithTag(
-                    "settings.disabled.card",
+                    "settings.offline.card",
                     useUnmergedTree = true,
                 ).fetchSemanticsNode()
                 .boundsInRoot
@@ -120,7 +131,15 @@ class SettingsComponentsTest : SettingsScreenTest(DeviceProfiles.largeFont) {
                 )
                 SettingsReadOnlyField(stringResource(R.string.settings_email), "rick@example.com", "email")
                 SettingsOfflineHint(stringResource(R.string.settings_saved_on_this_phone_syncs_when_y_4fb8b8))
-                SettingsNeedsConnection()
+                SettingsOfflineCard {
+                    SettingsDestinationRow(
+                        stringResource(R.string.settings_add_a_passkey),
+                        LucideGlyphs.KeyRound,
+                        "offline.row",
+                        {},
+                        enabled = false,
+                    )
+                }
             }
         }
         Guards.assertAll(compose, profile, headingTags = emptySet())

@@ -121,6 +121,34 @@ No new OQ, copy, dependency or test allow-list entry was needed in this review r
 
 Logs: `/tmp/chronoflow-10a-r1-{profile,clock,components,inset,language-route-restored,name-restored,captures,layout,lint,format-final,quick}.log`. Tier evidence is in `build/test-results/{targeted,captures,layout-10a-r1,quick,build-logic,timing}/timings.json`; individual targeted runs were also copied to `/tmp/chronoflow-10a-r1-*-timings.json`. The serial JVM measurements are recorded in `docs/perf-timeline.md`; no emulator performance/profile command was run. No command was blocked and no run hung. The pixel emulator was left running.
 
+## Review round 2
+
+The host verified round 1 and reported `make check` passing in 3:03. The final fix moves the offline card/hint pair into production `SettingsOfflineCard`: it owns `CfCard(rows = true)`, the generated `space3` gap and the private `SettingsNeedsConnection` paragraph. Callers, including 10c, place that component as one `SettingsPage` child. The fixture no longer supplies the gap, and the geometry test directly composes the production pair inside `SettingsPage`.
+
+The four component cases pass, including the large-font guard for the new public component. Removing its production gap makes `offlineDisabledRowHasNoChevronAndHintGapIsTwelveDp` fail (`expected 31.5 px, was 0.0 px`); the restored method passes. No screen copy is asserted. The brief now names the production pair and documents its ownership for 10c. No new OQ, copy or dependency was needed.
+
+| Review check | Result | Wall time |
+|---|---|---|
+| `make targeted ONLY="feature:settings:SettingsComponentsTest"` | 4 passed; zero overruns | 5.61 s runner wall; cold first case 1.958 s, warm cases at most 209 ms |
+| Restored geometry method after the deliberate mutation | passed | 4.43 s runner wall; cold first case 1.891 s |
+| `make captures ONLY="SetStates_"` (once) | 1 passed, 544 prefix-filter skips; zero overruns; PNG byte-identical | 19.86 s runner wall |
+| `make format` | passed | 13 s build |
+| Single round-2 `make quick` | all 5,372 assertions passed; one timing failure in untouched `TermsScreenTest#policyRowStaysEnabledWhileFailed`: 3,049 ms > 3,000 ms allowance for the class's first case; no missing evidence or hangs | 40.47 s runner wall |
+| Remaining build-logic stage, run separately | 37 passed, certified cached results | 2.25 s runner wall |
+| Remaining tooling stage, run separately | 171 harness + 25 contracts + 49 strings + 11 vectors passed | 19.783 / 0.106 / 0.017 / 0.082 s |
+| Final serial timing stage, run separately | 7 passed, certified cached results for unchanged budget code | 1.30 s runner wall |
+
+`SetStates_pixel8_en_light.png` is byte-for-byte identical to the pre-fix capture (SHA-256 `f568a8b211b1bbefaee055b37ff0591d35e08b80b5802f1c3e835590f9bd8cbd`). No emulator or performance command was needed; the pixel emulator remains running.
+
+The quick command ran once and exited at its timing gate. The unchanged Terms case exceeded the allowance for its first case by 49 ms; per the user's instruction it was not retried, edited or given a larger budget. The stages after that early exit were completed separately. Exact gate output:
+
+```text
+run-tier: over budget: robolectric net.chronoflow.feature.onboarding.terms.TermsScreenTest#policyRowStaysEnabledWhileFailed 3049 ms > 3000 ms
+make: *** [quick] Error 3
+```
+
+Logs: `/tmp/chronoflow-10a-r2-{components,gap-mutation,gap-restored,captures,format,quick,build-logic,tooling,timing}.log`. The targeted, capture and quick timing records were also copied to `/tmp/chronoflow-10a-r2-*-timings.json`. No command was blocked and no run hung. This final fix and its evidence are committed together.
+
 ## Commits
 
 Every commit is GPG-signed, has no trailer, and remains in its original linear history. Task 14 originally added this record in `fe3399e0`; review commits extend it below.
@@ -156,3 +184,4 @@ Review round 1 implementation commits (the following documentation commit record
 | `39661d95` | `test(settings): paint the capture shell insets with the theme` |
 | `14c7ee50` | `test(settings): prove the language route recreates on api 29` |
 | `e42ce09c` | `fix(settings): stop echoing profile edits into the name field` |
+| `d437dd87` | `docs(settings): record the first review fixes` |

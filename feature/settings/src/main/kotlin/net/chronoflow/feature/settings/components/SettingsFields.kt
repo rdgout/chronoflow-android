@@ -3,6 +3,7 @@ package net.chronoflow.feature.settings.components
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -16,8 +17,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import net.chronoflow.core.designsystem.component.CfCard
 import net.chronoflow.core.designsystem.generated.AuthTokens
 import net.chronoflow.core.designsystem.generated.CfTypeScale
+import net.chronoflow.core.designsystem.generated.PlanUITokens
 import net.chronoflow.core.designsystem.generated.SettingsTokens
 import net.chronoflow.core.designsystem.icon.LucideGlyphs
 import net.chronoflow.core.designsystem.icon.imageVector
@@ -71,7 +74,18 @@ fun SettingsOfflineHint(
 }
 
 @Composable
-fun SettingsNeedsConnection(modifier: Modifier = Modifier) {
+fun SettingsOfflineCard(
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(PlanUITokens.space3.dp)) {
+        CfCard(Modifier.testTag("settings.offline.card"), rows = true, content = content)
+        SettingsNeedsConnection()
+    }
+}
+
+@Composable
+private fun SettingsNeedsConnection(modifier: Modifier = Modifier) {
     Text(
         stringResource(R.string.settings_needs_a_connection),
         modifier.testTag("settings.needsConnection"),
