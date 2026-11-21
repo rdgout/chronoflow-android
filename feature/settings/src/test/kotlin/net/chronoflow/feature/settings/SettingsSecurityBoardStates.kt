@@ -82,6 +82,10 @@ internal object SettingsSecurityBoardStates {
 
 @Composable
 internal fun SettingsSecurityBoard(state: String) {
+    if (state == "PromptLocked") {
+        SettingsAccountPlanBoard("DeleteLocked")
+        return
+    }
     val now = SettingsSecurityBoardStates.now
     val nowProvider = remember { { now } }
     val locale =

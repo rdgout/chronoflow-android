@@ -5,8 +5,11 @@ package net.chronoflow.feature.settings.delete
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.clearText
@@ -29,6 +32,7 @@ import net.chronoflow.core.designsystem.component.CfButton
 import net.chronoflow.core.designsystem.component.CfButtonStyle
 import net.chronoflow.core.designsystem.generated.CfTypeScale
 import net.chronoflow.core.designsystem.generated.PlanUITokens
+import net.chronoflow.core.designsystem.layout.LocalSafeInsets
 import net.chronoflow.core.designsystem.system.CfModalBottomSheet
 import net.chronoflow.core.designsystem.theme.CfTheme
 import net.chronoflow.core.ui.R
@@ -76,7 +80,13 @@ fun DeleteAccountSheet(
                 modifier = modifier.testTag("settings.delete.screen"),
                 properties = ModalBottomSheetProperties(shouldDismissOnBackPress = !state.ui.busy),
             ) {
-                DeleteAccountContent(onEvent, Modifier.verticalScroll(rememberScrollState()))
+                DeleteAccountContent(
+                    onEvent,
+                    Modifier
+                        .windowInsetsPadding(
+                            LocalSafeInsets.current.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom),
+                        ).verticalScroll(rememberScrollState()),
+                )
             }
         }
 
