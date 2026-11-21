@@ -3,6 +3,7 @@ package net.chronoflow.app.guest
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalResources
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -26,8 +27,9 @@ internal fun GuestWizardRoute(
     graph: AppGraph,
     revision: Long,
 ) {
+    val locale = LocalResources.current.configuration.locales[0]
     val factory =
-        remember(graph, revision) {
+        remember(graph, revision, locale) {
             viewModelFactory {
                 initializer {
                     val dependencies =
@@ -39,12 +41,19 @@ internal fun GuestWizardRoute(
                             { graph.controller.presence },
                             graph.dispatchers,
                             CoroutineScope(graph.appScope.coroutineContext + graph.dispatchers.io),
-                            { graph.planClock.now },
+                            { LaunchPlatform.guestWizardInstant ?: graph.planClock.now },
                             GuestSignUpLauncher { onDismissed ->
                                 LaunchPlatform.guestSignUpRequested()
                                 onDismissed()
                             },
                             graph.copyCatalogs,
+                            seed =
+                                if (LaunchPlatform.guestWizardSeedEnabled) {
+                                    { LaunchPlatform.seedGuestWizard(it, locale, graph.planClock.now) }
+                                } else {
+                                    null
+                                },
+                            uiOverride = LaunchPlatform.guestWizardUiOverride,
                         )
                     GuestWizardHolder(
                         dependencies,
@@ -52,6 +61,7 @@ internal fun GuestWizardRoute(
                             graph.controller.presence
                         }, graph.guestWizardStore, graph.guestSecrets, graph.dispatchers),
                         graph.appScope,
+                        LaunchPlatform.guestWizardPresentation,
                     )
                 }
             }

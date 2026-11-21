@@ -88,7 +88,49 @@ internal object LaunchPlatform {
             null
         }
 
-    val guestRecoveryAllowed: Boolean get() = wizardBoardCapture == null
+    val guestRecoveryAllowed: Boolean get() =
+        wizardBoardCapture == null ||
+            net.chronoflow.debug.DebugSeedRouting.current
+                ?.guestRecoveryBoard != null
+
+    val guestWizardSeedEnabled: Boolean get() =
+        net.chronoflow.debug.DebugSeedRouting.current?.let {
+            (it.guestWizard || it.guestWizardJourney) && it.wizardBoardCapture != null
+        } == true
+    val guestWizardBoard: String? get() =
+        net.chronoflow.debug.DebugSeedRouting.current?.let {
+            if (it.guestWizard || it.guestWizardJourney) it.wizardBoardCapture else it.guestRecoveryBoard
+        }
+    val guestWizardInstant: java.time.Instant? get() =
+        guestWizardBoard?.takeIf { it != "WizardGuestJourney" }?.let {
+            net.chronoflow.feature.wizard.debug.WizardBoardCaptureSeed.now
+        }
+    val guestWizardUiOverride: net.chronoflow.feature.wizard.shell.WizardUiOverride? get() =
+        guestWizardBoard?.let {
+            net.chronoflow.feature.wizard.debug.GuestWizardBoardSeed
+                .uiOverride(it)
+        }
+    val guestWizardPresentation: net.chronoflow.feature.wizard.ui.WizardInitialPresentation get() =
+        guestWizardBoard?.let {
+            net.chronoflow.feature.wizard.debug.GuestWizardBoardSeed
+                .presentation(it)
+        } ?: net.chronoflow.feature.wizard.ui
+            .WizardInitialPresentation()
+
+    fun seedGuestWizard(
+        draft: net.chronoflow.core.wizard.model.MemberWizardDraft,
+        locale: java.util.Locale,
+        now: java.time.Instant,
+    ): net.chronoflow.core.wizard.model.MemberWizardDraft {
+        val seed = net.chronoflow.debug.DebugSeedRouting.current
+        val board = seed?.wizardBoardCapture
+        return if (board != null && (seed.guestWizard || seed.guestWizardJourney)) {
+            net.chronoflow.feature.wizard.debug.GuestWizardBoardSeed
+                .draft(draft, board, locale, now)
+        } else {
+            draft
+        }
+    }
 
     val guestSignUpRequested: () -> Unit = net.chronoflow.debug.GuestWizardDebugCounters::requested
 
@@ -122,6 +164,11 @@ internal object LaunchPlatform {
         if (seed.profile == net.chronoflow.debug.UiTestProfile.Screen) {
             net.chronoflow.debug.ScreenSessionFixture
                 .route(graph, seed.raw["CF_AUTH_TEST_AUDIT_SCREEN"], seed.raw["CF_AUTH_TEST_AUDIT_STATE"])
+            if (seed.guestWizard &&
+                graph.controller.presence == net.chronoflow.core.model.session.SessionPresence.SignedOut
+            ) {
+                graph.rootNavigator.navigate(net.chronoflow.core.navigation.Route.GuestWizard)
+            }
         }
     }
 

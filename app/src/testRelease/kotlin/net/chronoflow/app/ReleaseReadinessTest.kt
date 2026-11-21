@@ -32,6 +32,12 @@ import kotlin.time.Duration.Companion.seconds
 class ReleaseReadinessTest {
     @Test fun wizardCaptureCodeAndStartOverrideAreAbsent() {
         missing("net.chronoflow.feature.wizard.debug.WizardBoardCaptureSeed")
+        missing("net.chronoflow.feature.wizard.debug.GuestWizardBoardSeed")
+        missing("net.chronoflow.debug.GuestWizardDebugCounters")
+        org.junit.Assert.assertNull(LaunchPlatform.guestWizardBoard)
+        org.junit.Assert.assertNull(LaunchPlatform.guestWizardInstant)
+        org.junit.Assert.assertNull(LaunchPlatform.guestWizardUiOverride)
+        LaunchPlatform.guestSignUpRequested()
         missing("net.chronoflow.feature.wizard.debug.FixedAirportSearch")
         missing("net.chronoflow.feature.wizard.debug.WizardCompletionBoardSeed")
         missing("net.chronoflow.feature.wizard.debug.TripWizardActionsBoardSeed")

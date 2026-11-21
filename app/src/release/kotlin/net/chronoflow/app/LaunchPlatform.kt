@@ -37,6 +37,21 @@ internal object LaunchPlatform {
 
     val guestRecoveryAllowed: Boolean get() = true
 
+    val guestWizardSeedEnabled = false
+    val guestWizardBoard: String? = null
+    val guestWizardInstant: java.time.Instant? = null
+    val guestWizardUiOverride: net.chronoflow.feature.wizard.shell.WizardUiOverride? = null
+    val guestWizardPresentation =
+        net.chronoflow.feature.wizard.ui
+            .WizardInitialPresentation()
+
+    @Suppress("UNUSED_PARAMETER")
+    fun seedGuestWizard(
+        draft: net.chronoflow.core.wizard.model.MemberWizardDraft,
+        locale: java.util.Locale,
+        now: java.time.Instant,
+    ): net.chronoflow.core.wizard.model.MemberWizardDraft = draft
+
     val guestSignUpRequested: () -> Unit = {}
 
     fun welcomeDestinations(navigator: RootNavigator): WelcomeDestinations = RoutedWelcomeDestinations(navigator)

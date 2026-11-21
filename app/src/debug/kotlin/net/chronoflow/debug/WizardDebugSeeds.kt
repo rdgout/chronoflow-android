@@ -28,6 +28,11 @@ internal class WizardDebugSeeds {
         epoch: Long,
         locale: Locale,
     ): Prepared {
+        if (seed?.guestWizard == true || seed?.guestWizardJourney == true ||
+            seed?.guestRecoveryBoard != null
+        ) {
+            return Prepared(null, false)
+        }
         val key = epoch to seed?.testId
         if (last == key) return Prepared(installed, false)
         last = key

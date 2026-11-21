@@ -40,6 +40,7 @@ object TestSeeds {
     ) = withContext(io) {
         DebugShellStart.reset()
         DebugRefreshProbe.reset()
+        GuestWizardDebugCounters.signUpRequested.set(0)
         net.chronoflow.feature.settings.SettingsDebugCounters.languageSaved
             .set(0)
         UITestTimeline.record("seed-begin", seed)
@@ -68,11 +69,34 @@ object TestSeeds {
                 source,
                 io,
                 beforeSignIn = { SettingsBoardCaptureFixture.prepare(dir, seed, app.graph.planClock.now, io) },
+                guestSecrets =
+                    object : net.chronoflow.core.data.session.GuestSecrets {
+                        override suspend fun deleteAll() =
+                            net.chronoflow.core.datastore.KeystoreGuestSecretStore
+                                .forNamespace(
+                                    context,
+                                    StorageNamespace.Mock,
+                                    cipher,
+                                    io,
+                                ).deleteAll()
+                    },
             ).reseed(seed.signedIn, seed.testId, seed.termsChangesPending, seed.settingsPending)
             seed.authTestLink?.let { link ->
                 withContext(app.graph.dispatchers.main) { app.graph.pendingLaunchIntents.captureLink(link) }
             }
             DebugSeedRouting.current = seed
+            seed.guestRecoveryBoard?.let { board ->
+                val store = app.graph.guestWizardStore
+                val draft = store.start()
+                store.persist(
+                    net.chronoflow.feature.wizard.debug.GuestWizardBoardSeed.draft(
+                        draft,
+                        board,
+                        java.util.Locale.UK,
+                        app.graph.planClock.now,
+                    ),
+                )
+            }
         }
         seed.language?.let { language ->
             DevicePreferences.shared(context).setLanguage(language, sdkInt)

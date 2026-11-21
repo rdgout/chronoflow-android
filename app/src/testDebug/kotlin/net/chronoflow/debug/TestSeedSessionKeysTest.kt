@@ -52,6 +52,9 @@ class TestSeedSessionKeysTest(
                 "CF_SETTINGS_TEST_PENDING" -> seed.settingsPending
                 "CF_WIZARD_AUTO_OPEN" -> seed.wizardAutoOpen
                 "CF_WIZARD_BOARD_CAPTURE" -> seed.wizardBoardCapture
+                "CF_GUEST_WIZARD" -> seed.guestWizard
+                "CF_GUEST_WIZARD_JOURNEY" -> seed.guestWizardJourney
+                "CF_GUEST_RECOVERY_BOARD" -> seed.guestRecoveryBoard
                 else -> error("unlisted seed key")
             }
         assertEquals(row.expected, actual)
@@ -93,11 +96,14 @@ class TestSeedSessionKeysTest(
                     Row("settings-pending", "CF_SETTINGS_TEST_PENDING", "1", true, true, false),
                     Row("wizard", "CF_WIZARD_AUTO_OPEN", "1", true, true, false),
                     Row("board", "CF_WIZARD_BOARD_CAPTURE", "WizardWhere", true, "WizardWhere", false),
+                    Row("guest", "CF_GUEST_WIZARD", "1", true, true, false),
+                    Row("guest-journey", "CF_GUEST_WIZARD_JOURNEY", "1", true, true, false),
+                    Row("guest-recovery", "CF_GUEST_RECOVERY_BOARD", "WizardSleep", true, "WizardSleep", false),
                 )
 
             fun empty(key: String): Any? =
                 when (key) {
-                    "CF_SETTINGS_TEST_PENDING", "CF_AUTH_TEST_WALKTHROUGH_SEEN", "CF_WALKTHROUGH_TEST_PENDING", "CF_AUTH_TEST_TERMS_CHANGES_PENDING", "CF_AUTH_TEST_TERMS_PENDING", "CF_AUTH_TEST_UNVERIFIED", "CF_PLAN_TEST_POSITION", "CF_PLAN_TEST_FREEZE_CLOCK", "CF_WIZARD_AUTO_OPEN" -> false
+                    "CF_SETTINGS_TEST_PENDING", "CF_AUTH_TEST_WALKTHROUGH_SEEN", "CF_WALKTHROUGH_TEST_PENDING", "CF_AUTH_TEST_TERMS_CHANGES_PENDING", "CF_AUTH_TEST_TERMS_PENDING", "CF_AUTH_TEST_UNVERIFIED", "CF_PLAN_TEST_POSITION", "CF_PLAN_TEST_FREEZE_CLOCK", "CF_WIZARD_AUTO_OPEN", "CF_GUEST_WIZARD", "CF_GUEST_WIZARD_JOURNEY" -> false
                     "CF_MOCK_DELAY" -> Duration.ZERO
                     else -> null
                 }
@@ -109,7 +115,12 @@ class TestSeedSessionKeysTest(
                 valid
                     .filter {
                         it.key !in
-                            setOf("CF_AUTH_TEST_AUDIT_SCREEN", "CF_AUTH_TEST_AUDIT_STATE", "CF_WIZARD_BOARD_CAPTURE")
+                            setOf(
+                                "CF_AUTH_TEST_AUDIT_SCREEN",
+                                "CF_AUTH_TEST_AUDIT_STATE",
+                                "CF_WIZARD_BOARD_CAPTURE",
+                                "CF_GUEST_RECOVERY_BOARD",
+                            )
                     }.map {
                         it.copy(
                             name = it.name + "-invalid",
