@@ -28,8 +28,10 @@ import net.chronoflow.core.model.DataFailure
 import net.chronoflow.core.model.api.AccountSecurityChange
 import net.chronoflow.core.model.api.AccountSecurityResult
 import net.chronoflow.core.model.session.StaleSessionException
+import net.chronoflow.feature.settings.SettingsComputeKey
 import net.chronoflow.feature.settings.SettingsDependencies
 import net.chronoflow.feature.settings.SettingsDependenciesKey
+import net.chronoflow.feature.settings.SettingsIoKey
 import net.chronoflow.feature.settings.SettingsMainKey
 import net.chronoflow.feature.settings.SettingsPagesModel
 import net.chronoflow.feature.settings.SettingsPagesState
@@ -231,6 +233,8 @@ class SecurityViewModel(
                     SecurityViewModel(
                         checkNotNull(this[SettingsDependenciesKey]),
                         this[SettingsMainKey] ?: Dispatchers.Main.immediate,
+                        this[SettingsComputeKey] ?: Dispatchers.Default,
+                        this[SettingsIoKey] ?: Dispatchers.IO,
                     )
                 }
             }

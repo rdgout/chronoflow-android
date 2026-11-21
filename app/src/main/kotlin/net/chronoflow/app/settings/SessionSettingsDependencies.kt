@@ -24,7 +24,7 @@ internal class SessionSettingsDependencies(
     private val session: SessionGraph,
 ) : SettingsDependencies {
     override val snapshot = session.snapshot
-    override val passwordPromptSeed: String? = null
+    override val passwordPromptSeed: String? get() = net.chronoflow.app.LaunchPlatform.passwordPromptSeed
     override val clipboard get() = app.settingsClipboard
 
     override suspend fun performSecurity(change: AccountSecurityChange): AccountSecurityResult =

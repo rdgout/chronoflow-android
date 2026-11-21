@@ -3212,7 +3212,7 @@ Implementation commits:
   - The wide variants.
 - [x] Port the settings security model and its iOS model tests.
 - [x] Apply account-security summaries and snapshots under a session mutation permit without persisting secrets.
-- [ ] **Secrets.** Nothing secret goes into saved state. Setup and recovery codes live only in the ViewModel (`14 §3.4`).
+- [x] **Secrets.** Nothing secret goes into saved state. Setup and recovery codes live only in the ViewModel (`14 §3.4`).
 - [ ] **Tests.**
   - The ported cases.
   - Guards for all 20 boards.

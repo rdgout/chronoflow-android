@@ -64,3 +64,7 @@ interface SettingsDependencies {
 object SettingsDependenciesKey : CreationExtras.Key<SettingsDependencies>
 
 object SettingsMainKey : CreationExtras.Key<CoroutineDispatcher>
+
+object SettingsIoKey : CreationExtras.Key<CoroutineDispatcher>
+
+object SettingsComputeKey : CreationExtras.Key<CoroutineDispatcher>
