@@ -3332,7 +3332,7 @@ Acceptance evidence and the pending host checks are recorded in [`docs/settings-
   - Entered from Welcome's Plan my trip.
   - The guest variants: `WizardWhereGuest`, `WizardOutboundGuest`, `WizardOutboundPastGuest`, `WizardCheckingGuest`, `WizardFineTuneGuest`, `WizardReadyGuest`, `WizardReadyGuestFree` and `WizardDiscardGuest`.
   - Questions are excluded for guests, per 9e.
-- [ ] **Guest review endpoint.** `POST guest/trips/review` (90 s) in `ApiDataSource` and in the mock (iOS 18b, 18c; mock side ported in 4c, OQ-A165).
+- [x] **Guest review endpoint.** `POST guest/trips/review` (90 s) in `ApiDataSource` and in the mock (iOS 18b, 18c; mock side ported in 4c, OQ-A165). (API in 4b, mock in 4c; verified by `GuestGenerationMockTest`.)
 - [x] **GuestSecretStore:** Keystore alias `<ns>.guest` plus a DataStore key (06 OQ 12). The guest draft file is `noBackupFilesDir/<ns>/guest-wizard.json` (18f).
 - [ ] **Discard and recovery.** Discard returns to Welcome. The guest draft is recovered quietly after the Welcome intro (OQ 17, 18m).
 - [ ] **Tests.** The ported 18b–18h and 18k–18m cases, plus guards for every guest board and its DarkNL wrapper.
