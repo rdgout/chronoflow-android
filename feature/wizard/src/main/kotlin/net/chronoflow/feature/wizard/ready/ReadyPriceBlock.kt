@@ -39,6 +39,14 @@ internal fun ReadyPriceBlock(ui: ReadyPriceUi) {
             val alert = line is PriceLine.Balance && line.alert
             Text(
                 line.copy.resolve(),
+                modifier =
+                    if (line is PriceLine.GuestPaid ||
+                        line == PriceLine.GuestFree
+                    ) {
+                        Modifier.testTag("wizard.ready.guest-price")
+                    } else {
+                        Modifier
+                    },
                 color = if (alert) colors.destructive else colors.mutedForeground,
                 style =
                     CfTheme.type

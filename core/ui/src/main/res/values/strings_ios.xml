@@ -1704,8 +1704,6 @@
     <string name="wizard_opens_this_step">Opens this step</string>
     <!-- wizard: Outbound, flight {{number}} -->
     <string name="wizard_outbound_flight_number">Outbound, flight %1$s</string>
-    <!-- wizard: Paid with {{cost}} of the 3 credits you get when you sign up. -->
-    <string name="wizard_paid_with_cost_of_the_3_credits_yo_c69be5">Paid with %1$s of the 3 credits you get when you sign up.</string>
     <!-- wizard: Pick the airports from your booking. -->
     <string name="wizard_pick_the_airports_from_your_booking">Pick the airports from your booking.</string>
     <!-- wizard: Plan a trip -->

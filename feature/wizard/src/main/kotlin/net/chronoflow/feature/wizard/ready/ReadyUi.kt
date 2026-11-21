@@ -38,6 +38,7 @@ enum class ReadyRow(
     Flight("Flight", "flight"),
     Return("Return", "return"),
     Sleep("Sleep", "sleep"),
+    Questions("Questions", "questions"),
     Extras("Extras", "extras"),
     LatestWake("Latest wake-up", "latest-wake-up"),
 }
@@ -83,6 +84,13 @@ sealed interface PriceValue {
 
 @Immutable
 sealed interface PriceLine {
+    data class GuestPaid(
+        val cost: Int,
+        val balance: Int,
+    ) : PriceLine
+
+    data object GuestFree : PriceLine
+
     data object FreeTrip : PriceLine
 
     data object FreeHome : PriceLine
@@ -100,6 +108,21 @@ sealed interface PriceLine {
 
     val copy: WizardCopy get() =
         when (this) {
+            is GuestPaid -> {
+                WizardCopy(
+                    if (balance == 1) {
+                        "Paid with {{cost}} of the {{balance}} credit you get when you sign up."
+                    } else {
+                        "Paid with {{cost}} of the {{balance}} credits you get when you sign up."
+                    },
+                    mapOf("cost" to cost.toString(), "balance" to balance.toString()),
+                )
+            }
+
+            GuestFree -> {
+                WizardCopy("Your sign-up credits stay unused.")
+            }
+
             FreeTrip -> {
                 WizardCopy("This trip is free: only a small body-clock shift is needed.")
             }

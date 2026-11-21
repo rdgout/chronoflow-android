@@ -73,6 +73,7 @@ import net.chronoflow.core.wizard.model.resumeChecking
 import net.chronoflow.core.wizard.model.resumeCompletion
 import net.chronoflow.core.wizard.model.reviewInput
 import net.chronoflow.core.wizard.model.revisit
+import net.chronoflow.core.wizard.model.revisitGuestQuestions
 import net.chronoflow.core.wizard.model.savePlan
 import net.chronoflow.core.wizard.model.setDatePart
 import net.chronoflow.core.wizard.model.setPreference
@@ -732,6 +733,10 @@ class TripWizardViewModel(
                 val model = wizard ?: return
                 if (closing.value) return
                 val row = event.row
+                if (row == net.chronoflow.feature.wizard.ready.ReadyRow.Questions) {
+                    model.revisitGuestQuestions()
+                    return
+                }
                 val step =
                     when (row) {
                         net.chronoflow.feature.wizard.ready.ReadyRow.Route -> MemberWizardStep.whereTo

@@ -84,6 +84,23 @@ class TripWizardViewModelReadyTest {
         }
     }
 
+    @Test fun guestQuestionsRevisitsAgeInsteadOfFineTune() =
+        runTest(timeout = 60.seconds) {
+            withWizard(configure = {
+                val base = checkedDraft(MemberWizardStep.ready)
+                draft = base.copy(state = base.state.copy(mode = net.chronoflow.core.wizard.model.WizardMode.guest))
+                uiOverride = WizardUiOverride()
+            }) { f ->
+                runCurrent()
+                f.model.onEvent(WizardEvent.RevisitFromReady(ReadyRow.Questions))
+                runCurrent()
+                val state = checkNotNull(f.model.wizard).draft.state
+                assertEquals(MemberWizardStep.question, state.step)
+                assertEquals(listOf("age_band"), state.questions!!.first().fields)
+                assertEquals(0, state.questionIndex)
+            }
+        }
+
     @Test fun routeRevisitsWhere() = checkRow(ReadyRow.Route, MemberWizardStep.whereTo)
 
     @Test fun flightRevisitsOutbound() = checkRow(ReadyRow.Flight, MemberWizardStep.outbound)

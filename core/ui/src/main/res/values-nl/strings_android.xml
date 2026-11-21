@@ -27,4 +27,8 @@
     <string name="android_wizard_time_sheet_steps">Stappen van 5 minuten.</string>
     <!-- android: {{flight}} · via {{airports}} (review: needs review) -->
     <string name="android_wizard_flight_via">%1$s · via %2$s</string>
+    <!-- android: Paid with {{cost}} of the {{balance}} credits you get when you sign up. (review: needs review) -->
+    <string name="android_wizard_guest_price_paid">Betaald met %1$s van de %2$s credits die je krijgt als je een account maakt.</string>
+    <!-- android: Paid with {{cost}} of the {{balance}} credit you get when you sign up. (review: needs review) -->
+    <string name="android_wizard_guest_price_paid_one">Betaald met %1$s van de %2$s credit die je krijgt als je een account maakt.</string>
 </resources>

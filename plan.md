@@ -493,6 +493,8 @@ Every screen scrolls when height-constrained. The minimum width is 280 dp; below
 | Notifications blocked step | "Tap Open phone settings and turn on notifications for ChronoFlow." | "Tik op Telefooninstellingen openen en zet meldingen voor ChronoFlow aan." | reminders "Open your phone's Settings.", "Tap Notifications, then ChronoFlow." and "Turn on Allow notifications." |
 | Recovery-codes file name | "Recovery codes.txt" | "Herstelcodes.txt" | — |
 | Ready flight with stops (`android_wizard_flight_via`, needs review, OQ-A356) | {{flight}} · via {{airports}} | {{flight}} · via {{airports}} | — |
+| `android_wizard_guest_price_paid` (needs review, OQ-11a-1) | Paid with {{cost}} of the {{balance}} credits you get when you sign up. | Betaald met {{cost}} van de {{balance}} credits die je krijgt als je een account maakt. | wizard "Paid with {{cost}} of the 3 credits you get when you sign up." |
+| `android_wizard_guest_price_paid_one` (needs review, OQ-11a-1) | Paid with {{cost}} of the {{balance}} credit you get when you sign up. | Betaald met {{cost}} van de {{balance}} credit die je krijgt als je een account maakt. | — |
 | `android_wizard_time_sheet_steps` (needs review) | Steps of 5 minutes. | Stappen van 5 minuten. | — |
 | `android_wizard_airport_field` (needs review) | Airport or city | Luchthaven of stad | wizard "Search airports" |
 | `android_wizard_search_hint` (needs review) | Type at least 2 letters to search. | Typ minstens 2 letters om te zoeken. | — |

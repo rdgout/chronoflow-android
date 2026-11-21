@@ -902,7 +902,7 @@ object CopyIndex {
             "Only for this trip. Your usual sleep stays saved." -> CopyEntry(R.string.wizard_only_for_this_trip_your_usual_slee_48eb5c, false, emptyList())
             "Opens this step" -> CopyEntry(R.string.wizard_opens_this_step, false, emptyList())
             "Outbound, flight {{number}}" -> CopyEntry(R.string.wizard_outbound_flight_number, false, listOf("number"))
-            "Paid with {{cost}} of the 3 credits you get when you sign up." -> CopyEntry(R.string.wizard_paid_with_cost_of_the_3_credits_yo_c69be5, false, listOf("cost"))
+            "Paid with {{cost}} of the 3 credits you get when you sign up." -> CopyEntry(R.string.android_wizard_guest_price_paid, false, listOf("cost", "balance"))
             "Pick the airports from your booking." -> CopyEntry(R.string.wizard_pick_the_airports_from_your_booking, false, emptyList())
             "Plan a trip" -> CopyEntry(R.string.wizard_plan_a_trip, false, emptyList())
             "Please fill this in." -> CopyEntry(R.string.wizard_please_fill_this_in, false, emptyList())
@@ -1050,6 +1050,8 @@ object CopyIndex {
             "Check your connection and try again." -> CopyEntry(R.string.android_wizard_search_error_body, false, emptyList())
             "Steps of 5 minutes." -> CopyEntry(R.string.android_wizard_time_sheet_steps, false, emptyList())
             "{{flight}} · via {{airports}}" -> CopyEntry(R.string.android_wizard_flight_via, false, listOf("flight", "airports"))
+            "Paid with {{cost}} of the {{balance}} credits you get when you sign up." -> CopyEntry(R.string.android_wizard_guest_price_paid, false, listOf("cost", "balance"))
+            "Paid with {{cost}} of the {{balance}} credit you get when you sign up." -> CopyEntry(R.string.android_wizard_guest_price_paid_one, false, listOf("cost", "balance"))
             else -> null
         }
 }

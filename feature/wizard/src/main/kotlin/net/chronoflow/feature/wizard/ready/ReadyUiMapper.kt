@@ -3,6 +3,7 @@
 package net.chronoflow.feature.wizard.ready
 
 import kotlinx.serialization.SerializationException
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
 import net.chronoflow.core.model.DataFailure
@@ -60,6 +61,30 @@ object ReadyUiMapper {
                     )
                 }
                 add(ReadyRowUi(ReadyRow.Sleep, sleepSummary(draft)))
+                if (state.mode == WizardMode.guest) {
+                    val count =
+                        listOf("age_band", "shift_work").count {
+                            state.profile[it] != null &&
+                                state.profile[it] != JsonNull
+                        }
+                    add(
+                        ReadyRowUi(
+                            ReadyRow.Questions,
+                            ReadyText.capture { t ->
+                                t(
+                                    if (count ==
+                                        0
+                                    ) {
+                                        "None needed"
+                                    } else {
+                                        "{{count}} answered"
+                                    },
+                                    mapOf("count" to count.toString()),
+                                )
+                            },
+                        ),
+                    )
+                }
                 add(
                     ReadyRowUi(
                         ReadyRow.Extras,
@@ -94,6 +119,7 @@ object ReadyUiMapper {
                     active.isEditing,
                     state.originalForm?.end?.kind,
                     form.end.kind,
+                    state.mode,
                 )
             }
         val sourceChanged =
@@ -220,6 +246,16 @@ object ReadyUiMapper {
                     ?: (draft.state.savedProfile?.get("habitualWake") as? JsonPrimitive)?.contentOrNull
             }
         val times = listOfNotNull(bed, wake).joinToString("–")
+        if (draft.state.mode == WizardMode.guest) {
+            val label =
+                when ((draft.state.profile["chronotype"] as? JsonPrimitive)?.contentOrNull) {
+                    "early" -> "Early bird"
+                    "intermediate" -> "In between"
+                    "late" -> "Night owl"
+                    else -> "Not sure"
+                }
+            return ReadyText.capture { t -> times + " · " + t(label, emptyMap()) }
+        }
         return if (override.enabled) {
             ReadyText.capture { t ->
                 t("This trip · {{times}}", mapOf("times" to times))
@@ -247,14 +283,27 @@ object ReadyUiMapper {
         editing: Boolean = false,
         originalEndKind: String? = null,
         endKind: String? = null,
+        mode: WizardMode = WizardMode.member,
     ): ReadyPriceUi =
         ReadyPriceUi(
             credits != WizardCredits.unlimited,
             priceValue(price, editing),
             buildList {
-                if (credits == WizardCredits.free && !editing) add(PriceLine.FreeTrip)
+                if (mode == WizardMode.guest) {
+                    add(
+                        if (credits ==
+                            WizardCredits.free
+                        ) {
+                            PriceLine.GuestFree
+                        } else {
+                            PriceLine.GuestPaid(price.cost, price.balance)
+                        },
+                    )
+                } else if (credits == WizardCredits.free && !editing) {
+                    add(PriceLine.FreeTrip)
+                }
                 if (credits == WizardCredits.oneFree) add(PriceLine.FreeHome)
-                if (!price.unlimited &&
+                if (mode == WizardMode.member && !price.unlimited &&
                     price.cost > 0
                 ) {
                     add(PriceLine.Balance(price.balance, credits == WizardCredits.unavailable))
