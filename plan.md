@@ -3272,7 +3272,7 @@ Acceptance evidence and the pending host checks are recorded in [`docs/settings-
   - Balances from the server.
   - The NoLink copy, with no purchase or website hand-off (A14).
   - Pull to refresh.
-- [ ] **Tests.**
+- [x] **Tests.**
   - The ported cases.
   - Passkey JSON with the fake `CredentialClient`.
   - Guards.
