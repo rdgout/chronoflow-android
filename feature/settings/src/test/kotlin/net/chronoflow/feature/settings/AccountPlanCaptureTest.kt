@@ -37,7 +37,7 @@ class AccountPlanCaptureTest(
                 arrayOf("SetDelete", "DeleteConfirmation", false),
                 arrayOf("PasswordPromptDelete", "DeletePrompt", false),
                 arrayOf("SetPlan", "PlanFailed", false),
-                arrayOf("SetPlanCredits", "PlanCredits", false),
+                arrayOf("SetPlanCredits", "PlanPending", false),
                 arrayOf("SetPlanLoading", "PlanLoading", false),
                 arrayOf("SetPlanNoLink", "PlanCredits", false),
                 arrayOf("SetPlanOffline", "PlanOffline", false),

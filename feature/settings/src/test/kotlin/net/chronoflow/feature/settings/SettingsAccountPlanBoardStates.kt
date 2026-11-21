@@ -4,6 +4,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalResources
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import net.chronoflow.core.model.api.ApiJson
 import net.chronoflow.core.model.api.ApiPasskey
 import net.chronoflow.core.model.contracts.Language
@@ -56,11 +58,39 @@ internal object SettingsAccountPlanBoardStates {
             "DeleteLocked",
             "PlanLoading",
             "PlanCredits",
+            "PlanPending",
             "PlanUnlimited",
             "PlanFailed",
             "PlanOffline",
             "PlanMissing",
         )
+
+    fun plan(state: String): SettingsPlanState {
+        val unlimited = state in setOf("PlanUnlimited", "PlanFailed", "PlanOffline")
+        val credits =
+            if (state == "PlanMissing") {
+                null
+            } else {
+                ApiJson.response.parseToJsonElement(
+                    if (unlimited) """{"unlimited":true}""" else """{"credits":2}""",
+                ) as JsonObject
+            }
+        val billing =
+            buildJsonObject {
+                put(
+                    "subscription",
+                    buildJsonObject {
+                        put("tier", "annual")
+                        put("canResume", state == "PlanOffline")
+                        put("paymentFailed", state == "PlanFailed")
+                        put("renewsAt", "2026-11-14T00:00:00Z")
+                        put("endsAt", "2026-11-14T00:00:00Z")
+                    },
+                )
+                if (state == "PlanPending") put("checkout", buildJsonObject { put("status", "pending") })
+            }
+        return SettingsPlanState(credits, billing, state != "PlanLoading", state == "PlanOffline")
+    }
 }
 
 @Composable
@@ -146,22 +176,7 @@ internal fun SettingsAccountPlanBoard(state: String) {
         }
 
         else -> {
-            val unlimited = state in setOf("PlanUnlimited", "PlanFailed", "PlanOffline")
-            val credits =
-                if (state == "PlanMissing") {
-                    null
-                } else {
-                    ApiJson.response.parseToJsonElement(
-                        if (unlimited) """{"unlimited":true}""" else """{"credits":2}""",
-                    ) as JsonObject
-                }
-            val billing =
-                ApiJson.response.parseToJsonElement(
-                    """{"subscription":{"tier":"annual",
-                "canResume":${state == "PlanOffline"},"paymentFailed":${state == "PlanFailed"},
-                "renewsAt":"2026-11-14T00:00:00Z","endsAt":"2026-11-14T00:00:00Z"}}""",
-                ) as JsonObject
-            val plan = SettingsPlanState(credits, billing, state != "PlanLoading", state == "PlanOffline")
+            val plan = SettingsAccountPlanBoardStates.plan(state)
             PlanScreen(PlanScreenState(plan, SettingsPlanText.line(plan, formatter, language, ZoneOffset.UTC)), {})
         }
     }

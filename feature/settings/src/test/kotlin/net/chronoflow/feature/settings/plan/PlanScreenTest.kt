@@ -1,5 +1,3 @@
-@file:OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-
 package net.chronoflow.feature.settings.plan
 
 import androidx.compose.ui.test.assertCountEquals
@@ -8,30 +6,17 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeDown
-import androidx.lifecycle.ViewModelStore
-import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.cancelAndJoin
-import kotlinx.coroutines.job
-import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.TestCoroutineScheduler
-import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonObject
 import net.chronoflow.core.model.api.ApiJson
 import net.chronoflow.core.testing.tiers.Logic
-import net.chronoflow.feature.settings.support.FakeSettingsDependencies
+import net.chronoflow.feature.settings.SettingsAccountPlanBoardStates
 import net.chronoflow.feature.settings.support.SettingsScreenTest
-import org.junit.After
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
-import kotlin.time.Duration.Companion.seconds
 
 @Logic
 @RunWith(RobolectricTestRunner::class)
@@ -86,6 +71,14 @@ class PlanScreenTest : SettingsScreenTest() {
         show { PlanContent(state, {}) }
         compose.onNodeWithTag("settings.plan.cancelled").assertExists()
         compose.onNodeWithTag("settings.plan.date").assertExists()
+    }
+
+    @Test fun pendingShowsTheInfoNotice() {
+        val plan = SettingsAccountPlanBoardStates.plan("PlanPending")
+        show { PlanContent(PlanScreenState(plan), {}) }
+        compose.onNodeWithTag("settings.plan.processing").assertExists()
+        compose.onNodeWithTag("settings.plan.hero").assertExists()
+        compose.onNodeWithTag("settings.plan.noLink").assertExists()
     }
 
     @Test fun failedShowsTheWarningNotice() {
