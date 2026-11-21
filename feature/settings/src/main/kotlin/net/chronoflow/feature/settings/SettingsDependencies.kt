@@ -3,6 +3,8 @@ package net.chronoflow.feature.settings
 import androidx.lifecycle.viewmodel.CreationExtras
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
+import kotlinx.serialization.json.JsonObject
+import net.chronoflow.core.model.SettingsSection
 import net.chronoflow.core.model.session.SessionSnapshot
 import net.chronoflow.core.model.session.SessionUpdate
 import net.chronoflow.core.model.session.SignOutResult
@@ -45,6 +47,11 @@ interface SettingsDependencies {
     suspend fun formatter(): CopyLineFormatter
 
     val zone: ZoneId
+
+    suspend fun enqueueSettings(
+        section: SettingsSection,
+        patch: JsonObject,
+    )
 }
 
 object SettingsDependenciesKey : CreationExtras.Key<SettingsDependencies>

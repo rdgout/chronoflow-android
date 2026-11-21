@@ -1077,6 +1077,24 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A481 | (10a refresh) Loading rows: the `SetStatesMore` board draws bars 140/180/120 in 64 dp rows; iOS `SettingsLoadingRows` uses the generated `SettingsTokens.skeletonRowWidths` 150/190/130 in `counterHeight` 60 rows. | iOS and the generated tokens (sources order; values only from generated tokens); record the board difference. | 10a |
 | OQ-A482 | (10a refresh) Disabled row alpha: board 0.5 (= `AuthTokens.disabledOpacity`) vs `SettingsTokens.disabledOpacity` 0.45 (iOS password prompt). | `AuthTokens.disabledOpacity` 0.5 for rows (board; also `CfButton`'s default). | 10a |
 | OQ-A483 | (10a) Robolectric 4.18's ShadowLocaleManager stores application locales but does not project them into Activity configuration or dispatch locale recreation. | Keep the API 36 configuration projection case ignored (`needs ShadowLocaleManager`); verify its read/write and preference reconciliation on Robolectric, and its real activity locale/recreation with the seeded pixel language test. API 29 retains the full device-config/recreation guard. | 10a |
+| OQ-A484 | (10b OQ-10b-1) Time precision for the settings bedtime tiles: iOS uses a minute wheel; OQ-A8 says 5-minute steps for 9e and 10b. | OQ-A8: round to 5 min on Done, with the footnote "Steps of 5 minutes.". | 10b |
+| OQ-A485 | (10b OQ-10b-2) Sheet subtitle: `PickerTime` shows "On a normal work or school day."; iOS has none. | Habitual times: "On a normal work or school day."; free-day times: "On free days" (both catalog keys). | 10b |
+| OQ-A486 | (10b OQ-10b-3) Done on an untouched sheet: iOS writes (12:00 when unset); 9e writes nothing. | iOS: Done always writes the rounded value. | 10b |
+| OQ-A487 | (10b OQ-10b-4) A Dutch keyboard types "2,1" for mDFD; iOS rejects it. | Replace `,` with `.` before validation and saving. | 10b |
+| OQ-A488 | (10b OQ-10b-5) After a refused body-clock or preferences change, the model's edit overlay keeps the refused value until the page closes (iOS behaviour). | Port iOS as is; 10a's refused toast explains it. Revisit if the user reports it. | 10b |
+| OQ-A489 | (10b OQ-10b-6) Category switch colour: the board uses `primary`, iOS the system default. | `CfSwitch` (dawn), as everywhere on Android (A9). | 10b |
+| OQ-A490 | (10b OQ-10b-7) The reminders-row subtitle before 12b/12c. | None (iOS shows none while permission is unknown); 12c fills it. | 10b |
+| OQ-A491 | (10b OQ-10b-8) `CfTimePickerSheet`/`WizardClockRounding` belong to 9e. | 10b depends on 9e (wave 12) and reuses them; it never creates them (review 2026-11-16). | 10b |
+| OQ-A492 | (10b OQ-10b-9) `SetBodyClock` is 375 × 3,700, larger than one capture. | One capture per state and section item. | 10b |
+| OQ-A493 | (10b OQ-10b-10) The "Not sure" chronotype id is empty, so its iOS tag ends in a dot. | Keep the iOS id `settings.bodyClock.chronotype.`. | 10b |
+| OQ-A494 | (10b OQ-10b-11) Every save scrolls its section heading into view (iOS NH4.1). | Port it; use `scrollToItem` (no animation) under Reduce Motion. | 10b |
+| OQ-A495 | (10b OQ-10b-12) A readiness line key missing from the catalog. | Render the raw key (iOS `value: key` fallback). | 10b |
+| OQ-A496 | (10b OQ-10b-13) On API 29–30, the splash follows the system appearance while the app follows the choice. | Accept (plan `### Appearance`). Content and system bars follow the choice after the hand-off. | 10b |
+| OQ-A497 | (10b OQ-10b-14) Each valid mDFD keystroke enqueues an outbox row (iOS binding). | Port it; rows coalesce in the `settings:bodyClock` chain and the payloads are tiny. | 10b |
+| OQ-A498 | (10b OQ-10b-15) The board's NL category "Slaap" vs the catalog's "Slapen". | The catalog. | 10b |
+| OQ-A499 | (10b) Task 7 expected one time-tile column on small/largeFont, but the specified 128 dp adaptive minimum allows two. | Keep the iOS 128 dp minimum: two columns on small, pixel8 and largeFont; stack at the 280 dp minimum width. | 10b |
+| OQ-A500 | (10b) At 280 dp, a drink label and the two 48 dp controls plus count cannot share a row without clipping. | Keep the board row when the label’s measured minimum width fits; otherwise wrap the label above its controls. Values and targets stay unchanged. | 10b |
+| OQ-A501 | (10b) Android exposes setApplicationNightMode but no public per-app getter. | Seed Light, assert effective activity night configuration and dark pixels after the toggle and relaunch without a theme seed; the JVM recording sink checks MODE_NIGHT_YES. Never inspect the global night-mode setting as a substitute. | 10b |
 | OQ-0a-22 | Native libraries in the bundle? | Allow only `libandroidx.graphics.path.so` (Compose graphics-path; excluding it breaks Path conversion below API 34); fail on any other `.so` | 0a, 13 |
 | OQ-0b-1 | Where does `PlanMetrics` live? `08 §3.1` lists it inside `CfDimens`, but its consumer `:core:plan` is a JVM module that cannot depend on `:core:designsystem` | `core/plan/…/generated/PlanMetrics.generated.kt` (Double, dp), as iOS keeps it in `PlanCore` | 0b, 1b, 1c |
 | OQ-0b-2 | Port all iOS TokenGen outputs now (Auth, Settings, Terms, Welcome, PlanUI, Press, LaunchPaint, TypeMetrics), or only colors, sky and type? | All of them now (the iOS files are exact goldens and Phases 2, 3a, 3c, 5a, 9 and 10 need them) | 0b |
@@ -3124,18 +3142,32 @@ Implementation commits:
 **Delivers.** Builds Preferences: theme pills stored per device, the account time format and hidden categories saved through the outbox, the reminders row and Replay walkthrough. It builds Body clock with its readiness variants and sections (about, sleep, caffeine, light, health), validation, pending-value protection and the needs-an-answer badges. Everything follows the no-health-data rules.
 
 **Tasks**
-- [ ] **Preferences** (`SetPreferences`, `SetPreferencesNL`).
+- [x] Task 1: port the body clock model and its JVM tests.
+- [x] Task 2: add body clock readiness and choice rules.
+- [x] Task 3: port the preferences model.
+- [x] Task 4: pin pending protection for settings sections.
+- Task 5 was removed; reuse 9e's time picker.
+- [x] Task 6: apply the theme per device.
+- [x] Task 7: add body clock and preference components.
+- [x] Task 8: build preferences.
+- [x] Task 9: build body clock.
+- [x] Task 10: seed body clock board states.
+- [x] Task 11: add guards and board captures.
+- [x] Task 12: check the theme on the emulator (Tests below).
+- [x] Task 13: record phase 10b results and open questions ([acceptance record](docs/settings-preferences-body-clock.md)).
+
+- [x] **Preferences** (`SetPreferences`, `SetPreferencesNL`).
   - Theme pills: a device setting in DataStore, mirrored to `UiModeManager` on API 31+.
   - Time format and hidden categories: account settings, saved through the outbox.
   - The reminders row, which routes to 12c (a placeholder until then).
   - Replay walkthrough, through `Walkthrough(replay = true)`.
     - Call `holder.push(Route.Walkthrough(replay = true))` from Preferences (Phase 8 tab entry, `hidesShellChrome`, `CfNavLayout.None`).
-- [ ] **Body clock** (`SetBodyClock`, `DarkSetBodyClock`).
+- [x] **Body clock** (`SetBodyClock`, `DarkSetBodyClock`).
   - Readiness variants and the sections about, sleep, caffeine, light and health, under the no-health-data rules.
   - Validation.
   - Pending values are protected from a server overwrite (the 4d upsert).
   - The needs-an-answer badges.
-- [ ] **Tests.**
+- [x] **Tests.**
   - The ported cases.
   - Guards.
   - One emulator check: a theme change applies without a restart, and on API 31+ the next cold start's splash matches it.
@@ -3400,6 +3432,7 @@ Implementation commits:
   - The master switch, the kinds, and the lead time of 15, 30 or 60 min (native picker, per the 2026-11-09 decision).
   - Open phone settings, through `Settings.ACTION_APP_NOTIFICATION_SETTINGS`, with the blocked-step copy (OQ-A12).
   - Reached from Preferences (10b).
+  - Fill the Preferences reminders-row subtitle (`SettingsPreferencesView.swift:155–163`); 10b leaves it empty.
 - [ ] **Permission flow.** `RequestPermission(POST_NOTIFICATIONS)` on API 33+, remembered in `notificationPermissionRequested`. Below API 33 there is no system dialog: **Turn on reminders** (the Reminders page or the first-trip offer) writes `notificationPermissionRequested`, which is the in-app opt-in; until then the state is "ask" and nothing is scheduled, as on iOS (A13).
 - [ ] **First-trip offer** (`WizardReminders`), porting `FirstTripRemindersOffer`.
   - The settings row moves from `pending` to `seen` before the sheet shows.

@@ -22,6 +22,7 @@ import kotlinx.coroutines.launch
 import net.chronoflow.app.perf.PerfJank
 import net.chronoflow.app.perf.TripPageEntry
 import net.chronoflow.core.designsystem.theme.ReduceMotion
+import net.chronoflow.core.model.config.ThemeChoice
 import net.chronoflow.feature.launch.LaunchController
 import net.chronoflow.feature.launch.model.LaunchKind
 
@@ -29,6 +30,7 @@ class MainActivity : ComponentActivity() {
     private var reduceMotion by mutableStateOf(false)
     private val firstCommit = CompletableDeferred<Unit>()
     private lateinit var launch: LaunchController
+    private var initialTheme = ThemeChoice.System
 
     override val defaultViewModelCreationExtras: androidx.lifecycle.viewmodel.CreationExtras
         get() =
@@ -44,7 +46,9 @@ class MainActivity : ComponentActivity() {
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(newBase)
         (newBase.applicationContext as ChronoFlowApp).graph.launch.captureAppearance(newBase.resources.configuration)
-        applyOverrideConfiguration(ConfigurationPolicy.overrideConfiguration(newBase))
+        val configuration = ConfigurationPolicy.forLaunch(newBase)
+        initialTheme = configuration.initialTheme
+        applyOverrideConfiguration(configuration.configuration)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -85,6 +89,7 @@ class MainActivity : ComponentActivity() {
                 firstCommit,
                 jankTagger,
                 onSystemBars = ::applySystemBars,
+                initialTheme = initialTheme,
                 content = entry,
             )
         }

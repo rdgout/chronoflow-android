@@ -216,6 +216,21 @@
       "source": "board",
       "board": "SetHome",
       "first": "<rect width=\"20\" height=\"14\" x=\"2\" y=\"5\" rx=\"2\">"
+    },
+    "bell": {
+      "source": "board",
+      "board": "SetPreferences",
+      "first": "M10.268 21a2 2 0 0 0 3.464 0"
+    },
+    "rotate-ccw": {
+      "source": "board",
+      "board": "SetPreferences",
+      "first": "M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"
+    },
+    "minus": {
+      "source": "board",
+      "board": "SetBodyClock",
+      "first": "M5 12h14"
     }
   }
 }

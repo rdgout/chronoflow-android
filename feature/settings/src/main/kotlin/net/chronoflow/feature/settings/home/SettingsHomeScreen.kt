@@ -100,6 +100,7 @@ enum class SettingsDestination(
         R.string.settings_body_clock,
         R.string.settings_the_answers_every_plan_is_built_from,
         "settings.bodyClock",
+        true,
     ),
     Preferences(
         Route.Preferences,
@@ -107,6 +108,7 @@ enum class SettingsDestination(
         R.string.settings_preferences,
         R.string.settings_appearance_timeline_reminders,
         "settings.preferences",
+        true,
     ),
     Plan(Route.Plan, LucideGlyphs.CreditCard, R.string.settings_plan_credits, null, "settings.plan"),
 }
