@@ -123,7 +123,7 @@ internal fun SettingsBoardFixture(
                 "tab.settings",
             ),
         )
-    Box(Modifier.fillMaxSize().testTag("settings.capture.window")) {
+    Box(Modifier.fillMaxSize().background(CfTheme.colors.background).testTag("settings.capture.window")) {
         CfNavigationSuiteScaffold(
             layout,
             items,
