@@ -44,9 +44,11 @@ class SecurityConfirmedDateTests(
                 runCurrent()
                 assertEquals(expected, vm.confirmedDate(language))
             } finally {
-                store.clear()
-                vm.viewModelScope.coroutineContext.job
-                    .cancelAndJoin()
+                kotlinx.coroutines.withContext(kotlinx.coroutines.NonCancellable) {
+                    store.clear()
+                    vm.viewModelScope.coroutineContext.job
+                        .cancelAndJoin()
+                }
             }
         }
 

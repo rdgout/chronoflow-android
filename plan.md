@@ -3216,7 +3216,7 @@ Implementation commits:
 - [ ] **Tests.**
   - The ported cases.
   - [x] Guards for all 20 boards and 24 light/dark, Dutch and wide captures.
-  - On the emulator: saving through the document picker, and the `FLAG_SECURE` window flag.
+  - [x] On the emulator: saving through the document picker, the `FLAG_SECURE` window flag and prompt/IME geometry.
 
 **Acceptance**
 - No secret survives in a `Bundle`; this is tested with a recreation.

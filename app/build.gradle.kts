@@ -141,6 +141,7 @@ dependencies {
     testImplementation(project(":core:testing-junit"))
     testImplementation(project(":core:testing-compose"))
 
+    androidTestImplementation(libs.androidx.espresso.intents)
     androidTestImplementation(libs.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.runner)

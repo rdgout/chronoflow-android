@@ -165,7 +165,14 @@ class StringParityTest {
 
     @Test fun countsAreRecorded() {
         val main = sets.first { it.first == "main" }.second
-        val formats = setOf("app_name", "plan_day_title_date", "plan_title_comma_date", "ui_refresh_feedback_separator")
+        val formats =
+            setOf(
+                "app_name",
+                "plan_day_title_date",
+                "plan_title_comma_date",
+                "ui_refresh_feedback_separator",
+                "clipboard_label",
+            )
         val ios = main.en.filterKeys { !it.startsWith("android_") && it !in formats }
         assertThat(ios.values.count { !it.plural }).isEqualTo(921)
         assertThat(ios.values.count { it.plural }).isEqualTo(31)

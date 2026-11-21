@@ -270,7 +270,6 @@ private fun ColumnScope.TwoFactorSetup(
             testTag = "settings.twoFactor.code",
             placeholder = securityText("123456"),
             error = security.errors["code"]?.let { securityText(it) },
-            enabled = !security.busy,
             keyboardOptions =
                 KeyboardOptions(
                     keyboardType = KeyboardType.NumberPassword,
@@ -478,8 +477,12 @@ private fun LockHint(
 ) {
     Row(
         Modifier.fillMaxWidth().padding(horizontal = PlanUITokens.space1.dp),
-        horizontalArrangement = if (centered) Arrangement.Center else Arrangement.Start,
-        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement =
+            Arrangement.spacedBy(
+                SettingsTokens.pillGap.dp,
+                if (centered) Alignment.CenterHorizontally else Alignment.Start,
+            ),
+        verticalAlignment = Alignment.Top,
     ) {
         Icon(
             LucideGlyphs.Lock.imageVector(),
@@ -490,6 +493,7 @@ private fun LockHint(
         Text(
             securityText(key),
             style = CfTheme.type.style(CfTypeScale.settingsHint),
+            textAlign = if (centered) TextAlign.Center else TextAlign.Start,
             color = CfTheme.colors.mutedForeground,
         )
     }

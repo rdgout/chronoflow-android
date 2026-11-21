@@ -125,9 +125,11 @@ class SecurityViewModelTests {
             runCurrent()
             block(vm, deps)
         } finally {
-            store.clear()
-            vm.viewModelScope.coroutineContext.job
-                .cancelAndJoin()
+            kotlinx.coroutines.withContext(kotlinx.coroutines.NonCancellable) {
+                store.clear()
+                vm.viewModelScope.coroutineContext.job
+                    .cancelAndJoin()
+            }
         }
     }
 }

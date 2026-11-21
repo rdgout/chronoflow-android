@@ -65,13 +65,15 @@ class TwoFactorScreenTest : SettingsScreenTest() {
 
     @After fun clearModel() =
         runTest(dispatcher, timeout = 60.seconds) {
-            store.clear()
-            model
-                ?.viewModelScope
-                ?.coroutineContext
-                ?.job
-                ?.cancelAndJoin()
-            clipboardScope.coroutineContext.job.cancelAndJoin()
+            kotlinx.coroutines.withContext(kotlinx.coroutines.NonCancellable) {
+                store.clear()
+                model
+                    ?.viewModelScope
+                    ?.coroutineContext
+                    ?.job
+                    ?.cancelAndJoin()
+                clipboardScope.coroutineContext.job.cancelAndJoin()
+            }
         }
 
     private fun route(enabled: Boolean = false): SecurityViewModel {
