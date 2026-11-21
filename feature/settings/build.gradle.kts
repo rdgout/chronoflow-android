@@ -7,6 +7,7 @@ android {
 }
 
 dependencies {
+    implementation(libs.zxing.core)
     implementation(project(":core:plan"))
     implementation(project(":core:sync"))
     implementation(project(":core:data"))

@@ -14,6 +14,7 @@ dependencies {
     implementation(libs.compose.material3)
     implementation(libs.kotlinx.coroutines.core)
 
+    testImplementation(libs.androidx.activity.compose)
     testImplementation(project(":core:testing"))
     testImplementation(project(":core:testing-compose"))
     testImplementation(libs.junit4)

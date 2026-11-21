@@ -25,5 +25,6 @@ class ReleaseSeedExtrasTest {
                 .putExtra("cf.passkeyCapability", "1")
         assertEquals(LaunchOverrides.None, LaunchPlatform.overrides(intent))
         assertNull(LaunchPlatform.mockSources(StandardTestDispatcher()))
+        assertNull(LaunchPlatform.passwordPromptSeed)
     }
 }

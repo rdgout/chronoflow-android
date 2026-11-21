@@ -52,7 +52,7 @@ class SettingsHomeScreenTest : SettingsScreenTest() {
     @Test fun releaseOnlyShowsBuiltDestinations() {
         show { SettingsHomeScreen(state(showUnbuilt = false), {}) }
         compose.onNodeWithTag("settings.account").assertExists()
-        compose.onNodeWithTag("settings.security").assertDoesNotExist()
+        compose.onNodeWithTag("settings.security").assertExists()
         compose.onNodeWithTag("settings.bodyClock").assertExists()
         compose.onNodeWithTag("settings.preferences").assertExists()
         compose.onNodeWithTag("settings.plan").assertDoesNotExist()

@@ -1095,6 +1095,23 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A499 | (10b) Task 7 expected one time-tile column on small/largeFont, but the specified 128 dp adaptive minimum allows two. | Keep the iOS 128 dp minimum: two columns on small, pixel8 and largeFont; stack at the 280 dp minimum width. | 10b |
 | OQ-A500 | (10b) At 280 dp, a drink label and the two 48 dp controls plus count cannot share a row without clipping. | Keep the board row when the label’s measured minimum width fits; otherwise wrap the label above its controls. Values and targets stay unchanged. | 10b |
 | OQ-A501 | (10b) Android exposes setApplicationNightMode but no public per-app getter. | Seed Light, assert effective activity night configuration and dark pixels after the toggle and relaunch without a theme seed; the JVM recording sink checks MODE_NIGHT_YES. Never inspect the global night-mode setting as a substitute. | 10b |
+| OQ-A502 | (10c OQ-10c-1) Wide prompt width: `PasswordPromptWide` draws 540 dp; plan.md and `14 §1.2` say 560 dp. | **540 dp** (the board; looks come from boards), max height 90 %. Task 13 updates the plan line. | 10c |
+| OQ-A503 | (10c OQ-10c-2) Prompt header: the board draws Cancel + title at 17/22 (iOS nav bar). | `settingsStrong` 16/24 title, `TextButton` Cancel in `dawnText`, row min 48. | 10c |
+| OQ-A504 | (10c OQ-10c-3) `PasswordPromptChecking` and `PasswordPromptForgot` use the deferred `email` action; `PasswordPromptLocked` uses `delete` (10d). | Capture the same state with an in-scope action: Checking and Forgot with `Enable` (primary), Locked with `Disable` (destructive, as `delete`). 10d recaptures Locked with Delete. | 10c |
+| OQ-A505 | (10c OQ-10c-4) Prompt field fill: board `rgba(118,118,128,.12)` vs iOS `surface2`; board trailing lock glyph vs iOS none. | `surface2` (iOS) with the board's 18 dp lock glyph. | 10c |
+| OQ-A506 | (10c OQ-10c-5) Buttons: boards draw some at 40 (bundle `size="lg"` and `h-10`: Change password, setup Turn on, codes Copy/Download) and the setup-key Copy at 36 (default `h-9`) where iOS uses 48 (`actionMinHeight`) and 40 (`walkthroughDoneHeight`). The intro Turn on is 48 on both. | iOS heights: 48 for Change password, setup Turn on, codes Copy/Download; 40 for the setup-key Copy. | 10c |
+| OQ-A507 | (10c OQ-10c-6) 5a's `SecretField` lives in `:feature:auth`; features cannot depend on each other. | A same-shape `SecretField` in `:feature:settings`; consolidating into `:core:model` is a later refactor. | 10c |
+| OQ-A508 | (10c OQ-10c-7) The board toast (popover, dawn check) vs a Snackbar (OQ-A5). | `CfSnackbarHost`, `Long`, as 10a OQ-10a-10; `Set2FAOn` is captured with the snackbar shown. | 10c |
+| OQ-A509 | (10c OQ-10c-8) Show `security.passwordRules` as a hint on the Password page? | No: no board, iOS shows none. Server policy errors are mapped (OQ 21). | 10c |
+| OQ-A510 | (10c OQ-10c-9) Setup key grouping: the board shows `JBSW Y3DP EHPK 3PXP`; iOS shows the raw key. | Raw key (iOS); Copy copies the raw key. | 10c |
+| OQ-A511 | (10c OQ-10c-10) "Copied" feedback after Copy. | None: no iOS string; Android 13+ shows its own clipboard confirmation. | 10c |
+| OQ-A512 | (10c OQ-10c-11) Offer to open `otpauth://` in an authenticator app (`03 §7`). | Not built: no board or iOS. | 10c |
+| OQ-A513 | (10c OQ-10c-12) Settings home Security subtitle: 10a OQ-10a-1 (plan OQ-A462) expected 10c to switch to "Password, passkeys, two-factor". | Keep "Password, two-factor" (iOS at the pin uses it even with passkeys built; 10d OQ-10d-12 agrees). This supersedes OQ-A462's "10c switches" clause. | 10c |
+| OQ-A514 | (10c OQ-10c-13) Board Dutch differs from the catalog ("Wachtwoord opnieuw instellen?", "ingelogd", "inloggen" in the intro). | The catalog wins (generated copy); flag for the user. | 10c |
+| OQ-A515 | (10c OQ-10c-14) Download write failure has no designed copy. | Show "Something went wrong" (existing Settings key) in the feedback snackbar. | 10c |
+| OQ-A516 | (10c OQ-10c-15) iOS 2FA action rows are `SettingsRow` (64, subtitle 14/20); the boards draw 60 min, title 16/22, subtitle 13/18, no disc. | `CfRow(lock = true)` as iOS; record the 4 dp difference. The "Recovery codes" eyebrow-to-card gap follows the board (8) rather than iOS `space3` (12); record it. | 10c |
+| OQ-A517 | (10c OQ-10c-16) The Download emulator test stubs the document picker with Espresso-Intents instead of driving DocumentsUI (another app's UI, flaky). | Stub; the real picker is checked by hand once on `pixel` and noted in the PR. | 10c |
+| OQ-A518 | (10c OQ-10c-17) Clipboard clear when the app is in the background at 60 s (Android 10+ hides the clip from background apps). | Clear on the next foreground if the clip is still ours; a process death leaves it (the system clears clips after an hour on 13+). | 10c |
 | OQ-0a-22 | Native libraries in the bundle? | Allow only `libandroidx.graphics.path.so` (Compose graphics-path; excluding it breaks Path conversion below API 34); fail on any other `.so` | 0a, 13 |
 | OQ-0b-1 | Where does `PlanMetrics` live? `08 §3.1` lists it inside `CfDimens`, but its consumer `:core:plan` is a JVM module that cannot depend on `:core:designsystem` | `core/plan/…/generated/PlanMetrics.generated.kt` (Double, dp), as iOS keeps it in `PlanCore` | 0b, 1b, 1c |
 | OQ-0b-2 | Port all iOS TokenGen outputs now (Auth, Settings, Terms, Welcome, PlanUI, Press, LaunchPaint, TypeMetrics), or only colors, sky and type? | All of them now (the iOS files are exact goldens and Phases 2, 3a, 3c, 5a, 9 and 10 need them) | 0b |
@@ -3191,27 +3208,34 @@ Implementation commits:
   - `plan.md:2040` "Settings board fidelity (2026-11-09)"
   - `Packages/ChronoFlowKit/Sources/Settings/`
 
-**Delivers.** Builds Security, the password change, and the shared Confirm-it's-you password prompt in every state (checking, wrong, locked countdown, forgot), shown as a sheet or as a 560 dp dialog on wide windows. It builds two-factor setup, on, manage and recovery codes, including the wide variants. Secret screens use FLAG_SECURE, copied codes go to a sensitive clipboard entry cleared after 60 s, and Download saves the codes through the document picker.
+**Delivers.** Builds Security, the password change, and the shared Confirm-it's-you password prompt in every state (checking, wrong, locked countdown, forgot), shown as a sheet or as a 540 dp dialog on wide windows. It builds two-factor setup, on, manage and recovery codes, including the wide variants. Secret screens use FLAG_SECURE, copied codes go to a sensitive clipboard entry cleared after 60 s, and Download saves the codes through the document picker.
 
 **Tasks**
-- [ ] **Security** (`SetSecurity`) and **password change** (`SetPassword`), with the server password policy (OQ 21).
-- [ ] **Password prompt** (`PasswordPrompt*`).
-  - A sheet on phones; on wide windows a 560 dp dialog, at most 90% of the height (`PasswordPromptWide`).
+- [x] **Security** (`SetSecurity`) and **password change** (`SetPassword`), with the server password policy (OQ 21).
+- [x] Add the Security smartphone glyph from the boards.
+- [x] **Password prompt** (`PasswordPrompt*`).
+  - A sheet on phones; on wide windows a 540 dp dialog, at most 90% of the height (`PasswordPromptWide`).
   - States: checking, wrong, locked with a countdown, forgot, 2FA on, new codes, and NL.
-- [ ] **Two-factor** (`Set2FA*`).
+- [x] **Two-factor** (`Set2FA*`).
   - The intro, with the Android copy (OQ-A12).
   - Setup: the QR code, drawn on the device from `otpauthUrl` on a white tile (`03 §7`), and the setup key.
-    - Add `com.google.zxing:core` (Apache-2.0) to the catalog, pinned to the latest stable release that is at least two weeks old.
+    - [x] Add `com.google.zxing:core` (Apache-2.0) to the catalog, pinned to the latest stable release that is at least two weeks old (3.5.4, published 2025-11-11).
   - The on and manage states, and the recovery codes.
+  - [x] Add the reference-counted `SecureWindow` effect (OQ-A13).
   - `FLAG_SECURE` on setup and the codes (OQ-A13).
+  - [x] Add the sensitive clipboard and UTF-8 recovery-code document.
   - Copy uses `ClipData` with `EXTRA_IS_SENSITIVE` on API 33+, cleared after 60 s.
   - Download uses `CreateDocument("text/plain")` with the name "Recovery codes.txt", UTF-8 without a BOM and with LF line ends; the fallback is `ACTION_SEND`.
   - The wide variants.
-- [ ] **Secrets.** Nothing secret goes into saved state. Setup and recovery codes live only in the ViewModel (`14 §3.4`).
-- [ ] **Tests.**
+- [x] Port the settings security model and its iOS model tests.
+- [x] Apply account-security summaries and snapshots under a session mutation permit without persisting secrets.
+- [x] **Secrets.** Nothing secret goes into saved state. Setup and recovery codes live only in the ViewModel (`14 §3.4`).
+- [x] **Tests.**
   - The ported cases.
-  - Guards for all 20 boards.
-  - On the emulator: saving through the document picker, and the `FLAG_SECURE` window flag.
+  - [x] Guards for all 20 boards and 24 light/dark, Dutch and wide captures.
+  - [x] On the emulator: saving through the document picker, the `FLAG_SECURE` window flag and prompt/IME geometry.
+
+Acceptance evidence and the pending host checks are recorded in [`docs/settings-security-acceptance.md`](docs/settings-security-acceptance.md).
 
 **Acceptance**
 - No secret survives in a `Bundle`; this is tested with a recreation.

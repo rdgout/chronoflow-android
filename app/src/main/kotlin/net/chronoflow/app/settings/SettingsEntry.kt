@@ -16,7 +16,9 @@ import net.chronoflow.app.SessionGraph
 import net.chronoflow.core.model.config.LanguageChoice
 import net.chronoflow.core.navigation.Route
 import net.chronoflow.core.ui.R
+import net.chronoflow.feature.settings.SettingsComputeKey
 import net.chronoflow.feature.settings.SettingsDependenciesKey
+import net.chronoflow.feature.settings.SettingsIoKey
 import net.chronoflow.feature.settings.SettingsMainKey
 import net.chronoflow.feature.settings.account.AccountRoute
 import net.chronoflow.feature.settings.account.AccountViewModel
@@ -34,6 +36,10 @@ import net.chronoflow.feature.settings.preferences.PreferencesViewModel
 import net.chronoflow.feature.settings.preferences.ThemeDependenciesKey
 import net.chronoflow.feature.settings.profile.ProfileRoute
 import net.chronoflow.feature.settings.profile.ProfileViewModel
+import net.chronoflow.feature.settings.security.PasswordRoute
+import net.chronoflow.feature.settings.security.SecurityRoute
+import net.chronoflow.feature.settings.security.SecurityViewModel
+import net.chronoflow.feature.settings.security.TwoFactorRoute
 import java.io.IOException
 
 @Composable
@@ -51,6 +57,8 @@ internal fun SettingsEntry(
             MutableCreationExtras(owner.defaultViewModelCreationExtras).apply {
                 set(LanguageDependenciesKey, graph.languageApplier)
                 set(SettingsMainKey, graph.dispatchers.main)
+                set(SettingsIoKey, graph.dispatchers.io)
+                set(SettingsComputeKey, graph.dispatchers.default)
             }
         }
     if (route == Route.Language) {
@@ -64,6 +72,9 @@ internal fun SettingsEntry(
                 Route.Profile -> R.string.settings_profile
                 Route.Preferences -> R.string.settings_preferences
                 Route.BodyClock -> R.string.settings_body_clock
+                Route.Security -> R.string.settings_security
+                Route.Password -> R.string.settings_password
+                Route.TwoFactorSettings -> R.string.settings_two_factor_authentication
                 else -> R.string.settings_settings
             },
             onBack.takeUnless { route == Route.Settings },
@@ -78,6 +89,8 @@ internal fun SettingsEntry(
             MutableCreationExtras(owner.defaultViewModelCreationExtras).apply {
                 set(SettingsDependenciesKey, deps)
                 set(SettingsMainKey, graph.dispatchers.main)
+                set(SettingsIoKey, graph.dispatchers.io)
+                set(SettingsComputeKey, graph.dispatchers.default)
                 set(
                     ThemeDependenciesKey,
                     AppThemeDependencies(graph.deviceAppearance),
@@ -115,6 +128,32 @@ internal fun SettingsEntry(
                 language.phone,
                 onBack,
                 onNavigate,
+                modifier,
+            )
+        }
+
+        Route.Security -> {
+            SecurityRoute(
+                viewModel(factory = SecurityViewModel.Factory, extras = extras),
+                LaunchPlatform.routeLabel != null,
+                onBack,
+                onNavigate,
+                modifier,
+            )
+        }
+
+        Route.Password -> {
+            PasswordRoute(
+                viewModel(factory = SecurityViewModel.Factory, extras = extras),
+                onBack,
+                modifier,
+            )
+        }
+
+        Route.TwoFactorSettings -> {
+            TwoFactorRoute(
+                viewModel(factory = SecurityViewModel.Factory, extras = extras),
+                onBack,
                 modifier,
             )
         }

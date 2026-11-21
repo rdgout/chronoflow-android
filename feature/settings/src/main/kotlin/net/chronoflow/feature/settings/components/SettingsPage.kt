@@ -28,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import net.chronoflow.core.designsystem.generated.PlanUITokens
 import net.chronoflow.core.designsystem.generated.SettingsTokens
@@ -98,6 +99,7 @@ fun SettingsPage(
     onBack: (() -> Unit)?,
     testTag: String,
     modifier: Modifier = Modifier,
+    spacing: Dp = PlanUITokens.space6.dp,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
@@ -131,7 +133,7 @@ fun SettingsPage(
                     ).fillMaxWidth()
                     .testTag("$testTag.content")
                     .padding(top = PlanUITokens.space1.dp, bottom = SettingsTokens.pageBottom.dp),
-                verticalArrangement = Arrangement.spacedBy(PlanUITokens.space6.dp),
+                verticalArrangement = Arrangement.spacedBy(spacing),
                 content = content,
             )
         }

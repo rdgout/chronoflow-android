@@ -143,6 +143,10 @@ internal fun SettingsBoardFixture(
         ) {
             CompositionLocalProvider(LocalSafeInsets provides contentInsets) {
                 when {
+                    SettingsSecurityBoardStates.handles(state) -> {
+                        SettingsSecurityBoard(state)
+                    }
+
                     state == "Preferences" -> {
                         PreferencesScreen(SettingsPreferenceBoardStates.preferences(), {})
                     }

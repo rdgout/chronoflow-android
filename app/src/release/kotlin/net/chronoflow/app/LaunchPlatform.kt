@@ -7,6 +7,8 @@ import net.chronoflow.core.navigation.RootNavigator
 import net.chronoflow.feature.launch.LaunchOverrides
 
 internal object LaunchPlatform {
+    val passwordPromptSeed: String? = null
+
     @Suppress("UNUSED_PARAMETER")
     fun prepareWizard(
         graph: AppGraph,

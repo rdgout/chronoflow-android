@@ -1,10 +1,10 @@
 package net.chronoflow.feature.trip.actions
 
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.LocalActivity
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshots.Snapshot
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -42,7 +42,7 @@ class TripActionsBusyTest {
         compose.setContent {
             ProfileHost(DeviceProfiles.pixel8) {
                 ChronoFlowTheme(reduceMotion = true) {
-                    val current = LocalContext.current as ComponentActivity
+                    val current = checkNotNull(LocalActivity.current) as ComponentActivity
                     SideEffect { activity = current }
                     TripActionsWindow(ui, null, {}, { dismissed++ })
                 }
