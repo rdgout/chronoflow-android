@@ -5,11 +5,14 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicSecureTextField
 import androidx.compose.foundation.text.KeyboardOptions
@@ -96,8 +99,21 @@ internal fun SettingsPasswordPrompt(
         Layout(
             modifier = Modifier.fillMaxWidth().heightIn(min = PlanUITokens.actionMinHeight.dp),
             content = {
-                TextButton(onCancel, Modifier.testTag("$identifier.cancel"), enabled = !busy) {
-                    Text(securityText("Cancel"), color = CfTheme.colors.dawnText)
+                TextButton(
+                    onCancel,
+                    Modifier
+                        .defaultMinSize(
+                            minWidth = PlanUITokens.actionMinHeight.dp,
+                            minHeight = PlanUITokens.actionMinHeight.dp,
+                        ).testTag("$identifier.cancel"),
+                    enabled = !busy,
+                    contentPadding = PaddingValues(vertical = PlanUITokens.space2.dp),
+                ) {
+                    Text(
+                        securityText("Cancel"),
+                        Modifier.widthIn(min = PlanUITokens.actionMinHeight.dp).testTag("$identifier.cancel.label"),
+                        color = CfTheme.colors.dawnText,
+                    )
                 }
                 Text(
                     title,
@@ -136,6 +152,7 @@ internal fun SettingsPasswordPrompt(
             Row(
                 Modifier
                     .fillMaxWidth()
+                    .testTag("$identifier.field")
                     .alpha(if (enabled) 1f else SettingsTokens.dimmedFieldOpacity)
                     .background(CfTheme.colors.surface2, shape)
                     .then(
@@ -227,13 +244,17 @@ internal fun SettingsPasswordPrompt(
             TextButton(
                 { showingReset = true },
                 Modifier
-                    .heightIn(min = PlanUITokens.walkthroughDoneHeight.dp)
-                    .minimumInteractiveComponentSize()
+                    .defaultMinSize(
+                        minWidth = PlanUITokens.actionMinHeight.dp,
+                        minHeight = PlanUITokens.actionMinHeight.dp,
+                    ).minimumInteractiveComponentSize()
                     .testTag("$identifier.forgot"),
                 enabled = enabled,
+                contentPadding = PaddingValues(vertical = PlanUITokens.space2.dp),
             ) {
                 Text(
                     securityText("Forgot password?"),
+                    Modifier.widthIn(min = PlanUITokens.actionMinHeight.dp).testTag("$identifier.forgot.label"),
                     style =
                         CfTheme.type.screenBody.copy(
                             fontWeight = FontWeight.Medium,

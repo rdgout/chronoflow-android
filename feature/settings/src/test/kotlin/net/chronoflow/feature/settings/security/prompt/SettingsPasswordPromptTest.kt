@@ -14,11 +14,13 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performTextInput
+import net.chronoflow.core.designsystem.generated.PlanUITokens
 import net.chronoflow.core.designsystem.theme.CfTheme
 import net.chronoflow.core.testing.tiers.Logic
 import net.chronoflow.feature.settings.security.SettingsSecurityPrompt
 import net.chronoflow.feature.settings.support.SettingsScreenTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -68,6 +70,31 @@ class SettingsPasswordPromptTest : SettingsScreenTest() {
     @Test fun emptyPasswordDisablesSubmit() {
         content()
         compose.onNodeWithTag("$prefix.submit").assertIsNotEnabled()
+    }
+
+    @Test fun textActionsAlignWithTheFieldAndKeepTheirTouchTargets() {
+        content()
+        val field = compose.onNodeWithTag("$prefix.field").fetchSemanticsNode().boundsInRoot
+        val cancelLabel =
+            compose
+                .onNodeWithTag(
+                    "$prefix.cancel.label",
+                    useUnmergedTree = true,
+                ).fetchSemanticsNode()
+                .boundsInRoot
+        val forgotLabel =
+            compose
+                .onNodeWithTag(
+                    "$prefix.forgot.label",
+                    useUnmergedTree = true,
+                ).fetchSemanticsNode()
+                .boundsInRoot
+        val cancel = compose.onNodeWithTag("$prefix.cancel").fetchSemanticsNode().boundsInRoot
+        val forgot = compose.onNodeWithTag("$prefix.forgot").fetchSemanticsNode().boundsInRoot
+        assertEquals(field.left, cancelLabel.left, 0.5f)
+        assertEquals(field.left, forgotLabel.left, 0.5f)
+        assertTrue(cancel.height >= PlanUITokens.actionMinHeight * profile.density)
+        assertTrue(forgot.height >= PlanUITokens.actionMinHeight * profile.density)
     }
 
     @Test fun checkingShowsLabelSpinnerAndDisablesFieldForgotAndCancel() {
