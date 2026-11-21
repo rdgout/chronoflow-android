@@ -1079,6 +1079,7 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A483 | (10a) Robolectric 4.18's ShadowLocaleManager stores application locales but does not project them into Activity configuration or dispatch locale recreation. | Keep the API 36 configuration projection case ignored (`needs ShadowLocaleManager`); verify its read/write and preference reconciliation on Robolectric, and its real activity locale/recreation with the seeded pixel language test. API 29 retains the full device-config/recreation guard. | 10a |
 | OQ-A499 | (10b) Task 7 expected one time-tile column on small/largeFont, but the specified 128 dp adaptive minimum allows two. | Keep the iOS 128 dp minimum: two columns on small, pixel8 and largeFont; stack at the 280 dp minimum width. | 10b |
 | OQ-A500 | (10b) At 280 dp, a drink label and the two 48 dp controls plus count cannot share a row without clipping. | Keep the board row when the label’s measured minimum width fits; otherwise wrap the label above its controls. Values and targets stay unchanged. | 10b |
+| OQ-A501 | (10b) Android exposes setApplicationNightMode but no public per-app getter. | Seed Light, assert effective activity night configuration and dark pixels after the toggle and relaunch without a theme seed; the JVM recording sink checks MODE_NIGHT_YES. Never inspect the global night-mode setting as a substitute. | 10b |
 | OQ-0a-22 | Native libraries in the bundle? | Allow only `libandroidx.graphics.path.so` (Compose graphics-path; excluding it breaks Path conversion below API 34); fail on any other `.so` | 0a, 13 |
 | OQ-0b-1 | Where does `PlanMetrics` live? `08 §3.1` lists it inside `CfDimens`, but its consumer `:core:plan` is a JVM module that cannot depend on `:core:designsystem` | `core/plan/…/generated/PlanMetrics.generated.kt` (Double, dp), as iOS keeps it in `PlanCore` | 0b, 1b, 1c |
 | OQ-0b-2 | Port all iOS TokenGen outputs now (Auth, Settings, Terms, Welcome, PlanUI, Press, LaunchPaint, TypeMetrics), or only colors, sky and type? | All of them now (the iOS files are exact goldens and Phases 2, 3a, 3c, 5a, 9 and 10 need them) | 0b |
@@ -3135,7 +3136,7 @@ Implementation commits:
 - [x] Task 7: add body clock and preference components.
 - [x] Task 10: seed body clock board states.
 - [x] Task 11: add guards and board captures.
-- [ ] Task 12: check the theme on the emulator (Tests below).
+- [x] Task 12: check the theme on the emulator (Tests below).
 - [ ] Task 13: record phase 10b results and open questions.
 
 - [x] **Preferences** (`SetPreferences`, `SetPreferencesNL`).
@@ -3149,7 +3150,7 @@ Implementation commits:
   - Validation.
   - Pending values are protected from a server overwrite (the 4d upsert).
   - The needs-an-answer badges.
-- [ ] **Tests.**
+- [x] **Tests.**
   - The ported cases.
   - Guards.
   - One emulator check: a theme change applies without a restart, and on API 31+ the next cold start's splash matches it.

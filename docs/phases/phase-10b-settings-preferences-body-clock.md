@@ -108,6 +108,11 @@ These notes were checked against the code at `d838ffbf` (top of 10a; 8 and 9e ar
 **R15. Account fixture construction (Task 10).**
 - The Kotlin types behind the API snapshot are `AccountSnapshot` and `AccountSettings`. Their constructors and `copy` functions are private (`@ConsistentCopyVisibility`); use their public `invoke` factories when rebuilding the debug fixture. These preserve contract normalization, including readiness derived from the new body-clock answers. No contract visibility or earlier-phase behavior changes.
 
+**R16. Public night-mode verification (Task 12).**
+- Android SDK 37 exposes `UiModeManager.setApplicationNightMode(int)` but no public per-app getter. `getNightMode()` is the global setting and is not a substitute. The device tests seed Light, then verify the activity’s effective `Configuration.uiMode & UI_MODE_NIGHT_MASK == UI_MODE_NIGHT_YES`, its dark pixels, the unchanged activity instance and persistence after recreate/relaunch without a theme seed. Task 6’s recording sink verifies the exact `MODE_NIGHT_YES` argument. OQ-A501 records this default.
+- The same device class adds a separately seeded trip-screen theme toggle and checks the existing debug StrictMode counter (R10), without navigating through Preferences.
+- The connected-test runner removes the debug package after execution. For the manual cold-start check, install the built debug APK and seed Dark first; then run §8's force-stop/start/screencap commands. This is a screenshot check, not a performance measurement.
+
 **R11. Copy.** This phase still adds no copy. If any Android-only string becomes necessary, it goes in `tools/l10n/android-only.json` with `{{name}}` placeholders and `"replaces": []`, and into plan.md "Android-only copy awaiting approval" (l.487).
 
 ---
@@ -657,12 +662,12 @@ Each task is one commit. Tick the plan box named in a task in that same commit.
   2. note the activity instance in `onActivity`;
   3. click `settings.preferences.theme.dark`;
   4. `waitUntil` the node's `captureToImage()` background pixel equals `CfDarkColors.background` ±2;
-  5. assert the same activity instance, `getSystemService(UiModeManager).applicationNightMode == MODE_NIGHT_YES`, and DataStore theme `Dark`.
+  5. assert the same activity instance, the activity’s effective `Configuration.UI_MODE_NIGHT_YES` (refresh R16), and DataStore theme `Dark`.
 - `themeSurvivesRecreateAndRelaunch`:
   1. set Dark;
   2. `scenario.recreate()`, then the pixel is still dark;
   3. close the scenario and launch again **without** the seed's theme default (extend `ScreenTest.launch` so that passing `null` omits a default key, if 0e has no such option);
-  4. it is still dark, and `applicationNightMode == MODE_NIGHT_YES`.
+  4. it is still dark, and the activity’s effective `Configuration.uiMode` still has `UI_MODE_NIGHT_YES` (refresh R16).
 - The system splash itself is proven by 3a's splash theme test, which seeds the same `UiModeManager` state. A true cold start kills the instrumentation process, so record this manual check in the report (§8 item 6). Tick plan "**Tests**".
 
 ### Task 13: `docs(settings): record phase 10b results and open questions`
