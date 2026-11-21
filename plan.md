@@ -389,7 +389,7 @@ Every screen scrolls when height-constrained. The minimum width is 280 dp; below
 | Namespaces | `Api("ChronoFlow", "net.chronoflow.app.native")`, `Mock("ChronoFlowMock", "net.chronoflow.app.native.mock")` (`02 §4.1`) |
 | Account DB | `noBackupFilesDir/<ns>/Accounts/<uuid>/account-<uuid>.db` (+ `-wal`, `-shm`) |
 | Session blob | `noBackupFilesDir/<ns>/session.bin`; Keystore alias `<ns>.session` |
-| Guest secret | Keystore alias `<ns>.guest` + DataStore key (06 OQ 12) |
+| Guest secret | Keystore alias `<keychainService>.guest`; Preferences DataStore `guest_secrets_<dir>` (key `t.<token>`, 06 OQ 12) |
 | Wipe marker | `noBackupFilesDir/<ns>/pending-wipe.json` |
 | Guest wizard draft | `noBackupFilesDir/<ns>/guest-wizard.json` |
 | Mock server state | `noBackupFilesDir/ChronoFlowMock/Server/state.json` (schema 2) |

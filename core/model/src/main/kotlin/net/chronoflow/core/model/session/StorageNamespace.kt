@@ -9,4 +9,5 @@ enum class StorageNamespace(
     ;
 
     val sessionKeyAlias: String get() = "$keychainService.session"
+    val guestKeyAlias: String get() = "$keychainService.guest"
 }
