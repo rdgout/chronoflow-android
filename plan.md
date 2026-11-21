@@ -3215,7 +3215,7 @@ Implementation commits:
 - [x] **Secrets.** Nothing secret goes into saved state. Setup and recovery codes live only in the ViewModel (`14 §3.4`).
 - [ ] **Tests.**
   - The ported cases.
-  - Guards for all 20 boards.
+  - [x] Guards for all 20 boards and 24 light/dark, Dutch and wide captures.
   - On the emulator: saving through the document picker, and the `FLAG_SECURE` window flag.
 
 **Acceptance**

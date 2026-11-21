@@ -104,6 +104,11 @@ class SettingsPasswordPromptHostTest(
     companion object {
         @JvmStatic
         @ParameterizedRobolectricTestRunner.Parameters(name = "{0}")
-        fun cases(): List<Array<Any>> = listOf(arrayOf(DeviceProfiles.pixel8), arrayOf(DeviceProfiles.foldInner))
+        fun cases(): List<Array<Any>> =
+            listOf(
+                arrayOf(DeviceProfiles.pixel8),
+                arrayOf(DeviceProfiles.foldInner),
+                arrayOf(DeviceProfiles.foldInner.copy(name = "foldInnerLargeFont", fontScale = 1.3f)),
+            )
     }
 }

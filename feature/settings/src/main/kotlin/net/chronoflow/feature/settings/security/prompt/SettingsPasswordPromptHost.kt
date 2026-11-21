@@ -4,9 +4,10 @@ package net.chronoflow.feature.settings.security.prompt
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.ime
-import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.width
@@ -36,6 +37,7 @@ import androidx.compose.ui.window.DialogProperties
 import net.chronoflow.core.designsystem.generated.PlanUITokens
 import net.chronoflow.core.designsystem.generated.SettingsTokens
 import net.chronoflow.core.designsystem.layout.BoardMetrics
+import net.chronoflow.core.designsystem.layout.LocalSafeInsets
 import net.chronoflow.core.designsystem.layout.WindowPolicy
 import net.chronoflow.core.designsystem.system.CfModalBottomSheet
 import net.chronoflow.core.designsystem.theme.CfTheme
@@ -106,8 +108,11 @@ internal fun SettingsPasswordPromptHost(
         ) {
             Column(
                 Modifier
-                    .windowInsetsPadding(WindowInsets.navigationBars.union(WindowInsets.ime))
-                    .verticalScroll(rememberScrollState())
+                    .windowInsetsPadding(
+                        LocalSafeInsets.current
+                            .only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom)
+                            .union(WindowInsets.ime),
+                    ).verticalScroll(rememberScrollState())
                     .padding(horizontal = PlanUITokens.space5.dp)
                     .padding(bottom = PlanUITokens.space8.dp),
             ) { body() }
