@@ -9,7 +9,6 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -68,7 +67,6 @@ class SecurityViewModel(
     val now: () -> Instant = { deps.clock.now }
     private val acknowledged = MutableStateFlow(0L)
     private val language = MutableStateFlow<Language>(Language.En)
-    private var request: Job? = null
     private val mutableQr = MutableStateFlow<QrMatrix?>(null)
     val qr: kotlinx.coroutines.flow.StateFlow<QrMatrix?> = mutableQr
     private var seeded = false
@@ -147,8 +145,8 @@ class SecurityViewModel(
     }
 
     private fun submit(action: suspend () -> Unit) {
-        if (request?.isActive == true) return
-        request = viewModelScope.launch { action() }
+        if (state.value.busy) return
+        viewModelScope.launch { action() }
     }
 
     fun changePassword(

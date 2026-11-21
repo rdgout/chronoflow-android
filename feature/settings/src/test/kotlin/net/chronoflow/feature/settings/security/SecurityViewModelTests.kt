@@ -4,6 +4,7 @@ package net.chronoflow.feature.settings.security
 
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.job
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -13,6 +14,7 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import net.chronoflow.core.model.DataFailure
 import net.chronoflow.core.model.api.AccountSecurityResult
+import net.chronoflow.core.model.api.ApiTwoFactorSetup
 import net.chronoflow.core.model.session.StaleSessionException
 import net.chronoflow.feature.settings.support.FakeSettingsDependencies
 import net.chronoflow.feature.settings.testing.FakeSecretField
@@ -25,6 +27,41 @@ import org.junit.Test
 import kotlin.time.Duration.Companion.seconds
 
 class SecurityViewModelTests {
+    @Test fun clearingSecretsAllowsANewSubmissionWhileTheOldRequestFinishes() =
+        runTest(timeout = 60.seconds) {
+            withModel { vm, deps ->
+                val first = CompletableDeferred<AccountSecurityResult>()
+                val second = CompletableDeferred<AccountSecurityResult>()
+                var calls = 0
+                deps.security = { if (++calls == 1) first.await() else second.await() }
+                vm.showPrompt(SettingsSecurityPrompt.Enable)
+                vm.submitPrompt(FakeSecretField("password"))
+                runCurrent()
+                assertTrue(vm.state.value.busy)
+
+                vm.clearSecrets()
+                assertFalse(vm.state.value.busy)
+                vm.showPrompt(SettingsSecurityPrompt.Enable)
+                vm.submitPrompt(FakeSecretField("password"))
+                runCurrent()
+                assertEquals(2, calls)
+                assertTrue(vm.state.value.busy)
+
+                first.complete(AccountSecurityResult.Setup(ApiTwoFactorSetup("OLD", "otpauth://old")))
+                runCurrent()
+                assertNull(vm.state.value.setup)
+                assertTrue(vm.state.value.busy)
+                assertEquals(SettingsSecurityPrompt.Enable, vm.state.value.prompt)
+
+                val latest = ApiTwoFactorSetup("NEW", "otpauth://new")
+                second.complete(AccountSecurityResult.Setup(latest))
+                runCurrent()
+                assertEquals(latest, vm.state.value.setup)
+                assertFalse(vm.state.value.busy)
+                assertNull(vm.state.value.prompt)
+            }
+        }
+
     @Test fun successClearsAllFieldsAndHoldsFeedbackUntilAcknowledged() =
         runTest(timeout = 60.seconds) {
             withModel { vm, _ ->
