@@ -10,6 +10,7 @@ import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.job
@@ -136,6 +137,42 @@ internal class SettingsFixture(
     val deps: SettingsDependencies get() =
         object : SettingsDependencies {
             override val snapshot = this@SettingsFixture.snapshot
+            override val passwordPromptSeed: String? = null
+            override val clipboard: net.chronoflow.feature.settings.security.SensitiveClipboard
+                get() = error("Clipboard is not used by the store fixture")
+
+            override suspend fun performSecurity(
+                change: net.chronoflow.core.model.api.AccountSecurityChange,
+            ): net.chronoflow.core.model.api.AccountSecurityResult =
+                withContext(io) {
+                    if (!isCurrent()) {
+                        throw net.chronoflow.core.model.session
+                            .StaleSessionException()
+                    }
+                    val result =
+                        try {
+                            sync.accountSecurity(change, snapshot.session, snapshot.epoch)
+                        } catch (_: kotlinx.coroutines.CancellationException) {
+                            kotlinx.coroutines.currentCoroutineContext().ensureActive()
+                            throw net.chronoflow.core.model.session
+                                .StaleSessionException()
+                        }
+                    if (!isCurrent()) {
+                        throw net.chronoflow.core.model.session
+                            .StaleSessionException()
+                    }
+                    val admitted =
+                        controller.mutationPermit(snapshot)
+                            ?: throw net.chronoflow.core.model.session
+                                .StaleSessionException()
+                    net.chronoflow.core.data.security
+                        .AccountSecurityStore(
+                            database,
+                            settings,
+                        ).apply(change, result, admitted)
+                    sync.requestSync()
+                    result
+                }
 
             override fun account() = account.values()
 

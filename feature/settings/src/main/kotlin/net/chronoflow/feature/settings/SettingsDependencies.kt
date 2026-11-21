@@ -17,6 +17,13 @@ import net.chronoflow.core.sync.SyncEvent
 import java.time.ZoneId
 
 interface SettingsDependencies {
+    suspend fun performSecurity(
+        change: net.chronoflow.core.model.api.AccountSecurityChange,
+    ): net.chronoflow.core.model.api.AccountSecurityResult
+
+    val passwordPromptSeed: String?
+    val clipboard: net.chronoflow.feature.settings.security.SensitiveClipboard
+
     val snapshot: SessionSnapshot
 
     fun account(): Flow<AccountRecord?>

@@ -3194,7 +3194,7 @@ Implementation commits:
 **Delivers.** Builds Security, the password change, and the shared Confirm-it's-you password prompt in every state (checking, wrong, locked countdown, forgot), shown as a sheet or as a 560 dp dialog on wide windows. It builds two-factor setup, on, manage and recovery codes, including the wide variants. Secret screens use FLAG_SECURE, copied codes go to a sensitive clipboard entry cleared after 60 s, and Download saves the codes through the document picker.
 
 **Tasks**
-- [ ] **Security** (`SetSecurity`) and **password change** (`SetPassword`), with the server password policy (OQ 21).
+- [x] **Security** (`SetSecurity`) and **password change** (`SetPassword`), with the server password policy (OQ 21).
 - [x] Add the Security smartphone glyph from the boards.
 - [x] **Password prompt** (`PasswordPrompt*`).
   - A sheet on phones; on wide windows a 560 dp dialog, at most 90% of the height (`PasswordPromptWide`).

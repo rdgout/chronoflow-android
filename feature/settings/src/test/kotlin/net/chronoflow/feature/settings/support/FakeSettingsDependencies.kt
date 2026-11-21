@@ -20,7 +20,26 @@ import net.chronoflow.core.testing.FakePlanClock
 import net.chronoflow.feature.settings.SettingsDependencies
 import java.time.ZoneOffset
 
-class FakeSettingsDependencies : SettingsDependencies {
+class FakeSettingsDependencies(
+    clipboardScope: kotlinx.coroutines.CoroutineScope? = null,
+) : SettingsDependencies {
+    var security: suspend (net.chronoflow.core.model.api.AccountSecurityChange) ->
+    net.chronoflow.core.model.api.AccountSecurityResult = {
+        net.chronoflow.core.model.api.AccountSecurityResult.Changed
+    }
+
+    override suspend fun performSecurity(change: net.chronoflow.core.model.api.AccountSecurityChange) = security(change)
+
+    override var passwordPromptSeed: String? = null
+    val clipboardPort = RecordingClipboardPort()
+    override val clipboard by lazy {
+        net.chronoflow.feature.settings.security.SensitiveClipboard(
+            clipboardPort,
+            checkNotNull(clipboardScope),
+            "ChronoFlow",
+        )
+    }
+
     override val snapshot = SessionSnapshot(StoredSession("fixture", "019a562b-8000-7000-8000-000000000071"), 1)
     val account =
         MutableStateFlow<AccountRecord?>(AccountRecord(snapshot.session.accountId, "Rick Gout", "rick@example.com"))
@@ -87,4 +106,28 @@ class FakeSettingsDependencies : SettingsDependencies {
         section: SettingsSection,
         patch: JsonObject,
     ) = saveSettings(section, patch)
+}
+
+class RecordingClipboardPort : net.chronoflow.feature.settings.security.ClipboardPort {
+    var text: String? = null
+    var sensitive = false
+    var stamp = 0L
+
+    override fun set(
+        label: String,
+        text: String,
+        sensitive: Boolean,
+    ): Long {
+        this.text = text
+        this.sensitive = sensitive
+        return ++stamp
+    }
+
+    override fun currentTimestamp(): Long = stamp
+
+    override fun clear() {
+        text = null
+    }
+
+    override fun toString(): String = "RecordingClipboardPort(***)"
 }

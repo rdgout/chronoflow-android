@@ -1,13 +1,19 @@
 package net.chronoflow.app.settings
 
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonObject
 import net.chronoflow.app.AppGraph
 import net.chronoflow.app.SessionGraph
+import net.chronoflow.core.data.security.AccountSecurityStore
 import net.chronoflow.core.model.OutboxChange
 import net.chronoflow.core.model.ProfileChange
 import net.chronoflow.core.model.SettingsSection
+import net.chronoflow.core.model.api.AccountSecurityChange
+import net.chronoflow.core.model.api.AccountSecurityResult
 import net.chronoflow.core.model.session.StaleSessionException
 import net.chronoflow.core.plan.CopyLineFormatter
 import net.chronoflow.feature.settings.SettingsDependencies
@@ -18,6 +24,25 @@ internal class SessionSettingsDependencies(
     private val session: SessionGraph,
 ) : SettingsDependencies {
     override val snapshot = session.snapshot
+    override val passwordPromptSeed: String? = null
+    override val clipboard get() = app.settingsClipboard
+
+    override suspend fun performSecurity(change: AccountSecurityChange): AccountSecurityResult =
+        withContext(app.dispatchers.io) {
+            if (!isCurrent()) throw StaleSessionException()
+            val result =
+                try {
+                    session.sync.accountSecurity(change, snapshot.session, snapshot.epoch)
+                } catch (_: CancellationException) {
+                    currentCoroutineContext().ensureActive()
+                    throw StaleSessionException()
+                }
+            if (!isCurrent()) throw StaleSessionException()
+            val permit = app.controller.mutationPermit(snapshot) ?: throw StaleSessionException()
+            AccountSecurityStore(session.database, session.settings).apply(change, result, permit)
+            session.sync.requestSync()
+            result
+        }
 
     override fun account() = session.accounts.values()
 
