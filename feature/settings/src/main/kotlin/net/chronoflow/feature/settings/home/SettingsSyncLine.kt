@@ -27,8 +27,8 @@ import net.chronoflow.core.designsystem.theme.tnum
 import net.chronoflow.core.model.contracts.Language
 import net.chronoflow.core.plan.CopyLineFormatter
 import net.chronoflow.core.plan.PlanClock
+import net.chronoflow.core.plan.formatPlanDayMonth
 import net.chronoflow.core.ui.R
-import java.time.Instant
 import java.time.ZoneId
 
 @Composable
@@ -41,9 +41,7 @@ fun SettingsSyncLine(
     formatter: CopyLineFormatter?,
     modifier: Modifier = Modifier,
 ) {
-    val ticks = remember(clock) { clock.values() }
-    val now by ticks.collectAsStateWithLifecycle(Instant.EPOCH)
-    val line = state.syncLine(now, syncing, offline, zone) ?: return
+    val line = rememberSettingsSyncLine(state, syncing, offline, clock, zone) ?: return
     val language =
         if (LocalResources.current.configuration.locales[0]
                 .language == "nl"
@@ -87,7 +85,9 @@ fun SettingsSyncLine(
             }
 
             is SyncLine.On -> {
-                val date = formatter?.formatDayMonth(line.raw, language, zone.id) ?: return
+                val date =
+                    formatter?.formatDayMonth(line.raw, language, zone.id)
+                        ?: formatPlanDayMonth(line.raw, language, zone.id)
                 stringResource(R.string.settings_synced_on_date, date)
             }
         }
@@ -105,4 +105,18 @@ fun SettingsSyncLine(
         Icon(glyph.imageVector(), null, Modifier.size(AuthTokens.cardGap.dp), tint = CfTheme.colors.mutedForeground)
         Text(text, style = CfTheme.type.style(CfTypeScale.settingsHint).tnum(), color = CfTheme.colors.mutedForeground)
     }
+}
+
+@Composable
+internal fun rememberSettingsSyncLine(
+    state: SettingsHomeState,
+    syncing: Boolean,
+    offline: Boolean,
+    clock: PlanClock,
+    zone: ZoneId,
+): SyncLine? {
+    val initial = remember(clock) { clock.now }
+    val ticks = remember(clock) { clock.values() }
+    val now by ticks.collectAsStateWithLifecycle(initial)
+    return state.syncLine(now, syncing, offline, zone)
 }

@@ -110,7 +110,7 @@ class CopyLineFormatter(
         value: String,
         language: Language,
         zone: String = "UTC",
-    ): String = dateText(planDate(value), language, planZoneRules.rules(zone), DateTemplate.D_MMM)
+    ): String = formatPlanDayMonth(value, language, zone)
 
     fun formatWeekdayDate(
         value: String,

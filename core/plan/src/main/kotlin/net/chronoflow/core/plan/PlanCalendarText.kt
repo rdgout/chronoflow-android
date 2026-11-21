@@ -6,6 +6,12 @@ import java.time.zone.ZoneRules
 
 internal enum class DateTemplate { D_MMM_YYYY, D_MMM, EEE_D_MMM, EEE_D, EEE, MMM_YYYY }
 
+fun formatPlanDayMonth(
+    value: String,
+    language: Language,
+    zone: String = "UTC",
+): String = dateText(planDate(value), language, planZoneRules.rules(zone), DateTemplate.D_MMM)
+
 private val enMonths = arrayOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
 private val nlMonths = arrayOf("jan", "feb", "mrt", "apr", "mei", "jun", "jul", "aug", "sep", "okt", "nov", "dec")
 private val enLongMonths =

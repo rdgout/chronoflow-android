@@ -7,6 +7,8 @@ import androidx.compose.runtime.CompositionTracer
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.onNodeWithTag
+import kotlinx.coroutines.flow.emptyFlow
+import net.chronoflow.core.plan.PlanClock
 import net.chronoflow.core.testing.FakePlanClock
 import net.chronoflow.core.testing.tiers.Logic
 import net.chronoflow.feature.settings.support.SettingsScreenTest
@@ -112,5 +114,28 @@ class SettingsHomeScreenTest : SettingsScreenTest() {
         } finally {
             Composer.setTracer(null)
         }
+    }
+
+    @Test fun firstCompositionUsesTheCurrentInstantBeforeTheFirstTick() {
+        val initialClock =
+            object : PlanClock {
+                override val now = settingsNow
+
+                override fun values() = emptyFlow<java.time.Instant>()
+            }
+        val state = SettingsHomeState(account = account(syncedAt = settingsNow.minusSeconds(120).toString()))
+        val observed = mutableListOf<SyncLine?>()
+        show {
+            val line = rememberSettingsSyncLine(state, false, false, initialClock, ZoneOffset.UTC)
+            SideEffect { observed += line }
+        }
+        assertEquals(SyncLine.Minutes(2), observed.first())
+        assertTrue(SyncLine.JustNow !in observed)
+    }
+
+    @Test fun oldSyncDateIsPresentBeforeTheCopyCatalogLoads() {
+        val state = SettingsHomeState(account = account(syncedAt = settingsNow.minusSeconds(8 * 86400).toString()))
+        show { SettingsSyncLine(state, false, false, clock, ZoneOffset.UTC, formatter = null) }
+        compose.onNodeWithTag("settings.sync").assertExists()
     }
 }

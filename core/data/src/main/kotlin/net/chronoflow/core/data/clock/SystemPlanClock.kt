@@ -25,6 +25,8 @@ class SystemPlanClock(
 ) : PlanClock {
     private val app = context.applicationContext
 
+    override val now: Instant get() = Instant.ofEpochMilli(wallMs())
+
     override fun values(): Flow<Instant> =
         callbackFlow {
             val lock = Any()
