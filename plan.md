@@ -1077,6 +1077,8 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A481 | (10a refresh) Loading rows: the `SetStatesMore` board draws bars 140/180/120 in 64 dp rows; iOS `SettingsLoadingRows` uses the generated `SettingsTokens.skeletonRowWidths` 150/190/130 in `counterHeight` 60 rows. | iOS and the generated tokens (sources order; values only from generated tokens); record the board difference. | 10a |
 | OQ-A482 | (10a refresh) Disabled row alpha: board 0.5 (= `AuthTokens.disabledOpacity`) vs `SettingsTokens.disabledOpacity` 0.45 (iOS password prompt). | `AuthTokens.disabledOpacity` 0.5 for rows (board; also `CfButton`'s default). | 10a |
 | OQ-A483 | (10a) Robolectric 4.18's ShadowLocaleManager stores application locales but does not project them into Activity configuration or dispatch locale recreation. | Keep the API 36 configuration projection case ignored (`needs ShadowLocaleManager`); verify its read/write and preference reconciliation on Robolectric, and its real activity locale/recreation with the seeded pixel language test. API 29 retains the full device-config/recreation guard. | 10a |
+| OQ-A499 | (10b) Task 7 expected one time-tile column on small/largeFont, but the specified 128 dp adaptive minimum allows two. | Keep the iOS 128 dp minimum: two columns on small, pixel8 and largeFont; stack at the 280 dp minimum width. | 10b |
+| OQ-A500 | (10b) At 280 dp, a drink label and the two 48 dp controls plus count cannot share a row without clipping. | Keep the board row when the label’s measured minimum width fits; otherwise wrap the label above its controls. Values and targets stay unchanged. | 10b |
 | OQ-0a-22 | Native libraries in the bundle? | Allow only `libandroidx.graphics.path.so` (Compose graphics-path; excluding it breaks Path conversion below API 34); fail on any other `.so` | 0a, 13 |
 | OQ-0b-1 | Where does `PlanMetrics` live? `08 §3.1` lists it inside `CfDimens`, but its consumer `:core:plan` is a JVM module that cannot depend on `:core:designsystem` | `core/plan/…/generated/PlanMetrics.generated.kt` (Double, dp), as iOS keeps it in `PlanCore` | 0b, 1b, 1c |
 | OQ-0b-2 | Port all iOS TokenGen outputs now (Auth, Settings, Terms, Welcome, PlanUI, Press, LaunchPaint, TypeMetrics), or only colors, sky and type? | All of them now (the iOS files are exact goldens and Phases 2, 3a, 3c, 5a, 9 and 10 need them) | 0b |
@@ -3130,7 +3132,7 @@ Implementation commits:
 - [x] Task 4: pin pending protection for settings sections.
 - Task 5 was removed; reuse 9e's time picker.
 - [x] Task 6: apply the theme per device.
-- [ ] Task 7: add body clock and preference components.
+- [x] Task 7: add body clock and preference components.
 - [ ] Task 10: seed body clock board states.
 - [ ] Task 11: add guards and board captures.
 - [ ] Task 12: check the theme on the emulator (Tests below).

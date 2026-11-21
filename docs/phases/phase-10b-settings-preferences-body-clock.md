@@ -99,6 +99,12 @@ These notes were checked against the code at `d838ffbf` (top of 10a; 8 and 9e ar
 - `components/SettingsComponentsTest.kt` already exists as a `@Layout` class with 10a geometry checks. Extend it and keep those checks; additional logic-only cases may live in a sibling `@Logic` class. Do not duplicate or replace the existing class.
 - `BodyClockChoice.patch` must fall back from explicit JSON null free-day times as well as absent keys; iOS does both. The abbreviated §5.3 expression omitted the explicit-null fallback.
 
+**R13. Time-tile geometry (Task 7).**
+- The body’s 128 dp adaptive minimum and iOS `SettingsBodyClockView.swift:324` yield two columns at `small` (360 − 32 page − 40 card = 288; (288 − 12) / 2 = 138 ≥ 128), as well as `pixel8`/`largeFont`. The Task 7 one-column expectation contradicted that rule. Keep iOS’s 128 dp rule, test two columns on those profiles, and prove stacking at the 280 dp minimum width. Recorded as OQ-A499; no earlier-phase behavior changes.
+
+**R14. Minimum-width drink rows (Task 7).**
+- At 280 dp, the 208 dp card interior cannot fit the label beside two 48 dp targets, the 64 dp count and the board padding/gaps. Use layout-time intrinsic width to wrap the label above its controls only when it cannot fit; the board-width row stays unchanged. OQ-A500 records this default; `SettingsComponentsLayoutTest` guards 280 dp.
+
 **R11. Copy.** This phase still adds no copy. If any Android-only string becomes necessary, it goes in `tools/l10n/android-only.json` with `{{name}}` placeholders and `"replaces": []`, and into plan.md "Android-only copy awaiting approval" (l.487).
 
 ---
@@ -584,7 +590,7 @@ Each task is one commit. Tick the plan box named in a task in that same commit.
     - the saved label merges into one node.
   - `SettingsComponentsLayoutTest` (`@Layout`, pixels):
     - the missing box fill and border pixels (`settingsWarning*`), with the content's left edge equal to a non-missing sibling's;
-    - the time tile pair is 2 columns at `pixel8` and 1 column at `small` + `largeFont`;
+    - the time tile pair is 2 columns at `pixel8`, `small` and `largeFont`, and 1 column at the 280 dp minimum width (refresh R13);
     - light and dark.
 
 ### Task 8: `feat(settings): build preferences`
