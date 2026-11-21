@@ -3206,6 +3206,7 @@ Implementation commits:
   - The on and manage states, and the recovery codes.
   - [x] Add the reference-counted `SecureWindow` effect (OQ-A13).
   - `FLAG_SECURE` on setup and the codes (OQ-A13).
+  - [x] Add the sensitive clipboard and UTF-8 recovery-code document.
   - Copy uses `ClipData` with `EXTRA_IS_SENSITIVE` on API 33+, cleared after 60 s.
   - Download uses `CreateDocument("text/plain")` with the name "Recovery codes.txt", UTF-8 without a BOM and with LF line ends; the fallback is `ACTION_SEND`.
   - The wide variants.
