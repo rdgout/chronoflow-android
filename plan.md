@@ -3195,6 +3195,7 @@ Implementation commits:
 
 **Tasks**
 - [ ] **Security** (`SetSecurity`) and **password change** (`SetPassword`), with the server password policy (OQ 21).
+- [x] Add the Security smartphone glyph from the boards.
 - [ ] **Password prompt** (`PasswordPrompt*`).
   - A sheet on phones; on wide windows a 560 dp dialog, at most 90% of the height (`PasswordPromptWide`).
   - States: checking, wrong, locked with a countdown, forgot, 2FA on, new codes, and NL.
