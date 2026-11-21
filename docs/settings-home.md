@@ -4,7 +4,7 @@ Settings home, pending sign-out, Account, Profile and Language are implemented. 
 
 Home observes local account/settings/outbox values and session sync events. Only its sync-line leaf observes the clock. Sign-out captures the session, refuses a stale discard, flushes before confirmation, and delegates wiping and routing to the existing controller. The confirmation title counts displayed changes; the sync line counts outbox rows. Discard and Stay survive activity recreation through the entry ViewModel, without persisting the sheet across process death.
 
-Profile saves the trimmed name and unchanged email through the permitted outbox write. Edited drafts survive incoming pulls, failures and recreation. The name limit counts code points. Language stays device-local: LocaleManager on API 33+, device-config below 33, with disk and binder work on injected IO. Retained ViewModels hold one-shot feedback until acknowledgement; the process feedback survives locale recreation. No new Android-only copy or shipping dependency was added. Release keeps the passkey capability disabled and hides unbuilt Settings rows.
+Profile saves the trimmed name and unchanged email through the permitted outbox write. Edited drafts survive incoming pulls, failures and recreation. Stale-session cancellation stays silent, matching the Profile submit catch in iOS; own coroutine cancellation still propagates. Only external name replacements reach the field, without echoing the user's edits. The name limit counts code points. Language stays device-local: LocaleManager on API 33+, device-config below 33, with disk and binder work on injected IO. Retained ViewModels hold one-shot feedback until acknowledgement; the process feedback survives locale recreation. No new Android-only copy or shipping dependency was added. Release keeps the passkey capability disabled and hides unbuilt Settings rows.
 
 ## Brief corrections and implementation notes
 
@@ -25,11 +25,12 @@ Profile saves the trimmed name and unchanged email through the permitted outbox 
 | Board / PNG stem | Recorded differences |
 |---|---|
 | `SetHome`, `SetHomeNL`, `DarkSetHome` | Native M3 system large title and bar/navigation chrome. Account subtitle omits data/policies; Security omits passkeys. Readiness badge is below the subtitle in both languages; English board's trailing badge is not reproduced. Sign-out is the 40 dp outline pill with a native minimum touch target. Bottom padding is 40 dp because the Android bar occupies layout space. Sync type is generated 13/18; the syncing glyph stays static. |
-| `SignOutPendingSettings`, `SignOutPending` | Native M3 sheet, scrim and handle. Pending text uses generated 14/20; footer uses board 13/18. Title counts the two displayed entries. The Terms background uses the landed Phase 8 generic terms content. |
+| `DarkSetHome` inset correction (review 1) | The fixture now paints the bottom inset with the app's dark background, matching `CfRoot`. The near-white band below the dark navigation bar was a fixture defect; light/dark pixel guards cover the supplied bottom inset. |
+| `SignOutPendingSettings`, `SignOutPending` | Native M3 sheet, scrim and handle. Pending text uses generated 14/20; footer uses board 13/18. Title counts the two displayed entries. `SignOutPendingSettings` has “2 changes waiting to sync” behind the sheet; its board has “Synced 2 min ago”. The capture follows iOS `SettingsHomeState`'s pending-over-age priority. `SignOutPending` uses the landed Phase 8 generic Terms background. |
 | `SetAccount` | Profile and Language only; data/policies and Delete account remain deferred. Native large app bar and navigation chrome. |
 | `SetProfile` | Name-only editor, selectable read-only email and “Save changes”; the board's new-email/password/link flow is deferred. Native large app bar and navigation chrome. |
 | `SetLanguage` | Native large app bar and navigation chrome; saved feedback uses the shared inverse M3 Snackbar. The static capture shows the System selection; the device test verifies saved presentation through its counter. |
-| `SetStates` | Four sync lines plus the offline-disabled row and connection hint. Generic saved/failed toasts, refusal Details and health/readiness examples are outside 10a. |
+| `SetStates` | Four sync lines plus the offline-disabled row and connection hint. Review 1 removes the disabled row's chevron and groups its hint 12 dp below the card, matching the board; a geometry guard covers the gap. Generic saved/failed toasts, refusal Details and health/readiness examples are outside 10a. |
 | `SetStatesMore` | Loading and unavailable states only. Generated/iOS skeleton widths 150/190/130 and row height 60 replace board 140/180/120 and 64. Refusal feedback remains the existing shell's responsibility; no Details action. |
 
 Only `SetHomeNL` supplies a separate Dutch board in this scope. All fifteen guarded states also run in Dutch and dark. Wide pages cap the content at 560 dp from 600 dp; app bars remain full width. `Set2FAWide` and `Set2FAManageWide` supply that rule and are not built as 10a pages.
@@ -84,20 +85,45 @@ The initial generator check found the omitted Python glyph count. The initial gu
 
 Both emulator classes ran once, under the device lock. No command was blocked by adb, the sandbox or signing. Gradle printed nonfatal Kotlin-daemon marker `Operation not permitted` diagnostics but compiled and ran successfully. No hang or three-minute Gradle stall occurred. The emulator is left running.
 
-## Performance hand-off
+## Startup review
 
-No startup or timeline performance numbers are claimed. Per the user's instruction, do not run performance/profile generation here. AppGraph language services and the Terms slot touch startup/configuration code, so the user should run:
+No startup or timeline performance numbers are claimed. The host review confirmed `Application.onCreate` is unchanged and no new work reads anything before the first frame. `make perf` and `make baseline-profile` are therefore not required for this diff. No timeline renderer, clock ownership, drawing cache, benchmark journey or wizard path changed.
 
-```sh
-make baseline-profile
-make perf
-```
+The host's pre-review `make check` passed in 3:51 (reported by the user). This review round does not rerun `make check`, emulator tiers or T2 AVDs.
 
-Record cold/warm TTID, TTFD and the startup trace rows, including the existing ±25% comparison, in `docs/perf-startup.md`. No timeline renderer, clock ownership, drawing cache, benchmark journey or wizard path changed, so no timeline benchmark/profile journey update was made. `make check`, other emulator tiers and T2 AVDs were not run as requested.
+## Review round 1
+
+The Profile catch alone opts out of mapping foreign cancellation to an error. The pinned `SettingsProfileModel` catches `CancellationError` silently; the pages observers and Home sign-out use general catches, while Language's Android-only applier retains its checked-failure mapping. Their shared default is unchanged. Profile failure cases cover both generic foreign cancellation and `StaleSessionException`; revoked permits and not-current snapshots assert no error and no write.
+
+`PlanClock.now` supplies a synchronous instant from the same injected clock. The sync leaf remembers that seed once per clock and continues collecting its existing minute flow. A first-composition probe checks typed `SyncLine` values with a clock that emits no ticks; it never sees `JustNow` for a two-minute-old sync. The existing fixed-table day/month formatter is also available without a catalog, so the ≥7-day line appears immediately.
+
+Profile name replacements carry a revision, previous value and canonical value. Only a pull replacing an unedited draft or successful normalization advances the revision. The field binding tracks its external baseline across coalesced pulls and seeds the consumed revision on recreation; delayed effects preserve newer typing. Model/field state tests run on the JVM. The two composition binding tests share their ViewModel's single test scheduler and assert model input state, without screen-copy assertions.
+
+The SDK-29 route test selects Dutch by test tag, verifies the route recreates the activity, retains the ViewModel, applies `nl`, clears the recreate id and does not recreate twice. It never calls `host.recreate()`. Removing the route's `recreate()` call makes it fail (`expected 1, was 0`). Restoring the old Profile echo effect makes the rapid-edit case fail (`expected ABC, was A`). The inset guards failed against the original fixture in both themes, then passed with its themed background. These deliberate mutations were restored before commits.
+
+| Review check | Result | Wall time |
+|---|---|---|
+| Profile failure and durability classes | 18 passed | 6.41 s runner wall |
+| Sync screen, SystemPlanClock, PlanClock and date formatter classes | 22 passed | 8 s + 5 s + 3 s builds |
+| Settings components, including the 12 dp gap | 4 passed | 8.01 s runner wall |
+| Shell inset guard, light/dark | 2 passed after the fixture correction | 6.34 s runner wall |
+| SDK-29 Language route recreation | passed after restoring the deliberate mutation | 4.58 s runner wall; cold case 1.256 s, separate native warm-up 393 ms |
+| Profile binding, field policy, model and recreation classes | 12 passed after restoring the deliberate mutation | 7.43 s runner wall |
+| `make captures ONLY="SetStates,DarkSetHome"` (once) | 3 PNGs; 3 passed, 542 prefix-filter skips; no overruns | 20.72 s runner wall |
+| Touched-module layout tier, app/settings/core data (once) | 398 passed, one existing API-36 locale-shadow ignore; no overruns | 24.95 s runner wall |
+| `:app:lintDebug :feature:settings:lintDebug :core:data:lintDebug` (once) | passed | 28 s build |
+| Final `make format` | passed | 13 s build |
+| Single review `make quick` | passed completely: 5,372 main-stage cases, 37 build-logic cases, 171 harness + 25 contracts + 49 strings + 11 vectors, then 7 serial budget cases; no overruns, missing evidence or hangs | 45.89 s main tier; 2.38 s build-logic; tooling 19.990 / 0.111 / 0.017 / 0.083 s; 2.36 s timing tier |
+
+The regenerated files are `SetStates_pixel8_en_light.png`, `SetStatesMore_pixel8_en_light.png` and `DarkSetHome_pixel8_en_dark.png`. The `SetStates` and `DarkSetHome` images were inspected after generation: no disabled chevron, the board's 12 dp hint layout gap, and dark background throughout the supplied bottom inset. `SetStatesMore` keeps its previously recorded token/scope differences. The capture command ran once; no browser renderer was launched.
+
+No new OQ, copy, dependency or test allow-list entry was needed in this review round.
+
+Logs: `/tmp/chronoflow-10a-r1-{profile,clock,components,inset,language-route-restored,name-restored,captures,layout,lint,format-final,quick}.log`. Tier evidence is in `build/test-results/{targeted,captures,layout-10a-r1,quick,build-logic,timing}/timings.json`; individual targeted runs were also copied to `/tmp/chronoflow-10a-r1-*-timings.json`. The serial JVM measurements are recorded in `docs/perf-timeline.md`; no emulator performance/profile command was run. No command was blocked and no run hung. The pixel emulator was left running.
 
 ## Commits
 
-Every commit is GPG-signed, has no trailer, and remains in its original linear history. Task 14 is the documentation commit containing this record.
+Every commit is GPG-signed, has no trailer, and remains in its original linear history. Task 14 originally added this record in `fe3399e0`; review commits extend it below.
 
 | SHA | Subject |
 |---|---|
@@ -118,3 +144,15 @@ Every commit is GPG-signed, has no trailer, and remains in its original linear h
 | `d9756e9f` | `fix(settings): preserve strict state parsing parity` |
 | `a0e0c1b2` | `test(settings): keep pending seed tests in the jvm tier` |
 | `d692ceb4` | `test(settings): cover the minimum supported width` |
+| `fe3399e0` | `docs(settings): record settings home acceptance` |
+
+Review round 1 implementation commits (the following documentation commit records their acceptance):
+
+| SHA | Subject |
+|---|---|
+| `b11b3531` | `fix(settings): keep cancelled profile saves silent` |
+| `87eb37a9` | `fix(settings): seed sync age from the injected clock` |
+| `95dfad9d` | `fix(settings): match the offline row and hint spacing` |
+| `39661d95` | `test(settings): paint the capture shell insets with the theme` |
+| `14c7ee50` | `test(settings): prove the language route recreates on api 29` |
+| `e42ce09c` | `fix(settings): stop echoing profile edits into the name field` |

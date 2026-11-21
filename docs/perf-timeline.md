@@ -604,3 +604,21 @@ Worker evidence: Robolectric API 36, pixel8 profile, debug unit tests on the mac
 The page now observes the boolean availability of actions; the full busy state is collected inside the open sheet. `TimelineInvalidationTest.actionBusyChangesDoNotRecomposePageChrome` renders the real page and toggles the real preparer. Its initial mutation proof failed with 16 composition passes before these fixes; the final guard records **zero** passes and zero chrome compositions. The targeted class passes all **13** cases in **3.945 s** (command **7.923 s**); the new case is **0.091 s**. No drawing, main-thread build, clock, blur, layer or per-frame allocation path was added.
 
 No emulator performance or profile tier was run, per the orchestrator. Host follow-up commands remain `make perf-timeline` and `make baseline-profile`; record their normal first-frame, CPU/jank, RSS, placeholder, main-thread build, replay, recomposition and GC metrics here. No startup path changed, so no new startup measurement is claimed.
+
+## Phase 10a review round 1: settings clock seed (2026-11-21)
+
+`PlanClock` exposes its synchronous current instant so Settings can seed the sync age before the first flow emission. The timeline collector, renderer, drawing cache and clock ownership are unchanged. The single review `make quick` ran the serial `:core:plan:timingTest --max-workers=1` stage on the macOS arm64 host, JDK 21 JVM test build, in 2.36 s wall time. All seven budget cases passed; these are host JVM measurements, not Android frame-time or device claims.
+
+| Preparation fixture | Mean ms | Max ms |
+|---|---:|---:|
+| S3 | 2.9 | 4.0 |
+| large30 | 4.2 | 4.7 |
+| large60 | 6.5 | 8.9 |
+
+| DayDrawing width dp | Worst day median ms | Worst day max ms | Total median ms | Max bytes |
+|---|---:|---:|---:|---:|
+| 360 | 0.08 | 0.16 | 1.5 | 11,795 |
+| 411 | 0.05 | 0.07 | 0.6 | 11,795 |
+| 841 | 0.07 | 0.10 | 1.2 | 14,089 |
+
+The ten large60 `todayView` samples range from 0.49925 to 0.548583 ms (20 ms budget). Evidence: `core/plan/build/test-results/timingTest/TEST-*.xml`, `build/test-results/timing/timings.json`, `/tmp/chronoflow-10a-r1-quick.log`. No emulator performance run or profile regeneration is required for this Settings diff: the host review confirmed unchanged `Application.onCreate` and no new pre-frame reads.

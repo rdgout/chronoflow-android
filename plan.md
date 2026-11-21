@@ -3104,7 +3104,7 @@ Implementation commits:
 **Acceptance**
 - Sign-out with pending changes matches both `SignOutPending` boards.
 - The language switch works on API 29 and 36, through Robolectric and the `pixel` emulator.
-- [Acceptance record](docs/settings-home.md): captures, board differences, OQ-A462–A483, targeted tests, lint, release and layout evidence. The single quick run's test-tier annotation failure was fixed and verified narrowly; its remaining stages passed separately. Startup measurements and final host board review are handed to the user as requested.
+- [Acceptance record](docs/settings-home.md): captures, board differences, OQ-A462–A483, targeted tests, lint, release and layout evidence. The initial quick run's test-tier annotation failure was fixed and verified narrowly; its remaining stages passed separately. The host's pre-review `make check` passed in 3:51. Startup/profile runs are not required: `Application.onCreate` is unchanged and there are no new pre-frame reads. Review round 1 records the cancellation, first-sync-frame, offline-row, capture-inset, locale-route and fast-typing fixes; its single quick run, touched-module lint/layout and requested captures all pass.
 
 ### Phase 10b: Preferences and body clock (`feat/phase-10b-settings-preferences-body-clock`)
 
