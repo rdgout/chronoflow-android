@@ -23,11 +23,12 @@ internal class SessionSettingsDependencies(
     private val app: AppGraph,
     private val session: SessionGraph,
 ) : SettingsDependencies {
+    override val securityScope get() = session.scope
     override val snapshot = session.snapshot
     override val passwordPromptSeed: String? get() = net.chronoflow.app.LaunchPlatform.passwordPromptSeed
     override val clipboard get() = app.settingsClipboard
 
-    override suspend fun performSecurity(change: AccountSecurityChange): AccountSecurityResult =
+    override suspend fun requestSecurity(change: AccountSecurityChange): AccountSecurityResult =
         withContext(app.dispatchers.io) {
             if (!isCurrent()) throw StaleSessionException()
             val result =

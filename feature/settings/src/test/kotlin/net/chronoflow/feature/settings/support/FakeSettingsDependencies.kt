@@ -1,7 +1,10 @@
 package net.chronoflow.feature.settings.support
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.job
 import kotlinx.serialization.json.JsonObject
 import net.chronoflow.core.model.OutboxChange
 import net.chronoflow.core.model.ProfileChange
@@ -21,14 +24,18 @@ import net.chronoflow.feature.settings.SettingsDependencies
 import java.time.ZoneOffset
 
 class FakeSettingsDependencies(
-    clipboardScope: kotlinx.coroutines.CoroutineScope? = null,
+    private val clipboardScope: kotlinx.coroutines.CoroutineScope? = null,
 ) : SettingsDependencies {
+    override val securityScope by lazy {
+        val owner = checkNotNull(clipboardScope)
+        CoroutineScope(owner.coroutineContext + SupervisorJob(owner.coroutineContext.job))
+    }
     var security: suspend (net.chronoflow.core.model.api.AccountSecurityChange) ->
     net.chronoflow.core.model.api.AccountSecurityResult = {
         net.chronoflow.core.model.api.AccountSecurityResult.Changed
     }
 
-    override suspend fun performSecurity(change: net.chronoflow.core.model.api.AccountSecurityChange) = security(change)
+    override suspend fun requestSecurity(change: net.chronoflow.core.model.api.AccountSecurityChange) = security(change)
 
     override var passwordPromptSeed: String? = null
     val clipboardPort = RecordingClipboardPort()

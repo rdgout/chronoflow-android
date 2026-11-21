@@ -2,8 +2,11 @@
 
 package net.chronoflow.feature.settings.security
 
+import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.job
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import net.chronoflow.core.model.DataSource
@@ -22,6 +25,65 @@ import org.junit.Test
 import kotlin.time.Duration.Companion.seconds
 
 class SessionSettingsSecurityTests : SettingsFixtureTest() {
+    @Test fun disposingTheEntryStillAppliesConfirmationAndRequestsSync() = finishConfirmationAfterEntryDisposal(false)
+
+    @Test fun cancellingTheSessionStopsConfirmationBeforeStoreApplyAndSync() =
+        finishConfirmationAfterEntryDisposal(
+            true,
+        )
+
+    private fun finishConfirmationAfterEntryDisposal(cancelSession: Boolean) =
+        runTest(timeout = 60.seconds) {
+            withSettingsFixture(mutationsOffline = false) { f ->
+                val entered = CompletableDeferred<Unit>()
+                val release = CompletableDeferred<Unit>()
+                f.syncSource =
+                    object : DataSource by f.source {
+                        override suspend fun accountSecurity(change: AccountSecurityChange): AccountSecurityResult {
+                            if (change is AccountSecurityChange.ConfirmTwoFactor) {
+                                entered.complete(Unit)
+                                release.await()
+                            }
+                            return f.source.accountSecurity(change)
+                        }
+                    }
+                val vm = SecurityViewModel(f.deps, f.io, f.io, f.io)
+                f.store.put("security", vm)
+                f.viewModels += vm
+                runCurrent()
+                vm.showPrompt(SettingsSecurityPrompt.Enable)
+                vm.submitPrompt(FakeSecretField("password"))
+                runCurrent()
+                assertNotNull(vm.state.value.setup)
+                val syncRequests = f.securitySyncRequests
+                assertEquals(false, SecuritySummary.from(f.settings.settings())?.twoFactorEnabled)
+
+                vm.confirm(FakeSecretField("123456"))
+                entered.await()
+                f.store.clear()
+                vm.viewModelScope.coroutineContext.job
+                    .cancelAndJoin()
+                assertTrue(vm.viewModelScope.coroutineContext.job.isCancelled)
+                if (cancelSession) {
+                    f.securityScope.coroutineContext.job
+                        .cancelAndJoin()
+                }
+                release.complete(Unit)
+                runCurrent()
+
+                assertEquals(!cancelSession, SecuritySummary.from(f.settings.settings())?.twoFactorEnabled)
+                assertEquals(syncRequests + if (cancelSession) 0 else 1, f.securitySyncRequests)
+                assertNull(vm.state.value.setup)
+                assertTrue(
+                    vm.state.value.codes
+                        .isEmpty(),
+                )
+                assertNull(vm.state.value.prompt)
+                assertNull(vm.state.value.message)
+                assertFalse(vm.state.value.busy)
+            }
+        }
+
     @Test fun clearingSecretsDuringConfirmationStillAppliesTheStoreAndDiscardsLateUiResults() =
         runTest(timeout = 60.seconds) {
             withSettingsFixture(mutationsOffline = false) { f ->

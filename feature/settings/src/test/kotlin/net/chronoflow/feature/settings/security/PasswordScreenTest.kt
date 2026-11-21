@@ -11,6 +11,8 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.job
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -37,6 +39,7 @@ import kotlin.time.Duration.Companion.seconds
 class PasswordScreenTest : SettingsScreenTest() {
     private val scheduler = TestCoroutineScheduler()
     private val dispatcher = StandardTestDispatcher(scheduler)
+    private val sessionScope = CoroutineScope(SupervisorJob() + dispatcher)
     private val store = ViewModelStore()
     private var model: SecurityViewModel? = null
 
@@ -49,11 +52,12 @@ class PasswordScreenTest : SettingsScreenTest() {
                     ?.coroutineContext
                     ?.job
                     ?.cancelAndJoin()
+                sessionScope.coroutineContext.job.cancelAndJoin()
             }
         }
 
     @Test fun testPasswordFieldsSubmitAndShowFeedback() {
-        val deps = FakeSettingsDependencies()
+        val deps = FakeSettingsDependencies(sessionScope)
         val vm = SecurityViewModel(deps, dispatcher, dispatcher, dispatcher)
         model = vm
         store.put("security", vm)

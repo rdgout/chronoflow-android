@@ -2,9 +2,13 @@ package net.chronoflow.feature.settings
 
 import androidx.lifecycle.viewmodel.CreationExtras
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.json.JsonObject
 import net.chronoflow.core.model.SettingsSection
+import net.chronoflow.core.model.api.AccountSecurityChange
+import net.chronoflow.core.model.api.AccountSecurityResult
 import net.chronoflow.core.model.session.SessionSnapshot
 import net.chronoflow.core.model.session.SessionUpdate
 import net.chronoflow.core.model.session.SignOutResult
@@ -17,9 +21,13 @@ import net.chronoflow.core.sync.SyncEvent
 import java.time.ZoneId
 
 interface SettingsDependencies {
-    suspend fun performSecurity(
-        change: net.chronoflow.core.model.api.AccountSecurityChange,
-    ): net.chronoflow.core.model.api.AccountSecurityResult
+    val securityScope: CoroutineScope
+
+    // Entry disposal must not skip a submitted mutation's local apply and sync request.
+    suspend fun performSecurity(change: AccountSecurityChange): AccountSecurityResult =
+        securityScope.async { requestSecurity(change) }.await()
+
+    suspend fun requestSecurity(change: AccountSecurityChange): AccountSecurityResult
 
     val passwordPromptSeed: String?
     val clipboard: net.chronoflow.feature.settings.security.SensitiveClipboard

@@ -18,7 +18,9 @@ import net.chronoflow.feature.settings.security.SensitiveClipboard
 import java.time.Instant
 import java.time.ZoneOffset
 
-internal class SecuritySavedStateDependencies : SettingsDependencies {
+internal class SecuritySavedStateDependencies(
+    override val securityScope: kotlinx.coroutines.CoroutineScope,
+) : SettingsDependencies {
     val setup = ApiTwoFactorSetup("JBSWY3DPEHPK3PXP", "otpauth://totp/ChronoFlow?secret=JBSWY3DPEHPK3PXP")
     val codes =
         listOf(
@@ -35,7 +37,7 @@ internal class SecuritySavedStateDependencies : SettingsDependencies {
     override val passwordPromptSeed: String? = null
     override val clipboard: SensitiveClipboard get() = error("Unused clipboard")
 
-    override suspend fun performSecurity(change: AccountSecurityChange): AccountSecurityResult =
+    override suspend fun requestSecurity(change: AccountSecurityChange): AccountSecurityResult =
         if (change is AccountSecurityChange.EnableTwoFactor) {
             AccountSecurityResult.Setup(setup)
         } else {

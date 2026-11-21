@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
@@ -134,14 +135,17 @@ internal class SettingsFixture(
     val sql get() = SqlSyncDatabase(database)
     val epoch get() = SyncEpoch(AccountID.of(result.account.id), snapshot.epoch)
     val clock = FakePlanClock(settingsNow)
+    val securityScope = CoroutineScope(SupervisorJob() + io)
+    var securitySyncRequests = 0
     val deps: SettingsDependencies get() =
         object : SettingsDependencies {
+            override val securityScope get() = this@SettingsFixture.securityScope
             override val snapshot = this@SettingsFixture.snapshot
             override val passwordPromptSeed: String? = null
             override val clipboard: net.chronoflow.feature.settings.security.SensitiveClipboard
                 get() = error("Clipboard is not used by the store fixture")
 
-            override suspend fun performSecurity(
+            override suspend fun requestSecurity(
                 change: net.chronoflow.core.model.api.AccountSecurityChange,
             ): net.chronoflow.core.model.api.AccountSecurityResult =
                 withContext(io) {
@@ -171,6 +175,7 @@ internal class SettingsFixture(
                             settings,
                         ).apply(change, result, admitted)
                     sync.requestSync()
+                    securitySyncRequests++
                     result
                 }
 
@@ -288,6 +293,7 @@ internal class SettingsFixture(
                 it.viewModelScope.coroutineContext.job
                     .cancelAndJoin()
             }
+            securityScope.coroutineContext.job.cancelAndJoin()
             sync.stop()
             joinOwnedScope(sync)
             controller.close()

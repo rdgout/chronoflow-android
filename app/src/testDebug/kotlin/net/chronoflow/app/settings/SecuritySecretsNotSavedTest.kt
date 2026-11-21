@@ -83,7 +83,8 @@ class SecuritySecretsNotSavedTest {
     private fun verify(codes: Boolean) {
         val scheduler = TestCoroutineScheduler()
         val dispatcher = StandardTestDispatcher(scheduler)
-        val deps = SecuritySavedStateDependencies()
+        val sessionScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + dispatcher)
+        val deps = SecuritySavedStateDependencies(sessionScope)
         SecurityMemoryActivity.deps = deps
         SecurityMemoryActivity.main = dispatcher
         var host = Robolectric.buildActivity(SecurityMemoryActivity::class.java).setup()
@@ -133,8 +134,11 @@ class SecuritySecretsNotSavedTest {
         } finally {
             host.pause().stop().destroy()
             runTest(dispatcher, timeout = 60.seconds) {
-                model.viewModelScope.coroutineContext.job
-                    .cancelAndJoin()
+                kotlinx.coroutines.withContext(kotlinx.coroutines.NonCancellable) {
+                    model.viewModelScope.coroutineContext.job
+                        .cancelAndJoin()
+                    sessionScope.coroutineContext.job.cancelAndJoin()
+                }
             }
             SecurityMemoryActivity.deps = null
             SecurityMemoryActivity.main = null
