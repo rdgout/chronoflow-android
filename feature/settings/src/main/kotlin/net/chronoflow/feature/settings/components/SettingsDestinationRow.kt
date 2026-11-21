@@ -42,6 +42,7 @@ fun SettingsDestinationRow(
     badge: String? = null,
     badgeTag: String = "$testTag.badge",
     enabled: Boolean = true,
+    chevron: Boolean = enabled,
     singleLineSubtitle: Boolean = false,
 ) {
     Row(
@@ -81,11 +82,13 @@ fun SettingsDestinationRow(
                 }
             }
         }
-        Icon(
-            LucideGlyphs.ChevronRight.imageVector(),
-            null,
-            Modifier.size(PlanUITokens.space5.dp),
-            tint = CfTheme.colors.mutedForeground,
-        )
+        if (chevron) {
+            Icon(
+                LucideGlyphs.ChevronRight.imageVector(),
+                null,
+                Modifier.size(PlanUITokens.space5.dp).testTag("$testTag.chevron"),
+                tint = CfTheme.colors.mutedForeground,
+            )
+        }
     }
 }

@@ -1,7 +1,9 @@
 package net.chronoflow.feature.settings
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.only
@@ -13,7 +15,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import net.chronoflow.core.designsystem.component.CfCard
+import net.chronoflow.core.designsystem.generated.PlanUITokens
 import net.chronoflow.core.designsystem.icon.LucideGlyphs
 import net.chronoflow.core.designsystem.icon.MaterialSymbols
 import net.chronoflow.core.designsystem.layout.LocalSafeInsets
@@ -230,19 +234,21 @@ internal fun SettingsBoardFixture(
                             )
                             SettingsSyncLine(SettingsBoardFixture.home, true, false, clock, ZoneOffset.UTC, null)
                             SettingsSyncLine(SettingsBoardFixture.home, false, true, clock, ZoneOffset.UTC, null)
-                            CfCard(rows = true) {
-                                SettingsDestinationRow(
-                                    stringResource(
-                                        R.string.settings_add_a_passkey,
-                                    ),
-                                    LucideGlyphs.KeyRound,
-                                    "settings.disabled",
-                                    {
-                                    },
-                                    enabled = false,
-                                )
+                            Column(verticalArrangement = Arrangement.spacedBy(PlanUITokens.space3.dp)) {
+                                CfCard(Modifier.testTag("settings.disabled.card"), rows = true) {
+                                    SettingsDestinationRow(
+                                        stringResource(
+                                            R.string.settings_add_a_passkey,
+                                        ),
+                                        LucideGlyphs.KeyRound,
+                                        "settings.disabled",
+                                        {
+                                        },
+                                        enabled = false,
+                                    )
+                                }
+                                SettingsNeedsConnection()
                             }
-                            SettingsNeedsConnection()
                         }
                     }
 

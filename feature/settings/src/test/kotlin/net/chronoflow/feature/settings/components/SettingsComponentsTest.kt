@@ -10,11 +10,13 @@ import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import net.chronoflow.core.designsystem.component.CfCard
+import net.chronoflow.core.designsystem.generated.PlanUITokens
 import net.chronoflow.core.designsystem.icon.LucideGlyphs
 import net.chronoflow.core.testing.DeviceProfiles
 import net.chronoflow.core.testing.compose.Guards
 import net.chronoflow.core.testing.tiers.Layout
 import net.chronoflow.core.ui.R
+import net.chronoflow.feature.settings.SettingsBoardFixture
 import net.chronoflow.feature.settings.support.SettingsScreenTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -71,6 +73,27 @@ class SettingsComponentsTest : SettingsScreenTest(DeviceProfiles.largeFont) {
         val badge = compose.onNodeWithTag("row.badge", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
         assertTrue(badge.top >= subtitle.bottom + 5 * profile.density)
         assertEquals(subtitle.left, badge.left, 1f)
+        compose.onNodeWithTag("row.chevron", useUnmergedTree = true).assertExists()
+    }
+
+    @Test fun offlineDisabledRowHasNoChevronAndHintGapIsTwelveDp() {
+        show { SettingsBoardFixture("SyncStates") }
+        compose.onNodeWithTag("settings.disabled.chevron", useUnmergedTree = true).assertDoesNotExist()
+        val card =
+            compose
+                .onNodeWithTag(
+                    "settings.disabled.card",
+                    useUnmergedTree = true,
+                ).fetchSemanticsNode()
+                .boundsInRoot
+        val hint =
+            compose
+                .onNodeWithTag(
+                    "settings.needsConnection",
+                    useUnmergedTree = true,
+                ).fetchSemanticsNode()
+                .boundsInRoot
+        assertEquals(PlanUITokens.space3 * profile.density, hint.top - card.bottom, 1f)
     }
 
     @Test fun componentsFitAtTheRootFontCap() {

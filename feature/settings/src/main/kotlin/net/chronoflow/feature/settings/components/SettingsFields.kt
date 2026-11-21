@@ -18,7 +18,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import net.chronoflow.core.designsystem.generated.AuthTokens
 import net.chronoflow.core.designsystem.generated.CfTypeScale
-import net.chronoflow.core.designsystem.generated.PlanUITokens
 import net.chronoflow.core.designsystem.generated.SettingsTokens
 import net.chronoflow.core.designsystem.icon.LucideGlyphs
 import net.chronoflow.core.designsystem.icon.imageVector
@@ -75,7 +74,7 @@ fun SettingsOfflineHint(
 fun SettingsNeedsConnection(modifier: Modifier = Modifier) {
     Text(
         stringResource(R.string.settings_needs_a_connection),
-        modifier.padding(top = PlanUITokens.space3.dp),
+        modifier.testTag("settings.needsConnection"),
         style = CfTheme.type.screenBody,
         color = CfTheme.colors.mutedForeground,
     )
