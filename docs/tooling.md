@@ -172,6 +172,32 @@ A temporary `HangCapProbeTest` (`@Smoke`, `CountDownLatch(1).await(70, SECONDS)`
 
 ### Seeds
 
+- Phase 10b Body clock board states (debug only; install `app/build/outputs/apk/debug/app-debug.apk` first if the connected-test runner removed it). Each command supplies a fresh test id, applies the fixture before demo sign-in, and opens the stateless Body clock page:
+
+  ```sh
+  adb shell am start -n net.chronoflow.app.native.debug/net.chronoflow.debug.SeedReceiverActivity \
+    --es CF_AUTH_TEST_ID "$(uuidgen | tr A-Z a-z)" --es CF_UI_TEST_PROFILE screen \
+    --es CF_AUTH_TEST_SIGNED_IN demo --es CF_AUTH_TEST_WALKTHROUGH_SEEN 1 \
+    --es CF_SETTINGS_ROUTE bodyClock --es CF_SETTINGS_BOARD_STATE bodyMissing
+
+  adb shell am start -n net.chronoflow.app.native.debug/net.chronoflow.debug.SeedReceiverActivity \
+    --es CF_AUTH_TEST_ID "$(uuidgen | tr A-Z a-z)" --es CF_UI_TEST_PROFILE screen \
+    --es CF_AUTH_TEST_SIGNED_IN demo --es CF_AUTH_TEST_WALKTHROUGH_SEEN 1 \
+    --es CF_SETTINGS_ROUTE bodyClock --es CF_SETTINGS_BOARD_STATE bodyReady
+
+  adb shell am start -n net.chronoflow.app.native.debug/net.chronoflow.debug.SeedReceiverActivity \
+    --es CF_AUTH_TEST_ID "$(uuidgen | tr A-Z a-z)" --es CF_UI_TEST_PROFILE screen \
+    --es CF_AUTH_TEST_SIGNED_IN demo --es CF_AUTH_TEST_WALKTHROUGH_SEEN 1 \
+    --es CF_SETTINGS_ROUTE bodyClock --es CF_SETTINGS_BOARD_STATE bodyAdjusted
+
+  adb shell am start -n net.chronoflow.app.native.debug/net.chronoflow.debug.SeedReceiverActivity \
+    --es CF_AUTH_TEST_ID "$(uuidgen | tr A-Z a-z)" --es CF_UI_TEST_PROFILE screen \
+    --es CF_AUTH_TEST_SIGNED_IN demo --es CF_AUTH_TEST_WALKTHROUGH_SEEN 1 \
+    --es CF_SETTINGS_ROUTE bodyClock --es CF_SETTINGS_BOARD_STATE bodyExcluded
+  ```
+
+  Append `--es cf.settings.theme light` or `dark` for a fixed appearance. Omit it to preserve this device's choice. All four states are ignored without a valid `CF_AUTH_TEST_ID`. `bodyReady` is the default fixture. The capture command is `make captures ONLY=SetPreferences,SetPreferencesNL,SetBodyClock,DarkSetBodyClock`; state/section PNG names and verification results are recorded in [settings preferences and body clock](settings-preferences-body-clock.md).
+
 - Manual use:
   ```sh
   adb shell am start -n net.chronoflow.app.native.debug/net.chronoflow.debug.SeedReceiverActivity \
