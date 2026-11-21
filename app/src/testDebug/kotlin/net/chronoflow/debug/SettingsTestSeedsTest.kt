@@ -24,7 +24,6 @@ import net.chronoflow.core.sync.session.MemorySessionStore
 import net.chronoflow.core.sync.session.SessionController
 import net.chronoflow.core.sync.session.SessionTeardown
 import net.chronoflow.core.testing.junit.measureClassWarmup
-import net.chronoflow.core.testing.tiers.Logic
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -34,7 +33,6 @@ import org.junit.Test
 import java.time.Instant
 import kotlin.time.Duration.Companion.seconds
 
-@Logic
 class SettingsTestSeedsTest {
     @Test fun seedCreatesOneRealCheckOffAfterTheFullPull() =
         runTest(timeout = 60.seconds) {

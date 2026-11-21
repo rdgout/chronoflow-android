@@ -539,3 +539,7 @@ The timing collector initially counted the ignored JUnit case as executed and re
 ### Task 13 tag note (2026-11-21)
 
 The landed Android Sign-in screen exposes `sign-in.scroll`, not `auth.signIn`. The device tests query that existing structural tag and leave the auth feature unchanged. The no-pending test also checks the existing launch frame counter and t0 remain unchanged, so a transient replay cannot pass through a final absence assertion.
+
+### Task 11 tier note (final gate)
+
+`SettingsTestSeedsTest` uses only JDBC, the mock source and controller; it is a plain JVM class. The current `plainJvmClassesHaveNoTier` rule therefore rejects the body's `@Logic` shorthand. Keep it unannotated in the JVM tier, without adding a Robolectric runner or a Konsist exception.
