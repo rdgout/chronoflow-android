@@ -19,9 +19,10 @@ import org.robolectric.annotation.GraphicsMode
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class BodyClockQuestionAnchorTest : SettingsScreenTest(DeviceProfiles.small) {
     @Test fun firstMissingShiftWorkAlignsTheQuestionWithTheViewportTop() {
-        val state = bodyClockUi(
-            readiness = """{"variant":"needs-answers","missing":[{"question":"shift_work"}]}""",
-        ).copy(scroll = BodyClockScroll(63, BodyClockGroup.Health, "shiftWork"))
+        val state =
+            bodyClockUi(
+                readiness = """{"variant":"needs-answers","missing":[{"question":"shift_work"}]}""",
+            ).copy(scroll = BodyClockScroll(63, BodyClockGroup.Health, "shiftWork"))
         var acknowledged: Long? = null
         show {
             BodyClockScreen(BodyClockScreenState(state, TextFieldState()), {

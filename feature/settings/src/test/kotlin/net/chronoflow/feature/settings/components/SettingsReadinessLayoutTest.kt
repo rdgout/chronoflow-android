@@ -36,7 +36,13 @@ class SettingsReadinessLayoutTest(
     private fun checkDiscCenter(adjusted: Boolean) {
         showReadiness(BodyClockReadiness.Ready(adjusted, emptyList()))
         val check = compose.onNodeWithTag("settings.bodyClock.readiness.check", true).fetchSemanticsNode().boundsInRoot
-        val details = compose.onNodeWithTag("settings.bodyClock.readiness.details", true).fetchSemanticsNode().boundsInRoot
+        val details =
+            compose
+                .onNodeWithTag(
+                    "settings.bodyClock.readiness.details",
+                    true,
+                ).fetchSemanticsNode()
+                .boundsInRoot
         assertEquals(details.center.y, check.center.y, 1f)
     }
 

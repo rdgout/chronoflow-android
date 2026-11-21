@@ -7,8 +7,8 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.cancelAndJoin
-import kotlinx.coroutines.job
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.job
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runCurrent
@@ -142,19 +142,21 @@ class PreferencesViewModelTest {
         runTest(timeout = 60.seconds) {
             val failRead = CompletableDeferred<Unit>()
             var readFailures = 0
-            val theme = object : ThemeDependencies {
-                override val theme = flow {
-                    emit(ThemeChoice.Dark)
-                    failRead.await()
-                    throw IOException()
-                }
+            val theme =
+                object : ThemeDependencies {
+                    override val theme =
+                        flow {
+                            emit(ThemeChoice.Dark)
+                            failRead.await()
+                            throw IOException()
+                        }
 
-                override suspend fun setTheme(choice: ThemeChoice) = Unit
+                    override suspend fun setTheme(choice: ThemeChoice) = Unit
 
-                override fun reportThemeReadFailure() {
-                    readFailures++
+                    override fun reportThemeReadFailure() {
+                        readFailures++
+                    }
                 }
-            }
             val deps = preferencesDeps()
             withPreferences(deps, theme) { vm ->
                 assertEquals(ThemeChoice.Dark, vm.ui.value.theme)

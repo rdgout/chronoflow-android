@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.windowInsetsPadding
-import net.chronoflow.feature.settings.bodyclock.BodyClockQuestionPositions
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.verticalScroll
@@ -25,6 +24,7 @@ import net.chronoflow.core.designsystem.layout.LocalSafeInsets
 import net.chronoflow.core.designsystem.theme.CfTheme
 import net.chronoflow.core.model.contracts.ProfilePreferences
 import net.chronoflow.feature.settings.bodyclock.BodyClockGroup
+import net.chronoflow.feature.settings.bodyclock.BodyClockQuestionPositions
 import net.chronoflow.feature.settings.bodyclock.BodyClockReadiness
 import net.chronoflow.feature.settings.bodyclock.BodyClockSection
 import net.chronoflow.feature.settings.bodyclock.BodyClockUiState

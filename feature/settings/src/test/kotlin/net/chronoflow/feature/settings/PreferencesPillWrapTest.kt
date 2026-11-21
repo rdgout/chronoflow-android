@@ -39,9 +39,10 @@ class PreferencesPillWrapTest(
     companion object {
         @JvmStatic
         @ParameterizedRobolectricTestRunner.Parameters(name = "{0}-{1}")
-        fun cases(): List<Array<Any>> = listOf(
-            DeviceProfiles.pixel8.copy(name = "board375", widthDp = 375),
-            DeviceProfiles.pixel8,
-        ).flatMap { profile -> AppLanguage.entries.map { arrayOf(profile, it) } }
+        fun cases(): List<Array<Any>> =
+            listOf(
+                DeviceProfiles.pixel8.copy(name = "board375", widthDp = 375),
+                DeviceProfiles.pixel8,
+            ).flatMap { profile -> AppLanguage.entries.map { arrayOf(profile, it) } }
     }
 }

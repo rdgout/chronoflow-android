@@ -48,7 +48,12 @@ internal fun BodyClockSection(
     onEvent: (BodyClockEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    CfCard(modifier.onPlaced { positions.sectionPlaced(state.group, it) }.testTag("settings.bodyClock.section.${state.group.raw}")) {
+    CfCard(
+        modifier
+            .onPlaced {
+                positions.sectionPlaced(state.group, it)
+            }.testTag("settings.bodyClock.section.${state.group.raw}"),
+    ) {
         if (state.group == BodyClockGroup.Light) {
             Column(verticalArrangement = Arrangement.spacedBy(PlanUITokens.space1.dp)) {
                 BodyGroupHeader(state)
@@ -85,7 +90,12 @@ private fun ColumnScope.BodyClockAbout(
     positions: BodyClockQuestionPositions,
     onEvent: (BodyClockEvent) -> Unit,
 ) {
-    Column(Modifier.onPlaced { positions.questionPlaced("chronotype", it) }, verticalArrangement = Arrangement.spacedBy(PlanUITokens.space2.dp)) {
+    Column(
+        Modifier.onPlaced {
+            positions.questionPlaced("chronotype", it)
+        },
+        verticalArrangement = Arrangement.spacedBy(PlanUITokens.space2.dp),
+    ) {
         Text(
             stringResource(R.string.settings_when_do_you_naturally_feel_most_awake),
             style = CfTheme.type.style(CfTypeScale.settingsRow),
