@@ -20,6 +20,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -85,6 +87,8 @@ internal fun SettingsPasswordPrompt(
 ) {
     val title = securityText("Confirm it's you")
     var showingReset by remember { mutableStateOf(false) }
+    val remaining = promptRemaining(retryAt, now)
+    val locked by remember(remaining) { derivedStateOf { remaining.value > 0 } }
     Column(
         Modifier.fillMaxWidth().testTag(identifier).semantics { paneTitle = title },
         verticalArrangement = Arrangement.spacedBy(PlanUITokens.radiusLg.dp),
@@ -122,153 +126,155 @@ internal fun SettingsPasswordPrompt(
             style = CfTheme.type.style(CfTypeScale.settingsPromptBody),
             color = CfTheme.colors.mutedForeground,
         )
-        PromptAlertLine(retryAt, now) { remaining ->
-            val alert = if (remaining > 0) lockoutText(remaining) else error?.let { securityText(it, errorArgs) }
-            val enabled = !busy && remaining == 0
-            val canSubmit = enabled && password.text.isNotEmpty()
-            val label = securityText("Password")
-            val keyboard = LocalSoftwareKeyboardController.current
-            Column(verticalArrangement = Arrangement.spacedBy(SettingsTokens.pillGap.dp)) {
-                val shape = RoundedCornerShape(PlanUITokens.radiusMd.dp)
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .alpha(if (enabled) 1f else SettingsTokens.dimmedFieldOpacity)
-                        .background(CfTheme.colors.surface2, shape)
-                        .then(
-                            if (alert == null) {
-                                Modifier
-                            } else {
-                                Modifier.border(
-                                    SettingsTokens.selectionWidth.dp,
-                                    CfTheme.colors.destructive,
-                                    shape,
-                                )
-                            },
-                        ).heightIn(min = SettingsTokens.promptFieldHeight.dp)
-                        .padding(horizontal = PlanUITokens.space4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(PasswordPromptMetrics.fieldGap),
-                ) {
-                    BasicSecureTextField(
-                        state = password,
-                        modifier =
+        val alert = if (locked) securityText("Too many attempts.") else error?.let { securityText(it, errorArgs) }
+        val enabled = !busy && !locked
+        val canSubmit = enabled && password.text.isNotEmpty()
+        val label = securityText("Password")
+        val keyboard = LocalSoftwareKeyboardController.current
+        Column(verticalArrangement = Arrangement.spacedBy(SettingsTokens.pillGap.dp)) {
+            val shape = RoundedCornerShape(PlanUITokens.radiusMd.dp)
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .alpha(if (enabled) 1f else SettingsTokens.dimmedFieldOpacity)
+                    .background(CfTheme.colors.surface2, shape)
+                    .then(
+                        if (alert == null) {
                             Modifier
-                                .weight(
-                                    1f,
-                                ).heightIn(
-                                    min = SettingsTokens.promptFieldHeight.dp,
-                                ).testTag("$identifier.password")
-                                .semantics {
-                                    contentDescription = label
-                                    contentType = ContentType.Password
-                                    if (alert != null) error(alert)
-                                },
-                        enabled = enabled,
-                        textStyle =
-                            CfTheme.type
-                                .style(
-                                    CfTypeScale.screenBodyLg,
-                                ).copy(color = CfTheme.colors.cardForeground),
-                        keyboardOptions =
-                            KeyboardOptions(
-                                keyboardType = KeyboardType.Password,
-                                imeAction = ImeAction.Done,
-                            ),
-                        onKeyboardAction = {
-                            if (canSubmit) {
-                                keyboard?.hide()
-                                onSubmit()
-                            }
+                        } else {
+                            Modifier.border(
+                                SettingsTokens.selectionWidth.dp,
+                                CfTheme.colors.destructive,
+                                shape,
+                            )
                         },
-                        textObfuscationMode = TextObfuscationMode.RevealLastTyped,
-                        cursorBrush = SolidColor(CfTheme.colors.ring),
-                        decorator = { inner ->
-                            Box(contentAlignment = Alignment.CenterStart) {
-                                if (password.text.isEmpty()) {
-                                    Text(
-                                        label,
-                                        style = CfTheme.type.style(CfTypeScale.screenBodyLg),
-                                        color = CfTheme.colors.mutedForeground,
-                                    )
-                                }
-                                inner()
+                    ).heightIn(min = SettingsTokens.promptFieldHeight.dp)
+                    .padding(horizontal = PlanUITokens.space4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(PasswordPromptMetrics.fieldGap),
+            ) {
+                BasicSecureTextField(
+                    state = password,
+                    modifier =
+                        Modifier
+                            .weight(
+                                1f,
+                            ).heightIn(
+                                min = SettingsTokens.promptFieldHeight.dp,
+                            ).testTag("$identifier.password")
+                            .semantics {
+                                contentDescription = label
+                                contentType = ContentType.Password
+                                if (alert != null) error(alert)
+                            },
+                    enabled = enabled,
+                    textStyle =
+                        CfTheme.type
+                            .style(
+                                CfTypeScale.screenBodyLg,
+                            ).copy(color = CfTheme.colors.cardForeground),
+                    keyboardOptions =
+                        KeyboardOptions(
+                            keyboardType = KeyboardType.Password,
+                            imeAction = ImeAction.Done,
+                        ),
+                    onKeyboardAction = {
+                        if (canSubmit) {
+                            keyboard?.hide()
+                            onSubmit()
+                        }
+                    },
+                    textObfuscationMode = TextObfuscationMode.RevealLastTyped,
+                    cursorBrush = SolidColor(CfTheme.colors.ring),
+                    decorator = { inner ->
+                        Box(contentAlignment = Alignment.CenterStart) {
+                            if (password.text.isEmpty()) {
+                                Text(
+                                    label,
+                                    style = CfTheme.type.style(CfTypeScale.screenBodyLg),
+                                    color = CfTheme.colors.mutedForeground,
+                                )
                             }
-                        },
-                    )
+                            inner()
+                        }
+                    },
+                )
+                Icon(
+                    LucideGlyphs.Lock.imageVector(),
+                    null,
+                    Modifier.size(PasswordPromptMetrics.lockSize),
+                    tint = CfTheme.colors.mutedForeground,
+                )
+            }
+            if (alert != null) {
+                Row(
+                    Modifier.testTag("$identifier.error").semantics { liveRegion = LiveRegionMode.Polite },
+                    horizontalArrangement = Arrangement.spacedBy(SettingsTokens.pillGap.dp),
+                ) {
                     Icon(
-                        LucideGlyphs.Lock.imageVector(),
+                        LucideGlyphs.CircleAlert.imageVector(),
                         null,
-                        Modifier.size(PasswordPromptMetrics.lockSize),
-                        tint = CfTheme.colors.mutedForeground,
+                        Modifier.size(AuthTokens.icon.dp),
+                        tint = CfTheme.colors.destructive,
                     )
-                }
-                if (alert != null) {
-                    Row(
-                        Modifier.testTag("$identifier.error").semantics { liveRegion = LiveRegionMode.Polite },
-                        horizontalArrangement = Arrangement.spacedBy(SettingsTokens.pillGap.dp),
-                    ) {
-                        Icon(
-                            LucideGlyphs.CircleAlert.imageVector(),
-                            null,
-                            Modifier.size(AuthTokens.icon.dp),
-                            tint = CfTheme.colors.destructive,
-                        )
+                    if (locked) {
+                        PromptLockoutText { remaining.value }
+                    } else {
                         Text(alert, style = CfTheme.type.screenBody, color = CfTheme.colors.destructive)
                     }
                 }
-                TextButton(
-                    { showingReset = true },
-                    Modifier
-                        .heightIn(min = PlanUITokens.walkthroughDoneHeight.dp)
-                        .minimumInteractiveComponentSize()
-                        .testTag("$identifier.forgot"),
-                    enabled = enabled,
-                ) {
-                    Text(
-                        securityText("Forgot password?"),
-                        style =
-                            CfTheme.type.screenBody.copy(
-                                fontWeight = FontWeight.Medium,
-                                textDecoration = TextDecoration.Underline,
-                            ),
-                        color = CfTheme.colors.foreground,
-                    )
-                }
             }
-            if (message != null && remaining == 0) {
-                if (message == "Couldn't turn on two-factor.") {
-                    CfBanner(
-                        securityText(message),
-                        securityText("Nothing changed on your account. Try again in a moment."),
-                        testTag = "$identifier.feedback",
-                    )
-                } else {
-                    Text(
-                        securityText(message),
-                        Modifier.testTag("$identifier.feedback"),
-                        style = CfTheme.type.screenBody,
-                        color = CfTheme.colors.mutedForeground,
-                    )
-                }
+            TextButton(
+                { showingReset = true },
+                Modifier
+                    .heightIn(min = PlanUITokens.walkthroughDoneHeight.dp)
+                    .minimumInteractiveComponentSize()
+                    .testTag("$identifier.forgot"),
+                enabled = enabled,
+            ) {
+                Text(
+                    securityText("Forgot password?"),
+                    style =
+                        CfTheme.type.screenBody.copy(
+                            fontWeight = FontWeight.Medium,
+                            textDecoration = TextDecoration.Underline,
+                        ),
+                    color = CfTheme.colors.foreground,
+                )
             }
-            CfButton(
-                securityText(if (busy) "Checking…" else button),
-                {
-                    keyboard?.hide()
-                    onSubmit()
-                },
-                modifier = Modifier.testTag("$identifier.submit"),
-                style = if (destructive) CfButtonStyle.Destructive else CfButtonStyle.Primary,
-                enabled = canSubmit,
-                loading = busy,
-                loadingDescription = securityText("Checking…"),
-                fillWidth = true,
-                minHeight = SettingsTokens.promptButtonHeight.dp,
-                textStyle = CfTheme.type.style(CfTypeScale.settingsStrong),
-                disabledAlpha = SettingsTokens.disabledOpacity,
-            )
         }
+        if (message != null && !locked) {
+            if (message == "Couldn't turn on two-factor.") {
+                CfBanner(
+                    securityText(message),
+                    securityText("Nothing changed on your account. Try again in a moment."),
+                    testTag = "$identifier.feedback",
+                )
+            } else {
+                Text(
+                    securityText(message),
+                    Modifier.testTag("$identifier.feedback"),
+                    style = CfTheme.type.screenBody,
+                    color = CfTheme.colors.mutedForeground,
+                )
+            }
+        }
+        CfButton(
+            securityText(if (busy) "Checking…" else button),
+            {
+                keyboard?.hide()
+                onSubmit()
+            },
+            modifier = Modifier.testTag("$identifier.submit"),
+            style = if (destructive) CfButtonStyle.Destructive else CfButtonStyle.Primary,
+            enabled = canSubmit,
+            loading = busy,
+            loadingDescription = securityText("Checking…"),
+            fillWidth = true,
+            minHeight = SettingsTokens.promptButtonHeight.dp,
+            textStyle = CfTheme.type.style(CfTypeScale.settingsStrong),
+            disabledAlpha = SettingsTokens.disabledOpacity,
+        )
     }
     if (showingReset) {
         CfAlertDialog(
@@ -296,12 +302,24 @@ internal fun PromptAlertLine(
     now: () -> Instant,
     content: @Composable (Int) -> Unit,
 ) {
-    val remaining by produceState(remainingSeconds(retryAt, now()), retryAt, now) {
+    val remaining by promptRemaining(retryAt, now)
+    content(remaining)
+}
+
+@Composable
+private fun PromptLockoutText(remaining: () -> Int) {
+    Text(lockoutText(remaining()), style = CfTheme.type.screenBody, color = CfTheme.colors.destructive)
+}
+
+@Composable
+private fun promptRemaining(
+    retryAt: Instant?,
+    now: () -> Instant,
+): State<Int> =
+    produceState(remainingSeconds(retryAt, now()), retryAt, now) {
         do {
             value = remainingSeconds(retryAt, now())
             if (value == 0) break
             delay(1_000)
         } while (true)
     }
-    content(remaining)
-}
