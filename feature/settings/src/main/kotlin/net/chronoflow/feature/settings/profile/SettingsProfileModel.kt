@@ -8,12 +8,19 @@ import net.chronoflow.feature.settings.settingsAttempt
 
 enum class ProfileError { EnterName, CouldNotSave }
 
+data class ProfileNameReplacement(
+    val id: Long,
+    val previous: String,
+    val value: String,
+)
+
 data class SettingsProfileState(
     val name: String,
     val email: String,
     val busy: Boolean = false,
     val saved: Boolean = false,
     val error: ProfileError? = null,
+    val nameReplacement: ProfileNameReplacement? = null,
 )
 
 class SettingsProfileModel(
@@ -31,9 +38,9 @@ class SettingsProfileModel(
 
     fun receive(account: AccountRecord) {
         mutableUi.update {
-            it.copy(
+            val received = if (it.name == storedName) it.replacingName(account.name) else it
+            received.copy(
                 saved = it.saved && account.name == storedName,
-                name = if (it.name == storedName) account.name else it.name,
                 email = account.email,
             )
         }
@@ -55,10 +62,20 @@ class SettingsProfileModel(
             ) {
                 save(value)
                 storedName = value
-                mutableUi.update { it.copy(name = value, error = null, saved = true) }
+                mutableUi.update { it.replacingName(value).copy(error = null, saved = true) }
             }
         } finally {
             mutableUi.update { it.copy(busy = false) }
         }
     }
 }
+
+private fun SettingsProfileState.replacingName(value: String): SettingsProfileState =
+    if (value == name) {
+        this
+    } else {
+        copy(
+            name = value,
+            nameReplacement = ProfileNameReplacement((nameReplacement?.id ?: 0) + 1, name, value),
+        )
+    }

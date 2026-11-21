@@ -26,6 +26,7 @@ import net.chronoflow.feature.settings.support.withSettingsFixture
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import kotlin.time.Duration.Companion.seconds
@@ -245,6 +246,28 @@ class SettingsProfileTests : SettingsFixtureTest() {
                         .saved,
                 )
             }
+        }
+
+    @Test fun onlyPullsAndCanonicalNamesReplaceTheField() =
+        runTest(timeout = 60.seconds) {
+            val account = FakeSettingsDependencies().account.value!!
+            val model = SettingsProfileModel(account, save = {})
+            model.receive(account.copy(name = "Pulled"))
+            val pulled = checkNotNull(model.ui.value.nameReplacement)
+            assertEquals(account.name, pulled.previous)
+            assertEquals("Pulled", pulled.value)
+            model.edit("  Edited  ")
+            assertSame(pulled, model.ui.value.nameReplacement)
+            model.receive(account.copy(name = "Another pull"))
+            assertSame(pulled, model.ui.value.nameReplacement)
+            assertEquals("  Edited  ", model.ui.value.name)
+            model.submit()
+            val canonical = checkNotNull(model.ui.value.nameReplacement)
+            assertEquals(pulled.id + 1, canonical.id)
+            assertEquals("  Edited  ", canonical.previous)
+            assertEquals("Edited", canonical.value)
+            model.edit("Next draft")
+            assertSame(canonical, model.ui.value.nameReplacement)
         }
 
     @Test fun limitCountsCodePointsRatherThanUtf16Units() =

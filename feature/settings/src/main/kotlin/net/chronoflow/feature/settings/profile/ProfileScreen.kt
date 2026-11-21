@@ -108,15 +108,7 @@ fun ProfileRoute(
     modifier: Modifier = Modifier,
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
-    val field = remember(viewModel, ui.editor != null) { TextFieldState(ui.editor?.name.orEmpty()) }
-    if (ui.editor !=
-        null
-    ) {
-        LaunchedEffect(viewModel, field) { snapshotFlow { field.text.toString() }.collect(viewModel::edit) }
-    }
-    LaunchedEffect(ui.editor?.name) {
-        ui.editor?.name?.let { if (field.text.toString() != it) field.setTextAndPlaceCursorAtEnd(it) }
-    }
+    val field = rememberProfileNameField(viewModel, ui.editor)
     ProfileScreen(ProfileScreenState(ui, field), {
         when (it) {
             ProfileEvent.Back -> onBack()
@@ -124,4 +116,37 @@ fun ProfileRoute(
             ProfileEvent.Retry -> viewModel.retry()
         }
     }, modifier)
+}
+
+@Composable
+internal fun rememberProfileNameField(
+    viewModel: ProfileViewModel,
+    editor: SettingsProfileState?,
+): TextFieldState {
+    val binding = remember(viewModel, editor != null) { ProfileNameField(editor) }
+    val field = binding.state
+    if (editor != null) {
+        LaunchedEffect(viewModel, field) { snapshotFlow { field.text.toString() }.collect(viewModel::edit) }
+    }
+    val replacement = editor?.nameReplacement
+    LaunchedEffect(binding, replacement) { binding.receive(replacement) }
+    return field
+}
+
+internal class ProfileNameField(
+    editor: SettingsProfileState?,
+) {
+    val state = TextFieldState(editor?.name.orEmpty())
+    private var revision = editor?.nameReplacement?.id
+    private var previousName = editor?.name.orEmpty()
+
+    fun receive(replacement: ProfileNameReplacement?) {
+        if (replacement == null || replacement.id == revision) return
+        val current = state.text.toString()
+        if (current == previousName || current == replacement.previous) {
+            state.setTextAndPlaceCursorAtEnd(replacement.value)
+        }
+        previousName = replacement.value
+        revision = replacement.id
+    }
 }
