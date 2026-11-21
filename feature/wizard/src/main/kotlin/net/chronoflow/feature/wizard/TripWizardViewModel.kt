@@ -43,6 +43,7 @@ import net.chronoflow.core.wizard.model.WizardAirportSheet
 import net.chronoflow.core.wizard.model.WizardClockRounding
 import net.chronoflow.core.wizard.model.WizardDateTime
 import net.chronoflow.core.wizard.model.WizardMode
+import net.chronoflow.core.wizard.model.WizardSaveOutcome
 import net.chronoflow.core.wizard.model.allowsSleepOverride
 import net.chronoflow.core.wizard.model.answerOptional
 import net.chronoflow.core.wizard.model.answerQuestion
@@ -110,6 +111,7 @@ class TripWizardViewModel(
     private val mutableFormatter = MutableStateFlow<net.chronoflow.core.plan.CopyLineFormatter?>(null)
     val copyFormatter = mutableFormatter.asStateFlow()
     private val uiOverride = deps?.uiOverride
+    private val signUpLauncher = deps?.signUpLauncher
     private val pickerNow = deps?.now ?: { Instant.EPOCH }
     private val mutableClosing = MutableStateFlow(false)
     val closing = mutableClosing.asStateFlow()
@@ -415,6 +417,22 @@ class TripWizardViewModel(
                                     cue = cue,
                                 )
                             }
+                        if (snapshot.saveOutcome == WizardSaveOutcome.signUpRequested &&
+                            !snapshot.guestAuthenticationPresented && signUpLauncher != null
+                        ) {
+                            model.setGuestAuthenticationPresented(true)
+                            model.flush()
+                            if (model.closed || model.persistenceFailed) {
+                                model.setGuestAuthenticationPresented(false)
+                            } else {
+                                signUpLauncher.request {
+                                    if (viewModelScope.coroutineContext[kotlinx.coroutines.Job]?.isActive == true) {
+                                        model.setGuestAuthenticationPresented(false)
+                                        if (!model.closed) model.readyTick()
+                                    }
+                                }
+                            }
+                        }
                     }
                 } catch (_: CancellationException) {
                     currentCoroutineContext().ensureActive()
