@@ -44,6 +44,15 @@ internal fun settingsText(key: String): String =
     CopyIndex.find(CopyTable.Settings, key)?.let { stringResource(it.resId) } ?: key
 
 @Composable
+internal fun settingsText(
+    key: String,
+    args: Map<String, String>,
+): String {
+    val entry = checkNotNull(CopyIndex.find(CopyTable.Settings, key)) { "Missing Settings copy: $key" }
+    return stringResource(entry.resId, *entry.args.map { args.getValue(it) }.toTypedArray())
+}
+
+@Composable
 fun SettingsPills(
     title: String,
     options: List<CfPillOption>,
