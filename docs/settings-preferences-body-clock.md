@@ -283,3 +283,30 @@ Review commits (the following documentation commit records their acceptance):
 | `48abcc30` | `test(settings): pin time format wrapping at board and phone widths` |
 | `5a01cc92` | `refactor(settings): register question positions from layout callbacks` |
 | `1d3039fe` | `style(settings): format the review changes` |
+
+## Review round 2
+
+The host reported `make check` passing in 3:26 before this final fix. A missing question position now skips only the field-offset adjustment: the item-level scroll still completes and emits `ScrollHandled`. Unknown, unplaced and conditionally absent fields therefore cannot leave a completed request pending in the ViewModel.
+
+`BodyClockQuestionAnchorTest#unregisteredQuestionScrollsToAboutAndAcknowledgesOnce` uses the existing small-phone Robolectric fixture and its single UI scheduler. It supplies the unregistered `bipolar` identifier, measures About at the padded viewport top, consumes exactly one acknowledgement, then toggles readiness off and on and confirms no second acknowledgement. It asserts structure and events only. On the unfixed code the item-position assertion passed and the acknowledgement assertion failed with `expected:<[64]> but was:<[]>`; the fixed code passes. No app/graph boot, main-source test hook, copy, dependency, OQ or brief change was needed.
+
+| Check | Result | Wall time |
+|---|---|---:|
+| New regression against the unfixed code | failed for the missing acknowledgement, as required | 7.77 s process |
+| `make targeted ONLY="feature:settings:BodyClockQuestionAnchorTest feature:settings:BodyClockScreenTest feature:settings:BodyClockRecompositionTest"` | 13 passed; zero overruns | 5.95 s tier / 6.01 s process |
+| `make format` | passed | 11 s build |
+| Single `make quick`, main stage | 5,481 assertions passed; one untouched Terms timing overrun; no missing evidence or hangs | 38.81 s tier / 38.85 s process |
+| Remaining build-logic stage | 37 passed, certified cached results | 1.83 s |
+| Remaining tooling stage | 171 harness + 25 contracts + 49 strings + 11 vectors passed | 20.19 s process |
+| Final serial timing stage | 7 passed, certified cached results | 1.83 s |
+
+The new regression was the SDK-36 cold first case: 2,077 ms targeted and 7,205 ms during concurrent quick execution, within the existing 20 s allowance. The following question-anchor case took 74 ms targeted and 344 ms in quick. No budget was changed and no test was repeated to seek a faster timing.
+
+Quick ran once. Its sole gate failure was the unchanged `TermsScreenTest#policyRowStaysEnabledWhileFailed`, 43 ms over its first-class allowance. It was neither changed nor retried; quick's remaining stages ran separately with Make's usual `IOS_REPO`/`WEB_REPO` environment for the tooling script. Exact output:
+
+```text
+run-tier: over budget: robolectric net.chronoflow.feature.onboarding.terms.TermsScreenTest#policyRowStaysEnabledWhileFailed 3043 ms > 3000 ms
+make: *** [quick] Error 3
+```
+
+Evidence is in `build/phase-10b-r2/` and `/private/tmp/chronoflow-10b-r2-*.log`. No command was blocked and no test hung. No capture, layout, emulator, performance or profile tier was run in this round; the emulator was left running. The fix, regression and this record are committed together.

@@ -50,8 +50,9 @@ fun BodyClockScreen(
                 if (reduce) list.scrollToItem(index) else list.animateScrollToItem(index)
                 request.fieldKey?.let { field ->
                     withFrameNanos { }
-                    val offset = positions.offset(request.group, field) ?: return@collectLatest
-                    if (reduce) list.scrollToItem(index, offset) else list.animateScrollToItem(index, offset)
+                    positions.offset(request.group, field)?.let { offset ->
+                        if (reduce) list.scrollToItem(index, offset) else list.animateScrollToItem(index, offset)
+                    }
                 }
                 event(BodyClockEvent.ScrollHandled(request.id))
             }
