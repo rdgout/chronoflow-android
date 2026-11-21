@@ -78,3 +78,36 @@ Per the user's execution constraints, `make check`, `make perf`, `make perf-time
 The app graph/settings route integration touches the launch entry path. The host should run **`make perf`** and **`make baseline-profile`**, recording cold/warm startup and first-frame/TTFD metrics in `docs/perf-startup.md`. No production timeline path changed, so `make perf-timeline` is not required for this phase. These are pending measurements, not emulator/device performance claims.
 
 The host reviewer should compare all 24 captures with their named boards and check one real DocumentsUI save on `pixel`. The automated document-picker test uses Espresso-Intents as specified by OQ-A517; it verifies the written file bytes rather than driving another app's UI. No manual real-picker check is claimed here. The full `make check` commit gate remains for the host.
+
+## Review round 1
+
+The host's `make check` passed on `a870672a` (reported by the reviewer). All five verified findings are fixed in separate signed commits:
+
+- `b738a605`: missing format arguments preserve iOS's literal `{{name}}` placeholder. Both string and absent `min` values are covered by JVM model/helper tests; the tests first reproduced `NoSuchElementException` with the old implementation.
+- `0d257b88`: `clearSecrets` no longer cancels a submitted mutation. A delayed confirmation test on `SettingsFixture` proves the real store update and `performSecurity` completion after clearing, while the generation guard keeps UI secrets/feedback cleared.
+- `27809289`: the ViewModel derives the date in its UI state from the security summary and language on the injected compute dispatcher. Formatter failure silently omits the line. JVM tests cover dispatcher use, failure, summary/language changes and unrelated account updates.
+- `ca190463`: only the lockout text reads the per-second count; controls observe a derived lock boolean. A composition-trace guard verifies countdown updates without prompt/submit recomposition and verifies controls update at expiry (37 ms in quick).
+- `a29a5393`: Cancel/Forgot have zero horizontal content padding and token-based 48 dp targets. The native minimum-width override and start-aligned label width prevent centering short labels away from the field edge. A production geometry guard checks both alignment and height without asserting copy.
+
+Validation used the same JDK/SDK and in-process compiler settings recorded above. Final results:
+
+| Command / scope | Result and wall time |
+|---|---|
+| `make targeted ONLY="feature:settings:SecurityTextArgumentsTests#nonNumericOrMissingMinimumLeavesTheIosPlaceholderIntact"` | 2 passed; Gradle 4 s. |
+| `make targeted ONLY="feature:settings:SessionSettingsSecurityTests feature:settings:SecurityViewModelTests"` | 10 passed; Gradle 5 s. |
+| `make targeted ONLY="feature:settings:SecurityConfirmedDateTests feature:settings:SecurityConfirmedDateStateTests feature:settings:SecurityViewModelTests feature:settings:TwoFactorScreenTest"` | 19 passed; Gradle 10 s. |
+| `make targeted ONLY="feature:settings:SettingsPasswordPromptRecompositionTest feature:settings:SettingsPasswordPromptTest feature:settings:SettingsPasswordPromptHostTest feature:settings:SecurityViewModelTests"` | 24 passed; tier 8.32 s. |
+| `make targeted ONLY="feature:settings:SettingsPasswordPromptTest feature:settings:SettingsPasswordPromptHostTest feature:settings:SettingsPasswordPromptRecompositionTest"` | 19 passed; tier 9.06 s. Alignment case 23 ms. |
+| `Scripts/run-tier.sh 10c-r1-layout --results 'feature/settings/build/test-results/testDebugUnitTest/*.xml' --timings 'feature/settings/build/cf-timings/testDebugUnitTest/*.json' -- ./gradlew --console=plain :feature:settings:testDebugUnitTest -Pcf.tier=layout -Pkotlin.compiler.execution.strategy=in-process` | 861 passed; 49.89 s, zero overruns/hangs. |
+| `make captures ONLY=PasswordPrompt` | 10 prompt PNGs refreshed; 21.51 s. Other existing PNGs preserved. |
+| `./gradlew --console=plain :app:lintDebug :feature:settings:lintDebug -Pkotlin.compiler.execution.strategy=in-process` | Passed; 25.44 s. |
+| `make quick` — exactly once this round | **Passed**, full wall time 69.35 s. JVM/logic stage: 3,778 measured tests, 42.93 s, zero overruns/hangs. Build-logic's 37 and timing's 7 cases reused certified passing results (2.90 s / 2.83 s). Tooling: 171 + 25 + 49 + 11 tests passed (19.953 / 0.112 / 0.017 / 0.092 s). |
+
+One initial date compilation needed an explicit `MutableStateFlow<Language>` type because `Language.En` is a singleton type; the corrected targeted run passed. An attempted module-scoped formatting command could not run:
+
+```text
+./gradlew :feature:settings:spotlessApply -Pkotlin.compiler.execution.strategy=in-process
+Cannot locate tasks that match ':feature:settings:spotlessApply' as task 'spotlessApply' not found in project ':feature:settings'.
+```
+
+The root `make format` succeeded instead. Spotless's state-parameter rule also prompted using a count-provider lambda for the lockout leaf; formatting and tests then passed. No unresolved failure, hang or environment block remains. No perf command, `make check` or emulator test tier ran this round; pixel was left running. Captures still require the host's visual comparison. Logs and archived tier evidence are under `build/test-results/10c-r1-*`.
