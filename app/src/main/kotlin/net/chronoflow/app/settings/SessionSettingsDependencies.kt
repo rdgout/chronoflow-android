@@ -76,8 +76,7 @@ internal class SessionSettingsDependencies(
                         }
                     }
                     // A server-side deletion must finish its local wipe even when this entry is disposed.
-                    app.controller.signOut(snapshot, discardPending = true)
-                    app.rootNavigator.navigate(net.chronoflow.core.navigation.Route.Welcome)
+                    app.signOutAfterDeletingAccount(snapshot)
                 }.await()
         } catch (failure: CancellationException) {
             if (kotlinx.coroutines.currentCoroutineContext().isActive) throw StaleSessionException()

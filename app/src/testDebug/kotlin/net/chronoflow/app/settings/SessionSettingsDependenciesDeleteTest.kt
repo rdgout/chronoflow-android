@@ -6,8 +6,12 @@ import android.app.Application
 import androidx.test.core.app.ApplicationProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
@@ -47,6 +51,14 @@ class SessionSettingsDependenciesDeleteTest {
     @Test fun successSignsOutDiscardingPendingAndOpensWelcome() =
         runTest(timeout = 60.seconds) {
             withSession { graph, deps, root ->
+                val routes = mutableListOf<Route?>()
+                // Observe every destination synchronously so StateFlow cannot hide an intermediate Sign in.
+                backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                    graph.rootNavigator.state
+                        .map { it.route }
+                        .distinctUntilChanged()
+                        .collect { routes += it }
+                }
                 val session = checkNotNull(graph.sessionGraphs.current.value)
                 session.outbox.enqueue(
                     OutboxChange.Settings(
@@ -61,6 +73,7 @@ class SessionSettingsDependenciesDeleteTest {
                 runCurrent()
                 assertEquals(SessionPresence.SignedOut, graph.controller.presence)
                 assertEquals(Route.Welcome, graph.rootNavigator.state.value.route)
+                assertEquals(listOf(Route.Today, Route.Welcome), routes)
                 withContext(Dispatchers.IO) {
                     assertFalse(directory.exists())
                     assertFalse(File(root, "ChronoFlowMock/session.bin").exists())

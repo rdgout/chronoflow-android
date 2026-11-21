@@ -17,4 +17,12 @@ class SettingsDeleteRoutingTest {
     @Test fun repeatedSignOutKeepsSignIn() {
         assertNull(signedOutDestination(Route.SignIn, false))
     }
+
+    @Test fun deleteSignOutGoesStraightToWelcome() {
+        assertEquals(Route.Welcome, signedOutDestination(Route.Today, false, Route.Welcome))
+    }
+
+    @Test fun repeatedDeleteSignOutKeepsWelcome() {
+        assertNull(signedOutDestination(Route.Welcome, false, Route.Welcome))
+    }
 }
