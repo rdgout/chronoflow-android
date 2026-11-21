@@ -3133,7 +3133,7 @@ Implementation commits:
 - Task 5 was removed; reuse 9e's time picker.
 - [x] Task 6: apply the theme per device.
 - [x] Task 7: add body clock and preference components.
-- [ ] Task 10: seed body clock board states.
+- [x] Task 10: seed body clock board states.
 - [ ] Task 11: add guards and board captures.
 - [ ] Task 12: check the theme on the emulator (Tests below).
 - [ ] Task 13: record phase 10b results and open questions.

@@ -105,6 +105,9 @@ These notes were checked against the code at `d838ffbf` (top of 10a; 8 and 9e ar
 **R14. Minimum-width drink rows (Task 7).**
 - At 280 dp, the 208 dp card interior cannot fit the label beside two 48 dp targets, the 64 dp count and the board padding/gaps. Use layout-time intrinsic width to wrap the label above its controls only when it cannot fit; the board-width row stays unchanged. OQ-A500 records this default; `SettingsComponentsLayoutTest` guards 280 dp.
 
+**R15. Account fixture construction (Task 10).**
+- The Kotlin types behind the API snapshot are `AccountSnapshot` and `AccountSettings`. Their constructors and `copy` functions are private (`@ConsistentCopyVisibility`); use their public `invoke` factories when rebuilding the debug fixture. These preserve contract normalization, including readiness derived from the new body-clock answers. No contract visibility or earlier-phase behavior changes.
+
 **R11. Copy.** This phase still adds no copy. If any Android-only string becomes necessary, it goes in `tools/l10n/android-only.json` with `{{name}}` placeholders and `"replaces": []`, and into plan.md "Android-only copy awaiting approval" (l.487).
 
 ---

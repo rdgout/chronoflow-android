@@ -23,6 +23,7 @@ internal class SeedRunner(
     private val driverFactory: AccountDriverFactory,
     private val source: DataSource,
     private val io: CoroutineDispatcher,
+    private val beforeSignIn: suspend () -> Unit = {},
 ) {
     suspend fun reseed(
         signedIn: SeedAccount?,
@@ -32,6 +33,7 @@ internal class SeedRunner(
     ) = withContext(io) {
         MockSessionSeed.reset(storageDir, credentials, io)
         storageDir.mkdirs()
+        beforeSignIn()
         if (signedIn != null) {
             MockSessionSeed.run(
                 storageDir,
