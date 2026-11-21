@@ -27,16 +27,46 @@ import kotlin.coroutines.ContinuationInterceptor
 import kotlin.time.Duration.Companion.seconds
 
 class SecurityConfirmedDateStateTests {
+    @Test fun noFormattingBeforeLanguageIsKnownAndDutchIsTheFirstFormattedDate() =
+        runTest(timeout = 60.seconds) {
+            withModel { vm, deps ->
+                var formats = 0
+                deps.makeFormatter = {
+                    formats++
+                    CopyLineFormatter(SettingsFixture.catalog)
+                }
+                deps.settings.value = security("2026-10-30T08:00:00Z")
+                runCurrent()
+                assertEquals(
+                    true,
+                    vm.ui.value.summary
+                        ?.twoFactorEnabled,
+                )
+                assertEquals(0, formats)
+                assertNull(vm.ui.value.since)
+
+                vm.setLanguage(Language.Nl)
+                runCurrent()
+                assertEquals(1, formats)
+                assertEquals("30 okt 2026", vm.ui.value.since)
+                assertNull(vm.ui.value.feedback)
+            }
+        }
+
     @Test fun formatterFailureOnComputeOmitsTheDateWithoutFeedback() =
         runTest(timeout = 60.seconds) {
             val compute = StandardTestDispatcher(testScheduler, "compute")
             withModel(compute) { vm, deps ->
+                var formats = 0
                 deps.makeFormatter = {
+                    formats++
                     assertEquals(compute, currentCoroutineContext()[ContinuationInterceptor])
                     throw IOException("formatter unavailable")
                 }
                 deps.settings.value = security("2026-10-30T08:00:00Z")
+                vm.setLanguage(Language.En)
                 runCurrent()
+                assertEquals(1, formats)
                 assertEquals(
                     true,
                     vm.ui.value.summary
@@ -57,6 +87,7 @@ class SecurityConfirmedDateStateTests {
                     CopyLineFormatter(SettingsFixture.catalog)
                 }
                 deps.settings.value = security("2026-10-30T08:00:00Z")
+                vm.setLanguage(Language.En)
                 runCurrent()
                 assertEquals("30 Oct 2026", vm.ui.value.since)
                 assertEquals(1, formats)

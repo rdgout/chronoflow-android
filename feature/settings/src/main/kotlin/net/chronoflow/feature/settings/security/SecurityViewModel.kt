@@ -66,7 +66,7 @@ class SecurityViewModel(
     val state = model.state
     val now: () -> Instant = { deps.clock.now }
     private val acknowledged = MutableStateFlow(0L)
-    private val language = MutableStateFlow<Language>(Language.En)
+    private val language = MutableStateFlow<Language?>(null)
     private val mutableQr = MutableStateFlow<QrMatrix?>(null)
     val qr: kotlinx.coroutines.flow.StateFlow<QrMatrix?> = mutableQr
     private var seeded = false
@@ -81,7 +81,7 @@ class SecurityViewModel(
             .stateIn(viewModelScope, SharingStarted.Eagerly, "")
     private val presentation =
         combine(summary, language) { summary, language ->
-            SecuritySummaryPresentation(summary, confirmedDate(summary, language))
+            SecuritySummaryPresentation(summary, language?.let { confirmedDate(summary, it) })
         }.flowOn(compute)
             .stateIn(viewModelScope, SharingStarted.Eagerly, SecuritySummaryPresentation(null, null))
     val ui =
