@@ -17,6 +17,7 @@ import net.chronoflow.core.model.contracts.Language
 import net.chronoflow.core.model.store.SettingsRecord
 import net.chronoflow.feature.settings.support.FakeSettingsDependencies
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
@@ -41,8 +42,11 @@ class SecurityConfirmedDateTests(
             val vm = SecurityViewModel(deps, dispatcher, dispatcher, dispatcher)
             val store = ViewModelStore().apply { put("security", vm) }
             try {
+                vm.setLanguage(language)
                 runCurrent()
-                assertEquals(expected, vm.confirmedDate(language))
+                assertEquals(expected, vm.ui.value.since)
+                assertNull(vm.state.value.message)
+                assertNull(vm.ui.value.feedback)
             } finally {
                 kotlinx.coroutines.withContext(kotlinx.coroutines.NonCancellable) {
                     store.clear()

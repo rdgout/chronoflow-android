@@ -11,9 +11,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.collectLatest
@@ -27,6 +25,7 @@ import kotlinx.coroutines.withContext
 import net.chronoflow.core.model.DataFailure
 import net.chronoflow.core.model.api.AccountSecurityChange
 import net.chronoflow.core.model.api.AccountSecurityResult
+import net.chronoflow.core.model.contracts.Language
 import net.chronoflow.core.model.session.StaleSessionException
 import net.chronoflow.feature.settings.SettingsComputeKey
 import net.chronoflow.feature.settings.SettingsDependencies
@@ -49,6 +48,12 @@ data class SecurityUiState(
     val summary: SecuritySummary? = null,
     val security: SecurityState = SecurityState(),
     val feedback: SecurityFeedback? = null,
+    val since: String? = null,
+)
+
+private data class SecuritySummaryPresentation(
+    val summary: SecuritySummary?,
+    val since: String?,
 )
 
 class SecurityViewModel(
@@ -62,6 +67,7 @@ class SecurityViewModel(
     val state = model.state
     val now: () -> Instant = { deps.clock.now }
     private val acknowledged = MutableStateFlow(0L)
+    private val language = MutableStateFlow<Language>(Language.En)
     private var request: Job? = null
     private val mutableQr = MutableStateFlow<QrMatrix?>(null)
     val qr: kotlinx.coroutines.flow.StateFlow<QrMatrix?> = mutableQr
@@ -75,11 +81,16 @@ class SecurityViewModel(
         pages.ui
             .map { it.account?.email.orEmpty() }
             .stateIn(viewModelScope, SharingStarted.Eagerly, "")
+    private val presentation =
+        combine(summary, language) { summary, language ->
+            SecuritySummaryPresentation(summary, confirmedDate(summary, language))
+        }.flowOn(compute)
+            .stateIn(viewModelScope, SharingStarted.Eagerly, SecuritySummaryPresentation(null, null))
     val ui =
-        combine(pages.ui, summary, state, acknowledged) { page, summary, state, acknowledged ->
+        combine(pages.ui, presentation, state, acknowledged) { page, presentation, state, acknowledged ->
             SecurityUiState(
                 page,
-                summary,
+                presentation.summary,
                 state,
                 if (state.feedbackRevision > acknowledged && state.message != null && state.retryAt == null &&
                     !state.twoFactorActivationFailed && state.prompt == null
@@ -88,6 +99,7 @@ class SecurityViewModel(
                 } else {
                     null
                 },
+                presentation.since,
             )
         }.stateIn(viewModelScope, SharingStarted.Eagerly, SecurityUiState())
 
@@ -199,16 +211,23 @@ class SecurityViewModel(
         }
     }
 
-    suspend fun confirmedDate(language: net.chronoflow.core.model.contracts.Language): String? {
-        val raw = summary.value?.twoFactorConfirmedAt ?: return null
+    fun setLanguage(language: Language) {
+        this.language.value = language
+    }
+
+    private suspend fun confirmedDate(
+        summary: SecuritySummary?,
+        language: Language,
+    ): String? {
+        val raw = summary?.twoFactorConfirmedAt ?: return null
         try {
             Instant.parse(raw)
         } catch (_: java.time.format.DateTimeParseException) {
             return null
         }
         var result: String? = null
-        settingsAttempt(failed = { model.message("Something went wrong") }, cancelled = {}) {
-            result = withContext(compute) { deps.formatter().formatDate(raw, language, deps.zone.id) }
+        settingsAttempt(failed = {}, cancelled = {}) {
+            result = deps.formatter().formatDate(raw, language, deps.zone.id)
         }
         return result
     }

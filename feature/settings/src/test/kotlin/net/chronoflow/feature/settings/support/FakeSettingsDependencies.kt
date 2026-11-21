@@ -100,9 +100,12 @@ class FakeSettingsDependencies(
     override val clock = FakePlanClock(settingsNow)
     override val zone = ZoneOffset.UTC
 
-    override suspend fun formatter() =
+    var makeFormatter: suspend () -> net.chronoflow.core.plan.CopyLineFormatter = {
         net.chronoflow.core.plan
             .CopyLineFormatter(SettingsFixture.catalog)
+    }
+
+    override suspend fun formatter() = makeFormatter()
 
     override suspend fun enqueueSettings(
         section: SettingsSection,

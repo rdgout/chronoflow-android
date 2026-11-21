@@ -21,9 +21,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.autofill.ContentType
@@ -82,7 +80,6 @@ data class TwoFactorScreenState(
     val now: () -> Instant,
     val email: String = "",
     val qr: QrMatrix? = null,
-    val since: String? = null,
 )
 
 sealed interface TwoFactorEvent {
@@ -330,11 +327,11 @@ private fun ColumnScope.TwoFactorManage(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         CfBadge(securityText("On"), variant = CfBadgeVariant.Dawn)
-        if (state.since != null) {
+        if (state.ui.since != null) {
             Text(
                 securityText(
                     "Since {{date}}",
-                    mapOf("date" to state.since),
+                    mapOf("date" to state.ui.since),
                 ),
                 Modifier.testTag("settings.twoFactor.since"),
                 style = CfTheme.type.screenBody.copy(fontFeatureSettings = "tnum"),
@@ -517,13 +514,12 @@ fun TwoFactorRoute(
         } else {
             Language.En
         }
-    var since by remember { mutableStateOf<String?>(null) }
     val download = rememberRecoveryCodesDownload(ui.security.codes, viewModel::download)
     LaunchedEffect(viewModel) { viewModel.startTwoFactor() }
-    LaunchedEffect(ui.summary?.twoFactorConfirmedAt, language) { since = viewModel.confirmedDate(language) }
+    LaunchedEffect(viewModel, language) { viewModel.setLanguage(language) }
     LaunchedEffect(ui.security.prompt) { inputs.password.clearText() }
     SecurityFeedbackHost(viewModel.ui, viewModel::feedbackPresented, viewModel::clearSecrets, modifier) {
-        TwoFactorScreen(TwoFactorScreenState(ui, inputs, viewModel.now, email, qr, since), { event ->
+        TwoFactorScreen(TwoFactorScreenState(ui, inputs, viewModel.now, email, qr), { event ->
             when (event) {
                 TwoFactorEvent.Back -> onBack()
                 TwoFactorEvent.Retry -> viewModel.retry()

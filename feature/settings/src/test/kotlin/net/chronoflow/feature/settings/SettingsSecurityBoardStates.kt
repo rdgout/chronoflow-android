@@ -178,6 +178,7 @@ internal fun SettingsSecurityBoard(state: String) {
                 SettingsPagesState(loaded = true, settingsLoaded = true),
                 summary.copy(twoFactorEnabled = enabled),
                 security,
+                since = since,
             )
         val snackbar = remember { SnackbarHostState() }
         val notice = securityText("Two-factor is on. Save your recovery codes now.")
@@ -192,7 +193,6 @@ internal fun SettingsSecurityBoard(state: String) {
                     nowProvider,
                     "rick@example.com",
                     SettingsSecurityBoardStates.qr,
-                    since,
                 ),
                 {},
             )
