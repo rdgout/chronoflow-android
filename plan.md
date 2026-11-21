@@ -1055,6 +1055,7 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A459 | (9h OQ-9h-11) "Ends after {{count}} nights" has no singular in the iOS catalog ("Ends after 1 nights"). | Use the catalog string as is; report to the iOS session; nights < 2 is rare on web trips. | 9h |
 | OQ-A460 | (9h OQ-9h-12) iOS checks `canEdit`/`canDuplicate` from the card; the plan and 6d keep that. A trip whose `tripInput` shape fails `loadTrip` (legs > 16, bad boundary) throws `Server(null)`. | Treated as "other" failure (edit: server copy; duplicate: duplicate copy). | 9h |
 | OQ-A461 | (9h) OQ-A351 requires 1.0 on every edit step, but pinned iOS clears the floor on revisited input steps and WizardReturnWeb draws 45%. | Orchestrator decision, 2026-11-20: OQ-A351 was a plan default. Keep the 1.0 floor on initial edit Checking, its failures and first Ready (the recorded difference from iOS 0.95); after a revisit, use iOS `go()` floor clearing and `max(progressFloor ?: 0, stepProgress)`. Coming back? is 0.45, and later Checking/Ready use their step weights. | 9a, 9h |
+| OQ-A483 | (10a) Robolectric 4.18's ShadowLocaleManager stores application locales but does not project them into Activity configuration or dispatch locale recreation. | Keep the API 36 configuration projection case ignored (`needs ShadowLocaleManager`); verify its read/write and preference reconciliation on Robolectric, and its real activity locale/recreation with the seeded pixel language test. API 29 retains the full device-config/recreation guard. | 10a |
 | OQ-0a-22 | Native libraries in the bundle? | Allow only `libandroidx.graphics.path.so` (Compose graphics-path; excluding it breaks Path conversion below API 34); fail on any other `.so` | 0a, 13 |
 | OQ-0b-1 | Where does `PlanMetrics` live? `08 §3.1` lists it inside `CfDimens`, but its consumer `:core:plan` is a JVM module that cannot depend on `:core:designsystem` | `core/plan/…/generated/PlanMetrics.generated.kt` (Double, dp), as iOS keeps it in `PlanCore` | 0b, 1b, 1c |
 | OQ-0b-2 | Port all iOS TokenGen outputs now (Auth, Settings, Terms, Welcome, PlanUI, Press, LaunchPaint, TypeMetrics), or only colors, sky and type? | All of them now (the iOS files are exact goldens and Phases 2, 3a, 3c, 5a, 9 and 10 need them) | 0b |
@@ -3053,7 +3054,7 @@ Implementation commits:
 - [x] **Sign out with pending changes** (`SignOutPending`, `SignOutPendingSettings`): Stay or Discard, through `SessionController.signOut`.
   - Also fill the Terms `signOutConfirmation` slot (Phase 8).
 - [x] **Shared states** (`SetStates`, `SetStatesMore`): loading, account not on this phone and offline-disabled rows (10a Task 7). Generic saved/failed toasts and refusal Details stay out per brief OQ-10a-7/-8; the shell already owns refusal feedback (OQ-A296).
-- [ ] **Account** (`SetAccount`), **Profile** (`SetProfile`) and **Language** (`SetLanguage`).
+- [x] **Account** (`SetAccount`), **Profile** (`SetProfile`) and **Language** (`SetLanguage`) (10a Tasks 8–9).
   - The language choice is `system`, `en` or `nl`. It goes through `LocaleManager` on API 33+, or the `device-config` file below 33, and recreates the activity.
   - With `system`, a later change of the phone language is followed (OQ-A25).
 - [ ] **Tests.**
@@ -3072,7 +3073,7 @@ Implementation commits:
 - [x] **10a Task 6**: pending sign-out sheet and Terms slot.
 - [x] **10a Task 7**: stored and loading states.
 - [x] **10a Task 8**: account and profile pages.
-- [ ] **10a Task 9**: language page and applier.
+- [x] **10a Task 9**: language page and applier.
 - [ ] **10a Task 10**: settings routes and seed paths.
 - [ ] **10a Task 11**: pending-change seed.
 - [ ] **10a Task 12**: board guards and captures.

@@ -521,3 +521,9 @@ Key Dutch checks: "Instellingen", "2 min geleden gesynchroniseerd", "Nog 3 vrage
 | OQ-10a-19 → OQ-A480 | Name length: iOS counts graphemes (`String.count`), Laravel `max:255` counts code points. | Count code points, so the server never refuses a name the app accepted. |
 | OQ-A481 *(refresh)* | Loading rows: the `SetStatesMore` board draws bars 140/180/120 in 64 dp rows; iOS `SettingsLoadingRows` uses the generated `SettingsTokens.skeletonRowWidths` 150/190/130 in `counterHeight` 60 rows. | iOS and the generated tokens (sources order; values only from generated tokens); record the board difference. |
 | OQ-A482 *(refresh)* | Disabled row alpha: board 0.5 (= `AuthTokens.disabledOpacity`) vs `SettingsTokens.disabledOpacity` 0.45 (iOS password prompt). | `AuthTokens.disabledOpacity` 0.5 for rows (board; also `CfButton`'s default). |
+
+### Task 9 harness note (2026-11-21)
+
+Robolectric 4.18 has `ShadowLocaleManager`, but its setter only updates a package-to-`LocaleList` map; it neither projects the list into Activity resources nor dispatches recreation. The API 36 activity-locale case is therefore ignored with `needs ShadowLocaleManager` (OQ-A483). API 36 read/write and preference reconciliation remain tested; the pixel test proves the actual configuration/recreation path. API 29 keeps the full device-config/recreation test.
+
+The timing collector initially counted the ignored JUnit case as executed and rejected its absent listener entry. Task 9 also excludes XML `<skipped/>` cases from budget matching, while preserving every missing-entry check for executed cases; a runner regression covers a measured case beside an ignored one. No timing budget changes.
