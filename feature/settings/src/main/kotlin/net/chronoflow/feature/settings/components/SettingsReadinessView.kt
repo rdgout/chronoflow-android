@@ -92,7 +92,7 @@ fun SettingsReadinessView(
                 CfButton(
                     stringResource(R.string.settings_go_to_the_first_one),
                     onFirst,
-                    Modifier.testTag("settings.bodyClock.firstMissing"),
+                    Modifier.fillMaxWidth().testTag("settings.bodyClock.firstMissing"),
                     style = CfButtonStyle.Secondary,
                     size = CfButtonSize.Sm,
                     minHeight = PlanUITokens.walkthroughDoneHeight.dp,
@@ -133,9 +133,15 @@ fun SettingsReadinessView(
 
         is BodyClockReadiness.Ready -> {
             CfCard(status) {
-                Row(horizontalArrangement = Arrangement.spacedBy(PlanUITokens.space3.dp)) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(PlanUITokens.space3.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     Box(
-                        Modifier.size(SettingsTokens.rowDisc.dp).background(colors.dawn, CfTheme.shapes.full),
+                        Modifier
+                            .size(SettingsTokens.rowDisc.dp)
+                            .background(colors.dawn, CfTheme.shapes.full)
+                            .testTag("settings.bodyClock.readiness.check"),
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(
@@ -145,7 +151,7 @@ fun SettingsReadinessView(
                             tint = colors.dawnForeground,
                         )
                     }
-                    Column(Modifier.weight(1f)) {
+                    Column(Modifier.weight(1f).testTag("settings.bodyClock.readiness.details")) {
                         Text(
                             stringResource(
                                 if (state.adjusted) {
