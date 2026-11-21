@@ -49,8 +49,13 @@ internal fun settingsText(
     args: Map<String, String>,
 ): String {
     val entry = checkNotNull(CopyIndex.find(CopyTable.Settings, key)) { "Missing Settings copy: $key" }
-    return stringResource(entry.resId, *entry.args.map { args.getValue(it) }.toTypedArray())
+    return stringResource(entry.resId, *settingsFormatArguments(entry.args, args))
 }
+
+internal fun settingsFormatArguments(
+    names: List<String>,
+    args: Map<String, String>,
+): Array<String> = names.map { args[it] ?: "{{$it}}" }.toTypedArray()
 
 @Composable
 fun SettingsPills(
