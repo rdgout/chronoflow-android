@@ -1,6 +1,5 @@
 package net.chronoflow.feature.settings.passkeys
 
-import android.content.res.Resources
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
@@ -14,6 +13,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -22,14 +23,11 @@ import net.chronoflow.core.model.DataFailure
 import net.chronoflow.core.model.contracts.Language
 import net.chronoflow.core.model.passkey.PasskeyRegistrationProviding
 import net.chronoflow.core.model.session.StaleSessionException
-import net.chronoflow.core.ui.l10n.generated.CopyIndex
-import net.chronoflow.core.ui.l10n.generated.CopyTable
 import net.chronoflow.feature.settings.SettingsComputeKey
 import net.chronoflow.feature.settings.SettingsDependencies
 import net.chronoflow.feature.settings.SettingsDependenciesKey
 import net.chronoflow.feature.settings.SettingsMainKey
 import net.chronoflow.feature.settings.SettingsPagesModel
-import net.chronoflow.feature.settings.components.settingsFormatArguments
 import net.chronoflow.feature.settings.security.SecretField
 import net.chronoflow.feature.settings.security.SecurityFeedback
 import net.chronoflow.feature.settings.security.SecurityUiState
@@ -53,7 +51,20 @@ class PasskeysViewModel(
             { attempt { deps.deviceName() } },
         )
     private val acknowledged = MutableStateFlow(0L)
-    private val locale = MutableStateFlow<Pair<Language, Resources>?>(null)
+
+    private data class PasskeyLocale(
+        val language: Language,
+        val text: (String, Map<String, String>) -> String,
+    )
+
+    private val locale = MutableStateFlow<PasskeyLocale?>(null)
+    private val localDate =
+        (if (passkeysEnabled) deps.clock.values() else emptyFlow())
+            .map { instant ->
+                val zone = deps.zone
+                zone to instant.atZone(zone).toLocalDate()
+            }.distinctUntilChanged()
+            .flowOn(compute)
     val refreshing = MutableStateFlow(false)
     val canRegisterPasskey get() = model.canRegisterPasskey
     val now = { deps.clock.now }
@@ -73,21 +84,23 @@ class PasskeysViewModel(
             )
         }.stateIn(viewModelScope, SharingStarted.Eagerly, SecurityUiState())
     val meta =
-        combine(model.state.map { it.passkeys }.distinctUntilChanged(), locale) { passkeys, locale ->
+        combine(
+            model.state.map { it.passkeys }.distinctUntilChanged(),
+            locale,
+            localDate,
+        ) { passkeys, locale, (zone, date) ->
             if (locale == null || passkeys.isNullOrEmpty()) {
                 emptyMap()
             } else {
                 withContext(compute) {
                     val formatter = deps.formatter()
-                    val (language, resources) = locale
-                    val now = deps.clock.now
+                    val (language, text) = locale
+                    val now = date.atStartOfDay(zone).toInstant()
                     passkeys
                         .mapNotNull { passkey ->
                             SettingsPasskeyText
-                                .meta(passkey, language, now, deps.zone, formatter) { key, args ->
-                                    val entry = checkNotNull(CopyIndex.find(CopyTable.Settings, key))
-                                    resources.getString(entry.resId, *settingsFormatArguments(entry.args, args))
-                                }?.let { passkey.id to it }
+                                .meta(passkey, language, now, zone, formatter, text)
+                                ?.let { passkey.id to it }
                         }.toMap()
                 }
             }
@@ -119,9 +132,9 @@ class PasskeysViewModel(
 
     fun setLanguage(
         language: Language,
-        resources: Resources,
+        text: (String, Map<String, String>) -> String,
     ) {
-        locale.value = language to resources
+        locale.value = PasskeyLocale(language, text)
     }
 
     fun reload() {

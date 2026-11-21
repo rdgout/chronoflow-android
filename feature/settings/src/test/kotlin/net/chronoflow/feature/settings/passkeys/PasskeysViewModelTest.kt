@@ -16,9 +16,13 @@ import kotlinx.coroutines.withContext
 import net.chronoflow.core.model.DataFailure
 import net.chronoflow.core.model.api.AccountSecurityChange
 import net.chronoflow.core.model.api.AccountSecurityResult
+import net.chronoflow.core.model.api.ApiPasskey
+import net.chronoflow.core.model.contracts.Language
 import net.chronoflow.core.model.passkey.DeterministicRegistrationProvider
 import net.chronoflow.core.model.passkey.PasskeyCapability
+import net.chronoflow.core.plan.CopyLineFormatter
 import net.chronoflow.feature.settings.support.FakeSettingsDependencies
+import net.chronoflow.feature.settings.support.SettingsFixture
 import net.chronoflow.feature.settings.testing.FakeSecretField
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -26,9 +30,47 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.time.Instant
+import java.time.ZoneId
 import kotlin.time.Duration.Companion.seconds
 
 class PasskeysViewModelTest {
+    @Test fun metadataRefreshesAtLocalMidnightWithoutReformattingWithinTheDay() =
+        runTest(timeout = 60.seconds) {
+            val server =
+                PasskeyServer().apply {
+                    passkeys = listOf(ApiPasskey(1, "Laptop", null, "2026-10-02T08:00:00Z", "2026-10-31T22:50:00Z"))
+                }
+            var formats = 0
+            val deps =
+                enabledDependencies().apply {
+                    security = server::perform
+                    zone = ZoneId.of("Europe/Amsterdam")
+                    clock.advance(Instant.parse("2026-10-31T22:58:00Z"))
+                    makeFormatter = {
+                        formats++
+                        CopyLineFormatter(SettingsFixture.catalog)
+                    }
+                }
+            withModel(deps) { vm ->
+                assertTrue(vm.meta.value.isEmpty())
+                assertEquals(0, formats)
+                vm.setLanguage(Language.En) { key, args -> key.replace("{{date}}", args["date"].orEmpty()) }
+                runCurrent()
+                assertEquals("Added 2 Oct 2026 · used today", vm.meta.value[1L])
+                assertEquals(1, formats)
+                deps.clock.advance(Instant.parse("2026-10-31T22:59:00Z"))
+                runCurrent()
+                assertEquals("Added 2 Oct 2026 · used today", vm.meta.value[1L])
+                assertEquals(1, formats)
+                deps.clock.advance(Instant.parse("2026-10-31T23:00:00Z"))
+                runCurrent()
+                assertEquals("Added 2 Oct 2026 · used 31 Oct", vm.meta.value[1L])
+                assertEquals(2, formats)
+                assertEquals(listOf(AccountSecurityChange.ListPasskeys), server.calls)
+            }
+        }
+
     @Test fun disabledCapabilityDoesNotStartPagesOrLoadPasskeys() =
         runTest(timeout = 60.seconds) {
             val deps = FakeSettingsDependencies(backgroundScope)

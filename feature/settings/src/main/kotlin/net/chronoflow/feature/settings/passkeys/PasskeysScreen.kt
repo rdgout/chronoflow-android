@@ -18,7 +18,10 @@ import net.chronoflow.core.designsystem.system.CfPullToRefreshBox
 import net.chronoflow.core.model.api.ApiPasskey
 import net.chronoflow.core.model.contracts.Language
 import net.chronoflow.core.ui.R
+import net.chronoflow.core.ui.l10n.generated.CopyIndex
+import net.chronoflow.core.ui.l10n.generated.CopyTable
 import net.chronoflow.feature.settings.components.SettingsPage
+import net.chronoflow.feature.settings.components.settingsFormatArguments
 import net.chronoflow.feature.settings.security.SecretField
 import net.chronoflow.feature.settings.security.SecurityFeedbackHost
 import net.chronoflow.feature.settings.security.SecurityState
@@ -117,7 +120,12 @@ fun PasskeysRoute(
     val refreshing by viewModel.refreshing.collectAsStateWithLifecycle()
     val resources = LocalResources.current
     val language = Language.of(resources.configuration.locales[0].language)
-    LaunchedEffect(viewModel, resources, language) { viewModel.setLanguage(language, resources) }
+    LaunchedEffect(viewModel, resources, language) {
+        viewModel.setLanguage(language) { key, args ->
+            val entry = checkNotNull(CopyIndex.find(CopyTable.Settings, key))
+            resources.getString(entry.resId, *settingsFormatArguments(entry.args, args))
+        }
+    }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.resume() }
     val inputs = remember { PasskeysInputs() }
     LaunchedEffect(ui.security.prompt) { inputs.password.clearText() }

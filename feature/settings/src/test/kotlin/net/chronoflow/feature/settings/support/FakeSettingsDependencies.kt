@@ -21,6 +21,7 @@ import net.chronoflow.core.model.store.SettingsRecord
 import net.chronoflow.core.sync.SyncEvent
 import net.chronoflow.core.testing.FakePlanClock
 import net.chronoflow.feature.settings.SettingsDependencies
+import java.time.ZoneId
 import java.time.ZoneOffset
 
 class FakeSettingsDependencies(
@@ -119,7 +120,7 @@ class FakeSettingsDependencies(
     }
 
     override val clock = FakePlanClock(settingsNow)
-    override val zone = ZoneOffset.UTC
+    override var zone: ZoneId = ZoneOffset.UTC
 
     var makeFormatter: suspend () -> net.chronoflow.core.plan.CopyLineFormatter = {
         net.chronoflow.core.plan
