@@ -111,3 +111,32 @@ Cannot locate tasks that match ':feature:settings:spotlessApply' as task 'spotle
 ```
 
 The root `make format` succeeded instead. Spotless's state-parameter rule also prompted using a count-provider lambda for the lockout leaf; formatting and tests then passed. No unresolved failure, hang or environment block remains. No perf command, `make check` or emulator test tier ran this round; pixel was left running. Captures still require the host's visual comparison. Logs and archived tier evidence are under `build/test-results/10c-r1-*`.
+
+## Review round 2
+
+All four findings are fixed in separate signed commits:
+
+- `89205e6f`: `SettingsDependencies.performSecurity` starts an async request in its session-owned `securityScope` and awaits it. Production supplies `SessionGraph.scope`; `requestSecurity` keeps the server call, permit-protected store apply and sync on injected IO. All three main/test implementations and the additional saved-state fixture implement the contract. Long-lived work captures dependencies and the request, with no ViewModel, Activity or entry. JVM tests dispose the actual ViewModel store during confirmation and prove store apply plus sync still happen; cancelling the session instead prevents them.
+- `5fd0debf`: submit gates on model busy state. A delayed overlap test proves a fresh submission starts after `clearSecrets`, and the old response neither restores secrets nor clears the new request's busy state.
+- `e5e7b1e1`: language starts unknown. JVM coverage proves zero formatter calls before language selection and Dutch as the first formatted date. Failure coverage still proves the formatter actually ran off main and remained silent.
+- `657c34b3`: the copy tests call the real composable `settingsText` in a headless composition using real English/Dutch resources and the model's missing/string `min` arguments. No UI nodes or screen-copy queries are involved. Temporarily bypassing argument formatting caused all four cases to fail; restoring production made them pass.
+
+| Validation | Final result and wall time |
+|---|---|
+| `make targeted ONLY="feature:settings:SecurityViewModelTests feature:settings:SessionSettingsSecurityTests"` | 13 passed, 5.24 s. Includes both entry/session cancellation cases and overlapping submissions. |
+| Scoped rerun of the three failure-mapping methods; `make targeted ONLY="app:SecuritySecretsNotSavedTest"` | 3 + 2 passed; Gradle 4 s / 8 s. |
+| `make targeted ONLY="feature:settings:SecurityConfirmedDateStateTests feature:settings:SecurityConfirmedDateTests feature:settings:TwoFactorScreenTest"` | 14 passed, 8.51 s. |
+| `make targeted ONLY="feature:settings:SecurityTextArgumentsTests#nonNumericOrMissingMinimumLeavesTheIosPlaceholderIntact"` | 4 passed, 3.75 s after restoring the intentional mutation. |
+| App/settings layout tier (`:feature:settings:testDebugUnitTest :app:testDebugUnitTest -Pcf.tier=layout`) | 937 measured cases passed, 48.92 s; zero overruns/hangs. |
+| `./gradlew --console=plain :app:lintDebug :feature:settings:lintDebug -Pkotlin.compiler.execution.strategy=in-process` | Passed, 21.77 s. |
+| `make quick` — exactly once | Assertions passed; **timing gate failed**, 42.21 s overall. JVM/logic measured 3,784 tests in 42.16 s, one overrun, no hangs. The untouched Terms case below was not retried or changed. |
+
+```text
+make quick
+run-tier: over budget: robolectric net.chronoflow.feature.onboarding.terms.TermsScreenTest#policyRowStaysEnabledWhileFailed 3290 ms > 3000 ms
+make: *** [quick] Error 3
+```
+
+The unreached quick stages were completed separately: build-logic's 37 certified cached cases passed (2.80 s tier), tooling's 171 + 25 + 49 + 11 cases passed (19.831 / 0.105 / 0.017 / 0.088 s), and timing's 7 certified cached cases passed (2.92 s tier). Every new regression test passed in quick; the entry-disposal test took 50 ms.
+
+The first ownership run exposed three existing failure-mapping tests whose fake used a non-supervisor background scope. The fake now creates a supervisor child owned by the test scope, matching production; only the three failed methods were rerun before proceeding. A shell setup attempt, `export 'ORG_GRADLE_PROJECT_kotlin.compiler.execution.strategy=in-process'`, was rejected with `zsh:export:5: not valid in this context: ORG_GRADLE_PROJECT_kotlin.compiler.execution.strategy`; the commands then ran with `env` successfully. No command remains blocked. No perf, `make check` or emulator tier ran; pixel was left running. Logs and tier evidence are archived under `build/test-results/10c-r2-*`.
