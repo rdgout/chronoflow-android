@@ -3076,7 +3076,7 @@ Implementation commits:
 - [x] **10a Task 9**: language page and applier.
 - [x] **10a Task 10**: settings routes and seed paths.
 - [x] **10a Task 11**: pending-change seed.
-- [ ] **10a Task 12**: board guards and captures.
+- [x] **10a Task 12**: board guards and captures.
 - [ ] **10a Task 13**: device sign-out and language checks.
 - [ ] **10a Task 14**: acceptance record.
 

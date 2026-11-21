@@ -531,3 +531,7 @@ The timing collector initially counted the ignored JUnit case as executed and re
 ### Task 10 seed mapping note (2026-11-21)
 
 `SettingsSeedRoute.path` still returns null for the accepted-but-unmapped `twoFactorSettings` and `passkeys` strings. `DebugShellStart` must select `ShellStart.Settings(emptyList())` for these accepted settings seeds, rather than return no start: pinned iOS selects Settings before its switch, so the default case stays at Settings root. A null/dropped settings seed still supplies no start, and plan-route seeds keep their existing priority. This corrects R4's optional `?.let` shorthand without changing any earlier plan-route behavior.
+
+### Task 12 capture and guard boundaries (2026-11-21)
+
+`SignOutPending` over Terms is captured by `:app`'s `SettingsTermsCaptureTest`; the remaining boards use `:feature:settings`'s `SettingsCaptureTest`. This keeps the prohibition on feature-to-feature imports. The native sheet and activity renders are composited with their window dim/gravity for the two overlay boards. Feature guards host Settings content with all fixture insets; captures include the native phone shell. Robolectric does not project the fixture's top inset into a native navigation rail, so the existing shell/native-control tests retain that responsibility.
