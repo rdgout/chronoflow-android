@@ -154,7 +154,7 @@ All five native sections saved; no ChronoFlow StrictMode frames for pid 27908
 
 ## Board capture handoff
 
-`make captures ONLY=SetPreferences,SetPreferencesNL,SetBodyClock,DarkSetBodyClock` ran once and wrote all 40 expected PNGs into `build/captures/`. Names/dimensions are recorded in `build/phase-10b/task-11/capture-manifest.json`. Preferences and the complete missing-answer About card were inspected directly. No Chromium render or side-by-side host comparison was attempted; visual board acceptance remains pending that comparison.
+The original `make captures ONLY=SetPreferences,SetPreferencesNL,SetBodyClock,DarkSetBodyClock` run wrote all 40 expected PNGs into `build/captures/`. Names/dimensions are recorded in `build/phase-10b/task-11/capture-manifest.json`. Review round 1 below compares the supplied host board renders with the regenerated captures and records the retained differences by board name. The worker did not launch Chromium.
 
 | Board / capture stems | Recorded differences from the raw board |
 |---|---|
@@ -199,3 +199,87 @@ All implementation commits are GPG-signed with no trailers. No push, rebase or m
 | `885e31df` | `test(settings): check the theme on the emulator` |
 
 Task 13 commits this acceptance record as `docs(settings): record phase 10b results and open questions`.
+
+## Review round 1
+
+The host reported `make check` passing in 3:48 on the implementation above. This round addresses all eight review findings without changing the timeline, plan engine, shared switch wrapper, copy or dependencies. Phase 10b now also lists the completed Task 8 and Task 9 rows explicitly. No OQ or brief patch was needed: the review supplies the decisions.
+
+The readiness action fills the production card's content width. Ready and adjusted check discs are vertically centered on their title/subtitle block. Six light/dark geometry cases measure the production component; removing the width and alignment fixes makes all six fail, and restoration passes.
+
+The existing 9f `RootThemeTest` now composes `CfRoot` with a stored Dark choice on API 29 and 30 while the system is Light. Reverting the root to `isSystemInDarkTheme()` fails both pixel checks. The configuration cases dispatch a real `ActivityController.configurationChange` through `MainActivity`, retain the activity, and observe the root's existing system-bar callback calling the actual activity setter. After the configuration and next frame they require another Dark application, even though the resolved choice never changed. Replacing `SideEffect` with `LaunchedEffect(night)` fails both cases. Window flags alone had been insufficient evidence; the callback recorder proves the reapplication.
+
+Overlay observation and the launch-finish effect now live inside the theme content lambda. A tracing guard observes the overlay disappearing and zero further `CfRoot` compositions. Its paused-clock fixture explicitly publishes snapshot notifications; this prevents a false zero while the UI is still waiting to update. Restoring the original broad reads fails with `expected:<0> but was:<1>`. All graph/launch dispatchers in each new fixture share one test scheduler, and their scopes are joined during cleanup. No allow-list or main-source test hook was added.
+
+First-missing navigation reads layout coordinates for the question within its section and scrolls to that item plus offset. Coordinates stay in the screen's layout tracker, outside ViewModel state; every placement refreshes them. Section-save navigation still targets the heading. The small-phone Health/`shiftWork` case checks the question's unclipped position against the padded viewport top and its request acknowledgement. Removing the offset scroll makes it fail. Existing Body clock structure and section recomposition cases remain green.
+
+Theme read failures now report a static diagnostic and fall back to System, without setting the save-failure flag. A gated JVM flow first emits Dark, then fails; the test observes System, one diagnostic, no banner failure and no outbox row. Theme write failures continue to show the save error. The former `replayTwiceStartsFreshAfterSkipOrDone` test is renamed `preferencesSaveQueuesOnlySettingsAndReplayTargetsTheReplayRoute`: it checks the settings row and replay destination. It makes no claim about navigation-owner disposal or a second entry's ViewModel store.
+
+### Board comparison
+
+Compared the supplied `build/board-renders/{SetPreferences,SetPreferencesNL,SetBodyClock}.png` with the regenerated corresponding PNGs in `build/captures/`. The host PNGs are 1170 × 2532; their templates use a 375 CSS-pixel board, while the app captures use the pixel8 profile at 411 dp. Comparisons account for that width and the native chrome. The supplied Body clock image covers the initial viewport; its later sections were also checked against the board template, the pinned iOS source and the complete section captures. No browser renderer was launched by the worker.
+
+| Board / section | Comparison and disposition |
+|---|---|
+| `SetPreferences` | Native M3 back control, system large title, safe insets and bottom navigation replace the board's glass labelled back pill and Fraunces page title (A9). This shifts the first card and the visible fold. The app has the category swatches required by iOS `SettingsPreferencesView.swift:104`; the board rows show text alone. Swatches and their label inset are retained as iOS parity. Reminders and replay remain below the initial app viewport and are reachable by scrolling. |
+| `SetPreferences` time format | The board wraps “12-hour” below “24-hour”. Both implementations use intrinsic wrapping, not a forced line break. Production geometry tests prove wrapping at the board's 375 dp width in English and Dutch. At the wider 411 dp pixel8 width, the two English pills fit beside one another. This responsive difference is retained; no fixed board-width cap was introduced. |
+| `SetPreferencesNL` | Same native chrome and swatch differences. Dutch time-format pills wrap at both 375 and 411 dp, matching the supplied board's two rows. Copy uses catalog “Slapen” instead of board “Slaap” (OQ-A498). The larger native chrome and wrapped copy put Travel and the links farther below the fold; they remain scrollable. |
+| `SetPreferences`, `SetPreferencesNL` switches | The board's `ios-switch` CSS paints white thumbs and a borderless translucent off track. Android retains the Material 3 switch through `CfSwitch` (A9 / OQ-A489): dawn checked track, `dawnForeground` checked thumb, and `input`/`mutedForeground` off track, outline and thumb. Those dark thumbs and outlined off tracks are an explicit retained native-control difference. The shared wrapper and earlier-phase controls were not changed. |
+| `SetPreferences`, `SetPreferencesNL` link rows | The reminders subtitle is empty until 12c; the board includes its example status. Replay has its catalog subtitle and no trailing chevron, matching iOS. Native navigation occupies layout space, so these rows are not necessarily visible in the initial capture. |
+| `SetBodyClock` intro / needs answers | The full-width readiness pill is fixed and matches the board's width rule. The app's progress track, checkmark and “0/2 done” metadata are iOS parity (`SettingsBodyClockView.swift:425–436`) and remain despite their absence from the board. The app asks for two required answers, replacing the board's legacy count of three. Native page chrome and 411 dp wrapping shift the card and later sections. |
+| `SetBodyClock` About | The supplied host render leaves the chronotype option area blank; the template and iOS define four cards. The app paints those cards, their hints and selection controls, which makes About taller. Age bands remain Under 18 / 18–64 / 65+, replacing the board's four legacy bands. Missing-answer decoration appears on age and shift work only when missing. These are pinned iOS / no-health-data rules. |
+| `SetBodyClock` ready / adjusted / excluded captures | The provided host PNG shows needs answers. Ready and adjusted discs are now centered on their copy, as the pinned iOS HStack specifies; both regenerated variants were inspected and have geometry guards. Their copy, adjustment lines and excluded state follow server readiness and the existing §4 overrides, not the board's legacy complete/blocked wording. |
+| `SetBodyClock` Sleep | Native captures use the seed's 23:00 / 07:00 and same-as-workdays choice. Optional free-day tiles appear only when declared. The time sheet remains a native M3 dial with five-minute rounding; it is a separate window outside these static section captures. Adaptive tile width, not a fixed phone layout, controls stacking. |
+| `SetBodyClock` Caffeine | Retains boolean sensitivity, the neutral exclusion preference and catalog drink labels; the removed medical questions and third sensitivity answer are absent. Native switches have the same deliberate Material appearance described above. Static seeds show no Saved marker until a local edit succeeds; the board's Caffeine Saved example is not manufactured. |
+| `SetBodyClock` Light / Safety | One unified light-device question and its caution replace separate light-box/visor questions. Safety contains shift work, the neutral flight-movement preference and the two notices, replacing the medical questionnaire and its required-health caption. Switch appearance remains native M3. The notices are information, not collected health answers. |
+| `SetBodyClock` section PNGs / `DarkSetBodyClock` | Non-intro PNGs isolate the complete production card with its page padding and phone-height background; they do not repeat the app bar or shell. Dark captures received the same width/centering fixes and pass light/dark geometry guards. No dark host render was supplied, so no side-by-side dark match is claimed. |
+
+The English and Dutch pill-width cases use the real Preferences screen and inspect tags and geometry only. No copy is asserted on a screen. The regenerated missing-answer intro visibly has the full-width action, and the ready/adjusted intros visibly have centered discs.
+
+### Review verification
+
+Targeted checks used `make targeted ONLY="…"`, with the existing in-process Kotlin compiler setting and the writable Robolectric Maven cache from the initial record. Times are tier wall times unless labelled otherwise. All deliberate mutations were restored before commits.
+
+| Check | Result | Wall time |
+|---|---|---:|
+| `feature:settings:SettingsReadinessLayoutTest` | 6 passed; original width/alignment mutation fails all 6; restored cases pass | 8.24 s initial / 4.40 s restored |
+| `app:RootThemeTest app:CfRootTest app:CfRootHandOffTest app:RootThemeChoiceTest` | 21 passed; legacy stored-theme, real configuration reapplication and overlay scope controls proven by mutations | 8.56 s final |
+| `feature:settings:BodyClockQuestionAnchorTest feature:settings:BodyClockScreenTest feature:settings:BodyClockRecompositionTest` | 12 passed; Health anchor mutation fails and restoration passes | 6.92 s; restored anchor 4.19 s |
+| Anchor after layout-callback API cleanup | passed | 4.93 s |
+| `feature:settings:PreferencesViewModelTest` | 10 passed, including gated read failure and unchanged write-error handling | 3.12 s |
+| Renamed replay model method | passed | 2.73 s process |
+| `feature:settings:PreferencesPillWrapTest` | 4 profile/language cases passed | 5.44 s |
+| `make captures ONLY=SetPreferences,SetBodyClock,DarkSetBodyClock` (once) | 40 passed / 40 PNGs | 19.67 s |
+| App/settings layout tier (once) | 480 passed, 1 existing LocaleManager-shadow ignore; no overruns | 26.63 s |
+| `./gradlew :app:lintDebug :feature:settings:lintDebug` (once) | passed | 17.19 s process |
+| Final `make format` | passed | 10 s build |
+| Single review `make quick`, main stage | 5,480 assertions passed; one untouched Terms first-case timing overrun; no missing evidence or hangs | 38.82 s |
+| Remaining build-logic stage | 37 passed, certified cached results | 1.72 s |
+| Remaining tooling stage | 171 harness + 25 contracts + 49 strings + 11 vectors passed | 20.17 s process |
+| Final serial `make timing` stage | 7 passed, certified cached results for unchanged budget inputs | 1.61 s |
+
+Cold first cases remain separate from the warm budgets: readiness 1.904 s, root group 2.181 s, anchor 2.055 s and pill wrapping 2.135 s. The first API-29 configuration case took 1.113 s under that SDK's cold allowance; its other legacy theme case took 46 ms. No budget was loosened. Result evidence is retained in `build/phase-10b-r1/` and `build/test-results/layout-10b-r1/`; logs use `/private/tmp/chronoflow-10b-r1-*.log`.
+
+In concurrent quick execution, the first API-29 root case took 1.540 s and the first SDK-36 settings anchor case took 6.155 s; both used the existing 20 s SDK cold allowance. The body-clock section recomposition case took 204 ms. All 13 timeline invalidation and 124 list invalidation cases passed unchanged.
+
+Quick ran once and stopped at its timing gate. The unchanged Terms case exceeded its class's first-case allowance by 46 ms; per the user's instruction it was not retried, edited or given more time. The stages after that early exit were completed separately, with `IOS_REPO` and `WEB_REPO` supplied to the tooling script as Make normally does. The serial timing task reused certified output, so no fresh timeline budget measurements are claimed. Exact gate output:
+
+```text
+run-tier: over budget: robolectric net.chronoflow.feature.onboarding.terms.TermsScreenTest#policyRowStaysEnabledWhileFailed 3046 ms > 3000 ms
+make: *** [quick] Error 3
+```
+
+This review does not run emulator tiers, `make check`, `make baseline-profile`, `make perf` or `make perf-timeline`. The host will regenerate profiles and measure startup after this round. The pixel emulator is left running. No command remains blocked by permissions or signing.
+
+Review commits (the following documentation commit records their acceptance):
+
+| SHA | Subject |
+|---|---|
+| `d2cd44ad` | `fix(settings): match readiness card geometry` |
+| `d508037f` | `docs(settings): list the completed preferences and body clock tasks` |
+| `6080248b` | `fix(app): scope root appearance effects and prove legacy theme wiring` |
+| `0f0d8aa4` | `fix(settings): anchor the first missing question at the top` |
+| `d9cdd107` | `fix(settings): keep theme read failures off the save error line` |
+| `90cf9b59` | `test(settings): describe the replay model assertions accurately` |
+| `48abcc30` | `test(settings): pin time format wrapping at board and phone widths` |
+| `5a01cc92` | `refactor(settings): register question positions from layout callbacks` |
+| `1d3039fe` | `style(settings): format the review changes` |
