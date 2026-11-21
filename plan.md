@@ -3201,7 +3201,7 @@ Implementation commits:
 - [ ] **Two-factor** (`Set2FA*`).
   - The intro, with the Android copy (OQ-A12).
   - Setup: the QR code, drawn on the device from `otpauthUrl` on a white tile (`03 §7`), and the setup key.
-    - Add `com.google.zxing:core` (Apache-2.0) to the catalog, pinned to the latest stable release that is at least two weeks old.
+    - [x] Add `com.google.zxing:core` (Apache-2.0) to the catalog, pinned to the latest stable release that is at least two weeks old (3.5.4, published 2025-11-11).
   - The on and manage states, and the recovery codes.
   - `FLAG_SECURE` on setup and the codes (OQ-A13).
   - Copy uses `ClipData` with `EXTRA_IS_SENSITIVE` on API 33+, cleared after 60 s.

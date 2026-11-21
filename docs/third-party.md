@@ -254,3 +254,11 @@ Source: `@material-symbols/svg-400`, published 2026-10-27, selected 2026-11-17 w
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
+
+## ZXing core 3.5.4 (Apache-2.0)
+
+Source: https://github.com/zxing/zxing, published on Maven Central on 2025-11-11.
+Core only; no camera integration or native libraries.
+
+Copyright ZXing authors. Licensed under the Apache License, Version 2.0
+(the license text above applies).
