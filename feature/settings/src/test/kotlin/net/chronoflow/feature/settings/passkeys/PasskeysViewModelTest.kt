@@ -7,9 +7,15 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.job
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
@@ -21,6 +27,9 @@ import net.chronoflow.core.model.contracts.Language
 import net.chronoflow.core.model.passkey.DeterministicRegistrationProvider
 import net.chronoflow.core.model.passkey.PasskeyCapability
 import net.chronoflow.core.plan.CopyLineFormatter
+import net.chronoflow.core.plan.PlanClock
+import net.chronoflow.core.testing.FakePlanClock
+import net.chronoflow.feature.settings.SettingsDependencies
 import net.chronoflow.feature.settings.support.FakeSettingsDependencies
 import net.chronoflow.feature.settings.support.SettingsFixture
 import net.chronoflow.feature.settings.testing.FakeSecretField
@@ -35,6 +44,39 @@ import java.time.ZoneId
 import kotlin.time.Duration.Companion.seconds
 
 class PasskeysViewModelTest {
+    @Test fun clockIsCollectedOnlyWhileMetadataHasSubscribersWithAStopGracePeriod() =
+        runTest(timeout = 60.seconds) {
+            val deps = enabledDependencies()
+            val clock = ObservedClock(deps.clock)
+            val observed =
+                object : SettingsDependencies by deps {
+                    override val clock = clock
+                }
+            withModel(observed) { vm ->
+                assertEquals(0, clock.collections)
+                assertEquals(0, clock.active)
+                var subscription = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.meta.collect() }
+                runCurrent()
+                assertEquals(1, clock.collections)
+                assertEquals(1, clock.active)
+                subscription.cancelAndJoin()
+                advanceTimeBy(4_999)
+                runCurrent()
+                assertEquals(1, clock.active)
+                subscription = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.meta.collect() }
+                runCurrent()
+                assertEquals(1, clock.collections)
+                subscription.cancelAndJoin()
+                advanceTimeBy(5_000)
+                runCurrent()
+                assertEquals(0, clock.active)
+                backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.meta.collect() }
+                runCurrent()
+                assertEquals(2, clock.collections)
+                assertEquals(1, clock.active)
+            }
+        }
+
     @Test fun metadataRefreshesAtLocalMidnightWithoutReformattingWithinTheDay() =
         runTest(timeout = 60.seconds) {
             val server =
@@ -53,6 +95,8 @@ class PasskeysViewModelTest {
                     }
                 }
             withModel(deps) { vm ->
+                backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.meta.collect() }
+                runCurrent()
                 assertTrue(vm.meta.value.isEmpty())
                 assertEquals(0, formats)
                 vm.setLanguage(Language.En) { key, args -> key.replace("{{date}}", args["date"].orEmpty()) }
@@ -208,7 +252,7 @@ class PasskeysViewModelTest {
         }
 
     private suspend fun TestScope.withModel(
-        deps: FakeSettingsDependencies,
+        deps: SettingsDependencies,
         block: suspend (PasskeysViewModel) -> Unit,
     ) {
         val dispatcher = StandardTestDispatcher(testScheduler)
@@ -224,5 +268,24 @@ class PasskeysViewModelTest {
                     .cancelAndJoin()
             }
         }
+    }
+
+    private class ObservedClock(
+        private val source: FakePlanClock,
+    ) : PlanClock {
+        var collections = 0
+        var active = 0
+        override val now get() = source.now
+
+        override fun values() =
+            flow {
+                collections++
+                active++
+                try {
+                    emitAll(source.values())
+                } finally {
+                    active--
+                }
+            }
     }
 }

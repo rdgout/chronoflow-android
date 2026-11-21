@@ -167,3 +167,5 @@ make: *** [quick] Error 3
 ```
 
 Logs and focused timing evidence are under `build/test-results/10d-r1-*`. No new OQ or copy was needed. No perf tier, `make check`, push, history rewrite or emulator shutdown was performed. No sandbox blocker remains; the unrelated quick timing overrun above remains recorded as a failure.
+
+Round 2: passkey metadata uses `WhileSubscribed` with a five-second stop timeout and the route’s existing `collectAsStateWithLifecycle`; JVM coverage proves no clock collection without subscribers, delayed shutdown, resubscription and midnight refresh. The focused ViewModel/capability/screen tests passed (12.53 s).

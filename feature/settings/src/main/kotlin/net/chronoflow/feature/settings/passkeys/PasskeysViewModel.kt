@@ -104,7 +104,7 @@ class PasskeysViewModel(
                         }.toMap()
                 }
             }
-        }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000), emptyMap())
 
     init {
         if (passkeysEnabled) {
