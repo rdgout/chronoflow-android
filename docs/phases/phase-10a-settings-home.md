@@ -527,3 +527,7 @@ Key Dutch checks: "Instellingen", "2 min geleden gesynchroniseerd", "Nog 3 vrage
 Robolectric 4.18 has `ShadowLocaleManager`, but its setter only updates a package-to-`LocaleList` map; it neither projects the list into Activity resources nor dispatches recreation. The API 36 activity-locale case is therefore ignored with `needs ShadowLocaleManager` (OQ-A483). API 36 read/write and preference reconciliation remain tested; the pixel test proves the actual configuration/recreation path. API 29 keeps the full device-config/recreation test.
 
 The timing collector initially counted the ignored JUnit case as executed and rejected its absent listener entry. Task 9 also excludes XML `<skipped/>` cases from budget matching, while preserving every missing-entry check for executed cases; a runner regression covers a measured case beside an ignored one. No timing budget changes.
+
+### Task 10 seed mapping note (2026-11-21)
+
+`SettingsSeedRoute.path` still returns null for the accepted-but-unmapped `twoFactorSettings` and `passkeys` strings. `DebugShellStart` must select `ShellStart.Settings(emptyList())` for these accepted settings seeds, rather than return no start: pinned iOS selects Settings before its switch, so the default case stays at Settings root. A null/dropped settings seed still supplies no start, and plan-route seeds keep their existing priority. This corrects R4's optional `?.let` shorthand without changing any earlier plan-route behavior.

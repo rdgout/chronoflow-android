@@ -3074,7 +3074,7 @@ Implementation commits:
 - [x] **10a Task 7**: stored and loading states.
 - [x] **10a Task 8**: account and profile pages.
 - [x] **10a Task 9**: language page and applier.
-- [ ] **10a Task 10**: settings routes and seed paths.
+- [x] **10a Task 10**: settings routes and seed paths.
 - [ ] **10a Task 11**: pending-change seed.
 - [ ] **10a Task 12**: board guards and captures.
 - [ ] **10a Task 13**: device sign-out and language checks.
