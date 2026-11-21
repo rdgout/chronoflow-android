@@ -190,6 +190,18 @@ class AppGraph(
     val passkeyAnchor: PasskeyAnchor by lazy { PasskeyAnchor() }
     val credentialClient: CredentialClient by lazy { CredentialManagerClient(app, passkeyAnchor) }
     val passkeyCapability: PasskeyCapability get() = LaunchPlatform.passkeyCapability
+    val passkeyRegistration: net.chronoflow.core.model.passkey.PasskeyRegistrationProviding by lazy {
+        if (selection.source == DataSourceFactory.Source.Mock) {
+            net.chronoflow.core.model.passkey
+                .DeterministicRegistrationProvider()
+        } else {
+            net.chronoflow.core.model.passkey
+                .SystemPasskeyRegistrationProvider(credentialClient)
+        }
+    }
+
+    suspend fun settingsDeviceName(): String = androidDeviceName(app, dispatchers.io)
+
     val auth: AuthServices by lazy {
         AuthServices(
             rootNavigator,
@@ -415,11 +427,31 @@ class AppGraph(
             if (launchFinished) pendingLaunchIntents.consume()?.let { launchIntentHandler.handle(it) }
         }
 
+    private var deleteSignOutEpoch: Long? = null
+
+    internal suspend fun signOutAfterDeletingAccount(expected: net.chronoflow.core.model.session.SessionSnapshot) =
+        withContext(dispatchers.main) {
+            if (controller.activeSession() != expected) {
+                throw net.chronoflow.core.model.session
+                    .StaleSessionException()
+            }
+            val signedOutEpoch = expected.epoch + 1
+            deleteSignOutEpoch = signedOutEpoch
+            try {
+                controller.signOut(expected, discardPending = true)
+            } finally {
+                if (deleteSignOutEpoch == signedOutEpoch) deleteSignOutEpoch = null
+            }
+        }
+
     private fun onSignedOut() {
         val route = rootNavigator.state.value.route
         // Both session observers can arrive after the pending link has opened its reset route.
-        if (route is Route.Reset && auth.resetModel?.isActive == true) return
-        if (route != Route.SignIn) rootNavigator.navigate(Route.SignIn)
+        val resetting = route is Route.Reset && auth.resetModel?.isActive == true
+        val destination = if (deleteSignOutEpoch == controller.epoch) Route.Welcome else Route.SignIn
+        net.chronoflow.app.settings
+            .signedOutDestination(route, resetting, destination)
+            ?.let(rootNavigator::navigate)
     }
 
     suspend fun onVerify(epoch: Long) {

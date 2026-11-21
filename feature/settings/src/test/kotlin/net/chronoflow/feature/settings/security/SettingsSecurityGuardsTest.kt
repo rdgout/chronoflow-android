@@ -44,6 +44,7 @@ class SettingsSecurityGuardsTest(
             rootTag = "settings.capture.window",
             interactiveRootTag =
                 when {
+                    state == "PromptLocked" -> "settings.delete.prompt"
                     state == "PromptForgot" -> "settings.security.prompt.forgotAlert"
                     state.startsWith("Prompt") -> "settings.security.prompt"
                     else -> null

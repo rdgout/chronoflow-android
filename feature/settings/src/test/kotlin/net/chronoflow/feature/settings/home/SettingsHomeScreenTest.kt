@@ -55,7 +55,7 @@ class SettingsHomeScreenTest : SettingsScreenTest() {
         compose.onNodeWithTag("settings.security").assertExists()
         compose.onNodeWithTag("settings.bodyClock").assertExists()
         compose.onNodeWithTag("settings.preferences").assertExists()
-        compose.onNodeWithTag("settings.plan").assertDoesNotExist()
+        compose.onNodeWithTag("settings.plan").assertExists()
     }
 
     @Test fun busyDisablesSignOut() {

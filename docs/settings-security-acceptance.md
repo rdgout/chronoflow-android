@@ -19,7 +19,7 @@ ZXing Core is pinned to **3.5.4**, published **2025-11-11**, with its Apache-2.0
 These follow the brief defaults and are not new design decisions:
 
 - `PasswordPromptWide`: 540 dp dialog, height at most 90%; the Phase 10c plan entry now agrees. Other settings columns remain unchanged.
-- All `PasswordPrompt*`: token title 16/24 with native Cancel; `surface2` field plus the board's 18 dp lock. `PasswordPromptChecking` and `PasswordPromptForgot` use Enable; `PasswordPromptLocked` uses destructive Disable until Delete is implemented in 10d.
+- All `PasswordPrompt*`: token title 16/24 with native Cancel; `surface2` field plus the board's 18 dp lock. `PasswordPromptChecking` and `PasswordPromptForgot` use Enable; `PasswordPromptLocked` is recaptured by 10d with the destructive Delete prompt (2,820 s lockout).
 - `SetPassword`, `Set2FASetup`, `Set2FAOn`, `Set2FACodes`: iOS action heights (48 dp; setup-key Copy 40 dp) instead of the smaller board buttons. Setup displays/copies the raw key.
 - `Set2FAOn`: the shared long snackbar replaces the board toast. There is no added “Copied” message, password-policy hint or authenticator-app link.
 - `Set2FAManage` and its wide/NL variants: `CfRow` follows iOS's 64 dp minimum and 14/20 subtitle rather than the board's 60 dp and 13/18. The recovery-code eyebrow gap follows the board's 8 dp rather than iOS's 12 dp.

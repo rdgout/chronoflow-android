@@ -47,7 +47,7 @@ class SecurityTextArgumentsTests(
                         ),
                         422,
                     )
-                }) { Instant.parse("2026-11-21T12:00:00Z") }
+                }, now = { Instant.parse("2026-11-21T12:00:00Z") })
             model.showPrompt(SettingsSecurityPrompt.Enable)
             model.submitPrompt(FakeSecretField("password"))
             val key = checkNotNull(model.state.value.errors["current_password"])

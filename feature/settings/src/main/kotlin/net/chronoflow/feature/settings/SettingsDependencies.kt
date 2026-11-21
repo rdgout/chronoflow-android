@@ -25,6 +25,11 @@ import net.chronoflow.core.sync.SyncEvent
 import java.time.ZoneId
 
 interface SettingsDependencies {
+    val passkeyCapability: net.chronoflow.core.model.passkey.PasskeyCapability
+    val passkeyRegistration: net.chronoflow.core.model.passkey.PasskeyRegistrationProviding?
+
+    suspend fun deviceName(): String
+
     val securityScope: CoroutineScope
 
     // Entry disposal must not skip a submitted mutation's local apply and sync request.
@@ -37,6 +42,12 @@ interface SettingsDependencies {
         }
 
     suspend fun requestSecurity(change: AccountSecurityChange): AccountSecurityResult
+
+    suspend fun refreshNow()
+
+    suspend fun deleteAccount(password: String)
+
+    val deleteSheetSeed: Boolean
 
     val passwordPromptSeed: String?
     val clipboard: net.chronoflow.feature.settings.security.SensitiveClipboard

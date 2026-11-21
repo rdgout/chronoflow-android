@@ -2,10 +2,31 @@ package net.chronoflow.core.model.passkey
 
 import net.chronoflow.core.model.api.ApiPasskeyAssertion
 import net.chronoflow.core.model.api.ApiPasskeyAssertionResponse
+import net.chronoflow.core.model.api.ApiPasskeyAttestation
+import net.chronoflow.core.model.api.ApiPasskeyAttestationResponse
+import net.chronoflow.core.model.api.ApiPasskeyCreationOptions
 import net.chronoflow.core.model.api.CredentialType
 import java.util.Base64
 
 object Base64URL {
+    fun attestation(
+        credentialID: ByteArray,
+        clientDataJSON: ByteArray,
+        attestationObject: ByteArray,
+        transports: List<String>? = null,
+    ): ApiPasskeyAttestation {
+        val id = encode(credentialID)
+        return ApiPasskeyAttestation(
+            id,
+            id,
+            CredentialType.PublicKey,
+            ApiPasskeyAttestationResponse(encode(clientDataJSON), encode(attestationObject), transports),
+        )
+    }
+
+    fun excludedCredentialIDs(options: ApiPasskeyCreationOptions): List<ByteArray> =
+        options.excludeCredentials.map { decode(it.id) }
+
     fun encode(bytes: ByteArray): String = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes)
 
     fun decode(value: String): ByteArray {

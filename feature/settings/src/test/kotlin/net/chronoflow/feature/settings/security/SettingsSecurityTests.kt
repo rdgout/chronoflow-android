@@ -26,7 +26,7 @@ import kotlin.time.Duration.Companion.seconds
 class SettingsSecurityTests {
     private val script = ScriptedSecurity()
     private val now = Instant.ofEpochSecond(100)
-    private val model = SettingsSecurityModel(script::perform) { now }
+    private val model = SettingsSecurityModel(script::perform, now = { now })
 
     @Test fun promptWorksAgainAfterLeavingAndReturning() =
         runTest(timeout = 60.seconds) {

@@ -111,7 +111,7 @@ enum class SettingsDestination(
         "settings.preferences",
         true,
     ),
-    Plan(Route.Plan, LucideGlyphs.CreditCard, R.string.settings_plan_credits, null, "settings.plan"),
+    Plan(Route.Plan, LucideGlyphs.CreditCard, R.string.settings_plan_credits, null, "settings.plan", true),
 }
 
 @Composable

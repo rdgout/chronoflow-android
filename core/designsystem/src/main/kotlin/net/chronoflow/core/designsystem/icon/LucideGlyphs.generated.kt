@@ -566,6 +566,16 @@ object LucideGlyphs {
             ),
         )
 
+    val Trash =
+        LucideGlyph(
+            "trash",
+            listOf(
+                LucidePath("M3 6h18", false),
+                LucidePath("M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6", false),
+                LucidePath("M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2", false),
+            ),
+        )
+
     val TriangleAlert =
         LucideGlyph(
             "triangle-alert",

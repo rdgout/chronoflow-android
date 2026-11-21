@@ -21,6 +21,11 @@ import java.time.ZoneOffset
 internal class SecuritySavedStateDependencies(
     override val securityScope: kotlinx.coroutines.CoroutineScope,
 ) : SettingsDependencies {
+    override val passkeyCapability = net.chronoflow.core.model.passkey.PasskeyCapability.Shipped
+    override val passkeyRegistration: net.chronoflow.core.model.passkey.PasskeyRegistrationProviding? = null
+
+    override suspend fun deviceName() = "Android"
+
     val setup = ApiTwoFactorSetup("JBSWY3DPEHPK3PXP", "otpauth://totp/ChronoFlow?secret=JBSWY3DPEHPK3PXP")
     val codes =
         listOf(
@@ -34,6 +39,13 @@ internal class SecuritySavedStateDependencies(
             "p5ma-6evk",
         )
     override val snapshot = SessionSnapshot(StoredSession("fixture", "0199a3c0-0000-7000-8000-000000000001"), 1)
+
+    override suspend fun refreshNow() = Unit
+
+    override val deleteSheetSeed = false
+
+    override suspend fun deleteAccount(password: String): Unit = error("Unused delete")
+
     override val passwordPromptSeed: String? = null
     override val clipboard: SensitiveClipboard get() = error("Unused clipboard")
 

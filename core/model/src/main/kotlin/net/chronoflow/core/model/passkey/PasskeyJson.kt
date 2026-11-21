@@ -1,14 +1,47 @@
 package net.chronoflow.core.model.passkey
 
 import kotlinx.serialization.SerializationException
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import net.chronoflow.core.model.api.ApiJson
 import net.chronoflow.core.model.api.ApiPasskeyAssertion
+import net.chronoflow.core.model.api.ApiPasskeyAttestation
+import net.chronoflow.core.model.api.ApiPasskeyCreationOptions
 import net.chronoflow.core.model.api.ApiPasskeyRequestOptions
 
 object PasskeyJson {
+    fun creationJson(options: ApiPasskeyCreationOptions): String =
+        ApiJson.request.encodeToString(ApiPasskeyCreationOptions.serializer(), options)
+
+    fun attestation(responseJson: String): ApiPasskeyAttestation {
+        val root =
+            try {
+                ApiJson.response.parseToJsonElement(responseJson) as? JsonObject ?: throw PasskeyFailure.Unavailable
+            } catch (_: SerializationException) {
+                throw PasskeyFailure.Unavailable
+            }
+        if (root.requiredString("type") != "public-key") throw PasskeyFailure.Unavailable
+        val rawId = Base64URL.decodeLenient(root.requiredString("rawId"))
+        if (!Base64URL.decodeLenient(root.requiredString("id")).contentEquals(rawId)) {
+            throw PasskeyFailure.InvalidEncoding
+        }
+        val response = root["response"] as? JsonObject ?: throw PasskeyFailure.Unavailable
+        val transports =
+            (response["transports"] as? JsonArray)
+                ?.mapNotNull { value ->
+                    (value as? JsonPrimitive)?.takeIf { it.isString && it.content.length in 1..32 }?.content
+                }?.take(8)
+                ?.takeIf { it.isNotEmpty() }
+        return Base64URL.attestation(
+            rawId,
+            Base64URL.decodeLenient(response.requiredString("clientDataJSON")),
+            Base64URL.decodeLenient(response.requiredString("attestationObject")),
+            transports,
+        )
+    }
+
     fun requestJson(options: ApiPasskeyRequestOptions): String =
         ApiJson.request.encodeToString(ApiPasskeyRequestOptions.serializer(), options)
 

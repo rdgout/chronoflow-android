@@ -1,9 +1,11 @@
 package net.chronoflow.app.settings
 
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.async
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonObject
 import net.chronoflow.app.AppGraph
@@ -23,6 +25,11 @@ internal class SessionSettingsDependencies(
     private val app: AppGraph,
     private val session: SessionGraph,
 ) : SettingsDependencies {
+    override val passkeyCapability get() = app.passkeyCapability
+    override val passkeyRegistration get() = app.passkeyRegistration
+
+    override suspend fun deviceName() = app.settingsDeviceName()
+
     override val securityScope get() = session.scope
     override val snapshot = session.snapshot
     override val passwordPromptSeed: String? get() = net.chronoflow.app.LaunchPlatform.passwordPromptSeed
@@ -44,6 +51,38 @@ internal class SessionSettingsDependencies(
             session.sync.requestSync()
             result
         }
+
+    override suspend fun refreshNow() =
+        withContext(app.dispatchers.io) {
+            if (!isCurrent()) throw StaleSessionException()
+            session.sync.refreshNow()
+            Unit
+        }
+
+    override val deleteSheetSeed get() = net.chronoflow.app.LaunchPlatform.deleteSheetSeed
+
+    override suspend fun deleteAccount(password: String) {
+        if (!isCurrent()) throw StaleSessionException()
+        try {
+            app.appScope
+                .async {
+                    withContext(app.dispatchers.io) {
+                        if (!isCurrent()) throw StaleSessionException()
+                        try {
+                            session.sync.deleteAccount(password, snapshot.session, snapshot.epoch)
+                        } catch (_: CancellationException) {
+                            currentCoroutineContext().ensureActive()
+                            throw StaleSessionException()
+                        }
+                    }
+                    // A server-side deletion must finish its local wipe even when this entry is disposed.
+                    app.signOutAfterDeletingAccount(snapshot)
+                }.await()
+        } catch (failure: CancellationException) {
+            if (kotlinx.coroutines.currentCoroutineContext().isActive) throw StaleSessionException()
+            throw failure
+        }
+    }
 
     override fun account() = session.accounts.values()
 
