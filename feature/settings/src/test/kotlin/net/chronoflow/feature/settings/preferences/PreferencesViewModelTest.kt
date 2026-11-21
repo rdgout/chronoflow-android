@@ -182,7 +182,7 @@ class PreferencesViewModelTest {
             }
         }
 
-    @Test fun replayTwiceStartsFreshAfterSkipOrDone() =
+    @Test fun preferencesSaveQueuesOnlySettingsAndReplayTargetsTheReplayRoute() =
         runTest(timeout = 60.seconds) {
             val deps = preferencesDeps()
             withPreferences(deps) { vm ->
