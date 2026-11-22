@@ -8,6 +8,7 @@ data class WizardInitialPresentation(
     val query: String? = null,
     val discardDialogVisible: Boolean = false,
     val timeSheet: String? = null,
+    val presentSignUp: Boolean = false,
 )
 
 object WizardInitialPresentationKey : CreationExtras.Key<WizardInitialPresentation>

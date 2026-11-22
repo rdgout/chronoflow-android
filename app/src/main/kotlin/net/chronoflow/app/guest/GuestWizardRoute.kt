@@ -40,9 +40,9 @@ internal fun GuestWizardRoute(
                             graph.dispatchers,
                             CoroutineScope(graph.appScope.coroutineContext + graph.dispatchers.io),
                             { LaunchPlatform.guestWizardInstant ?: graph.planClock.now },
-                            GuestSignUpLauncher { onDismissed ->
+                            GuestSignUpLauncher { host ->
                                 LaunchPlatform.guestSignUpRequested()
-                                onDismissed()
+                                host.signUpDismissed(needsReview = false, onGuestRoute = true)
                             },
                             graph.copyCatalogs,
                             seed =
