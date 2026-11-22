@@ -1590,3 +1590,30 @@ The host verified `GuestRecoveryScreenTest.testWelcomeHandsOverToRecoveredSleep`
 Guest expiry sweeps now observe the process lifecycle, once per real `ON_STOP` → `ON_START` return. The holder retains that observer across configuration changes and removes it when the entry clears. Three plain JVM cases prove active-process observer reattachment, foreground return and cleanup (3 ms total); the separate host rotation and exit cases also passed.
 
 Targeted checks passed: seed application (3 cases, 6 s Gradle), Fine-tune seed/screen (15 cases, 7 s), Ready seed plus layout guards (146 cases, 11 s), and foreground/host/exits (14 cases, 8 s). The single `make quick` passed in 67.081 s overall, with 42.43 s in its JVM/Robolectric tier and zero budget overruns. Build-logic, tooling and serial timing checks passed as part of that command. No perf or `make check` was run; pixel remains running.
+
+### Review round 2 (2026-11-22)
+
+The short `GuestWizardJourneyTest` remains the frozen Welcome → Ready → sign-up hand-off check; it was not changed or rerun this round. It performs no review and its capture identity is not a minted server draft. Phase 11b's claim tests will need a live reviewed guest draft. The legacy `WizardGuestJourney` seed is retained because the new seeded IO screen test uses it: it now opens live Sleep, with future AMS → HND times, the current clock, shift work false and no UI override. The seed roles are also corrected in the plan and 11a brief.
+
+The earlier journey's coverage is now split at the cheapest layer:
+
+| Former journey step | Current proof |
+| --- | --- |
+| Welcome → guest wizard | `GuestWizardJourneyTest` checks the Ready/sign-up hand-off; `GuestWizardHostTest.planMyTripOpensGuestWhere` checks the empty entry |
+| Where and Outbound → Sleep | `GuestWizardScreenTest.testWhereGuest`, route/times ViewModel tests, and `GuestWizardModeTests.GuestPaths.guestPathBackTargetsAndSleepAreMandatory` |
+| Sleep edits and per-step guest draft writes | `GuestWizardIoTest.sleepReviewAgeAndRecheckKeepGuestStorageOffMain` uses the real ViewModel/dependencies and file store with guarded persistence; existing Sleep ViewModel tests cover controls/validation |
+| Checking and first review/secret mint | The same JVM test checks the mint and dispatcher; `GuestWizardReviewIoTest.firstGuestReviewFromSleepDoesNoMainThreadIo` runs real guest file/Keystore work on pixel; the Checking ViewModel/screen tests cover its presentation |
+| Age answer → recheck | `GuestWizardIoTest` checks the second request, age profile, known-secret reuse, token rotation and subsequent Fine-tune persistence; `KeystoreGuestSecretStoreTest.runsOnTheInjectedDispatcher` checks the concrete store's IO hop |
+| Fine-tune → Ready → sign-up request | Existing Fine-tune/Ready ViewModel and guest screen tests plus the short hand-off journey |
+
+`GuestWizardIoTest` uses one scheduler with separately identifiable Main, IO and worker dispatchers. Guarded stores reject Main calls, with a negative control proving both guards fail on Main; the real guest file supplier also asserts IO. Its two cases passed (0.171 s initially, 0.073 s in quick). Scopes are canceled and joined before resetting Main. The new seeded screen emulator case ran once through the device lock and passed in **2.663 s**, including a zero debug IO-violation assertion. `adb logcat -d -s StrictMode` had zero matches for guest store/recovery classes. The unchanged short journey therefore retains its round-1 time and scope without taking on this IO coverage.
+
+The foreground unit test is renamed to `reattachingToAnActiveProcessDoesNotSweep`; disconnected activity lifecycle events were removed. `GuestWizardHostTest.leavingTheRouteClearsTheViewModel` now checks that the real process registry loses one observer when the entry clears and gains one on a new entry. Both targeted cases passed (8 s Gradle; the host case's cold SDK run was 2.692 s).
+
+Verification: the 14 seed cases passed (4 s Gradle), and the corrected concrete Keystore dispatcher target passed (3 s). An initial command used a nonexistent method name and reported no matching tests; it was corrected to `runsOnTheInjectedDispatcher`. The single `make quick` completed its JVM/Robolectric run in **42.75 s**, with zero assertion failures and no hangs, but failed one untouched onboarding class warm-up budget:
+
+```text
+run-tier: over budget: robolectric net.chronoflow.feature.onboarding.terms.TermsScreenTest#policyRowStaysEnabledWhileFailed 3266 ms > 3000 ms
+```
+
+That case was not retried or changed. The skipped quick components ran separately and passed: build-logic (37 certified cases, 2.46 s), script/contract/string/icon tooling (171/25/49/11 cases; 19.941/0.111/0.017/0.088 s), and serial timing (7 certified cases, 1.42 s). No perf or `make check` was run; pixel remains running.
