@@ -16,6 +16,7 @@ import net.chronoflow.app.SessionTestApplication
 import net.chronoflow.app.SoftwareSessionCipher
 import net.chronoflow.app.closeAndJoinForTest
 import net.chronoflow.core.datastore.DeviceConfigFile
+import net.chronoflow.core.datastore.SessionCipher
 import net.chronoflow.core.testing.tiers.Logic
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -53,6 +54,42 @@ class TestSeedsApplyTest {
                 assertThat(File(dir, "stale").exists()).isFalse()
             } finally {
                 (context as ChronoFlowApp).graph.closeAndJoinForTest()
+            }
+        }
+
+    @Test
+    fun signedInGraphIsPublishedAfterCredentialsAreWritten() =
+        runTest(timeout = 60.seconds) {
+            val app = context as ChronoFlowApp
+            val dir = File(context.filesDir, "uitests/$id")
+            val delegate = SoftwareSessionCipher()
+            var encrypted = false
+            var publishedDuringWrite = false
+            val cipher =
+                object : SessionCipher by delegate {
+                    override fun encrypt(
+                        alias: String,
+                        plaintext: ByteArray,
+                    ): SessionCipher.Sealed {
+                        encrypted = true
+                        publishedDuringWrite = app.graph.overrides.storageDir == dir
+                        return delegate.encrypt(alias, plaintext)
+                    }
+                }
+            val dispatcher = StandardTestDispatcher(testScheduler)
+            try {
+                TestSeeds.apply(
+                    context,
+                    TestSeed.parse(mapOf(TestSeed.TEST_ID_KEY to id, "CF_AUTH_TEST_SIGNED_IN" to "demo")),
+                    dispatcher,
+                    sessionCipher = cipher,
+                    dispatchers = AppDispatchers(dispatcher, dispatcher, dispatcher),
+                )
+                assertThat(encrypted).isTrue()
+                assertThat(publishedDuringWrite).isFalse()
+                assertThat(app.graph.overrides.storageDir).isEqualTo(dir)
+            } finally {
+                app.graph.closeAndJoinForTest()
             }
         }
 

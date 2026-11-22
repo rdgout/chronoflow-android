@@ -63,7 +63,6 @@ object TestSeeds {
                     mutationsOffline = seed.mutationsOffline,
                     reminderPermission = reminders.permission,
                 )
-            DebugAppHooks.resetGraph(app, overrides)
             val credentials = KeystoreSessionStore(File(dir, "ChronoFlowMock/session.bin"), alias, cipher, io)
             val source = sourceForSeed(dir, overrides, io) { credentials.readStoredSession()?.token }
             SeedRunner(
@@ -86,6 +85,8 @@ object TestSeeds {
                                 ).deleteAll()
                     },
             ).reseed(seed.signedIn, seed.testId, seed.termsChangesPending, seed.settingsPending)
+            // A foreground callback may restore the session as soon as the graph is published.
+            DebugAppHooks.resetGraph(app, overrides)
             seed.authTestLink?.let { link ->
                 withContext(app.graph.dispatchers.main) { app.graph.pendingLaunchIntents.captureLink(link) }
             }
