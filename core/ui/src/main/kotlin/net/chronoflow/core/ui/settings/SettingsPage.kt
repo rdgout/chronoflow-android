@@ -113,6 +113,7 @@ fun SettingsPage(
             CfMediumTopAppBar(
                 stringResource(title),
                 scrollBehavior,
+                Modifier.testTag("$testTag.appbar"),
                 navigationIcon = onBack?.let { { CfBackButton(stringResource(R.string.auth_back), it) } },
             )
         },

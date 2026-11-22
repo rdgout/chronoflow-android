@@ -116,7 +116,7 @@ fun TodayScreen(
         }
     CompositionLocalProvider(LocalTripCardProbe provides cardProbe) {
         Scaffold(
-            modifier.fillMaxSize().nestedScroll(scroll.nestedScrollConnection),
+            modifier.fillMaxSize(),
             containerColor = CfTheme.colors.background,
             contentWindowInsets = WindowInsets(0),
             topBar = {
@@ -124,8 +124,12 @@ fun TodayScreen(
             },
         ) { scaffold ->
             CfPullToRefreshBox(refreshState.refreshing, onRefresh, Modifier.fillMaxSize().padding(scaffold)) {
+                // Consume downward overscroll in the app bar before pull-to-refresh.
                 LazyColumn(
-                    Modifier.fillMaxSize().testTag("today.screen"),
+                    Modifier
+                        .fillMaxSize()
+                        .nestedScroll(scroll.nestedScrollConnection)
+                        .testTag("today.screen"),
                     state = listState,
                     contentPadding = padding,
                     horizontalAlignment = Alignment.CenterHorizontally,
