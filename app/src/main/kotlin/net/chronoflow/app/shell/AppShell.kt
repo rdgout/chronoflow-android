@@ -37,6 +37,15 @@ internal fun AppShell(
     val sessionGraph by graph.sessionGraphs.current.collectAsStateWithLifecycle()
     val render = rememberUpdatedState(placeholder)
     val holder = rememberShellViewModel(root)
+    LaunchedEffect(graph, holder) {
+        net.chronoflow.app.reminders
+            .ReminderTapRouting(
+                graph.reminderTaps,
+                graph.controller::activeSession,
+                holder::openReminder,
+                graph.dispatchers.main,
+            ).run()
+    }
     val wizardDependencies = sessionGraph?.wizard
     val launcher = holder.wizardLauncher(wizardDependencies, graph.dispatchers.io)
     val wizardLocale = rememberUpdatedState(LocalConfiguration.current.locales[0])

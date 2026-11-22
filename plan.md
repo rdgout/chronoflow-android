@@ -3497,7 +3497,7 @@ Acceptance evidence and the pending host checks are recorded in [`docs/settings-
   - Receivers for `BOOT_COMPLETED`, `MY_PACKAGE_REPLACED`, `TIMEZONE_CHANGED`, `TIME_SET` and `LOCALE_CHANGED` enqueue the expedited unique work `reminders-reschedule` (REPLACE).
   - A 12 h periodic refill (OQ-A14).
   - WorkManager is initialized on demand through `Configuration.Provider`, with the default initializer removed, so it adds no startup work.
-- [ ] **Taps.** An explicit `PendingIntent` to `MainActivity` carries `tripId`, `blockId`, `inputHash` and `accountId`. It is routed after an account check, as in iOS `AppTabs.swift:370–383`.
+- [x] **Taps.** An explicit `PendingIntent` to `MainActivity` carries `tripId`, `blockId`, `inputHash` and `accountId`. It is routed after an account check, as in iOS `AppTabs.swift:370–383`.
 - [x] **Teardown.** Sign-out cancels every alarm and notification and erases the ledger, through the 4e hook.
 - [x] **Permission model.** `ReminderPermissionState` (granted, ask, blocked, unsupported), from `POST_NOTIFICATIONS`, `NotificationManagerCompat.areNotificationsEnabled()` and, below API 33, the in-app opt-in `notificationPermissionRequested` (A13).
 - [ ] **Tests.**

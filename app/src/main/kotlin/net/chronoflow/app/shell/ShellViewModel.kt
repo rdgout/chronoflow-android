@@ -77,6 +77,17 @@ internal class ShellViewModel(
         state = ShellNav.openTrip(state, tripId)
     }
 
+    fun openReminder(tap: net.chronoflow.core.navigation.ReminderTapExtras) {
+        state =
+            ShellNav.reminderTap(
+                state,
+                tap,
+                java.util.UUID
+                    .randomUUID()
+                    .toString(),
+            )
+    }
+
     fun seed(start: ShellStart) {
         state = ShellNav.seed(state, start)
     }

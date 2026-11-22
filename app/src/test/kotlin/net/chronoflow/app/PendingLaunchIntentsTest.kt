@@ -34,7 +34,11 @@ class PendingLaunchIntentsTest {
             try {
                 val uri = "https://app.chronoflow.net/x"
                 graph.pendingLaunchIntents.capture(
-                    Intent(Intent.ACTION_VIEW, Uri.parse(uri)).putExtra("cf.reminder.tripId", "trip"),
+                    Intent(Intent.ACTION_VIEW, Uri.parse(uri)),
+                    restored = false,
+                )
+                graph.pendingLaunchIntents.capture(
+                    Intent(net.chronoflow.core.data.reminders.ACTION_OPEN).putExtra("cf.reminder.tripId", "trip"),
                     restored = false,
                 )
                 graph.handlePendingLaunchIntents()
@@ -48,4 +52,27 @@ class PendingLaunchIntentsTest {
                 graph.closeAndJoinForTest()
             }
         }
+
+    @Test fun reminderExtrasNeedTheOpenActionAndAreNotRestored() {
+        val pending = PendingLaunchIntents()
+        val intent = Intent(Intent.ACTION_VIEW).putExtra("cf.reminder.tripId", "trip")
+        pending.capture(intent, restored = false)
+        assertNull(pending.consume())
+        intent.action = net.chronoflow.core.data.reminders.ACTION_OPEN
+        pending.capture(intent, restored = true)
+        assertNull(pending.consume())
+        pending.capture(intent, restored = false)
+        assertEquals("trip", pending.consume()?.reminder?.tripId)
+        val stripped =
+            net.chronoflow.app.reminders
+                .sanitizedLaunchIntent(intent)
+        assertNull(stripped.action)
+        assertNull(stripped.getStringExtra("cf.reminder.tripId"))
+        assertEquals(
+            Intent.ACTION_MAIN,
+            net.chronoflow.app.reminders
+                .sanitizedLaunchIntent(Intent(Intent.ACTION_MAIN))
+                .action,
+        )
+    }
 }

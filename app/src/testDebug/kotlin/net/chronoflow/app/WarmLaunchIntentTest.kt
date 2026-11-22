@@ -4,7 +4,6 @@ package net.chronoflow.app
 
 import android.content.Intent
 import android.net.Uri
-import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
@@ -46,13 +45,14 @@ class WarmLaunchIntentTest {
                     Intent(app, MainActivity::class.java)
                         .putExtra("CF_AUTH_TEST_ID", "0199a3c0-0000-7000-8000-000000000000")
                         .putExtra("CF_UI_TEST_PROFILE", "screen")
-                ActivityScenario.launch<MainActivity>(plain).use {
+                withLinkActivity(plain) {
                     graph.finishLaunch()
                     graph.rootNavigator.navigate(Route.Terms)
                 }
                 val incoming =
                     Intent(app, MainActivity::class.java).apply {
                         if (reminder) {
+                            action = net.chronoflow.core.data.reminders.ACTION_OPEN
                             putExtra("cf.reminder.tripId", "trip")
                             putExtra("cf.reminder.blockId", "block")
                         } else {
@@ -68,12 +68,15 @@ class WarmLaunchIntentTest {
                     runCurrent()
                     assertNull("warm activity intent was left buffered", graph.pendingLaunchIntents.consume())
                     assertEquals(Route.Terms, graph.rootNavigator.state.value.route)
+                    if (reminder) {
+                        assertEquals(
+                            "trip",
+                            graph.reminderTaps.pending.value
+                                ?.tripId,
+                        )
+                    }
                 }
-                if (reminder) {
-                    ActivityScenario.launch<MainActivity>(incoming).use { checkHandoff() }
-                } else {
-                    withLinkActivity(incoming) { checkHandoff() }
-                }
+                withLinkActivity(incoming) { checkHandoff() }
             } finally {
                 withContext(NonCancellable) { graph.closeAndJoinForTest() }
             }

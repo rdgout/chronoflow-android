@@ -2,8 +2,8 @@ package net.chronoflow.app
 
 import android.content.Intent
 import net.chronoflow.app.links.AuthLinkIntentPolicy
+import net.chronoflow.app.reminders.ReminderTapIntentPolicy
 import net.chronoflow.core.navigation.PendingLaunchIntent
-import net.chronoflow.core.navigation.ReminderTapExtras
 
 class PendingLaunchIntents {
     private val buffer = PendingLaunchIntent.Buffer()
@@ -14,17 +14,13 @@ class PendingLaunchIntents {
         restored: Boolean,
     ) {
         AuthLinkIntentPolicy.linkToCapture(intent.action, intent.dataString, intent.flags, restored)?.let(::captureLink)
-        if (restored || intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY != 0) return
-        val trip = intent.getStringExtra("cf.reminder.tripId")
         val reminder =
-            trip?.let {
-                ReminderTapExtras(
-                    it,
-                    intent.getStringExtra("cf.reminder.blockId"),
-                    intent.getStringExtra("cf.reminder.accountId"),
-                    intent.getStringExtra("cf.reminder.inputHash"),
-                )
-            }
+            ReminderTapIntentPolicy.tapToCapture(
+                intent.action,
+                intent.flags,
+                restored,
+                intent::getStringExtra,
+            )
         buffer.capture(PendingLaunchIntent(reminder = reminder))
     }
 

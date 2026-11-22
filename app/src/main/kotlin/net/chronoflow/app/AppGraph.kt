@@ -382,7 +382,10 @@ class AppGraph(
     }
     val authLinkRouting: AuthLinkRouting by lazy { AuthLinkRouting(appScope, resetRouter, auth.verification) }
 
-    val launchIntentHandler: LaunchIntentHandler by lazy { LaunchIntentHandler {} }
+    val launchIntentHandler: LaunchIntentHandler by lazy {
+        net.chronoflow.app.reminders
+            .ReminderTapDispatcher(reminderTaps)
+    }
     private val syncLazy: Lazy<SessionSync> =
         lazy {
             SessionSync(
