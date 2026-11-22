@@ -81,14 +81,14 @@ Never the committed debug key (OQ-A38). Add the upload key only if sideloaded re
 
 Internal testing first (at most 100 testers), then closed testing: at least 12 opted-in testers for 14 continuous days when required for a personal developer account created after 2023-11-13 (OQ-G11). Open testing is unused. Promote production in stages **10% → 50% → 100%**, halting on vitals thresholds: crash **1.09%**, ANR **0.47%**, **8% per model** (research 14 §8.2/§11.5). Read each pre-launch report before promotion.
 
-Phase 13 evidence (2026-11-22): host `make release-check` passed, and `make release-smoke` passed after 40ba540f with all three methods < 10 s, unchanged pids and no native crash. Host `make check` also passed at de1b68d4; the upload gates below apply to the final upload artifact.
+Phase 13 evidence (2026-11-22): host `make release-check` passed, and `make release-smoke` passed after 40ba540f and again after 3f3b5155 with all three methods < 10 s, unchanged pids and no native crash. Host `make check` passed at 0660f83a and again at 4d1abfea; the upload gates below apply to the final upload artifact.
 
 ## Pre-upload checklist
 
-- [ ] Complete the remaining Phase 13 host functional/performance evidence; every missing or failed hard gate is resolved. Profiles and their strict guard are committed in c8e7cfb3; their refresh after ccedfbe0 remains open. Host standalone make check passed. R9 quick median is 44.33 s; check has two passing runs (245.89 / 284.79 s), followed by a LaunchHandOffTest failure, so the full timing series remains open.
+- [ ] Complete the remaining Phase 13 host functional/performance evidence; every missing or failed hard gate is resolved. Profiles and their strict guard are committed in c8e7cfb3; their refresh after 89f3dd7f remains open. Host standalone make check passed. R9 quick median is 44.33 s; check has two passing runs (245.89 / 284.79 s), followed by a LaunchHandOffTest failure, so the full timing series remains open.
 - [ ] `make release-check` passes (release unit tests, manifest, APK content, size).
 - [ ] `make release-smoke` passes on the minified build; all three methods < 10 s, unchanged pids and no native crash.
-- [ ] The host supplied all required metrics for `make perf`, `make perf-timeline` (light/dark/font 1.3) and `make perf-rn` at c8e7cfb3. Refresh launch/profile verification after ccedfbe0; emulator measurements do not close device gates.
+- [ ] The host supplied all required metrics for `make perf`, `make perf-timeline` (light/dark/font 1.3) and `make perf-rn` at c8e7cfb3. Refresh launch/profile verification after 89f3dd7f; emulator measurements do not close device gates.
 - [x] Host `make size` is OK, 4,156,988 B; enableSplit=true rejected `splits/base-en.apk`, the plugin was restored to false, and normal size passed. Proof: `build/phase13-host-evidence/t13-split.log` and `t13-size.log`.
 - [ ] Every later upload runs `make version-bump PART=build` or a larger part, then commits `chore(release): bump version to <name> (<code>)`. The first upload remains 0.1.0 / 10000 (OQ-13-10); this phase does not bump it.
 - [ ] Set all CF_UPLOAD_* outside the repo, then `./gradlew :app:bundleRelease`; verify with `jarsigner -verify -verbose -certs app/build/outputs/bundle/release/app-release.aab` and inspect the intended upload certificate.

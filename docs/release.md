@@ -108,7 +108,7 @@ diff <(rg '^-' app/build/outputs/mapping/release/configuration.txt | sort) \
      <(rg '^-' app/build/outputs/mapping/benchmarkRelease/configuration.txt | sort)
 ```
 
-The release/benchmarkRelease app keep and Log-stripping rules are identical. Only nonMinifiedRelease has the pinned profile exception. The host runtime smoke and c8e7cfb3 regenerated-profile proofs pass. The subsequent clock fix ccedfbe0 requires the launch/profile refresh listed below.
+The release/benchmarkRelease app keep and Log-stripping rules are identical. Only nonMinifiedRelease has the pinned profile exception. The host runtime smoke and c8e7cfb3 regenerated-profile proofs pass. The subsequent clock fix 89f3dd7f requires the launch/profile refresh listed below.
 
 ## Release manifest
 
@@ -227,7 +227,7 @@ Worker validation, local host 2026-11-22:
 
 ## Completed profile proof
 
-Host `make baseline-profile` passed in 10 min 34 s (bp-13b.log); c8e7cfb3 commits both genuine generated profiles and the strict coverage guard. The subsequent native startup/timeline runs at c8e7cfb3 use Partial(Require) successfully. This completes the original collection; the Profiles box is reopened for the required refresh after launch-clock fix ccedfbe0. See [host profile evidence](perf-startup.md#phase-13-profile-preparation). Performance budget remains open for the unmeasured/failed host gates, without a waiver.
+Host `make baseline-profile` passed in 10 min 34 s (bp-13b.log); c8e7cfb3 commits both genuine generated profiles and the strict coverage guard. The subsequent native startup/timeline runs at c8e7cfb3 use Partial(Require) successfully. This completes the original collection; the Profiles box is reopened for the required refresh after launch-clock fix 89f3dd7f. See [host profile evidence](perf-startup.md#phase-13-profile-preparation). Performance budget remains open for the unmeasured/failed host gates, without a waiver.
 
 ## RN comparison tooling
 
@@ -263,9 +263,9 @@ The normal APK set still has no language split or new native library. Final `zip
 
 Quick's 6,304 JVM/Robolectric cases, 58 build-logic cases, seven serial timing cases and 342 Python cases all pass. No individual test-budget violation or hang occurred. The 102.34 s command duration exceeds the warm target; no second quick run was made and R9 remains open. Slowest warm cases and separate cold allowances are in [tooling](tooling.md#phase-13). Logs: `/tmp/cf13-final-release-check.log`, `/tmp/cf13-final-lint.log`, `/tmp/cf13-final-layout.log`, `/tmp/cf13-final-format.log`, `/tmp/cf13-final-quick.log`.
 
-Host follow-up, 2026-11-22: release-check passes with `release apk: OK (2 dex files, 7768 classes checked)` and `Bundle size: 4156988 bytes (4.16 MB), arm64-v8a/xxhdpi/en: OK`. The corrected minified smoke passes as above; signingReport and the real split-enabled failure proof are complete. A standalone make check passes. The subsequent `Scripts/measure-tiers.sh` run after a05a1def takes **22 min 35 s**: warm-up quick/check pass; quick runs **81.86 / 44.33 / 43.83 s**, median **44.33 s ≤ 60**; check runs **245.89 / 284.79 s** pass, but the third check fails in LaunchHandOffTest. There is **no three-run check median**. The script exits before writing `build/tier-timings.json`, which remains the **2026-11-16** artifact; it has not been edited by hand. Archived evidence: `build/phase13-host-evidence/t13-tiers4.log`, `prior-tier-quick.times`, `prior-tier-check.times`, `prior-tier-timings.json` and `smoke/` (the failed third check's XML).
+Host follow-up, 2026-11-22: release-check passes with `release apk: OK (2 dex files, 7768 classes checked)` and `Bundle size: 4156988 bytes (4.16 MB), arm64-v8a/xxhdpi/en: OK`. The corrected minified smoke passes as above; signingReport and the real split-enabled failure proof are complete. A standalone make check passes. The subsequent `Scripts/measure-tiers.sh` run after 4df62c45–27693223 takes **22 min 35 s**: warm-up quick/check pass; quick runs **81.86 / 44.33 / 43.83 s**, median **44.33 s ≤ 60**; check runs **245.89 / 284.79 s** pass, but the third check fails in LaunchHandOffTest. There is **no three-run check median**. The script exits before writing `build/tier-timings.json`, which remains the **2026-11-16** artifact; it has not been edited by hand. Archived evidence: `build/phase13-host-evidence/t13-tiers4.log`, `prior-tier-quick.times`, `prior-tier-check.times`, `prior-tier-timings.json` and `smoke/` (the failed third check's XML).
 
-The failure is a product clock deadline defect, corrected in ccedfbe0. `MediaLaunchClock.sleepUntil` now rechecks monotonic time after Android's millisecond timer wakes; the assertion window and animation duration are unchanged. The JVM early-wake test fails before the fix and passes afterwards, alongside cancellation and the coordinator/timeline cases. Host verification of that fix remains open; no device/perf command was run by this worker.
+The failure is a product clock deadline defect, corrected in 89f3dd7f. `MediaLaunchClock.sleepUntil` now rechecks monotonic time after Android's millisecond timer wakes; the assertion window and animation duration are unchanged. The JVM early-wake test fails before the fix and passes afterwards, alongside cancellation and the coordinator/timeline cases. Host verification of that fix remains open; no device/perf command was run by this worker.
 
 Remaining commands under R17, serially with pixel running (the launch path changed):
 
@@ -282,7 +282,7 @@ THEME=dark make perf-timeline
 FONT_SCALE=1.3 make perf-timeline
 ```
 
-The profile/performance results recorded at c8e7cfb3 remain historical evidence; regenerate/commit profiles after ccedfbe0 and record the new Require results. Do not reapply the old saved guard patch: it is already committed. Release-check and minified smoke passed before the clock fix; repeat `make release-check` and `make release-smoke` for the final upload artifact. No board captures are required (no UI/boards changed).
+The profile/performance results recorded at c8e7cfb3 remain historical evidence; regenerate/commit profiles after 89f3dd7f and record the new Require results. Do not reapply the old saved guard patch: it is already committed. Release-check and minified smoke passed before the clock fix; repeat `make release-check` and `make release-smoke` for the final upload artifact. No board captures are required (no UI/boards changed).
 
 Physical reference and low-end runs remain open (OQ-A22), and block production under OQ-A45. Only when the host selects/prepares the corresponding device:
 
