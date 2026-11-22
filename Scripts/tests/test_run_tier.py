@@ -597,5 +597,36 @@ class PassedStampTest(unittest.TestCase):
         self.assertTrue(report["errors"])
 
 
+
+
+class InstrumentationProgressTest(unittest.TestCase):
+    def setUp(self):
+        self.root = temp_dir(self)
+        self.runner = runner_module()
+        self.path = self.root / "app/build/outputs/androidTest-results/connected/debug/pixel/logcat-a.B-test.txt"
+        self.path.parent.mkdir(parents=True)
+
+    def test_completed_case_is_reported_once_without_log_payload(self):
+        self.path.write_text("11-22 16:50:54.591 4377 4396 I TestRunner: finished: test(a.B)\n")
+        seen = set()
+        self.assertEqual([str(self.path.relative_to(self.root))],
+                         self.runner.instrumentation_completions(self.root, 0, seen))
+        self.assertEqual([], self.runner.instrumentation_completions(self.root, 0, seen))
+
+    def test_stale_result_does_not_keep_a_run_alive(self):
+        self.path.write_text(" I TestRunner: finished: test(a.B)\n")
+        self.assertEqual([], self.runner.instrumentation_completions(self.root, self.path.stat().st_mtime_ns + 1, set()))
+
+    def test_unfinished_case_does_not_keep_a_run_alive(self):
+        self.path.write_text(" I TestRunner: started: test(a.B)\n")
+        self.assertEqual([], self.runner.instrumentation_completions(self.root, 0, set()))
+
+    def test_core_module_result_is_found(self):
+        path = self.root / "core/ui/build/outputs/androidTest-results/connected/debug/pixel/logcat-a.C-test.txt"
+        path.parent.mkdir(parents=True)
+        path.write_text(" I TestRunner: finished: test(a.C)\n")
+        self.assertEqual([str(path.relative_to(self.root))], self.runner.instrumentation_completions(self.root, 0, set()))
+
+
 if __name__ == "__main__":
     unittest.main()

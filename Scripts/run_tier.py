@@ -292,12 +292,37 @@ def save_logcat(out_dir):
         pass
 
 
+def instrumentation_completions(root, started_ns, seen):
+    completed = []
+    for pattern in ("*/build/outputs/androidTest-results/connected/**/logcat-*.txt",
+                    "*/*/build/outputs/androidTest-results/connected/**/logcat-*.txt"):
+        for path in root.glob(pattern):
+            try:
+                stat = path.stat()
+                if stat.st_mtime_ns < started_ns or path in seen:
+                    continue
+                with path.open("rb") as source:
+                    source.seek(max(0, stat.st_size - 4096))
+                    tail = source.read()
+                if b" I TestRunner: finished: " in tail:
+                    seen.add(path)
+                    completed.append(str(path.relative_to(root)))
+            except OSError:
+                # UTP may replace an output directory while the next module starts.
+                continue
+    return sorted(completed)
+
+
 def run_command(root, log_path, tier, command, env):
     idle_cap = float(env.get("TIER_IDLE_TIMEOUT", "600"))
     total_cap = float(env.get("TIER_TOTAL_TIMEOUT", "3600"))
     grace = float(env.get("TIER_KILL_GRACE", "5"))
     stop_cmd = env.get("TIER_STOP_CMD", "./gradlew --stop")
     t0 = time.monotonic()
+    started_ns = time.time_ns()
+    native_run = any("connected" in part and "AndroidTest" in part for part in command)
+    seen, last_progress = set(), t0
+    output_lock = threading.Lock()
     state = {"last": time.monotonic()}
     with open(log_path, "wb") as log:
         proc = subprocess.Popen(
@@ -309,13 +334,17 @@ def run_command(root, log_path, tier, command, env):
             start_new_session=True,
         )
 
-        def pump():
-            for chunk in iter(lambda: proc.stdout.read1(65536), b""):
+        def emit(chunk):
+            with output_lock:
                 sys.stdout.buffer.write(chunk)
                 sys.stdout.buffer.flush()
                 log.write(chunk)
                 log.flush()
                 state["last"] = time.monotonic()
+
+        def pump():
+            for chunk in iter(lambda: proc.stdout.read1(65536), b""):
+                emit(chunk)
 
         reader = threading.Thread(target=pump, daemon=True)
         reader.start()
@@ -323,6 +352,10 @@ def run_command(root, log_path, tier, command, env):
         cap = None
         while proc.poll() is None:
             now = time.monotonic()
+            if native_run and now - last_progress >= 1:
+                for path in instrumentation_completions(root, started_ns, seen):
+                    emit(("run-tier: completed instrumentation result " + path + "\n").encode())
+                last_progress = now
             if now - t0 > total_cap:
                 cap = "total cap"
             elif now - state["last"] > idle_cap:
