@@ -29,6 +29,7 @@ cb2f1fa5e47997e1397985a142344139f359dceaf60043413ed00bca0c1947eb  plans/S1.json 
 59d1fa426e9f102d563c212057877ca4e2b4aee670341a3087878b9ab32e3e67  plans/S5.json  Packages/ChronoFlowKit/Tests/DataAccessTests/Fixtures/plans/S5.json
 8bb0af18c3e4099bcb8359026b50ffa16472ea3bd77f4198c8c17ec4a6f558c7  plans/S6-RETURN-10N.json  Packages/ChronoFlowKit/Tests/DataAccessTests/Fixtures/plans/S6-RETURN-10N.json
 f343d7cf90a948098468961b110e9869a399b2c091ac3078ff39e8931f249748  plans/S6.json  Packages/ChronoFlowKit/Tests/DataAccessTests/Fixtures/plans/S6.json
+0ac14ed1f2106fdf12ca7498716d4fb4c3b8c6d60b325792ed28c62c72ad3b2f  reminders/selection.json  Packages/ChronoFlowKit/Tests/RemindersTests/Fixtures/selection.json
 523ecee6564794301a1b618bd47e6dd4845862e0706d8d12269c8e4f99642233  trips/checks.json  Packages/ChronoFlowKit/Tests/DataAccessTests/Fixtures/trips/checks.json
 1c9c87785e608df0d86dbd482568e6a4ce081aac085aed683190f7d98d71d50d  trips/detail.json  Packages/ChronoFlowKit/Tests/DataAccessTests/Fixtures/trips/detail.json
 de68698e45fd7c3efac3cb0e5fdabffd351e1584fd65bf98696be5f182d40a4c  trips/list.json  Packages/ChronoFlowKit/Tests/DataAccessTests/Fixtures/trips/list.json
