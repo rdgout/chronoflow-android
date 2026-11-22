@@ -105,3 +105,39 @@ diff <(rg '^-' app/build/outputs/mapping/release/configuration.txt | sort) \
 ```
 
 The release/benchmarkRelease app keep and Log-stripping rules are identical. Only nonMinifiedRelease has the pinned profile exception. Runtime smoke and regenerated-profile proofs remain host commands.
+
+## Release manifest
+
+`./gradlew :build-logic:convention:test --tests '*VerifyReleaseManifestTest' --tests '*AppLinkManifestRulesTest' :app:verifyReleaseManifest -Pkotlin.compiler.execution.strategy=in-process`: PASS, **13.20 s wall**, local host 2026-11-22. All 21 verifier cases and nine unchanged App Link cases pass. The report is `app/build/reports/verifyReleaseManifest.txt` (`OK`). Each planted mutation retains MainActivity's verified HTTPS auth-link filter.
+
+AGP 9.5.1 includes SDK and version fields in `app/build/intermediates/merged_manifest/release/processReleaseMainManifest/AndroidManifest.xml`: minSdk 29, targetSdk 36, versionCode 10000, versionName 0.1.0. The verifier's cache inputs carry all four values and the required-permission set. No APK badging fallback is needed.
+
+Merged permission lines:
+
+```xml
+<uses-permission android:name="android.permission.INTERNET" />
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+<uses-permission android:name="android.permission.WAKE_LOCK" />
+<uses-permission android:name="net.chronoflow.app.native.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
+```
+
+Every exported component:
+
+```text
+activity: net.chronoflow.app.MainActivity
+receiver: androidx.work.impl.diagnostics.DiagnosticsReceiver (permission android.permission.DUMP)
+receiver: androidx.profileinstaller.ProfileInstallReceiver (permission android.permission.DUMP)
+```
+
+The named `EXPORTED` set contains MainActivity; the additional exported-component set stays empty. The only guard permission is `DUMP`. `SystemJobService` and both reminder receivers remain unexported; the planted exported job service fails `EXPORTED_COMPONENT`.
+
+InitializationProvider's complete metadata:
+
+```text
+androidx.lifecycle.ProcessLifecycleInitializer
+androidx.profileinstaller.ProfileInstallerInitializer
+```
+
+The app manifest removes permissions `FOREGROUND_SERVICE`, `USE_BIOMETRIC`, `USE_FINGERPRINT`; services `com.google.android.gms.auth.api.signin.RevocationBoundService` and `androidx.room.MultiInstanceInvalidationService`; initializers `androidx.work.WorkManagerInitializer`, `androidx.emoji2.text.EmojiCompatInitializer`, `okhttp3.internal.platform.PlatformInitializer`. Missing optional classes are removed with `tools:ignore="MissingClass"`. WorkManager initializes on demand through ChronoFlowApp's Configuration.Provider.

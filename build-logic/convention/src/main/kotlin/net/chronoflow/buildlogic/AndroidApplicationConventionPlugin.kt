@@ -3,6 +3,7 @@ package net.chronoflow.buildlogic
 import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension
+import net.chronoflow.buildlogic.manifest.ReleaseManifestAllowlist
 import net.chronoflow.buildlogic.manifest.VerifyReleaseManifestTask
 import net.chronoflow.buildlogic.signing.UploadSigningResolver
 import net.chronoflow.buildlogic.size.MeasureBundleSizeTask
@@ -90,6 +91,11 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
                             mergedManifest.set(variant.artifacts.get(SingleArtifact.MERGED_MANIFEST))
                             applicationId.set(variant.applicationId)
                             allowedExportedComponents.set(emptySet())
+                            requiredPermissions.set(ReleaseManifestAllowlist.PERMISSIONS_REQUIRED)
+                            minSdk.set(29)
+                            targetSdk.set(36)
+                            versionCode.set(version.code)
+                            versionName.set(version.name)
                             report.set(layout.buildDirectory.file("reports/verifyReleaseManifest.txt"))
                         }
                     tasks.register("measureBundleSize", MeasureBundleSizeTask::class.java) {
