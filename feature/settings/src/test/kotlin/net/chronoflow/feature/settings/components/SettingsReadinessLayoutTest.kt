@@ -4,6 +4,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import net.chronoflow.core.designsystem.generated.PlanUITokens
 import net.chronoflow.core.testing.tiers.Layout
 import net.chronoflow.core.ui.R
+import net.chronoflow.core.ui.settings.SettingsPage
 import net.chronoflow.feature.settings.bodyclock.BodyClockReadiness
 import net.chronoflow.feature.settings.support.SettingsScreenTest
 import org.junit.Assert.assertEquals

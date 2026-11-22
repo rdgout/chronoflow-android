@@ -20,8 +20,8 @@ import net.chronoflow.core.designsystem.generated.CfTypeScale
 import net.chronoflow.core.designsystem.theme.CfTheme
 import net.chronoflow.core.designsystem.theme.LocalReduceMotion
 import net.chronoflow.core.ui.R
+import net.chronoflow.core.ui.settings.SettingsLazyPage
 import net.chronoflow.feature.settings.components.SettingsError
-import net.chronoflow.feature.settings.components.SettingsLazyPage
 import net.chronoflow.feature.settings.components.SettingsReadinessView
 import net.chronoflow.feature.settings.components.SettingsStoredState
 

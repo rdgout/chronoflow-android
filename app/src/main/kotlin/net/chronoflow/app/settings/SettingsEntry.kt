@@ -16,6 +16,7 @@ import net.chronoflow.app.SessionGraph
 import net.chronoflow.core.model.config.LanguageChoice
 import net.chronoflow.core.navigation.Route
 import net.chronoflow.core.ui.R
+import net.chronoflow.core.ui.settings.SettingsPage
 import net.chronoflow.feature.settings.SettingsComputeKey
 import net.chronoflow.feature.settings.SettingsDependenciesKey
 import net.chronoflow.feature.settings.SettingsIoKey
@@ -25,7 +26,6 @@ import net.chronoflow.feature.settings.account.AccountViewModel
 import net.chronoflow.feature.settings.bodyclock.BodyClockRoute
 import net.chronoflow.feature.settings.bodyclock.BodyClockViewModel
 import net.chronoflow.feature.settings.components.SettingsLoadingRows
-import net.chronoflow.feature.settings.components.SettingsPage
 import net.chronoflow.feature.settings.home.SettingsHomeRoute
 import net.chronoflow.feature.settings.home.SettingsHomeViewModel
 import net.chronoflow.feature.settings.language.LanguageDependenciesKey

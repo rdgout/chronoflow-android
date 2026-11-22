@@ -21,7 +21,7 @@ import net.chronoflow.core.designsystem.component.CfNoticeTone
 import net.chronoflow.core.designsystem.component.CfSecureTextField
 import net.chronoflow.core.designsystem.generated.PlanUITokens
 import net.chronoflow.core.ui.R
-import net.chronoflow.feature.settings.components.SettingsPage
+import net.chronoflow.core.ui.settings.SettingsPage
 import java.time.Instant
 
 class PasswordInputs {

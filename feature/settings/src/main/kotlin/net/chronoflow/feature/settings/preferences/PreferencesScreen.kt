@@ -31,10 +31,10 @@ import net.chronoflow.core.navigation.Route
 import net.chronoflow.core.ui.R
 import net.chronoflow.core.ui.plan.CategorySwatch
 import net.chronoflow.core.ui.plan.CategorySwatchSize
+import net.chronoflow.core.ui.settings.SettingsPage
 import net.chronoflow.feature.settings.components.SettingsDestinationRow
 import net.chronoflow.feature.settings.components.SettingsError
 import net.chronoflow.feature.settings.components.SettingsEyebrow
-import net.chronoflow.feature.settings.components.SettingsPage
 import net.chronoflow.feature.settings.components.SettingsPills
 import net.chronoflow.feature.settings.components.SettingsStoredState
 import net.chronoflow.feature.settings.components.settingsText

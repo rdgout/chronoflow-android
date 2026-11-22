@@ -12,7 +12,7 @@ import net.chronoflow.core.designsystem.icon.LucideGlyphs
 import net.chronoflow.core.designsystem.icon.imageVector
 import net.chronoflow.core.navigation.Route
 import net.chronoflow.core.ui.R
-import net.chronoflow.feature.settings.components.SettingsPage
+import net.chronoflow.core.ui.settings.SettingsPage
 import net.chronoflow.feature.settings.components.SettingsStoredState
 
 data class SecurityScreenState(

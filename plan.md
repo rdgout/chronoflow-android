@@ -3544,6 +3544,18 @@ Acceptance evidence and the pending host checks are recorded in [`docs/settings-
 
 **Delivers.** Builds the Connectivity & reminders page in its on, ask, blocked and unsupported states: the master switch, the kinds, the lead time of 15, 30 or 60 min, and Open phone settings. It adds the POST_NOTIFICATIONS request flow. It adds the first-trip Turn on reminders? sheet over the trip page, consumed before it is shown.
 
+**Task commits**
+
+- [x] 1. Move the settings page scaffold to core ui.
+- [ ] 2. Consume the first-trip reminders offer.
+- [ ] 3. Port the reminders model.
+- [ ] 4. Build the connectivity and reminders page.
+- [ ] 5. Show the reminders state on preferences.
+- [ ] 6. Offer reminders after the first saved trip.
+- [ ] 7. Add guards and board captures.
+- [ ] 8. Drive the permission dialog on the emulator.
+- [ ] 9. Record phase 12c results and open questions.
+
 **Tasks**
 - [ ] **Connectivity & reminders page** (`feature/reminders/…`; `SetReminders`, `SetRemindersAsk`, `SetRemindersBlocked`, `DarkSetReminders`).
   - States: on, ask, blocked and unsupported.

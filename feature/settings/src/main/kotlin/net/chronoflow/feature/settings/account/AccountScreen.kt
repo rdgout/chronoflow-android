@@ -23,9 +23,9 @@ import net.chronoflow.core.designsystem.theme.CfTheme
 import net.chronoflow.core.model.config.LanguageChoice
 import net.chronoflow.core.navigation.Route
 import net.chronoflow.core.ui.R
+import net.chronoflow.core.ui.settings.SettingsPage
 import net.chronoflow.feature.settings.SettingsPagesState
 import net.chronoflow.feature.settings.components.SettingsDestinationRow
-import net.chronoflow.feature.settings.components.SettingsPage
 import net.chronoflow.feature.settings.components.SettingsStoredState
 
 data class AccountScreenState(

@@ -41,8 +41,8 @@ import net.chronoflow.core.navigation.Route
 import net.chronoflow.core.plan.CopyLineFormatter
 import net.chronoflow.core.plan.PlanClock
 import net.chronoflow.core.ui.R
+import net.chronoflow.core.ui.settings.SettingsPage
 import net.chronoflow.feature.settings.components.SettingsDestinationRow
-import net.chronoflow.feature.settings.components.SettingsPage
 import net.chronoflow.feature.settings.signout.SignOutPendingSheet
 import java.time.ZoneId
 

@@ -6,6 +6,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import net.chronoflow.core.testing.DeviceProfiles
 import net.chronoflow.core.testing.tiers.Layout
 import net.chronoflow.core.ui.R
+import net.chronoflow.core.ui.settings.SettingsPage
 import net.chronoflow.feature.settings.support.SettingsScreenTest
 import org.junit.Assert.assertEquals
 import org.junit.Test

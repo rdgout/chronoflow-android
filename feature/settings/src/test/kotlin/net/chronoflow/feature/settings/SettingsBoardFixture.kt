@@ -25,6 +25,7 @@ import net.chronoflow.core.model.contracts.BlockType
 import net.chronoflow.core.model.store.AccountRecord
 import net.chronoflow.core.testing.FakePlanClock
 import net.chronoflow.core.ui.R
+import net.chronoflow.core.ui.settings.SettingsPage
 import net.chronoflow.feature.settings.account.AccountScreen
 import net.chronoflow.feature.settings.account.AccountScreenState
 import net.chronoflow.feature.settings.bodyclock.BodyClockGroup
@@ -33,7 +34,6 @@ import net.chronoflow.feature.settings.bodyclock.BodyClockScreenState
 import net.chronoflow.feature.settings.components.SettingsDestinationRow
 import net.chronoflow.feature.settings.components.SettingsLoadingRows
 import net.chronoflow.feature.settings.components.SettingsOfflineCard
-import net.chronoflow.feature.settings.components.SettingsPage
 import net.chronoflow.feature.settings.components.SettingsStoredState
 import net.chronoflow.feature.settings.home.PendingChange
 import net.chronoflow.feature.settings.home.PendingText
