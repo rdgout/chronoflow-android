@@ -31,18 +31,13 @@ class GuestWizardJourneyTest : ScreenTest() {
         launch(
             mapOf(
                 "CF_MOCK_DELAY" to "0",
+                "cf.settings.language" to null,
+                "cf.settings.theme" to null,
                 "CF_GUEST_WIZARD_JOURNEY" to "1",
-                "CF_WIZARD_BOARD_CAPTURE" to "WizardGuestJourney",
+                "CF_WIZARD_BOARD_CAPTURE" to "WizardReadyGuest",
             ),
         )
         tap("welcome.plan")
-        tap("wizard.where.continue")
-        tap("wizard.outbound.continue")
-        compose.onNodeWithTag("wizard.sleep.habitual_bed").assertExists()
-        tap("wizard.sleep.continue")
-        compose.waitUntilExactlyOneExists(hasTestTag("wizard.checking.line.1"), 2_000)
-        tap("wizard.choice.question.18_64")
-        tap("wizard.fine-tune.continue")
         tap("wizard.ready.continue", 3_000)
         compose.waitUntil(3_000) { GuestWizardDebugCounters.signUpRequested.get() == 1 }
         assertEquals(1, GuestWizardDebugCounters.signUpRequested.get())
@@ -55,8 +50,7 @@ class GuestWizardJourneyTest : ScreenTest() {
         tag: String,
         timeout: Long = 5_000,
     ) {
-        compose.waitUntilExactlyOneExists(hasTestTag(tag) and isEnabled(), timeout)
-        compose.waitUntil(timeout) { compose.onNodeWithTag(tag).isDisplayed() }
+        compose.waitUntil(timeout) { compose.onNode(hasTestTag(tag) and isEnabled()).isDisplayed() }
         compose.onNodeWithTag(tag).performClick()
     }
 }

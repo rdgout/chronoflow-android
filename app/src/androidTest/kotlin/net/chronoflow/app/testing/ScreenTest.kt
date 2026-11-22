@@ -200,8 +200,13 @@ abstract class ScreenTest {
                 scenario?.close()
             } finally {
                 scenario = null
-                val reset = TestSeed.parse(mapOf("cf.settings.language" to "system", "cf.settings.theme" to "system"))
-                runBlocking { TestSeeds.apply(targetContext, reset, Dispatchers.IO) }
+                if (!::seed.isInitialized || seed.language != null || seed.theme != null) {
+                    val reset =
+                        TestSeed.parse(
+                            mapOf("cf.settings.language" to "system", "cf.settings.theme" to "system"),
+                        )
+                    runBlocking { TestSeeds.apply(targetContext, reset, Dispatchers.IO) }
+                }
             }
         }
     }
