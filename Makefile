@@ -230,7 +230,7 @@ font-scale-check:
 
 .PHONY: audit-suite
 audit-suite:
-	python3 -I Scripts/device_lock.py -- sh -ec 'Scripts/emulator.sh ensure; $(RUN_TIER) audit-suite --device --emulator --results "app/build/outputs/androidTest-results/connected/**/*.xml" -- $(GRADLE) :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.cf.audit.language=nl -Pandroid.testInstrumentationRunnerArguments.cf.audit.theme=dark -Pandroid.testInstrumentationRunnerArguments.cf.audit.reduceMotion=1'
+	python3 -I Scripts/device_lock.py -- bash -c 'Scripts/emulator.sh ensure || exit $$?; status=0; $(RUN_TIER) audit-suite --device --emulator --results "app/build/outputs/androidTest-results/connected/**/*.xml" -- $(GRADLE) :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.notClass=net.chronoflow.app.reminders.RemindersPermissionDeviceTest -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true -Pandroid.testInstrumentationRunnerArguments.cf.audit.language=nl -Pandroid.testInstrumentationRunnerArguments.cf.audit.theme=dark -Pandroid.testInstrumentationRunnerArguments.cf.audit.reduceMotion=1 || status=$$?; $(RUN_TIER) audit-permission --device --emulator --results "build/reminders-permission/result.xml" -- python3 -I Scripts/reminders_permission.py --audit || status=$$?; exit $$status'
 
 .PHONY: process-death
 process-death:
@@ -247,7 +247,8 @@ strictmode-run:
 	  "$$adb_cmd" -s "$$serial" logcat -G 16M || exit $$?; \
 	  "$$adb_cmd" -s "$$serial" logcat -c || exit $$?; \
 	  status=0; \
-	  $(RUN_TIER) strictmode --device --emulator --results "*/build/outputs/androidTest-results/connected/**/*.xml" --results "*/*/build/outputs/androidTest-results/connected/**/*.xml" -- $(GRADLE) $(AUDIT_ANDROID_MODULES:%=:%:connectedDebugAndroidTest) --max-workers=1 --continue -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true || status=$$?; \
+	  $(RUN_TIER) strictmode --device --emulator --results "*/build/outputs/androidTest-results/connected/**/*.xml" --results "*/*/build/outputs/androidTest-results/connected/**/*.xml" -- $(GRADLE) $(AUDIT_ANDROID_MODULES:%=:%:connectedDebugAndroidTest) -Pandroid.testInstrumentationRunnerArguments.notClass=net.chronoflow.app.reminders.RemindersPermissionDeviceTest --max-workers=1 --continue -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true || status=$$?; \
+	  $(RUN_TIER) strictmode-permission --device --emulator --results "build/reminders-permission/result.xml" -- python3 -I Scripts/reminders_permission.py || status=$$?; \
 	  python3 -I Scripts/ios-parity.py || status=$$?; \
 	  "$$adb_cmd" -s "$$serial" logcat -d -v threadtime > build/audit/strictmode-logcat.txt || exit $$?; \
 	  python3 -I Scripts/strictmode-scan.py build/audit/strictmode-logcat.txt || status=$$?; \

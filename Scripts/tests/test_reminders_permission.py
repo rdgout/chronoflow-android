@@ -52,3 +52,10 @@ class RemindersPermissionTest(unittest.TestCase):
             self.assertIn("clear-permission-flags", run.call_args_list[2].args[0])
             self.assertIn(permission.TEST_CLASS, run.call_args_list[3].args[0])
             self.assertIn('time="2.5"', permission.REPORT.read_text())
+
+    def test_audit_defaults_are_forwarded_to_the_isolated_class(self):
+        command = permission.instrumentation_command(["adb-shell"], audit=True)
+        self.assertEqual(["cf.audit.language", "nl", "-e", "cf.audit.theme", "dark", "-e",
+                          "cf.audit.reduceMotion", "1", permission.RUNNER], command[-9:])
+        self.assertIn(permission.TEST_CLASS, command)
+        self.assertNotIn("cf.audit.theme", permission.instrumentation_command(["adb-shell"]))

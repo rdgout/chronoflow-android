@@ -29,6 +29,17 @@ class MakefileTest(unittest.TestCase):
         self.assertLess(recipe.index("Scripts/ios-parity.py"), recipe.index("logcat -d -v threadtime"))
         self.assertLess(recipe.index("logcat -d -v threadtime"), recipe.index("Scripts/strictmode-scan.py"))
 
+    def test_audit_suites_include_the_isolated_permission_case_without_annotation_filters(self):
+        text = (ROOT / "Makefile").read_text()
+        audit = text.split("audit-suite:\n", 1)[1].split("\n.PHONY:", 1)[0]
+        strict = text.split("strictmode-run:\n", 1)[1]
+        for recipe in (audit, strict):
+            self.assertIn("notClass=net.chronoflow.app.reminders.RemindersPermissionDeviceTest", recipe)
+            self.assertIn("Scripts/reminders_permission.py", recipe)
+            self.assertIn("leaveApksInstalledAfterRun=true", recipe)
+            self.assertNotIn("RunnerArguments.annotation=", recipe)
+        self.assertIn("Scripts/reminders_permission.py --audit", audit)
+
     def test_device_recipes_take_the_lock(self):
         text = (ROOT / "Makefile").read_text()
         offenders = [

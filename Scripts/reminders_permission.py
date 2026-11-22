@@ -39,6 +39,15 @@ def write_report(seconds, failure):
     ET.ElementTree(suite).write(REPORT, encoding="utf-8", xml_declaration=True)
 
 
+def instrumentation_command(shell, audit=False):
+    command = shell + ["am", "instrument", "-w", "-r", "-e", "class", TEST_CLASS,
+                       "-e", "timeout_msec", "60000"]
+    if audit:
+        for key, value in (("cf.audit.language", "nl"), ("cf.audit.theme", "dark"), ("cf.audit.reduceMotion", "1")):
+            command.extend(("-e", key, value))
+    return command + [RUNNER]
+
+
 def main(argv):
     if os.environ.get("CF_DEVICE_LOCK_HELD") != "1":
         print("reminders-permission: run inside Scripts/device_lock.py or a --device tier", file=sys.stderr)
@@ -64,8 +73,8 @@ def main(argv):
             print(command.stdout + command.stderr, end="", flush=True)
             if command.returncode:
                 raise RuntimeError("permission preparation failed")
-        run = subprocess.run(shell + ["am", "instrument", "-w", "-r", "-e", "class", TEST_CLASS,
-                                      "-e", "timeout_msec", "60000", RUNNER], capture_output=True, text=True, timeout=90)
+        run = subprocess.run(instrumentation_command(shell, "--audit" in argv),
+                             capture_output=True, text=True, timeout=90)
         output = run.stdout + run.stderr
         print(output, end="", flush=True)
         seconds, failure = result(output, run.returncode)
