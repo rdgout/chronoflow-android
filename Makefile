@@ -166,6 +166,24 @@ mock-seed-check:
 perf:
 	$(RUN_TIER) perf --device --results 'benchmark/build/outputs/androidTest-results/connected/**/*.xml' -- Scripts/perf-startup.sh
 
+.PHONY: perf-today-title
+perf-today-title:
+	$(RUN_TIER) perf-today-title --device --results 'benchmark/build/outputs/androidTest-results/connected/benchmarkRelease/**/*.xml' -- bash -ec ' \
+	  ADB="$${ADB:-$${ANDROID_HOME}/platform-tools/adb}"; PERF_SUITE=perf-today-title; \
+	  source Scripts/perf-device.sh; resolve_perf_device; \
+	  trap '\''Scripts/emulator.sh prep-functional "$$SERIAL"'\'' EXIT; \
+	  Scripts/emulator.sh prep-perf "$$SERIAL"; \
+	  PERF_OUTPUT_DIR=benchmark/build/outputs/connected_android_test_additional_output; \
+	  source Scripts/perf-archive.sh; \
+	  begin_perf_archive today-title default "$$(git rev-parse --short HEAD)"; \
+	  status=0; \
+	  $(GRADLE) :benchmark:connectedBenchmarkReleaseAndroidTest \
+	    -Pandroid.testInstrumentationRunnerArguments.class=net.chronoflow.benchmark.TodayTitleBenchmark \
+	    -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.enabledRules=Macrobenchmark \
+	    -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.suppressErrors=EMULATOR \
+	    -Pandroid.testInstrumentationRunnerArguments.timeout_msec=300000 || status=$$?; \
+	  finish_perf_archive; exit $$status'
+
 snapshots:
 	$(RUN_TIER) snapshots $(RESULTS_DEBUG) $(TIMINGS_DEBUG) -- $(GRADLE) $(if $(SNAPSHOT_RECORD),recordRoborazziDebug,verifyRoborazziDebug) -Pcf.tier=snapshot
 
