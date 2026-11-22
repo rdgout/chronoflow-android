@@ -3553,7 +3553,7 @@ Acceptance evidence and the pending host checks are recorded in [`docs/settings-
 - [x] 5. Show the reminders state on preferences.
 - [x] 6. Offer reminders after the first saved trip.
 - [x] 7. Add guards and board captures.
-- [ ] 8. Drive the permission dialog on the emulator.
+- [x] 8. Drive the permission dialog on the emulator.
 - [ ] 9. Record phase 12c results and open questions.
 
 **Tasks**
@@ -3567,7 +3567,7 @@ Acceptance evidence and the pending host checks are recorded in [`docs/settings-
 - [x] **First-trip offer** (`WizardReminders`), porting `FirstTripRemindersOffer`.
   - The settings row moves from `pending` to `seen` before the sheet shows.
   - The sheet shows once, over the first saved trip's page.
-- [ ] **Tests.**
+- [x] **Tests.**
   - The ported 19d and 19f cases.
   - Guards.
   - On the emulator: the system permission dialog from the ask state, driven with UiAutomator.

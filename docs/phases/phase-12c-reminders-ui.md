@@ -448,3 +448,6 @@ If the leave-installed property is not honoured, or the precondition fails after
 
 
 **R21. Task 7 native geometry.** M3 segmented buttons intentionally overlap adjacent borders by 1 dp. Keep the text, 48 dp touch-target, safe-area and ink guards; check non-overlap on the other controls and check the segments' containment, non-adjacent separation and adjacent shared-border width explicitly. Do not change the landed native wrapper's geometry or weaken the shared guard.
+
+
+**R22. Task 8 execution evidence.** `Scripts/reminders_permission.py` runs under the tier's device lock, verifies the APK remains installed, revokes/clears flags outside instrumentation, then invokes only the permission class with `am instrument`. It checks the runner's single-test success and time metric, writes JUnit evidence, and fails on missing evidence or a runner failure even when `adb` exits 0. `make targeted ONLY="app:RemindersPermissionDeviceTest"` uses that same path (install first, or reuse installed APKs with `REUSE_BUILD=1`). The smoke target keeps/excludes exactly the APK/class required by R13. No other emulator class is run for this task.

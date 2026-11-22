@@ -42,3 +42,34 @@ The local board files reference a `support.js` runtime that is absent from this 
 ## Size baseline
 
 `make size`: `Bundle size: 4131623 bytes (4.13 MB), arm64-v8a/xxhdpi/en: OK`; `BUILD SUCCESSFUL in 1m 1s`. No new native library was introduced.
+
+## Native permission and sheet evidence
+
+```sh
+make targeted ONLY='app:RemindersPermissionDeviceTest'
+```
+
+First run on `pixel` (`emulator-5554`), debug: **PASS**, `OK (1 test)`, runner **3.241 s**, complete tier **13.430 s** including APK install. The real system dialog is absent before Ask and appears only after tapping it. Allow turns the switch on, shows the lead control and persists `notificationPermissionRequested`. The debug ChronoFlow I/O violation counter is **0**. Results: `build/test-results/targeted-permission/timings.json` and `build/reminders-permission/result.xml`.
+
+The main smoke command excludes this class and keeps the APKs installed. Its following locked tier verifies installation, revokes permission/clears user-set flags outside instrumentation, and runs this class alone. The isolated runner checks actual JUnit success and the time metric, emits XML, and propagates failures even if `adb` itself exits 0. The same runner backs the targeted command. Its parser, missing-APK, lock, sequencing and targeted-selection tests pass (20 tooling cases total).
+
+The native first-trip sheet was captured over the trip page, with its native handle, scrim and navigation inset: `build/captures-device/WizardReminders_device.png`. After force-stop and the specified seeded relaunch without `cf.firstTripReminders`, `trip.page` is present and `reminders.firstTrip` is absent; image: `build/captures-device/WizardReminders_after_relaunch_device.png`. Database persistence across a real close/reopen is proved separately by the JVM test, without reseeding.
+
+Commands (each device operation uses the device lock):
+
+```sh
+python3 -I Scripts/device_lock.py -- /opt/homebrew/share/android-commandlinetools/platform-tools/adb -s emulator-5554 shell am start -W \
+  -n net.chronoflow.app.native.debug/net.chronoflow.debug.SeedReceiverActivity \
+  --es CF_AUTH_TEST_ID 01900000-0000-7000-8000-0000000012c0 --es CF_UI_TEST_PROFILE screen \
+  --es CF_AUTH_TEST_SIGNED_IN demo --es CF_AUTH_TEST_WALKTHROUGH_SEEN 1 \
+  --es cf.notificationAuthorization undetermined --es cf.firstTripReminders 1 \
+  --es CF_PLAN_TEST_ROUTE trip:0199a3c0-0000-7000-8000-000000000001 \
+  --es cf.settings.language en --es cf.settings.theme light --es cf.reduceMotion 1
+python3 -I Scripts/device_lock.py -- /opt/homebrew/share/android-commandlinetools/platform-tools/adb -s emulator-5554 exec-out screencap -p > build/captures-device/WizardReminders_device.png
+python3 -I Scripts/device_lock.py -- /opt/homebrew/share/android-commandlinetools/platform-tools/adb -s emulator-5554 shell am force-stop net.chronoflow.app.native.debug
+# Repeat the seeded am start above, omitting --es cf.firstTripReminders 1.
+python3 -I Scripts/device_lock.py -- /opt/homebrew/share/android-commandlinetools/platform-tools/adb -s emulator-5554 exec-out screencap -p > build/captures-device/WizardReminders_after_relaunch_device.png
+python3 -I Scripts/device_lock.py -- /opt/homebrew/share/android-commandlinetools/platform-tools/adb -s emulator-5554 logcat -d -s StrictMode
+```
+
+Both seeded launches returned `Status: ok`, `LaunchState: COLD`; the StrictMode command produced no output. No other emulator test tier, performance tier or profile generation ran. `pixel` remains running.

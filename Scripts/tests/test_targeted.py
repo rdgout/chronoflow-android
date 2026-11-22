@@ -39,6 +39,24 @@ class TargetedTest(unittest.TestCase):
         self.assertIn("am instrument", result.stdout)
         self.assertIn("class net.chronoflow.app.AppLaunchSmokeTest", result.stdout)
 
+    def test_permission_dialog_runs_alone_after_install_and_external_revoke(self):
+        result = targeted("app:RemindersPermissionDeviceTest", env={"REUSE_BUILD": ""})
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("targeted-permission --device --emulator", result.stdout)
+        self.assertIn("reminders_permission.py --install", result.stdout)
+        self.assertIn("build/reminders-permission/result.xml", result.stdout)
+
+    def test_reused_permission_dialog_preserves_the_installed_apks(self):
+        result = targeted("app:RemindersPermissionDeviceTest", env={"REUSE_BUILD": "1"})
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("reminders_permission.py", result.stdout)
+        self.assertNotIn("--install", result.stdout)
+
+    def test_permission_dialog_cannot_share_an_instrumentation_run(self):
+        result = targeted("app:RemindersPermissionDeviceTest", "app:AppLaunchSmokeTest")
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("requires a revoked permission", result.stderr)
+
     def test_release_source_set_runs_through_the_release_task(self):
         result = targeted("app:ReleaseAppIdentityTest")
         self.assertEqual(result.returncode, 0, result.stderr)

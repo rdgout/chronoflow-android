@@ -15,7 +15,7 @@ TIMINGS_DEBUG := --timings '*/build/cf-timings/testDebugUnitTest/*.json' --timin
 RESULTS_JVM := --results 'konsist/build/test-results/test/*.xml' --results 'core/*/build/test-results/test/*.xml' --results 'tools/*/build/test-results/test/*.xml'
 TIMINGS_JVM := --timings 'konsist/build/cf-timings/test/*.json' --timings 'core/*/build/cf-timings/test/*.json' --timings 'tools/*/build/cf-timings/test/*.json'
 SMOKE := net.chronoflow.core.testing.tiers.Smoke
-SMOKE_TASK := :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.annotation=$(SMOKE)
+SMOKE_TASK := :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.annotation=$(SMOKE) -Pandroid.testInstrumentationRunnerArguments.notClass=net.chronoflow.app.reminders.RemindersPermissionDeviceTest -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true
 GENERATORS :=
 GENERATOR_CHECKS :=
 GENERATORS += tokens
@@ -49,6 +49,7 @@ check: quick
 	$(MAKE) generators-check
 	Scripts/emulator.sh ensure
 	$(RUN_TIER) smoke --device --emulator --results 'app/build/outputs/androidTest-results/connected/**/*.xml' -- $(GRADLE) $(SMOKE_TASK)
+	$(RUN_TIER) reminders-permission --device --emulator --results 'build/reminders-permission/result.xml' -- python3 -I Scripts/reminders_permission.py
 
 test:
 	$(RUN_TIER) test $(RESULTS_JVM) $(RESULTS_DEBUG) $(TIMINGS_JVM) $(TIMINGS_DEBUG) -- $(GRADLE) $(JVM_MODULES:%=:%:test) testDebugUnitTest :app:testReleaseUnitTest -Pcf.tier=test
