@@ -42,7 +42,7 @@ import net.chronoflow.core.designsystem.generated.CfTypeScale
 import net.chronoflow.core.designsystem.generated.PlanUITokens
 import net.chronoflow.core.designsystem.layout.LocalSafeInsets
 import net.chronoflow.core.designsystem.layout.WindowPolicy
-import net.chronoflow.core.designsystem.system.CfLargeTopAppBar
+import net.chronoflow.core.designsystem.system.CfMediumTopAppBar
 import net.chronoflow.core.designsystem.system.CfPullToRefreshBox
 import net.chronoflow.core.designsystem.theme.CfTheme
 import net.chronoflow.core.model.contracts.Language
@@ -120,7 +120,7 @@ fun TodayScreen(
             containerColor = CfTheme.colors.background,
             contentWindowInsets = WindowInsets(0),
             topBar = {
-                CfLargeTopAppBar(stringResource(R.string.screens_today), scroll, Modifier.testTag("today.appbar"))
+                CfMediumTopAppBar(stringResource(R.string.screens_today), scroll, Modifier.testTag("today.appbar"))
             },
         ) { scaffold ->
             CfPullToRefreshBox(refreshState.refreshing, onRefresh, Modifier.fillMaxSize().padding(scaffold)) {

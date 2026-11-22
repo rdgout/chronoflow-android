@@ -32,15 +32,15 @@ import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.unit.dp
 import net.chronoflow.core.designsystem.haptics.HapticEvent
 import net.chronoflow.core.designsystem.haptics.LocalHaptics
-import net.chronoflow.core.designsystem.system.CfLargeTopAppBar
+import net.chronoflow.core.designsystem.system.CfMediumTopAppBar
 import net.chronoflow.core.designsystem.system.CfSegmentedButtons
 import net.chronoflow.core.designsystem.system.CfSwitch
 import net.chronoflow.core.designsystem.system.cfToggleable
+import net.chronoflow.core.testing.DeviceProfiles
 import net.chronoflow.core.testing.compose.RecordingHaptics
 import net.chronoflow.core.testing.tiers.Logic
 import net.chronoflow.core.ui.R
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -111,11 +111,11 @@ class SystemWrappersTest : PrimitiveTestFixture() {
         }
     }
 
-    @Test fun largeAppBarCollapsesThroughItsNestedScrollConnection() {
+    @Test fun mediumAppBarCollapsesThroughItsNestedScrollConnection() {
         host {
             val behavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
             Column(Modifier.fillMaxSize().nestedScroll(behavior.nestedScrollConnection)) {
-                CfLargeTopAppBar(stringResource(R.string.settings_change_password), behavior, Modifier.testTag("bar"))
+                CfMediumTopAppBar(stringResource(R.string.settings_change_password), behavior, Modifier.testTag("bar"))
                 LazyColumn(Modifier.fillMaxWidth().testTag("list")) {
                     items(30, key = { it }, contentType = { "spacer" }) { Box(Modifier.height(100.dp)) }
                 }
@@ -133,6 +133,17 @@ class SystemWrappersTest : PrimitiveTestFixture() {
                 .onNodeWithTag("bar")
                 .fetchSemanticsNode()
                 .boundsInRoot.height
-        assertTrue("App bar height must shrink after scrolling: $expanded -> $collapsed", collapsed < expanded)
+        val profile = DeviceProfiles.pixel8
+        val topInset = profile.insets.top
+        assertEquals(
+            (TopAppBarDefaults.MediumAppBarExpandedHeight.value + topInset) * profile.density,
+            expanded,
+            1f,
+        )
+        assertEquals(
+            (TopAppBarDefaults.MediumAppBarCollapsedHeight.value + topInset) * profile.density,
+            collapsed,
+            1f,
+        )
     }
 }

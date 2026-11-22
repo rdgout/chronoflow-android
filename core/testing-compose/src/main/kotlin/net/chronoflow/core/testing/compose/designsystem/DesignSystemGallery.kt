@@ -73,8 +73,8 @@ import net.chronoflow.core.designsystem.system.CfAlertDialog
 import net.chronoflow.core.designsystem.system.CfBackButton
 import net.chronoflow.core.designsystem.system.CfDatePickerDialog
 import net.chronoflow.core.designsystem.system.CfDialogAction
-import net.chronoflow.core.designsystem.system.CfLargeTopAppBar
 import net.chronoflow.core.designsystem.system.CfLinearProgress
+import net.chronoflow.core.designsystem.system.CfMediumTopAppBar
 import net.chronoflow.core.designsystem.system.CfModalBottomSheet
 import net.chronoflow.core.designsystem.system.CfPullToRefreshBox
 import net.chronoflow.core.designsystem.system.CfSegmentedButtons
@@ -336,7 +336,7 @@ fun GalleryPage(
 @Composable fun ColumnScope.Bars() {
     val title = stringResource(R.string.settings_change_password)
     val back = stringResource(R.string.auth_back)
-    CfLargeTopAppBar(title, TopAppBarDefaults.exitUntilCollapsedScrollBehavior(), navigationIcon = {
+    CfMediumTopAppBar(title, TopAppBarDefaults.exitUntilCollapsedScrollBehavior(), navigationIcon = {
         CfBackButton(back, {})
     })
     CfTopAppBar(title, navigationIcon = { CfBackButton(back, {}) })

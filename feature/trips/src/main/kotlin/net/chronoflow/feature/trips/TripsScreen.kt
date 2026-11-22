@@ -48,7 +48,7 @@ import net.chronoflow.core.designsystem.generated.PlanUITokens
 import net.chronoflow.core.designsystem.icon.MaterialSymbols
 import net.chronoflow.core.designsystem.layout.LocalSafeInsets
 import net.chronoflow.core.designsystem.layout.WindowPolicy
-import net.chronoflow.core.designsystem.system.CfLargeTopAppBar
+import net.chronoflow.core.designsystem.system.CfMediumTopAppBar
 import net.chronoflow.core.designsystem.system.CfPullToRefreshBox
 import net.chronoflow.core.designsystem.theme.CfTheme
 import net.chronoflow.core.model.config.AppLanguage
@@ -135,7 +135,7 @@ fun TripsContent(
         containerColor = CfTheme.colors.background,
         contentWindowInsets = WindowInsets(0),
         topBar = {
-            CfLargeTopAppBar(stringResource(R.string.screens_my_trips), scrollBehavior, actions = {
+            CfMediumTopAppBar(stringResource(R.string.screens_my_trips), scrollBehavior, actions = {
                 IconButton(onNewTrip, Modifier.testTag("trips.create")) {
                     Icon(MaterialSymbols.Add, stringResource(R.string.screens_new_trip))
                 }

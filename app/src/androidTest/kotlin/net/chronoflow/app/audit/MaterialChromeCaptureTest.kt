@@ -77,11 +77,11 @@ class MaterialChromeCaptureTest(
         shot("TabBar", "Today")
     }
 
-    @Test fun capturesLargeTitle() {
+    @Test fun capturesMediumTitle() {
         open("settings.profile", settings("none"))
-        shot("LargeTitle", "expanded")
+        shot("MediumTitle", "expanded")
         compose.onNodeWithTag("settings.screen.content").performTouchInput { swipeUp() }
-        shot("LargeTitle", "collapsed")
+        shot("MediumTitle", "collapsed")
     }
 
     @Test fun capturesSheet() {

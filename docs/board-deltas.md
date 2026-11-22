@@ -24,4 +24,4 @@ The Today captures use the requested 390 × 844 board frame, retaining pixel8 de
 |---|---|---|---|---|
 | Today | Shared hero Next title | Medium 500 | Regular 400 | Preserve pinned iOS and the landed OQ-A240/6a choice. |
 | TodayFuture | Optional Next row in capture | Present in sample | Absent with the Swift snapshot fixture | The fixture supplies the active trip detail while filtering trips to upcoming; the required stale-detail guard rejects it. The screen test separately renders the non-null Next branch; the live source observes the selected hero detail. |
-| TodayEmpty, TodayFuture, TodayCompleted | Native title ink in JVM captures | Title visible | Missing in these captures | Unresolved after idle/frame/idle; OQ-A336 retains CfLargeTopAppBar and requires device verification. Its structural tag is present in every state. |
+| TodayEmpty, TodayFuture, TodayCompleted | Native title ink in JVM captures | Title visible | Missing in these captures | Unresolved after idle/frame/idle; OQ-A336 retains CfMediumTopAppBar and requires device verification. Its structural tag is present in every state. |

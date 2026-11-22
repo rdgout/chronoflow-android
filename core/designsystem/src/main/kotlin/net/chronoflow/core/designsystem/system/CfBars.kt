@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.only
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LargeTopAppBar
+import androidx.compose.material3.MediumTopAppBar
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -60,14 +60,14 @@ fun CfTopAppBar(
 }
 
 @Composable
-fun CfLargeTopAppBar(
+fun CfMediumTopAppBar(
     title: String,
     scrollBehavior: TopAppBarScrollBehavior,
     modifier: Modifier = Modifier,
     navigationIcon: (@Composable () -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {},
 ) {
-    LargeTopAppBar(
+    MediumTopAppBar(
         title = {
             Text(
                 title,
