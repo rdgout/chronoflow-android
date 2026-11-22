@@ -27,6 +27,9 @@ dependencies {
     implementation(libs.kotlinx.coroutines.core)
 
     testImplementation(project(":core:testing"))
+    testImplementation(project(":core:ui"))
+    testImplementation(platform(libs.compose.bom))
+    testImplementation(libs.androidx.datastore.preferences)
     testImplementation(project(":core:testing-junit"))
     implementation(project(":core:wizard"))
     testImplementation(libs.junit4)
