@@ -156,8 +156,19 @@ class SignInModel(
         }
     }
 
-    fun makeSignUpModel(onBack: () -> Unit): SignUpModel =
-        SignUpModel(source, session, deviceIdentity, deviceName, accepted, onBack)
+    fun makeSignUpModel(
+        initialGuestState: GuestSignupState = GuestSignupState.Ready,
+        onBack: () -> Unit,
+    ): SignUpModel =
+        SignUpModel(
+            source,
+            session,
+            deviceIdentity,
+            deviceName,
+            accepted,
+            onBack,
+            initialGuestState = initialGuestState,
+        )
 
     fun prepareReset() {
         twoFactor.value?.cancel()

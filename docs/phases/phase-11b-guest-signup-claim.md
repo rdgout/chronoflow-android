@@ -92,6 +92,8 @@ Checked against the code at `fcf08348` (phases 0a–11a), iOS at `f391a1fa`, web
 
 **R11. Additional mechanical mapping (worker preflight).** Android `MemberWizardDraft.airports` is a derived getter over `MemberWizardState.airports` (`MemberWizardState.kt`); it is not a constructor/copy property. Task 3 copies `seed.airports` through `state.copy(airports = seed.airports)`, preserving the existing model representation and the iOS seed behavior.
 
+**Task 6 Kotlin call compatibility.** Keep the function callback last: `submit(password, confirmation, language, requiresGuestClaim = false, commitAutofill)` and `makeSignUpModel(initialGuestState = Ready, onBack)`. Existing trailing-lambda member callers retain their behavior; the ViewModel passes `commitAutofill` by name. Task 7 supplies the claim providers through the factory.
+
 This phase is mostly **ports of small iOS types, one sheet and wiring**. The mock registration claim (iOS 18d) is **4c's and already merged** (`MockGuestRegistrationClaimTests`, `MockStaleClaimTests`, `MockClaimReplayTests`). The HTTP half of `GuestClaimAuthTests` is **4b's** (`GuestClaimWireTests`). The guest wizard model (`guestReviewExpired`, `setGuestSigningIn`, `setGuestAuthenticationPresented`) is **9a's**; the guest store, secret store and the sign-up seam are **11a's**. Do not port them again. If a rule below is missing from those phases, port it into that module with its iOS test in a separate `fix(<scope>): …` commit that names the Swift line, and report it.
 
 ---

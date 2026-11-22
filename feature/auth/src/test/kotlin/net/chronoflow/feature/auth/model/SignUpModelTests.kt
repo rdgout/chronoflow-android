@@ -19,6 +19,7 @@ import net.chronoflow.core.model.api.RegisterInput
 import net.chronoflow.core.model.api.SessionResult
 import net.chronoflow.core.model.auth.AuthenticationMethod
 import net.chronoflow.core.model.device.DeviceIdentityFailure
+import net.chronoflow.core.model.guest.GuestClaim
 import net.chronoflow.core.model.session.SessionFailure
 import net.chronoflow.core.model.store.StoreFailure
 import net.chronoflow.core.navigation.Route
@@ -383,6 +384,146 @@ class SignUpModelTests {
                 assertTrue(routed)
                 assertTrue(password.cleared && confirmation.cleared)
                 assertFalse(model.form.busy)
+            }
+    }
+
+    class Guest {
+        @Test fun guestSignupRequiresALiveClaimBeforeCreatingAnAccount() =
+            runTest(timeout = 60.seconds) {
+                val f = fixture().filled()
+                val password = FakeSecretField("NewPassword123!")
+                val confirmation = FakeSecretField("NewPassword123!")
+                val outcome = f.model.submit(password, confirmation, AuthLanguage.En, requiresGuestClaim = true) {}
+                assertEquals(SignUpModel.Outcome.GuestReviewExpired, outcome)
+                assertEquals(GuestSignupState.Review, f.model.guestState.value)
+                assertTrue(password.cleared && confirmation.cleared)
+                assertTrue(f.routes.accepted.isEmpty())
+                assertTrue(f.source.inbox().isEmpty())
+            }
+
+        @Test fun guestSignupDistinguishesARequestFailureFromAnAccountAwaitingAcceptance() =
+            runTest(timeout = 60.seconds) {
+                val f = fixture().filled()
+                assertEquals(GuestSignupState.Ready, f.model.guestState.value)
+                f.source.failNext(MockMethod.SignUp, DataFailure.Server(503))
+                submit(f.model)
+                assertEquals(GuestSignupState.Failed, f.model.guestState.value)
+                f.session.failure = SessionFailure.CredentialWrite
+                submit(f.model)
+                assertEquals(GuestSignupState.Retry, f.model.guestState.value)
+                assertEquals(SessionFailure.CredentialWrite, f.model.sessionFailure)
+            }
+
+        @Test fun expiredGuestClaimShowsReviewAndClearsPasswords() =
+            runTest(timeout = 60.seconds) {
+                val f = fixture()
+                var expired = 0
+                val model =
+                    SignUpModel(
+                        f.source,
+                        f.session,
+                        { AUTH_DEVICE_ID },
+                        { "test" },
+                        f.routes::acceptedSession,
+                        {},
+                        claim = { GuestClaim("trip", 1, 1, "secret") },
+                        guestReviewExpired = { expired++ },
+                    )
+                f.source.failNext(MockMethod.SignUp, DataFailure.ReviewExpired)
+                val password = FakeSecretField("NewPassword123!")
+                val confirmation = FakeSecretField("NewPassword123!")
+                assertEquals(
+                    SignUpModel.Outcome.GuestReviewExpired,
+                    model.submit(password, confirmation, AuthLanguage.En, requiresGuestClaim = true) {},
+                )
+                assertEquals(GuestSignupState.Review, model.guestState.value)
+                assertTrue(password.cleared && confirmation.cleared)
+                assertEquals(1, expired)
+                assertNull(model.form.state.value.banner)
+            }
+
+        @Test fun claimFieldsAreSentOnlyWithAClaim() =
+            runTest(timeout = 60.seconds) {
+                checkClaim(GuestClaim("token", 4, 7, "secret"))
+                checkClaim(null)
+            }
+
+        private suspend fun TestScope.checkClaim(claim: GuestClaim?) {
+            val f = fixture()
+            var recorded: RegisterInput? = null
+            val source =
+                object : DataSource by f.source {
+                    override suspend fun signUp(input: RegisterInput): SessionResult {
+                        recorded = input
+                        return f.source.signUp(
+                            input.copy(
+                                draftToken = null,
+                                inputRevision = null,
+                                reviewRevision = null,
+                                guestSecret = null,
+                            ),
+                        )
+                    }
+                }
+            val model =
+                SignUpModel(
+                    source,
+                    f.session,
+                    { AUTH_DEVICE_ID },
+                    { "test" },
+                    f.routes::acceptedSession,
+                    {},
+                    claim = { claim },
+                )
+            model.editName("Traveller")
+            model.editEmail("new@example.com")
+            submit(model)
+            assertEquals(claim?.draftToken, checkNotNull(recorded).draftToken)
+            assertEquals(claim?.inputRevision, checkNotNull(recorded).inputRevision)
+            assertEquals(claim?.reviewRevision, checkNotNull(recorded).reviewRevision)
+            assertEquals(claim?.guestSecret, checkNotNull(recorded).guestSecret)
+        }
+
+        @Test fun submitResetsTheGuestStateFirst() =
+            runTest(timeout = 60.seconds) {
+                val f = fixture()
+                lateinit var model: SignUpModel
+                var sent = false
+                val source =
+                    object : DataSource by f.source {
+                        override suspend fun signUp(input: RegisterInput): SessionResult {
+                            assertEquals(GuestSignupState.Ready, model.guestState.value)
+                            sent = true
+                            throw DataFailure.Offline
+                        }
+                    }
+                model =
+                    SignUpModel(
+                        source,
+                        f.session,
+                        { AUTH_DEVICE_ID },
+                        { "test" },
+                        f.routes::acceptedSession,
+                        {},
+                        claim = { GuestClaim("token", 4, 7, "secret") },
+                        initialGuestState = GuestSignupState.Review,
+                    )
+                submit(model)
+                assertTrue(sent)
+            }
+
+        @Test fun fieldOnlyValidationKeepsReady() =
+            runTest(timeout = 60.seconds) {
+                val f = fixture()
+                f.source.failNext(
+                    MockMethod.SignUp,
+                    DataFailure.Validation(mapOf("name" to FieldMessage("Please fill this in.")), 422),
+                )
+                val outcome = f.model.submit(FakeSecretField(), FakeSecretField(), AuthLanguage.En) {}
+                assertNull(outcome)
+                assertEquals(GuestSignupState.Ready, f.model.guestState.value)
+                assertNull(f.model.form.state.value.banner)
+                assertNotNull(f.model.form.state.value.fields["name"])
             }
     }
 
