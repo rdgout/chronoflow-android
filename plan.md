@@ -3551,7 +3551,7 @@ Acceptance evidence and the pending host checks are recorded in [`docs/settings-
 - [x] 3. Port the reminders model.
 - [x] 4. Build the connectivity and reminders page.
 - [x] 5. Show the reminders state on preferences.
-- [ ] 6. Offer reminders after the first saved trip.
+- [x] 6. Offer reminders after the first saved trip.
 - [ ] 7. Add guards and board captures.
 - [ ] 8. Drive the permission dialog on the emulator.
 - [ ] 9. Record phase 12c results and open questions.
@@ -3564,7 +3564,7 @@ Acceptance evidence and the pending host checks are recorded in [`docs/settings-
   - Reached from Preferences (10b).
   - Fill the Preferences reminders-row subtitle (`SettingsPreferencesView.swift:155–163`); 10b leaves it empty.
 - [x] **Permission flow.** `RequestPermission(POST_NOTIFICATIONS)` on API 33+, remembered in `notificationPermissionRequested`. Below API 33 there is no system dialog: **Turn on reminders** (the Reminders page or the first-trip offer) writes `notificationPermissionRequested`, which is the in-app opt-in; until then the state is "ask" and nothing is scheduled, as on iOS (A13).
-- [ ] **First-trip offer** (`WizardReminders`), porting `FirstTripRemindersOffer`.
+- [x] **First-trip offer** (`WizardReminders`), porting `FirstTripRemindersOffer`.
   - The settings row moves from `pending` to `seen` before the sheet shows.
   - The sheet shows once, over the first saved trip's page.
 - [ ] **Tests.**

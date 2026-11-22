@@ -80,6 +80,11 @@ fun TripPageRoute(
             )
         }
     val vm: TripPageViewModel = viewModel(key = "trip:${route.tripId}", factory = factory)
+    val reminders =
+        remember(graph, session) {
+            net.chronoflow.app.reminders
+                .SessionRemindersDependencies(graph, checkNotNull(session))
+        }
     TrackTripPageSheet(vm, route, onRouteChange)
     Box(modifier.fillMaxSize().testTag("route.tripPage")) {
         TripPage(
@@ -90,6 +95,8 @@ fun TripPageRoute(
             onToday = onToday,
             onWizard = onWizard,
         )
+        net.chronoflow.app.reminders
+            .FirstTripRemindersHost(reminders, graph.dispatchers.main, route.tripId)
     }
 }
 
