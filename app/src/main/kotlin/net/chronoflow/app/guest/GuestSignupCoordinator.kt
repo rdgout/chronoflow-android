@@ -86,10 +86,8 @@ class GuestSignupCoordinator(
 
     fun dismiss() {
         val shown = presentation.value ?: return
-        if (shown.model.form.busy) return
+        if (request != null || shown.model.form.busy) return
         val needsReview = shown.model.guestState.value == GuestSignupState.Review
-        request?.cancel()
-        request = null
         shown.model.cancel()
         mutablePresentation.value = null
         shown.host.signUpDismissed(needsReview, onGuestRoute())
@@ -97,7 +95,7 @@ class GuestSignupCoordinator(
 
     fun review() {
         val shown = presentation.value ?: return
-        if (shown.model.form.busy) return
+        if (request != null || shown.model.form.busy) return
         shown.host.reviewExpired()
         dismiss()
     }

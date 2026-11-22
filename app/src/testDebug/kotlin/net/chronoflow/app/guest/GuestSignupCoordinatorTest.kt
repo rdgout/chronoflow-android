@@ -162,6 +162,50 @@ class GuestSignupCoordinatorTest {
             }
         }
 
+    @Test fun dismissalDuringSignInDoesNotCancelThePersistedHandoff() =
+        runTest(timeout = 60.seconds) {
+            signInCompletesWhile { it.dismiss() }
+        }
+
+    @Test fun reviewDuringSignInDoesNotExpireOrCancelThePersistedHandoff() =
+        runTest(timeout = 60.seconds) {
+            signInCompletesWhile { it.review() }
+        }
+
+    private suspend fun kotlinx.coroutines.test.TestScope.signInCompletesWhile(
+        action: (GuestSignupCoordinator) -> Unit,
+    ) {
+        val fixture = GuestAuthFixture(this)
+        val coordinator = coordinator(fixture, GuestSignupState.Review)
+        val flush = CompletableDeferred<Unit>()
+        val host =
+            Host(onPrepareSignIn = {
+                val draft = fixture.guest.start()
+                fixture.guest.persist(draft.copy(state = draft.state.copy(signingIn = true)))
+                flush.await()
+            })
+        try {
+            coordinator.request(host)
+            val shown = checkNotNull(coordinator.presentation.value)
+            coordinator.signInInstead()
+            runCurrent()
+            assertTrue(checkNotNull(fixture.guest.recover()).state.signingIn == true)
+            assertFalse(shown.model.form.busy)
+            action(coordinator)
+            assertSame(shown, coordinator.presentation.value)
+            assertTrue(host.dismissals.isEmpty())
+            assertEquals(0, host.reviews)
+            flush.complete(Unit)
+            runCurrent()
+            assertEquals(Route.SignIn, fixture.navigator.state.value.route)
+            assertNull(coordinator.presentation.value)
+            assertEquals(listOf(true to false), host.dismissals)
+        } finally {
+            coordinator.clear()
+            fixture.close()
+        }
+    }
+
     @Test fun submitInReviewSendsNothing() =
         runTest(timeout = 60.seconds) {
             val fixture = GuestAuthFixture(this)
@@ -332,6 +376,7 @@ class GuestSignupCoordinatorTest {
 
     private class Host(
         private val order: MutableList<String> = mutableListOf(),
+        private val onPrepareSignIn: suspend () -> Unit = {},
     ) : GuestSignUpHost {
         val dismissals = mutableListOf<Pair<Boolean, Boolean>>()
         var reviews = 0
@@ -346,6 +391,7 @@ class GuestSignupCoordinatorTest {
 
         override suspend fun prepareSignIn() {
             order.add("prepareSignIn")
+            onPrepareSignIn()
         }
 
         override fun reviewExpired() {
