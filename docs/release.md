@@ -203,16 +203,18 @@ All three runners clear the native perf package exactly once after successful pe
 
 ## Minified smoke
 
-Host command: `make release-smoke` (device lock, one device). **Pending host execution (R17)**; no runtime R8 result or duration is claimed.
+Host command: `make release-smoke` (device lock, one device). The first host run on pixel/API 36, minified benchmarkRelease, failed the sheet case; the corrected test awaits a host rerun. Source: `t13-smoke.log` in the Phase 13 host scratchpad and `benchmark/build/outputs/androidTest-results/connected/benchmarkRelease/TEST-pixel(AVD) - 16.xml`.
 
-The class signs in through the real mock-backed form once in BeforeClass, then starts a fresh process per method while preserving the account/session file. This makes the once-per-process wizard hook deterministic without another sign-in journey. The sheet case waits for an app window event from the font-scale recreation before checking `step.sheet` and `trip.page`, then restores the old setting in finally. Every method compares pids and checks the crash buffer. The first-trip reminder guard does not wait and runs only after the wizard save here. All queries use structural tags; no sleeps or copy queries.
+The class signs in through the real mock-backed form once in BeforeClass, then starts a fresh process per method while preserving the account/session file. This makes the once-per-process wizard hook deterministic without another sign-in journey. The sheet case waits for an app window event from the font-scale recreation, checks the restored `step.sheet` and unchanged pid, dismisses the sheet, waits for it to disappear, then checks `trip.page` and the pid again. It restores the old setting in finally. Every method compares pids and checks the crash buffer. The first-trip reminder guard does not wait and runs only after the wizard save here. All queries use structural tags; no sleeps or copy queries.
 
 | Host measurement | Budget | Result |
 |---|---:|---|
-| signInOnce setup | ≤ 20 s | pending host |
-| todayTripsAndSettingsOpen | < 10 s | pending host |
-| tripSheetSurvivesRecreation | < 10 s | pending host |
-| wizardSavesToTripPage | < 10 s | pending host |
+| signInOnce setup | ≤ 20 s | Not separately timed; `make release-smoke` host rerun pending |
+| todayTripsAndSettingsOpen | < 10 s | First host run PASS, 3.691 s; rerun `make release-smoke` |
+| tripSheetSurvivesRecreation | < 10 s | First host run FAIL, 11.682 s; corrected `make release-smoke` rerun pending |
+| wizardSavesToTripPage | < 10 s | First host run PASS, 6.117 s; rerun `make release-smoke` |
+
+Review correction belongs to 0feca5ee. `TripPageSheets` uses `CfModalBottomSheet`, whose Material modal owns a separate window. The old test found the restored sheet but queried the hidden activity window next; it failed before reaching its pid assertion. No crash was recorded, and that failure alone did not prove the underlying page was lost. The shared test-only `verifyRecreatedSheet` flow now asserts the process both while the sheet is visible and after revealing the page. Its JVM active-window fixture fails with the old ordering, then all three cases pass with the fix (0.013 s suite); missing-page and process-death controls still fail as required. `:benchmark:assembleBenchmarkRelease` plus root Spotless passes in 59.38 s command wall. No product source, timeout or budget changes; the actual device proof remains the rerun above.
 
 The runner refuses physical-device clearing without `PERF_CLEAR=1`; shared in-test clearing independently requires an emulator or the runner's explicit `cf.perfClear=1` argument. It uses functional preparation, timeout_msec=60000 and no benchmark rule/error suppression. It is separate from `make check`.
 

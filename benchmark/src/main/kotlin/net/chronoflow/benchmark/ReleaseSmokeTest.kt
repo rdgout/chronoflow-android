@@ -5,7 +5,9 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
+import androidx.test.uiautomator.Until
 import net.chronoflow.core.testing.tiers.Perf
+import net.chronoflow.core.testing.verifyRecreatedSheet
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -65,9 +67,15 @@ class ReleaseSmokeTest {
                 },
                 5000,
             )
-            device.requireTag("step.sheet")
-            device.requireTag("trip.page")
-            assertEquals(before, pid())
+            verifyRecreatedSheet(
+                requireSheet = { device.requireTag("step.sheet") },
+                requireSameProcess = { assertEquals(before, pid()) },
+                dismissSheet = { device.pressBack() },
+                requireSheetGone = {
+                    check(device.wait(Until.gone(By.res("step.sheet")), 3000)) { "restored step.sheet stayed open" }
+                },
+                requireUnderlyingPage = { device.requireTag("trip.page") },
+            )
         } finally {
             if (old == "null") {
                 device.executeShellCommand("settings delete system font_scale")
