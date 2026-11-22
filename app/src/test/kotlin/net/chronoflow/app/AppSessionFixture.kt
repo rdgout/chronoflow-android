@@ -73,7 +73,26 @@ internal class AppSessionFixture private constructor(
             verification = {},
             dispatcher = io,
         )
-    val graphs: SessionGraphs = SessionGraphs(controller, accounts, model, sync, { source }, scope)
+    val reminderEvents = mutableListOf<String>()
+    var attachReminders: suspend () -> Unit = {}
+    val graphs: SessionGraphs =
+        SessionGraphs(
+            controller,
+            accounts,
+            model,
+            sync,
+            { source },
+            scope,
+            io = io,
+            attachReminders = {
+                reminderEvents += "attach"
+                attachReminders()
+            },
+            detachReminders = { reminderEvents += "detach" },
+            clearReminderTaps = { reminderEvents += "taps" },
+            ensureRefill = { reminderEvents += "refill" },
+            rescheduleReminders = { reminderEvents += "reschedule" },
+        )
 
     init {
         controller.attach(stopSync = sync::stop, requestSync = { sync.requestStart(controller, it) })

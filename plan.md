@@ -3487,7 +3487,7 @@ Acceptance evidence and the pending host checks are recorded in [`docs/settings-
 **Delivers.** Schedules the engine's selection with AlarmManager alarms (exact on API 29–30, inexact on 31+; A13) recorded in the account database, and posts notifications on the reminders channel with a 20 min timeout. A 12 h refill and expedited rescheduling on boot, time, zone, locale and package changes keep the window full. Taps route to the trip page and block after an account check, the sign-out teardown cancels everything, and the permission state model is exposed to the UI.
 
 **Tasks**
-- [ ] **Scheduler** (`core/data/…/reminders/`).
+- [x] **Scheduler** (`core/data/…/reminders/`).
   - `AlarmManager.setExactAndAllowWhileIdle(RTC_WAKEUP, …)` on API 29–30 and `setAndAllowWhileIdle(RTC_WAKEUP, …)` on API 31+ (A13) for each selected reminder, with a `scheduled_reminder` row and a request code that stays stable per identifier.
   - Replace-all scheduling runs serialized after each full sync, check-off, undo and settings change, never on the main thread.
 - [x] **Delivery.**

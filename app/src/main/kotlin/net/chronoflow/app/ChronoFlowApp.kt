@@ -9,7 +9,9 @@ import net.chronoflow.feature.launch.LaunchTrace
 
 open class ChronoFlowApp :
     Application(),
-    Configuration.Provider {
+    Configuration.Provider,
+    net.chronoflow.core.data.reminders.ReminderHost {
+    override val reminderRuntime get() = graph.reminderRuntime
     override val workManagerConfiguration: Configuration
         get() =
             Configuration
