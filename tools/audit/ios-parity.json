@@ -1,0 +1,930 @@
+{
+  "schema": 1,
+  "entries": [
+    {
+      "ios": "01-launch-t00400ms.png",
+      "seeds": {},
+      "extras": {
+        "cf.settings.language": "nl",
+        "cf.settings.theme": "light"
+      },
+      "profile": "launch",
+      "wait": "welcome.plan",
+      "frames": [
+        400
+      ],
+      "skip": null,
+      "fresh": true
+    },
+    {
+      "ios": "01-launch-t01000ms.png",
+      "seeds": {},
+      "extras": {
+        "cf.settings.language": "nl",
+        "cf.settings.theme": "light"
+      },
+      "profile": "launch",
+      "wait": "welcome.plan",
+      "frames": [
+        1000
+      ],
+      "skip": null,
+      "fresh": true
+    },
+    {
+      "ios": "01-launch-t01800ms.png",
+      "seeds": {},
+      "extras": {
+        "cf.settings.language": "nl",
+        "cf.settings.theme": "light"
+      },
+      "profile": "launch",
+      "wait": "welcome.plan",
+      "frames": [
+        1800
+      ],
+      "skip": null,
+      "fresh": true
+    },
+    {
+      "ios": "01-launch-t02800ms.png",
+      "seeds": {},
+      "extras": {
+        "cf.settings.language": "nl",
+        "cf.settings.theme": "light"
+      },
+      "profile": "launch",
+      "wait": "welcome.plan",
+      "frames": [
+        2800
+      ],
+      "skip": null,
+      "fresh": true
+    },
+    {
+      "ios": "01-launch-t04000ms.png",
+      "seeds": {},
+      "extras": {
+        "cf.settings.language": "nl",
+        "cf.settings.theme": "light"
+      },
+      "profile": "launch",
+      "wait": "welcome.plan",
+      "frames": [
+        4000
+      ],
+      "skip": null,
+      "fresh": true
+    },
+    {
+      "ios": "01-launch-t06000ms.png",
+      "seeds": {},
+      "extras": {
+        "cf.settings.language": "nl",
+        "cf.settings.theme": "light"
+      },
+      "profile": "launch",
+      "wait": "welcome.plan",
+      "frames": [
+        6000
+      ],
+      "skip": null,
+      "fresh": true
+    },
+    {
+      "ios": "02-today-en-3s.png",
+      "seeds": {
+        "CF_AUTH_TEST_SIGNED_IN": "demo",
+        "CF_AUTH_TEST_WALKTHROUGH_SEEN": "1"
+      },
+      "extras": {
+        "cf.settings.language": "en",
+        "cf.settings.theme": "light"
+      },
+      "profile": "screen",
+      "wait": "today.screen",
+      "frames": null,
+      "skip": null
+    },
+    {
+      "ios": "02-today-en-7s.png",
+      "seeds": {
+        "CF_AUTH_TEST_SIGNED_IN": "demo",
+        "CF_AUTH_TEST_WALKTHROUGH_SEEN": "1"
+      },
+      "extras": {
+        "cf.settings.language": "en",
+        "cf.settings.theme": "light"
+      },
+      "profile": "screen",
+      "wait": "today.screen",
+      "frames": null,
+      "skip": null
+    },
+    {
+      "ios": "03-my-trips.png",
+      "seeds": {
+        "CF_AUTH_TEST_SIGNED_IN": "demo",
+        "CF_AUTH_TEST_WALKTHROUGH_SEEN": "1",
+        "CF_PLAN_TEST_ROUTE": "trips"
+      },
+      "extras": {
+        "cf.settings.language": "en",
+        "cf.settings.theme": "light"
+      },
+      "profile": "screen",
+      "wait": "trips.screen",
+      "frames": null,
+      "skip": null
+    },
+    {
+      "ios": "04-trip-timeline-top.png",
+      "seeds": {
+        "CF_AUTH_TEST_SIGNED_IN": "demo",
+        "CF_AUTH_TEST_WALKTHROUGH_SEEN": "1",
+        "CF_PLAN_TEST_ROUTE": "trip:0199a3c0-0000-7000-8000-000000000001",
+        "CF_PLAN_TEST_FREEZE_CLOCK": "1"
+      },
+      "extras": {
+        "cf.settings.language": "en",
+        "cf.settings.theme": "light"
+      },
+      "profile": "screen",
+      "wait": "trip.page",
+      "frames": null,
+      "skip": null
+    },
+    {
+      "ios": "05-trip-list-mode.png",
+      "seeds": {
+        "CF_AUTH_TEST_SIGNED_IN": "demo",
+        "CF_AUTH_TEST_WALKTHROUGH_SEEN": "1",
+        "CF_PLAN_TEST_ROUTE": "trip:0199a3c0-0000-7000-8000-000000000001:list",
+        "CF_PLAN_TEST_FREEZE_CLOCK": "1"
+      },
+      "extras": {
+        "cf.settings.language": "en",
+        "cf.settings.theme": "light"
+      },
+      "profile": "screen",
+      "wait": "trip.page",
+      "frames": null,
+      "skip": null
+    },
+    {
+      "ios": "06-trip-summary.png",
+      "seeds": {
+        "CF_AUTH_TEST_SIGNED_IN": "demo",
+        "CF_AUTH_TEST_WALKTHROUGH_SEEN": "1",
+        "CF_PLAN_TEST_ROUTE": "trip:0199a3c0-0000-7000-8000-000000000001",
+        "CF_PLAN_TEST_FREEZE_CLOCK": "1",
+        "CF_PLAN_TEST_POSITION": "summary"
+      },
+      "extras": {
+        "cf.settings.language": "en",
+        "cf.settings.theme": "light"
+      },
+      "profile": "screen",
+      "wait": "trip.page",
+      "frames": null,
+      "skip": null
+    },
+    {
+      "ios": "07-step-sheet.png",
+      "seeds": {
+        "CF_AUTH_TEST_SIGNED_IN": "demo",
+        "CF_AUTH_TEST_WALKTHROUGH_SEEN": "1",
+        "CF_PLAN_TEST_ROUTE": "trip:0199a3c0-0000-7000-8000-000000000001",
+        "CF_PLAN_TEST_FREEZE_CLOCK": "1",
+        "CF_PLAN_TEST_SHEET": "step:sleep-sleep-29865450"
+      },
+      "extras": {
+        "cf.settings.language": "en",
+        "cf.settings.theme": "light"
+      },
+      "profile": "screen",
+      "wait": "step.sheet",
+      "frames": null,
+      "skip": null
+    },
+    {
+      "ios": "08-legend-sheet.png",
+      "seeds": {
+        "CF_AUTH_TEST_SIGNED_IN": "demo",
+        "CF_AUTH_TEST_WALKTHROUGH_SEEN": "1",
+        "CF_PLAN_TEST_ROUTE": "trip:0199a3c0-0000-7000-8000-000000000001",
+        "CF_PLAN_TEST_FREEZE_CLOCK": "1",
+        "CF_PLAN_TEST_SHEET": "legend"
+      },
+      "extras": {
+        "cf.settings.language": "en",
+        "cf.settings.theme": "light"
+      },
+      "profile": "screen",
+      "wait": "legend.sheet",
+      "frames": null,
+      "skip": null
+    },
+    {
+      "ios": "09-block-route-trip2-5s.png",
+      "seeds": {
+        "CF_AUTH_TEST_SIGNED_IN": "demo",
+        "CF_AUTH_TEST_WALKTHROUGH_SEEN": "1",
+        "CF_PLAN_TEST_ROUTE": "trip:0199a3c0-0000-7000-8000-000000000002",
+        "CF_PLAN_TEST_FREEZE_CLOCK": "1"
+      },
+      "extras": {
+        "cf.settings.language": "en",
+        "cf.settings.theme": "light"
+      },
+      "profile": "screen",
+      "wait": "trip.page",
+      "frames": null,
+      "skip": null
+    },
+    {
+      "ios": "10-settings-home.png",
+      "seeds": {
+        "CF_AUTH_TEST_SIGNED_IN": "demo",
+        "CF_AUTH_TEST_WALKTHROUGH_SEEN": "1",
+        "CF_SETTINGS_ROUTE": "none"
+      },
+      "extras": {
+        "cf.settings.language": "en",
+        "cf.settings.theme": "light"
+      },
+      "profile": "screen",
+      "wait": "settings.screen",
+      "frames": null,
+      "skip": null
+    },
+    {
+      "ios": "11-settings-bodyclock.png",
+      "seeds": {
+        "CF_AUTH_TEST_SIGNED_IN": "demo",
+        "CF_AUTH_TEST_WALKTHROUGH_SEEN": "1",
+        "CF_SETTINGS_ROUTE": "bodyClock"
+      },
+      "extras": {
+        "cf.settings.language": "en",
+        "cf.settings.theme": "light"
+      },
+      "profile": "screen",
+      "wait": "settings.bodyClock.screen",
+      "frames": null,
+      "skip": null
+    },
+    {
+      "ios": "12-settings-preferences.png",
+      "seeds": {
+        "CF_AUTH_TEST_SIGNED_IN": "demo",
+        "CF_AUTH_TEST_WALKTHROUGH_SEEN": "1",
+        "CF_SETTINGS_ROUTE": "preferences"
+      },
+      "extras": {
+        "cf.settings.language": "en",
+        "cf.settings.theme": "light"
+      },
+      "profile": "screen",
+      "wait": "settings.preferences.screen",
+      "frames": null,
+      "skip": null
+    },
+    {
+      "ios": "13-sign-in.png",
+      "seeds": {
+        "CF_AUTH_TEST_AUDIT_SCREEN": "sign-in"
+      },
+      "extras": {
+        "cf.settings.language": "en",
+        "cf.settings.theme": "light"
+      },
+      "profile": "screen",
+      "wait": "sign-in.submit",
+      "frames": null,
+      "skip": null
+    },
+    {
+      "ios": "14-sign-up.png",
+      "seeds": {
+        "CF_AUTH_TEST_AUDIT_SCREEN": "sign-up"
+      },
+      "extras": {
+        "cf.settings.language": "en",
+        "cf.settings.theme": "light"
+      },
+      "profile": "screen",
+      "wait": "sign-up.submit",
+      "frames": null,
+      "skip": null
+    },
+    {
+      "ios": "15-welcome-en.png",
+      "seeds": {},
+      "extras": {
+        "cf.settings.language": "en",
+        "cf.settings.theme": "light"
+      },
+      "profile": "launch",
+      "wait": "welcome.plan",
+      "frames": null,
+      "skip": null,
+      "settleUptimeSeconds": 3.5
+    },
+    {
+      "ios": "16-wizard-from.png",
+      "seeds": {
+        "CF_AUTH_TEST_SIGNED_IN": "demo",
+        "CF_AUTH_TEST_WALKTHROUGH_SEEN": "1",
+        "CF_WIZARD_BOARD_CAPTURE": "WizardWhereEmpty",
+        "CF_WIZARD_AUTO_OPEN": "1"
+      },
+      "extras": {
+        "cf.settings.language": "en",
+        "cf.settings.theme": "light"
+      },
+      "profile": "screen",
+      "wait": "wizard.window",
+      "frames": null,
+      "skip": null
+    },
+    {
+      "ios": "17-wizard-outbound.png",
+      "seeds": {
+        "CF_AUTH_TEST_SIGNED_IN": "demo",
+        "CF_AUTH_TEST_WALKTHROUGH_SEEN": "1",
+        "CF_WIZARD_BOARD_CAPTURE": "WizardOutboundThree",
+        "CF_WIZARD_AUTO_OPEN": "1"
+      },
+      "extras": {
+        "cf.settings.language": "en",
+        "cf.settings.theme": "light"
+      },
+      "profile": "screen",
+      "wait": "wizard.window",
+      "frames": null,
+      "skip": null,
+      "note": "Existing three-flight seed; platform-native split date/time controls differ from the historical combined iOS controls."
+    },
+    {
+      "ios": "18-wizard-check.png",
+      "seeds": {
+        "CF_AUTH_TEST_SIGNED_IN": "demo",
+        "CF_AUTH_TEST_WALKTHROUGH_SEEN": "1",
+        "CF_WIZARD_BOARD_CAPTURE": "WizardChecking",
+        "CF_WIZARD_AUTO_OPEN": "1"
+      },
+      "extras": {
+        "cf.settings.language": "en",
+        "cf.settings.theme": "light"
+      },
+      "profile": "screen",
+      "wait": "wizard.window",
+      "frames": null,
+      "skip": null
+    },
+    {
+      "ios": "19-wizard-qshift.png",
+      "seeds": {
+        "CF_AUTH_TEST_SIGNED_IN": "demo",
+        "CF_AUTH_TEST_WALKTHROUGH_SEEN": "1",
+        "CF_WIZARD_BOARD_CAPTURE": "WizardQShift",
+        "CF_WIZARD_AUTO_OPEN": "1"
+      },
+      "extras": {
+        "cf.settings.language": "en",
+        "cf.settings.theme": "light"
+      },
+      "profile": "screen",
+      "wait": "wizard.window",
+      "frames": null,
+      "skip": null
+    },
+    {
+      "ios": "20-trip-timeline-AppleInterfaceStyle-ignored-light.png",
+      "seeds": {
+        "CF_AUTH_TEST_SIGNED_IN": "demo",
+        "CF_AUTH_TEST_WALKTHROUGH_SEEN": "1",
+        "CF_PLAN_TEST_ROUTE": "trip:0199a3c0-0000-7000-8000-000000000001",
+        "CF_PLAN_TEST_FREEZE_CLOCK": "1"
+      },
+      "extras": {
+        "cf.settings.language": "en",
+        "cf.settings.theme": "light"
+      },
+      "profile": "screen",
+      "wait": "trip.page",
+      "frames": null,
+      "skip": null
+    },
+    {
+      "ios": "21-today-AppleInterfaceStyle-ignored-light.png",
+      "seeds": {
+        "CF_AUTH_TEST_SIGNED_IN": "demo",
+        "CF_AUTH_TEST_WALKTHROUGH_SEEN": "1"
+      },
+      "extras": {
+        "cf.settings.language": "en",
+        "cf.settings.theme": "light"
+      },
+      "profile": "screen",
+      "wait": "today.screen",
+      "frames": null,
+      "skip": null
+    },
+    {
+      "ios": "22-today-nl.png",
+      "seeds": {
+        "CF_AUTH_TEST_SIGNED_IN": "demo",
+        "CF_AUTH_TEST_WALKTHROUGH_SEEN": "1"
+      },
+      "extras": {
+        "cf.settings.language": "nl",
+        "cf.settings.theme": "light"
+      },
+      "profile": "screen",
+      "wait": "today.screen",
+      "frames": null,
+      "skip": null
+    },
+    {
+      "ios": "23-walkthrough.png",
+      "seeds": {
+        "CF_AUTH_TEST_SIGNED_IN": "demo",
+        "CF_AUTH_TEST_WALKTHROUGH_SEEN": "0"
+      },
+      "extras": {
+        "cf.settings.language": "en",
+        "cf.settings.theme": "light"
+      },
+      "profile": "screen",
+      "wait": "walkthrough.screen",
+      "frames": null,
+      "skip": null
+    },
+    {
+      "ios": "24-large60-diagnostic-still-splash-1.5s.png",
+      "seeds": {
+        "CF_AUTH_TEST_SIGNED_IN": "demo",
+        "CF_AUTH_TEST_WALKTHROUGH_SEEN": "1"
+      },
+      "extras": {
+        "cf.settings.language": "en",
+        "cf.settings.theme": "light",
+        "cf.trip-page": "large60"
+      },
+      "profile": "screen",
+      "wait": "trip.timeline.ready",
+      "frames": null,
+      "skip": null,
+      "note": "Diagnostic reference captured a historical iOS splash/data issue; Android captures the existing fixture after readiness."
+    },
+    {
+      "ios": "24-large60-diagnostic-still-splash-3s.png",
+      "seeds": {
+        "CF_AUTH_TEST_SIGNED_IN": "demo",
+        "CF_AUTH_TEST_WALKTHROUGH_SEEN": "1"
+      },
+      "extras": {
+        "cf.settings.language": "en",
+        "cf.settings.theme": "light",
+        "cf.trip-page": "large60"
+      },
+      "profile": "screen",
+      "wait": "trip.timeline.ready",
+      "frames": null,
+      "skip": null,
+      "note": "Diagnostic reference captured a historical iOS splash/data issue; Android captures the existing fixture after readiness."
+    },
+    {
+      "ios": "24-large60-diagnostic-still-splash-6s.png",
+      "seeds": {
+        "CF_AUTH_TEST_SIGNED_IN": "demo",
+        "CF_AUTH_TEST_WALKTHROUGH_SEEN": "1"
+      },
+      "extras": {
+        "cf.settings.language": "en",
+        "cf.settings.theme": "light",
+        "cf.trip-page": "large60"
+      },
+      "profile": "screen",
+      "wait": "trip.timeline.ready",
+      "frames": null,
+      "skip": null,
+      "note": "Diagnostic reference captured a historical iOS splash/data issue; Android captures the existing fixture after readiness."
+    },
+    {
+      "ios": "24b-large60-diagnostic-12s.png",
+      "seeds": {
+        "CF_AUTH_TEST_SIGNED_IN": "demo",
+        "CF_AUTH_TEST_WALKTHROUGH_SEEN": "1"
+      },
+      "extras": {
+        "cf.settings.language": "en",
+        "cf.settings.theme": "light",
+        "cf.trip-page": "large60"
+      },
+      "profile": "screen",
+      "wait": "trip.timeline.ready",
+      "frames": null,
+      "skip": null,
+      "note": "Diagnostic reference captured a historical iOS splash/data issue; Android captures the existing fixture after readiness."
+    },
+    {
+      "ios": "24b-large60-diagnostic-still-splash-4s.png",
+      "seeds": {
+        "CF_AUTH_TEST_SIGNED_IN": "demo",
+        "CF_AUTH_TEST_WALKTHROUGH_SEEN": "1"
+      },
+      "extras": {
+        "cf.settings.language": "en",
+        "cf.settings.theme": "light",
+        "cf.trip-page": "large60"
+      },
+      "profile": "screen",
+      "wait": "trip.timeline.ready",
+      "frames": null,
+      "skip": null,
+      "note": "Diagnostic reference captured a historical iOS splash/data issue; Android captures the existing fixture after readiness."
+    },
+    {
+      "ios": "25-S3-diagnostic-AMS-SYD.png",
+      "seeds": {
+        "CF_AUTH_TEST_SIGNED_IN": "demo",
+        "CF_AUTH_TEST_WALKTHROUGH_SEEN": "1"
+      },
+      "extras": {
+        "cf.settings.language": "en",
+        "cf.settings.theme": "light",
+        "cf.trip-page": "S3"
+      },
+      "profile": "screen",
+      "wait": "trip.timeline.ready",
+      "frames": null,
+      "skip": null,
+      "note": "Diagnostic reference captured a historical iOS splash/data issue; Android captures the existing fixture after readiness."
+    },
+    {
+      "ios": "26-block-route-trip2-no-sheet-9s.png",
+      "seeds": {
+        "CF_AUTH_TEST_SIGNED_IN": "demo",
+        "CF_AUTH_TEST_WALKTHROUGH_SEEN": "1",
+        "CF_PLAN_TEST_ROUTE": "trip:0199a3c0-0000-7000-8000-000000000002",
+        "CF_PLAN_TEST_FREEZE_CLOCK": "1"
+      },
+      "extras": {
+        "cf.settings.language": "en",
+        "cf.settings.theme": "light"
+      },
+      "profile": "screen",
+      "wait": "trip.page",
+      "frames": null,
+      "skip": null
+    },
+    {
+      "ios": "27-wizard-return.png",
+      "seeds": {
+        "CF_AUTH_TEST_SIGNED_IN": "demo",
+        "CF_AUTH_TEST_WALKTHROUGH_SEEN": "1",
+        "CF_WIZARD_BOARD_CAPTURE": "WizardReturn",
+        "CF_WIZARD_AUTO_OPEN": "1"
+      },
+      "extras": {
+        "cf.settings.language": "en",
+        "cf.settings.theme": "light"
+      },
+      "profile": "screen",
+      "wait": "wizard.window",
+      "frames": null,
+      "skip": null
+    },
+    {
+      "ios": "28-wizard-savejourney-seed-shows-return-step.png",
+      "seeds": {
+        "CF_AUTH_TEST_SIGNED_IN": "demo",
+        "CF_AUTH_TEST_WALKTHROUGH_SEEN": "1",
+        "CF_WIZARD_BOARD_CAPTURE": "WizardSaveJourney",
+        "CF_WIZARD_AUTO_OPEN": "1"
+      },
+      "extras": {
+        "cf.settings.language": "en",
+        "cf.settings.theme": "light"
+      },
+      "profile": "screen",
+      "wait": "wizard.window",
+      "frames": null,
+      "skip": null
+    },
+    {
+      "ios": "29-trip-actions.png",
+      "seeds": {
+        "CF_AUTH_TEST_SIGNED_IN": "demo",
+        "CF_AUTH_TEST_WALKTHROUGH_SEEN": "1",
+        "CF_PLAN_TEST_ROUTE": "trip:0199a3c0-0000-7000-8000-000000000001",
+        "CF_PLAN_TEST_FREEZE_CLOCK": "1",
+        "CF_WIZARD_BOARD_CAPTURE": "TripActions"
+      },
+      "extras": {
+        "cf.settings.language": "en",
+        "cf.settings.theme": "light"
+      },
+      "profile": "screen",
+      "wait": "trip.actions.cancel",
+      "frames": null,
+      "skip": null
+    },
+    {
+      "ios": "30-trip-timeline-dark.png",
+      "seeds": {
+        "CF_AUTH_TEST_SIGNED_IN": "demo",
+        "CF_AUTH_TEST_WALKTHROUGH_SEEN": "1",
+        "CF_PLAN_TEST_ROUTE": "trip:0199a3c0-0000-7000-8000-000000000001",
+        "CF_PLAN_TEST_FREEZE_CLOCK": "1"
+      },
+      "extras": {
+        "cf.settings.language": "en",
+        "cf.settings.theme": "dark"
+      },
+      "profile": "screen",
+      "wait": "trip.page",
+      "frames": null,
+      "skip": null
+    },
+    {
+      "ios": "31-trip-list-dark.png",
+      "seeds": {
+        "CF_AUTH_TEST_SIGNED_IN": "demo",
+        "CF_AUTH_TEST_WALKTHROUGH_SEEN": "1",
+        "CF_PLAN_TEST_ROUTE": "trip:0199a3c0-0000-7000-8000-000000000001:list",
+        "CF_PLAN_TEST_FREEZE_CLOCK": "1"
+      },
+      "extras": {
+        "cf.settings.language": "en",
+        "cf.settings.theme": "dark"
+      },
+      "profile": "screen",
+      "wait": "trip.page",
+      "frames": null,
+      "skip": null
+    },
+    {
+      "ios": "32-today-dark.png",
+      "seeds": {
+        "CF_AUTH_TEST_SIGNED_IN": "demo",
+        "CF_AUTH_TEST_WALKTHROUGH_SEEN": "1"
+      },
+      "extras": {
+        "cf.settings.language": "en",
+        "cf.settings.theme": "dark"
+      },
+      "profile": "screen",
+      "wait": "today.screen",
+      "frames": null,
+      "skip": null
+    },
+    {
+      "ios": "33-trips-dark.png",
+      "seeds": {
+        "CF_AUTH_TEST_SIGNED_IN": "demo",
+        "CF_AUTH_TEST_WALKTHROUGH_SEEN": "1",
+        "CF_PLAN_TEST_ROUTE": "trips"
+      },
+      "extras": {
+        "cf.settings.language": "en",
+        "cf.settings.theme": "dark"
+      },
+      "profile": "screen",
+      "wait": "trips.screen",
+      "frames": null,
+      "skip": null
+    },
+    {
+      "ios": "34-trip-timeline-nl.png",
+      "seeds": {
+        "CF_AUTH_TEST_SIGNED_IN": "demo",
+        "CF_AUTH_TEST_WALKTHROUGH_SEEN": "1",
+        "CF_PLAN_TEST_ROUTE": "trip:0199a3c0-0000-7000-8000-000000000001",
+        "CF_PLAN_TEST_FREEZE_CLOCK": "1"
+      },
+      "extras": {
+        "cf.settings.language": "nl",
+        "cf.settings.theme": "light"
+      },
+      "profile": "screen",
+      "wait": "trip.page",
+      "frames": null,
+      "skip": null
+    },
+    {
+      "ios": "35-settings-reminders.png",
+      "seeds": {
+        "CF_AUTH_TEST_SIGNED_IN": "demo",
+        "CF_AUTH_TEST_WALKTHROUGH_SEEN": "1",
+        "CF_SETTINGS_ROUTE": "reminders"
+      },
+      "extras": {
+        "cf.settings.language": "en",
+        "cf.settings.theme": "light"
+      },
+      "profile": "screen",
+      "wait": "reminders.screen",
+      "frames": null,
+      "skip": null
+    },
+    {
+      "ios": "36-settings-plan.png",
+      "seeds": {
+        "CF_AUTH_TEST_SIGNED_IN": "demo",
+        "CF_AUTH_TEST_WALKTHROUGH_SEEN": "1",
+        "CF_SETTINGS_ROUTE": "plan"
+      },
+      "extras": {
+        "cf.settings.language": "en",
+        "cf.settings.theme": "light"
+      },
+      "profile": "screen",
+      "wait": "settings.plan.screen",
+      "frames": null,
+      "skip": null
+    },
+    {
+      "ios": "40-signedin-launch-motion-0.5s.png",
+      "seeds": {
+        "CF_AUTH_TEST_SIGNED_IN": "demo",
+        "CF_AUTH_TEST_WALKTHROUGH_SEEN": "1"
+      },
+      "extras": {
+        "cf.settings.language": "en",
+        "cf.settings.theme": "light"
+      },
+      "profile": "launch",
+      "wait": "today.screen",
+      "frames": [
+        500
+      ],
+      "skip": null
+    },
+    {
+      "ios": "40-signedin-launch-motion-1.5s.png",
+      "seeds": {
+        "CF_AUTH_TEST_SIGNED_IN": "demo",
+        "CF_AUTH_TEST_WALKTHROUGH_SEEN": "1"
+      },
+      "extras": {
+        "cf.settings.language": "en",
+        "cf.settings.theme": "light"
+      },
+      "profile": "launch",
+      "wait": "today.screen",
+      "frames": [
+        1500
+      ],
+      "skip": null
+    },
+    {
+      "ios": "40-signedin-launch-motion-1s.png",
+      "seeds": {
+        "CF_AUTH_TEST_SIGNED_IN": "demo",
+        "CF_AUTH_TEST_WALKTHROUGH_SEEN": "1"
+      },
+      "extras": {
+        "cf.settings.language": "en",
+        "cf.settings.theme": "light"
+      },
+      "profile": "launch",
+      "wait": "today.screen",
+      "frames": [
+        1000
+      ],
+      "skip": null
+    },
+    {
+      "ios": "40-signedin-launch-motion-2.5s.png",
+      "seeds": {
+        "CF_AUTH_TEST_SIGNED_IN": "demo",
+        "CF_AUTH_TEST_WALKTHROUGH_SEEN": "1"
+      },
+      "extras": {
+        "cf.settings.language": "en",
+        "cf.settings.theme": "light"
+      },
+      "profile": "launch",
+      "wait": "today.screen",
+      "frames": [
+        2500
+      ],
+      "skip": null
+    },
+    {
+      "ios": "40-signedin-launch-motion-2s.png",
+      "seeds": {
+        "CF_AUTH_TEST_SIGNED_IN": "demo",
+        "CF_AUTH_TEST_WALKTHROUGH_SEEN": "1"
+      },
+      "extras": {
+        "cf.settings.language": "en",
+        "cf.settings.theme": "light"
+      },
+      "profile": "launch",
+      "wait": "today.screen",
+      "frames": [
+        2000
+      ],
+      "skip": null
+    },
+    {
+      "ios": "40-signedin-launch-motion-3.5s.png",
+      "seeds": {
+        "CF_AUTH_TEST_SIGNED_IN": "demo",
+        "CF_AUTH_TEST_WALKTHROUGH_SEEN": "1"
+      },
+      "extras": {
+        "cf.settings.language": "en",
+        "cf.settings.theme": "light"
+      },
+      "profile": "launch",
+      "wait": "today.screen",
+      "frames": [
+        3500
+      ],
+      "skip": null
+    },
+    {
+      "ios": "40-signedin-launch-motion-3s.png",
+      "seeds": {
+        "CF_AUTH_TEST_SIGNED_IN": "demo",
+        "CF_AUTH_TEST_WALKTHROUGH_SEEN": "1"
+      },
+      "extras": {
+        "cf.settings.language": "en",
+        "cf.settings.theme": "light"
+      },
+      "profile": "launch",
+      "wait": "today.screen",
+      "frames": [
+        3000
+      ],
+      "skip": null
+    },
+    {
+      "ios": "40-signedin-launch-motion-4s.png",
+      "seeds": {
+        "CF_AUTH_TEST_SIGNED_IN": "demo",
+        "CF_AUTH_TEST_WALKTHROUGH_SEEN": "1"
+      },
+      "extras": {
+        "cf.settings.language": "en",
+        "cf.settings.theme": "light"
+      },
+      "profile": "launch",
+      "wait": "today.screen",
+      "frames": [
+        4000
+      ],
+      "skip": null
+    },
+    {
+      "ios": "40-signedin-launch-motion-5s.png",
+      "seeds": {
+        "CF_AUTH_TEST_SIGNED_IN": "demo",
+        "CF_AUTH_TEST_WALKTHROUGH_SEEN": "1"
+      },
+      "extras": {
+        "cf.settings.language": "en",
+        "cf.settings.theme": "light"
+      },
+      "profile": "launch",
+      "wait": "today.screen",
+      "frames": [
+        5000
+      ],
+      "skip": null
+    },
+    {
+      "ios": "40-signedin-launch-motion-6s.png",
+      "seeds": {
+        "CF_AUTH_TEST_SIGNED_IN": "demo",
+        "CF_AUTH_TEST_WALKTHROUGH_SEEN": "1"
+      },
+      "extras": {
+        "cf.settings.language": "en",
+        "cf.settings.theme": "light"
+      },
+      "profile": "launch",
+      "wait": "today.screen",
+      "frames": [
+        6000
+      ],
+      "skip": null
+    },
+    {
+      "ios": "launcher-icon",
+      "seeds": {},
+      "extras": {},
+      "profile": "screen",
+      "wait": "workspace",
+      "frames": null,
+      "skip": null
+    }
+  ]
+}

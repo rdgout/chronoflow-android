@@ -183,6 +183,10 @@ endif
 audit-coverage:
 	python3 -I Scripts/board-coverage.py --canvas _design/canvas/canvas.json --scope tools/audit/board-scope.json --captures build/captures --out build/audit
 
+.PHONY: ios-parity
+ios-parity:
+	python3 -I Scripts/device_lock.py -- python3 -I Scripts/ios-parity.py $(if $(ONLY),--only "$(ONLY)")
+
 perf-timeline:
 	$(RUN_TIER) perf-timeline --device --results 'benchmark/build/outputs/androidTest-results/connected/benchmarkRelease/**/*.xml' -- bash -c ' \
 	  reset_window() { \

@@ -3692,7 +3692,7 @@ Acceptance evidence and the pending host checks are recorded in [`docs/settings-
 **Delivers.** Audits the whole app against the boards and the iOS reference screenshots in docs/research/screens/ios, with seeded captures in both languages and themes, and checks the system chrome against the Material mapping. It runs the accessibility audit (TalkBack, Switch Access, keyboard, contrast, font scales 1.0, 1.3 and 2.0), the process-death and fold/split checks, the T2 device matrix once, a StrictMode-clean full run and the open device gates. It ends with a verification record and the list of remaining server dependencies.
 
 **Tasks**
-- [ ] **Board audit.**
+- [x] **Board audit.**
   - `make captures` for every screen state, in en and nl, light and dark, at `pixel8`, `foldInner` and `largeFont`.
   - Compare against the boards and against `docs/research/screens/ios/`.
   - Fix each difference, or list it in `docs/audit.md` with its board and the reason.
