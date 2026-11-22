@@ -87,6 +87,10 @@ internal class ShellViewModel(
         state = ShellNav.wizardSaved(state, tripId)
     }
 
+    fun guestTrips() {
+        state = ShellNav.guestTrips(state)
+    }
+
     fun back(): Boolean {
         val (next, handled) = ShellNav.back(state)
         state = next

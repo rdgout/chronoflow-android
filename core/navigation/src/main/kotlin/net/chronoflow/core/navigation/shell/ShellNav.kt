@@ -68,6 +68,13 @@ object ShellNav {
             }
         }
 
+    fun guestTrips(state: ShellNavState): ShellNavState =
+        state.copy(
+            overlay = null,
+            selected = ShellTab.Trips,
+            stacks = state.stacks + (ShellTab.Trips to listOf(Route.Trips)),
+        )
+
     fun wizardSaved(
         state: ShellNavState,
         tripId: String,
