@@ -35,6 +35,7 @@ import net.chronoflow.core.wizard.model.MemberWizardDraft
 import net.chronoflow.core.wizard.model.MemberWizardDrafts
 import net.chronoflow.core.wizard.model.MemberWizardStep
 import net.chronoflow.core.wizard.model.WizardDraftStore
+import net.chronoflow.debug.GuestWizardDebugSecrets
 import net.chronoflow.feature.wizard.TripWizardDependencies
 import net.chronoflow.feature.wizard.TripWizardDependenciesKey
 import net.chronoflow.feature.wizard.TripWizardViewModel
@@ -137,6 +138,22 @@ class GuestWizardIoTest {
                         ?.identity
                         ?.guestSecret,
                 )
+                assertTrue(GuestWizardDebugSecrets.hasReviewSecret(f.actualStore, f.secrets, f.io))
+                withContext(f.io) { f.secrets.deleteAll() }
+                assertFalse(GuestWizardDebugSecrets.hasReviewSecret(f.actualStore, f.secrets, f.io))
+            }
+        }
+
+    @Test fun guestFileStoreHopsToIoFromMain() =
+        runTest(timeout = 60.seconds) {
+            withGuest { f, _ ->
+                runCurrent()
+                val accesses = f.fileAccesses
+                withContext(Dispatchers.Main) {
+                    assertFalse(currentCoroutineContext()[ContinuationInterceptor] === f.io)
+                    f.actualStore.persist(checkNotNull(f.persistedDraft))
+                }
+                assertTrue(f.fileAccesses > accesses)
             }
         }
 
@@ -208,7 +225,7 @@ class GuestWizardIoTest {
         var fileAccesses = 0
         var persistedDraft: MemberWizardDraft? = null
         val persistedSteps = mutableListOf<MemberWizardStep>()
-        private val actualStore =
+        val actualStore =
             GuestWizardStore({
                 assertEquals("guest file access requires IO", io, currentCoroutineContext()[ContinuationInterceptor])
                 fileAccesses++

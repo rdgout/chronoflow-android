@@ -13,6 +13,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -25,7 +26,9 @@ import net.chronoflow.core.model.session.StorageNamespace
 import net.chronoflow.core.testing.tiers.Logic
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
@@ -33,6 +36,7 @@ import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import java.io.File
 import java.nio.file.Files
+import kotlin.coroutines.ContinuationInterceptor
 import kotlin.time.Duration.Companion.seconds
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
@@ -199,8 +203,55 @@ class KeystoreGuestSecretStoreTest {
                 assertFalse(pending.isCompleted)
                 runCurrent()
                 assertTrue(pending.isCompleted)
+
+                val io = StandardTestDispatcher(testScheduler, "guest-secret-io")
+                var writes = 0
+                val checkedDataStore =
+                    object : DataStore<Preferences> by dataStore {
+                        override suspend fun updateData(transform: suspend (Preferences) -> Preferences): Preferences {
+                            assertSame(io, currentCoroutineContext()[ContinuationInterceptor])
+                            writes++
+                            return dataStore.updateData(transform)
+                        }
+                    }
+                val checkedStore =
+                    KeystoreGuestSecretStore(
+                        checkedDataStore,
+                        StorageNamespace.Mock.guestKeyAlias,
+                        cipher,
+                        io,
+                    )
+                val wrongDispatcherStore =
+                    KeystoreGuestSecretStore(
+                        checkedDataStore,
+                        StorageNamespace.Mock.guestKeyAlias,
+                        cipher,
+                        UnconfinedTestDispatcher(testScheduler),
+                    )
+                assertWrongDispatcher { wrongDispatcherStore.set("secret", "old") }
+                checkedStore.set("secret", "old")
+                assertEquals(1, writes)
+                assertWrongDispatcher { wrongDispatcherStore.rotate("old", "new", "replacement") }
+                checkedStore.rotate("old", "new", "replacement")
+                assertEquals(3, writes)
+                assertNull(checkedStore.get("old"))
+                assertEquals("replacement", checkedStore.get("new"))
+                assertWrongDispatcher { wrongDispatcherStore.delete("new") }
+                checkedStore.delete("new")
+                assertEquals(4, writes)
+                assertNull(checkedStore.get("new"))
             }
         }
+
+    private suspend fun assertWrongDispatcher(block: suspend () -> Unit) {
+        var rejected: AssertionError? = null
+        try {
+            block()
+        } catch (failure: AssertionError) {
+            rejected = failure
+        }
+        assertNotNull("the storage boundary must reject a missing IO hop", rejected)
+    }
 
     private class RecordingCipher : SessionCipher {
         val delegate = SoftwareSessionCipher()

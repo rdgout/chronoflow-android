@@ -8,11 +8,13 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import kotlinx.coroutines.runBlocking
 import net.chronoflow.app.ChronoFlowApp
 import net.chronoflow.app.ioViolationsForTest
 import net.chronoflow.app.resetIoViolationsForTest
 import net.chronoflow.app.testing.ScreenTest
 import net.chronoflow.core.testing.tiers.Smoke
+import net.chronoflow.debug.GuestWizardDebugSecrets
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -39,6 +41,16 @@ class GuestWizardReviewIoTest : ScreenTest() {
         compose.waitUntilExactlyOneExists(hasTestTag("wizard.sleep.continue") and isEnabled(), 5_000)
         compose.onNodeWithTag("wizard.sleep.continue").performClick()
         compose.waitUntil(5_000) { compose.onNodeWithTag("wizard.choice.question.18_64").isDisplayed() }
+        compose.waitUntil(5_000) {
+            runBlocking {
+                val graph = app.graph
+                GuestWizardDebugSecrets.hasReviewSecret(
+                    graph.guestWizardStore,
+                    graph.guestSecrets,
+                    graph.dispatchers.io,
+                )
+            }
+        }
         instrumentation.runOnMainSync { assertEquals(0, app.graph.ioViolationsForTest) }
         assertTrue("guest review screen exceeded 10 s", System.nanoTime() - started < 10_000_000_000L)
     }

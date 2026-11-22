@@ -34,6 +34,7 @@ class ReleaseReadinessTest {
         missing("net.chronoflow.feature.wizard.debug.WizardBoardCaptureSeed")
         missing("net.chronoflow.feature.wizard.debug.GuestWizardBoardSeed")
         missing("net.chronoflow.debug.GuestWizardDebugCounters")
+        missing("net.chronoflow.debug.GuestWizardDebugSecrets")
         org.junit.Assert.assertNull(LaunchPlatform.guestWizardBoard)
         org.junit.Assert.assertNull(LaunchPlatform.guestWizardInstant)
         org.junit.Assert.assertNull(LaunchPlatform.guestWizardUiOverride)
