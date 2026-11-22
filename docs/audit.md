@@ -1935,3 +1935,9 @@ Brief §5.5 permits another suppression only with an open question. OQ-A617 reco
 ## Robustness (Tasks 13–15)
 
 Pending process-death/StrictMode/resize tooling and recorded runs. Fold/T2 and performance tiers belong to the orchestrator. Calculating save resume is not swept on device because the mock delay is shorter than the kill procedure; the existing WizardProcessDeathTest is the required model/Robolectric evidence (OQ-14-5).
+
+### Escape dispatch (Task 9)
+
+**Fixed — ItemDetail, Legend, PasswordPrompt:** removing the provisional handlers on pixel leaves these three native bottom sheets open after Escape; the Compose disappearance checks fail (38.603 s run, three failures and the alert passing). A handler only on the shared native sheet window closes all three (14.280 s targeted run). The alert uses Android’s unhandled Escape → Back fallback, with no custom handler. The wide password dialog is unchanged. The window handler respects `shouldDismissOnBackPress` and restores the original callback when disposed; Robolectric guards cover Escape, a busy sheet and Enter. No product state, string or token is added.
+
+The earlier UiAutomator `Until.gone(By.res(tag))` assertion observed stale nodes from a closed window. Every new dismissal assertion uses Compose `waitUntilDoesNotExist(hasTestTag(tag))`. No existing device seed holds a password prompt busy; that native negative case is not added. The handler-removal red run proves that the corrected disappearance assertion fails on the three open sheets; the production wrapper’s disabled-dismiss guard covers the busy policy at the cheaper layer.
