@@ -65,6 +65,7 @@ class ReleaseReadinessTest {
     @Test fun wizardCaptureCodeAndStartOverrideAreAbsent() {
         missing("net.chronoflow.feature.wizard.debug.WizardBoardCaptureSeed")
         missing("net.chronoflow.feature.wizard.debug.GuestWizardBoardSeed")
+        missing("net.chronoflow.debug.reminders.MockReminderCenter")
         missing("net.chronoflow.debug.guest.GuestSignupSeed")
         missing("net.chronoflow.debug.guest.GuestSignupPrefill")
         org.junit.Assert.assertNull(LaunchPlatform.guestSignupSeed)

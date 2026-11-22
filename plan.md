@@ -3549,7 +3549,7 @@ Acceptance evidence and the pending host checks are recorded in [`docs/settings-
 - [x] 1. Move the settings page scaffold to core ui.
 - [x] 2. Consume the first-trip reminders offer.
 - [x] 3. Port the reminders model.
-- [ ] 4. Build the connectivity and reminders page.
+- [x] 4. Build the connectivity and reminders page.
 - [ ] 5. Show the reminders state on preferences.
 - [ ] 6. Offer reminders after the first saved trip.
 - [ ] 7. Add guards and board captures.
@@ -3557,13 +3557,13 @@ Acceptance evidence and the pending host checks are recorded in [`docs/settings-
 - [ ] 9. Record phase 12c results and open questions.
 
 **Tasks**
-- [ ] **Connectivity & reminders page** (`feature/reminders/…`; `SetReminders`, `SetRemindersAsk`, `SetRemindersBlocked`, `DarkSetReminders`).
+- [x] **Connectivity & reminders page** (`feature/reminders/…`; `SetReminders`, `SetRemindersAsk`, `SetRemindersBlocked`, `DarkSetReminders`).
   - States: on, ask, blocked and unsupported.
   - The master switch, the kinds, and the lead time of 15, 30 or 60 min (native picker, per the 2026-11-09 decision).
   - Open phone settings, through `Settings.ACTION_APP_NOTIFICATION_SETTINGS`, with the blocked-step copy (OQ-A12).
   - Reached from Preferences (10b).
   - Fill the Preferences reminders-row subtitle (`SettingsPreferencesView.swift:155–163`); 10b leaves it empty.
-- [ ] **Permission flow.** `RequestPermission(POST_NOTIFICATIONS)` on API 33+, remembered in `notificationPermissionRequested`. Below API 33 there is no system dialog: **Turn on reminders** (the Reminders page or the first-trip offer) writes `notificationPermissionRequested`, which is the in-app opt-in; until then the state is "ask" and nothing is scheduled, as on iOS (A13).
+- [x] **Permission flow.** `RequestPermission(POST_NOTIFICATIONS)` on API 33+, remembered in `notificationPermissionRequested`. Below API 33 there is no system dialog: **Turn on reminders** (the Reminders page or the first-trip offer) writes `notificationPermissionRequested`, which is the in-app opt-in; until then the state is "ask" and nothing is scheduled, as on iOS (A13).
 - [ ] **First-trip offer** (`WizardReminders`), porting `FirstTripRemindersOffer`.
   - The settings row moves from `pending` to `seen` before the sheet shows.
   - The sheet shows once, over the first saved trip's page.

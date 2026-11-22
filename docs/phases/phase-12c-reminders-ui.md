@@ -442,3 +442,6 @@ If the leave-installed property is not honoured, or the precondition fails after
 
 
 **R19. Task 3 port details.** iOS `RemindersModel.requestPermission` awaits `write(true)` (which reschedules) and then explicitly reschedules again. Preserve both calls; correct Task 3's contradictory single-call assertion. `StoreApplication` is internal to `:core:data`, so `RemindersModelTests` exercises its pending-settings protection through the public `SqlSyncDatabase.applyPull` entry; no earlier-phase visibility or behaviour changes.
+
+
+**R20. Task 4 test boundaries.** Exercise the production `RemindersSeed` parser/apply/queue and `beginReminderPermissionRequest` helper directly with fake authorization and real preferences/SQL, without constructing an application graph. `TestSeeds` supplies `RemindersSeed.queue` to `SeedRunner`'s existing `onSessionReady` path, before its writer closes; this avoids opening a second writer. The page route is `RemindersRoute(vm, …)`; `RemindersScreen(state, onEvent)` stays stateless as required by the user.

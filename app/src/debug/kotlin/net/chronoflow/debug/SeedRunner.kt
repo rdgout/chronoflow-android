@@ -25,6 +25,7 @@ internal class SeedRunner(
     private val driverFactory: AccountDriverFactory,
     private val source: DataSource,
     private val io: CoroutineDispatcher,
+    private val seedReminders: suspend (AccountDatabase) -> Unit = {},
     private val beforeSignIn: suspend () -> Unit = {},
     private val guestSecrets: GuestSecrets = NoGuestSecrets,
 ) {
@@ -60,6 +61,7 @@ internal class SeedRunner(
                 driverFactory,
                 io,
                 onSessionReady = { database, permit ->
+                    seedReminders(database)
                     if (termsChangesPending) seedTermsChangesPending(database, permit)
                     if (settingsPending) seedSettingsPending(database, permit)
                 },

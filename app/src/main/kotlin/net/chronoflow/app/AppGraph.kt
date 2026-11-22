@@ -242,6 +242,24 @@ class AppGraph(
             sessionStore.readStoredSession()?.token
         }, dispatchers.io)
     }
+    val reminderPermission: suspend () -> net.chronoflow.core.reminders.ReminderPermission = {
+        overrides.reminderPermission?.permission() ?: reminderPermissions.refresh()
+    }
+
+    internal suspend fun beginReminderPermissionRequest(sdkInt: Int) =
+        net.chronoflow.app.reminders.beginReminderPermissionRequest(
+            devicePreferences,
+            dispatchers.io,
+            sdkInt,
+            overrides.reminderPermission,
+        ) {
+            android.os.Build.VERSION.SDK_INT < 33 ||
+                androidx.core.content.ContextCompat.checkSelfPermission(
+                    app,
+                    android.Manifest.permission.POST_NOTIFICATIONS,
+                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        }
+
     val reminderPermissions by lazy { ReminderPermissions(app, devicePreferences, dispatchers.io) }
     val reminderStrings by lazy { AndroidReminderStrings(app) }
     val appLanguage by lazy { AppLanguageSource(languageApplier, dispatchers.io) }
@@ -251,7 +269,7 @@ class AppGraph(
             ReminderService(
                 AndroidReminderAlarms(app, dispatchers.io),
                 reminderNotices,
-                permission = { reminderPermissions.refresh() },
+                permission = reminderPermission,
                 language = { appLanguage.current() },
                 strings = reminderStrings,
                 formatter = { CopyLineFormatter(copyCatalogs.catalog()) },

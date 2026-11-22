@@ -130,7 +130,7 @@ fun CfSegmentedButtons(
 ) {
     val c = CfTheme.colors
     val haptics = LocalHaptics.current
-    require(options.isNotEmpty() && selectedIndex in options.indices)
+    require(options.isNotEmpty() && selectedIndex in -1..options.lastIndex)
     SingleChoiceSegmentedButtonRow(modifier.then(if (testTag == null) Modifier else Modifier.testTag(testTag))) {
         options.forEachIndexed { i, option ->
             val enabled = optionEnabled(i)

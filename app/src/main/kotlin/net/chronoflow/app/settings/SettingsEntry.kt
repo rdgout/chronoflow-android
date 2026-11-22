@@ -10,6 +10,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.MutableCreationExtras
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.launch
 import net.chronoflow.app.AppGraph
 import net.chronoflow.app.LaunchPlatform
 import net.chronoflow.app.SessionGraph
@@ -51,6 +52,8 @@ internal fun SettingsEntry(
     onNavigate: (Route) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
     val owner = checkNotNull(LocalViewModelStoreOwner.current) as HasDefaultViewModelProviderFactory
     val languageExtras =
         remember(owner, graph) {
@@ -72,6 +75,7 @@ internal fun SettingsEntry(
                 Route.Passkeys -> R.string.settings_passkeys
                 Route.Account -> R.string.settings_account
                 Route.Profile -> R.string.settings_profile
+                Route.Reminders -> R.string.reminders_connectivity_reminders
                 Route.Preferences -> R.string.settings_preferences
                 Route.BodyClock -> R.string.settings_body_clock
                 Route.Security -> R.string.settings_security
@@ -100,6 +104,38 @@ internal fun SettingsEntry(
             }
         }
     when (route) {
+        Route.Reminders -> {
+            val reminderDeps =
+                remember(graph, session) {
+                    net.chronoflow.app.reminders
+                        .SessionRemindersDependencies(graph, session)
+                }
+            val reminderExtras =
+                remember(reminderDeps, owner) {
+                    MutableCreationExtras(owner.defaultViewModelCreationExtras).apply {
+                        set(net.chronoflow.feature.reminders.RemindersDependenciesKey, reminderDeps)
+                        set(net.chronoflow.feature.reminders.RemindersMainKey, graph.dispatchers.main)
+                    }
+                }
+            net.chronoflow.feature.reminders.RemindersRoute(
+                viewModel(
+                    factory = net.chronoflow.feature.reminders.RemindersViewModel.Factory,
+                    extras = reminderExtras,
+                ),
+                graph.dispatchers.main,
+                onBack,
+                {
+                    scope.launch {
+                        net.chronoflow.app.reminders.openNotificationSettings(
+                            context,
+                            graph.dispatchers.io,
+                        )
+                    }
+                },
+                modifier,
+            )
+        }
+
         Route.Settings -> {
             LaunchedEffect(graph) {
                 try {
