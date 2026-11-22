@@ -30,6 +30,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import net.chronoflow.core.designsystem.component.CfIconButton
 import net.chronoflow.core.designsystem.icon.LucideGlyphs
 import net.chronoflow.core.designsystem.icon.imageVector
@@ -76,7 +77,7 @@ fun DayNavigation(
             LucideGlyphs.ChevronLeft.imageVector(),
             stringResource(R.string.plan_previous_day),
             { onSelect(days[selectedIndex - 1].id) },
-            Modifier.testTag("trip.days.previous"),
+            Modifier.zIndex(1f).testTag("trip.days.previous"),
             enabled =
                 selectedIndex > 0,
             iconSize = TripPageMetrics.chevron,
@@ -113,7 +114,7 @@ fun DayNavigation(
             LucideGlyphs.ChevronRight.imageVector(),
             stringResource(R.string.plan_next_day),
             { onSelect(days[selectedIndex + 1].id) },
-            Modifier.testTag("trip.days.next"),
+            Modifier.zIndex(1f).testTag("trip.days.next"),
             enabled = selectedIndex + 1 < days.size,
             iconSize = TripPageMetrics.chevron,
         )

@@ -1908,6 +1908,12 @@ Affected boards: `WizardFineTune`, `WizardFineTuneBusy`, `WizardFineTuneBusyDark
 
 The new `WizardStepperAccessibilityTest` failed before the fix and passes after it; the existing plus-tap, disabled-at-maximum and adjustable-parent guards also pass. The two representative pixel reruns (`WizardFineTune`, `WizardSheetBlue`) pass in 10.47 s tier wall time. The initial 33 related audit failures and focused rerun evidence are under `build/phase14/screen-audits/`.
 
+### Day navigation accessibility fix
+
+**Fixed — PlanEnd:** a partially scrolled day pill's expanded semantic bounds covered part of the previous-day arrow, leaving its accessibility target only 28 dp wide. The arrows now draw above the scrolling pills, preserving their full targets and the existing appearance and navigation. The seeded `DayNavigationAccessibilityTest` reproduces the real ATF failure before the fix and passes after it (9.27 s tier wall time, 2.204 s test case). The timeline/list invalidation and existing day-navigation tests also pass: 140 cases, 13.77 s tier wall time.
+
+A clip-only attempt did not resolve the raw touch-bounds guard and was removed. Robolectric's accessibility provider returned no node for this fixture even with a fake enabled service, so that unsupported guard was deleted under AGENTS Tests 6. The committed guard uses the real device accessibility framework. The before/after seeded screenshot/hierarchy and diagnostics remain under `build/phase14/screen-audits/`; no fixture or unsupported check is claimed as layout evidence. Orchestrator performance/profile commands remain pending for the timeline-adjacent change.
+
 ## Robustness (Tasks 13–15)
 
 Pending process-death/StrictMode/resize tooling and recorded runs. Fold/T2 and performance tiers belong to the orchestrator. Calculating save resume is not swept on device because the mock delay is shorter than the kill procedure; the existing WizardProcessDeathTest is the required model/Robolectric evidence (OQ-14-5).
