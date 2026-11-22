@@ -13,7 +13,6 @@ import net.chronoflow.app.ioViolationsForTest
 import net.chronoflow.app.resetIoViolationsForTest
 import net.chronoflow.app.testing.ScreenTest
 import net.chronoflow.core.testing.tiers.Smoke
-import net.chronoflow.debug.GuestWizardDebugCounters
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -39,8 +38,7 @@ class GuestWizardJourneyTest : ScreenTest() {
         )
         tap("welcome.plan")
         tap("wizard.ready.continue", 3_000)
-        compose.waitUntil(3_000) { GuestWizardDebugCounters.signUpRequested.get() == 1 }
-        assertEquals(1, GuestWizardDebugCounters.signUpRequested.get())
+        compose.waitUntil(3_000) { compose.onNodeWithTag("guest-signup.name").isDisplayed() }
         compose.onNodeWithTag("wizard.ready.questions").assertExists()
         instrumentation.runOnMainSync { assertEquals(0, app.graph.ioViolationsForTest) }
         assertTrue("guest journey exceeded 10 s", System.nanoTime() - started < 10_000_000_000L)

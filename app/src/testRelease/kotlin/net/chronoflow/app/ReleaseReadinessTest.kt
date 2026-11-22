@@ -30,15 +30,49 @@ import org.junit.Test
 import kotlin.time.Duration.Companion.seconds
 
 class ReleaseReadinessTest {
+    @Test fun guestSignupCoordinatorHasNoSeedOrPrefill() =
+        runTest(timeout = 60.seconds) {
+            val dispatcher = StandardTestDispatcher(testScheduler)
+            val navigator =
+                net.chronoflow.core.navigation
+                    .RootNavigator()
+            val auth =
+                net.chronoflow.app.auth.AuthServices(
+                    navigator,
+                    backgroundScope,
+                    AppDispatchers(dispatcher, dispatcher, dispatcher),
+                    net.chronoflow.core.testing.sync
+                        .ScriptedSource(),
+                    net.chronoflow.feature.auth.model
+                        .SessionAcceptor {},
+                    { "device" },
+                    { "phone" },
+                    { _, _ -> },
+                )
+            val coordinator =
+                net.chronoflow.app.guest.GuestSignupCoordinator(
+                    auth,
+                    navigator,
+                    0,
+                    LaunchPlatform.guestSignupSeed,
+                    LaunchPlatform.guestSignupPrefill,
+                )
+            org.junit.Assert.assertNull(coordinator.seed)
+            org.junit.Assert.assertNull(coordinator.prefill)
+            coordinator.clear()
+        }
+
     @Test fun wizardCaptureCodeAndStartOverrideAreAbsent() {
         missing("net.chronoflow.feature.wizard.debug.WizardBoardCaptureSeed")
         missing("net.chronoflow.feature.wizard.debug.GuestWizardBoardSeed")
-        missing("net.chronoflow.debug.GuestWizardDebugCounters")
+        missing("net.chronoflow.debug.guest.GuestSignupSeed")
+        missing("net.chronoflow.debug.guest.GuestSignupPrefill")
+        org.junit.Assert.assertNull(LaunchPlatform.guestSignupSeed)
+        org.junit.Assert.assertNull(LaunchPlatform.guestSignupPrefill)
         missing("net.chronoflow.debug.GuestWizardDebugSecrets")
         org.junit.Assert.assertNull(LaunchPlatform.guestWizardBoard)
         org.junit.Assert.assertNull(LaunchPlatform.guestWizardInstant)
         org.junit.Assert.assertNull(LaunchPlatform.guestWizardUiOverride)
-        LaunchPlatform.guestSignUpRequested()
         missing("net.chronoflow.feature.wizard.debug.FixedAirportSearch")
         missing("net.chronoflow.feature.wizard.debug.WizardCompletionBoardSeed")
         missing("net.chronoflow.feature.wizard.debug.TripWizardActionsBoardSeed")

@@ -40,7 +40,6 @@ object TestSeeds {
     ) = withContext(io) {
         DebugShellStart.reset()
         DebugRefreshProbe.reset()
-        GuestWizardDebugCounters.signUpRequested.set(0)
         net.chronoflow.feature.settings.SettingsDebugCounters.languageSaved
             .set(0)
         UITestTimeline.record("seed-begin", seed)

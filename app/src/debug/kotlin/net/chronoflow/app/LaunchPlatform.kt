@@ -132,7 +132,17 @@ internal object LaunchPlatform {
         }
     }
 
-    val guestSignUpRequested: () -> Unit = net.chronoflow.debug.GuestWizardDebugCounters::requested
+    val guestSignupSeed: net.chronoflow.app.guest.GuestSignupSeeding? get() =
+        guestWizardBoard?.let(net.chronoflow.debug.guest.GuestSignupSeed::board)
+    val guestSignupPrefill: net.chronoflow.app.guest.GuestSignupPrefilling? get() =
+        if (net.chronoflow.debug.DebugSeedRouting.current
+                ?.guestWizardJourney == true
+        ) {
+            net.chronoflow.debug.guest
+                .GuestSignupPrefill()
+        } else {
+            null
+        }
 
     fun welcomeDestinations(navigator: RootNavigator): WelcomeDestinations = RoutedWelcomeDestinations(navigator)
 
