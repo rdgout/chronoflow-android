@@ -181,3 +181,18 @@ The debug-only `ExitInfoLogger` reads the previous `ApplicationExitInfo` on API 
 `env 'ORG_GRADLE_PROJECT_kotlin.compiler.execution.strategy=in-process' make targeted ONLY='app:ExitInfoLoggerTest app:ReleaseReadinessTest'`: **PASS, 15.75 s wall**, local host 2026-11-22. Three Robolectric cases: previous crash 0.745 s (first SDK 30 case), no exit 0.011 s, SDK 29 no-service guard 0.413 s (first SDK 29 case). All 15 release-readiness cases pass (0.080 s suite); the logger class is absent. No graph, activity or app root is booted by the new test.
 
 Robolectric 4.18 has `ShadowActivityManager.addApplicationExitInfo(Object)` and nested `ApplicationExitInfoBuilder`. The four-argument helper is deprecated and failed the first compile under warnings-as-errors; the builder overload fixes it without suppression. Logs: `/tmp/cf13-task7-tests.log` (compile failure), `/tmp/cf13-task7-tests2.log` (pass). Startup/profile host proofs remain `make baseline-profile` and `make perf`.
+
+## Perf journey entries
+
+`cf.perf-account=demo` seeds only an absent perf mock state; explicit GraphOverrides remain authoritative. `cf.perf-wizard=WizardSaveJourney` installs the real-store, real-clock 9g journey through the existing WizardStartOverride seam, once per process on shell entry. Debug wizard seeds remain authoritative. MainActivity adds only the two intent-hook calls (and their import); all implementation lives in perf sources. Release has a fifth no-op declaration, PerfJourneyHook, following the existing four-stub pattern. The APK gate derives that exact declaration set; no perf package is allow-listed.
+
+The initial spike found one additional brief mismatch: each 9g capture creates a random `WizardLeg.id`, so separately generated drafts cannot be raw-equal. The perf copy preserves this behavior and the equality guard aligns only that identity, verifies UUID validity, then compares the full draft. Route, all airports, UTC times, profile, revision, recovery and step fields compare exactly. The correction is recorded in the brief; no 9g source or test changed.
+
+`env 'ORG_GRADLE_PROJECT_kotlin.compiler.execution.strategy=in-process' make targeted ONLY='app:PerfJourneyExtrasTest app:PerfWizardJourneyTest app:PerfMockSourcesSeedTest feature:wizard:WizardSaveJourneySeedTest app:ReleaseReadinessTest'`: **PASS, 16.88 s wall**, local host 2026-11-22. The nine new JVM cases total 0.283 s (extras 0.007 s; draft 0.008 s; mock source 0.268 s). The mock-seed class warms its fixture once via measureClassWarmup. All 16 release-readiness cases and the unchanged 9g journey seed test pass.
+
+Runner fixture commands (fake adb/Gradle/checker only):
+
+- `python3 -I -m unittest discover -s Scripts/tests -p test_perf_startup.py`: 11 PASS, **2.34 s wall**.
+- `python3 -I -m unittest discover -s Scripts/tests -p test_perf_timeline.py`: 19 PASS, **4.54 s wall**.
+
+All three runners clear the native perf package exactly once after successful perf preparation and before Gradle. The scripts skip their clear on physical devices without PERF_CLEAR=1 and report `state: as found`. Dry runs print the clear without executing it. No device/perf run was performed by the worker.

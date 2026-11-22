@@ -115,6 +115,27 @@ class PerfStartupTest(unittest.TestCase):
         self.assertNotIn("ProcessDeathLaunchTest", result.stdout)
         self.assertFalse(any(c.startswith("gradlew") for c in self.calls()))
 
+    def test_clear_runs_once_after_perf_prep_and_before_gradle(self):
+        self.assertEqual(self.perf().returncode, 0)
+        calls = self.calls()
+        clear = [i for i, c in enumerate(calls) if "shell pm clear net.chronoflow.app.native" in c]
+        self.assertEqual(len(clear), 1)
+        self.assertLess(calls.index("emulator.sh prep-perf emulator-5554"), clear[0])
+        self.assertLess(clear[0], next(i for i, c in enumerate(calls) if c.startswith("gradlew")))
+
+    def test_physical_clear_requires_opt_in(self):
+        result = self.perf(FAKE_QEMU="0")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("state: as found", result.stdout)
+        self.assertFalse(any("shell pm clear" in c for c in self.calls()))
+
+    def test_profile_dry_run_prints_one_clear_after_perf_prep(self):
+        result = self.perf(script=str(SCRIPTS / "baseline-profile.sh"), BASELINE_PROFILE_DRY_RUN="1")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout.count("shell pm clear net.chronoflow.app.native"), 1)
+        self.assertIn("emulator.sh prep-perf emulator-5554", self.calls())
+        self.assertFalse(any("shell pm clear" in c for c in self.calls()))
+
 
 if __name__ == "__main__":
     unittest.main()

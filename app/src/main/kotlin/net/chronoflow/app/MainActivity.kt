@@ -20,6 +20,7 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.launch
 import net.chronoflow.app.perf.PerfJank
+import net.chronoflow.app.perf.PerfJourneyHook
 import net.chronoflow.app.perf.TripPageEntry
 import net.chronoflow.core.designsystem.theme.ReduceMotion
 import net.chronoflow.core.model.config.ThemeChoice
@@ -52,6 +53,7 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        PerfJourneyHook.onIntent(intent)
         val graph = (application as ChronoFlowApp).graph
         launch = graph.launch
         val freshLaunch =
@@ -109,6 +111,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        PerfJourneyHook.onIntent(intent)
         val graph = (application as ChronoFlowApp).graph
         graph.pendingLaunchIntents.capture(intent, restored = false)
         graph.authLinks.deliver()

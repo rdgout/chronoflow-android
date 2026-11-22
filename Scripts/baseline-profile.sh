@@ -23,8 +23,10 @@ step() {
 }
 
 
+IS_EMU=0
 for prop in ro.boot.qemu ro.kernel.qemu; do
   if [ "$(dev shell getprop "$prop" | tr -d '\r')" = 1 ]; then
+    IS_EMU=1
     GPU=unknown
     if [ -f "$STATE_DIR/gpu-mode" ]; then GPU="$(tr -d '[:space:]' <"$STATE_DIR/gpu-mode")"; fi
     if [ "$GPU" != host ]; then
@@ -45,6 +47,11 @@ prep_status=$?
 if [ "$prep_status" != 0 ]; then
   echo "baseline-profile: prep-perf failed with status $prep_status" >&2
   exit "$prep_status"
+fi
+if [ "$IS_EMU" = 1 ] || [ "${PERF_CLEAR:-0}" = 1 ]; then
+  step "$ADB" -s "$SERIAL" shell pm clear net.chronoflow.app.native || true
+else
+  echo "state: as found (set PERF_CLEAR=1 to clear app data)"
 fi
 
 # Three collection attempts; the generator derives its deadline from the per-iteration caps.

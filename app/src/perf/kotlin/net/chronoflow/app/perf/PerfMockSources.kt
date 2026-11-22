@@ -4,6 +4,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.delay
 import net.chronoflow.app.BuildConfig
 import net.chronoflow.app.GraphOverrides
+import net.chronoflow.app.MockSeedFlags
 import net.chronoflow.app.MockSources
 import net.chronoflow.core.datamock.FileMockStateStore
 import net.chronoflow.core.datamock.MockAppSeed
@@ -21,6 +22,7 @@ import kotlin.time.DurationUnit
 
 class PerfMockSources(
     private val io: CoroutineDispatcher,
+    private val debugAppSeed: Boolean = BuildConfig.DEBUG,
 ) : MockSources {
     override suspend fun latestVerificationLink(
         source: DataSource,
@@ -53,7 +55,13 @@ class PerfMockSources(
             store = FileMockStateStore(root),
             mutationsOffline = overrides.mutationsOffline,
             seed =
-                overrides.mockSeed?.let {
+                (
+                    overrides.mockSeed ?: if (PerfJourneyState.current.demoAccount) {
+                        MockSeedFlags(unverified = false, walkthroughSeen = true, termsPending = false)
+                    } else {
+                        null
+                    }
+                )?.let {
                     MockAppSeed.make(
                         Instant.now(),
                         it.unverified,
@@ -68,7 +76,7 @@ class PerfMockSources(
                 overrides.mockDelay?.let { MockLatency.exact(it.toDouble(DurationUnit.SECONDS)) }
                     ?: { seconds -> delay((seconds * 1000).roundToLong()) },
             bearer = bearer,
-            debugAppSeed = BuildConfig.DEBUG,
+            debugAppSeed = debugAppSeed,
             io = io,
         )
 }

@@ -18,7 +18,9 @@ internal object LaunchPlatform {
         graph: AppGraph,
         epoch: Long,
         locale: java.util.Locale,
-    ): Boolean = false
+    ): Boolean =
+        net.chronoflow.app.perf.PerfJourneyHook
+            .prepareWizard(graph, epoch, locale)
 
     val wizardBoardCapture: String? = null
     val frozenTripInstant: java.time.Instant? = null

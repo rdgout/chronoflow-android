@@ -771,3 +771,7 @@ Hand each of these over as an exact command. Never fabricate numbers.
 ### Task 3 review finding (2026-11-22)
 
 The first real R8 configuration comparison found extra consumer rules from `kotlinx-coroutines-test-jvm` in the perf variants, transitively through `:core:testing`. Perf imports only `LargeTimelineFixtures`; the coroutine test dispatcher is unused. Task 3 excludes `kotlinx-coroutines-test` and its JVM artifact on the two perf runtime classpaths (both the direct fixture edge and the transitive edge through `:core:data-mock` reach the test helpers). Debug and test dependencies stay unchanged. The final R8 comparison and builds are recorded in `docs/release.md`; no app keep rule is broadened.
+
+### Task 8 identity correction (2026-11-22)
+
+R10's full draft equality assumed deterministic leg IDs. `WizardLeg.id` defaults to `UUID.randomUUID()` (`core/wizard/.../WizardForm.kt`), and 9g's `WizardSaveJourney.apply` creates a new capture form on every call. Task 8 preserves that landed behavior: compare the complete result with 9g after aligning only the freshly generated leg IDs, and separately assert that each perf leg ID is a UUID. All route, airport, UTC-time, profile, revision, recovery and step fields still compare exactly. No earlier-phase helper or production identity rule changes. This replaces R10's impossible raw equality assertion.

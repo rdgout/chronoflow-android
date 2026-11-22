@@ -192,6 +192,20 @@ class PerfTimelineTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("adb -s emulator-5554 logcat -T 1 -v brief -s TestRunner:I *:S", self.calls("adb"))
 
+    def test_clear_runs_once_after_prep_and_before_gradle(self):
+        self.assertEqual(self.perf().returncode, 0)
+        calls = self.log.read_text().splitlines()
+        clear = [i for i, c in enumerate(calls) if "shell pm clear net.chronoflow.app.native" in c]
+        self.assertEqual(len(clear), 1)
+        self.assertLess(next(i for i, c in enumerate(calls) if c.startswith("emulator.sh prep-perf")), clear[0])
+        self.assertLess(clear[0], next(i for i, c in enumerate(calls) if c.startswith("gradlew")))
+
+    def test_dry_run_prints_one_clear(self):
+        result = self.perf(PERF_TIMELINE_DRY_RUN="1")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout.count("shell pm clear net.chronoflow.app.native"), 1)
+        self.assertFalse(any("shell pm clear" in c for c in self.calls("adb")))
+
 
 if __name__ == "__main__":
     unittest.main()
