@@ -15,6 +15,10 @@ kotlin {
     }
 }
 
+tasks.withType<Test>().configureEach {
+    maxHeapSize = "3g"
+}
+
 dependencies {
     compileOnly(libs.android.gradlePlugin)
     compileOnly(libs.kotlin.gradlePlugin)

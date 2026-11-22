@@ -497,6 +497,8 @@ Cold Robolectric initialization is recorded separately by the timing harness. Th
 
 Host evidence after a05a1def (2026-11-22): build-logic limits concurrent test tasks to four worker slots on this 14-logical-core host and one fork per task. The listener still counts the entire test lifecycle; warm-up labels deduct no time and the regression guard rejects slow bodies even when a warm-up is recorded. Terms/CfBanner use the lighter direct-activity fixture and explicit recorded native-text warm-up. GuestContinuationRepositoryTest uses the smallest settings snapshot that proves the write. No budget, allowance or tier was changed. Local tuning evidence: `build/phase13-test-tuning/evidence.json`. Host R9 evidence: `build/phase13-host-evidence/t13-tiers4.log` and the archived tier time files.
 
+With a quiet host, warm daemon and the quick JVM/Robolectric test tasks forced to rerun, default heaps measured **45.5 / 45.0 / 44.3 / 44.5 s**, versus **44.7 s** on the first run after the configuration change and **42.5 / 42.3 s** with **3 GB per Test task**, now applied including `timingTest`. TermsScreenTest's first case improved from **1029–1171 to 1009–1055 ms**, and CfBannerTest's from **900–965 to 885–928 ms**, with no test outcome change; forks, workers, budgets and hang caps remain unchanged.
+
 Slowest ten warm cases in the saved last host quick report, before this task (cold SDK/class allowances excluded; reused unchanged results retain their original measured provenance):
 
 | Class.method | ms |

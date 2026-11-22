@@ -16,6 +16,7 @@ internal fun Project.configureTestConcurrency() {
     tasks.withType<Test>().configureEach {
         // Each fork has its own Robolectric/Compose caches; extra forks multiply cold setup and CPU contention.
         maxParallelForks = 1
+        maxHeapSize = "3g"
         usesService(slots)
     }
 }
