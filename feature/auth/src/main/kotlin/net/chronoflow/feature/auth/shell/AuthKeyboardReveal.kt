@@ -71,9 +71,10 @@ internal fun AuthKeyboardReveal(
     val target = WindowInsets.imeAnimationTarget
     LaunchedEffect(focusedField, failureRevision) {
         if (focusedField == null) return@LaunchedEffect
-        snapshotFlow { ime.getBottom(density) == target.getBottom(density) }
+        // With animations disabled, settled heights can change without an intermediate unsettled frame.
+        snapshotFlow { ime.getBottom(density) to target.getBottom(density) }
+            .filter { (bottom, targetBottom) -> bottom == targetBottom }
             .distinctUntilChanged()
-            .filter { it }
             .collect {
                 withFrameNanos { }
                 coordinates.reveal(focusedField, with(density) { AuthTokens.fieldGap.dp.toPx() })

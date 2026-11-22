@@ -1716,3 +1716,38 @@ Sign-up dismissal and Review now leave an active sign-in handoff running through
 The named board differences above now include the Review button's disabled state, the banner's 48 dp action row and the grabber colour on all four `GuestSignup*` boards. Inspection of the generated light/dark palette found no matching grabber token, so shared sheet colours stay unchanged. This finding changes documentation only.
 
 The journey now asserts the shell's selected top route is a trip page whose ID equals the live guest claim token. The debug shell factory publishes route values after composition and clears them on disposal; it retains no owner/ViewModel and the probe is absent from release. The production factory stays unchanged in the release source set. The shell probe guard passed (3.435 s cold SDK case; Gradle 11 s), release exclusion passed (3 ms; Gradle 4 s), and the live emulator journey passed in 5.813 s (Gradle 13 s), below its unchanged 10 s budget.
+
+**Keyboard diagnosis.** The two earlier candidate runs failed in the test body (1.769 s assertion; 6.673 s five-second timeout), while the host had also reported activity-window cleanup timing out. A further diagnostic run captured a persistent product defect before teardown: the confirmation field's full bottom was **1548 px**, below the keyboard top at **1517 px**, and its clipped bottom was exactly 1517 px. Both activity and focused sheet windows were **1080 × 2400 px**, reporting an **883 px** IME inset. The sheet's screen origin was (0,0), and its soft-input mode was 48 (`ADJUST_NOTHING`). The five-second diagnostic wait failed in 6.780 s total test time (Gradle 13 s), so this was not merely an early measurement or an origin mismatch.
+
+The failure screenshot was captured while the test was still holding the focused sheet open, using `adb exec-out screencap -p`: `build/diagnostics/11b-review1/failure.png`. Measurements and the window-manager dump are alongside it in `geometry.log` and `window.txt`. The PNG visibly shows the lower part of the confirmation field covered by the IME. These are local diagnostic artifacts; temporary test logging and the screenshot handshake were removed from the sources. An initial diagnostic setup tried `adb shell run-as net.chronoflow.app.native.debug rm -f cache/r1-ime-captured` before Gradle installed the app and returned `run-as: unknown package: net.chronoflow.app.native.debug`; removing that unnecessary pre-install cleanup resolved setup.
+
+`GuestSignupContent` already applies `imePadding` around a scroll viewport, and its focus-driven reveal uses the same `AuthKeyboardReveal` as Phase 5d's full-screen sign-up form. M3 gives `CfModalBottomSheet` its own edge-to-edge window, uses `ADJUST_NOTHING` from API 30, and handles IME content insets. Pinned iOS `GuestSignupView` uses a keyboard-aware `ScrollView` in a large native sheet with interactive keyboard dismissal. No additional inset or soft-input override was needed.
+
+The shared reveal previously observed only `currentImeBottom == targetImeBottom`. With disabled animations, the heights can jump from 0/0 directly to 883/883; `distinctUntilChanged` then suppresses the second `true`, leaving the old reveal in place. It now observes the settled **height pair**, so each changed settled keyboard height triggers the existing measured-coordinate reveal. The first product fix passed with the field bottom at **1328 px** against the same **1517 px** keyboard top (diagnostic test 1.899 s; Gradle 7 s). No measured size is written into Compose state.
+
+Cleanup now clears focus and hides the IME using the focused attached window's token, with the previous activity-window fallback when no focused window exists. It retains the two-frame settle check and five-second limit. The guest test proves the sheet owns a different window and waits for stable, full field/IME geometry within that same limit; it still submits with Go and waits for `auth.banner.action`. Its unchanged 10 s test budget was not raised.
+
+Clean-source emulator proof, all on pixel/API 36/debug mock through `make targeted` and the device lock:
+
+| Command | Result | Test / Gradle wall time |
+| --- | --- | --- |
+| `make targeted ONLY="app:GuestSignupKeyboardTest"` — consecutive run 1 | passed, including teardown | 2.006 s / 6 s |
+| same command — consecutive run 2 | passed, including teardown | 1.945 s / 6 s |
+| same command — consecutive run 3 | passed, including teardown | 1.852 s / 6 s |
+| `make targeted ONLY="app:SignInKeyboardTest"` | passed; existing activity-window keyboard/reveal and cleanup | 1.448 s / 7 s |
+| `make targeted ONLY="feature:auth:AuthLayoutTests feature:auth:GuestSignupContentTest feature:auth:SignUpImeChainTest"` | 20 passed; zero overruns | 7.63 s tier / 7 s Gradle |
+| app/auth layout tier (`:app:testDebugUnitTest :feature:auth:testDebugUnitTest -Pcf.tier=layout`) | 295 passed, one skipped; zero overruns | 20.18 s tier / 20 s Gradle |
+
+The three keyboard results are preserved separately under `build/test-results/11b-review1-keyboard-proof{1,2,3}/`; the sign-in result is under `11b-review1-signin-keyboard/`. One product fix attempt was needed after the diagnosis.
+
+Final review checks:
+
+| Command / tier | Result | Wall time |
+| --- | --- | --- |
+| `:app:lintDebug :feature:auth:lintDebug` | passed | 23 s Gradle |
+| single `make quick` | Gradle test/assertion and Spotless checks passed; timing certification failed only the two untouched class warm-ups below; no hangs | 44.131 s overall / 44.08 s tier / 43 s Gradle |
+| skipped build-logic component | 37 certified cases passed | 2.77 s tier / 2 s Gradle |
+| skipped `Scripts/test_scripts.sh` component | 171 script + 25 contract + 49 string + 11 icon cases passed | 20.609 s overall |
+| skipped serial `make timing` component | seven certified budget cases passed, zero overruns | 1.51 s tier / 1 s Gradle |
+
+Quick's untouched overruns were `CfBannerTest#politeAnnouncementCanBeSuppressedByTheCaller` **3451 ms > 3000 ms** and `TermsScreenTest#policyRowStaysEnabledWhileFailed` **3420 ms > 3000 ms**. Neither test was changed or retried; quick ran exactly once. The new sign-in cancellation cases took 21/19 ms warm and the shell route probe case 121 ms. The remaining quick components were completed separately after the tier stopped; this is not an all-green quick claim. No perf tier or `make check` was run. Host profile/startup measurement remains with the user, and pixel stays running.

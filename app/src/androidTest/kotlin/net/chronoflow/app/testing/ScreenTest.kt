@@ -4,6 +4,8 @@ import android.app.Activity
 import android.content.Intent
 import android.view.Choreographer
 import android.view.View
+import android.view.inputmethod.InputMethodManager
+import android.view.inspector.WindowInspector
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.hasTestTag
@@ -12,7 +14,6 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsAnimationCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry
@@ -85,21 +86,31 @@ abstract class ScreenTest {
 
     private fun hideKeyboard() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
-        val activities = mutableListOf<Activity>()
+        val windows = mutableListOf<View>()
         instrumentation.runOnMainSync {
             val monitor = ActivityLifecycleMonitorRegistry.getInstance()
-            activities +=
-                listOf(Stage.RESUMED, Stage.STARTED, Stage.PAUSED)
-                    .flatMap { monitor.getActivitiesInStage(it) }
-                    .filter { !it.isDestroyed && it.window.decorView.isShown && it.window.decorView.isAttachedToWindow }
+            val focusedWindows =
+                WindowInspector.getGlobalWindowViews().filter {
+                    it.hasWindowFocus() && it.isShown && it.isAttachedToWindow
+                }
+            windows +=
+                focusedWindows.ifEmpty {
+                    listOf(Stage.RESUMED, Stage.STARTED, Stage.PAUSED)
+                        .flatMap { monitor.getActivitiesInStage(it) }
+                        .filterNot(Activity::isDestroyed)
+                        .map { it.window.decorView }
+                        .filter { it.isShown && it.isAttachedToWindow }
+                }
         }
-        activities.forEach { activity ->
-            lateinit var decor: View
-            instrumentation.runOnMainSync { decor = activity.window.decorView }
+        windows.forEach { decor ->
             waitForImeToSettle(decor, visible = false) {
-                activity.currentFocus?.clearFocus()
+                decor.findFocus()?.clearFocus()
                 decor.clearFocus()
-                WindowInsetsControllerCompat(activity.window, decor).hide(WindowInsetsCompat.Type.ime())
+                // A native sheet owns the focused window and IME token independently of its activity.
+                decor.context
+                    .getSystemService(
+                        InputMethodManager::class.java,
+                    ).hideSoftInputFromWindow(decor.windowToken, 0)
             }
         }
     }
@@ -107,6 +118,7 @@ abstract class ScreenTest {
     protected fun waitForImeToSettle(
         submitTag: String,
         windowDecor: View? = null,
+        layoutReady: () -> Boolean = { true },
     ) {
         val submit = compose.onNodeWithTag(submitTag).fetchSemanticsNode()
         lateinit var decor: View
@@ -115,13 +127,14 @@ abstract class ScreenTest {
         } else {
             decor = windowDecor
         }
-        waitForImeToSettle(decor, visible = true, bounds = { submit.boundsInRoot })
+        waitForImeToSettle(decor, visible = true, bounds = { submit.boundsInRoot }, layoutReady = layoutReady)
     }
 
     private fun waitForImeToSettle(
         decor: View,
         visible: Boolean,
         bounds: () -> Rect = { Rect(0f, 0f, decor.width.toFloat(), decor.height.toFloat()) },
+        layoutReady: () -> Boolean = { true },
         changeVisibility: () -> Unit = {},
     ) {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
@@ -182,7 +195,7 @@ abstract class ScreenTest {
                 changeVisibility()
                 frames.postFrameCallback(sample)
             }
-            compose.waitUntil(5_000) { settled.get() }
+            compose.waitUntil(5_000) { settled.get() && layoutReady() }
         } finally {
             instrumentation.runOnMainSync {
                 frames.removeFrameCallback(sample)
