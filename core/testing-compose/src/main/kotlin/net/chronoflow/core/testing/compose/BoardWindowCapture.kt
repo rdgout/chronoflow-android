@@ -9,6 +9,7 @@ import androidx.compose.ui.test.SemanticsNodeInteractionsProvider
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.core.graphics.createBitmap
 import org.robolectric.shadows.ShadowDialog
 import kotlin.math.roundToInt
 
@@ -21,7 +22,7 @@ fun BoardCapture.captureWindow(
     val background = rule.onNodeWithTag(backgroundTag).captureToImage().asAndroidBitmap()
     val foreground = rule.onNode(isDialog()).captureToImage().asAndroidBitmap()
     val params = checkNotNull(ShadowDialog.getLatestDialog().window).attributes
-    val bitmap = Bitmap.createBitmap(background.width, background.height, Bitmap.Config.ARGB_8888)
+    val bitmap = createBitmap(background.width, background.height, Bitmap.Config.ARGB_8888)
     val canvas = Canvas(bitmap)
     canvas.drawBitmap(background, 0f, 0f, null)
     if (params.flags and WindowManager.LayoutParams.FLAG_DIM_BEHIND != 0) {
@@ -52,7 +53,7 @@ fun BoardCapture.captureWindowStack(
     val background = rule.onNodeWithTag(backgroundTag).captureToImage().asAndroidBitmap()
     val dialogs = ShadowDialog.getShownDialogs().filter { it.isShowing }
     check(dialogs.size == foregroundTags.size) { "The capture needs every shown window in display order" }
-    val bitmap = Bitmap.createBitmap(background.width, background.height, Bitmap.Config.ARGB_8888)
+    val bitmap = createBitmap(background.width, background.height, Bitmap.Config.ARGB_8888)
     val canvas = Canvas(bitmap)
     canvas.drawBitmap(background, 0f, 0f, null)
     foregroundTags.zip(dialogs).forEach { (tag, dialog) ->
