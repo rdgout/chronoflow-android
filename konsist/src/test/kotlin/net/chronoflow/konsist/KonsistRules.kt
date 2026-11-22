@@ -427,7 +427,8 @@ fun noWorkManagerOutsideReminders(scope: KoScope) {
         scope.files
             .filter { file ->
                 val name = file.packagee?.name
-                name != prefix && name?.startsWith("$prefix.") != true
+                val application = file.path.endsWith("/app/src/main/kotlin/net/chronoflow/app/ChronoFlowApp.kt")
+                !application && name != prefix && name?.startsWith("$prefix.") != true
             }.flatMap { file ->
                 file.imports
                     .filter { it.name == "androidx.work" || it.name.startsWith("androidx.work.") }

@@ -88,6 +88,7 @@ android {
 }
 
 dependencies {
+    implementation(libs.androidx.work.runtime)
     implementation(libs.androidx.navigation3.ui)
     implementation(libs.compose.material3.adaptive)
     implementation(libs.androidx.lifecycle.viewmodel.navigation3)

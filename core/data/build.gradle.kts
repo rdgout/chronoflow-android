@@ -7,6 +7,8 @@ android {
 }
 
 dependencies {
+    implementation(libs.androidx.work.runtime)
+    testImplementation(libs.androidx.work.testing)
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services.auth)
     implementation(project(":core:datastore"))

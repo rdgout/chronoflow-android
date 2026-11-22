@@ -1165,6 +1165,7 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A564 | (12a OQ-12a-8) Destination of the fixture: 0d's copier writes files only to the fixtures root or a same-named sub-directory. | Add the optional destination element (Task 1); the file lands at `fixtures/reminders/selection.json` as plan.md asks. | 12a |
 | OQ-A565 | (12a OQ-12a-9) `ZoneId.of` and Foundation `TimeZone(identifier:)` differ on non-IANA ids (abbreviations, `GMT+2`). | Plan data uses IANA ids only; invalid → UTC. No test beyond `Not/AZone`. | 12a |
 | OQ-A566 | (12a OQ-12a-10) A stored `leadMin` outside 15/30/60 (server forbids it). | Accept it as iOS does; only `leadPatch` validates. | 12a |
+| OQ-A587 | (12b) WorkManager merges an exported SystemJobService and Room's direct-boot-aware invalidation service; the existing manifest verifier rejects both. | Keep the verifier unchanged: SystemJobService becomes unexported, retaining BIND_JOB_SERVICE for system delivery; remove unused MultiInstanceInvalidationService. AOSP permits system access to unexported components. Actual boot/refill delivery remains manual acceptance. | 12b |
 | OQ-0a-22 | Native libraries in the bundle? | Allow only `libandroidx.graphics.path.so` (Compose graphics-path; excluding it breaks Path conversion below API 34); fail on any other `.so` | 0a, 13 |
 | OQ-0b-1 | Where does `PlanMetrics` live? `08 §3.1` lists it inside `CfDimens`, but its consumer `:core:plan` is a JVM module that cannot depend on `:core:designsystem` | `core/plan/…/generated/PlanMetrics.generated.kt` (Double, dp), as iOS keeps it in `PlanCore` | 0b, 1b, 1c |
 | OQ-0b-2 | Port all iOS TokenGen outputs now (Auth, Settings, Terms, Welcome, PlanUI, Press, LaunchPaint, TypeMetrics), or only colors, sky and type? | All of them now (the iOS files are exact goldens and Phases 2, 3a, 3c, 5a, 9 and 10 need them) | 0b |
@@ -3492,7 +3493,7 @@ Acceptance evidence and the pending host checks are recorded in [`docs/settings-
 - [x] **Delivery.**
   - `ReminderAlarmReceiver` posts on channel `reminders` ("Reminders on this phone", `IMPORTANCE_DEFAULT`, re-localized at start), with `notify(tag = identifier, id = requestCode)`, `setTimeoutAfter(20 min)` and `ic_stat_moon`.
   - Inside `goAsync`, it deletes the row and appends to the ledger.
-- [ ] **Upkeep.**
+- [x] **Upkeep.**
   - Receivers for `BOOT_COMPLETED`, `MY_PACKAGE_REPLACED`, `TIMEZONE_CHANGED`, `TIME_SET` and `LOCALE_CHANGED` enqueue the expedited unique work `reminders-reschedule` (REPLACE).
   - A 12 h periodic refill (OQ-A14).
   - WorkManager is initialized on demand through `Configuration.Provider`, with the default initializer removed, so it adds no startup work.
