@@ -17,6 +17,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.lifecycle.LifecycleRegistry
+import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
@@ -96,13 +98,23 @@ class GuestWizardHostTest {
     @Test fun leavingTheRouteClearsTheViewModel() =
         withHost("WizardWhereGuestEmpty") { f, _ ->
             val first = f.vm
-            compose.runOnIdle { f.navigator.navigate(Route.Welcome) }
+            val process = ProcessLifecycleOwner.get().lifecycle as LifecycleRegistry
+            var attachedObservers = 0
+            compose.runOnIdle {
+                attachedObservers = process.observerCount
+                assertTrue(attachedObservers > 0)
+                f.navigator.navigate(Route.Welcome)
+            }
             flush(f)
             assertTrue(f.generations.single().cancelled)
-            compose.runOnIdle { RoutedWelcomeDestinations(f.navigator).planMyTrip() }
+            compose.runOnIdle {
+                assertEquals(attachedObservers - 1, process.observerCount)
+                RoutedWelcomeDestinations(f.navigator).planMyTrip()
+            }
             flush(f)
             assertNotSame(first, f.vm)
             assertEquals(2, f.generations.size)
+            compose.runOnIdle { assertEquals(attachedObservers, process.observerCount) }
         }
 
     @Test fun backOnWhereClosesWithoutFinishingTheActivity() =

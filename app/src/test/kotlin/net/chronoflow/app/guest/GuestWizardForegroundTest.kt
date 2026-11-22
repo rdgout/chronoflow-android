@@ -7,15 +7,11 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class GuestWizardForegroundTest {
-    @Test fun configurationChangeRestartDoesNotSweep() {
+    @Test fun reattachingToAnActiveProcessDoesNotSweep() {
         val process = Owner().apply { start() }
         var sweeps = 0
         val observer = GuestWizardForeground { sweeps++ }
         observer.observe(process.lifecycle)
-        val activity = Owner().apply { start() }
-        activity.registry.handleLifecycleEvent(Lifecycle.Event.ON_STOP)
-        activity.registry.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
-        Owner().start()
         observer.observe(process.lifecycle)
         assertEquals(0, sweeps)
         assertEquals(1, process.registry.observerCount)

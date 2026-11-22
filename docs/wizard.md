@@ -1587,6 +1587,6 @@ The host verified `GuestRecoveryScreenTest.testWelcomeHandsOverToRecoveredSleep`
 
 `WizardFineTuneGuest` now has all six extras at Add. The four guest Ready captures end on 14 Oct and retain the pinned iOS formatter's 420 min wording, recorded above by board name. All five affected captures were regenerated once (21 s Gradle); Fine-tune and Dutch dark Ready were inspected directly.
 
-Guest expiry sweeps now observe the process lifecycle, once per real `ON_STOP` → `ON_START` return. The holder retains that observer across configuration changes and removes it when the entry clears. Three plain JVM cases prove configuration restart, foreground return and cleanup (3 ms total); the existing rotation and exit cases also passed.
+Guest expiry sweeps now observe the process lifecycle, once per real `ON_STOP` → `ON_START` return. The holder retains that observer across configuration changes and removes it when the entry clears. Three plain JVM cases prove active-process observer reattachment, foreground return and cleanup (3 ms total); the separate host rotation and exit cases also passed.
 
 Targeted checks passed: seed application (3 cases, 6 s Gradle), Fine-tune seed/screen (15 cases, 7 s), Ready seed plus layout guards (146 cases, 11 s), and foreground/host/exits (14 cases, 8 s). The single `make quick` passed in 67.081 s overall, with 42.43 s in its JVM/Robolectric tier and zero budget overruns. Build-logic, tooling and serial timing checks passed as part of that command. No perf or `make check` was run; pixel remains running.
