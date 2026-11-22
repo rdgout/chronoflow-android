@@ -3388,6 +3388,24 @@ Acceptance evidence and the pending host checks are recorded in [`docs/settings-
   - Guards.
   - One emulator journey: guest wizard → sign up → verify through the mock inbox → the claimed trip page.
 
+**Implementation (brief tasks)**
+
+- [x] Task 1: guest claim and continuation types.
+- [ ] Task 2: read and expire the guest claim.
+- [ ] Task 3: member wizard guest seed.
+- [ ] Task 4: account continuation store.
+- [ ] Task 5: guest session acceptance.
+- [ ] Task 6: sign-up claim and guest states.
+- [ ] Task 7: password and passkey claims.
+- [ ] Task 8: acceptance wiring.
+- [ ] Task 9: shell continuation routing.
+- [ ] Task 10: guest sign-up host seam.
+- [ ] Task 11: guest sign-up sheet.
+- [ ] Task 12: guest sign-up presentation.
+- [ ] Task 13: guest sign-up guards and captures.
+- [ ] Task 14: guest claim integration.
+- [ ] Task 15: guest journey and keyboard.
+
 **Acceptance**
 - The claimed trip opens after verification.
 - The guest secret and draft are gone afterwards.
