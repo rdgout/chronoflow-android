@@ -45,13 +45,13 @@ class DeviceScreenCapture(
             )
         }
 
-        internal fun timingFile(): File {
+        internal fun timingFile(area: String = "material"): File {
             val directory =
                 arguments.getString("additionalTestOutputDir")
                     ?: checkNotNull(
                         InstrumentationRegistry.getInstrumentation().targetContext.getExternalFilesDir("captures"),
                     ).absolutePath
-            return File(directory, "material/timings.jsonl")
+            return File(directory, "$area/timings.jsonl")
         }
     }
 }
@@ -77,7 +77,9 @@ internal fun ComposeTestRule.awaitHardwareFrames() {
     waitUntil(5_000) { pending.get() == 0 }
 }
 
-internal class DeviceCaptureTimingRule : TestRule {
+internal class DeviceCaptureTimingRule(
+    private val area: String = "material",
+) : TestRule {
     override fun apply(
         base: Statement,
         description: Description,
@@ -94,7 +96,7 @@ internal class DeviceCaptureTimingRule : TestRule {
                     throw skipped
                 } finally {
                     val seconds = (System.nanoTime() - started) / 1_000_000_000.0
-                    val target = DeviceScreenCapture.timingFile()
+                    val target = DeviceScreenCapture.timingFile(area)
                     target.parentFile?.mkdirs()
                     target.appendText(
                         JSONObject()
@@ -107,7 +109,7 @@ internal class DeviceCaptureTimingRule : TestRule {
                             "\n",
                     )
                     if (status == "passed") {
-                        check(seconds < 10) { "material capture exceeded 10 s: ${description.methodName}" }
+                        check(seconds < 10) { "device audit exceeded 10 s: ${description.methodName}" }
                     }
                 }
             }

@@ -1873,6 +1873,33 @@ The audit helper uses Compose 1.12.1 `ui-test-junit4-accessibility` with its ATF
 
 Pending automated audit runs, keyboard, contrast and device font-scale evidence. Manual TalkBack, Switch Access and hardware-keyboard rows remain **pending (orchestrator/user)** until observed; no pass is inferred from captures. Accepted Welcome/sign-in-guest contrast and native disabled controls follow the exact policy in brief §5.5.
 
+### Plan and auth audit coverage
+
+The six Android audit classes preserve all 42 Swift test method names. Each case seeds one screen; default is en/light, `FULL=1` adds the other three language/theme cells as separate JUnit cases. Empty trips removes only the demo account's existing trip data. Forgot/reset/verification aliases call existing model APIs in debug sources: field validation, completion, existing form failures, malformed-link failure and resend countdown. Passwords and reset inputs remain in memory. The iOS failure-key names accompany the canonical Android `CF_AUTH_TEST_AUDIT_SCREEN`/`CF_AUTH_TEST_AUDIT_STATE` keys; the canonical pair selects the state.
+
+Ten methods are explicitly ignored under OQ-14-6; these are missing evidence, not passes:
+
+| Class | Swift methods | Reason |
+| --- | --- | --- |
+| SignUpAuditTest | testSignUpEmptyAudit, testSignUpEmailAudit, testSignUpTakenAudit, testSignUpPasswordAudit, testSignUpConfirmationAudit, testSignUpVisibleAudit, testSignUpServerAudit, testSignUpThrottleAudit, testSignUpOfflineAudit | The existing SignUpModel is entry-scoped and has no debug prefill/failure path. Adding a hook to the production entry factory or typing credentials would violate this phase's rules. The form is audited. |
+| VerifyAuditTest | testVerifySignOutErrorAudit | No existing debug injection for session teardown failure; adding a production hook is out of scope. |
+
+Pixel (`emulator-5554`, API 36, debug, 2026-11-22) targeted results:
+
+| Command suffix (`make targeted ONLY=…`) | Passed / skipped | Tier wall time |
+| --- | --- | --- |
+| `app:PlanAuditTest` | 5 / 0 | 33.68 s (build included) |
+| `app:AuthAuditTest` | 3 / 0 | 9.65 s |
+| `app:ForgotAuditTest` | 6 / 0 | 11.14 s |
+| `app:ResetAuditTest` | 8 / 0 | 13.23 s |
+| `app:SignUpAuditTest` | 1 / 9 | 7.76 s |
+| `app:VerifyAuditTest` | 9 / 1 | 16.14 s |
+| `app:AccessibilityAuditFailureTest` | 1 / 0 | 6.28 s |
+
+Actual instrumented audit case times are 0.98–2.07 s (separate monotonic timing rule, including test setup/teardown); all are below 10 s. The additional framework test injects an enabled undersized native Button in the test window and verifies that the real ATF raises `TouchTargetSizeCheck`, then removes it. No production test hook is used. Per-class XML, tier timings and additional output are under `build/phase14/auth-audits/<area>/`. New seed model tests cover all existing-state aliases at the JVM layer. A reset-done seed initially failed because the demo login password does not meet reset rules; the valid existing reset test fixture fixed it. The probe's first compile used ATF's deprecated base exception type; it now catches the current Espresso exception.
+
+Manual TalkBack, Switch Access and keyboard procedures remain pending (orchestrator/user).
+
 ## Robustness (Tasks 13–15)
 
 Pending process-death/StrictMode/resize tooling and recorded runs. Fold/T2 and performance tiers belong to the orchestrator. Calculating save resume is not swept on device because the mock delay is shorter than the kill procedure; the existing WizardProcessDeathTest is the required model/Robolectric evidence (OQ-14-5).

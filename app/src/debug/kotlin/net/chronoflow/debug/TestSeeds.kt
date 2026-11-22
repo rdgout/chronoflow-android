@@ -38,6 +38,7 @@ object TestSeeds {
         sessionCipher: SessionCipher? = null,
         dispatchers: AppDispatchers? = null,
     ) = withContext(io) {
+        AuditSeedStatus.prepared.set(false)
         DebugShellStart.reset()
         DebugRefreshProbe.reset()
         net.chronoflow.feature.settings.SettingsDebugCounters.languageSaved
@@ -72,7 +73,11 @@ object TestSeeds {
                 source,
                 io,
                 seedReminders = reminders::queue,
-                beforeSignIn = { SettingsBoardCaptureFixture.prepare(dir, seed, app.graph.planClock.now, io) },
+                beforeSignIn = {
+                    val now = app.graph.planClock.now
+                    SettingsBoardCaptureFixture.prepare(dir, seed, now, io)
+                    AuditMockSeed.prepare(dir, seed, now, io)
+                },
                 guestSecrets =
                     object : net.chronoflow.core.data.session.GuestSecrets {
                         override suspend fun deleteAll() =
