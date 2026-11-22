@@ -1647,7 +1647,10 @@ Recorded differences for **each of `GuestSignup`, `GuestSignupFailed`, `GuestSig
 - In the app, the backdrop is guest Ready, replacing the board's retired GuestReview. It is outside the Robolectric dialog capture.
 - The password hint uses the server's 12-character policy from iOS, replacing the board's 10-character hint.
 - The native M3 drag handle occupies a 48 dp slot; content begins directly below it, replacing the board's 5 px grabber and 12 px top padding (and iOS's overlaid grabber with 20 pt content padding).
+- The drag handle draws dark slate; the boards' grabber is light translucent grey, `rgba(120,120,128,0.4)`. No generated colour token matches that RGB and alpha. The shared `CfSheetDragHandle` therefore retains its native M3 colour for every sheet; no other sheet's appearance changes.
 - Fields and buttons retain Phase 2's native Android field decoration and 48 dp interaction targets. The sheet uses the shared card fill and 38 dp top corners.
+
+For **`GuestSignupReview`**, “Create account and save” draws disabled/grey, matching pinned iOS's `.disabled(model.guestState == .review)`. The banner's “Review my trip” action occupies a native 48 dp interaction row, making the banner taller than that board's banner.
 
 All 80 guest sign-up layout cases passed: Ready/Failed/Retry/Review × small/pixel8/foldInner/largeFont/landscapeSideNav × en/nl × light/dark. They measure the production content and shared native handle; foldInner fields are 480 dp wide and centred, and pixel8 fields are the frame width minus 40 dp.
 
@@ -1705,3 +1708,9 @@ First-case costs were kept separate: content 2.658 s, seeded sheet screen 2.421 
 OQ-A544–A556 record the thirteen brief defaults; no A557+ question was needed. No Android-only copy, dependency or native library was added. Both languages use the generated resources. The generated legacy “3 credits” lookup alias still points at the resource's server balance argument (11a/OQ-A533); handwritten Kotlin adds no fixed credit amount or arithmetic.
 
 Host follow-up: a fresh `make quick` for the untouched timing case, `make baseline-profile` (commit the regenerated profiles), and `make perf` (record cold/warm startup in `docs/perf-startup.md`). The Valet claim gate remains open as OQ-A555. No perf tier or `make check` was run. Pixel remains running.
+
+### Review round 1 (2026-11-22)
+
+Sign-up dismissal and Review now leave an active sign-in handoff running through its persistence flush and navigation. A JVM regression reproduced cancellation after saving `signingIn = true`; both dismissal and Review cases now pass alongside the existing coordinator cases (11 tests, 0.447 s total; Gradle 5 s). The two new cases took 21 ms and 38 ms. Keyboard candidates remain separate from these commits.
+
+The named board differences above now include the Review button's disabled state, the banner's 48 dp action row and the grabber colour on all four `GuestSignup*` boards. Inspection of the generated light/dark palette found no matching grabber token, so shared sheet colours stay unchanged. This finding changes documentation only.
