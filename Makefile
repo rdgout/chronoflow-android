@@ -231,3 +231,7 @@ font-scale-check:
 .PHONY: audit-suite
 audit-suite:
 	python3 -I Scripts/device_lock.py -- sh -ec 'Scripts/emulator.sh ensure; $(RUN_TIER) audit-suite --device --emulator --results "app/build/outputs/androidTest-results/connected/**/*.xml" -- $(GRADLE) :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.cf.audit.language=nl -Pandroid.testInstrumentationRunnerArguments.cf.audit.theme=dark -Pandroid.testInstrumentationRunnerArguments.cf.audit.reduceMotion=1'
+
+.PHONY: process-death
+process-death:
+	python3 -I Scripts/device_lock.py -- sh -ec 'Scripts/emulator.sh ensure; $(GRADLE) :app:installDebug; python3 -I Scripts/process-death-sweep.py $(if $(ONLY),--only "$(ONLY)")'
