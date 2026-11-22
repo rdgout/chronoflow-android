@@ -1,5 +1,6 @@
 package net.chronoflow.feature.auth.signup
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,8 +29,10 @@ fun AuthConsent(
     policyOpener: PolicyOpener,
     enabled: Boolean,
     modifier: Modifier = Modifier,
+    @StringRes textResource: Int = R.string.auth_by_creating_an_account_you_agree_to_9e09cb,
+    testTag: String = "sign-up.consent",
 ) {
-    val text = stringResource(R.string.auth_by_creating_an_account_you_agree_to_9e09cb)
+    val text = stringResource(textResource)
     val foreground = CfTheme.colors.foreground
     val annotated =
         remember(text, foreground, policyOpener, enabled) {
@@ -66,7 +69,7 @@ fun AuthConsent(
         annotated,
         modifier
             .fillMaxWidth()
-            .testTag("sign-up.consent")
+            .testTag(testTag)
             .alpha(if (enabled) 1f else AuthTokens.disabledOpacity)
             .semantics { if (!enabled) disabled() },
         color = CfTheme.colors.mutedForeground,

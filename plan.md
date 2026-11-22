@@ -3400,7 +3400,7 @@ Acceptance evidence and the pending host checks are recorded in [`docs/settings-
 - [x] Task 8: acceptance wiring.
 - [x] Task 9: shell continuation routing.
 - [x] Task 10: guest sign-up host seam.
-- [ ] Task 11: guest sign-up sheet.
+- [x] Task 11: guest sign-up sheet.
 - [ ] Task 12: guest sign-up presentation.
 - [ ] Task 13: guest sign-up guards and captures.
 - [ ] Task 14: guest claim integration.
