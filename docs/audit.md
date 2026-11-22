@@ -1957,3 +1957,64 @@ The stateless-screen Robolectric guards use explicit reading-order lists: Sign i
 These procedures are not claimed as manual passes. The full Accessibility plan box stays open until its automated and manual gates are complete.
 
 Task 9 final targeted guards: five keyboard/timing cases passed (17.216 s command wall); four native-sheet wrapper cases passed (8.426 s). The separate native evidence is one alert pass without a handler and three sheet passes with the shared handler. No manual-input result is inferred from these automated checks.
+
+### Contrast (Task 10)
+
+`ContrastTest` retains Phase 2’s original contracts and now checks the built foreground/surface roles of buttons, cards, banners/notices, settings, wizard, list and timeline labels, focus rings, borders and Now. Body text uses 4.5:1; large sky headlines and non-text controls use 3:1. Nine equally spaced positions use `CfSky.colorAt` over the actual generated multi-stop ramp. Translucent copy-card, picker and warning fills are composited over their parent. Timeline optional/marked colors use the production precomposition function over surface2; completed list rows composite their whole group over background. Decorative category patterns are not treated as text backgrounds; their flat token fills are measured.
+
+The role inventory is grounded in `CfButton`, `CfBanner`/`CfNotice`, `CfTextField`, settings readiness/time tiles, wizard notices, `NowLine`, `DayListRow`, `TripPagePriorityTag`, `TimelineCategoryStyle` and `DayDrawingBuilder`. Token-equivalent roles share contracts. Existing Material `toM3()` roles remain covered by Phase 2. Disabled controls follow the accepted audit policy; these new contrast contracts add no ATF suppression.
+
+Welcome’s five accepted elements and sign-in.guest remain accepted per OQ-A108 / iOS OQ 33 even where the computed pair passes. Full-ramp sky samples describe the available background envelope, not a claim that text occupies all nine positions. The original skyTop–skyMid text interval still passes. Borders retain Phase 2’s decisions (docs/design-system.md). New gaps retain the landed appearance on OQ-A619’s default; no token changes are made.
+
+| Exception role (theme: pair or ramp index 0…8) | Ratio | Minimum | Decision |
+| --- | ---: | ---: | --- |
+| `light:primaryForeground/now` | 4.086:1 | 4.5:1 | OQ-A619 |
+| `light:input/background` | 1.419:1 | 3:1 | Phase 2 decorative borders |
+| `light:border/background` | 1.334:1 | 3:1 | Phase 2 decorative borders |
+| `light:input/card` | 1.506:1 | 3:1 | Phase 2 decorative borders |
+| `light:border/card` | 1.416:1 | 3:1 | Phase 2 decorative borders |
+| `light:dawn/settingsWarningBackground` | 2.345:1 | 3:1 | OQ-A619 |
+| `light:optionalTimelineSleep` | 1.718:1 | 4.5:1 | OQ-A619 |
+| `light:markedTimelineSleep` | 1.484:1 | 4.5:1 | OQ-A619 |
+| `light:markedTimelineLight` | 3.569:1 | 4.5:1 | OQ-A619 |
+| `light:markedTimelineModerate` | 4.199:1 | 4.5:1 | OQ-A619 |
+| `light:optionalTimelineDark` | 1.510:1 | 4.5:1 | OQ-A619 |
+| `light:markedTimelineDark` | 1.358:1 | 4.5:1 | OQ-A619 |
+| `light:optionalTimelineCaffeine` | 2.172:1 | 4.5:1 | OQ-A619 |
+| `light:markedTimelineCaffeine` | 1.756:1 | 4.5:1 | OQ-A619 |
+| `light:optionalTimelineTravel` | 2.369:1 | 4.5:1 | OQ-A619 |
+| `light:markedTimelineTravel` | 1.856:1 | 4.5:1 | OQ-A619 |
+| `light:eyebrow@2` | 4.416:1 | 4.5:1 | OQ-A108 |
+| `light:eyebrow@3` | 3.945:1 | 4.5:1 | OQ-A108 |
+| `light:eyebrow@4` | 3.557:1 | 4.5:1 | OQ-A108 |
+| `light:eyebrow@5` | 2.665:1 | 4.5:1 | OQ-A108 |
+| `light:planPill@5` | 2.665:1 | 3:1 | OQ-A108 |
+| `light:eyebrow@6` | 1.803:1 | 4.5:1 | OQ-A108 |
+| `light:planPill@6` | 1.803:1 | 3:1 | OQ-A108 |
+| `light:eyebrow@7` | 1.245:1 | 4.5:1 | OQ-A108 |
+| `light:planPill@7` | 1.245:1 | 3:1 | OQ-A108 |
+| `light:skyTitle@8` | 2.183:1 | 3:1 | OQ-A108 |
+| `light:eyebrow@8` | 1.119:1 | 4.5:1 | OQ-A108 |
+| `light:planPill@8` | 1.119:1 | 3:1 | OQ-A108 |
+| `dark:input/background` | 1.629:1 | 3:1 | Phase 2 decorative borders |
+| `dark:border/background` | 1.510:1 | 3:1 | Phase 2 decorative borders |
+| `dark:input/card` | 1.508:1 | 3:1 | Phase 2 decorative borders |
+| `dark:border/card` | 1.398:1 | 3:1 | Phase 2 decorative borders |
+| `dark:markedListInterval` | 4.343:1 | 4.5:1 | OQ-A619 |
+| `dark:optionalTimelineSleep` | 4.106:1 | 4.5:1 | OQ-A619 |
+| `dark:markedTimelineSleep` | 3.340:1 | 4.5:1 | OQ-A619 |
+| `dark:optionalTimelineLight` | 1.273:1 | 4.5:1 | OQ-A619 |
+| `dark:markedTimelineLight` | 1.249:1 | 4.5:1 | OQ-A619 |
+| `dark:optionalTimelineModerate` | 1.936:1 | 4.5:1 | OQ-A619 |
+| `dark:markedTimelineModerate` | 1.804:1 | 4.5:1 | OQ-A619 |
+| `dark:optionalTimelineCaffeine` | 2.939:1 | 4.5:1 | OQ-A619 |
+| `dark:markedTimelineCaffeine` | 2.582:1 | 4.5:1 | OQ-A619 |
+| `dark:optionalTimelineTravel` | 2.268:1 | 4.5:1 | OQ-A619 |
+| `dark:markedTimelineTravel` | 2.064:1 | 4.5:1 | OQ-A619 |
+| `dark:eyebrow@7` | 3.928:1 | 4.5:1 | OQ-A108 |
+| `dark:eyebrow@8` | 2.652:1 | 4.5:1 | OQ-A108 |
+| `dark:planPill@8` | 2.652:1 | 3:1 | OQ-A108 |
+
+Every listed gap has a static `assertBelow` contract: a later color change must prompt review of its exception. The original light dawn-on-card/background/muted/popover and dark dawn-on-foreground exceptions remain in Phase 2’s tests and docs/design-system.md.
+
+Task 10 focused JVM result: both added contrast methods pass (4.102 s command wall), covering 216 role/theme/sample measurements. A compile-only setup error used an integer threshold; it was corrected to Double before any new test executed.
