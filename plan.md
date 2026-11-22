@@ -3696,7 +3696,7 @@ Acceptance evidence and the pending host checks are recorded in [`docs/settings-
   - `make captures` for every screen state, in en and nl, light and dark, at `pixel8`, `foldInner` and `largeFont`.
   - Compare against the boards and against `docs/research/screens/ios/`.
   - Fix each difference, or list it in `docs/audit.md` with its board and the reason.
-- [ ] **Material chrome.** Capture every system component in light and dark, en and nl, for the designer to confirm (OQ-A42).
+- [x] **Material chrome.** Capture every system component in light and dark, en and nl, for the designer to confirm (OQ-A42).
 - [ ] **Accessibility.**
   - Compose accessibility checks (`enableAccessibilityChecks()`) on every screen.
   - Manual TalkBack, Switch Access and keyboard passes over the plan, auth and wizard screens.

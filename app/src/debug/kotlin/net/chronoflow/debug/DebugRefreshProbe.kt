@@ -5,6 +5,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 object DebugRefreshProbe : RefreshDebugProbe {
     val accepted = AtomicInteger()
+    val presentations = AtomicInteger()
 
     @Volatile var outcome = "none"
 
@@ -19,11 +20,13 @@ object DebugRefreshProbe : RefreshDebugProbe {
     }
 
     override fun presented(text: String) {
+        presentations.incrementAndGet()
         presented = text
     }
 
     fun reset() {
         accepted.set(0)
+        presentations.set(0)
         outcome = "none"
         presented = "none"
     }

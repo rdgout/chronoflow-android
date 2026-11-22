@@ -1863,6 +1863,10 @@ No missing PNG is treated as a pass. No physical-device, startup-budget, TalkBac
 | GuestExcluded | 11b | Retired health-answers screen; iOS OQ 47 and OQ-A544 leave it unbuilt. Guests use WizardExcluded. |
 | PolicyReader | 8 | No in-app policy-reader screen is built: PolicyLinks opens the external policy URL in a native Custom Tab (OQ-A32/OQ-A339/OQ-A346). The board draws an in-app reader that the pinned iOS/landed Phase 8 scope does not build. External browser content and chrome need device review. |
 
+## Material chrome (Task 5)
+
+The 68 full-screen pixel captures cover every Material row in en/nl × light/dark, including both alert and segmented-control call sites, switch states, collapsed/expanded titles, native pickers and separate refresh indicator/result states. All 44 final capture cases passed (83.70 s total; maximum case 6.501 s). Hardware frame-commit waits prevent screenshots of prior frames. See [the Material record](material-chrome.md) for exact names, commands, tint guards and the wide JVM rail evidence. Designer status remains **awaiting designer (OQ-A42)**; haptic feel is **not observable on the emulator; device gate**.
+
 ## Accessibility (Tasks 7–11)
 
 Pending automated audit tier, keyboard, contrast and device font-scale evidence. Manual TalkBack, Switch Access and hardware-keyboard rows remain **pending (orchestrator/user)** until observed; no pass is inferred from captures. Accepted Welcome/sign-in-guest contrast and native disabled controls follow the exact policy in brief §5.5.
