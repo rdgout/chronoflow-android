@@ -11,6 +11,7 @@ import net.chronoflow.core.model.config.AppLanguage
 import net.chronoflow.core.testing.DeviceProfile
 import net.chronoflow.core.testing.DeviceProfiles
 import net.chronoflow.core.testing.compose.BoardCapture
+import net.chronoflow.core.testing.compose.BoardCaptureCell
 import net.chronoflow.core.testing.compose.ProfileHost
 import net.chronoflow.core.testing.compose.ProfileRule
 import net.chronoflow.core.testing.tiers.Capture
@@ -114,7 +115,12 @@ class WelcomeCaptureTest internal constructor(
         @ParameterizedRobolectricTestRunner.Parameters(name = "{0}")
         internal fun cases(): List<Array<Any>> {
             val finals =
-                listOf(DeviceProfiles.pixel8, DeviceProfiles.foldInner, DeviceProfiles.small).flatMap { profile ->
+                listOf(
+                    DeviceProfiles.pixel8,
+                    DeviceProfiles.foldInner,
+                    DeviceProfiles.small,
+                    DeviceProfiles.largeFont,
+                ).flatMap { profile ->
                     AppLanguage.entries.flatMap { language ->
                         listOf(false, true).map { dark ->
                             WelcomeCaptureCase(profile, language, dark, "final")
@@ -135,7 +141,11 @@ class WelcomeCaptureTest internal constructor(
                         }
                     }
                 }
-            return (finals + intros + flights).map { arrayOf<Any>(it) }
+            val auditFlights =
+                BoardCaptureCell.standard.map { cell ->
+                    WelcomeCaptureCase(cell.profile, cell.language, cell.dark, "welcome", 2300)
+                }
+            return (finals + intros + flights + auditFlights).distinct().map { arrayOf<Any>(it) }
         }
     }
 }

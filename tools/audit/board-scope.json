@@ -1,15 +1,50 @@
 {
   "schema": 1,
   "excluded": {
-    "superseded": ["TripEditor", "TripEditorErrors", "EditorStates", "TripReview*", "ReviewAnswer", "ReviewStates", "TripDiscard*", "TripCalculating", "TripNoCredits", "DarkTripEditor", "DarkTripReview", "GuestFlight", "GuestHealth", "GuestSleep", "GuestReview", "GuestStates", "WizardOutboundStopNew*"],
-    "retiredHealth": ["WizardQBipolar*", "WizardQCaffeine*", "WizardQClot*", "WizardQEye*", "WizardQPregnant*"],
-    "outOfScope": ["Calendar*", "LiveActivity", "DataDownload*", "SetData", "SetPaywall", "SetCancel", "TripDelete", "AuthEmailChanged", "PasswordPromptEmail", "WizardCheckPractice*"]
+    "superseded": [
+      "TripEditor",
+      "TripEditorErrors",
+      "EditorStates",
+      "TripReview*",
+      "ReviewAnswer",
+      "ReviewStates",
+      "TripDiscard*",
+      "TripCalculating",
+      "TripNoCredits",
+      "DarkTripEditor",
+      "DarkTripReview",
+      "GuestFlight",
+      "GuestHealth",
+      "GuestSleep",
+      "GuestReview",
+      "GuestStates",
+      "WizardOutboundStopNew*"
+    ],
+    "retiredHealth": [
+      "WizardQBipolar*",
+      "WizardQCaffeine*",
+      "WizardQClot*",
+      "WizardQEye*",
+      "WizardQPregnant*"
+    ],
+    "outOfScope": [
+      "Calendar*",
+      "LiveActivity",
+      "DataDownload*",
+      "SetData",
+      "SetPaywall",
+      "SetCancel",
+      "TripDelete",
+      "AuthEmailChanged",
+      "PasswordPromptEmail",
+      "WizardCheckPractice*"
+    ]
   },
   "kinds": {
     "nonScreen": {
       "SplashSpec": "Geometry specification; covered by LaunchLayout tests (0b/3a).",
-      "WizardSpec": "Rules deck; covered by wizard model tests (9a–9h).",
-      "WizardCopy": "Copy deck; covered by generated en/nl string tests (0c/9a–9h).",
+      "WizardSpec": "Rules deck; covered by wizard model tests (9a\u20139h).",
+      "WizardCopy": "Copy deck; covered by generated en/nl string tests (0c/9a\u20139h).",
       "AppIcon": "Launcher icon; evidenced by the launcher shot in Task 4."
     },
     "wideOnly": {
@@ -38,6 +73,13 @@
   },
   "cellExemptions": {},
   "notBuilt": {
-    "GuestExcluded": {"phase": "11b", "reason": "Retired health-answers screen; iOS OQ 47 and OQ-A544 leave it unbuilt. Guests use WizardExcluded."}
+    "GuestExcluded": {
+      "phase": "11b",
+      "reason": "Retired health-answers screen; iOS OQ 47 and OQ-A544 leave it unbuilt. Guests use WizardExcluded."
+    },
+    "PolicyReader": {
+      "phase": "8",
+      "reason": "No in-app policy-reader screen is built: PolicyLinks opens the external policy URL in a native Custom Tab (OQ-A32/OQ-A339/OQ-A346). The board simulates browser chrome; browser content and chrome need device review."
+    }
   }
 }

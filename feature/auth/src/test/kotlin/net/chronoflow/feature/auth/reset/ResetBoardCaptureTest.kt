@@ -3,11 +3,11 @@ package net.chronoflow.feature.auth.reset
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import net.chronoflow.core.designsystem.theme.ChronoFlowTheme
 import net.chronoflow.core.testing.compose.BoardCapture
+import net.chronoflow.core.testing.compose.BoardCaptureCell
 import net.chronoflow.core.testing.compose.ProfileHost
 import net.chronoflow.core.testing.compose.ProfileRule
 import net.chronoflow.core.testing.tiers.Capture
 import net.chronoflow.feature.auth.forgot.ForgotSample
-import net.chronoflow.feature.auth.signin.authBoard
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.RuleChain
@@ -22,16 +22,20 @@ import org.robolectric.annotation.GraphicsMode
 @Config(sdk = [36])
 class ResetBoardCaptureTest(
     private val name: String,
-    private val dark: Boolean,
+    private val cell: BoardCaptureCell,
 ) {
     private val compose = createComposeRule()
 
-    @get:Rule val rules: RuleChain = RuleChain.outerRule(ProfileRule(authBoard, dark = dark)).around(compose)
+    @get:Rule val rules: RuleChain =
+        RuleChain
+            .outerRule(
+                ProfileRule(cell.profile, cell.language, cell.dark),
+            ).around(compose)
 
     @Test fun capturesTheBoardState() {
         compose.setContent {
-            ProfileHost(authBoard) {
-                ChronoFlowTheme(darkTheme = dark) {
+            ProfileHost(cell.profile) {
+                ChronoFlowTheme(darkTheme = cell.dark) {
                     when (name) {
                         "AuthForgot" -> ForgotSample("form")
                         "AuthReset" -> ResetSample("form")
@@ -44,20 +48,23 @@ class ResetBoardCaptureTest(
                 }
             }
         }
-        BoardCapture.capture(compose, "${name}_en_${if (dark) "dark" else "light"}")
+        BoardCapture.capture(compose, "${name}_${cell.suffix}")
     }
 
     companion object {
         @JvmStatic
-        @ParameterizedRobolectricTestRunner.Parameters(name = "{0}_dark={1}")
+        @ParameterizedRobolectricTestRunner.Parameters(name = "{0}-{1}")
         fun cases(): List<Array<Any>> =
-            listOf("AuthForgot", "AuthReset", "AuthResetDone", "AuthResetExpired").flatMap { name ->
-                listOf(false, true).map { arrayOf<Any>(name, it) }
-            } +
-                listOf(
-                    arrayOf("auth/ForgotSent", false),
-                    arrayOf("auth/ExpiredSent", false),
-                    arrayOf("auth/ResetFieldErrors", false),
-                )
+            listOf(
+                "AuthForgot",
+                "AuthReset",
+                "AuthResetDone",
+                "AuthResetExpired",
+                "auth/ForgotSent",
+                "auth/ExpiredSent",
+                "auth/ResetFieldErrors",
+            ).flatMap { name ->
+                BoardCaptureCell.standard.map { cell -> arrayOf<Any>(name, cell) }
+            }
     }
 }

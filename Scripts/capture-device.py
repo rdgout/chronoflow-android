@@ -17,7 +17,8 @@ def main(only):
         print('captures: no booted device; run Scripts/emulator.sh ensure', file=sys.stderr)
         return 1
     target = ROOT / 'build/captures/device'
-    shutil.rmtree(target, ignore_errors=True)
+    subprocess.run([sys.executable, '-I', str(ROOT / 'Scripts/prepare-captures.py'), str(target),
+                    '--only', only, '--append', '1' if os.environ.get('APPEND') == '1' else '0'], check=True)
     trip_sheets = only.startswith(('ItemDetail', 'PlanLegend', 'SheetStates', 'TripActions'))
     wizard_pickers = only.startswith('PickerDateTime')
     module = 'app' if only.startswith('SplashScreen') or trip_sheets or wizard_pickers else 'core/ui'

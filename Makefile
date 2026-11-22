@@ -173,7 +173,7 @@ captures:
 ifeq ($(DEVICE),1)
 	python3 -I Scripts/device_lock.py -- python3 -I Scripts/capture-device.py "$(ONLY)"
 else
-	rm -rf build/captures
+	python3 -I Scripts/prepare-captures.py build/captures --only "$(ONLY)" --append "$(if $(filter 1,$(APPEND)),1,0)"
 	$(RUN_TIER) captures $(RESULTS_DEBUG) $(TIMINGS_DEBUG) -- $(GRADLE) testDebugUnitTest --rerun -Pcf.tier=capture -Pcf.captureOnly=$(ONLY)
 	@n=$$(find build/captures -name '*.png' 2>/dev/null | wc -l | tr -d ' '); echo "captures: $$n PNGs in build/captures"; \
 	  if [ "$$n" = 0 ] && [ -z "$(ONLY)" ]; then echo "captures: no PNGs written" >&2; exit 1; fi

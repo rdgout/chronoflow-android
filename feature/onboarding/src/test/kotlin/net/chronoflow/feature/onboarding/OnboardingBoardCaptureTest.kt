@@ -3,10 +3,8 @@ package net.chronoflow.feature.onboarding
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import net.chronoflow.core.designsystem.theme.ChronoFlowTheme
 import net.chronoflow.core.model.api.AccountPolicies
-import net.chronoflow.core.model.config.AppLanguage
-import net.chronoflow.core.model.contracts.Language
-import net.chronoflow.core.testing.DeviceProfiles
 import net.chronoflow.core.testing.compose.BoardCapture
+import net.chronoflow.core.testing.compose.BoardCaptureCell
 import net.chronoflow.core.testing.compose.ProfileHost
 import net.chronoflow.core.testing.compose.ProfileRule
 import net.chronoflow.core.testing.tiers.Capture
@@ -27,22 +25,21 @@ import org.robolectric.annotation.Config
 @Config(sdk = [36])
 class OnboardingBoardCaptureTest(
     private val board: String,
-    private val language: Language,
-    private val dark: Boolean,
+    private val cell: BoardCaptureCell,
 ) {
-    private val profile = DeviceProfiles.pixel8.copy(widthDp = 375, heightDp = 812)
+    private val profile = cell.profile
     private val compose = createComposeRule()
 
     @get:Rule val rules: RuleChain =
         RuleChain
             .outerRule(
-                ProfileRule(profile, if (language == Language.Nl) AppLanguage.Nl else AppLanguage.En, dark),
+                ProfileRule(profile, cell.language, cell.dark),
             ).around(compose)
 
     @Test fun captureBoard() {
         compose.setContent {
             ProfileHost(profile) {
-                ChronoFlowTheme(darkTheme = dark, reduceMotion = true) {
+                ChronoFlowTheme(darkTheme = cell.dark, reduceMotion = true) {
                     if (board.startsWith("Terms")) {
                         TermsScreen(
                             TermsUiState(policies = AccountPolicies("1", "1"), failed = board == "TermsFailed"),
@@ -63,12 +60,12 @@ class OnboardingBoardCaptureTest(
         compose.waitForIdle()
         compose.mainClock.advanceTimeByFrame()
         compose.waitForIdle()
-        BoardCapture.capture(compose, "${board}_pixel8_${language.raw}_${if (dark) "dark" else "light"}")
+        BoardCapture.capture(compose, "${board}_${cell.suffix}")
     }
 
     companion object {
         @JvmStatic
-        @ParameterizedRobolectricTestRunner.Parameters(name = "{0}-{1}-{2}")
+        @ParameterizedRobolectricTestRunner.Parameters(name = "{0}-{1}")
         fun cases() =
             listOf(
                 "Walkthrough",
@@ -78,9 +75,7 @@ class OnboardingBoardCaptureTest(
                 "TermsUpdate",
                 "TermsFailed",
             ).flatMap { board ->
-                listOf(Language.En, Language.Nl).flatMap { language ->
-                    listOf(false, true).map { arrayOf<Any>(board, language, it) }
-                }
+                BoardCaptureCell.standard.map { cell -> arrayOf<Any>(board, cell) }
             }
     }
 }
