@@ -62,6 +62,18 @@ class BumpVersionTest(unittest.TestCase):
         self.write([0, 100, 0, 0])
         self.assertEqual(self.cli("build").returncode, 2)
 
+    def test_underscore_is_not_a_java_properties_integer(self):
+        self.write([0, "1_0", 0, 0])
+        result = self.cli("build")
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("versionMinor", result.stderr)
+
+    def test_unicode_digits_are_not_a_java_properties_integer(self):
+        self.write([0, "١", 0, 0])
+        result = self.cli("build")
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("versionMinor", result.stderr)
+
     def test_dry_run_preserves_bytes(self):
         self.write([0, 1, 0, 0])
         before = self.path.read_bytes()

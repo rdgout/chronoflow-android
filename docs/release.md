@@ -230,3 +230,5 @@ Task 10's generator and post-generation gate are prepared, but its generated-fil
 ## 16 KB alignment
 
 Worker, local host, 2026-11-22: `/opt/homebrew/share/android-commandlinetools/build-tools/36.0.0/zipalign -c -P 16 -v 4 app/build/outputs/apk/release/app-release-unsigned.apk` exits 0 and prints `Verification successful`. This checks the existing release APK's native-library packaging, including the sole allowed graphics-path library. Raw local log: `/tmp/cf13-task13-zipalign.log`. Recheck the final APK after any packaging/native dependency change.
+
+Final version-parser review found Python int() accepts underscores and Unicode digits that VersionProperties.parse rejects. The script now accepts only the same signed ASCII integer syntax before applying the existing ranges. `python3 -I -m unittest discover -s Scripts/tests -p test_bump_version.py`: **18 PASS, 0.49 s wall** (2026-11-22), including both planted mismatches. This corrects Task 2 commit 6cca81c7; valid versions and version.properties are unchanged.

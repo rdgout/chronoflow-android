@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Bump the four-part Android upload version without third-party dependencies."""
 import argparse
+import re
 import sys
 from pathlib import Path
 
@@ -17,7 +18,10 @@ def read_version(path):
     values = []
     for key, limit in zip(KEYS, LIMITS):
         try:
-            value = int(properties[key])
+            raw = properties[key]
+            if not re.fullmatch(r"[+-]?[0-9]+", raw):
+                raise ValueError
+            value = int(raw)
         except KeyError:
             raise ValueError(f"{key} is missing") from None
         except ValueError:
