@@ -22,8 +22,10 @@ import net.chronoflow.core.model.store.StoreTime
 import net.chronoflow.core.wizard.model.MemberWizardDraft
 import net.chronoflow.core.wizard.model.MemberWizardDrafts
 import net.chronoflow.core.wizard.model.MemberWizardRecord
+import net.chronoflow.core.wizard.model.MemberWizardStep
 import net.chronoflow.core.wizard.model.TripWizardAction
 import net.chronoflow.core.wizard.model.WizardDraftStore
+import net.chronoflow.core.wizard.model.WizardSleepOverride
 import net.chronoflow.core.wizard.model.hasChanges
 import net.chronoflow.core.wizard.model.loadTrip
 import java.time.Instant
@@ -59,6 +61,26 @@ class MemberWizardStore(
             recover()?.let { return@withContext it }
             val draft = initialDraft()
             drafts.createRecovery(record(draft), permit)
+            draft
+        }
+
+    suspend fun start(seed: MemberWizardDraft): MemberWizardDraft =
+        withContext(io) {
+            val initial = initialDraft()
+            val draft =
+                initial.copy(
+                    form = seed.form.copy(identity = null, override = WizardSleepOverride()),
+                    state =
+                        initial.state.copy(
+                            airports = seed.airports,
+                            entered = true,
+                            fromLastTrip = false,
+                            step = MemberWizardStep.checking,
+                            returnToReady = true,
+                            profile = JsonObject(emptyMap()),
+                        ),
+                )
+            drafts.replaceRecovery(record(draft), permit)
             draft
         }
 
