@@ -1652,3 +1652,56 @@ Recorded differences for **each of `GuestSignup`, `GuestSignupFailed`, `GuestSig
 All 80 guest sign-up layout cases passed: Ready/Failed/Retry/Review × small/pixel8/foldInner/largeFont/landscapeSideNav × en/nl × light/dark. They measure the production content and shared native handle; foldInner fields are 480 dp wide and centred, and pixel8 fields are the frame width minus 40 dp.
 
 Capture command (run once): `make captures ONLY=GuestSignup,GuestSignupFailed,GuestSignupRetry,GuestSignupReview`. It passed in 22 s Gradle wall time and wrote exactly four 1125 × 2436 PNGs in `build/captures/`, named after those boards. Ready and Review were inspected directly: outside the sheet the dialog capture has no Ready backdrop, and the taller Review form scrolls to its lower actions/consent. The host still compares these with its rendered boards.
+
+
+### Phase 11b verification (2026-11-22)
+
+Current seed roles replace the earlier hand-off-only journey: `CF_GUEST_WIZARD=1` + `WizardGuestJourney` opens live Sleep; adding `CF_GUEST_WIZARD_JOURNEY=1` supplies the sign-up prefill. `CF_GUEST_WIZARD=1` + `GuestSignup*` presents the sheet over frozen Ready. The journey keeps its Swift name `testWelcomeThroughSignupOpensClaimedTrip`; Where/Outbound are covered by the cheaper wizard suites. `GuestWizardReviewIoTest` is unchanged.
+
+Per-task targeted checks completed before their commits (Gradle wall times; a fix reran only the affected methods):
+
+| Brief task | Tests | Passing run / correction time |
+| --- | --- | --- |
+| Preflight | unchanged mock registration, stale/replay claim and wire classes | 8 s + 3 s |
+| 1 | `GuestClaimTest`, `GuestSessionContinuationCodecTest` | 12 s |
+| 2 | `GuestClaimStoreTests`, existing `GuestWizardStoreTests` | 3 s |
+| 3 | `MemberWizardStoreSeedTest`, existing `WizardRecoveryTests` | corrected seed method 3 s; other cases passed in the preceding run |
+| 4 | `GuestContinuationRepositoryTest` | five cases passed initially; corrected corrupt-row method 3 s |
+| 5 | four `GuestSessionAcceptance*Tests` classes, 14 cases | 2 s |
+| 6 | `SignUpModelTests`, `GuestSignupStateTest`, existing sign-up VM/guards/consent and verify models | 11 s |
+| 7 | request/expiry/two-factor claim cases and existing sign-in/passkey/two-factor models | 5 s initial run; corrected register/expiry methods 3 s |
+| 8 | `GuestAcceptanceWiringTest`, `AuthServicesTest`, `SignInModelRoutingTests`, reset/forgot/link/entry tests | 10 s initial run; two corrected future-date fixture cases 4 s |
+| 9 | `GuestContinuationRunnerTest`, shell guest/state/settings and overlay cases | 5 s + 3 s |
+| 10 | guest sign-up VM, board seeds, guest dependencies and IO cases | 7 s + 5 s |
+| 11 | content, existing consent/native sheet; 80 guest sheet layout cases | 9 s + 5 s; 12 s |
+| 12 | nine coordinator, five native-sheet screen, three acceptance wiring, release-readiness cases | 12 s + 7 s |
+| 13 | four captures, one invocation | 22 s |
+| 14 | `GuestWizardClaimIntegrationTests` en/nl | 3 s; cases 0.405 s / 0.046 s |
+
+The initial compiler/fixture corrections were nullable generated identity arguments, the stored body-clock normalization, valid-but-unknown continuation JSON (the store rejects invalid JSON), the missing shared sign-up claim binding, the future mock flight dates, extension imports and Android's `TripDetailResponse.detail` wrapper. No test budget or earlier-phase behavior was changed to resolve them. The missing sign-up provider was caught by the new request/expiry tests.
+
+Final checks and evidence:
+
+| Command / tier | Result | Wall time |
+| --- | --- | --- |
+| `:app:lintDebug`, touched auth/wizard/data/navigation/design-system lint, `:app:verifyReleaseManifest`, full `:app:testReleaseUnitTest`, `:app:compileDebugAndroidTestKotlin` | passed; 239 release cases, zero overruns | 53.83 s tier / 53.875 s shell |
+| touched-module layout tier (app, auth, wizard, design system; data/navigation have no layout cases) | 1,213 passed, one skipped; zero overruns | 28.38 s tier / 28.448 s shell |
+| `make targeted ONLY="app:GuestWizardJourneyTest"` (once) | passed on pixel AVD/API 36/debug mock; live claim, verification, walkthrough, trip, file/secret cleanup, zero IO violations | test 5.972 s; tier 20.17 s including build/install |
+| `make targeted ONLY="app:GuestSignupKeyboardTest"` (once) | passed; focused confirmation above the real IME; Go reaches Review | test 2.075 s; tier 8.37 s |
+| `adb -s emulator-5554 logcat -d -s StrictMode` | zero matches for GuestSignupCoordinator, GuestSessionAcceptance, GuestContinuationRepository, GuestContinuationRunner and GuestWizardStore | read-only check |
+| single `make quick` | one Konsist failure, corrected below; one untouched cold-case timing overrun, not retried; no hangs | 51.56 s tier / 51.614 s shell |
+| targeted handle guard + `KonsistRulesTest#designSystemPrimitivesHaveGuards` | passed after adding component geometry/ink coverage | 4 s + 5 s Gradle |
+| additional `:core:ui:testDebugUnitTest -Pcf.tier=layout` | 268 cases passed; zero overruns | 19.08 s tier / 19.125 s shell |
+| build-logic (the skipped quick component) | 37 certified cases passed | 2.60 s tier / 2.643 s shell |
+| `Scripts/test_scripts.sh` (the skipped quick component) | 171 script + 25 contract + 49 string + 11 icon tests passed | 20.667 s shell |
+| `make timing` (the skipped quick component) | all seven serial JVM budget tests passed | 2.48 s tier / 2.528 s shell |
+
+The quick failure was the new public `CfSheetDragHandle` missing the design-system guard coverage required by Konsist. `CfSheetDragHandleGuardsTest` now checks the production handle's native 48 dp slot and token ink; it uses component geometry/ink checks because a small handle cannot satisfy a full-screen non-blank-area threshold. The rule and guard pass; no rule or allowlist was weakened. The untouched cold class case `core:ui:CfBannerTest#politeAnnouncementCanBeSuppressedByTheCaller` took **3,258 ms**, exceeding its **3,000 ms** class allowance. It was not changed or retried, and quick was not repeated. No all-green quick/commit gate is claimed.
+
+A final concurrency regression (`GuestClaimConcurrencyTest.reviewExpiryCannotOverwriteAConcurrentReview`) demonstrated that separate suspending recovery and persistence could overwrite a newer guest review. The signed correction keeps the match and invalidation in one mutex/IO operation, preserving pinned iOS actor atomicity. That regression and the existing claim/store classes then passed in 4 s Gradle wall time. The tests introduce no production hook.
+
+First-case costs were kept separate: content 2.658 s, seeded sheet screen 2.421 s, first capture/SDK 6.364 s. Subsequent targeted content/screen/capture cases were below 1 s. In the final quick run the new guest cases' warm maximum was 321 ms; the 80 layout cases' warm maximum was 109 ms. Timing JSON and XML evidence are under `build/test-results/{quick,11b-lint-release,11b-layout,11b-ui-layout,11b-journey,11b-keyboard,captures,timing}/`.
+
+OQ-A544–A556 record the thirteen brief defaults; no A557+ question was needed. No Android-only copy, dependency or native library was added. Both languages use the generated resources. The generated legacy “3 credits” lookup alias still points at the resource's server balance argument (11a/OQ-A533); handwritten Kotlin adds no fixed credit amount or arithmetic.
+
+Host follow-up: a fresh `make quick` for the untouched timing case, `make baseline-profile` (commit the regenerated profiles), and `make perf` (record cold/warm startup in `docs/perf-startup.md`). The Valet claim gate remains open as OQ-A555. No perf tier or `make check` was run. Pixel remains running.

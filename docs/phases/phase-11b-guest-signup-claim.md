@@ -100,6 +100,8 @@ Checked against the code at `fcf08348` (phases 0a–11a), iOS at `f391a1fa`, web
 
 **Task 14 response mapping.** Android `DataSource.fetchTripDetail` returns `TripDetailResponse(data, detail)`; the final Swift trip assertion reads `.detail.trip.id` on Android. This is a wrapper-access mapping, with no data-source change.
 
+**Task 15 credits audit.** Acceptance grep 8 also matches 11a's existing generated `CopyIndex` compatibility alias for the old "3 credits" key. At the phase base it already maps to `android_wizard_guest_price_paid`, whose en/nl strings take both cost and balance arguments (OQ-A533). Keep that generated alias and the landed behavior; audit hand-written Kotlin with `--glob '!*.generated.kt'` and verify the resource arguments separately. No fixed credit amount or client arithmetic is introduced by 11b.
+
 This phase is mostly **ports of small iOS types, one sheet and wiring**. The mock registration claim (iOS 18d) is **4c's and already merged** (`MockGuestRegistrationClaimTests`, `MockStaleClaimTests`, `MockClaimReplayTests`). The HTTP half of `GuestClaimAuthTests` is **4b's** (`GuestClaimWireTests`). The guest wizard model (`guestReviewExpired`, `setGuestSigningIn`, `setGuestAuthenticationPresented`) is **9a's**; the guest store, secret store and the sign-up seam are **11a's**. Do not port them again. If a rule below is missing from those phases, port it into that module with its iOS test in a separate `fix(<scope>): …` commit that names the Swift line, and report it.
 
 ---
@@ -256,6 +258,7 @@ suspend fun reviewExpired(claim: GuestClaim)
   4. `current = recover()` non-null, `current.state.instance == draft.state.instance` and `current.form.identity == identity` (re-read after the suspending secret read, so a discard or a new review in between yields `null`).
   Then `GuestClaim(identity.token, identity.inputRevision, identity.reviewRevision, secret)`.
 - **`reviewExpired(claim)`**: `draft = recover() ?: return`; return unless `draft.form.identity?.token == claim.draftToken`, `inputRevision == claim.inputRevision` and `reviewRevision == claim.reviewRevision`. Then apply 9a's `returnToReadyAfterExpiredClaim()` (`returnToReady = true`, `checkingAnswers = null`, `reviewedAt = null`, `step = ready`), `revision + 1`, `persist(draft)`. It throws what `persist` throws.
+- Keep `reviewExpired`'s matching check and invalidation in one `withContext(io)` / mutex critical section, using the existing private `recoverRecord` / `record` / `write` helpers. This preserves the atomicity of pinned iOS `GuestWizardStore.swift:102–112`; splitting it into two suspending public calls can overwrite a concurrent newer review. `GuestClaimConcurrencyTest.reviewExpiryCannotOverwriteAConcurrentReview` reproduced that loss before the correction.
 - `recover()` keeps its sliding-expiry rule (11a): a claim on a draft ≥ 30 min old is `null`.
 
 ### 5.3 Member wizard from a guest seed (`MemberWizardStore.start(seed)`, port `MemberWizardStore.swift:164–177`)
