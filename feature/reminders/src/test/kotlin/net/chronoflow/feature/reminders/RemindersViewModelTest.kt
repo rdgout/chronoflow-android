@@ -201,6 +201,33 @@ class RemindersViewModelTest {
             }
         }
 
+    @Test fun callerCancellationNeverSetsFailureAndResetsBusy() =
+        runTest(timeout = 60.seconds) {
+            withModel { vm, deps ->
+                val gate = CompletableDeferred<Unit>()
+                deps.enqueue = { gate.await() }
+                vm.setEnabled(false)
+                runCurrent()
+                assertTrue(vm.state.value.busy)
+                vm.viewModelScope.coroutineContext.job
+                    .cancelAndJoin()
+                assertFalse(vm.failed)
+                assertFalse(vm.state.value.busy)
+            }
+        }
+
+    @Test fun foreignCancellationKeepsTheOfferOpenAndResetsBusy() =
+        runTest(timeout = 60.seconds) {
+            withModel { vm, deps ->
+                deps.enqueue = { throw kotlinx.coroutines.CancellationException() }
+                vm.requestPermission()
+                runCurrent()
+                assertTrue(vm.failed)
+                assertFalse(vm.state.value.busy)
+                assertNotNull(vm.permissionRequestsFinished.value)
+            }
+        }
+
     @Test fun checkedFailureKeepsTheOfferOpenAndResetsBusy() =
         runTest(timeout = 60.seconds) {
             withModel {

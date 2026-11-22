@@ -1,9 +1,12 @@
 package net.chronoflow.feature.reminders
 
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.isActive
 import net.chronoflow.core.model.DataFailure
 import net.chronoflow.core.model.device.DeviceIdentityFailure
 import net.chronoflow.core.model.session.SessionFailure
+import net.chronoflow.core.model.session.StaleSessionException
 import net.chronoflow.core.model.store.LocalMutationFailure
 import net.chronoflow.core.model.store.StoreFailure
 import java.io.IOException
@@ -16,8 +19,11 @@ internal suspend fun remindersAttempt(
 ) {
     try {
         block()
-    } catch (failure: CancellationException) {
+    } catch (failure: StaleSessionException) {
         throw failure
+    } catch (failure: CancellationException) {
+        if (!currentCoroutineContext().isActive) throw failure
+        failed(failure)
     } catch (failure: SessionFailure) {
         failed(failure)
     } catch (failure: DataFailure) {

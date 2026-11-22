@@ -451,3 +451,6 @@ If the leave-installed property is not honoured, or the precondition fails after
 
 
 **R22. Task 8 execution evidence.** `Scripts/reminders_permission.py` runs under the tier's device lock, verifies the APK remains installed, revokes/clears flags outside instrumentation, then invokes only the permission class with `am instrument`. It checks the runner's single-test success and time metric, writes JUnit evidence, and fails on missing evidence or a runner failure even when `adb` exits 0. `make targeted ONLY="app:RemindersPermissionDeviceTest"` uses that same path (install first, or reuse installed APKs with `REUSE_BUILD=1`). The smoke target keeps/excludes exactly the APK/class required by R13. No other emulator class is run for this task.
+
+
+**R23. Binding cancellation rule (user, Lessons from 6c).** Preserve silent `StaleSessionException` and rethrow caller cancellation. A `CancellationException` from a dependency while the caller is still active is a failure to map, as on iOS. This overrides §5.3's broader all-cancellations wording; the model tests distinguish stale-session, caller and foreign cancellation without booting the app. No earlier-phase code changes.
