@@ -18,24 +18,7 @@ class DeviceScreenCapture(
 ) {
     fun capture(name: String) {
         assumeTrue("capture is outside cf.captureOnly", only.isEmpty() || only.any(name::startsWith))
-        rule.waitForIdle()
-        val pending = AtomicInteger()
-        val instrumentation = InstrumentationRegistry.getInstrumentation()
-        instrumentation.runOnMainSync {
-            val windows = WindowInspector.getGlobalWindowViews().filter { it.isShown && it.isAttachedToWindow }
-            check(windows.isNotEmpty()) { "no visible capture window" }
-            pending.set(windows.size)
-            windows.forEach { decor ->
-                decor.viewTreeObserver.registerFrameCommitCallback {
-                    decor.post {
-                        decor.viewTreeObserver.registerFrameCommitCallback { pending.decrementAndGet() }
-                        decor.postInvalidateOnAnimation()
-                    }
-                }
-                decor.postInvalidateOnAnimation()
-            }
-        }
-        rule.waitUntil(5_000) { pending.get() == 0 }
+        rule.awaitHardwareFrames()
         val bitmap = checkNotNull(InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot())
         try {
             BoardCapture.capture(bitmap, name)
@@ -71,6 +54,27 @@ class DeviceScreenCapture(
             return File(directory, "material/timings.jsonl")
         }
     }
+}
+
+internal fun ComposeTestRule.awaitHardwareFrames() {
+    waitForIdle()
+    val pending = AtomicInteger()
+    val instrumentation = InstrumentationRegistry.getInstrumentation()
+    instrumentation.runOnMainSync {
+        val windows = WindowInspector.getGlobalWindowViews().filter { it.isShown && it.isAttachedToWindow }
+        check(windows.isNotEmpty()) { "no visible capture window" }
+        pending.set(windows.size)
+        windows.forEach { decor ->
+            decor.viewTreeObserver.registerFrameCommitCallback {
+                decor.post {
+                    decor.viewTreeObserver.registerFrameCommitCallback { pending.decrementAndGet() }
+                    decor.postInvalidateOnAnimation()
+                }
+            }
+            decor.postInvalidateOnAnimation()
+        }
+    }
+    waitUntil(5_000) { pending.get() == 0 }
 }
 
 internal class DeviceCaptureTimingRule : TestRule {

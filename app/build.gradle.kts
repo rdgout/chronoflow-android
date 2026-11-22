@@ -144,6 +144,8 @@ dependencies {
 
     androidTestImplementation(libs.androidx.espresso.intents)
     androidTestImplementation(libs.compose.ui.test.junit4)
+    androidTestImplementation(libs.compose.ui.test.junit4.accessibility)
+    androidTestCompileOnly(libs.checker.qual)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.uiautomator)

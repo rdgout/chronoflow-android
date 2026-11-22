@@ -187,6 +187,10 @@ audit-coverage:
 ios-parity:
 	python3 -I Scripts/device_lock.py -- python3 -I Scripts/ios-parity.py $(if $(ONLY),--only "$(ONLY)")
 
+.PHONY: a11y
+a11y:
+	python3 -I Scripts/device_lock.py -- bash -c 'Scripts/emulator.sh ensure && exec $(RUN_TIER) a11y --device --emulator --results "app/build/outputs/androidTest-results/connected/**/*.xml" -- $(GRADLE) :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.package=net.chronoflow.app.audit -Pandroid.testInstrumentationRunnerArguments.notAnnotation=net.chronoflow.core.testing.tiers.Capture $(if $(filter 1,$(FULL)),-Pandroid.testInstrumentationRunnerArguments.cf.auditFull=1)'
+
 perf-timeline:
 	$(RUN_TIER) perf-timeline --device --results 'benchmark/build/outputs/androidTest-results/connected/benchmarkRelease/**/*.xml' -- bash -c ' \
 	  reset_window() { \

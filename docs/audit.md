@@ -1869,7 +1869,9 @@ The 68 full-screen pixel captures cover every Material row in en/nl × light/dar
 
 ## Accessibility (Tasks 7–11)
 
-Pending automated audit tier, keyboard, contrast and device font-scale evidence. Manual TalkBack, Switch Access and hardware-keyboard rows remain **pending (orchestrator/user)** until observed; no pass is inferred from captures. Accepted Welcome/sign-in-guest contrast and native disabled controls follow the exact policy in brief §5.5.
+The audit helper uses Compose 1.12.1 `ui-test-junit4-accessibility` with its ATF 4.1.1 dependency (ATF's Checker Framework qualifier API is exposed via a test-only compile dependency). Compiled API inspection confirms that the v2 `createEmptyComposeRule` is an AndroidComposeTestRule at runtime, so the preferred `enableAccessibilityChecks`/`tryPerformAccessibilityChecks` path is supported. Each caller supplies the exact content tag of its current window (including sheets/dialogs); the validator checks that node's window root, throws on ERROR and applies only brief §5.5's five rules. Every ignored check logs its rule/tag/bounds once. Framework descriptions are redacted to structural identifiers and framework image saving is disabled, keeping field contents out of logs, exceptions and saved screenshots. Hardware frame commits precede the audit. API reference: [Android accessibility testing](https://developer.android.com/develop/ui/compose/accessibility/testing).
+
+Pending automated audit runs, keyboard, contrast and device font-scale evidence. Manual TalkBack, Switch Access and hardware-keyboard rows remain **pending (orchestrator/user)** until observed; no pass is inferred from captures. Accepted Welcome/sign-in-guest contrast and native disabled controls follow the exact policy in brief §5.5.
 
 ## Robustness (Tasks 13–15)
 
