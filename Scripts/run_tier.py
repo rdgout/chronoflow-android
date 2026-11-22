@@ -379,6 +379,8 @@ def execute_tier(root, out_dir, tier, patterns, timing_patterns, command, env, e
     missing_evidence, missing_dirs = missing_execution_evidence(
         root, timing_patterns, started_ns, current_files, timing_files, measured_dirs
     )
+    if emulator and not current_tests:
+        missing_evidence.append("emulator tier selected no test cases")
     if timing_patterns and current_files and not timing_files:
         missing_evidence.append("%s wrote no timing files" % tier)
     failed_dirs.update(missing_dirs)

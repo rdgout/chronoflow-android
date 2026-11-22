@@ -88,6 +88,17 @@ class RunTierTest(unittest.TestCase):
         self.assertEqual(result.returncode, 2)
         self.assertIn("produced no result files", result.stderr)
 
+    def test_empty_emulator_results_fail(self):
+        result = self.tier(
+            "t", "--emulator", "--results", "empty.xml", "--", sys.executable, "-c",
+            "from pathlib import Path; Path('empty.xml').write_text('<testsuites tests=\"0\"/>')",
+        )
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertIn("emulator tier selected no test cases", result.stderr)
+        report = json.loads((self.root / "build/test-results/t/timings.json").read_text())
+        self.assertEqual(0, report["measuredTests"])
+        self.assertIn("emulator tier selected no test cases", report["missingEvidence"])
+
     def test_worker_hang_evidence_is_surfaced_and_preserved(self):
         directory = self.root / "module/build/cf-timings/test"
         directory.mkdir(parents=True)
