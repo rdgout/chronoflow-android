@@ -3450,7 +3450,7 @@ Acceptance evidence and the pending host checks are recorded in [`docs/settings-
   - `ReminderSchedule`.
   - `ReminderLedger`: identifiers and replay protection.
   - The account-level switches and the lead time (15, 30 or 60 min).
-- [ ] **Parity.** Copy `selection.json` (110 vectors, 1.0 MB) into `core/testing/…/fixtures/reminders/` with its hash. `ReminderParityTest` runs every vector unchanged. Record the exporter command (`Tools/ReminderParity/export-selection.cjs`) for a re-pin.
+- [x] **Parity.** Copy `selection.json` (110 vectors, 1.0 MB) into `core/testing/…/fixtures/reminders/` with its hash. `ReminderParityTest` runs every vector unchanged. Record the exporter command (`Tools/ReminderParity/export-selection.cjs`) for a re-pin.
 - [ ] **Copy.** Notification copy in en and nl, through the 0c strings and the account time format.
 
 **Acceptance**
