@@ -1617,3 +1617,13 @@ run-tier: over budget: robolectric net.chronoflow.feature.onboarding.terms.Terms
 ```
 
 That case was not retried or changed. The skipped quick components ran separately and passed: build-logic (37 certified cases, 2.46 s), script/contract/string/icon tooling (171/25/49/11 cases; 19.941/0.111/0.017/0.088 s), and serial timing (7 certified cases, 1.42 s). No perf or `make check` was run; pixel remains running.
+
+**Final coverage fix after review round 3 (2026-11-22).** The concrete Keystore dispatcher test now exercises `set`, `rotate` and `delete` as well as `get`. Its checked DataStore asserts the caller's injected IO dispatcher before DataStore can perform its own dispatch; separate wrong-dispatcher controls for all three mutations must fail that boundary. Mutation counts also prove the writes/deletions happened. `GuestWizardIoTest.guestFileStoreHopsToIoFromMain` now calls concrete guest persistence from Main, so removing that store's IO hop makes the file-supplier assertion fail.
+
+The debug-only `GuestWizardDebugSecrets.hasReviewSecret` probe returns only whether the persisted review token resolves to a non-empty secret, with every read on injected IO. JVM checks prove both presence after mint/recheck and absence after clearing secrets. `ReleaseReadinessTest` proves the hook is absent from release. The seeded emulator test now waits for this probe after the age question, before checking zero IO violations; this enhanced assertion has been compiled but has not been run on the emulator. Run on the host:
+
+```sh
+make targeted ONLY="app:GuestWizardReviewIoTest#firstGuestReviewFromSleepDoesNoMainThreadIo"
+```
+
+All five targeted JVM/Robolectric/release cases passed: Keystore dispatcher (1.280 s cold SDK case, 6 s Gradle), three guest VM cases (0.171 s total, 4 s Gradle), and release exclusion (0.007 s, 4 s Gradle). `:app:compileDebugAndroidTestKotlin` passed in 3 s. The single `make quick` passed in **67.756 s** overall, including a **42.92 s** JVM/Robolectric tier with zero budget overruns; the concrete dispatcher case took 39 ms and the Main-caller file-store case 6 ms warm. Build-logic, tooling and serial timing checks passed within quick. No emulator, perf or `make check` run was made for this fix.
