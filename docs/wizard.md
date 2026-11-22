@@ -1627,3 +1627,28 @@ make targeted ONLY="app:GuestWizardReviewIoTest#firstGuestReviewFromSleepDoesNoM
 ```
 
 All five targeted JVM/Robolectric/release cases passed: Keystore dispatcher (1.280 s cold SDK case, 6 s Gradle), three guest VM cases (0.171 s total, 4 s Gradle), and release exclusion (0.007 s, 4 s Gradle). `:app:compileDebugAndroidTestKotlin` passed in 3 s. The single `make quick` passed in **67.756 s** overall, including a **42.92 s** JVM/Robolectric tier with zero budget overruns; the concrete dispatcher case took 39 ms and the Main-caller file-store case 6 ms warm. Build-logic, tooling and serial timing checks passed within quick. No emulator, perf or `make check` run was made for this fix.
+
+
+## Phase 11b: guest sign-up and claim
+
+The guest holder retains a single sign-up coordinator; Ready opens the native sheet, and leaving the root entry clears it. Registration carries the live review claim. The per-account continuation waits through Verify, Terms and Walkthrough, then opens the claimed trip through the existing awaiting-sync route. Password/passkey sign-in without a receipt seeds the member wizard; two-factor continues to My trips.
+
+| Board | Debug seed (also requires `CF_AUTH_TEST_ID=<uuid>`, `CF_UI_TEST_PROFILE=screen`) |
+| --- | --- |
+| `GuestSignup` | `CF_GUEST_WIZARD=1`, `CF_WIZARD_BOARD_CAPTURE=GuestSignup` |
+| `GuestSignupFailed` | `CF_GUEST_WIZARD=1`, `CF_WIZARD_BOARD_CAPTURE=GuestSignupFailed` |
+| `GuestSignupRetry` | `CF_GUEST_WIZARD=1`, `CF_WIZARD_BOARD_CAPTURE=GuestSignupRetry` |
+| `GuestSignupReview` | `CF_GUEST_WIZARD=1`, `CF_WIZARD_BOARD_CAPTURE=GuestSignupReview` |
+
+The captures use the real `GuestWizardRoute(holder, revision)` and native sheet with injected dependencies and the board presentation seed. The board frame is 375 × 812 dp, density 3, English, light, zero insets. Robolectric's `BoardCapture` captures the dialog window, so these are **sheet-only captures without the guest Ready backdrop**. No stored references or Chromium board renders are used.
+
+Recorded differences for **each of `GuestSignup`, `GuestSignupFailed`, `GuestSignupRetry`, `GuestSignupReview`**:
+
+- In the app, the backdrop is guest Ready, replacing the board's retired GuestReview. It is outside the Robolectric dialog capture.
+- The password hint uses the server's 12-character policy from iOS, replacing the board's 10-character hint.
+- The native M3 drag handle occupies a 48 dp slot; content begins directly below it, replacing the board's 5 px grabber and 12 px top padding (and iOS's overlaid grabber with 20 pt content padding).
+- Fields and buttons retain Phase 2's native Android field decoration and 48 dp interaction targets. The sheet uses the shared card fill and 38 dp top corners.
+
+All 80 guest sign-up layout cases passed: Ready/Failed/Retry/Review × small/pixel8/foldInner/largeFont/landscapeSideNav × en/nl × light/dark. They measure the production content and shared native handle; foldInner fields are 480 dp wide and centred, and pixel8 fields are the frame width minus 40 dp.
+
+Capture command (run once): `make captures ONLY=GuestSignup,GuestSignupFailed,GuestSignupRetry,GuestSignupReview`. It passed in 22 s Gradle wall time and wrote exactly four 1125 × 2436 PNGs in `build/captures/`, named after those boards. Ready and Review were inspected directly: outside the sheet the dialog capture has no Ready backdrop, and the taller Review form scrolls to its lower actions/consent. The host still compares these with its rendered boards.
