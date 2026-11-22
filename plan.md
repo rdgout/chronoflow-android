@@ -3629,7 +3629,7 @@ Acceptance evidence and the pending host checks are recorded in [`docs/settings-
   - Measure the RN release APK with the same `StartupBenchmark` harness (`12 §1`).
   - Record the results in `docs/perf-startup.md` and `docs/perf-timeline.md`.
   - A missed hard gate becomes a fix task in this phase, not a waiver.
-- [ ] **Play readiness.** In `docs/play.md`:
+- [x] **Play readiness.** In `docs/play.md`:
   - the Data safety answers (`14 §9.2`, OQ-A41);
   - the status of checklist items P1–P11 (`14 §10`);
   - the `assetlinks.json` content for S1, with the release fingerprint only (OQ-A38).

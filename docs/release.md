@@ -226,3 +226,7 @@ Task 10's generator and post-generation gate are prepared, but its generated-fil
 ## RN comparison tooling
 
 `make perf-rn` takes the host-wide device lock, checks the prebuilt APK hash before installation, uses shared device/archive helpers, checks animator scales, and restores functional preparation even on a Gradle/checker failure. The checker still runs after a failed Gradle command so missing evidence is explicit. Physical clearing has both runner and instrumentation guards. The optional NOT-PROFILEABLE suppression and am-start fallback require named opt-ins and are recorded in the [comparison protocol](perf-startup.md#rn-comparison-protocol). No RN Macrobenchmark result is claimed until the host run.
+
+## 16 KB alignment
+
+Worker, local host, 2026-11-22: `/opt/homebrew/share/android-commandlinetools/build-tools/36.0.0/zipalign -c -P 16 -v 4 app/build/outputs/apk/release/app-release-unsigned.apk` exits 0 and prints `Verification successful`. This checks the existing release APK's native-library packaging, including the sole allowed graphics-path library. Raw local log: `/tmp/cf13-task13-zipalign.log`. Recheck the final APK after any packaging/native dependency change.
