@@ -18,7 +18,9 @@ class ReminderAlarmReceiver : BroadcastReceiver() {
         runtime.scope.launch(runtime.io) {
             try {
                 withTimeoutOrNull(8.seconds) {
-                    ReminderDelivery.deliver(context.applicationContext, intent, runtime, runtime.clock)
+                    attemptReminderDelivery {
+                        ReminderDelivery.deliver(context.applicationContext, intent, runtime, runtime.clock)
+                    }
                 }
             } finally {
                 pending.finish()

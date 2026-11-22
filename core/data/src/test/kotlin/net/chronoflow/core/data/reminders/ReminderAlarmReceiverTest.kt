@@ -6,6 +6,7 @@ import android.Manifest
 import android.app.NotificationManager
 import android.content.Context
 import android.content.IntentFilter
+import android.database.sqlite.SQLiteDiskIOException
 import android.os.Looper
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -21,12 +22,54 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.shadow.api.Shadow
 import org.robolectric.shadows.ShadowBroadcastPendingResult
+import java.io.IOException
 import kotlin.time.Duration.Companion.seconds
 
 @Logic
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [36], application = TestReminderApplication::class)
 class ReminderAlarmReceiverTest {
+    @Test fun channelStorageFailureFinishesWithoutPosting() = storageFailure(finishingLedger = false)
+
+    @Test fun ledgerStorageFailureFinishesWithoutCrashing() = storageFailure(finishingLedger = true)
+
+    private fun storageFailure(finishingLedger: Boolean) =
+        runTest(timeout = 60.seconds) {
+            val app = ApplicationProvider.getApplicationContext<TestReminderApplication>()
+            val dispatcher = StandardTestDispatcher(testScheduler)
+            val runtime = FakeReminderRuntime(app, dispatcher, backgroundScope)
+            app.reminderRuntime =
+                object : ReminderRuntime by runtime {
+                    override suspend fun ensureChannel() {
+                        if (!finishingLedger) throw IOException()
+                        runtime.ensureChannel()
+                    }
+
+                    override suspend fun delivered(
+                        accountId: String,
+                        identifier: String,
+                    ): Unit = throw SQLiteDiskIOException()
+                }
+            shadowOf(app).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
+            val receiver = ReminderAlarmReceiver()
+            app.registerReceiver(receiver, IntentFilter(ACTION_ALARM), Context.RECEIVER_NOT_EXPORTED)
+            try {
+                app.sendBroadcast(
+                    AndroidReminderAlarms(app, dispatcher).alarmIntent(adapterRequest(), 7).setComponent(null),
+                )
+                shadowOf(Looper.getMainLooper()).idle()
+                runCurrent()
+                assertEquals(
+                    if (finishingLedger) 1 else 0,
+                    checkNotNull(app.getSystemService(NotificationManager::class.java)).activeNotifications.size,
+                )
+                val result = checkNotNull(shadowOf(receiver).originalPendingResult)
+                assertTrue(Shadow.extract<ShadowBroadcastPendingResult>(result).future.isDone)
+            } finally {
+                app.unregisterReceiver(receiver)
+            }
+        }
+
     @Test fun broadcastPostsAndFinishesPendingResult() =
         runTest(timeout = 60.seconds) {
             val app = ApplicationProvider.getApplicationContext<TestReminderApplication>()

@@ -1,6 +1,7 @@
 package net.chronoflow.app.reminders
 
 import android.content.ComponentName
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.StateFlow
@@ -9,10 +10,14 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import net.chronoflow.core.data.reminders.ReminderRuntime
 import net.chronoflow.core.datastore.CorruptWipeMarkerException
+import net.chronoflow.core.datastore.PermanentSessionKeyFailure
 import net.chronoflow.core.datastore.WipeMarker
 import net.chronoflow.core.model.session.SessionPresence
 import net.chronoflow.core.model.session.SessionStore
 import net.chronoflow.core.model.session.StoredSession
+import java.io.IOException
+import java.security.GeneralSecurityException
+import java.security.ProviderException
 import java.time.Instant
 import java.util.Locale
 import kotlin.time.Duration.Companion.seconds
@@ -39,11 +44,23 @@ class AppReminderRuntime(
         withContext(io) {
             try {
                 if (wipeMarker().read() != null) return@withContext null
+                val bytes = sessionStore.read() ?: return@withContext null
+                StoredSession.parse(bytes)?.accountId?.lowercase(Locale.ROOT)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
             } catch (_: CorruptWipeMarkerException) {
-                return@withContext null
+                null
+            } catch (_: IOException) {
+                null
+            } catch (_: GeneralSecurityException) {
+                null
+            } catch (_: ProviderException) {
+                null
+            } catch (_: SecurityException) {
+                null
+            } catch (_: PermanentSessionKeyFailure) {
+                null
             }
-            val bytes = sessionStore.read() ?: return@withContext null
-            StoredSession.parse(bytes)?.accountId?.lowercase(Locale.ROOT)
         }
 
     override suspend fun ensureChannel() = withContext(io) { ensureChannel.invoke() }

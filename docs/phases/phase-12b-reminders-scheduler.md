@@ -93,6 +93,8 @@ Checked against the code at `147aa187` (phases 0a–12a on `feat/phase-12b-remin
 
 **R14. Warm-tap dispatch and native/Compose waits (2026-11-22).** Device diagnostics found no discarded tap: `onNewIntent`, capture, the finished launch handler, dispatch and router receipt all ran at 05:38:20.996; the composition's routing continuation resumed only at 05:38:26.066, during test teardown, then the matching account opened Trips. Run `ReminderTapRouting` on injected `AppDispatchers.main`, retaining the calling effect's cancellation. A JVM regression holds the caller dispatcher paused and checks that the injected main dispatcher opens the trip without advancing the caller. The emulator journey uses UiAutomator for the notification shade and Compose structural waits for the trip page and sheet, so those waits advance the Compose test clock. Temporary diagnostic logging is removed before commit.
 
+**R15. Review: background storage failures.** An unreadable wipe marker or encrypted session means the account is unknown and the alarm is dropped. `AppReminderRuntime.storedAccountId` maps the specific I/O, cryptographic, provider and permission failures to null. The alarm receiver also contains those failures from channel setup and delivery bookkeeping, including SQLite/storage failures, before finishing its pending result. Cancellation propagates. The failure mapping logs no credentials and does not delete them. JVM tests cover account-read failures and the receiver's error policy; Robolectric verifies channel/ledger failures still finish the broadcast.
+
 Tags: **[F]** fact verified in source (path:line). **[R]** decision for Android made by this brief. **[P]** platform behaviour stated from memory; verify it where the task says so.
 
 ---
