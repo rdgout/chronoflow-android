@@ -657,11 +657,11 @@ Every command must record date, commit/dirty state, device, API, Hz, GPU, font s
 
 | Budget row | Source | Phase 13 value | Verdict |
 |---|---|---|---|
-| Today view, JVM | TodayViewBudgetTest, serial make timing | pending final JVM evidence | pending final JVM evidence |
-| Plan preparation, JVM | TimelinePreparationBudgetTest, make timing | pending final JVM evidence | pending final JVM evidence |
-| DayDrawing build | DayDrawingBudgetTest, make timing; real TextPaint guard | pending final JVM evidence | pending final JVM evidence |
-| Drawing cache | DayDrawingCacheTest / quick | pending final JVM evidence | pending final JVM evidence |
-| Invalidation | TimelineInvalidationTest + ListInvalidationTest / quick | pending final JVM evidence | pending final JVM evidence |
+| Today view, JVM | TodayViewBudgetTest, serial make timing | Ten large60 samples 0.503375–0.5565 ms | PASS, every sample ≤ 20 ms |
+| Plan preparation, JVM | TimelinePreparationBudgetTest, make timing | S3/large30/large60 max 4.2/5.0/8.1 ms | PASS, limits 40/100/200 ms |
+| DayDrawing build | DayDrawingBudgetTest, make timing; real TextPaint guard | Fake metrics below; real TextPaint 2 cases PASS | PASS, JVM/Robolectric guards |
+| Drawing cache | DayDrawingCacheTest / quick | 8 cases PASS, 0.118 s suite | PASS |
+| Invalidation | TimelineInvalidationTest + ListInvalidationTest / quick | 13 + 124 cases PASS, 0.763 + 7.233 s suite | PASS, including both within-day scroll guards |
 | First large60 frame | timelineFirstFrameMs each | pending R2/R3/R4 | pending host; emulator ≤ 800 ms |
 | CPU frame P50/P90/P99 | timelineScroll frameDurationCpuMs | pending R2/R3/R4 | pending host; P90/P99 CPU band, P50 trend |
 | Overrun P99 | timelineScroll frameOverrunMs | pending R2/R3/R4 | pending host, emulator report |
@@ -680,3 +680,14 @@ Every command must record date, commit/dirty state, device, API, Hz, GPU, font s
 Layer 4 device review: **open: device only (OQ-A22)**. Before the first production upload, one passing reference 120 Hz run and one passing low-end run are required, or the user's recorded OQ-A45 waiver. Prepare airplane mode, battery saver off, charge above 50%, cooled device, animator scales 1; record the actual refresh rate. The host handles device selection and leaves pixel available afterwards.
 
 A hard miss receives one immediate repeat of the same configuration, with both rows retained; a repeated miss becomes a fix task. The checker already handles the emulator CPU-band retry. No missing metric, over-budget result or absent physical evidence is a PASS. Profiles and Performance budget remain unchecked in plan.md until the host evidence closes them.
+
+
+Final JVM evidence (2026-11-22, source 17527208 plus documentation, local macOS host, JDK 21, debug JVM/Robolectric): `make quick` ran the serial timing tier last (7 cases, 4.09 s tier wall). The whole command took 102.34 s; this exceeds the warm target and does not close R9. Raw timing XML: `core/plan/build/test-results/timingTest/`; timing budget report: `build/test-results/timing/timings.json`. No individual test budget overrun occurred.
+
+| DayDrawing width dp | Slowest day median ms | Day maximum ms (report) | Total median ms | Maximum drawing bytes |
+|---:|---:|---:|---:|---:|
+| 360 | 0.07 | 0.10 | 0.9 | 11,795 |
+| 411 | 0.04 | 0.06 | 0.6 | 11,795 |
+| 841 | 0.05 | 0.05 | 1.3 | 14,089 |
+
+All widths pass ≤ 1 ms median/day, ≤ 5 ms total/width and ≤ 512 KiB/drawing. `env 'ORG_GRADLE_PROJECT_kotlin.compiler.execution.strategy=in-process' make targeted ONLY='feature:trip:TextPaintDayDrawingBudgetTest'` separately passed its two real TextPaint cases in **5.51 s tier wall** (1.688 s suite including class initialization). Reported real-metric day maxima: 0.57 ms at 841 dp and 0.08 ms at 411 dp; total pass times 14.9/2.0 ms; drawing bytes 14,155/11,795. Fake and real metric results are different harnesses. No renderer, clock scope or drawing allocation path changed in Phase 13, and no device/perf tier was run by the worker.

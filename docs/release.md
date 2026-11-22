@@ -232,3 +232,90 @@ Task 10's generator and post-generation gate are prepared, but its generated-fil
 Worker, local host, 2026-11-22: `/opt/homebrew/share/android-commandlinetools/build-tools/36.0.0/zipalign -c -P 16 -v 4 app/build/outputs/apk/release/app-release-unsigned.apk` exits 0 and prints `Verification successful`. This checks the existing release APK's native-library packaging, including the sole allowed graphics-path library. Raw local log: `/tmp/cf13-task13-zipalign.log`. Recheck the final APK after any packaging/native dependency change.
 
 Final version-parser review found Python int() accepts underscores and Unicode digits that VersionProperties.parse rejects. The script now accepts only the same signed ASCII integer syntax before applying the existing ranges. `python3 -I -m unittest discover -s Scripts/tests -p test_bump_version.py`: **18 PASS, 0.49 s wall** (2026-11-22), including both planted mismatches. This corrects Task 2 commit 6cca81c7; valid versions and version.properties are unchanged.
+
+## Tooling notes
+
+Final worker source: 17527208 plus documentation, 2026-11-22, local macOS host. Gradle uses JDK 17; JVM/Robolectric tests use JDK 21. No device/emulator/performance tier was run. The throwaway signing key is deleted; no production key or Play upload was created.
+
+| Exact command | Result | Wall time |
+|---|---|---:|
+| `make release-check GRADLE='./gradlew --no-daemon --console=plain -Pkotlin.compiler.execution.strategy=in-process'` | 293 release cases, manifest, every-dex scan and size PASS | 60.19 s |
+| `./gradlew :app:lintDebug -Pkotlin.compiler.execution.strategy=in-process` | PASS, including dependency lint | 66.25 s |
+| `Scripts/run-tier.sh layout-app --results 'app/build/test-results/testDebugUnitTest/*.xml' --timings 'app/build/cf-timings/testDebugUnitTest/*.json' -- ./gradlew --console=plain :app:testDebugUnitTest -Pcf.tier=layout -Pkotlin.compiler.execution.strategy=in-process` | 76 cases PASS, zero test-budget overruns | 13.21 s wrapper / 13.16 s tier |
+| `env 'ORG_GRADLE_PROJECT_kotlin.compiler.execution.strategy=in-process' make quick` | All test stages PASS; duration above the 60 s warm target | 102.34 s |
+| `make format` | PASS; no tracked source changes | 232.05 s |
+
+Final release-check output:
+
+```text
+INFO billing: absent
+release apk: OK (2 dex files, 7747 classes checked)
+Bundle size: 4147961 bytes (4.15 MB), arm64-v8a/xxhdpi/en: OK
+```
+
+The normal APK set still has no language split or new native library. Final `zipalign -c -P 16 -v 4` against `app-release-unsigned.apk` exits 0 with `Verification successful` (`/tmp/cf13-final-zipalign.log`). Sorted release and benchmarkRelease R8 directives still have an empty diff. The merged-manifest report is `OK`; its ten original rules, verified auth-link filter and unexported SystemJobService remain enforced. Provider-based signing and unsigned builds are proven above. Running `env 'ORG_GRADLE_PROJECT_kotlin.compiler.execution.strategy=in-process' ./gradlew help --configuration-cache` twice prints `Reusing configuration cache.` on the second run.
+
+Quick's 6,304 JVM/Robolectric cases, 58 build-logic cases, seven serial timing cases and 342 Python cases all pass. No individual test-budget violation or hang occurred. The 102.34 s command duration exceeds the warm target; no second quick run was made and R9 remains open. Slowest warm cases and separate cold allowances are in [tooling](tooling.md#phase-13). Logs: `/tmp/cf13-final-release-check.log`, `/tmp/cf13-final-lint.log`, `/tmp/cf13-final-layout.log`, `/tmp/cf13-final-format.log`, `/tmp/cf13-final-quick.log`.
+
+Host commands remaining under R17, serially with pixel running:
+
+```sh
+export ANDROID_HOME=/opt/homebrew/share/android-commandlinetools
+export JAVA_HOME=$(/usr/libexec/java_home -v 17)
+make baseline-profile
+# Hand the genuine generated profiles back for the strict-guard/artifact commit:
+git apply /tmp/cf13-baseline-profile-guards.patch
+make targeted ONLY="app:BaselineProfileFilesTest"
+# Commit the two profiles and their passing guard together before perf proof.
+make perf
+make perf-timeline
+THEME=dark make perf-timeline
+FONT_SCALE=1.3 make perf-timeline
+make perf-rn
+make release-smoke
+Scripts/measure-tiers.sh
+make check
+```
+
+These commands have **not been run by the worker**; there is no output to report for them. `make baseline-profile` must precede the prepared Kotlin guard: the current artifact fails the read-only coverage probe with `baseline-profile: missing main journey coverage: feature/trips/TripsScreenKt`. This is missing evidence, not a waiver. Keep the profile artifact/guard commit separate from the already committed preparation. No board captures are required by this phase (no UI/boards).
+
+The following intentional split-enabled proof is also **host-only and unrun**. It preserves the convention plugin with a trap, expects the real size gate to reject a language split, retains the names and restores the normal configuration before a passing size run. Run from the repository root with a clean convention plugin:
+
+```sh
+(
+  set -eu
+  cf_split_plugin=build-logic/convention/src/main/kotlin/net/chronoflow/buildlogic/AndroidApplicationConventionPlugin.kt
+  cf_split_backup=$(mktemp /tmp/cf13-split-plugin.XXXXXX)
+  cp "$cf_split_plugin" "$cf_split_backup"
+  trap 'cp "$cf_split_backup" "$cf_split_plugin"' EXIT
+  python3 -I - <<'PY'
+from pathlib import Path
+p = Path("build-logic/convention/src/main/kotlin/net/chronoflow/buildlogic/AndroidApplicationConventionPlugin.kt")
+s = p.read_text()
+assert s.count("bundle.language.enableSplit = false") == 1
+p.write_text(s.replace("bundle.language.enableSplit = false", "bundle.language.enableSplit = true"))
+PY
+  if make size > /tmp/cf13-language-split-proof.log 2>&1; then
+    cat /tmp/cf13-language-split-proof.log
+    echo 'Expected the enabled language split to fail the size gate' >&2
+    exit 1
+  fi
+  cat /tmp/cf13-language-split-proof.log
+  rg 'language split present:' /tmp/cf13-language-split-proof.log
+  cp app/build/outputs/size/apks-entries.txt /tmp/cf13-language-split-entries.txt
+)
+make size
+```
+
+Physical reference and low-end runs remain open (OQ-A22), and block production under OQ-A45. Only when the host selects/prepares the corresponding device:
+
+```sh
+PERF_CLEAR=1 DEVICE_CLASS=reference make perf
+PERF_CLEAR=1 DEVICE_CLASS=reference make perf-timeline
+PERF_CLEAR=1 DEVICE_CLASS=reference make perf-rn
+PERF_CLEAR=1 DEVICE_CLASS=lowEnd make perf
+PERF_CLEAR=1 DEVICE_CLASS=lowEnd make perf-timeline
+PERF_CLEAR=1 DEVICE_CLASS=lowEnd make perf-rn
+```
+
+Actual device metadata, raw metrics and trace paths go into the pending performance tables. Use the explicitly documented RN fallbacks only if their stated tooling condition occurs. No missing metric, repeated hard miss or above-target tier median closes a gate.

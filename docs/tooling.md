@@ -447,7 +447,7 @@ Host-only runs, serial under their device locks: `make baseline-profile`, `make 
 | warm make check, three runs | pending host | < 300 s median | pending host |
 | slowest ten quick cases | pending build/test-results/quick/timings.json | warm cases < 1 s | pending host |
 
-The worker's one final quick run is recorded below after it executes; it does not replace R9's measured medians or make check.
+The worker's one final quick run below does not replace R9's measured medians or make check.
 
 Verified tooling outcomes:
 
@@ -459,3 +459,37 @@ Verified tooling outcomes:
 - Bash 3 under nounset rejects an empty optional array expansion; the baseline runner now expands a non-empty full argument array. Profile-specific fixtures pass.
 - The Kotlin daemon cannot write its timestamp marker outside the sandbox's writable roots. In-process compilation avoids the path. Two release builds reached three minutes without R8 output in a reused daemon; each was stopped once and its one retry passed. Fresh single-use release builds completed without the stall. The exact logs and outputs are in release.md; no hang was hidden by a larger cap.
 - RN parameter suffix, non-profileable support, real RN timing and the profile collector's pm-clear behavior await host verification. Named fallbacks remain explicit and preserve missing-evidence failures.
+
+
+Final worker validation, 2026-11-22, source 17527208 plus documentation, local macOS host:
+
+| Check | Result | Wall time |
+|---|---|---:|
+| Single `make quick` | All test stages PASS; whole-command duration exceeds the 60 s warm target | 102.34 s |
+| quick JVM/Robolectric tier | 6,304 cases; zero test-budget overruns/hangs | 61.75 s |
+| build-logic tier | 58 cases; zero test-budget overruns | 7.08 s |
+| Serial timing tier | 7 cases; zero test-budget overruns | 4.09 s |
+| Python tooling | Scripts 256, contracts 26, l10n 49, icons 11; all PASS | 28.636 / 0.115 / 0.017 / 0.090 s unittest times |
+| `:app:lintDebug` | PASS, including dependency-module lint | 66.25 s |
+| App layout tier | 76 cases; zero test-budget overruns | 13.21 s wrapper / 13.16 s tier |
+| Final `make release-check` | 293 release cases + manifest/APK/size PASS | 60.19 s |
+| Final `make format` | PASS; no tracked source changes | 232.05 s |
+
+Quick was run exactly once. Compilation and cold workers were present in this run; only the host's measured warm medians can establish R9. The run is retained as above-target evidence, without rerunning, loosening a budget or claiming a warm pass. Raw reports remain under `build/test-results/`; command log `/tmp/cf13-final-quick.log`. Formatting printed ten existing unresolved-auto-fix warnings and completed successfully. Two `./gradlew help --configuration-cache` runs confirmed `Reusing configuration cache.` on the second run.
+
+Slowest ten **warm** cases from `build/test-results/quick/timings.json` (all ≤ 1,000 ms):
+
+| Class.method | ms |
+|---|---:|
+| `TestHangWatchdogTest.aDebuggerLeavesTheWatchdogDisarmed` | 869 |
+| `MockSeedRefreshTests.restoresTenDayOldSeedWithoutLosingUserStateCurrentAnchor` | 672 |
+| `TestHangWatchdogTest.eachRobolectricSdkGetsItsOwnColdAllowance` | 640 |
+| `DecodeRecoveryTests.badCardIsSkippedWhileOtherTripsKeepUpdating` | 585 |
+| `LargeTimelineFixtureTests.templatesAreUnchanged` | 576 |
+| `DataSourceParityTests.invalidSettingsReturnEveryFieldReminders` | 565 |
+| `DeleteAccountSheetTest.sheetSurvivesRecreationWithoutThePassword` | 551 |
+| `AccountStorageLifecycleTests.failedCreationLeavesNoPartialTable` | 537 |
+| `AccountStorageLifecycleTests.corruptFileIsKeptAndReportedUnavailable` | 536 |
+| `HapticsRulesTest.noHapticsInLaunch` | 528 |
+
+Cold Robolectric initialization is recorded separately by the timing harness. The ten largest first-SDK cases in the same run were 6,713 / 6,547 / 6,454 / 6,360 / 6,039 / 5,993 / 5,750 / 5,673 / 5,417 / 4,863 ms (SDK 36, each below its 20,000 ms cold allowance). These are not warm-case measurements. Per-class explicit warm-ups are in the same report's `warmups` array; no allowance or watchdog cap changed.

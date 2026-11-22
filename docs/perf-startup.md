@@ -401,7 +401,7 @@ Status: worker implementation and local release gates are recorded; the R17 host
 |---|---|---|
 | R1 | `make perf` | Date, commit/dirty state, pixel/API, Hz/GPU/font/theme, startup + launch rows, raw archive/traces, verdict |
 | R5 | `make perf-rn` | Same device; verified RN SHA, both TTID median/P90, RSS median, overrun P99; native/RN verdicts |
-| R7 | `make release-check` | Final APK/manifest/release-unit/size result; worker Task 6 baseline is PASS, 42.36 s wall |
+| R7 | `make release-check` | Worker final PASS, 60.19 s wall; 293 release cases, manifest/APK/size OK; see release.md |
 | R8 | `make release-smoke` | Setup and all three method durations, unchanged pids, empty native crash buffer |
 | R9 | `Scripts/measure-tiers.sh` | Three warm quick/check times and medians; slowest ten quick cases; build/tier-timings.json |
 | R10 | `PERF_CLEAR=1 DEVICE_CLASS=reference make perf` and `PERF_CLEAR=1 DEVICE_CLASS=reference make perf-rn` | Physical preparation and actual device metadata; use lowEnd for the low-end device |
@@ -414,19 +414,22 @@ Startup row-to-verdict inventory (plan.md, including R14's complete mapping):
 | Warm TTID | startupWarm / R1 | pending host | pending host |
 | onCreate → overlay frame 0 | first-commitFirstMs / R1 | pending host | pending host |
 | Overlay frame pacing | launchCold frameCount + display Hz / R1 | pending host | pending host |
-| First animated change | LaunchTimelineTests / final quick | pending final JVM evidence | pending final JVM evidence |
+| First animated change | LaunchTimelineTests / final quick | 5 cases PASS, 0.007 s suite | PASS, JVM functional guard |
 | Launch jank, frame count | launchCold frameOverrunMs P99, frameCount minimum / R1 | pending host | pending host |
 | Main thread before hand-off | debug StrictMode AppLaunchSmokeTest / make check | pending host | pending host |
 | Stall behavior | LaunchStallTest / make check | pending host | pending host |
 | Session known, signed out | startupCold sessionFirstMs median / R1 | pending host | pending host; 50/100 ms device gates |
-| Hand-off end | LaunchHandOffTimelineTests / quick; LaunchHandOffTest / make check | pending final JVM + host evidence | pending host |
+| Hand-off end | LaunchHandOffTimelineTests / quick; LaunchHandOffTest / make check | 8 JVM cases PASS, 0.005 s suite; instrumented evidence pending | JVM PASS; device pending host |
 | Welcome interactive | welcomeInteractiveMs each / R1 | pending host | pending host |
 | Last intro item | introLastItemMs each / R1 | pending host | pending host |
 | TTFD, signed out/in | startupCold / startupColdSignedIn timeToFullDisplayMs / R1 | pending host; both must be finite | pending host |
 | Peak memory to Welcome | LaunchComparisonBenchmark memoryRssAnonMaxKb median / R5 | pending host, both apps | pending host |
 | RN TTID median/P90 and overrun P99 | LaunchComparisonBenchmark / R5 | pending host, both apps | pending host |
-| Download size | release-check → make size, arm64/xxhdpi/en | Last measured Task 6: 4,147,966 B, allowed native lib only, no language split | PASS at Task 6; final run/split-enabled proof pending |
-| make quick < 60 s warm | R9 build/tier-timings.json | pending host median | pending host |
+| Download size | release-check → make size, arm64/xxhdpi/en | Final worker: 4,147,961 B, allowed native lib only, no language split | Normal gate PASS; split-enabled proof pending host |
+| make quick < 60 s warm | R9 build/tier-timings.json | Worker single run 102.34 s; host warm median pending | Worker duration above target; R9 open |
 | make check < 300 s warm | R9, including reminders-permission tier | pending host median | pending host |
 
 Device startup rows remain **open: device only (OQ-A22)** until R10 supplies physical evidence. Every host row must retain its raw result directory and metric. A missed hard gate creates a fix task, followed by the permitted one re-run; no budget is loosened or waived. Record a ±25% trend flag with its observed cause rather than editing the prior row.
+
+
+Final worker check (2026-11-22, source 17527208 plus documentation, local macOS host, JDK 21 tests): the single `make quick` passed its test tiers in **102.34 s wall**, above the 60 s warm target. No repeat or budget change was made. All individual test budget checks passed. R9's three warm host measurements remain required. The final `make release-check` passed in **60.19 s**, reporting **4,147,961 B (4.15 MB)**; this supersedes the earlier size samples for the final worker source. See [tooling notes](release.md#tooling-notes) for exact commands and outputs. These are host JVM/build results, not device performance evidence.
