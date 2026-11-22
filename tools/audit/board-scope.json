@@ -79,7 +79,7 @@
     },
     "PolicyReader": {
       "phase": "8",
-      "reason": "No in-app policy-reader screen is built: PolicyLinks opens the external policy URL in a native Custom Tab (OQ-A32/OQ-A339/OQ-A346). The board simulates browser chrome; browser content and chrome need device review."
+      "reason": "No in-app policy-reader screen is built: PolicyLinks opens the external policy URL in a native Custom Tab (OQ-A32/OQ-A339/OQ-A346). The board draws an in-app reader that the pinned iOS/landed Phase 8 scope does not build. External browser content and chrome need device review."
     }
   }
 }
