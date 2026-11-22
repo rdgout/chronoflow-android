@@ -434,3 +434,28 @@ python3 -I Scripts/device_lock.py -- "$ANDROID_HOME/platform-tools/adb" -s emula
 ```
 
 Run the real dialog journey alone with `make targeted ONLY="app:RemindersPermissionDeviceTest"`. It installs the APKs, revokes/clears flags outside instrumentation under the device lock, runs exactly that class, and writes `build/reminders-permission/result.xml` plus the tier timing report. `REUSE_BUILD=1` skips installation. In `make check`, the main smoke run excludes this class and keeps the APKs installed, then the same isolated runner executes it. A missing APK, missing metric or instrumentation failure fails the tier. Permission is never revoked inside a test process.
+
+## Phase 13
+
+Worker commands use ANDROID_HOME `/opt/homebrew/share/android-commandlinetools`, JDK 17 for Gradle and the provisioned JDK 21 test launcher. Detailed per-task commands, outcomes and wall times are in [release evidence](release.md) and the two performance documents. No device/emulator/perf tier was run by the worker; no Play key was created. The pre-existing pixel emulator is left running.
+
+Host-only runs, serial under their device locks: `make baseline-profile`, `make perf`, `make perf-timeline`, `THEME=dark make perf-timeline`, `FONT_SCALE=1.3 make perf-timeline`, `make perf-rn`, `make release-smoke`, `Scripts/measure-tiers.sh`, `make check`. The intentional enableSplit=true size proof is host-only (restore false and rerun size afterwards). Physical variants require PERF_CLEAR=1 when data is cleared. Reference/low-end runs remain open until supplied.
+
+| R9 measurement | Runs / median | Budget | Status |
+|---|---|---:|---|
+| warm make quick, three runs | pending host | < 60 s median | pending host |
+| warm make check, three runs | pending host | < 300 s median | pending host |
+| slowest ten quick cases | pending build/test-results/quick/timings.json | warm cases < 1 s | pending host |
+
+The worker's one final quick run is recorded below after it executes; it does not replace R9's measured medians or make check.
+
+Verified tooling outcomes:
+
+- Gradle provider-based upload signing builds both signed and unsigned bundles; the throwaway key is deleted. Configuration remains cache-compatible.
+- AGP writes SDK/version fields in the merged manifest and writes all four R8 diagnostic files; the analyzer exists. The final release/benchmarkRelease directive comparison is empty after removing unused coroutine-test runtime dependencies from perf.
+- Bundletool's normal APK-set entries are toc.pb, base-arm64_v8a, base-master and base-xxhdpi; there is no language split. The intentional split-enabled naming proof awaits the host.
+- Apkanalyzer's mapped defined-class output works. Dexdump emits modified UTF-8, handled with byte-preserving decoding; planted checks reject seed markers despite those bytes.
+- Robolectric 4.18's supported exit-info builder is nested in ShadowActivityManager; the old four-argument helper is deprecated. Three logger cases pass without booting the app graph.
+- Bash 3 under nounset rejects an empty optional array expansion; the baseline runner now expands a non-empty full argument array. Profile-specific fixtures pass.
+- The Kotlin daemon cannot write its timestamp marker outside the sandbox's writable roots. In-process compilation avoids the path. Two release builds reached three minutes without R8 output in a reused daemon; each was stopped once and its one retry passed. Fresh single-use release builds completed without the stall. The exact logs and outputs are in release.md; no hang was hidden by a larger cap.
+- RN parameter suffix, non-profileable support, real RN timing and the profile collector's pm-clear behavior await host verification. Named fallbacks remain explicit and preserve missing-evidence failures.

@@ -640,3 +640,43 @@ The single final quick run stopped at a stale glyph-count assertion. After the c
 | 841 | 0.05 | 0.08 | 1.4 | 14,089 |
 
 The ten large60 `todayView` samples range from 0.580625 to 0.641 ms (20 ms budget). Quick also passed the 13 `TimelineInvalidationTest` and 124 `ListInvalidationTest` cases unchanged. Evidence: `core/plan/build/test-results/timingTest/TEST-*.xml`, `build/test-results/timing/timings.json`, `build/phase-10b/final/quick-timings.json`, `/private/tmp/chronoflow-10b-timing.log`. No emulator performance/profile command was run. R10 does not require `make perf-timeline` for this diff; the root theme startup/profile handoff is recorded in `docs/perf-startup.md`.
+
+## Phase 13
+
+The worker changed only benchmark/profile journeys and their scripts, not the timeline renderer or page. R17 reserves all device/perf tiers to the host. The new shared last-day helper retains the twelve menu-scroll / six bounded-gesture limits; its default swipe path retains bounded-swipe-v3 and adds reversal only for the trip profile's return scroll. Existing static/clock invalidation and timing gates are checked in final quick.
+
+| Run | Exact host command | Evidence/result to fill |
+|---|---|---|
+| R2 | `make perf-timeline` | pixel, light, font 1.0; all five benchmark methods and metrics, raw archive/traces |
+| R3 | `THEME=dark make perf-timeline` | Same device/configuration, dark |
+| R4 | `FONT_SCALE=1.3 make perf-timeline` | Same device, light, capped font 1.3 |
+| R6 | `make size` | Final release size, allowed native library, no language split; split-enabled proof is separate |
+| R10 | `PERF_CLEAR=1 DEVICE_CLASS=reference make perf-timeline` | Reference 120 Hz and device preparation; repeat with lowEnd on the low-end device |
+
+Every command must record date, commit/dirty state, device, API, Hz, GPU, font scale, theme, build, raw metrics, trace paths and its verdict. Current values below are intentionally pending; emulator rows are never device claims.
+
+| Budget row | Source | Phase 13 value | Verdict |
+|---|---|---|---|
+| Today view, JVM | TodayViewBudgetTest, serial make timing | pending final JVM evidence | pending final JVM evidence |
+| Plan preparation, JVM | TimelinePreparationBudgetTest, make timing | pending final JVM evidence | pending final JVM evidence |
+| DayDrawing build | DayDrawingBudgetTest, make timing; real TextPaint guard | pending final JVM evidence | pending final JVM evidence |
+| Drawing cache | DayDrawingCacheTest / quick | pending final JVM evidence | pending final JVM evidence |
+| Invalidation | TimelineInvalidationTest + ListInvalidationTest / quick | pending final JVM evidence | pending final JVM evidence |
+| First large60 frame | timelineFirstFrameMs each | pending R2/R3/R4 | pending host; emulator ≤ 800 ms |
+| CPU frame P50/P90/P99 | timelineScroll frameDurationCpuMs | pending R2/R3/R4 | pending host; P90/P99 CPU band, P50 trend |
+| Overrun P99 | timelineScroll frameOverrunMs | pending R2/R3/R4 | pending host, emulator report |
+| Jank percentage | positive-overrun frames / frames | pending R2/R3/R4 | pending host, emulator report |
+| Hitch ratio | positive overrun / active frame time | pending R2/R3/R4 | pending host, emulator report |
+| Placeholder episodes | timelinePlaceholderCount maximum | pending R2/R3/R4 | pending host; ≤ 6 per emulator iteration |
+| Timeline builds on main | timelineBuildOnMainCount | pending R2/R3/R4 | pending host; hard 0 |
+| Main-thread frame P50/P99 | timelineMainFrameMsP50 / timelineMainFrameMsP99 | pending R2/R3/R4 | pending host, report |
+| RenderThread frame P99 | timelineRenderThreadMsP99 | pending R2/R3/R4 | pending host, report |
+| TimelineTargets composition/day | timelineTargetsMaxMs | pending R2/R3/R4 | pending host, report |
+| First-frame breakdown | timelineDecodeMs / timelinePrepareMs / timelineTypefaceMs | pending R2/R3/R4 | pending host, report |
+| Jump to last day | timelineLastDay | pending R2/R3/R4 | pending host; ≤ 6 bounded gestures |
+| Peak memory, large60 | memoryRssAnonMaxKb maximum + growth | pending R2/R3/R4 | pending host; ≤ 153,600 KiB, growth > 40 MiB warns |
+| List and wide scroll | listScroll / timelineScrollWide | pending R2/R3/R4 | pending host; every required metric must exist |
+
+Layer 4 device review: **open: device only (OQ-A22)**. Before the first production upload, one passing reference 120 Hz run and one passing low-end run are required, or the user's recorded OQ-A45 waiver. Prepare airplane mode, battery saver off, charge above 50%, cooled device, animator scales 1; record the actual refresh rate. The host handles device selection and leaves pixel available afterwards.
+
+A hard miss receives one immediate repeat of the same configuration, with both rows retained; a repeated miss becomes a fix task. The checker already handles the emulator CPU-band retry. No missing metric, over-budget result or absent physical evidence is a PASS. Profiles and Performance budget remain unchecked in plan.md until the host evidence closes them.
