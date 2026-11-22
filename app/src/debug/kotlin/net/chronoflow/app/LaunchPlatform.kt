@@ -164,6 +164,8 @@ internal object LaunchPlatform {
         if (seed.profile == net.chronoflow.debug.UiTestProfile.Screen) {
             net.chronoflow.debug.ScreenSessionFixture
                 .route(graph, seed.raw["CF_AUTH_TEST_AUDIT_SCREEN"], seed.raw["CF_AUTH_TEST_AUDIT_STATE"])
+            // A screen seed skips the overlay that normally completes the recovery hand-off.
+            if (seed.guestRecoveryBoard != null) graph.launch.onExitFrame(0)
             if (seed.guestWizard &&
                 graph.controller.presence == net.chronoflow.core.model.session.SessionPresence.SignedOut
             ) {

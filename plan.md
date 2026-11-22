@@ -1130,6 +1130,17 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A530 | (10d OQ-10d-12) Settings home Security subtitle with passkeys ("Password, passkeys, two-factor" exists in the catalog). | Keep "Password, two-factor" (iOS), as OQ-A513 already decided (it superseded OQ-A462's "10c switches" clause); 10d changes no subtitle. | 10d |
 | OQ-A531 | (10d OQ-10d-13) No wide boards for Passkeys, Delete or Plan. | 560 dp column (OQ-A37); delete confirmation as a 640 dp-max sheet; the prompt uses 10c's 540 dp dialog (OQ-10c-1 = OQ-A502). | 10d |
 | OQ-A532 | (10d OQ-10d-14) After the delete's sign-out, `AppGraph.onSignedOut()` (called from the teardown and again, asynchronously, from `SessionGateRouter`) navigates to Sign in unless already there, which can replace the Welcome navigation. | `onSignedOut()` also leaves `Route.Welcome` alone (a signed-out destination); the delete test asserts Welcome with the gate router running. | 10d |
+| OQ-A533 | (11a OQ-11a-1) iOS hard-codes "3" in "Paid with {{cost}} of the 3 credits…"; the server grants 1 sign-up credit (OQ-A18). | Render `price.cost` and `price.balance` through the Android-only pair `android_wizard_guest_price_paid` / `…_one` (needs review). The mock (3) matches the board and iOS. | 11a |
+| OQ-A534 | (11a OQ-11a-2) What does "Make my plan" do before 11b builds the GuestSignup sheet? | A `GuestSignUpLauncher` seam: debug presented counter, immediate dismissal, no UI (no board for anything else). 11b replaces it. | 11a |
+| OQ-A535 | (11a OQ-11a-3) The plan lists `GuestSessionContinuation.swift` as an 11a reference; nothing in 11a consumes it. | Port it in 11b with its consumers; 11a only reads it. | 11a |
+| OQ-A536 | (11a OQ-11a-4) Secret storage format for "Keystore alias `<ns>.guest` + DataStore key". | Alias `"${keychainService}.guest"`; one Preferences DataStore per namespace (`guest_secrets_<dir>`); key `t.<token>`; value Base64 of 4a's `[0x01][IV][ct+tag]`. | 11a |
+| OQ-A537 | (11a OQ-11a-5) Where the guest draft file code lives. | `:core:wizard`, pure JVM with an atomic rename; `:core:data` only if Konsist forbids file I/O there. | 11a |
+| OQ-A538 | (11a OQ-11a-6) ~~4e's `RootContent` has no ViewModel entry decorator (OQ-5a-5).~~ 5d added it (OQ-A227). *[Refresh R4]* | The guest VM and an entry-scoped `GuestWizardHolder` ViewModel come from the `RootContent` entry store (keyed `guestWizard:<revision>`), kept across recreation and cleared when the entry leaves. | 11a |
+| OQ-A539 | (11a OQ-11a-7) iOS checks guest recovery once per scene. | Once per process, on the first Welcome after the hand-off. | 11a |
+| OQ-A540 | (11a OQ-11a-8) 9b may type `newGeneration()` as `TripGenerationService`. | Widen it to `MemberWizardGeneration` in a separate refactor commit; `onCleared` cancels without suspending. | 11a |
+| OQ-A541 | (11a OQ-11a-9) The board's guest Checking/Fine-tune/Where/Outbound have no Dark/NL wrappers. | Guard them in dark and nl through the shared props; capture only the 12 named wrappers. | 11a |
+| OQ-A542 | (11a OQ-11a-10) `WizardReadyGuest` draws "Questions 3 answered" (from the retired 3-question era); guests now answer at most 2. | Render the model count ("2 answered" with the seed); record the difference in `docs/wizard.md`. | 11a |
+| OQ-A543 | (11a OQ-11a-11) `WizardFineTuneGuest` draws a fixed row list (room, wake, seat, drinks, light, blue). | Render the rows the review and preferences produce (iOS); the seed matches the board as closely as the mock allows; record differences in `docs/wizard.md`. | 11a |
 | OQ-0a-22 | Native libraries in the bundle? | Allow only `libandroidx.graphics.path.so` (Compose graphics-path; excluding it breaks Path conversion below API 34); fail on any other `.so` | 0a, 13 |
 | OQ-0b-1 | Where does `PlanMetrics` live? `08 §3.1` lists it inside `CfDimens`, but its consumer `:core:plan` is a JVM module that cannot depend on `:core:designsystem` | `core/plan/…/generated/PlanMetrics.generated.kt` (Double, dp), as iOS keeps it in `PlanCore` | 0b, 1b, 1c |
 | OQ-0b-2 | Port all iOS TokenGen outputs now (Auth, Settings, Terms, Welcome, PlanUI, Press, LaunchPaint, TypeMetrics), or only colors, sky and type? | All of them now (the iOS files are exact goldens and Phases 2, 3a, 3c, 5a, 9 and 10 need them) | 0b |
@@ -3333,11 +3344,11 @@ Acceptance evidence and the pending host checks are recorded in [`docs/settings-
 - [x] **Guest mode** (`:core:wizard` and `feature/wizard`).
   - Entered from Welcome's Plan my trip.
   - The guest variants: `WizardWhereGuest`, `WizardOutboundGuest`, `WizardOutboundPastGuest`, `WizardCheckingGuest`, `WizardFineTuneGuest`, `WizardReadyGuest`, `WizardReadyGuestFree` and `WizardDiscardGuest`.
-  - Questions are excluded for guests, per 9e.
+  - The five retired health questions are excluded. Guests answer age and shift work when requested by the review (9e, Refresh R10).
 - [x] **Guest review endpoint.** `POST guest/trips/review` (90 s) in `ApiDataSource` and in the mock (iOS 18b, 18c; mock side ported in 4c, OQ-A165). (API in 4b, mock in 4c; verified by `GuestGenerationMockTest`.)
 - [x] **GuestSecretStore:** Keystore alias `<ns>.guest` plus a DataStore key (06 OQ 12). The guest draft file is `noBackupFilesDir/<ns>/guest-wizard.json` (18f).
 - [x] **Discard and recovery.** Discard returns to Welcome. The guest draft is recovered quietly after the Welcome intro (OQ 17, 18m).
-- [ ] **Tests.** The ported 18b–18h and 18k–18m cases, plus guards for every guest board and its DarkNL wrapper.
+- [x] **Tests.** The ported 18b–18h and 18k–18m cases, plus guards for every guest board and its DarkNL wrapper. Emulator timing/re-verification and host perf follow-up are recorded in `docs/wizard.md`.
 
 **Acceptance**
 - A guest reaches guest Ready on the mock.
