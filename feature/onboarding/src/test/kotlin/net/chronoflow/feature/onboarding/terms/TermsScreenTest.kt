@@ -14,7 +14,7 @@ import net.chronoflow.core.model.api.AccountPolicies
 import net.chronoflow.core.testing.DeviceProfiles
 import net.chronoflow.core.testing.compose.ProfileHost
 import net.chronoflow.core.testing.compose.ProfileRule
-import net.chronoflow.core.testing.junit.measureClassWarmup
+import net.chronoflow.core.testing.compose.warmNativeTextRuntime
 import net.chronoflow.core.testing.tiers.Logic
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -115,12 +115,7 @@ class TermsScreenTest {
 
     companion object {
         private val fixtureReady by lazy {
-            measureClassWarmup(TermsScreenTest::class.java, 36, "native-font-runtime") {
-                // In Robolectric 4.18, NATIVE alone leaves Typeface's font-map lock null during BeforeClass.
-                org.robolectric.nativeruntime.DefaultNativeRuntimeLoader
-                    .injectAndLoad()
-                android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.NORMAL)
-            }
+            warmNativeTextRuntime(TermsScreenTest::class.java, 36)
         }
 
         @BeforeClass

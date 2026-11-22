@@ -11,11 +11,13 @@ import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import net.chronoflow.core.designsystem.component.CfBanner
+import net.chronoflow.core.testing.compose.warmNativeTextRuntime
 import net.chronoflow.core.testing.tiers.Logic
 import net.chronoflow.core.ui.R
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.BeforeClass
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -27,6 +29,13 @@ import org.robolectric.annotation.GraphicsMode
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(sdk = [36], qualifiers = "w411dp-h914dp-420dpi")
 class CfBannerTest : PrimitiveTestFixture() {
+    companion object {
+        @JvmStatic @BeforeClass
+        fun warmNativeFonts() {
+            warmNativeTextRuntime(CfBannerTest::class.java, 36)
+        }
+    }
+
     @Test fun politeAnnouncementCanBeSuppressedByTheCaller() {
         host {
             Column {

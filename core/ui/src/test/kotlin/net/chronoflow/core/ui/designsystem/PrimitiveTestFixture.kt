@@ -1,5 +1,7 @@
 package net.chronoflow.core.ui.designsystem
 
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,7 +15,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.captureToImage
-import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.text.TextLayoutResult
@@ -23,17 +25,31 @@ import net.chronoflow.core.designsystem.generated.CfLightColors
 import net.chronoflow.core.designsystem.theme.ChronoFlowTheme
 import net.chronoflow.core.testing.DeviceProfiles
 import net.chronoflow.core.testing.compose.ProfileHost
+import org.junit.After
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Rule
+import org.robolectric.Robolectric
+import org.robolectric.android.controller.ActivityController
 import kotlin.math.abs
 
 abstract class PrimitiveTestFixture {
-    @get:Rule val compose = createComposeRule()
+    @get:Rule val compose = createEmptyComposeRule()
+    private lateinit var controller: ActivityController<ComponentActivity>
+
+    @Before fun createHost() {
+        controller = Robolectric.buildActivity(ComponentActivity::class.java).setup()
+    }
+
+    @After fun closeHost() {
+        controller.pause().stop().destroy()
+    }
+
     protected open val dark = false
     protected val colors get() = if (dark) CfDarkColors else CfLightColors
 
     protected fun host(content: @Composable () -> Unit) {
-        compose.setContent {
+        controller.get().setContent {
             ProfileHost(DeviceProfiles.pixel8) {
                 ChronoFlowTheme(darkTheme = dark) {
                     Box(
@@ -46,6 +62,7 @@ abstract class PrimitiveTestFixture {
                 }
             }
         }
+        compose.waitForIdle()
     }
 
     protected fun pixels(tag: String): PixelMap = compose.onNodeWithTag(tag).captureToImage().toPixelMap()
