@@ -5,6 +5,7 @@ import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import net.chronoflow.buildlogic.manifest.ReleaseManifestAllowlist
 import net.chronoflow.buildlogic.manifest.VerifyReleaseManifestTask
+import net.chronoflow.buildlogic.signing.PerfSigning
 import net.chronoflow.buildlogic.signing.UploadSigningResolver
 import net.chronoflow.buildlogic.size.MeasureBundleSizeTask
 import org.gradle.api.Plugin
@@ -85,6 +86,25 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
             val bundletool = configurations.create("bundletool") { isCanBeConsumed = false }
             addDependency("bundletool", libs.library("bundletool"))
             extensions.configure<ApplicationAndroidComponentsExtension> {
+                // Baseline Profile's earlier callback clones release with initWith, including its upload key.
+                finalizeDsl { android ->
+                    PerfSigning.buildTypes.forEach { type ->
+                        android.buildTypes.getByName(type).signingConfig = android.signingConfigs.getByName("debug")
+                    }
+                }
+                onVariants { variant ->
+                    PerfSigning.verify(
+                        variant.buildType,
+                        variant.buildType?.let { type ->
+                            extensions
+                                .getByType(ApplicationExtension::class.java)
+                                .buildTypes
+                                .getByName(type)
+                                .signingConfig
+                                ?.name
+                        },
+                    )
+                }
                 onVariants(selector().withBuildType("release")) { variant ->
                     verifyTasks +=
                         tasks.register("verifyReleaseManifest", VerifyReleaseManifestTask::class.java) {

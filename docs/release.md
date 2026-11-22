@@ -20,6 +20,10 @@ CF_UPLOAD_KEY_PASSWORD=<key password>
 
 Gradle properties take precedence over environment variables. No values means unsigned release; partial values fail naming missing keys. The canonical store path must be absolute and outside the repository, including through symlinks; `~/` expands against the user's home. Only release takes this signing config; debug and perf retain debug signing. The signing value object deliberately has no generated `toString` so credentials cannot appear through diagnostic interpolation.
 
+Phase 13 review corrected 5b4cd017: Baseline Profile 1.5.0 clones release in its finalizeDsl callback, copying the eagerly assigned upload config into both perf build types. The convention plugin now resets nonMinifiedRelease and benchmarkRelease to the debug config in a later finalizeDsl callback. An independent onVariants invariant checks their finalized config names on every app configuration, after all DSL callbacks; this catches an ordering regression without reading or printing signing credentials.
+
+Regression evidence (2026-11-22, worker/JDK 17, no device): with a temporary external fixture file and complete synthetic CF_UPLOAD_* environment values, `./gradlew help --no-configuration-cache -Pkotlin.compiler.execution.strategy=in-process` fails before the reset with `nonMinifiedRelease must use debug signing` (5.82 s), then passes with it (7.57 s). The temporary file is empty: this proves the real plugin lifecycle/configuration, not keystore validity or a signed bundle. Five PerfSigningTest cases and nine existing UploadSigningTest cases pass in 3.60 s command wall. The host will independently repeat `./gradlew :app:signingReport` with its throwaway key; expected config names are debug/debug, release/upload, nonMinifiedRelease/debug and benchmarkRelease/debug. Existing signed/unsigned bundle evidence below remains valid.
+
 Print the upload certificate's SHA-256:
 
 ```sh
