@@ -40,7 +40,7 @@ class OpenResetTest {
                     },
                     { "id" },
                     { "test" },
-                    {},
+                    { _, _ -> },
                 )
             services.router.forgot()
             val forgot = checkNotNull(services.forgotModel)
@@ -96,7 +96,7 @@ class OpenResetTest {
                     },
                     { "id" },
                     { "test" },
-                    { acceptedRoutes++ },
+                    { _, _ -> acceptedRoutes++ },
                 )
             services.openReset(ResetPasswordLink("secret", "demo@example.com"))
             val model = checkNotNull(services.resetModel)

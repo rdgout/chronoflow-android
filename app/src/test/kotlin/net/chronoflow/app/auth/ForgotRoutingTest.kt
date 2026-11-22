@@ -38,7 +38,7 @@ class ForgotRoutingTest {
                     },
                     { "id" },
                     { "test" },
-                    {},
+                    { _, _ -> },
                 )
             services.router.forgot()
             val first = checkNotNull(services.forgotModel)

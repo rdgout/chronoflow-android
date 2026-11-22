@@ -94,6 +94,8 @@ Checked against the code at `fcf08348` (phases 0a–11a), iOS at `f391a1fa`, web
 
 **Task 6 Kotlin call compatibility.** Keep the function callback last: `submit(password, confirmation, language, requiresGuestClaim = false, commitAutofill)` and `makeSignUpModel(initialGuestState = Ready, onBack)`. Existing trailing-lambda member callers retain their behavior; the ViewModel passes `commitAutofill` by name. Task 7 supplies the claim providers through the factory.
 
+**Task 8 test boundary.** The binding tests run as plain JVM tests of `AuthServices` with a real mock review, guest store, JDBC account store, controller and acceptance, using one scheduler. They do not construct `AppGraph` or add a Konsist exception (AGENTS Tests 1); AppGraph's lazy assembly is checked by compilation. This replaces Task 8's graph fixture.
+
 This phase is mostly **ports of small iOS types, one sheet and wiring**. The mock registration claim (iOS 18d) is **4c's and already merged** (`MockGuestRegistrationClaimTests`, `MockStaleClaimTests`, `MockClaimReplayTests`). The HTTP half of `GuestClaimAuthTests` is **4b's** (`GuestClaimWireTests`). The guest wizard model (`guestReviewExpired`, `setGuestSigningIn`, `setGuestAuthenticationPresented`) is **9a's**; the guest store, secret store and the sign-up seam are **11a's**. Do not port them again. If a rule below is missing from those phases, port it into that module with its iOS test in a separate `fix(<scope>): …` commit that names the Swift line, and report it.
 
 ---

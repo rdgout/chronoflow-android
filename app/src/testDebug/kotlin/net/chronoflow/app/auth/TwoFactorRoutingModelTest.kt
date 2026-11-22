@@ -29,7 +29,7 @@ class TwoFactorRoutingModelTest {
                 SessionAcceptor {},
                 { "0199a3c0-0000-7000-8000-000000000001" },
                 { "test" },
-                { navigator.navigate(Route.Today) },
+                { _, _ -> navigator.navigate(Route.Today) },
             )
 
         suspend fun enter() {

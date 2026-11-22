@@ -186,6 +186,14 @@ class AppGraph(
             now = { planClock.now },
         )
     }
+    val guestAcceptance by lazy {
+        net.chronoflow.core.data.guest.GuestSessionAcceptance(
+            guestWizardStore,
+            guestSecrets,
+            { planClock.now },
+            dispatchers.io,
+        )
+    }
     val wiper by lazy {
         AccountWiper(
             storageRoot,
@@ -256,11 +264,22 @@ class AppGraph(
             SessionAcceptor { controller.accept(it) },
             { deviceIdentity.identity() },
             { androidDeviceName(app, dispatchers.io) },
-            {
-                readiness.routeAcceptedSession(
+            { result, method ->
+                guestAcceptance.routeAcceptedSession(
+                    result,
+                    method,
+                    controller,
+                    sessionAccounts,
+                    readiness,
+                    appScope,
                     navigate = { rootNavigator.navigate(it.toRoute()) },
                     verification = ::onVerify,
                 )
+            },
+            claim = { guestWizardStore.claim(guestSecrets) },
+            guestReviewExpired = { claim ->
+                net.chronoflow.app.guest
+                    .quietly { guestWizardStore.reviewExpired(claim) }
             },
             mockMail = mockResetMail(selection.source, mockSources, { dataSources.public() }) { auth.openReset(it) },
             verificationFactory = {

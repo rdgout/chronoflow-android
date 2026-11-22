@@ -15,6 +15,7 @@ import net.chronoflow.core.model.api.PasswordSignInInput
 import net.chronoflow.core.model.api.SessionResult
 import net.chronoflow.core.model.api.SignInResult
 import net.chronoflow.core.model.api.UserVerification
+import net.chronoflow.core.model.auth.AuthenticationMethod
 import net.chronoflow.core.model.passkey.PasskeyCapability
 import net.chronoflow.core.model.passkey.PasskeyFailure
 import net.chronoflow.core.navigation.RootNavigator
@@ -62,7 +63,7 @@ class AuthServicesTest {
                         },
                         { "id" },
                         { "test" },
-                        {},
+                        { _, _ -> },
                     )
                 services.signIn.navigation.twoFactor("artificial-challenge")
                 when (action) {
@@ -135,7 +136,7 @@ class AuthServicesTest {
                         SessionAcceptor { accepted++ },
                         { "0199a3c0-0000-7000-8000-000000000001" },
                         { "test" },
-                        { error("unavailable passkey routed") },
+                        { _, _ -> error("unavailable passkey routed") },
                         passkeyCapability = PasskeyCapability(true),
                         assertionProvider =
                             DeterministicAssertionProvider {
@@ -164,7 +165,7 @@ class AuthServicesTest {
                         SessionAcceptor {},
                         { "id" },
                         { "test" },
-                        {},
+                        { _, _ -> },
                     )
                 services.router.backToSignIn()
                 assertEquals(Route.SignIn, navigator.state.value.route)
@@ -195,7 +196,7 @@ class AuthServicesTest {
                         },
                         { "id" },
                         { "test" },
-                        {},
+                        { _, _ -> },
                     )
                 services.signIn.editEmail("retained@example.com")
                 services.signIn.navigation.twoFactor("artificial-challenge")
@@ -225,7 +226,7 @@ class AuthServicesTest {
                         },
                         { "id" },
                         { "test" },
-                        {},
+                        { _, _ -> },
                     )
                 services.signIn.editEmail("retained@example.com")
                 services.signIn.navigation.twoFactor("artificial-challenge")
@@ -270,7 +271,11 @@ class AuthServicesTest {
                             names++
                             "test"
                         },
-                        { routed++ },
+                        { result, method ->
+                            assertEquals(sessionResult(), result)
+                            assertEquals(AuthenticationMethod.Password, method)
+                            routed++
+                        },
                     )
                 val model = services.signIn
                 assertEquals(0, sourceCalls)

@@ -70,7 +70,7 @@ class SignUpEntryScopeTest {
                     .SessionAcceptor {},
                 { "id" },
                 { "test" },
-                {},
+                { _, _ -> },
             )
         val fixture =
             EntryScopeFixture(
