@@ -108,6 +108,7 @@ class ReleaseSmokeTest {
             device.executeShellCommand("logcat -b crash -c")
             device.clearApp(pkg)
             device.signInDemo(pkg)
+            device.requireTag("today.trip", 15_000)
         }
     }
 }
