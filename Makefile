@@ -193,3 +193,7 @@ perf-timeline:
 baseline-profile: export TIER_IDLE_TIMEOUT := 1200
 baseline-profile:
 	$(RUN_TIER) baseline-profile --device --results 'benchmark/build/outputs/androidTest-results/connected/**/*.xml' -- Scripts/baseline-profile.sh
+
+.PHONY: version-bump
+version-bump:
+	python3 -I Scripts/bump-version.py $(PART)

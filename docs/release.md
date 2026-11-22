@@ -63,3 +63,18 @@ jar is unsigned.
 The first unsigned attempt stopped after three minutes without R8 output (386.80 s total), using the required one `./gradlew --stop` (`2 Daemons stopped`, 0.30 s). The one retry above passed. The verifier run after the stopped attempt inspected the previous signed artifact and is not unsigned evidence. Logs: `/tmp/cf13-task1-unsigned.log`, `/tmp/cf13-task1-stop.log`, `/tmp/cf13-task1-unsigned-retry.log`, `/tmp/cf13-task1-jarsigner-unsigned-retry.log`. The throwaway key and its directory have been deleted.
 
 Tooling: the Kotlin daemon cannot write its timestamp marker under the sandbox's read-only `Library/Application Support/kotlin/daemon`; Gradle's compiler fallback completed the builds/tests. In-process compilation avoids that daemon path for the final resolver test run.
+
+## Versioning
+
+`version.properties` holds `versionMajor`, `versionMinor`, `versionPatch`, `versionBuild`, in that order. `versionName = major.minor.patch`; `versionCode = major*1_000_000 + minor*10_000 + patch*100 + build`. Major is 0–2099; the other parts are 0–99. Every upload bumps at least build. The first upload remains 0.1.0 (10000).
+
+| `make version-bump PART=…` | Change | At the limit |
+|---|---|---|
+| `build` | Increment build | `versionBuild is 99: bump patch` |
+| `patch` | Increment patch; reset build | `versionPatch is 99: bump minor` |
+| `minor` | Increment minor; reset patch/build | `versionMinor is 99: bump major` |
+| `major` | Increment major; reset minor/patch/build | `versionMajor is 2099` |
+
+Preview with `python3 -I Scripts/bump-version.py build --dry-run`. Commit uploads as `chore(release): bump version to <name> (<code>)`. This phase does not bump the version.
+
+Version script verification: `python3 -I -m unittest discover -s Scripts/tests -p test_bump_version.py`, 16 cases PASS, 0.52 s wall on the local host (2026-11-22). Temporary files only; `version.properties` is unchanged.
