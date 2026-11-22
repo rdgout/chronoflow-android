@@ -8,6 +8,7 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import kotlinx.coroutines.test.runTest
 import net.chronoflow.core.designsystem.theme.ChronoFlowTheme
+import net.chronoflow.core.testing.compose.BoardCaptureCell
 import net.chronoflow.core.testing.compose.ProfileHost
 import net.chronoflow.core.testing.compose.ProfileRule
 import net.chronoflow.core.testing.tiers.Capture
@@ -29,20 +30,23 @@ import kotlin.time.Duration.Companion.seconds
 @Config(sdk = [36])
 class TripSearchStatesCaptureTest(
     private val search: SearchBoardState,
-    private val dark: Boolean,
+    private val cell: BoardCaptureCell,
 ) {
-    private val profile = wizardBoardProfile.copy(name = "tripSearchStates", widthDp = 375, heightDp = 812)
+    private val profile = cell.profile
     private val compose = createComposeRule()
 
-    @get:Rule val rules: RuleChain = RuleChain.outerRule(ProfileRule(profile, dark = dark)).around(compose)
+    @get:Rule val rules: RuleChain = RuleChain.outerRule(ProfileRule(profile, cell.language, cell.dark)).around(compose)
 
     @Test fun capturesTheSearchState() {
         lateinit var state: WizardUiState
         var keyboard: SoftwareKeyboardController? = null
-        runTest(timeout = 60.seconds) { state = boardState("WizardStopSearch", Locale.ENGLISH, search) }
+        runTest(timeout = 60.seconds) {
+            state =
+                boardState("WizardStopSearch", Locale.forLanguageTag(cell.language.tag), search)
+        }
         compose.setContent {
             ProfileHost(profile) {
-                ChronoFlowTheme(darkTheme = dark, reduceMotion = true) {
+                ChronoFlowTheme(darkTheme = cell.dark, reduceMotion = true) {
                     val controller = LocalSoftwareKeyboardController.current
                     SideEffect { keyboard = controller }
                     WizardScreen(state, {})
@@ -53,12 +57,15 @@ class TripSearchStatesCaptureTest(
         compose.runOnIdle { keyboard?.hide() }
         compose.waitForIdle()
         val name = if (search == SearchBoardState.Failed) "error" else search.name.lowercase(Locale.ROOT)
-        captureWizard(compose, "TripSearchStates_${name}_${if (dark) "dark" else "light"}", true)
+        captureWizard(compose, "TripSearchStates_${name}_${cell.suffix}", true)
     }
 
     companion object {
         @JvmStatic
         @ParameterizedRobolectricTestRunner.Parameters(name = "{0}-{1}")
-        fun cases() = SearchBoardState.entries.flatMap { listOf(arrayOf<Any>(it, false), arrayOf<Any>(it, true)) }
+        fun cases() =
+            SearchBoardState.entries.flatMap { search ->
+                BoardCaptureCell.standard.map { cell -> arrayOf<Any>(search, cell) }
+            }
     }
 }

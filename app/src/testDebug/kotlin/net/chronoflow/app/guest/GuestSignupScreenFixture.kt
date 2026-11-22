@@ -28,6 +28,7 @@ import net.chronoflow.app.AppDispatchers
 import net.chronoflow.app.auth.AuthServices
 import net.chronoflow.app.auth.LazyPublicDataSource
 import net.chronoflow.core.designsystem.theme.ChronoFlowTheme
+import net.chronoflow.core.model.config.AppLanguage
 import net.chronoflow.core.model.guest.MemoryGuestSecretStore
 import net.chronoflow.core.model.session.SessionPresence
 import net.chronoflow.core.navigation.RootNavigator
@@ -57,6 +58,8 @@ import java.util.Locale
 internal class GuestSignupScreenFixture(
     val board: String,
     val profile: DeviceProfile,
+    val language: AppLanguage = AppLanguage.En,
+    val dark: Boolean = false,
 ) {
     val scheduler = TestCoroutineScheduler()
     val dispatcher = StandardTestDispatcher(scheduler)
@@ -97,7 +100,7 @@ internal class GuestSignupScreenFixture(
             scope,
             { WizardBoardCaptureSeed.now },
             coordinator,
-            seed = { GuestWizardBoardSeed.draft(it, board, Locale.ENGLISH) },
+            seed = { GuestWizardBoardSeed.draft(it, board, Locale.forLanguageTag(language.tag)) },
             uiOverride = GuestWizardBoardSeed.uiOverride(board),
         )
     private val dependencies =
@@ -127,7 +130,9 @@ internal class GuestSignupTestActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val fixture = checkNotNull(fixture)
         setContent {
-            ProfileHost(fixture.profile) { ChronoFlowTheme(darkTheme = false) { GuestSignupTestContent(fixture) } }
+            ProfileHost(
+                fixture.profile,
+            ) { ChronoFlowTheme(darkTheme = fixture.dark) { GuestSignupTestContent(fixture) } }
         }
     }
 
