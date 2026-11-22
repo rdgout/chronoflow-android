@@ -3489,7 +3489,7 @@ Acceptance evidence and the pending host checks are recorded in [`docs/settings-
 - [ ] **Scheduler** (`core/data/…/reminders/`).
   - `AlarmManager.setExactAndAllowWhileIdle(RTC_WAKEUP, …)` on API 29–30 and `setAndAllowWhileIdle(RTC_WAKEUP, …)` on API 31+ (A13) for each selected reminder, with a `scheduled_reminder` row and a request code that stays stable per identifier.
   - Replace-all scheduling runs serialized after each full sync, check-off, undo and settings change, never on the main thread.
-- [ ] **Delivery.**
+- [x] **Delivery.**
   - `ReminderAlarmReceiver` posts on channel `reminders` ("Reminders on this phone", `IMPORTANCE_DEFAULT`, re-localized at start), with `notify(tag = identifier, id = requestCode)`, `setTimeoutAfter(20 min)` and `ic_stat_moon`.
   - Inside `goAsync`, it deletes the row and appends to the ledger.
 - [ ] **Upkeep.**

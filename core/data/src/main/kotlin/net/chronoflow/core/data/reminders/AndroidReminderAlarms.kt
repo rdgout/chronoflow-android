@@ -21,7 +21,7 @@ class AndroidReminderAlarms(
 
     private fun identity(identifier: String): Intent =
         Intent(ACTION_ALARM)
-            .setComponent(ComponentName(app, "net.chronoflow.core.data.reminders.ReminderAlarmReceiver"))
+            .setComponent(ComponentName(app, ReminderAlarmReceiver::class.java))
             .setIdentifier(identifier)
 
     fun alarmIntent(
