@@ -3548,7 +3548,7 @@ Acceptance evidence and the pending host checks are recorded in [`docs/settings-
 
 - [x] 1. Move the settings page scaffold to core ui.
 - [x] 2. Consume the first-trip reminders offer.
-- [ ] 3. Port the reminders model.
+- [x] 3. Port the reminders model.
 - [ ] 4. Build the connectivity and reminders page.
 - [ ] 5. Show the reminders state on preferences.
 - [ ] 6. Offer reminders after the first saved trip.
