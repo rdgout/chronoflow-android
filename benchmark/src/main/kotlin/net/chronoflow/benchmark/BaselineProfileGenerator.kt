@@ -334,7 +334,16 @@ class BaselineProfileGenerator {
             }
         }
 
-    @Test fun wizardToReady() =
+    @Test fun wizardToReady() {
+        val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+        BoundedProfileInput(
+            stepTimeoutMillis = budget.setupTimeoutMillis,
+            journeyTimeoutMillis = budget.setupTimeoutMillis,
+        ).use { input ->
+            input.step("wizard demo session") { device.signInDemo(packageName) }
+            // Sign-in publishes the session before FullPull stores settings and trips together.
+            input.step("wizard account snapshot stored") { device.requireTag("today.trip", 15_000) }
+        }
         collectProfile("wizardToReady") {
             BoundedProfileInput(journeyTimeoutMillis = budget.journeyTimeoutMillis).use { input ->
                 input.step("cancel stale touch") { cancelStaleTouch() }
@@ -342,19 +351,10 @@ class BaselineProfileGenerator {
                 input.step("wizard launch") {
                     launch(mapOf("cf.perf-account" to "demo", "cf.perf-wizard" to "WizardSaveJourney"))
                 }
-                input.step("wizard entry or Welcome") {
-                    val entries = Pattern.compile("welcome\\.signIn|wizard\\.choice\\.one-way|wizard\\.ready")
+                input.step("wizard entry") {
+                    val entries = Pattern.compile("wizard\\.choice\\.one-way|wizard\\.ready")
                     check(device.wait(Until.hasObject(By.res(entries)), 10_000)) {
-                        "neither Welcome nor wizard entry appeared"
-                    }
-                }
-                if (input.step("Welcome entry") { device.hasObject(By.res("welcome.signIn")) }) {
-                    input.step("wizard demo sign in") { device.signInFromWelcome() }
-                    input.step("wizard entry after sign in") {
-                        val entries = Pattern.compile("wizard\\.choice\\.one-way|wizard\\.ready")
-                        check(device.wait(Until.hasObject(By.res(entries)), 10_000)) {
-                            "wizard entry never appeared after sign in"
-                        }
+                        "wizard entry never appeared after account sync"
                     }
                 }
                 if (input.step("one-way entry") { device.hasObject(By.res("wizard.choice.one-way")) }) {
@@ -367,4 +367,5 @@ class BaselineProfileGenerator {
                 input.step("Ready or quiet recovery") { device.requireTag("wizard.ready", 10_000) }
             }
         }
+    }
 }
