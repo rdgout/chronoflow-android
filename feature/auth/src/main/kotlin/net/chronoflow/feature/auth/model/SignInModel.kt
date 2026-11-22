@@ -15,6 +15,7 @@ import net.chronoflow.core.model.api.SessionResult
 import net.chronoflow.core.model.api.SignInResult
 import net.chronoflow.core.model.auth.AuthenticationMethod
 import net.chronoflow.core.model.device.DeviceIdentityFailure
+import net.chronoflow.core.model.guest.GuestClaim
 import net.chronoflow.core.model.passkey.PasskeyCapability
 import net.chronoflow.core.model.passkey.PasskeyFailure
 import net.chronoflow.core.model.session.SessionFailure
@@ -32,6 +33,8 @@ class SignInModel(
     private val accepted: suspend (SessionResult, AuthenticationMethod) -> Unit,
     private val onTwoFactor: () -> Unit,
     private val onLeaveTwoFactor: () -> Unit = {},
+    private val claim: suspend () -> GuestClaim? = { null },
+    private val guestReviewExpired: suspend (GuestClaim) -> Unit = {},
 ) {
     private val mutableEmail = MutableStateFlow("")
     val email: StateFlow<String> = mutableEmail.asStateFlow()
@@ -59,6 +62,7 @@ class SignInModel(
     ) {
         attempt(AuthFormModel.Action.Password, password) {
             val id = deviceIdentity()
+            val claim = claim()
             currentCoroutineContext().ensureActive()
             val result =
                 source.signIn(
@@ -67,8 +71,8 @@ class SignInModel(
                         password.read(),
                         id,
                         deviceName(),
-                        draftToken = null,
-                        guestSecret = null,
+                        draftToken = claim?.draftToken,
+                        guestSecret = claim?.guestSecret,
                     ),
                 )
             currentCoroutineContext().ensureActive()
@@ -167,6 +171,8 @@ class SignInModel(
             deviceName,
             accepted,
             onBack,
+            claim = claim,
+            guestReviewExpired = guestReviewExpired,
             initialGuestState = initialGuestState,
         )
 

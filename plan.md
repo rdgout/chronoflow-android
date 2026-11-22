@@ -3396,7 +3396,7 @@ Acceptance evidence and the pending host checks are recorded in [`docs/settings-
 - [x] Task 4: account continuation store.
 - [x] Task 5: guest session acceptance.
 - [x] Task 6: sign-up claim and guest states.
-- [ ] Task 7: password and passkey claims.
+- [x] Task 7: password and passkey claims.
 - [ ] Task 8: acceptance wiring.
 - [ ] Task 9: shell continuation routing.
 - [ ] Task 10: guest sign-up host seam.
