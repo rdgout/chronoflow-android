@@ -196,3 +196,25 @@ Runner fixture commands (fake adb/Gradle/checker only):
 - `python3 -I -m unittest discover -s Scripts/tests -p test_perf_timeline.py`: 19 PASS, **4.54 s wall**.
 
 All three runners clear the native perf package exactly once after successful perf preparation and before Gradle. The scripts skip their clear on physical devices without PERF_CLEAR=1 and report `state: as found`. Dry runs print the clear without executing it. No device/perf run was performed by the worker.
+
+## Minified smoke
+
+Host command: `make release-smoke` (device lock, one device). **Pending host execution (R17)**; no runtime R8 result or duration is claimed.
+
+The class signs in through the real mock-backed form once in BeforeClass, then starts a fresh process per method while preserving the account/session file. This makes the once-per-process wizard hook deterministic without another sign-in journey. The sheet case waits for an app window event from the font-scale recreation before checking `step.sheet` and `trip.page`, then restores the old setting in finally. Every method compares pids and checks the crash buffer. The first-trip reminder guard does not wait and runs only after the wizard save here. All queries use structural tags; no sleeps or copy queries.
+
+| Host measurement | Budget | Result |
+|---|---:|---|
+| signInOnce setup | ≤ 20 s | pending host |
+| todayTripsAndSettingsOpen | < 10 s | pending host |
+| tripSheetSurvivesRecreation | < 10 s | pending host |
+| wizardSavesToTripPage | < 10 s | pending host |
+
+The runner refuses physical-device clearing without `PERF_CLEAR=1`; shared in-test clearing independently requires an emulator or the runner's explicit `cf.perfClear=1` argument. It uses functional preparation, timeout_msec=60000 and no benchmark rule/error suppression. It is separate from `make check`.
+
+Worker validation, local host 2026-11-22:
+
+- `python3 -I -m unittest discover -s Scripts/tests -p test_release_smoke.py`: **4 PASS, 0.74 s wall** (dry-run class/cap selection, Gradle status, physical refusal and opt-in).
+- `python3 -I -m unittest discover -s Scripts/tests -p test_makefile.py`: **2 PASS, 0.06 s wall**.
+- `./gradlew :benchmark:assembleBenchmarkRelease -Pkotlin.compiler.execution.strategy=in-process`: **PASS, 10.10 s wall**.
+- `./gradlew --no-daemon :app:assembleBenchmarkRelease :benchmark:assembleBenchmarkRelease -Pkotlin.compiler.execution.strategy=in-process`: **PASS, 56.30 s wall**. Both target and test APKs compile; no runtime keep-rule conclusion follows until the host smoke runs.

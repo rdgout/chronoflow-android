@@ -203,3 +203,7 @@ release-check:
 	$(GRADLE) :app:assembleRelease :app:testReleaseUnitTest :app:verifyReleaseManifest
 	python3 -I Scripts/check-release-apk.py --apk "app/build/outputs/apk/release/$$(python3 -I -c 'import json; print(json.load(open("app/build/outputs/apk/release/output-metadata.json"))["elements"][0]["outputFile"])')" --mapping app/build/outputs/mapping/release/mapping.txt --allowed-perf-stubs app/src/releaseNoPerf/kotlin/net/chronoflow/app/perf
 	$(MAKE) size
+
+.PHONY: release-smoke
+release-smoke:
+	$(RUN_TIER) release-smoke --device --results 'benchmark/build/outputs/androidTest-results/connected/**/*.xml' -- Scripts/release-smoke.sh
