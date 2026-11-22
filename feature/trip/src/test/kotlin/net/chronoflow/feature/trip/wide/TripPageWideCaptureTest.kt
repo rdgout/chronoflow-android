@@ -1,9 +1,12 @@
 package net.chronoflow.feature.trip.wide
 
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
 import net.chronoflow.core.testing.compose.BoardCapture
 import net.chronoflow.core.testing.compose.ProfileRule
 import net.chronoflow.core.testing.tiers.Capture
+import net.chronoflow.feature.trip.page.tripBoardBitmap
 import org.junit.After
 import org.junit.Rule
 import org.junit.Test
@@ -36,9 +39,11 @@ class TripPageWideCaptureTest(
     @Test fun capturesTheBoardState() {
         val host = TripPageWideFixture(case).also { fixture = it }
         host.start(compose)
+        val menu = case.board == "PlanWideDayMenu"
+        if (menu) compose.onNodeWithTag("trip.dayMenu").performClick()
         compose.mainClock.advanceTimeByFrame()
         compose.waitForIdle()
-        BoardCapture.capture(compose, case.name)
+        BoardCapture.capture(tripBoardBitmap(compose, TripPageWideFixture.ROOT, menu), case.name)
     }
 
     companion object {

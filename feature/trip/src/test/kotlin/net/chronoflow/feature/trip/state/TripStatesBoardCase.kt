@@ -3,6 +3,7 @@ package net.chronoflow.feature.trip.state
 import net.chronoflow.core.model.config.AppLanguage
 import net.chronoflow.core.testing.DeviceProfile
 import net.chronoflow.core.testing.DeviceProfiles
+import net.chronoflow.core.testing.compose.BoardCaptureCell
 
 class TripStatesBoardCase(
     val board: String,
@@ -47,13 +48,13 @@ class TripStatesBoardCase(
 
         fun captureCases(): List<TripStatesBoardCase> =
             boards.flatMap { board ->
-                val languages = if (board.endsWith("NL")) listOf(AppLanguage.Nl) else AppLanguage.entries
-                languages.flatMap { language ->
-                    listOf(
-                        TripStatesBoardCase(board, DeviceProfiles.pixel8, language),
-                        TripStatesBoardCase(board, DeviceProfiles.pixel8, language, true),
-                    )
-                }
+                val cells =
+                    if (board in setOf("PlanRemote", "PlanRemoteOffline", "PlanRemoteOfflineNL")) {
+                        BoardCaptureCell.phoneWithWideSibling
+                    } else {
+                        BoardCaptureCell.standard
+                    }
+                cells.map { cell -> TripStatesBoardCase(board, cell.profile, cell.language, cell.dark) }
             }
     }
 }

@@ -15,12 +15,13 @@ import net.chronoflow.core.designsystem.system.CfNavItem
 import net.chronoflow.core.designsystem.system.CfNavLayout
 import net.chronoflow.core.designsystem.system.CfNavigationSuiteScaffold
 import net.chronoflow.core.designsystem.theme.ChronoFlowTheme
+import net.chronoflow.core.model.config.AppLanguage
 import net.chronoflow.core.model.contracts.Language
 import net.chronoflow.core.plan.CopyCatalog
 import net.chronoflow.core.plan.CopyLineFormatter
 import net.chronoflow.core.sync.refresh.RefreshFeedbackState
-import net.chronoflow.core.testing.DeviceProfiles
 import net.chronoflow.core.testing.compose.BoardCapture
+import net.chronoflow.core.testing.compose.BoardCaptureCell
 import net.chronoflow.core.testing.compose.ProfileHost
 import net.chronoflow.core.testing.compose.ProfileRule
 import net.chronoflow.core.testing.tiers.Capture
@@ -40,14 +41,15 @@ import kotlin.time.Duration.Companion.seconds
 @Config(sdk = [36])
 class TripsBoardCaptureTest(
     private val board: String,
-    private val dark: Boolean,
+    private val cell: BoardCaptureCell,
 ) {
+    private val language = if (cell.language == AppLanguage.Nl) Language.Nl else Language.En
     private val compose = createComposeRule()
 
     @get:Rule val rules: RuleChain =
         RuleChain
             .outerRule(
-                ProfileRule(DeviceProfiles.pixel8, dark = dark),
+                ProfileRule(cell.profile, cell.language, cell.dark),
             ).around(compose)
 
     @Test fun capturesTheBoardState() {
@@ -60,7 +62,7 @@ class TripsBoardCaptureTest(
                     "Trips" -> {
                         TripsBoardFixture.content(
                             formatter,
-                            Language.En,
+                            language,
                         )
                     }
 
@@ -74,8 +76,8 @@ class TripsBoardCaptureTest(
                 }
         }
         compose.setContent {
-            ProfileHost(DeviceProfiles.pixel8) {
-                ChronoFlowTheme(darkTheme = dark, reduceMotion = true) {
+            ProfileHost(cell.profile) {
+                ChronoFlowTheme(darkTheme = cell.dark, reduceMotion = true) {
                     val safe = LocalSafeInsets.current
                     val items =
                         listOf(
@@ -99,7 +101,7 @@ class TripsBoardCaptureTest(
                             ),
                         )
                     CfNavigationSuiteScaffold(
-                        CfNavLayout.Bar,
+                        if (cell.profile.widthDp >= 600) CfNavLayout.Rail else CfNavLayout.Bar,
                         items,
                         1,
                         {},
@@ -111,7 +113,7 @@ class TripsBoardCaptureTest(
                             TripsContent(
                                 state,
                                 RefreshFeedbackState(),
-                                Language.En,
+                                language,
                                 {},
                                 {},
                                 {},
@@ -126,20 +128,15 @@ class TripsBoardCaptureTest(
         compose.waitForIdle()
         compose.mainClock.advanceTimeByFrame()
         compose.waitForIdle()
-        BoardCapture.capture(compose, "${board}_en_${if (dark) "dark" else "light"}")
+        BoardCapture.capture(compose, "${board}_${cell.suffix}")
     }
 
     companion object {
         @JvmStatic
         @ParameterizedRobolectricTestRunner.Parameters(name = "{0}-{1}")
         fun cases(): List<Array<Any>> =
-            listOf(
-                arrayOf("Trips", false),
-                arrayOf("Trips", true),
-                arrayOf("TripsEmpty", false),
-                arrayOf("TripsEmpty", true),
-                arrayOf("TripsLoading", false),
-                arrayOf("TripsLoading", true),
-            )
+            listOf("Trips", "TripsEmpty", "TripsLoading").flatMap { board ->
+                BoardCaptureCell.standard.map { cell -> arrayOf<Any>(board, cell) }
+            }
     }
 }

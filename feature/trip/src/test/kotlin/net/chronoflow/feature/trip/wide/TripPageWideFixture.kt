@@ -18,6 +18,7 @@ import net.chronoflow.core.testing.DeviceProfile
 import net.chronoflow.core.testing.DeviceProfiles
 import net.chronoflow.core.testing.LargeTimelineFixtures
 import net.chronoflow.core.testing.SafeInsetsDp
+import net.chronoflow.core.testing.compose.BoardCaptureCell
 import net.chronoflow.core.testing.compose.ProfileHost
 import net.chronoflow.feature.trip.page.TripPageTestRig
 import net.chronoflow.feature.trip.state.TripStatesFixture
@@ -47,40 +48,22 @@ class TripPageWideCase(
 
         fun captures(): List<TripPageWideCase> =
             listOf(
-                TripPageWideCase("PlanWide", position = "top"),
-                TripPageWideCase("PlanWideDark", dark = true),
-                TripPageWideCase("PlanWideScrolled", position = "scrolled"),
-                TripPageWideCase("PlanWideDayMenu_title", position = "scrolled"),
-            ) +
-                listOf("PlanRemoteWide", "PlanRemoteWideOffline").flatMap { board ->
-                    AppLanguage.entries.flatMap { language ->
-                        listOf(false, true).map { dark ->
-                            TripPageWideCase(board, language = language, dark = dark)
-                        }
-                    }
-                } +
-                listOf(
+                "PlanWide",
+                "PlanWideScrolled",
+                "PlanWideDayMenu",
+                "PlanRemoteWide",
+                "PlanRemoteWideOffline",
+            ).flatMap { board ->
+                BoardCaptureCell.wide.map { cell ->
                     TripPageWideCase(
-                        "PlanWide",
-                        board669.copy(name = "board669-xxl", fontScale = 2f),
-                        AppLanguage.Nl,
-                        position = "top",
-                    ),
-                    TripPageWideCase(
-                        "PlanRemoteWide",
-                        board669.copy(name = "board669-xxl", fontScale = 2f),
-                        AppLanguage.Nl,
-                        true,
-                    ),
-                    TripPageWideCase(
-                        "PlanRemoteWideOffline",
-                        board669.copy(name = "board669-xxl", fontScale = 2f),
-                        AppLanguage.Nl,
-                        true,
-                    ),
-                    TripPageWideCase("PlanWide", DeviceProfiles.foldInner),
-                    TripPageWideCase("PlanWide", DeviceProfiles.landscapeSideNav),
-                )
+                        board,
+                        cell.profile,
+                        cell.language,
+                        cell.dark,
+                        if (board == "PlanWide") "top" else "scrolled",
+                    )
+                }
+            }
 
         fun guards(): List<TripPageWideCase> =
             listOf("ready-top", "ready-scrolled", "PlanRemoteWide", "PlanRemoteWideOffline").flatMap { state ->
