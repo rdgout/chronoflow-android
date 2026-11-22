@@ -2018,3 +2018,11 @@ Welcome’s five accepted elements and sign-in.guest remain accepted per OQ-A108
 Every listed gap has a static `assertBelow` contract: a later color change must prompt review of its exception. The original light dawn-on-card/background/muted/popover and dark dawn-on-foreground exceptions remain in Phase 2’s tests and docs/design-system.md.
 
 Task 10 focused JVM result: both added contrast methods pass (4.102 s command wall), covering 216 role/theme/sample measurements. A compile-only setup error used an integer threshold; it was corrected to Double before any new test executed.
+
+### Font scale (Task 11)
+
+`make font-scale-check` is an opt-in, locked pixel procedure. Its nine Dutch screens are settled Welcome, Sign in, Today, My trips, timeline, list, Settings home, Preferences and Outbound. Each scale is applied and echoed before a new UUID-gated screen launch; two consecutive geometry dumps must agree before capture. It records XML/PNG files as `build/captures/font-scale/<screen>_<scale>` and the verdict in `build/audit/font-scale.json`, then restores system scale 1.0 in `finally`.
+
+Every resource-id node belonging to the app is compared exactly at 1.3 versus 2.0; system UI belongs to its own configuration and is excluded. At least one text-node geometry must change between 1.0 and 1.3. Displayed copy is never compared. Six fake-device tests cover fixture parsing, the matching cap, a one-pixel mismatch naming its tag, scale-not-applied rejection, exception restoration and the nine-screen manifest (0.095 s command wall). The Makefile device-lock guards pass (0.043 s). Manual accessibility procedures remain pending (orchestrator/user); the combined Accessibility checkbox stays open while those and OQ-A618 remain open.
+
+Pixel result (2026-11-22, debug, emulator-5554/API 36): all nine screens passed; 54 XML/PNG artifacts were produced. Command `make font-scale-check`: exit 0, 233.680 s wall (226.678 s procedure). All 1.3/2.0 tagged bounds match exactly and all nine 1.0 text geometries differ. System scale 1.0 was restored. Raw report: `build/audit/font-scale.json`. This is emulator evidence only.

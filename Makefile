@@ -223,3 +223,7 @@ release-smoke:
 .PHONY: perf-rn
 perf-rn:
 	$(RUN_TIER) perf-rn --device --results 'benchmark/build/outputs/androidTest-results/connected/**/*.xml' -- Scripts/perf-compare-rn.sh
+
+.PHONY: font-scale-check
+font-scale-check:
+	python3 -I Scripts/device_lock.py -- sh -ec 'Scripts/emulator.sh ensure; $(GRADLE) :app:installDebug; python3 -I Scripts/font-scale-check.py'

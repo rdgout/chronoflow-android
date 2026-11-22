@@ -1,0 +1,1 @@
+<hierarchy><node package="net.chronoflow.app.native.debug" resource-id="screen" bounds="[0,0][1080,2400]"><node package="net.chronoflow.app.native.debug" class="android.widget.TextView" resource-id="screen.heading" text="fixture" bounds="[20,40][500,100]"/></node></hierarchy>
