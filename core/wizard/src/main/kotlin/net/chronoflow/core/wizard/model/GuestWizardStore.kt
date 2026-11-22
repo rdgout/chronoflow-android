@@ -1,5 +1,6 @@
 package net.chronoflow.core.wizard.model
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -11,11 +12,16 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import net.chronoflow.core.model.api.ApiJson
 import net.chronoflow.core.model.contracts.ProfilePreferences
+import net.chronoflow.core.model.guest.GuestClaim
+import net.chronoflow.core.model.guest.GuestSecretStore
+import net.chronoflow.core.model.store.StoreFailure
 import java.io.File
 import java.io.FileOutputStream
+import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption.ATOMIC_MOVE
 import java.nio.file.StandardCopyOption.REPLACE_EXISTING
+import java.security.GeneralSecurityException
 import java.time.Instant
 import java.time.format.DateTimeParseException
 import java.time.temporal.ChronoUnit.MILLIS
@@ -40,6 +46,53 @@ class GuestWizardStore(
         }
 
     suspend fun recover(): MemberWizardDraft? = withContext(io) { mutex.withLock { recoverRecord()?.draft } }
+
+    suspend fun claim(secrets: GuestSecretStore): GuestClaim? =
+        try {
+            val draft = recover()
+            val identity = draft?.form?.identity
+            val revision = identity?.reviewRevision
+            if (draft == null || identity == null || identity.token.isEmpty() || revision == null) {
+                null
+            } else {
+                val secret = secrets.get(identity.token)
+                if (secret.isNullOrEmpty()) {
+                    null
+                } else {
+                    val current = recover()
+                    if (current?.state?.instance == draft.state.instance && current.form.identity == identity) {
+                        GuestClaim(identity.token, identity.inputRevision, revision, secret)
+                    } else {
+                        null
+                    }
+                }
+            }
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: IOException) {
+            null
+        } catch (_: GeneralSecurityException) {
+            null
+        } catch (_: StoreFailure) {
+            null
+        } catch (_: RuntimeException) {
+            null
+        }
+
+    suspend fun reviewExpired(claim: GuestClaim) =
+        withContext(io) {
+            mutex.withLock {
+                val draft = recoverRecord()?.draft ?: return@withLock
+                val identity = draft.form.identity ?: return@withLock
+                if (identity.token != claim.draftToken || identity.inputRevision != claim.inputRevision ||
+                    identity.reviewRevision != claim.reviewRevision
+                ) {
+                    return@withLock
+                }
+                val expired = draft.returnToReadyAfterExpiredClaim()
+                write(record(expired.copy(state = expired.state.copy(revision = expired.state.revision + 1))))
+            }
+        }
 
     suspend fun recoveryDecision(
         handoffFinished: Boolean,

@@ -3391,7 +3391,7 @@ Acceptance evidence and the pending host checks are recorded in [`docs/settings-
 **Implementation (brief tasks)**
 
 - [x] Task 1: guest claim and continuation types.
-- [ ] Task 2: read and expire the guest claim.
+- [x] Task 2: read and expire the guest claim.
 - [ ] Task 3: member wizard guest seed.
 - [ ] Task 4: account continuation store.
 - [ ] Task 5: guest session acceptance.
