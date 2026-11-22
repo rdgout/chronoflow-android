@@ -454,3 +454,6 @@ If the leave-installed property is not honoured, or the precondition fails after
 
 
 **R23. Binding cancellation rule (user, Lessons from 6c).** Preserve silent `StaleSessionException` and rethrow caller cancellation. A `CancellationException` from a dependency while the caller is still active is a failure to map, as on iOS. This overrides §5.3's broader all-cancellations wording; the model tests distinguish stale-session, caller and foreign cancellation without booting the app. No earlier-phase code changes.
+
+
+**R24. Final quick fixture check.** `RemindersSeedTest` is a Robolectric class and uses `AndroidAccountDriverFactory` for its real seed-row guard, matching production seeding. SQLite JDBC registration is class-loader scoped and produced “No suitable driver” when this case followed the full app suite. Pure JVM persistence/model tests retain `JdbcAccountDriverFactory`. This changes no production behaviour or timing budget.
