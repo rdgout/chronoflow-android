@@ -71,3 +71,19 @@ Expected files under `build/captures/fold-check/`:
 - `relaunch-events.log`, `activity-task-manager.log` and `result.json` (status, completed stages, activity/task/process identity).
 
 Only `result.json` with status `passed` and all five freshly listed stages is a completed run. Runtime fold/sheet verification and the five screenshots remain pending until requested; the parser tests exercise synthetic XML/activity/state fixtures without running the fold script or touching adb.
+
+## Phase 14 fold and resize handoff (2026-11-22)
+
+Status: **pending (orchestrator/user)**. The worker did not create a T2 AVD, boot fold, run the fold script or run resize on a device. `Scripts/fold-check.sh` and its implementation remain unchanged. After the existing fold procedure above, run:
+
+```sh
+python3 -I Scripts/device_lock.py -- python3 -I Scripts/resize-check.py
+```
+
+The resize procedure addresses only `fold` / `emulator-5556`. It reads the active density (override wins), resolves an opening-day block from the existing debug mock fixture, then seeds that step sheet. It applies `split-narrow` 320 × 700 dp and `landscape-short` 800 × 360 dp as rounded physical pixels, requiring the same visible day anchor, `step.sheet`, `trip.page` and `trip.scroll`, no launch overlay, stable task/record/PID and no new MainActivity relaunch events. It waits for consecutive matching tagged geometry and always resets `wm size` in `finally`. Output: `build/captures/resize/{split-narrow,landscape-short}.{xml,png}` and `result.json`; both profile rows and `sizeReset=true` are required. These are planned checks, not device results.
+
+At 420 dpi the requested sizes are 840×1838 and 2100×945 px; at 390 dpi they are 780×1706 and 1950×878 px. Eight fake-device/parser tests cover density and px conversion, retained nodes/anchor, overlay rejection and reset after a failure. The reset guard first exposed an incorrect fake-adb command suffix; after correcting the fixture it verifies a real size override before the failure and reset afterward.
+
+Real split screen: **pending (orchestrator/user)**. Under the device lock, try `adb -s emulator-5556 shell am start --windowingMode 3 -n net.chronoflow.app.native.debug/net.chronoflow.app.MainActivity` after opening a trip sheet. If the shell cannot enter split screen, use Overview’s Split screen action and select a second app. Resize the divider to a width ≥280 dp; confirm the day anchor and open step sheet survive. Record the successful method and one screenshot in `build/captures/resize/real-split.png`. A `wm size` override alone is not evidence of real split screen.
+
+T2 creation/matrix commands remain with the orchestrator: `make avd-create AVD=fold`, `make avd-create AVD=small`, `make avd-create AVD=api29`, `make matrix`. Record per-AVD results and `make du` before/after the downloads; none is inferred from JVM profiles.
