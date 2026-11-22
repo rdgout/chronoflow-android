@@ -179,6 +179,10 @@ else
 	  if [ "$$n" = 0 ] && [ -z "$(ONLY)" ]; then echo "captures: no PNGs written" >&2; exit 1; fi
 endif
 
+.PHONY: audit-coverage
+audit-coverage:
+	python3 -I Scripts/board-coverage.py --canvas _design/canvas/canvas.json --scope tools/audit/board-scope.json --captures build/captures --out build/audit
+
 perf-timeline:
 	$(RUN_TIER) perf-timeline --device --results 'benchmark/build/outputs/androidTest-results/connected/benchmarkRelease/**/*.xml' -- bash -c ' \
 	  reset_window() { \
