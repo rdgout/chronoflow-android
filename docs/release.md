@@ -218,3 +218,7 @@ Worker validation, local host 2026-11-22:
 - `python3 -I -m unittest discover -s Scripts/tests -p test_makefile.py`: **2 PASS, 0.06 s wall**.
 - `./gradlew :benchmark:assembleBenchmarkRelease -Pkotlin.compiler.execution.strategy=in-process`: **PASS, 10.10 s wall**.
 - `./gradlew --no-daemon :app:assembleBenchmarkRelease :benchmark:assembleBenchmarkRelease -Pkotlin.compiler.execution.strategy=in-process`: **PASS, 56.30 s wall**. Both target and test APKs compile; no runtime keep-rule conclusion follows until the host smoke runs.
+
+## Profile completion pending the host
+
+Task 10's generator and post-generation gate are prepared, but its generated-file/strict-Kotlin-guard commit is pending R17's host generation. See [profile preparation](perf-startup.md#phase-13-profile-preparation). The Profiles plan box stays open. No generated file was hand-edited, no missing coverage was waived, and the current artifact gap is explicitly a failed pending gate.

@@ -343,3 +343,23 @@ Review round 1 moves overlay observation and the launch-finish effect into the r
 ## Phase 13 release size
 
 2026-11-22, worker, local macOS host, release bundle, bundletool arm64-v8a/xxhdpi/en/API 36 device spec; no device used. `make size GRADLE='./gradlew --no-daemon --console=plain -Pkotlin.compiler.execution.strategy=in-process'`: **4,147,965 B (4.15 MB), OK**, 40.72 s wall. Previous 5b result: 2,445,635 B. Native-library and language-split checks pass; the intentional split-enabled proof awaits the host (R17). See [release evidence](release.md#size).
+
+## Phase 13 profile preparation
+
+The generator now retains the original stubbed Today startup and wide journey, and adds signed-out Welcome, a real signed-in Today, the active-trip journey and wizard-to-Ready recovery. Large60 appends the shared day-59 jump after the existing bounded-scroll guard. Each new journey cold-starts and uses BoundedProfileInput with structural waits. Collection remains three max/two stable iterations, 120 s per journey; the runner remains timeout_msec=900000 and TIER_IDLE_TIMEOUT=1200.
+
+Worker checks (local host, 2026-11-22; no profile/device run): benchmark APK assembly PASS (2.08 s wall before the final bounded-condition cleanup); four post-generation coverage validator cases PASS (0.10 s wall). Thirteen runner fixture cases initially found Bash 3's empty-array expansion under nounset; replacing the empty optional array with the full non-empty argument array fixes the four affected profile cases (0.33 s wall), with the other nine cases already passing. The current three BaselineProfileFilesTest cases pass (5.23 s command wall).
+
+**Task 10 remains incomplete until host artifacts arrive.** The current baseline correctly fails the new post-generation validator with `missing main journey coverage: feature/trips/TripsScreenKt`; WizardReadyStepKt and SignInModel are also absent. The two generated files have not been hand-edited. The worker prepared the strict Kotlin guard extension in `/tmp/cf13-baseline-profile-guards.patch`; apply it and commit it with the genuinely regenerated files after the host run, then run `make targeted ONLY="app:BaselineProfileFilesTest"`. This keeps the artifact/guard commit green and the Profiles plan box open. Post-generation script guards already enforce the full required class list and have planted controls.
+
+Host commands, in this order:
+
+```sh
+make baseline-profile
+make perf
+make perf-timeline
+```
+
+Record generated-profile coverage and BaselineProfileMode.Require proof results here. No generation or performance number is claimed yet. Physical generation additionally requires `PERF_CLEAR=1`; the runner passes that explicit opt-in to the in-test clear guard.
+
+Final Task 10 benchmark APK assembly after bounding the helper's condition queries: `./gradlew :benchmark:assembleBenchmarkRelease -Pkotlin.compiler.execution.strategy=in-process`, **PASS, 1.88 s wall**. The prepared generator code can now be used by the host command above. The code preparation commit does not complete the pending artifact/guard portion of Task 10.

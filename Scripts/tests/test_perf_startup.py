@@ -136,6 +136,18 @@ class PerfStartupTest(unittest.TestCase):
         self.assertIn("emulator.sh prep-perf emulator-5554", self.calls())
         self.assertFalse(any("shell pm clear" in c for c in self.calls()))
 
+    def test_profile_generation_refuses_physical_clear_without_opt_in(self):
+        result = self.perf(script=str(SCRIPTS / "baseline-profile.sh"), BASELINE_PROFILE_DRY_RUN="1", FAKE_QEMU="0")
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("baseline-profile clears app data: set PERF_CLEAR=1", result.stderr)
+        self.assertFalse(any(c.startswith("gradlew") for c in self.calls()))
+
+    def test_profile_physical_opt_in_reaches_instrumentation(self):
+        result = self.perf(script=str(SCRIPTS / "baseline-profile.sh"), BASELINE_PROFILE_DRY_RUN="1", FAKE_QEMU="0", PERF_CLEAR="1")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("cf.perfClear=1", result.stdout)
+        self.assertIn("timeout_msec=900000", result.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()

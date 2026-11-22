@@ -37,6 +37,11 @@ for prop in ro.boot.qemu ro.kernel.qemu; do
   fi
 done
 
+if [ "$IS_EMU" != 1 ] && [ "${PERF_CLEAR:-0}" != 1 ]; then
+  echo "baseline-profile clears app data: set PERF_CLEAR=1" >&2
+  exit 2
+fi
+
 cleanup() {
   dev shell wm size reset
   "$EMULATOR_SH" prep-functional "$SERIAL"
@@ -55,10 +60,14 @@ else
 fi
 
 # Three collection attempts; the generator derives its deadline from the per-iteration caps.
-step "$GRADLEW" --console=plain :app:generateBaselineProfile \
-  -Pandroid.testInstrumentationRunnerArguments.class=net.chronoflow.benchmark.BaselineProfileGenerator \
-  -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.enabledRules=BaselineProfile \
+args=(
+  --console=plain :app:generateBaselineProfile
+  -Pandroid.testInstrumentationRunnerArguments.class=net.chronoflow.benchmark.BaselineProfileGenerator
+  -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.enabledRules=BaselineProfile
   -Pandroid.testInstrumentationRunnerArguments.timeout_msec=900000
+)
+if [ "${PERF_CLEAR:-0}" = 1 ]; then args+=(-Pandroid.testInstrumentationRunnerArguments.cf.perfClear=1); fi
+step "$GRADLEW" "${args[@]}"
 status=$?
 if [ "$status" != 0 ]; then exit "$status"; fi
 if [ -n "${BASELINE_PROFILE_DRY_RUN:-}" ]; then exit 0; fi
@@ -69,7 +78,7 @@ for f in baseline-prof.txt startup-prof.txt; do
   fi
 done
 
-python3 -I - "$OUT/baseline-prof.txt" <<'PYTHON'
+python3 -I - "$OUT/baseline-prof.txt" "$OUT/startup-prof.txt" <<'PYTHON'
 from pathlib import Path
 import sys
 profile = Path(sys.argv[1]).read_text()
@@ -82,4 +91,18 @@ for name in ("WideDayRowKt", "PinnedDayListKt", "WideListRowsKt", "TripScrollTra
         raise SystemExit("baseline-profile: missing wide coverage: " + name)
 if "Lnet/chronoflow/feature/trip/list/DayListRowKt;" not in profile:
     raise SystemExit("baseline-profile: missing list row coverage: DayListRowKt")
+required_journeys = (
+    "app/MainActivity", "core/plan/drawing/DayDrawingBuilder", "feature/trip/timeline/DayDrawingReplayKt",
+    "feature/today/ui/TodayScreenKt", "feature/trips/TripsScreenKt",
+    "feature/trip/page/TripPageScreenKt", "feature/trip/list/DayListRowKt",
+    "core/ui/plan/StepSheetContentKt", "feature/wizard/ready/WizardReadyStepKt",
+    "feature/launch/welcome/WelcomeScreenKt", "feature/auth/model/SignInModel",
+)
+for name in required_journeys:
+    if f"Lnet/chronoflow/{name};" not in profile:
+        raise SystemExit("baseline-profile: missing main journey coverage: " + name)
+startup = Path(sys.argv[2]).read_text()
+for name in ("app/MainActivity", "feature/today/ui/TodayScreenKt", "feature/launch/welcome/WelcomeScreenKt"):
+    if f"Lnet/chronoflow/{name};" not in startup:
+        raise SystemExit("baseline-profile: missing startup coverage: " + name)
 PYTHON
