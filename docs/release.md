@@ -157,3 +157,19 @@ Bundle size: 4147965 bytes (4.15 MB), arm64-v8a/xxhdpi/en: OK
 ```
 
 Command: `make size GRADLE='./gradlew --no-daemon --console=plain -Pkotlin.compiler.execution.strategy=in-process'`, **40.72 s wall**, PASS. This is a bundletool download-size estimate, not an emulator or physical-device performance claim. No unapproved `.so` and no language split were found. The first size build reached the three-minute no-output R8 limit and was stopped once (`1 Daemon stopped`); the one retry above passed with a fresh single-use daemon. The split-enabled proof remains pending with the host under R17; the Release build plan box remains open until that proof is recorded.
+
+## Release content
+
+`make release-check GRADLE='./gradlew --no-daemon --console=plain -Pkotlin.compiler.execution.strategy=in-process'`: **PASS, 42.36 s wall**, worker/local host, 2026-11-22. Release unit XML contains **291 cases, zero failures/errors**. Manifest verification passes. The APK checker reports:
+
+```text
+INFO billing: absent
+release apk: OK (2 dex files, 7747 classes checked)
+Bundle size: 4147966 bytes (4.15 MB), arm64-v8a/xxhdpi/en: OK
+```
+
+`Scripts/check-release-apk.py` uses apkanalyzer's defined classes with R8 mappings, then scans every dex disassembly for forbidden original class prefixes, seed strings and app-owned Log.v/d/i or exit-history calls. It permits only perf stub declarations read from the releaseNoPerf directory, not the whole package. A forbidden string reports its owning class without echoing its value. Billing is informational. The Make target uses AGP's current output metadata to select the signed or unsigned APK, avoiding a stale artifact left by another signing mode. This gate is separate from `make check`.
+
+Fixture command `python3 -I -m unittest discover -s Scripts/tests -p test_check_release_apk.py`: **20 PASS**, 5.08 s wall initially; **2.18 s wall** after making all string findings omit their values. Each fixture case remains below 1 s. Controls cover preview annotations, the declared stub, library Log.d and app Log.w; planted failures cover both debug-package forms, new CF_ seeds, undeclared perf code, forbidden calls, missing dex evidence and a missing tool.
+
+Tooling: installed apkanalyzer accepts `dex packages --defined-only --proguard-mappings`; installed dexdump emits modified UTF-8 (an overlong NUL in this real APK raised UnicodeDecodeError in the initial inspection). The checker streams with byte-preserving backslash replacement, retaining ASCII forbidden markers; a planted modified-UTF-8 fixture proves the markers still fail. No release content finding required a source move or keep-rule change.

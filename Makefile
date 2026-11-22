@@ -197,3 +197,9 @@ baseline-profile:
 .PHONY: version-bump
 version-bump:
 	python3 -I Scripts/bump-version.py $(PART)
+
+.PHONY: release-check
+release-check:
+	$(GRADLE) :app:assembleRelease :app:testReleaseUnitTest :app:verifyReleaseManifest
+	python3 -I Scripts/check-release-apk.py --apk "app/build/outputs/apk/release/$$(python3 -I -c 'import json; print(json.load(open("app/build/outputs/apk/release/output-metadata.json"))["elements"][0]["outputFile"])')" --mapping app/build/outputs/mapping/release/mapping.txt --allowed-perf-stubs app/src/releaseNoPerf/kotlin/net/chronoflow/app/perf
+	$(MAKE) size
