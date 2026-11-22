@@ -87,7 +87,7 @@ make baseline-profile                      # regenerates the committed profiles
 | 2026-11-22 | c8e7cfb3-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.3 | light | trip | benchmarkRelease, Partial(Require), bounded-swipe-v3 | 83.0/97.3 | 3.6/4.8/6.5 | 3.0/4.7 | -5.0 | 0.0/0.0 | 0.0/0.0 | 0 | 0.6 | 110.7 | 0.1 | 570 | 3 | ok | ok | PASS |
 | 2026-11-22 | c8e7cfb3-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.3 | light | trip-wide | benchmarkRelease, Partial(Require), bounded-swipe-v3 | n/a/n/a | 3.4/4.2/6.2 | 3.2/4.7 | -6.0 | 0.0/0.0 | 0.0/0.0 | 0 | 0.3 | 110.2 | -0.2 | 513 | 5 | ok | — | PASS |
 
-`-dirty` marks a run made with uncommitted changes. For Phase 13, the regenerated profiles were already committed in c8e7cfb3; the scripts retained their recorded dirty state while auto-recording documentation.
+`-dirty` marks a run made with uncommitted changes (here the regenerated baseline profile, committed right after).
 
 ### Phase 2 review round 1: purpose-specific marker metric
 
