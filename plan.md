@@ -3643,14 +3643,14 @@ Acceptance evidence and the pending host checks are recorded in [`docs/settings-
 **Delivers.** Makes the release build shippable: signing placeholders, versioning, the R8 keep-rule review, the final manifest allowlist, no language splits and the size gate. It regenerates the baseline and startup profiles across the main journeys and runs the full performance budget (cold and warm start, launch jank, timeline, memory) on the emulator, and on devices when attached, compared with RN. It records the Data safety answers and the Play checklist status.
 
 **Tasks**
-- [ ] **Release build.**
+- [x] **Release build.**
   - Signing from `CF_UPLOAD_*` in `~/.gradle/gradle.properties`; no key in the repository.
   - A version bump rule in `version.properties`.
   - Review the R8 keep rules in `src/main/keepRules/*.keep` (serialization, Nav3 keys), with `-assumenosideeffects` for `Log.v`, `Log.d` and `Log.i`.
   - `bundle { language { enableSplit = false } }` (OQ-A39).
   - The final `verifyReleaseManifest` allowlist.
   - `make size`: at most 8 MB download, no `.so` except the OQ-0a-22 allow-list.
-- [ ] **Profiles.** Extend `BaselineProfileGenerator` with the startup journey (launch → Today), the trip journey (`04 §10.5`), and the wizard up to Ready. Regenerate and commit; `BaselineProfileMode.Require` must pass.
+- [ ] **Profiles.** Extend `BaselineProfileGenerator` with the startup journey (launch → Today), the trip journey (`04 §10.5`), and the wizard up to Ready. Original generation/strict guard committed in c8e7cfb3; Partial(Require) host runs passed. Refresh and commit after launch-clock fix ccedfbe0 with `make baseline-profile`; `BaselineProfileMode.Require` must pass again.
 - [ ] **Performance budget.**
   - Run every row of "Performance budget" on `pixel`, and on a reference and a low-end device when attached (OQ-A22).
   - Measure the RN release APK with the same `StartupBenchmark` harness (`12 §1`).
@@ -3671,7 +3671,7 @@ Acceptance evidence and the pending host checks are recorded in [`docs/settings-
 - The bundle is within the size gate.
 - `docs/play.md` is complete.
 
-**Worker hand-off (2026-11-22).** Release-readiness checks pass: 293 release cases, manifest, release APK scan, debug-only exit logger and normal size gate. Release build remains open for the real language-split failure proof; Profiles remains open for host regeneration plus its artifact/strict-guard commit; Performance budget remains open for device/emulator evidence and R9's warm medians. The worker's one quick run passed all test stages in 102.34 s, above the 60 s warm target; this is recorded, not waived. Exact host commands and local results are in `docs/release.md`, `docs/perf-startup.md`, `docs/perf-timeline.md` and `docs/tooling.md`. No later phase is unblocked by this documentation commit.
+**Current evidence (2026-11-22).** Release build and release readiness are proven: host throwaway-key signingReport confirms release/upload and both perf variants/debug after fbd51e30; enableSplit=true fails with `language split present: splits/base-en.apk`, the plugin is restored, and normal size passes at 4,156,988 B (4.16 MB). Host release-check, all three minified release-smoke cases after 40ba540f and a standalone make check pass. Profiles/strict guard were generated and committed in c8e7cfb3; startup, light/dark/large-font timeline and RN emulator runs pass their applicable gates and retain their auto-recorded rows. The later launch-clock fix ccedfbe0 requires profile/perf refresh. After a05a1def, R9 quick times are 81.86 / 44.33 / 43.83 s (median 44.33 s ≤ 60). Check has two passing times, 245.89 / 284.79 s; its third timed run failed LaunchHandOffTest at exitStart 3499.573168 ms. There is no three-run check median, and build/tier-timings.json was not regenerated (still 2026-11-16). The monotonic-deadline regression is fixed and JVM-tested; host post-fix functional/timing proof remains open. Performance budget stays unchecked, and physical rows stay open: device only (OQ-A22/OQ-A45). Evidence and remaining commands are in docs/perf-startup.md, docs/perf-timeline.md, docs/release.md and build/phase13-host-evidence/. No later phase is unblocked while these gates remain open.
 
 ### Phase 14: Audit and verification (`feat/phase-14-audit-verification`)
 

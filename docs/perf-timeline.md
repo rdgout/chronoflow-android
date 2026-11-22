@@ -80,8 +80,14 @@ make baseline-profile                      # regenerates the committed profiles
 | 2026-11-20 | 62472d29 | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | trip-wide | benchmarkRelease, Partial(Require), bounded-swipe-v3 | n/a/n/a | 3.3/4.2/6.2 | 3.5/4.9 | -7.4 | 0.0/0.0 | 0.0/0.0 | 0 | 0.3 | 109.0 | -0.5 | 526 | 5 | ok | — | BAND |
 | 2026-11-20 | 62472d29 | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | trip | benchmarkRelease, Partial(Require), bounded-swipe-v3 | 98.9/99.9 | 3.6/4.6/6.4 | 3.0/4.7 | -5.4 | 0.0/0.0 | 0.0/0.0 | 0 | 0.7 | 109.2 | 0.3 | 571 | 3 | ok | ok | PASS |
 | 2026-11-20 | 62472d29 | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | trip-wide | benchmarkRelease, Partial(Require), bounded-swipe-v3 | n/a/n/a | 3.4/4.3/6.3 | 3.3/5.1 | -6.1 | 0.0/0.0 | 0.0/0.0 | 0 | 0.4 | 108.5 | -0.0 | 526 | 5 | ok | — | PASS |
+| 2026-11-22 | c8e7cfb3-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | trip | benchmarkRelease, Partial(Require), bounded-swipe-v3 | 99.2/100.9 | 3.6/4.6/6.4 | 2.9/4.5 | -4.9 | 0.0/0.0 | 0.0/0.1 | 0 | 0.6 | 109.4 | 0.0 | 571 | 3 | ok | ok | PASS |
+| 2026-11-22 | c8e7cfb3-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | trip-wide | benchmarkRelease, Partial(Require), bounded-swipe-v3 | n/a/n/a | 3.4/4.3/6.2 | 3.3/4.9 | -5.8 | 0.0/0.0 | 0.0/0.0 | 0 | 0.4 | 109.5 | 0.2 | 526 | 5 | ok | — | PASS |
+| 2026-11-22 | c8e7cfb3-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | dark | trip | benchmarkRelease, Partial(Require), bounded-swipe-v3 | 82.3/97.8 | 3.6/4.8/6.3 | 2.9/4.6 | -4.8 | 0.0/0.0 | 0.1/0.3 | 0 | 0.7 | 110.9 | 0.1 | 571 | 3 | ok | ok | PASS |
+| 2026-11-22 | c8e7cfb3-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | dark | trip-wide | benchmarkRelease, Partial(Require), bounded-swipe-v3 | n/a/n/a | 3.4/4.4/6.6 | 3.4/5.7 | -5.7 | 0.2/0.7 | 0.4/1.1 | 0 | 0.5 | 109.6 | 0.2 | 525 | 5 | ok | — | PASS |
+| 2026-11-22 | c8e7cfb3-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.3 | light | trip | benchmarkRelease, Partial(Require), bounded-swipe-v3 | 83.0/97.3 | 3.6/4.8/6.5 | 3.0/4.7 | -5.0 | 0.0/0.0 | 0.0/0.0 | 0 | 0.6 | 110.7 | 0.1 | 570 | 3 | ok | ok | PASS |
+| 2026-11-22 | c8e7cfb3-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.3 | light | trip-wide | benchmarkRelease, Partial(Require), bounded-swipe-v3 | n/a/n/a | 3.4/4.2/6.2 | 3.2/4.7 | -6.0 | 0.0/0.0 | 0.0/0.0 | 0 | 0.3 | 110.2 | -0.2 | 513 | 5 | ok | — | PASS |
 
-`-dirty` marks a run made with uncommitted changes (here the regenerated baseline profile, committed right after).
+`-dirty` marks a run made with uncommitted changes. For Phase 13, the regenerated profiles were already committed in c8e7cfb3; the scripts retained their recorded dirty state while auto-recording documentation.
 
 ### Phase 2 review round 1: purpose-specific marker metric
 
@@ -643,17 +649,27 @@ The ten large60 `todayView` samples range from 0.580625 to 0.641 ms (20 ms budge
 
 ## Phase 13
 
-The worker changed only benchmark/profile journeys and their scripts, not the timeline renderer or page. R17 reserves all device/perf tiers to the host. The new shared last-day helper retains the twelve menu-scroll / six bounded-gesture limits; its default swipe path retains bounded-swipe-v3 and adds reversal only for the trip profile's return scroll. Existing static/clock invalidation and timing gates are checked in final quick.
+The worker changed only benchmark/profile journeys and their scripts, not the timeline renderer or page. R17 reserves all device/perf tiers to the host. The new shared last-day helper retains the twelve menu-scroll / six bounded-gesture limits; its default swipe path retains bounded-swipe-v3 and adds reversal only for the trip profile's return scroll. Existing static/clock invalidation and timing gates passed the worker quick checks. The host has now completed R2–R4 below; the six auto-recorded history rows are retained unchanged.
 
-| Run | Exact host command | Evidence/result to fill |
+| Run | Exact host command | Evidence/current result |
 |---|---|---|
-| R2 | `make perf-timeline` | pixel, light, font 1.0; all five benchmark methods and metrics, raw archive/traces |
-| R3 | `THEME=dark make perf-timeline` | Same device/configuration, dark |
-| R4 | `FONT_SCALE=1.3 make perf-timeline` | Same device, light, capped font 1.3 |
-| R6 | `make size` | Final release size, allowed native library, no language split; split-enabled proof is separate |
-| R10 | `PERF_CLEAR=1 DEVICE_CLASS=reference make perf-timeline` | Reference 120 Hz and device preparation; repeat with lowEnd on the low-end device |
+| R2 | `make perf-timeline` | PASS emulator gates; light/font 1.0; t13-tl.log, 767.65 s command wall |
+| R3 | `THEME=dark make perf-timeline` | PASS emulator gates; dark/font 1.0; t13-tldark.log, 769.83 s command wall |
+| R4 | `FONT_SCALE=1.3 make perf-timeline` | PASS emulator gates; light/font 1.3; t13-tlfont.log, 765.58 s command wall |
+| R6 | `make size` | Host PASS, 4,156,988 B (4.16 MB); enableSplit=true failed as expected with language split present: splits/base-en.apk; plugin restored and normal gate PASS. Logs: build/phase13-host-evidence/t13-split.log and t13-size.log |
+| R10 | `PERF_CLEAR=1 DEVICE_CLASS=reference make perf-timeline` | Open: reference 120 Hz device only; repeat with DEVICE_CLASS=lowEnd on the selected low-end device |
 
-Every command must record date, commit/dirty state, device, API, Hz, GPU, font scale, theme, build, raw metrics, trace paths and its verdict. Current values below are intentionally pending; emulator rows are never device claims.
+Host metadata: 2026-11-22, c8e7cfb3-dirty, pixel / sdk_gphone64_arm64, Android 16 / API 36, 60 Hz, GPU host, animator scales 1, host on AC power; benchmarkRelease, Partial(Require), bounded-swipe-v3. R2 is light/font 1.0, R3 dark/font 1.0, R4 light/font 1.3. Values below are in R2/R3/R4 order when grouped; emulator rows are never device claims. The history's first-frame field is median/max, while the budget table explicitly labels mean/max.
+
+Source logs: `build/phase13-host-evidence/t13-tl.log`, `t13-tldark.log` and `t13-tlfont.log`. Raw JSON, XML and Perfetto traces: Raw JSON, XML and Perfetto traces:
+
+| Run | Evidence archive |
+|---|---|
+| R2 | `build/perf/timeline/20261122T093253Z-c8e7cfb3-dirty-light-1.0-bounded-swipe-v3.vOw4FM/` |
+| R3 | `build/perf/timeline/20261122T094541Z-c8e7cfb3-dirty-dark-1.0-bounded-swipe-v3.oYNNNv/` |
+| R4 | `build/perf/timeline/20261122T095831Z-c8e7cfb3-dirty-light-1.3-bounded-swipe-v3.hdK2eS/` |
+
+Each archive retains `androidTest-results/`, `connected_android_test_additional_output/` and its `row.md`. All five TimelineBenchmark methods pass in each run; no retry/failure or ±25% flag appears in the supplied logs.
 
 | Budget row | Source | Phase 13 value | Verdict |
 |---|---|---|---|
@@ -662,27 +678,27 @@ Every command must record date, commit/dirty state, device, API, Hz, GPU, font s
 | DayDrawing build | DayDrawingBudgetTest, make timing; real TextPaint guard | Fake metrics below; real TextPaint 2 cases PASS | PASS, JVM/Robolectric guards |
 | Drawing cache | DayDrawingCacheTest / quick | 8 cases PASS, 0.118 s suite | PASS |
 | Invalidation | TimelineInvalidationTest + ListInvalidationTest / quick | 13 + 124 cases PASS, 0.763 + 7.233 s suite | PASS, including both within-day scroll guards |
-| First large60 frame | timelineFirstFrameMs each | pending R2/R3/R4 | pending host; emulator ≤ 800 ms |
-| CPU frame P50/P90/P99 | timelineScroll frameDurationCpuMs | pending R2/R3/R4 | pending host; P90/P99 CPU band, P50 trend |
-| Overrun P99 | timelineScroll frameOverrunMs | pending R2/R3/R4 | pending host, emulator report |
-| Jank percentage | positive-overrun frames / frames | pending R2/R3/R4 | pending host, emulator report |
-| Hitch ratio | positive overrun / active frame time | pending R2/R3/R4 | pending host, emulator report |
-| Placeholder episodes | timelinePlaceholderCount maximum | pending R2/R3/R4 | pending host; ≤ 6 per emulator iteration |
-| Timeline builds on main | timelineBuildOnMainCount | pending R2/R3/R4 | pending host; hard 0 |
-| Main-thread frame P50/P99 | timelineMainFrameMsP50 / timelineMainFrameMsP99 | pending R2/R3/R4 | pending host, report |
-| RenderThread frame P99 | timelineRenderThreadMsP99 | pending R2/R3/R4 | pending host, report |
-| TimelineTargets composition/day | timelineTargetsMaxMs | pending R2/R3/R4 | pending host, report |
-| First-frame breakdown | timelineDecodeMs / timelinePrepareMs / timelineTypefaceMs | pending R2/R3/R4 | pending host, report |
-| Jump to last day | timelineLastDay | pending R2/R3/R4 | pending host; ≤ 6 bounded gestures |
-| Peak memory, large60 | memoryRssAnonMaxKb maximum + growth | pending R2/R3/R4 | pending host; ≤ 153,600 KiB, growth > 40 MiB warns |
-| List and wide scroll | listScroll / timelineScrollWide | pending R2/R3/R4 | pending host; every required metric must exist |
+| First large60 frame | timelineFirstFrameMs each | R2/R3/R4 maxima 100.9 / 97.8 / 97.3 ms; means 93.2 / 83.7 / 84.6 ms | PASS, every sample ≤ 800 ms |
+| CPU frame P50/P90/P99 | timelineScroll frameDurationCpuMs | R2 3.6/4.6/6.4; R3 3.6/4.8/6.3; R4 3.6/4.8/6.5 ms | PASS emulator CPU-band checker; P50 REPORT |
+| Overrun P99 | timelineScroll frameOverrunMs | R2/R3/R4 −4.9 / −4.8 / −5.0 ms | REPORT, emulator |
+| Jank percentage | positive-overrun frames / frames | Mean/max 0.0/0.0% in R2, R3 and R4 | REPORT, emulator |
+| Hitch ratio | positive overrun / active frame time | R2/R3/R4 maxima 0.1 / 0.3 / 0.0 ms/s | REPORT, emulator |
+| Placeholder episodes | timelinePlaceholderCount maximum | 0 in R2, R3 and R4 | PASS, ≤ 6 per emulator iteration |
+| Timeline builds on main | timelineBuildOnMainCount | 0 in R2, R3 and R4 | PASS, hard 0 |
+| Main-thread frame P50/P99 | timelineMainFrameMsP50 / timelineMainFrameMsP99 | R2/R3/R4 iteration maxima 0.8/2.9, 0.8/2.9, 0.8/3.0 ms | REPORT, emulator |
+| RenderThread frame P99 | timelineRenderThreadMsP99 | R2/R3/R4 iteration maxima 4.5 / 4.6 / 4.7 ms | REPORT, emulator |
+| TimelineTargets composition/day | timelineTargetsMaxMs | R2/R3/R4 maxima 0.4 / 0.2 / 0.5 ms; lower bounds excluding pausable-prefetch bodies | REPORT, emulator |
+| First-frame breakdown | timelineDecodeMs / timelinePrepareMs / timelineTypefaceMs | R2 maxima 9.0/17.1/1.0; R3 9.8/16.5/1.0; R4 13.3/15.1/1.0 ms | REPORT, emulator |
+| Jump to last day | timelineLastDay | PASS in all three runs; helper enforces ≤ 6 bounded gestures, actual gesture count is not emitted | PASS emulator functional guard |
+| Peak memory, large60 | memoryRssAnonMaxKb maximum + growth | R2/R3/R4 maxima 112,024 / 113,548 / 113,364 KiB; growth 8 / 72 / 152 KiB | PASS, ≤ 153,600 KiB; growth below 40 MiB warning |
+| List and wide scroll | listScroll / timelineScrollWide | R2/R3/R4 list CPU 3.4/4.4/5.8, 3.4/4.4/5.9, 3.4/4.4/6.0 ms; wide CPU 3.4/4.3/6.2, 3.4/4.4/6.6, 3.4/4.2/6.2 ms | PASS execution/required metrics and wide emulator CPU checker; CPU is P50/P90/P99 |
 
 Layer 4 device review: **open: device only (OQ-A22)**. Before the first production upload, one passing reference 120 Hz run and one passing low-end run are required, or the user's recorded OQ-A45 waiver. Prepare airplane mode, battery saver off, charge above 50%, cooled device, animator scales 1; record the actual refresh rate. The host handles device selection and leaves pixel available afterwards.
 
-A hard miss receives one immediate repeat of the same configuration, with both rows retained; a repeated miss becomes a fix task. The checker already handles the emulator CPU-band retry. No missing metric, over-budget result or absent physical evidence is a PASS. Profiles and Performance budget remain unchecked in plan.md until the host evidence closes them.
+A hard miss receives one immediate repeat of the same configuration, with both rows retained; a repeated miss becomes a fix task. The checker already handles the emulator CPU-band retry. No missing metric, over-budget result or absent physical evidence is a PASS. The original profile collection is verified by c8e7cfb3 and the successful Require runs; the launch-clock fix ccedfbe0 requires a refresh. Performance budget remains unchecked. The host standalone make check and corrected minified smoke pass, and R9 quick median is 44.33 s. The third timed check failed the early launch-clock deadline, so the check series has only two passing times (245.89 / 284.79 s), no three-run median, and no regenerated tier-timings.json. Post-ccedfbe0 launch/profile verification and physical device rows remain open; see release.md for exact commands.
 
 
-Final JVM evidence (2026-11-22, source 17527208 plus documentation, local macOS host, JDK 21, debug JVM/Robolectric): `make quick` ran the serial timing tier last (7 cases, 4.09 s tier wall). The whole command took 102.34 s; this exceeds the warm target and does not close R9. Raw timing XML: `core/plan/build/test-results/timingTest/`; timing budget report: `build/test-results/timing/timings.json`. No individual test budget overrun occurred.
+Earlier JVM evidence (2026-11-22, source 17527208 plus documentation, local macOS host, JDK 21, debug JVM/Robolectric): `make quick` ran the serial timing tier last (7 cases, 4.09 s tier wall). The whole command took 102.34 s; this exceeded the warm target; the later host three-run quick median is 44.33 s (PASS), while the incomplete check series keeps R9 open. Raw timing XML: `core/plan/build/test-results/timingTest/`; timing budget report: `build/test-results/timing/timings.json`. No individual test budget overrun occurred.
 
 | DayDrawing width dp | Slowest day median ms | Day maximum ms (report) | Total median ms | Maximum drawing bytes |
 |---:|---:|---:|---:|---:|
@@ -691,3 +707,6 @@ Final JVM evidence (2026-11-22, source 17527208 plus documentation, local macOS 
 | 841 | 0.05 | 0.05 | 1.3 | 14,089 |
 
 All widths pass ≤ 1 ms median/day, ≤ 5 ms total/width and ≤ 512 KiB/drawing. `env 'ORG_GRADLE_PROJECT_kotlin.compiler.execution.strategy=in-process' make targeted ONLY='feature:trip:TextPaintDayDrawingBudgetTest'` separately passed its two real TextPaint cases in **5.51 s tier wall** (1.688 s suite including class initialization). Reported real-metric day maxima: 0.57 ms at 841 dp and 0.08 ms at 411 dp; total pass times 14.9/2.0 ms; drawing bytes 14,155/11,795. Fake and real metric results are different harnesses. No renderer, clock scope or drawing allocation path changed in Phase 13, and no device/perf tier was run by the worker.
+
+
+Additional R2/R3/R4 values: list peak RSS maxima **112,896 / 112,816 / 112,772 KiB**; wide peak RSS maxima **112,176 / 112,196 / 112,856 KiB**. Wide dark jank mean/max is **0.2/0.7%**, hitch **0.4/1.1 ms/s**; light and large-font wide jank/hitch maxima are zero. List overrun P99 is **−5.4 / −5.3 / −5.3 ms**. All are emulator reports; peak RSS passes the shared 153,600 KiB limit. First-frame TTID mean/max is **132.5/143.3, 118.2/129.5, 119.9/140.5 ms**. No new physical-device performance claim is made.

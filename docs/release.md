@@ -22,7 +22,7 @@ Gradle properties take precedence over environment variables. No values means un
 
 Phase 13 review corrected 5b4cd017: Baseline Profile 1.5.0 clones release in its finalizeDsl callback, copying the eagerly assigned upload config into both perf build types. The convention plugin now resets nonMinifiedRelease and benchmarkRelease to the debug config in a later finalizeDsl callback. An independent onVariants invariant checks their finalized config names on every app configuration, after all DSL callbacks; this catches an ordering regression without reading or printing signing credentials.
 
-Regression evidence (2026-11-22, worker/JDK 17, no device): with a temporary external fixture file and complete synthetic CF_UPLOAD_* environment values, `./gradlew help --no-configuration-cache -Pkotlin.compiler.execution.strategy=in-process` fails before the reset with `nonMinifiedRelease must use debug signing` (5.82 s), then passes with it (7.57 s). The temporary file is empty: this proves the real plugin lifecycle/configuration, not keystore validity or a signed bundle. Five PerfSigningTest cases and nine existing UploadSigningTest cases pass in 3.60 s command wall. The host will independently repeat `./gradlew :app:signingReport` with its throwaway key; expected config names are debug/debug, release/upload, nonMinifiedRelease/debug and benchmarkRelease/debug. Existing signed/unsigned bundle evidence below remains valid.
+Regression evidence (2026-11-22, worker/JDK 17, no device): with a temporary external fixture file and complete synthetic CF_UPLOAD_* environment values, `./gradlew help --no-configuration-cache -Pkotlin.compiler.execution.strategy=in-process` fails before the reset with `nonMinifiedRelease must use debug signing` (5.82 s), then passes with it (7.57 s). The temporary file is empty: this proves the real plugin lifecycle/configuration, not keystore validity or a signed bundle. Five PerfSigningTest cases and nine existing UploadSigningTest cases pass in 3.60 s command wall. The host independently confirmed `./gradlew :app:signingReport` with a throwaway key after fbd51e30: debug → debug, release → upload, nonMinifiedRelease → debug and benchmarkRelease → debug. This is a host-reported signing check; no signing credentials or private key are archived. Existing signed/unsigned bundle evidence below remains valid.
 
 Print the upload certificate's SHA-256:
 
@@ -97,7 +97,7 @@ App-owned rules, reviewed 2026-11-22:
 
 `./gradlew :app:assembleRelease :app:assembleBenchmarkRelease :app:analyzeReleaseR8Config -Pkotlin.compiler.execution.strategy=in-process`: PASS, 42.81 s wall. AGP 9.5.1 writes `configuration.txt`, `mapping.txt`, `seeds.txt`, `usage.txt` under `app/build/outputs/mapping/<variant>/`. No `-printconfiguration` addition is needed. Analyzer output: `R8 Keep Rules analysis report generated: build/reports/r8/r8-config-analyzer-release.html` (module-relative path).
 
-The release configuration contains **57 library consumer rule file sections**. None keeps a whole package with all members; the only such package keep is our existing conditional Credential Manager provider rule above. Navigation 3 routes and sheets are `@Serializable`; the app owns its back stacks and uses `NavDisplay`. The requested `rememberNavBackStack|SavedStateConfiguration|serializer<|Json.encodeToString` search found no reflective route/sheet serializer lookup in app/feature production code. Wizard recovery uses generated kotlinx.serialization serializers; bundled companion `serializer()` consumer rules cover these. No route keep was added. The minified smoke is the runtime proof (host command `make release-smoke`, pending).
+The release configuration contains **57 library consumer rule file sections**. None keeps a whole package with all members; the only such package keep is our existing conditional Credential Manager provider rule above. Navigation 3 routes and sheets are `@Serializable`; the app owns its back stacks and uses `NavDisplay`. The requested `rememberNavBackStack|SavedStateConfiguration|serializer<|Json.encodeToString` search found no reflective route/sheet serializer lookup in app/feature production code. Wizard recovery uses generated kotlinx.serialization serializers; bundled companion `serializer()` consumer rules cover these. No route keep was added. The minified smoke is the runtime proof: host `make release-smoke` passes all three cases after 40ba540f (results below).
 
 Initial sorted-directive diff found four extra entries in benchmarkRelease from `kotlinx-coroutines-test-jvm`, transitively through the fixture module: duplicate volatile-field keeps and dispatcher-factory name keeps. Perf code imports only `LargeTimelineFixtures`. Dependency insight also found a transitive fixture path through `:core:data-mock`; excluding only the direct edge left the diff unchanged. The final exclusion is on the two perf runtime classpaths, covering both paths and removing the unused dispatcher provider; debug/tests are unaffected. No app rule was changed. A first build-script attempt used Gradle's map overload (returns `Dependency`); the corrected string overload returns `ProjectDependency` and supports exclusions.
 
@@ -108,7 +108,7 @@ diff <(rg '^-' app/build/outputs/mapping/release/configuration.txt | sort) \
      <(rg '^-' app/build/outputs/mapping/benchmarkRelease/configuration.txt | sort)
 ```
 
-The release/benchmarkRelease app keep and Log-stripping rules are identical. Only nonMinifiedRelease has the pinned profile exception. Runtime smoke and regenerated-profile proofs remain host commands.
+The release/benchmarkRelease app keep and Log-stripping rules are identical. Only nonMinifiedRelease has the pinned profile exception. The host runtime smoke and c8e7cfb3 regenerated-profile proofs pass. The subsequent clock fix ccedfbe0 requires the launch/profile refresh listed below.
 
 ## Release manifest
 
@@ -152,15 +152,15 @@ Task 5 adds a language-split check after bundletool builds the device-specific A
 
 `./gradlew :build-logic:convention:test --tests '*BundleSizeTest' -Pkotlin.compiler.execution.strategy=in-process`: **11 cases PASS**, 10.71 s wall, local host 2026-11-22. English, Dutch and pt_BR splits are rejected; ABI, density and master APKs are controls.
 
-Host proof still required (R17): temporarily change `bundle.language.enableSplit = false` to `true` in `build-logic/convention/src/main/kotlin/net/chronoflow/buildlogic/AndroidApplicationConventionPlugin.kt`, run `make size`, retain the expected `language split present: …` failure and `app/build/outputs/size/apks-entries.txt`, then restore `false` and run `make size` again. Record the real language split names here; do not waive this proof or change the regex without evidence.
+Host negative proof completed (R17): temporarily setting `bundle.language.enableSplit = true` makes `make size` fail with `language split present: splits/base-en.apk`. The convention plugin was restored to false, and normal `make size` passes at **4,156,988 B (4.16 MB)**. The same size passes in host release-check. Logs: `build/phase13-host-evidence/t13-split.log`, `t13-size.log` and `t13-release-check.log`. The normal gate finds no new native library or language split; the Release build plan box is complete.
 
-Phase 13 result, local host, 2026-11-22, release bundle, bundletool device spec arm64-v8a/xxhdpi/en/API 36:
+Earlier worker result, local host, 2026-11-22, release bundle, bundletool device spec arm64-v8a/xxhdpi/en/API 36:
 
 ```text
 Bundle size: 4147965 bytes (4.15 MB), arm64-v8a/xxhdpi/en: OK
 ```
 
-Command: `make size GRADLE='./gradlew --no-daemon --console=plain -Pkotlin.compiler.execution.strategy=in-process'`, **40.72 s wall**, PASS. This is a bundletool download-size estimate, not an emulator or physical-device performance claim. No unapproved `.so` and no language split were found. The first size build reached the three-minute no-output R8 limit and was stopped once (`1 Daemon stopped`); the one retry above passed with a fresh single-use daemon. The split-enabled proof remains pending with the host under R17; the Release build plan box remains open until that proof is recorded.
+Command: `make size GRADLE='./gradlew --no-daemon --console=plain -Pkotlin.compiler.execution.strategy=in-process'`, **40.72 s wall**, PASS. This is a bundletool download-size estimate, not an emulator or physical-device performance claim. No unapproved `.so` and no language split were found. The first size build reached the three-minute no-output R8 limit and was stopped once (`1 Daemon stopped`); the one retry above passed with a fresh single-use daemon. The later host proof above closes the split-enabled requirement without changing the checker or budget.
 
 ## Release content
 
@@ -203,18 +203,18 @@ All three runners clear the native perf package exactly once after successful pe
 
 ## Minified smoke
 
-Host command: `make release-smoke` (device lock, one device). The first host run on pixel/API 36, minified benchmarkRelease, failed the sheet case; the corrected test awaits a host rerun. Source: `t13-smoke.log` in the Phase 13 host scratchpad and `benchmark/build/outputs/androidTest-results/connected/benchmarkRelease/TEST-pixel(AVD) - 16.xml`.
+Host command: `make release-smoke` (device lock, pixel emulator/API 36, minified benchmarkRelease). The rerun after 40ba540f passes all three cases, **80.00 s tier wall**, with same-process and crash-buffer assertions intact. Archived evidence: `build/phase13-host-evidence/t13-release-smoke.log` and `build/phase13-host-evidence/release-smoke/` (timings and connected benchmarkRelease XML). The earlier failed run is retained as `build/phase13-host-evidence/t13-smoke.log`; it is superseded by this rerun, not treated as a pass.
 
 The class signs in through the real mock-backed form once in BeforeClass, then starts a fresh process per method while preserving the account/session file. This makes the once-per-process wizard hook deterministic without another sign-in journey. The sheet case waits for an app window event from the font-scale recreation, checks the restored `step.sheet` and unchanged pid, dismisses the sheet, waits for it to disappear, then checks `trip.page` and the pid again. It restores the old setting in finally. Every method compares pids and checks the crash buffer. The first-trip reminder guard does not wait and runs only after the wizard save here. All queries use structural tags; no sleeps or copy queries.
 
 | Host measurement | Budget | Result |
 |---|---:|---|
-| signInOnce setup | ≤ 20 s | Not separately timed; `make release-smoke` host rerun pending |
-| todayTripsAndSettingsOpen | < 10 s | First host run PASS, 3.691 s; rerun `make release-smoke` |
-| tripSheetSurvivesRecreation | < 10 s | First host run FAIL, 11.682 s; corrected `make release-smoke` rerun pending |
-| wizardSavesToTripPage | < 10 s | First host run PASS, 6.117 s; rerun `make release-smoke` |
+| signInOnce setup | ≤ 20 s | Setup completed; not separately timed in XML |
+| todayTripsAndSettingsOpen | < 10 s | Host rerun PASS, 3.381 s |
+| tripSheetSurvivesRecreation | < 10 s | Host rerun PASS, 8.606 s |
+| wizardSavesToTripPage | < 10 s | Host rerun PASS, 6.778 s |
 
-Review correction belongs to 0feca5ee. `TripPageSheets` uses `CfModalBottomSheet`, whose Material modal owns a separate window. The old test found the restored sheet but queried the hidden activity window next; it failed before reaching its pid assertion. No crash was recorded, and that failure alone did not prove the underlying page was lost. The shared test-only `verifyRecreatedSheet` flow now asserts the process both while the sheet is visible and after revealing the page. Its JVM active-window fixture fails with the old ordering, then all three cases pass with the fix (0.013 s suite); missing-page and process-death controls still fail as required. `:benchmark:assembleBenchmarkRelease` plus root Spotless passes in 59.38 s command wall. No product source, timeout or budget changes; the actual device proof remains the rerun above.
+Review correction belongs to 0feca5ee. `TripPageSheets` uses `CfModalBottomSheet`, whose Material modal owns a separate window. The old test found the restored sheet but queried the hidden activity window next; it failed before reaching its pid assertion. No crash was recorded, and that failure alone did not prove the underlying page was lost. The shared test-only `verifyRecreatedSheet` flow now asserts the process both while the sheet is visible and after revealing the page. Its JVM active-window fixture fails with the old ordering, then all three cases pass with the fix (0.013 s suite); missing-page and process-death controls still fail as required. `:benchmark:assembleBenchmarkRelease` plus root Spotless passes in 59.38 s command wall. No product source, timeout or budget changes; the passing rerun above supplies the emulator proof. Physical-device evidence remains separate.
 
 The runner refuses physical-device clearing without `PERF_CLEAR=1`; shared in-test clearing independently requires an emulator or the runner's explicit `cf.perfClear=1` argument. It uses functional preparation, timeout_msec=60000 and no benchmark rule/error suppression. It is separate from `make check`.
 
@@ -223,15 +223,15 @@ Worker validation, local host 2026-11-22:
 - `python3 -I -m unittest discover -s Scripts/tests -p test_release_smoke.py`: **4 PASS, 0.74 s wall** (dry-run class/cap selection, Gradle status, physical refusal and opt-in).
 - `python3 -I -m unittest discover -s Scripts/tests -p test_makefile.py`: **2 PASS, 0.06 s wall**.
 - `./gradlew :benchmark:assembleBenchmarkRelease -Pkotlin.compiler.execution.strategy=in-process`: **PASS, 10.10 s wall**.
-- `./gradlew --no-daemon :app:assembleBenchmarkRelease :benchmark:assembleBenchmarkRelease -Pkotlin.compiler.execution.strategy=in-process`: **PASS, 56.30 s wall**. Both target and test APKs compile; no runtime keep-rule conclusion follows until the host smoke runs.
+- `./gradlew --no-daemon :app:assembleBenchmarkRelease :benchmark:assembleBenchmarkRelease -Pkotlin.compiler.execution.strategy=in-process`: **PASS, 56.30 s wall**. Both target and test APKs compile. The later passing host smoke above provides the runtime keep-rule proof.
 
-## Profile completion pending the host
+## Completed profile proof
 
-Task 10's generator and post-generation gate are prepared, but its generated-file/strict-Kotlin-guard commit is pending R17's host generation. See [profile preparation](perf-startup.md#phase-13-profile-preparation). The Profiles plan box stays open. No generated file was hand-edited, no missing coverage was waived, and the current artifact gap is explicitly a failed pending gate.
+Host `make baseline-profile` passed in 10 min 34 s (bp-13b.log); c8e7cfb3 commits both genuine generated profiles and the strict coverage guard. The subsequent native startup/timeline runs at c8e7cfb3 use Partial(Require) successfully. This completes the original collection; the Profiles box is reopened for the required refresh after launch-clock fix ccedfbe0. See [host profile evidence](perf-startup.md#phase-13-profile-preparation). Performance budget remains open for the unmeasured/failed host gates, without a waiver.
 
 ## RN comparison tooling
 
-`make perf-rn` takes the host-wide device lock, checks the prebuilt APK hash before installation, uses shared device/archive helpers, checks animator scales, and restores functional preparation even on a Gradle/checker failure. The checker still runs after a failed Gradle command so missing evidence is explicit. Physical clearing has both runner and instrumentation guards. The optional NOT-PROFILEABLE suppression and am-start fallback require named opt-ins and are recorded in the [comparison protocol](perf-startup.md#rn-comparison-protocol). No RN Macrobenchmark result is claimed until the host run.
+`make perf-rn` takes the host-wide device lock, checks the prebuilt APK hash before installation, uses shared device/archive helpers, checks animator scales, and restores functional preparation even on a Gradle/checker failure. The checker still runs after a failed Gradle command so missing evidence is explicit. Physical clearing has both runner and instrumentation guards. The optional NOT-PROFILEABLE suppression and am-start fallback require named opt-ins and are recorded in the [comparison protocol](perf-startup.md#rn-comparison-protocol). The host normal-harness RN comparison now passes; all emulator values remain REPORT, as recorded in perf-startup.md.
 
 ## 16 KB alignment
 
@@ -241,7 +241,7 @@ Final version-parser review found Python int() accepts underscores and Unicode d
 
 ## Tooling notes
 
-Final worker source: 17527208 plus documentation, 2026-11-22, local macOS host. Gradle uses JDK 17; JVM/Robolectric tests use JDK 21. No device/emulator/performance tier was run. The throwaway signing key is deleted; no production key or Play upload was created.
+Earlier worker source: 17527208 plus documentation, 2026-11-22, local macOS host. Gradle uses JDK 17; JVM/Robolectric tests use JDK 21. No device/emulator/performance tier was run. The throwaway signing key is deleted; no production key or Play upload was created.
 
 | Exact command | Result | Wall time |
 |---|---|---:|
@@ -263,55 +263,26 @@ The normal APK set still has no language split or new native library. Final `zip
 
 Quick's 6,304 JVM/Robolectric cases, 58 build-logic cases, seven serial timing cases and 342 Python cases all pass. No individual test-budget violation or hang occurred. The 102.34 s command duration exceeds the warm target; no second quick run was made and R9 remains open. Slowest warm cases and separate cold allowances are in [tooling](tooling.md#phase-13). Logs: `/tmp/cf13-final-release-check.log`, `/tmp/cf13-final-lint.log`, `/tmp/cf13-final-layout.log`, `/tmp/cf13-final-format.log`, `/tmp/cf13-final-quick.log`.
 
-Host commands remaining under R17, serially with pixel running:
+Host follow-up, 2026-11-22: release-check passes with `release apk: OK (2 dex files, 7768 classes checked)` and `Bundle size: 4156988 bytes (4.16 MB), arm64-v8a/xxhdpi/en: OK`. The corrected minified smoke passes as above; signingReport and the real split-enabled failure proof are complete. A standalone make check passes. The subsequent `Scripts/measure-tiers.sh` run after a05a1def takes **22 min 35 s**: warm-up quick/check pass; quick runs **81.86 / 44.33 / 43.83 s**, median **44.33 s ≤ 60**; check runs **245.89 / 284.79 s** pass, but the third check fails in LaunchHandOffTest. There is **no three-run check median**. The script exits before writing `build/tier-timings.json`, which remains the **2026-11-16** artifact; it has not been edited by hand. Archived evidence: `build/phase13-host-evidence/t13-tiers4.log`, `prior-tier-quick.times`, `prior-tier-check.times`, `prior-tier-timings.json` and `smoke/` (the failed third check's XML).
+
+The failure is a product clock deadline defect, corrected in ccedfbe0. `MediaLaunchClock.sleepUntil` now rechecks monotonic time after Android's millisecond timer wakes; the assertion window and animation duration are unchanged. The JVM early-wake test fails before the fix and passes afterwards, alongside cancellation and the coordinator/timeline cases. Host verification of that fix remains open; no device/perf command was run by this worker.
+
+Remaining commands under R17, serially with pixel running (the launch path changed):
 
 ```sh
 export ANDROID_HOME=/opt/homebrew/share/android-commandlinetools
 export JAVA_HOME=$(/usr/libexec/java_home -v 17)
+make targeted ONLY="app:LaunchHandOffTest#slowShowsStatusAndHandsOffAfterReady"
+Scripts/measure-tiers.sh
+make check
 make baseline-profile
-# Hand the genuine generated profiles back for the strict-guard/artifact commit:
-git apply /tmp/cf13-baseline-profile-guards.patch
-make targeted ONLY="app:BaselineProfileFilesTest"
-# Commit the two profiles and their passing guard together before perf proof.
 make perf
 make perf-timeline
 THEME=dark make perf-timeline
 FONT_SCALE=1.3 make perf-timeline
-make perf-rn
-make release-smoke
-Scripts/measure-tiers.sh
-make check
 ```
 
-These commands have **not been run by the worker**; there is no output to report for them. `make baseline-profile` must precede the prepared Kotlin guard: the current artifact fails the read-only coverage probe with `baseline-profile: missing main journey coverage: feature/trips/TripsScreenKt`. This is missing evidence, not a waiver. Keep the profile artifact/guard commit separate from the already committed preparation. No board captures are required by this phase (no UI/boards).
-
-The following intentional split-enabled proof is also **host-only and unrun**. It preserves the convention plugin with a trap, expects the real size gate to reject a language split, retains the names and restores the normal configuration before a passing size run. Run from the repository root with a clean convention plugin:
-
-```sh
-(
-  set -eu
-  cf_split_plugin=build-logic/convention/src/main/kotlin/net/chronoflow/buildlogic/AndroidApplicationConventionPlugin.kt
-  cf_split_backup=$(mktemp /tmp/cf13-split-plugin.XXXXXX)
-  cp "$cf_split_plugin" "$cf_split_backup"
-  trap 'cp "$cf_split_backup" "$cf_split_plugin"' EXIT
-  python3 -I - <<'PY'
-from pathlib import Path
-p = Path("build-logic/convention/src/main/kotlin/net/chronoflow/buildlogic/AndroidApplicationConventionPlugin.kt")
-s = p.read_text()
-assert s.count("bundle.language.enableSplit = false") == 1
-p.write_text(s.replace("bundle.language.enableSplit = false", "bundle.language.enableSplit = true"))
-PY
-  if make size > /tmp/cf13-language-split-proof.log 2>&1; then
-    cat /tmp/cf13-language-split-proof.log
-    echo 'Expected the enabled language split to fail the size gate' >&2
-    exit 1
-  fi
-  cat /tmp/cf13-language-split-proof.log
-  rg 'language split present:' /tmp/cf13-language-split-proof.log
-  cp app/build/outputs/size/apks-entries.txt /tmp/cf13-language-split-entries.txt
-)
-make size
-```
+The profile/performance results recorded at c8e7cfb3 remain historical evidence; regenerate/commit profiles after ccedfbe0 and record the new Require results. Do not reapply the old saved guard patch: it is already committed. Release-check and minified smoke passed before the clock fix; repeat `make release-check` and `make release-smoke` for the final upload artifact. No board captures are required (no UI/boards changed).
 
 Physical reference and low-end runs remain open (OQ-A22), and block production under OQ-A45. Only when the host selects/prepares the corresponding device:
 
