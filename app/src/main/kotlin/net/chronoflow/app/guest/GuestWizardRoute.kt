@@ -1,12 +1,10 @@
 package net.chronoflow.app.guest
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalResources
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.lifecycle.viewmodel.MutableCreationExtras
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
@@ -88,18 +86,8 @@ internal fun GuestWizardRoute(
             factory = TripWizardViewModel.factory(WizardMode.Create),
             extras = extras,
         )
-    val lifecycle = LocalLifecycleOwner.current.lifecycle
-    DisposableEffect(lifecycle, holder, model) {
-        val observer =
-            LifecycleEventObserver { _, event ->
-                if (event ==
-                    Lifecycle.Event.ON_START
-                ) {
-                    holder.onStart(model)
-                }
-            }
-        lifecycle.addObserver(observer)
-        onDispose { lifecycle.removeObserver(observer) }
+    LaunchedEffect(holder, model) {
+        holder.observeForeground(model, ProcessLifecycleOwner.get().lifecycle)
     }
     WizardRoot(model) { holder.close(model) }
 }
