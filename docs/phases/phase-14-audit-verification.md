@@ -532,3 +532,25 @@ Fix commits sit between task commits and tick nothing. Every commit is a Convent
 | OQ-14-9 | LeakCanary (OQ-13-12). | Not added: it installs an eager initializer, which AGENTS.md "Performance" forbids; record in `docs/verification.md`. |
 
 Inherited questions on their defaults for this phase: OQ-A22 (device gates open until attached), OQ-A34 (ChromeOS not targeted), OQ-A42 (designer confirms the Material chrome), OQ-A12 (Android-only copy "needs review"), OQ-A3 (selected tab color, iOS parity), OQ-A5 (Snackbar toast), OQ-A6 (no glass), OQ-A8 (M3 time picker).
+
+## Refresh notes (2026-11-22, against 92781204)
+
+Refreshed by the orchestrator against `feat/phase-13-release-perf` at `92781204` (top of 13; every phase through 13 is in the stack). **Where a note and the body disagree, the note wins.** Before Task 1, repeat these checks (the greps are in each note) and stop on any further mismatch.
+
+**R1. plan.md line numbers.** Body: Phase 14 entry l.2785–2824. HEAD: Phase 14 entry `plan.md:3676–3716`; "Performance budget" l.513; "Risks" l.568; "Open questions for the user" l.600; "Tasks" → "How a phase works" l.1306. The spec sections the body cites still sit at the cited lines: window policy l.357, state survival l.373, Material mapping l.414, seeds and test hooks l.466. **Instruction:** cite the HEAD numbers. The highest OQ-A number at HEAD is **OQ-A616**. Task 17 appends OQ-14-1… as the next free numbers at commit time (expected OQ-A617 onward; re-check the table, never reuse a number).
+
+**R2. Preconditions P1–P12** all hold at HEAD. Paths that differ from the body's wording:
+- P2: `core/testing-compose/src/main/kotlin/net/chronoflow/core/testing/compose/BoardCapture.kt`; `captures:` is at `Makefile:172`.
+- P3: `profiles.json` is `{"schema":…, "profiles": {"small", "pixel8", "foldInner", "landscapeSideNav", "largeFont"}}` (a map keyed by alias, not a list).
+- P4: the tiers directory also holds `TimingGate.kt`. No `Audit` annotation exists yet; Task 6 adds it.
+- P5: `app/src/androidTest/kotlin/net/chronoflow/app/testing/ScreenTest.kt`; `app/src/debug/kotlin/net/chronoflow/debug/DebugSeedRouting.kt`.
+- P6: `ContrastTest` is in `core/designsystem/src/test`; `SystemTintTest` and `SystemDialogTintTest` are in `core/ui/src/test/.../designsystem/`; `DesignSystemGalleryCaptureTest` is in `core/ui/src/androidTest/.../designsystem/`.
+- P9: `app/src/testDebug/kotlin/net/chronoflow/app/ProcessDeathRestoreTest.kt`; `benchmark/src/main/kotlin/net/chronoflow/benchmark/ProcessDeathLaunchTest.kt`.
+- P10: `DebugStrictMode` is `app/src/main/kotlin/net/chronoflow/app/diagnostics/DebugStrictMode.kt` (main source set, debug-gated), not `src/debug`.
+- 9g's `WizardProcessDeathTest` is `app/src/testDebug/kotlin/net/chronoflow/app/wizard/WizardProcessDeathTest.kt`.
+
+**R3. Seeds.** `CF_PLAN_TEST_FREEZE_CLOCK` exists (`TestSeed.kt:146`). `CF_REFRESH_TEST_EMPTY_TRIPS` does **not** exist, so OQ-14-6 applies to `testTripsEmptyState` as the body says. The auth seeds at HEAD are `CF_AUTH_TEST_{AUDIT_SCREEN, AUDIT_STATE, ID, LINK, SIGNED_IN, TERMS_CHANGES_PENDING, TERMS_PENDING, UNVERIFIED, WALKTHROUGH_SEEN}`. There is no `CF_AUTH_TEST_RESET_FAILURE`, `CF_AUTH_TEST_SIGNUP_FAILURE` or `CF_AUTH_TEST_VERIFY_STATE`: Android routes those states through `CF_AUTH_TEST_AUDIT_STATE`. **Instruction:** read the accepted `CF_AUTH_TEST_AUDIT_STATE` values in `TestSeed.kt` and the auth debug routing before Task 7, and follow the body's rule for a state with no seed.
+
+**R4. Toolchain and devices.** Only the `pixel` AVD exists, and `system-images/` holds only `android-36`. `Scripts/emulator.sh` maps ports pixel 5554, fold 5556, small 5558, api29 5560. `docs/research/screens/ios/` holds 56 files. `canvas.json` has 334 entries and the canvas 338 `*.dc.html` files. **Instruction:** the T2 AVDs (`make avd-create`, `make matrix`) and the fold check are host work: write the scripts and hand the exact commands to the orchestrator, who runs them under the device lock.
+
+**R5. Phase 13 hand-ins.** `make release-check`, `make release-smoke` and `make perf-rn` exist (`Makefile:202–215`). Test workers have a 3 GB heap and bounded contention (13, `TestConcurrency.kt`). `MediaLaunchClock.sleepUntil` now rechecks the nanosecond deadline (89f3dd7f); launch timing windows are unchanged. Profiles and perf numbers still need a refresh after 89f3dd7f (`docs/play.md`, plan.md Phase 13). That refresh stays with the orchestrator; Task 16/17 lists it as an open gate if it is still open.
