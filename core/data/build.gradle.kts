@@ -13,6 +13,7 @@ dependencies {
     testImplementation(testFixtures(project(":core:sync")))
     testImplementation(project(":core:database-testing"))
     api(project(":core:plan"))
+    api(project(":core:reminders"))
     api(project(":core:sync"))
     api(project(":core:database"))
     implementation(libs.kotlinx.serialization.json)

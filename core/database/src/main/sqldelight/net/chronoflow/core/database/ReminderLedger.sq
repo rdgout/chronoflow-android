@@ -6,3 +6,12 @@ CREATE TABLE reminder_ledger (
   member_keys TEXT NOT NULL
 );
 CREATE INDEX reminder_ledger_send_at_ms ON reminder_ledger(send_at_ms);
+
+selectReminderLedger:
+SELECT trip_id, input_hash, send_at_ms, member_keys FROM reminder_ledger ORDER BY id;
+
+insertReminderLedger:
+INSERT INTO reminder_ledger(trip_id, input_hash, send_at_ms, member_keys) VALUES (?, ?, ?, ?);
+
+deleteReminderLedger:
+DELETE FROM reminder_ledger;
