@@ -85,6 +85,14 @@ class GuestWizardBoardSeedTest(
                         draft.state.step,
                     )
                     assertEquals(true, draft.state.sleepCompleted)
+                    if (name != "WizardFineTuneGuest") {
+                        assertEquals(
+                            "2026-10-14",
+                            draft.state.review
+                                ?.summary
+                                ?.planEndDate,
+                        )
+                    }
                     assertEquals(JsonPrimitive("18_64"), draft.state.profile["age_band"])
                     assertEquals(JsonPrimitive(false), draft.state.profile["shift_work"])
                     val model =

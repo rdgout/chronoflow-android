@@ -101,6 +101,11 @@ object GuestWizardBoardSeed {
                         ),
                 )
         }
+        if (name == "WizardReadyGuest" || name == "WizardReadyGuestFree") {
+            val review = checkNotNull(state.review)
+            val summary = checkNotNull(review.summary).copy(planEndDate = "2026-10-14")
+            state = state.copy(review = review.copy(summary = summary))
+        }
         val form =
             (if (base.form.end.kind == "return_legs") base.form.removeReturn().form else base.form).copy(
                 end = WizardEnd(),
