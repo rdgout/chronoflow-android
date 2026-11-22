@@ -235,3 +235,20 @@ audit-suite:
 .PHONY: process-death
 process-death:
 	python3 -I Scripts/device_lock.py -- sh -ec 'Scripts/emulator.sh ensure; $(GRADLE) :app:installDebug; python3 -I Scripts/process-death-sweep.py $(if $(ONLY),--only "$(ONLY)")'
+
+AUDIT_ANDROID_MODULES := $(subst /,:,$(patsubst %/src/androidTest,%,$(wildcard */src/androidTest */*/src/androidTest)))
+.PHONY: strictmode-run
+strictmode-run:
+	python3 -I Scripts/device_lock.py -- bash -c ' \
+	  set -u; \
+	  Scripts/emulator.sh ensure || exit $$?; \
+	  mkdir -p build/audit; \
+	  adb_cmd="$${ADB:-$${ANDROID_HOME}/platform-tools/adb}"; serial="$${ANDROID_SERIAL:-emulator-5554}"; \
+	  "$$adb_cmd" -s "$$serial" logcat -G 16M || exit $$?; \
+	  "$$adb_cmd" -s "$$serial" logcat -c || exit $$?; \
+	  status=0; \
+	  $(RUN_TIER) strictmode --device --emulator --results "*/build/outputs/androidTest-results/connected/**/*.xml" --results "*/*/build/outputs/androidTest-results/connected/**/*.xml" -- $(GRADLE) $(AUDIT_ANDROID_MODULES:%=:%:connectedDebugAndroidTest) --max-workers=1 --continue -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true || status=$$?; \
+	  python3 -I Scripts/ios-parity.py || status=$$?; \
+	  "$$adb_cmd" -s "$$serial" logcat -d -v threadtime > build/audit/strictmode-logcat.txt || exit $$?; \
+	  python3 -I Scripts/strictmode-scan.py build/audit/strictmode-logcat.txt || status=$$?; \
+	  exit $$status'

@@ -1,0 +1,3 @@
+11-22 10:00:00.000 100 101 D StrictMode: StrictMode policy violation; ~duration=4 ms: android.os.strictmode.DiskWriteViolation
+11-22 10:00:00.000 100 101 D StrictMode:     at android.os.StrictMode.onWriteToDisk(StrictMode.java:1)
+11-22 10:00:00.000 100 101 D StrictMode:     at com.google.example.Library.write(Library.java:2)

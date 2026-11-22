@@ -1,0 +1,4 @@
+11-22 10:00:00.000 100 100 D StrictMode: StrictMode policy violation; ~duration=4 ms: android.os.strictmode.DiskReadViolation
+11-22 10:00:00.000 100 100 D StrictMode:     at android.os.StrictMode.onReadFromDisk(StrictMode.java:1)
+11-22 10:00:00.000 100 100 D StrictMode:     at androidx.example.Reader.read(Reader.kt:2)
+11-22 10:00:00.000 100 100 D StrictMode:     at net.chronoflow.app.Example.read(Example.kt:3)
