@@ -1941,3 +1941,19 @@ Pending process-death/StrictMode/resize tooling and recorded runs. Fold/T2 and p
 **Fixed — ItemDetail, Legend, PasswordPrompt:** removing the provisional handlers on pixel leaves these three native bottom sheets open after Escape; the Compose disappearance checks fail (38.603 s run, three failures and the alert passing). A handler only on the shared native sheet window closes all three (14.280 s targeted run). The alert uses Android’s unhandled Escape → Back fallback, with no custom handler. The wide password dialog is unchanged. The window handler respects `shouldDismissOnBackPress` and restores the original callback when disposed; Robolectric guards cover Escape, a busy sheet and Enter. No product state, string or token is added.
 
 The earlier UiAutomator `Until.gone(By.res(tag))` assertion observed stale nodes from a closed window. Every new dismissal assertion uses Compose `waitUntilDoesNotExist(hasTestTag(tag))`. No existing device seed holds a password prompt busy; that native negative case is not added. The handler-removal red run proves that the corrected disappearance assertion fails on the three open sheets; the production wrapper’s disabled-dismiss guard covers the busy policy at the cheaper layer.
+
+### Keyboard traversal (Task 9)
+
+The stateless-screen Robolectric guards use explicit reading-order lists: Sign in email → password → submit → forgot → sign-up → guest; Welcome plan → sign-in; wizard one-way → add return. Focus alone emits no action; Enter activates the focused action. Keyboard input mode is selected explicitly in the fixture. Wizard focus stays unselected after the Compose clock advances 250 ms; the existing `TripWizardViewModelReturnChoiceTest.oneWayAdvancesAfter250ms` separately proves the delayed transition at 250 ms (not 249 ms), on the JVM. Existing trip timeline/list keyboard guards are reused unchanged. Native Escape evidence is recorded above.
+
+| Manual input pass | Procedure on pixel (API 36) | Status |
+| --- | --- | --- |
+| Keyboard: Welcome/auth | Use `adb shell input keyevent TAB`, `ENTER`, `ESCAPE`, `DPAD_DOWN`; traverse Welcome → Sign in through the guest footer; check reading order, activation and back. | pending (orchestrator/user) |
+| Keyboard: plan | Seed Today; traverse trip card → trip page → opening-day step sheet; check timeline/list semantics order, arrow actions, Enter and Escape. | pending (orchestrator/user) |
+| Keyboard: wizard | Open Where → Outbound; Tab must not select; Enter selects, choice advances after 250 ms; fields and native pickers remain reachable. | pending (orchestrator/user) |
+| Keyboard: settings | Traverse Settings → Preferences; reach every switch/row and return with Escape/back. | pending (orchestrator/user) |
+| Switch Access | Resolve the installed Switch Access service with `adb shell pm list packages` / `dumpsys accessibility`; enable it in Accessibility settings, scan and activate Welcome → Sign in and a trip step; restore the user’s previous setting. If absent, run on a physical device. | pending (orchestrator/user) |
+
+These procedures are not claimed as manual passes. The full Accessibility plan box stays open until its automated and manual gates are complete.
+
+Task 9 final targeted guards: five keyboard/timing cases passed (17.216 s command wall); four native-sheet wrapper cases passed (8.426 s). The separate native evidence is one alert pass without a handler and three sheet passes with the shared handler. No manual-input result is inferred from these automated checks.
