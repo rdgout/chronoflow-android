@@ -13,8 +13,10 @@ import kotlinx.coroutines.runBlocking
 import net.chronoflow.app.ChronoFlowApp
 import net.chronoflow.app.ioViolationsForTest
 import net.chronoflow.app.resetIoViolationsForTest
+import net.chronoflow.app.shell.ShellRouteProbe
 import net.chronoflow.app.testing.ScreenTest
 import net.chronoflow.core.model.guest.GuestRecoveryLocation
+import net.chronoflow.core.navigation.Route
 import net.chronoflow.core.testing.tiers.Smoke
 import net.chronoflow.debug.GuestWizardDebugSecrets
 import org.junit.Assert.assertEquals
@@ -77,7 +79,10 @@ class GuestWizardJourneyTest : ScreenTest() {
             assertFalse(GuestRecoveryLocation.file(graph.storageRoot(), graph.namespace).exists())
             assertNull(graph.guestSecrets.get(token))
         }
-        instrumentation.runOnMainSync { assertEquals(0, app.graph.ioViolationsForTest) }
+        instrumentation.runOnMainSync {
+            assertEquals(token, (ShellRouteProbe.route as? Route.TripPage)?.tripId)
+            assertEquals(0, app.graph.ioViolationsForTest)
+        }
         assertTrue("guest journey exceeded 10 s", System.nanoTime() - started < 10_000_000_000L)
     }
 

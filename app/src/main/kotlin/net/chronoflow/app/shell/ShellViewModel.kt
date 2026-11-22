@@ -1,12 +1,10 @@
 package net.chronoflow.app.shell
 
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.CoroutineDispatcher
 import net.chronoflow.app.wizard.WizardLauncher
 import net.chronoflow.core.navigation.Route
@@ -120,6 +118,3 @@ internal class ShellViewModel(
         owners.values.forEach { it.viewModelStore.clear() }
     }
 }
-
-@Composable
-internal fun rememberShellViewModel(root: Route): ShellViewModel = viewModel { ShellViewModel(ShellNav.fromRoot(root)) }

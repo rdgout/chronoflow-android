@@ -109,6 +109,7 @@ class ReleaseReadinessTest {
     }
 
     @Test fun shellSeedsAndRefreshProbeAreAbsent() {
+        missing("net.chronoflow.app.shell.ShellRouteProbe")
         org.junit.Assert.assertNull(LaunchPlatform.shellStart())
         org.junit.Assert.assertSame(
             net.chronoflow.core.sync.refresh.RefreshDebugProbe.None,
