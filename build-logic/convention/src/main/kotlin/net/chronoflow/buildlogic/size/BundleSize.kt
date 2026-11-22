@@ -24,6 +24,10 @@ object BundleSize {
     // androidx.graphics:graphics-path ships with Compose UI and cannot be dropped (OQ-0a-22).
     val allowedNativeLibraries = setOf("libandroidx.graphics.path.so")
 
+    private val languageSplit = Regex("""^splits/base-[a-z]{2,3}(_[A-Z]{2})?\.apk$""")
+
+    fun languageSplits(apksEntryNames: List<String>): List<String> = apksEntryNames.filter(languageSplit::matches)
+
     fun nativeLibraries(
         entryNames: List<String>,
         allowed: Set<String> = emptySet(),

@@ -141,3 +141,19 @@ androidx.profileinstaller.ProfileInstallerInitializer
 ```
 
 The app manifest removes permissions `FOREGROUND_SERVICE`, `USE_BIOMETRIC`, `USE_FINGERPRINT`; services `com.google.android.gms.auth.api.signin.RevocationBoundService` and `androidx.room.MultiInstanceInvalidationService`; initializers `androidx.work.WorkManagerInitializer`, `androidx.emoji2.text.EmojiCompatInitializer`, `okhttp3.internal.platform.PlatformInitializer`. Missing optional classes are removed with `tools:ignore="MissingClass"`. WorkManager initializes on demand through ChronoFlowApp's Configuration.Provider.
+
+## Size
+
+Task 5 adds a language-split check after bundletool builds the device-specific APK set. It records every entry at `app/build/outputs/size/apks-entries.txt`, then rejects `splits/base-<language>[_<REGION>].apk`. The existing native-library allow-list and 8/12 MB verdicts are unchanged. The previous recorded size (5b) was **2,445,635 B**; Phase 13's measurement follows below.
+
+`./gradlew :build-logic:convention:test --tests '*BundleSizeTest' -Pkotlin.compiler.execution.strategy=in-process`: **11 cases PASS**, 10.71 s wall, local host 2026-11-22. English, Dutch and pt_BR splits are rejected; ABI, density and master APKs are controls.
+
+Host proof still required (R17): temporarily change `bundle.language.enableSplit = false` to `true` in `build-logic/convention/src/main/kotlin/net/chronoflow/buildlogic/AndroidApplicationConventionPlugin.kt`, run `make size`, retain the expected `language split present: …` failure and `app/build/outputs/size/apks-entries.txt`, then restore `false` and run `make size` again. Record the real language split names here; do not waive this proof or change the regex without evidence.
+
+Phase 13 result, local host, 2026-11-22, release bundle, bundletool device spec arm64-v8a/xxhdpi/en/API 36:
+
+```text
+Bundle size: 4147965 bytes (4.15 MB), arm64-v8a/xxhdpi/en: OK
+```
+
+Command: `make size GRADLE='./gradlew --no-daemon --console=plain -Pkotlin.compiler.execution.strategy=in-process'`, **40.72 s wall**, PASS. This is a bundletool download-size estimate, not an emulator or physical-device performance claim. No unapproved `.so` and no language split were found. The first size build reached the three-minute no-output R8 limit and was stopped once (`1 Daemon stopped`); the one retry above passed with a fresh single-use daemon. The split-enabled proof remains pending with the host under R17; the Release build plan box remains open until that proof is recorded.
