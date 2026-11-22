@@ -25,6 +25,20 @@ import kotlin.time.Duration.Companion.seconds
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [36], application = TestReminderApplication::class)
 class ReminderDeliveryTest {
+    @Test fun signOutDuringChannelSetupDropsTheAlarm() =
+        fixture { app, runtime, intent ->
+            shadowOf(app).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
+            val signingOut =
+                object : ReminderRuntime by runtime {
+                    override suspend fun ensureChannel() {
+                        runtime.ensureChannel()
+                        runtime.account = null
+                    }
+                }
+            ReminderDelivery.deliver(app, intent, signingOut, runtime.clock)
+            assertEmpty(app, runtime)
+        }
+
     @Test fun postsWithTagIdChannelAndTimeout() =
         fixture { app, runtime, intent ->
             val request = adapterRequest()

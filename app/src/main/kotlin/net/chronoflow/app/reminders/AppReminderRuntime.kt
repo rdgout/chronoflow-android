@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
+import net.chronoflow.core.data.reminders.ReminderDeliveryGate
 import net.chronoflow.core.data.reminders.ReminderRuntime
 import net.chronoflow.core.datastore.CorruptWipeMarkerException
 import net.chronoflow.core.datastore.PermanentSessionKeyFailure
@@ -37,6 +38,7 @@ class AppReminderRuntime(
     private val reschedule: suspend () -> Unit,
     private val delivered: suspend (String, String) -> Unit,
     private val ensureChannel: suspend () -> Unit,
+    private val deliveryGate: ReminderDeliveryGate,
 ) : ReminderRuntime {
     override val tapComponent: ComponentName get() = component()
 
@@ -64,6 +66,11 @@ class AppReminderRuntime(
         }
 
     override suspend fun ensureChannel() = withContext(io) { ensureChannel.invoke() }
+
+    override suspend fun postIfCurrent(
+        accountId: String,
+        post: () -> Unit,
+    ): Boolean = withContext(io) { deliveryGate.postIfCurrent(accountId, ::storedAccountId, post) }
 
     override suspend fun delivered(
         accountId: String,

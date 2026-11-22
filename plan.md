@@ -3518,7 +3518,7 @@ Acceptance evidence and the pending host checks are recorded in [`docs/settings-
   - A 12 h periodic refill (OQ-A14).
   - WorkManager is initialized on demand through `Configuration.Provider`, with the default initializer removed, so it adds no startup work.
 - [x] **Taps.** An explicit `PendingIntent` to `MainActivity` carries `tripId`, `blockId`, `inputHash` and `accountId`. It is routed after an account check on injected `AppDispatchers.main`, as in iOS `AppTabs.swift:371–385`.
-- [x] **Teardown.** Sign-out cancels every alarm and notification and erases the ledger, through the 4e hook.
+- [x] **Teardown.** Sign-out cancels every alarm and notification and erases the ledger, through the 4e hook. A shared gate serializes the final account check and notification post with the wipe marker; explicit sign-out removes delivered notices even when the scheduler is unattached.
 - [x] **Permission model.** `ReminderPermission` (Granted, Undetermined = ask, Blocked, Unsupported), from `POST_NOTIFICATIONS`, `NotificationManagerCompat.areNotificationsEnabled()` and, below API 33, the in-app opt-in `notificationPermissionRequested` (A13).
 - [x] **Tests.**
   - JVM, with a fake alarm scheduler: selection → alarms, replacement, and the caps.

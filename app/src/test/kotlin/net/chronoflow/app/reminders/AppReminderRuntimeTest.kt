@@ -7,6 +7,7 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
+import net.chronoflow.core.data.reminders.ReminderDeliveryGate
 import net.chronoflow.core.database.testing.TestRoots
 import net.chronoflow.core.datastore.PermanentSessionKeyFailure
 import net.chronoflow.core.datastore.WipeMarker
@@ -19,8 +20,10 @@ import net.chronoflow.core.testing.reminders.reminderAccount
 import net.chronoflow.core.testing.reminders.reminderNow
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
+import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
 import java.io.File
@@ -32,6 +35,28 @@ import java.util.Locale
 import kotlin.time.Duration.Companion.seconds
 
 class AppReminderRuntimeTest {
+    @Test fun finalPostChecksTheWipeMarkerAgain() =
+        fixture { f ->
+            f.credentials.data = StoredSession("test", reminderAccount).encode()
+            assertEquals(reminderAccount, f.runtime.storedAccountId())
+            f.deliveryGate.beginWipe { f.marker.write(AccountID.of(reminderAccount)) }
+            assertFalse(f.runtime.postIfCurrent(reminderAccount) { fail("post ignored the wipe marker") })
+        }
+
+    @Test fun finalPostRejectsAnUnreadableAccount() =
+        fixture { f ->
+            f.sessionReadFailure = IOException()
+            assertFalse(f.runtime.postIfCurrent(reminderAccount) { fail("post ignored a storage failure") })
+        }
+
+    @Test fun finalPostRunsForTheStoredAccount() =
+        fixture { f ->
+            f.credentials.data = StoredSession("test", reminderAccount).encode()
+            var posted = false
+            assertTrue(f.runtime.postIfCurrent(reminderAccount) { posted = true })
+            assertTrue(posted)
+        }
+
     @Test fun signedOutBackgroundPassDoesNotReschedule() =
         fixture { f ->
             f.runtime.backgroundPass()
@@ -133,6 +158,7 @@ class AppReminderRuntimeTest {
         var presence: SessionPresence = SessionPresence.SignedOut
         val dispatcher = StandardTestDispatcher(scope.testScheduler)
         val marker = WipeMarker(root, dispatcher)
+        val deliveryGate = ReminderDeliveryGate()
         val runtime =
             AppReminderRuntime(
                 dispatcher,
@@ -157,6 +183,7 @@ class AppReminderRuntimeTest {
                 { events += "reschedule" },
                 { _, _ -> },
                 {},
+                deliveryGate,
             )
     }
 

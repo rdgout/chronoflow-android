@@ -69,11 +69,13 @@ object ReminderDelivery {
                         PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
                     ),
                 ).build()
-        try {
-            manager.notify(identifier, code, notification)
-        } catch (_: SecurityException) {
-            return@withContext
-        }
+        val posted =
+            try {
+                runtime.postIfCurrent(account) { manager.notify(identifier, code, notification) }
+            } catch (_: SecurityException) {
+                return@withContext
+            }
+        if (!posted) return@withContext
         try {
             runtime.delivered(account, identifier)
         } catch (_: StoreFailure.Closed) {

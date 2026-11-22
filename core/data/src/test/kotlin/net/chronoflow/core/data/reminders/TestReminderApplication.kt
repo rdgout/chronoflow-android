@@ -29,6 +29,7 @@ class FakeReminderRuntime(
     val deliveries = mutableListOf<Pair<String, String>>()
     var passes = 0
     var pass: suspend () -> Unit = {}
+    private val deliveryGate = ReminderDeliveryGate()
 
     override suspend fun storedAccountId(): String? {
         accountReads++
@@ -38,6 +39,11 @@ class FakeReminderRuntime(
     override suspend fun ensureChannel() {
         AndroidReminderNotices(context, io) { channelName(context, it) }.ensureChannel(Language.En)
     }
+
+    override suspend fun postIfCurrent(
+        accountId: String,
+        post: () -> Unit,
+    ): Boolean = deliveryGate.postIfCurrent(accountId, ::storedAccountId, post)
 
     override suspend fun delivered(
         accountId: String,

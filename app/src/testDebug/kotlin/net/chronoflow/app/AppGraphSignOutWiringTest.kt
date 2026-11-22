@@ -1,5 +1,9 @@
 package net.chronoflow.app
 
+import android.Manifest
+import android.annotation.SuppressLint
+import android.app.Notification
+import android.app.NotificationManager
 import androidx.test.core.app.ApplicationProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
@@ -7,6 +11,7 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
+import net.chronoflow.core.data.reminders.CHANNEL_ID
 import net.chronoflow.core.datamock.FileMockStateStore
 import net.chronoflow.core.datamock.MockDataSource
 import net.chronoflow.core.datamock.MockLatency
@@ -18,6 +23,7 @@ import net.chronoflow.core.model.api.AccountSettings
 import net.chronoflow.core.model.api.AccountSnapshot
 import net.chronoflow.core.model.api.PasswordSignInInput
 import net.chronoflow.core.model.api.SignInResult
+import net.chronoflow.core.model.contracts.Language
 import net.chronoflow.core.model.session.SessionPresence
 import net.chronoflow.core.navigation.Route
 import net.chronoflow.core.testing.sync.snapshot
@@ -25,10 +31,12 @@ import net.chronoflow.core.testing.tiers.Logic
 import net.chronoflow.debug.ScreenSessionFixture
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.ParameterizedRobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import java.io.File
 import java.nio.file.Files
@@ -42,7 +50,9 @@ import kotlin.time.Duration.Companion.seconds
 class AppGraphSignOutWiringTest(
     private val unauthorized: Boolean,
 ) {
-    @Test fun signOutNavigatesErasesAccountFilesAndRejectsTheOldToken() =
+    @SuppressLint("MissingPermission")
+    @Test
+    fun signOutNavigatesErasesAccountFilesAndRejectsTheOldToken() =
         runTest(timeout = 60.seconds) {
             val app = ApplicationProvider.getApplicationContext<SessionTestApplication>()
             val dispatcher = StandardTestDispatcher(testScheduler)
@@ -133,6 +143,19 @@ class AppGraphSignOutWiringTest(
 
                 fun freshSource() = source { old.session.token }
                 assertEquals(old.session.accountId, freshSource().fetchIdentity().id)
+                graph.sessionGraphs.close()
+                assertNull(graph.reminderService.attachedAccount.value)
+                shadowOf(app).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
+                val notificationManager = checkNotNull(app.getSystemService(NotificationManager::class.java))
+                withContext(graph.dispatchers.io) {
+                    graph.reminderNotices.ensureChannel(Language.En)
+                    notificationManager.notify(
+                        "chronoflow.reminder.before-sign-out",
+                        7,
+                        Notification.Builder(app, CHANNEL_ID).setSmallIcon(android.R.drawable.ic_dialog_info).build(),
+                    )
+                }
+                assertEquals(1, notificationManager.activeNotifications.size)
                 if (unauthorized) {
                     // A 401 is already revoked server-side; this path deliberately skips a redundant logout.
                     freshSource().signOut()
@@ -142,6 +165,7 @@ class AppGraphSignOutWiringTest(
                 }
                 runCurrent()
                 assertEquals(SessionPresence.SignedOut, graph.controller.presence)
+                assertTrue(notificationManager.activeNotifications.isEmpty())
                 assertEquals(Route.SignIn, graph.rootNavigator.state.value.route)
                 withContext(Dispatchers.IO) {
                     assertFalse(account.exists())

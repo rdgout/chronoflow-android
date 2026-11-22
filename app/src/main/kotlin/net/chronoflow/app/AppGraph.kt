@@ -262,6 +262,10 @@ class AppGraph(
         }
     val reminderService: ReminderService by reminderServiceLazy
     val reminderTaps by lazy { ReminderTapRouter() }
+    private val reminderDeliveryGate by lazy {
+        net.chronoflow.core.data.reminders
+            .ReminderDeliveryGate()
+    }
     val reminderRuntime by lazy {
         AppReminderRuntime(
             io = dispatchers.io,
@@ -278,6 +282,7 @@ class AppGraph(
             reschedule = { reminderService.reschedule() },
             delivered = reminderService::delivered,
             ensureChannel = { reminderNotices.ensureChannel(appLanguage.current()) },
+            deliveryGate = reminderDeliveryGate,
         )
     }
     val accountModel by lazy { AccountModel(appScope) }
@@ -434,12 +439,15 @@ class AppGraph(
                         ).pending().size
                     },
                     flush = { sessionSync.refreshNow() },
-                    beginWipe = wiper::begin,
+                    beginWipe = { id -> reminderDeliveryGate.beginWipe { wiper.begin(id) } },
                     erase = wiper::erase,
                     finishWipe = wiper::finish,
                     logout = { dataSources.forSession(it).signOut() },
                     detach = {
-                        withContext(dispatchers.io) { ReminderWork.cancelAll(app) }
+                        withContext(dispatchers.io) {
+                            ReminderWork.cancelAll(app)
+                            reminderNotices.removeDelivered()
+                        }
                         accountModel.detach()
                         withContext(dispatchers.main) { onSignedOut() }
                     },

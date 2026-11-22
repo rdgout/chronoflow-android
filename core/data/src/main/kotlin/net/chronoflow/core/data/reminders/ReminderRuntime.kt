@@ -20,6 +20,11 @@ interface ReminderRuntime {
 
     suspend fun ensureChannel()
 
+    suspend fun postIfCurrent(
+        accountId: String,
+        post: () -> Unit,
+    ): Boolean
+
     suspend fun delivered(
         accountId: String,
         identifier: String,
