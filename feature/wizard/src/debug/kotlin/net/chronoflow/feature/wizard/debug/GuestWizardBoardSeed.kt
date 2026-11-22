@@ -81,7 +81,7 @@ object GuestWizardBoardSeed {
         if (name == "WizardGuestJourney") {
             state =
                 state.copy(
-                    step = MemberWizardStep.whereTo,
+                    step = MemberWizardStep.sleep,
                     profile =
                         JsonObject(state.profile + ("shift_work" to JsonPrimitive(false))),
                 )

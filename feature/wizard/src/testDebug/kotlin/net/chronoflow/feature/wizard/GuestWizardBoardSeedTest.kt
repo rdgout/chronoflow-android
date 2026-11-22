@@ -150,7 +150,7 @@ class GuestWizardBoardSeedTest(
                 }
 
                 "WizardGuestJourney" -> {
-                    assertEquals(MemberWizardStep.whereTo, draft.state.step)
+                    assertEquals(MemberWizardStep.sleep, draft.state.step)
                     assertEquals(
                         "HND",
                         draft.form.legs
