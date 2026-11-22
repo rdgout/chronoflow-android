@@ -351,8 +351,30 @@ class BaselineProfileGenerator {
                 input.step("wizard launch") {
                     launch(mapOf("cf.perf-account" to "demo", "cf.perf-wizard" to "WizardSaveJourney"))
                 }
+                val entries = Pattern.compile("wizard\\.choice\\.one-way|wizard\\.ready")
+                input.step("wizard entry or Welcome") {
+                    val routes = Pattern.compile("${entries.pattern()}|welcome\\.signIn")
+                    check(device.wait(Until.hasObject(By.res(routes)), 10_000)) {
+                        "neither wizard entry nor welcome.signIn appeared"
+                    }
+                }
+                if (input.step("wizard session needs recovery") { device.hasObject(By.res("welcome.signIn")) }) {
+                    // A reinstall clears the session; omit the wizard extra until FullPull commits its snapshot.
+                    BoundedProfileInput(
+                        stepTimeoutMillis = budget.setupTimeoutMillis,
+                        journeyTimeoutMillis = budget.setupTimeoutMillis,
+                    ).use { recovery ->
+                        recovery.step("wizard recover demo session") { signInDemo() }
+                        recovery.step("wizard recovered account snapshot stored") {
+                            device.requireTag("today.trip", 15_000)
+                        }
+                    }
+                    input.step("wizard recovered cold process") { killProcess() }
+                    input.step("wizard recovered launch") {
+                        launch(mapOf("cf.perf-account" to "demo", "cf.perf-wizard" to "WizardSaveJourney"))
+                    }
+                }
                 input.step("wizard entry") {
-                    val entries = Pattern.compile("wizard\\.choice\\.one-way|wizard\\.ready")
                     check(device.wait(Until.hasObject(By.res(entries)), 10_000)) {
                         "wizard entry never appeared after account sync"
                     }
