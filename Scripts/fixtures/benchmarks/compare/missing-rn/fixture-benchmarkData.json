@@ -1,0 +1,63 @@
+{
+  "context": {
+    "build": {
+      "model": "fixture-device",
+      "version": {
+        "sdk": 36
+      }
+    }
+  },
+  "benchmarks": [
+    {
+      "name": "coldSignedOut[Native]",
+      "className": "net.chronoflow.benchmark.LaunchComparisonBenchmark",
+      "metrics": {
+        "timeToInitialDisplayMs": {
+          "minimum": 291,
+          "maximum": 309,
+          "median": 300.0,
+          "runs": [
+            291,
+            293,
+            295,
+            297,
+            299,
+            301,
+            303,
+            305,
+            307,
+            309
+          ]
+        },
+        "memoryRssAnonMaxKb": {
+          "minimum": 100000,
+          "maximum": 100000,
+          "median": 100000,
+          "runs": [
+            100000,
+            100000,
+            100000,
+            100000,
+            100000,
+            100000,
+            100000,
+            100000,
+            100000,
+            100000
+          ]
+        }
+      },
+      "sampledMetrics": {
+        "frameOverrunMs": {
+          "P99": -0.5,
+          "runs": [
+            [
+              -1.0,
+              -0.5
+            ]
+          ]
+        }
+      }
+    }
+  ]
+}

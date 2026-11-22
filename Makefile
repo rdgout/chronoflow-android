@@ -207,3 +207,7 @@ release-check:
 .PHONY: release-smoke
 release-smoke:
 	$(RUN_TIER) release-smoke --device --results 'benchmark/build/outputs/androidTest-results/connected/**/*.xml' -- Scripts/release-smoke.sh
+
+.PHONY: perf-rn
+perf-rn:
+	$(RUN_TIER) perf-rn --device --results 'benchmark/build/outputs/androidTest-results/connected/**/*.xml' -- Scripts/perf-compare-rn.sh

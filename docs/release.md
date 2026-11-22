@@ -222,3 +222,7 @@ Worker validation, local host 2026-11-22:
 ## Profile completion pending the host
 
 Task 10's generator and post-generation gate are prepared, but its generated-file/strict-Kotlin-guard commit is pending R17's host generation. See [profile preparation](perf-startup.md#phase-13-profile-preparation). The Profiles plan box stays open. No generated file was hand-edited, no missing coverage was waived, and the current artifact gap is explicitly a failed pending gate.
+
+## RN comparison tooling
+
+`make perf-rn` takes the host-wide device lock, checks the prebuilt APK hash before installation, uses shared device/archive helpers, checks animator scales, and restores functional preparation even on a Gradle/checker failure. The checker still runs after a failed Gradle command so missing evidence is explicit. Physical clearing has both runner and instrumentation guards. The optional NOT-PROFILEABLE suppression and am-start fallback require named opt-ins and are recorded in the [comparison protocol](perf-startup.md#rn-comparison-protocol). No RN Macrobenchmark result is claimed until the host run.

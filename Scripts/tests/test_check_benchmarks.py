@@ -549,5 +549,57 @@ class TimelineCheckTest(unittest.TestCase):
         self.assertIn("listScroll memoryRssAnonMaxKb has invalid runs", result.stderr)
 
 
+class CompareBenchmarksTest(unittest.TestCase):
+    def compare(self, case, device="reference", *extra):
+        return check("--suite", "compare", "--device-class", device, "--results-dir", str(FIXTURES / "compare" / case), *extra)
+
+    def test_below_reference_passes(self):
+        result = self.compare("below")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("BELOW PASS", result.stdout)
+        self.assertIn("timeToInitialDisplayMs P90", result.stdout)
+
+    def test_above_reference_fails(self):
+        result = self.compare("above")
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertIn("ABOVE FAIL", result.stdout)
+
+    def test_above_emulator_only_reports(self):
+        result = self.compare("above", "emulator")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("ABOVE REPORT", result.stdout)
+
+    def test_missing_rn_fails(self):
+        result = self.compare("missing-rn")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("missing Rn result", result.stderr)
+
+    def test_history_has_one_row_per_stat_with_twelve_cells(self):
+        history = temp_dir(self) / "history.md"
+        history.write_text("# Startup history\n")
+        result = self.compare("below", "reference", "--append", "--history", str(history), "--rn-apk-sha", "a" * 64)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        rows = [line for line in history.read_text().splitlines() if line.startswith("| ") and not line.startswith("| Date")]
+        self.assertEqual(len(rows), 4)
+        self.assertTrue(all(len(line.strip("|").split("|")) == 12 for line in rows))
+        self.assertTrue(all("aaaaaaaaaaaa" in line for line in rows))
+
+    def test_session_known_row_uses_the_plan_budget(self):
+        result = check("--suite", "startup", "--device-class", "reference", "--results-dir", str(FIXTURES / "startup/session-over"))
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertIn("startupCold sessionFirstMs median=51.0 ms hard=50 FAIL", result.stdout)
+
+    def test_signed_overrun_is_valid(self):
+        result = self.compare("below")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("frameOverrunMs P99 native=-0.5", result.stdout)
+
+    def test_history_requires_artifact_identity(self):
+        history = temp_dir(self) / "history.md"
+        result = self.compare("below", "reference", "--append", "--history", str(history))
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("--rn-apk-sha", result.stderr)
+
+
 if __name__ == "__main__":
     unittest.main()

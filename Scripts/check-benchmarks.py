@@ -8,6 +8,7 @@ import argparse
 import datetime
 import json
 import math
+import re
 import statistics
 import sys
 from pathlib import Path
@@ -19,7 +20,7 @@ RAW_KEYS = {
     "timelineFirstFrameMs": "timelineFirstFrameFirstMs",
 }
 SIGNED_RAW = {"frameOverrunMs"}
-CLASS_SUFFIX = {"startup": ".StartupBenchmark", "timeline": ".TimelineBenchmark", "launch": ".LaunchJankBenchmark"}
+CLASS_SUFFIX = {"startup": ".StartupBenchmark", "timeline": ".TimelineBenchmark", "launch": ".LaunchJankBenchmark", "compare": ".LaunchComparisonBenchmark"}
 TIMELINE_HEADER = (
     "| Date | Commit | Class | Device | API | Hz | GPU | Font | Theme | Page | Build | First frame ms med/max | "
     "CPU P50/P90/P99 ms | Main/Render P99 ms | Overrun P99 ms | Jank % mean/max | Hitch ms/s mean/max | "
@@ -588,6 +589,89 @@ def write_launch_history(args, code, context):
     path.write_text("\n".join(lines) + "\n")
 
 
+COMPARE_HEADER = "| Date | Commit | Class | Device | API | RN APK sha256 | Metric | Stat | Native | RN | Δ % | Verdict |"
+
+
+def comparison_stat(bench, metric, stat):
+    raw = RAW_KEYS.get(metric, metric)
+    values = stat_values(bench, raw, stat)
+    if values is not None:
+        return values[0]
+    if stat == "P90":
+        runs = sorted(_flatten((bench.get("metrics", {}).get(raw) or {}).get("runs")))
+        if runs and all(_num(value) for value in runs):
+            position = (len(runs) - 1) * 0.9
+            low, high = math.floor(position), math.ceil(position)
+            return runs[low] + (runs[high] - runs[low]) * (position - low)
+    return None
+
+
+def check_compare(args, budgets):
+    benches, context = load_benchmarks(args.results_dir, "compare")
+    targets = {name: benches.get("coldSignedOut[" + name + "]") for name in ("Native", "Rn")}
+    for name, bench in targets.items():
+        if bench is None:
+            print("Compare metric: missing %s result" % name, file=sys.stderr)
+    if any(bench is None for bench in targets.values()):
+        return 1, [], context
+    entries = list(budgets["compare"]) + [{
+        "test": "coldSignedOut", "metric": "timeToInitialDisplayMs", "stat": "P90", "unit": "ms", "rule": "report",
+    }]
+    rows, failed = [], False
+    for entry in entries:
+        metric, stat = entry["metric"], entry["stat"]
+        raw = RAW_KEYS.get(metric, metric)
+        signed = raw in SIGNED_RAW
+        pair = {}
+        for name, bench in targets.items():
+            if invalid_runs(bench, raw, signed=signed):
+                print("Compare metric: %s %s has invalid runs FAIL" % (name, metric), file=sys.stderr)
+                failed = True
+                continue
+            value = comparison_stat(bench, metric, stat)
+            if not _num(value) or (value < 0 and not signed):
+                print("Compare metric: %s %s %s is missing or invalid FAIL" % (name, metric, stat), file=sys.stderr)
+                failed = True
+                continue
+            pair[name] = value
+        if len(pair) != 2:
+            continue
+        native, rn = pair["Native"], pair["Rn"]
+        relation = "BELOW" if native < rn else "ABOVE"
+        delta = (native - rn) / abs(rn) * 100 if rn != 0 else None
+        gate = entry.get(args.device_class, {})
+        verdict = "REPORT"
+        if entry["rule"] == "nativeBelowRn" and gate.get("gate"):
+            verdict = "PASS" if relation == "BELOW" else "FAIL"
+        failed = failed or verdict == "FAIL"
+        shown_delta = "%+.1f%%" % delta if delta is not None else "n/a (RN zero)"
+        print("Compare metric: coldSignedOut %s %s native=%.1f rn=%.1f delta=%s %s %s" % (
+            metric, stat, native, rn, shown_delta, relation, verdict))
+        rows.append((metric, stat, native, rn, shown_delta, verdict))
+    return int(failed), rows, context
+
+
+def write_compare_history(args, rows, context):
+    path = Path(args.history)
+    lines = path.read_text().splitlines() if path.exists() else []
+    heading = "## RN comparison"
+    if heading not in lines:
+        lines += ["", heading, "", COMPARE_HEADER, "|" + "---|" * 12]
+    at = lines.index(heading) + 1
+    while at < len(lines) and not lines[at].startswith("|"):
+        at += 1
+    while at < len(lines) and lines[at].startswith("|"):
+        at += 1
+    build = context.get("build", {})
+    for metric, stat, native, rn, delta, verdict in rows:
+        cells = [datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d"), args.commit,
+                 args.device_class, build.get("model", "unknown"), str(build.get("version", {}).get("sdk", "unknown")),
+                 args.rn_apk_sha[:12].lower(), metric, stat, "%.1f" % native, "%.1f" % rn, delta, verdict]
+        lines.insert(at, "| " + " | ".join(cells) + " |")
+        at += 1
+    path.write_text("\n".join(lines) + "\n")
+
+
 def main(argv):
     parser = argparse.ArgumentParser(prog="check-benchmarks.py")
     parser.add_argument("--suite", required=True, choices=sorted(CLASS_SUFFIX))
@@ -601,9 +685,17 @@ def main(argv):
     parser.add_argument("--gpu", default="unknown")
     parser.add_argument("--commit", default="unknown")
     parser.add_argument("--append", action="store_true")
+    parser.add_argument("--rn-apk-sha", default="unknown")
     parser.add_argument("--row-file", default=str(ROOT / "build" / "perf" / "timeline-row.md"))
     args = parser.parse_args(argv)
     budgets = json.loads(Path(args.budgets).read_text())
+    if args.suite == "compare":
+        if args.append and args.history and not re.fullmatch(r"[0-9a-fA-F]{64}", args.rn_apk_sha):
+            parser.error("--rn-apk-sha must be the full SHA-256 when appending a comparison")
+        code, rows, context = check_compare(args, budgets)
+        if args.history and args.append:
+            write_compare_history(args, rows, context)
+        return code
     if args.suite == "timeline":
         code, features, context, benches = check_timeline(args, budgets)
         if args.history or code != 0 or features:

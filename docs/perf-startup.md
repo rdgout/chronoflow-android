@@ -363,3 +363,32 @@ make perf-timeline
 Record generated-profile coverage and BaselineProfileMode.Require proof results here. No generation or performance number is claimed yet. Physical generation additionally requires `PERF_CLEAR=1`; the runner passes that explicit opt-in to the in-test clear guard.
 
 Final Task 10 benchmark APK assembly after bounding the helper's condition queries: `./gradlew :benchmark:assembleBenchmarkRelease -Pkotlin.compiler.execution.strategy=in-process`, **PASS, 1.88 s wall**. The prepared generator code can now be used by the host command above. The code preparation commit does not complete the pending artifact/guard portion of Task 10.
+
+## RN comparison protocol
+
+Native `net.chronoflow.app.native` and RN `net.chronoflow.app` use the same parameterized LaunchComparisonBenchmark harness: signed out, data cleared before every iteration, StartupMode.COLD, ten measured iterations, StartupTimingMetric / FrameTimingMetric / MemoryUsageMetric(Max), a fixed 0–3.5 s capture, and Partial(UseIfAvailable) for each APK's embedded profile. Native budget suites retain Require. Clearing RN data removes the research demo sign-in. This is the OQ-13-16 default: StartupBenchmark stays native-only because its native trace metrics cannot exist in RN.
+
+The existing prebuilt RN release APK was verified read-only by the worker on 2026-11-22: SHA-256 `4ee240d3754a7bba12761ddcb4b8317b15d7131f3c55f93f314d64e89df3b1f5` (125,310,093 B; applicationId net.chronoflow.app, version 1.0.0 / 1, research 12 §1). `make perf-rn` reads and installs only this existing APK after the hash check, or a user-supplied RN_APK/RN_APK_SHA pair. A missing/mismatched APK refuses before installation with OQ-A591. No RN build is part of the recipe.
+
+TTID median and memory median must be below RN on reference/low-end devices; emulator comparisons report. Overrun P99 and TTID P90 report. P90 is the linearly interpolated 90th percentile of the ten raw TTID samples. Every missing/non-finite metric fails; signed frame overrun remains valid. History rows have the exact twelve-column schema below and a twelve-character verified APK hash.
+
+Host commands (the first is the normal run; use fallbacks only for the stated tooling condition):
+
+```sh
+make perf-rn
+# If Macrobenchmark rejects the known non-profileable RN APK:
+RN_NOT_PROFILEABLE=1 make perf-rn
+# If RN StartupTimingMetric is still missing after that:
+RN_NOT_PROFILEABLE=1 RN_AM_START_FALLBACK=1 make perf-rn
+```
+
+The last command additionally records ten RN-only `am start -W -S` TotalTime samples as `rnAmStartTotalTimeMs`, report only, with raw JSONL in the archive. Those values are a different harness and never become a below-RN TTID verdict; missing comparison metrics keep the command failing/open. No fallback has been exercised on a device yet. Physical runs require `PERF_CLEAR=1`; no device/perf tier was run by the worker.
+
+Worker validation (local host, 2026-11-22): `python3 -I -m unittest discover -s Scripts/tests -p test_check_benchmarks.py`: **64 PASS, 2.56 s wall**; after isolating the session fixture's other reference values, its targeted case passed in **0.07 s**. `test_perf_compare_rn.py`: **8 PASS, 2.01 s wall**, including the fallback with fake adb only. `:benchmark:assembleBenchmarkRelease -Pkotlin.compiler.execution.strategy=in-process`: **PASS, 1.71 s wall**. The new sessionFirstMs budget is exactly plan.md's 50/100 ms (emulator report); existing budget values are unchanged.
+
+## RN comparison
+
+| Date | Commit | Class | Device | API | RN APK sha256 | Metric | Stat | Native | RN | Δ % | Verdict |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+
+Host comparison results are pending. Research's am-start TotalTime values are context only and are not Macrobenchmark evidence.

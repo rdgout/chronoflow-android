@@ -3,7 +3,8 @@
   "labels": {
     "startup": "Startup",
     "timeline": "Timeline",
-    "launch": "Launch"
+    "launch": "Launch",
+    "compare": "Compare"
   },
   "startup": [
     {
@@ -153,6 +154,21 @@
       },
       "lowEnd": {
         "report": true
+      },
+      "emulator": {
+        "report": true
+      }
+    },
+    {
+      "test": "startupCold",
+      "metric": "sessionFirstMs",
+      "stat": "median",
+      "unit": "ms",
+      "reference": {
+        "hard": 50
+      },
+      "lowEnd": {
+        "hard": 100
       },
       "emulator": {
         "report": true
@@ -920,5 +936,55 @@
     }
   ],
   "welcomeEmulatorRefreshHz": 60.000004,
-  "timelineWidePage": "trip-wide"
+  "timelineWidePage": "trip-wide",
+  "compare": [
+    {
+      "test": "coldSignedOut",
+      "metric": "timeToInitialDisplayMs",
+      "stat": "median",
+      "unit": "ms",
+      "rule": "nativeBelowRn",
+      "emulator": {
+        "report": true
+      },
+      "reference": {
+        "gate": true
+      },
+      "lowEnd": {
+        "gate": true
+      }
+    },
+    {
+      "test": "coldSignedOut",
+      "metric": "memoryRssAnonMaxKb",
+      "stat": "median",
+      "unit": "KiB",
+      "rule": "nativeBelowRn",
+      "emulator": {
+        "report": true
+      },
+      "reference": {
+        "gate": true
+      },
+      "lowEnd": {
+        "gate": true
+      }
+    },
+    {
+      "test": "coldSignedOut",
+      "metric": "frameOverrunMs",
+      "stat": "P99",
+      "unit": "ms",
+      "rule": "report",
+      "emulator": {
+        "report": true
+      },
+      "reference": {
+        "report": true
+      },
+      "lowEnd": {
+        "report": true
+      }
+    }
+  ]
 }
