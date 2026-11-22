@@ -570,7 +570,10 @@ class AppGraph(
         if (firstCommit.isCompleted) return
         LaunchTrace.beginSession()
         firstCommit.complete(Unit)
-        appScope.launch(dispatchers.io) { reminderRuntime.ensureChannel() }
+        appScope.launch(dispatchers.io) {
+            LaunchPlatform.onFirstCommit(app)
+            reminderRuntime.ensureChannel()
+        }
     }
 
     suspend fun finishLaunch() =

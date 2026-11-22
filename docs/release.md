@@ -173,3 +173,11 @@ Bundle size: 4147966 bytes (4.15 MB), arm64-v8a/xxhdpi/en: OK
 Fixture command `python3 -I -m unittest discover -s Scripts/tests -p test_check_release_apk.py`: **20 PASS**, 5.08 s wall initially; **2.18 s wall** after making all string findings omit their values. Each fixture case remains below 1 s. Controls cover preview annotations, the declared stub, library Log.d and app Log.w; planted failures cover both debug-package forms, new CF_ seeds, undeclared perf code, forbidden calls, missing dex evidence and a missing tool.
 
 Tooling: installed apkanalyzer accepts `dex packages --defined-only --proguard-mappings`; installed dexdump emits modified UTF-8 (an overlong NUL in this real APK raised UnicodeDecodeError in the initial inspection). The checker streams with byte-preserving backslash replacement, retaining ASCII forbidden markers; a planted modified-UTF-8 fixture proves the markers still fail. No release content finding required a source move or keep-rule change.
+
+## Debug exit history
+
+The debug-only `ExitInfoLogger` reads the previous `ApplicationExitInfo` on API 30+ after first commit, on AppGraph's injected IO dispatcher. It logs the specified metadata only, never trace input or process state summaries. The existing first-commit guard keeps the hook once per process. Release and perf use the no-op LaunchPlatform hook; Application.onCreate is unchanged.
+
+`env 'ORG_GRADLE_PROJECT_kotlin.compiler.execution.strategy=in-process' make targeted ONLY='app:ExitInfoLoggerTest app:ReleaseReadinessTest'`: **PASS, 15.75 s wall**, local host 2026-11-22. Three Robolectric cases: previous crash 0.745 s (first SDK 30 case), no exit 0.011 s, SDK 29 no-service guard 0.413 s (first SDK 29 case). All 15 release-readiness cases pass (0.080 s suite); the logger class is absent. No graph, activity or app root is booted by the new test.
+
+Robolectric 4.18 has `ShadowActivityManager.addApplicationExitInfo(Object)` and nested `ApplicationExitInfoBuilder`. The four-argument helper is deprecated and failed the first compile under warnings-as-errors; the builder overload fixes it without suppression. Logs: `/tmp/cf13-task7-tests.log` (compile failure), `/tmp/cf13-task7-tests2.log` (pass). Startup/profile host proofs remain `make baseline-profile` and `make perf`.

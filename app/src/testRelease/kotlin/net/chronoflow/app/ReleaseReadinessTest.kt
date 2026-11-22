@@ -30,6 +30,10 @@ import org.junit.Test
 import kotlin.time.Duration.Companion.seconds
 
 class ReleaseReadinessTest {
+    @Test fun exitInfoLoggerIsAbsent() {
+        missing("net.chronoflow.debug.ExitInfoLogger")
+    }
+
     @Test fun guestSignupCoordinatorHasNoSeedOrPrefill() =
         runTest(timeout = 60.seconds) {
             val dispatcher = StandardTestDispatcher(testScheduler)

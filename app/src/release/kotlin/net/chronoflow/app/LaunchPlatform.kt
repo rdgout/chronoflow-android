@@ -7,6 +7,9 @@ import net.chronoflow.core.navigation.RootNavigator
 import net.chronoflow.feature.launch.LaunchOverrides
 
 internal object LaunchPlatform {
+    @Suppress("UNUSED_PARAMETER")
+    fun onFirstCommit(app: android.app.Application) = Unit
+
     val deleteSheetSeed: Boolean get() = false
     val passwordPromptSeed: String? = null
 
