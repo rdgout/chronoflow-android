@@ -63,6 +63,7 @@ class TripPageBoardFixture(
             "S1",
             checkNotNull(planDate(detail.plan.days[dayIndex].startUtc)).plusSeconds(9 * 3600L),
             startAtSummary = case.board == "PlanTimelineTop",
+            initialTimeline = case.board != "PlanEnd" && case.board != "PlanEndNoText",
             language =
                 if (case.language ==
                     AppLanguage.Nl
@@ -189,7 +190,9 @@ class TripPageBoardFixture(
             }
 
             "PlanEnd", "PlanEndNoText" -> {
-                compose.runOnIdle { list.requestScrollToItem(rig.model.index.end) }
+                val end =
+                    if (case.profile.widthDp >= 600) rig.model.index.end else rig.model.listIndex.end
+                compose.runOnIdle { list.requestScrollToItem(end) }
             }
         }
         compose.waitForIdle()

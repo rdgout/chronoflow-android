@@ -82,6 +82,8 @@ class TripPageBoardGuardTest(
             }
 
             "PlanEnd", "PlanEndNoText" -> {
+                val mode = if (TripPageLayout.resolve(case.profile.widthDp.toDouble()).isWide) "timeline" else "list"
+                compose.onNodeWithTag("trip.mode.$mode").assertExists()
                 compose.onNodeWithTag("trip.plan.end.title").assertIsDisplayed()
                 if (model.prepared.returnDayID != null) compose.onNodeWithTag("trip.plan.end.return").assertExists()
             }
