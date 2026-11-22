@@ -90,6 +90,8 @@ Checked against the code at `fcf08348` (phases 0a–11a), iOS at `f391a1fa`, web
 7. Robolectric captures show the sheet without its backdrop (R6).
 8. `CfButton(loading = …)` requires a localized `loadingDescription`: pass the button's own label ("Create account and save"), as 5d's `SignUpScreen` passes its label (l.299–308); no new copy.
 
+**R11. Additional mechanical mapping (worker preflight).** Android `MemberWizardDraft.airports` is a derived getter over `MemberWizardState.airports` (`MemberWizardState.kt`); it is not a constructor/copy property. Task 3 copies `seed.airports` through `state.copy(airports = seed.airports)`, preserving the existing model representation and the iOS seed behavior.
+
 This phase is mostly **ports of small iOS types, one sheet and wiring**. The mock registration claim (iOS 18d) is **4c's and already merged** (`MockGuestRegistrationClaimTests`, `MockStaleClaimTests`, `MockClaimReplayTests`). The HTTP half of `GuestClaimAuthTests` is **4b's** (`GuestClaimWireTests`). The guest wizard model (`guestReviewExpired`, `setGuestSigningIn`, `setGuestAuthenticationPresented`) is **9a's**; the guest store, secret store and the sign-up seam are **11a's**. Do not port them again. If a rule below is missing from those phases, port it into that module with its iOS test in a separate `fix(<scope>): …` commit that names the Swift line, and report it.
 
 ---
@@ -255,7 +257,7 @@ Add to 9b's `…/cd/wizard/MemberWizardStore.kt`:
 ```kotlin
 suspend fun start(seed: MemberWizardDraft): MemberWizardDraft
 ```
-`draft = initialDraft()` (9b, so the member's `savedProfile`, `sleepNeeded`, `firstTrip` come from the account), then a copy with: `form = seed.form` with `identity = null` and `override = WizardSleepOverride()` (the default); `airports = seed.airports`; `state.entered = true`; `state.fromLastTrip = false`; `state.step = checking`; `state.returnToReady = true`; `state.profile = JsonObject(emptyMap())`. `mode` stays `member` (from `initialDraft`). `drafts.replaceRecovery(record(draft), permit)`, return `draft`. It replaces any existing member recovery row (a stale writer of the old row then gets `RecoveryRejected`).
+`draft = initialDraft()` (9b, so the member's `savedProfile`, `sleepNeeded`, `firstTrip` come from the account), then a copy with: `form = seed.form` with `identity = null` and `override = WizardSleepOverride()` (the default); `state.airports = seed.airports` (Android derived draft getter; R11); `state.entered = true`; `state.fromLastTrip = false`; `state.step = checking`; `state.returnToReady = true`; `state.profile = JsonObject(emptyMap())`. `mode` stays `member` (from `initialDraft`). `drafts.replaceRecovery(record(draft), permit)`, return `draft`. It replaces any existing member recovery row (a stale writer of the old row then gets `RecoveryRejected`).
 
 ### 5.4 Guest continuation repository (port `GuestContinuationRepository.swift`)
 
