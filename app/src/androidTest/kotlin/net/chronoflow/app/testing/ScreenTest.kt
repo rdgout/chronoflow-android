@@ -21,6 +21,7 @@ import androidx.test.runner.lifecycle.Stage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import net.chronoflow.app.MainActivity
+import net.chronoflow.core.testing.audit.mergeAuditDefaults
 import net.chronoflow.debug.TestSeed
 import net.chronoflow.debug.TestSeeds
 import net.chronoflow.debug.UITestTimeline
@@ -64,13 +65,21 @@ abstract class ScreenTest {
     }
 
     private fun seededIntent(overrides: Map<String, String?>): Intent {
+        val args = InstrumentationRegistry.getArguments()
+        val auditArguments =
+            listOf("cf.audit.language", "cf.audit.theme", "cf.audit.reduceMotion")
+                .mapNotNull { key -> args.getString(key)?.let { key to it } }
+                .toMap()
+        val explicit = overrides.mapNotNull { (key, value) -> value?.let { key to it } }.toMap()
         val extras =
             mapOf(
                 TestSeed.TEST_ID_KEY to UUID.randomUUID().toString(),
                 TestSeed.PROFILE_KEY to "screen",
                 "cf.settings.language" to "system",
                 "cf.settings.theme" to "system",
-            ).plus(overrides).mapNotNull { (key, value) -> value?.let { key to it } }.toMap()
+            ).plus(mergeAuditDefaults(explicit, auditArguments))
+                // Null is an explicit request to preserve the persisted device configuration.
+                .filterKeys { it !in overrides || overrides[it] != null }
         seed = TestSeed.parse(extras)
         runBlocking { TestSeeds.apply(targetContext, seed, Dispatchers.IO) }
         return TestSeeds.forwardIntent(targetContext, seed)

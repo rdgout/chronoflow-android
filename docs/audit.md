@@ -2030,3 +2030,11 @@ Pixel result (2026-11-22, debug, emulator-5554/API 36): all nine screens passed;
 ### Long audit tier progress
 
 The full variant audit contains hundreds of parameterized cases and can outlast the runner’s 600 s idle cap while Gradle prints no case-level output. `run_tier.py` now reports only fresh UTP logcat files containing TestRunner’s finished marker, once per case, with the structural filename only. Stale and unfinished files do not count. The 600 s idle, 3,600 s total and 60 s per-test caps are unchanged; this is evidence of completed tests, not a heartbeat. Four fake-file progress guards pass (0.124 s command wall).
+
+## Robustness (Tasks 12–16)
+
+### Dutch, dark and Reduce Motion suite (Task 12)
+
+`make audit-suite` runs every app instrumented test without an annotation filter, under the device lock, with `cf.audit.language=nl`, `cf.audit.theme=dark` and `cf.audit.reduceMotion=1`. `ScreenTest` applies these defaults only when the test has not explicitly chosen a value. Explicit null still omits the key and preserves persisted device configuration, as the existing persistence tests require. Six pure JVM `AuditDefaultsTest` cases cover no arguments, each known argument, explicit values winning and unknown arguments. The full device suite belongs to the Task 16 record; no full-suite verdict is inferred from the merge tests.
+
+Task 12 targeted result: six defaults and four existing seed-routing guards passed (8.679 s command wall); app androidTest compilation and formatting passed (19.763 s). Explicit-null omission remains in the activity fixture, outside the pure non-null merge contract.

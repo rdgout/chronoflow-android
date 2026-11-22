@@ -227,3 +227,7 @@ perf-rn:
 .PHONY: font-scale-check
 font-scale-check:
 	python3 -I Scripts/device_lock.py -- sh -ec 'Scripts/emulator.sh ensure; $(GRADLE) :app:installDebug; python3 -I Scripts/font-scale-check.py'
+
+.PHONY: audit-suite
+audit-suite:
+	python3 -I Scripts/device_lock.py -- sh -ec 'Scripts/emulator.sh ensure; $(RUN_TIER) audit-suite --device --emulator --results "app/build/outputs/androidTest-results/connected/**/*.xml" -- $(GRADLE) :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.cf.audit.language=nl -Pandroid.testInstrumentationRunnerArguments.cf.audit.theme=dark -Pandroid.testInstrumentationRunnerArguments.cf.audit.reduceMotion=1'
