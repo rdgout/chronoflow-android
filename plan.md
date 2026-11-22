@@ -3403,7 +3403,7 @@ Acceptance evidence and the pending host checks are recorded in [`docs/settings-
 - [x] Task 11: guest sign-up sheet.
 - [x] Task 12: guest sign-up presentation.
 - [x] Task 13: guest sign-up guards and captures.
-- [ ] Task 14: guest claim integration.
+- [x] Task 14: guest claim integration.
 - [ ] Task 15: guest journey and keyboard.
 
 **Acceptance**
