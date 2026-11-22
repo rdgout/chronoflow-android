@@ -1900,6 +1900,14 @@ Actual instrumented audit case times are 0.98–2.07 s (separate monotonic timin
 
 Manual TalkBack, Switch Access and keyboard procedures remain pending (orchestrator/user).
 
+### Wizard stepper accessibility fix
+
+**Fixed:** the preparation stepper exposed two unlabeled clickable children in addition to its labeled adjustable parent. Its visual halves are now hidden from accessibility; the existing parent keeps the range, label and SetProgress action, matching the native iOS Stepper in `MemberWizardFineTuneView.swift` at the pin. Pointer interaction and the existing tests stay unchanged. No string or token changes.
+
+Affected boards: `WizardFineTune`, `WizardFineTuneBusy`, `WizardFineTuneBusyDarkNL`, `WizardFineTuneDark`, `WizardFineTuneDarkNL`, `WizardFineTuneGuest`, `WizardFineTuneMulti`, `WizardFineTuneMultiDarkNL`, `WizardFineTuneNL`, `WizardFineTuneNone`, `WizardFineTuneNoneDarkNL`, `WizardFineTuneSheet`, `WizardFineTuneSheetDarkNL`, `WizardFineTuneSleep`, `WizardFineTuneSleepDarkNL`, `WizardSheetBlue`, `WizardSheetBlueDarkNL`, `WizardSheetBlueError`, `WizardSheetBlueErrorDarkNL`, `WizardSheetBusy`, `WizardSheetBusyDarkNL`, `WizardSheetDrinks`, `WizardSheetDrinksDarkNL`, `WizardSheetDrinksError`, `WizardSheetDrinksErrorDarkNL`, `WizardSheetFreeSleep`, `WizardSheetFreeSleepDarkNL`, `WizardSheetLight`, `WizardSheetLightDarkNL`, `WizardSheetRoom`, `WizardSheetRoomDarkNL`, `WizardSheetWake`, `WizardSheetWakeDarkNL`.
+
+The new `WizardStepperAccessibilityTest` failed before the fix and passes after it; the existing plus-tap, disabled-at-maximum and adjustable-parent guards also pass. The two representative pixel reruns (`WizardFineTune`, `WizardSheetBlue`) pass in 10.47 s tier wall time. The initial 33 related audit failures and focused rerun evidence are under `build/phase14/screen-audits/`.
+
 ## Robustness (Tasks 13–15)
 
 Pending process-death/StrictMode/resize tooling and recorded runs. Fold/T2 and performance tiers belong to the orchestrator. Calculating save resume is not swept on device because the mock delay is shorter than the kill procedure; the existing WizardProcessDeathTest is the required model/Robolectric evidence (OQ-14-5).
