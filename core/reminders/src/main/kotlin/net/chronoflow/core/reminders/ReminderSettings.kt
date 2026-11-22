@@ -75,11 +75,12 @@ enum class ReminderPermission {
 
 enum class ReminderKind(
     val raw: String,
+    val copyKey: String,
 ) {
-    SeekLight("seek_light"),
-    AvoidLight("avoid_light"),
-    CaffeineCutoff("caffeine_cutoff"),
-    WindDown("wind_down"),
+    SeekLight("seek_light", "Seek bright light from {{time}}."),
+    AvoidLight("avoid_light", "Avoid bright light from {{time}}."),
+    CaffeineCutoff("caffeine_cutoff", "Last caffeine before {{time}}."),
+    WindDown("wind_down", "Wind down for bed: sleep from {{time}}."),
     ;
 
     companion object {

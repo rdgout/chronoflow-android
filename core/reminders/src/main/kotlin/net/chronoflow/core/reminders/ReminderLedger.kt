@@ -13,7 +13,9 @@ data class ReminderLedgerEntry(
     val inputHash: String,
     val sendAtMs: Double,
     val memberKeys: List<String>,
-)
+) {
+    companion object
+}
 
 object ReminderLedger {
     fun decode(data: String): List<ReminderLedgerEntry> {
@@ -46,6 +48,17 @@ object ReminderLedger {
         now: Instant,
     ): List<ReminderLedgerEntry> {
         val milliseconds = now.epochSecond * 1000.0 + now.nano / 1_000_000.0
-        return rows.filter { it.sendAtMs >= milliseconds - 36 * 60 * 60 * 1000 && it.sendAtMs <= milliseconds }
+        return rows.filter {
+            it.sendAtMs >= milliseconds - REMINDER_LOOKBACK_SECONDS * 1000 &&
+                it.sendAtMs <= milliseconds
+        }
     }
 }
+
+fun ReminderLedgerEntry.Companion.from(request: ReminderRequest): ReminderLedgerEntry =
+    ReminderLedgerEntry(
+        request.tripID,
+        request.inputHash,
+        request.sendAt.epochSecond * 1000.0 + request.sendAt.nano / 1_000_000.0,
+        request.memberKeys,
+    )

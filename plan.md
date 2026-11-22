@@ -3445,7 +3445,7 @@ Acceptance evidence and the pending host checks are recorded in [`docs/settings-
 **Delivers.** Ports the reminder engine into :core:reminders. It covers selection over the 36 h lookback and the 48 h window, kinds and copy keys, 15 min coalescing, at most 6 a day and 60 in total, identifiers, the ledger and the account-level switches. The 110 iOS parity vectors pass unchanged on the JVM.
 
 **Tasks**
-- [ ] **Engine** (`core/reminders/…`).
+- [x] **Engine** (`core/reminders/…`).
   - `ReminderSelection`: a 36 h lookback and a 48 h window; kinds and copy keys; 15 min coalescing; at most 6 a day and 60 in total; a 5 s margin; expiry after 20 min.
   - `ReminderSchedule`.
   - `ReminderLedger`: identifiers and replay protection.
