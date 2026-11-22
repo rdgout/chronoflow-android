@@ -21,6 +21,10 @@ import org.robolectric.annotation.GraphicsMode
 class PreferencesScreenTest : SettingsScreenTest() {
     private fun state(failure: Boolean = false) =
         PreferencesUiState(
+            reminders =
+                net.chronoflow.core.reminders
+                    .ReminderSettings(),
+            reminderPermission = net.chronoflow.core.reminders.ReminderPermission.Granted,
             editor = SettingsPreferencesModel.State(json("{}"), failure = failure),
         )
 
@@ -38,13 +42,13 @@ class PreferencesScreenTest : SettingsScreenTest() {
         compose.onNodeWithTag("settings.preferences.Travel").assertExists()
     }
 
-    @Test fun linksEmitDistinctEventsAndRemindersHasNoSubtitle() {
+    @Test fun linksEmitDistinctEventsAndRemindersHasSubtitleWhenKnown() {
         val events = mutableListOf<PreferencesEvent>()
         show { PreferencesScreen(state(), { events += it }) }
         compose.onNodeWithTag("settings.preferences.reminders").performScrollTo().performClick()
         compose.onNodeWithTag("settings.preferences.replay").performScrollTo().performClick()
         assertEquals(listOf(PreferencesEvent.Reminders, PreferencesEvent.Replay), events)
-        compose.onNodeWithTag("settings.preferences.reminders.subtitle", true).assertDoesNotExist()
+        compose.onNodeWithTag("settings.preferences.reminders.subtitle", true).assertExists()
     }
 
     @Test fun failureShowsTheErrorLine() {

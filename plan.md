@@ -3550,7 +3550,7 @@ Acceptance evidence and the pending host checks are recorded in [`docs/settings-
 - [x] 2. Consume the first-trip reminders offer.
 - [x] 3. Port the reminders model.
 - [x] 4. Build the connectivity and reminders page.
-- [ ] 5. Show the reminders state on preferences.
+- [x] 5. Show the reminders state on preferences.
 - [ ] 6. Offer reminders after the first saved trip.
 - [ ] 7. Add guards and board captures.
 - [ ] 8. Drive the permission dialog on the emulator.

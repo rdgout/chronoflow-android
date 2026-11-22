@@ -69,6 +69,8 @@ internal class SecuritySavedStateDependencies(
 
     override fun sessionUpdates() = emptyFlow<net.chronoflow.core.model.session.SessionUpdate>()
 
+    override suspend fun reminderPermission() = net.chronoflow.core.reminders.ReminderPermission.Granted
+
     override suspend fun isCurrent() = true
 
     override suspend fun signOut(discardPending: Boolean) = SignOutResult.SignedOut

@@ -158,6 +158,23 @@ fun PreferencesScreen(
                 LucideGlyphs.Bell,
                 "settings.preferences.reminders",
                 { onEvent(PreferencesEvent.Reminders) },
+                subtitle =
+                    when (val subtitle = remindersSubtitle(state.reminders, state.reminderPermission)) {
+                        is RemindersSubtitle.On -> {
+                            stringResource(
+                                R.string.settings_on_minutes_min_ahead_works_offline,
+                                subtitle.minutes.toString(),
+                            )
+                        }
+
+                        RemindersSubtitle.Off -> {
+                            stringResource(R.string.settings_off_works_offline)
+                        }
+
+                        null -> {
+                            null
+                        }
+                    },
                 chevron = true,
             )
             CfDivider()
@@ -187,6 +204,9 @@ fun PreferencesRoute(
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.ui.collectAsStateWithLifecycle()
+    androidx.lifecycle.compose.LifecycleEventEffect(androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+        viewModel.refreshReminderPermission()
+    }
     val event: (PreferencesEvent) -> Unit =
         remember(viewModel, onBack, onNavigate) {
             { event ->

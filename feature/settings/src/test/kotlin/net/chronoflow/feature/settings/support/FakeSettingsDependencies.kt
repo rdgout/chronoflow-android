@@ -101,6 +101,10 @@ class FakeSettingsDependencies(
 
     override fun sessionUpdates() = updates
 
+    var reminderAuthorization = net.chronoflow.core.reminders.ReminderPermission.Granted
+
+    override suspend fun reminderPermission() = reminderAuthorization
+
     override suspend fun isCurrent() = current
 
     override suspend fun signOut(discardPending: Boolean) =

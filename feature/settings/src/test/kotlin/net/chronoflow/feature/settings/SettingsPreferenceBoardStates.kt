@@ -45,6 +45,10 @@ internal object SettingsPreferenceBoardStates {
 
     fun preferences() =
         PreferencesUiState(
+            reminders =
+                net.chronoflow.core.reminders.ReminderSettings
+                    .decode(snapshot.settings.reminders.toString()),
+            reminderPermission = net.chronoflow.core.reminders.ReminderPermission.Granted,
             editor =
                 SettingsPreferencesModel.State(
                     JsonObject(
