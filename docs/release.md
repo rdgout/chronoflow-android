@@ -78,3 +78,30 @@ Tooling: the Kotlin daemon cannot write its timestamp marker under the sandbox's
 Preview with `python3 -I Scripts/bump-version.py build --dry-run`. Commit uploads as `chore(release): bump version to <name> (<code>)`. This phase does not bump the version.
 
 Version script verification: `python3 -I -m unittest discover -s Scripts/tests -p test_bump_version.py`, 16 cases PASS, 0.52 s wall on the local host (2026-11-22). Temporary files only; `version.properties` is unchanged.
+
+## R8 keep rules
+
+App-owned rules, reviewed 2026-11-22:
+
+| File | Rule | Why |
+|---|---|---|
+| `app/src/main/keepRules/app.keep` | `-assumenosideeffects class android.util.Log` for `v(...)`, `d(...)`, `i(...)` only | Strip low-priority app logging. Warnings/errors retain their side effects. |
+| `app/src/main/keepRules/credentials.keep` | `-if class androidx.credentials.CredentialManager` / `-keep class androidx.credentials.playservices.** { *; }` | Credential Manager discovers its Play services provider by reflection (5b); conditional and restricted to that provider package. |
+| `app/src/nonMinifiedRelease/keepRules/profile.keep` | Exactly `-dontobfuscate` and `-dontoptimize` | Profile collection needs real names and uninlined methods. This exception belongs only to nonMinifiedRelease (OQ-A595). |
+
+`KeepRulesTest` scans main and every build-type keep directory except the profile exception, pins the known files, rejects optimization escapes and broad app keeps, and rejects three planted violations. Its keep files are declared Konsist task inputs, so a keep-only change invalidates the test. `make targeted ONLY='konsist:KeepRulesTest'`: 8 cases PASS, 6.67 s wall.
+
+`./gradlew :app:assembleRelease :app:assembleBenchmarkRelease :app:analyzeReleaseR8Config -Pkotlin.compiler.execution.strategy=in-process`: PASS, 42.81 s wall. AGP 9.5.1 writes `configuration.txt`, `mapping.txt`, `seeds.txt`, `usage.txt` under `app/build/outputs/mapping/<variant>/`. No `-printconfiguration` addition is needed. Analyzer output: `R8 Keep Rules analysis report generated: build/reports/r8/r8-config-analyzer-release.html` (module-relative path).
+
+The release configuration contains **57 library consumer rule file sections**. None keeps a whole package with all members; the only such package keep is our existing conditional Credential Manager provider rule above. Navigation 3 routes and sheets are `@Serializable`; the app owns its back stacks and uses `NavDisplay`. The requested `rememberNavBackStack|SavedStateConfiguration|serializer<|Json.encodeToString` search found no reflective route/sheet serializer lookup in app/feature production code. Wizard recovery uses generated kotlinx.serialization serializers; bundled companion `serializer()` consumer rules cover these. No route keep was added. The minified smoke is the runtime proof (host command `make release-smoke`, pending).
+
+Initial sorted-directive diff found four extra entries in benchmarkRelease from `kotlinx-coroutines-test-jvm`, transitively through the fixture module: duplicate volatile-field keeps and dispatcher-factory name keeps. Perf code imports only `LargeTimelineFixtures`. Dependency insight also found a transitive fixture path through `:core:data-mock`; excluding only the direct edge left the diff unchanged. The final exclusion is on the two perf runtime classpaths, covering both paths and removing the unused dispatcher provider; debug/tests are unaffected. No app rule was changed. A first build-script attempt used Gradle's map overload (returns `Dependency`); the corrected string overload returns `ProjectDependency` and supports exclusions.
+
+Final `:app:assembleBenchmarkRelease -Pkotlin.compiler.execution.strategy=in-process`: PASS, 28.96 s wall. The exact comparison below exits 0 with **no output**:
+
+```sh
+diff <(rg '^-' app/build/outputs/mapping/release/configuration.txt | sort) \
+     <(rg '^-' app/build/outputs/mapping/benchmarkRelease/configuration.txt | sort)
+```
+
+The release/benchmarkRelease app keep and Log-stripping rules are identical. Only nonMinifiedRelease has the pinned profile exception. Runtime smoke and regenerated-profile proofs remain host commands.

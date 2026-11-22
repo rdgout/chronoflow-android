@@ -767,3 +767,7 @@ Hand each of these over as an exact command. Never fabricate numbers.
 | OQ-A596 | (13) Perf journey extras need hooks in `MainActivity` and in the wizard start. | One `net.chronoflow.app.perf.PerfJourneyHook` object (perf real, releaseNoPerf no-op stub): two `MainActivity` call lines, plus the release `LaunchPlatform.prepareWizard` delegating to it. Anything more takes the OQ-13-5/-6 fallback. |
 | OQ-A597 | (13) Six "Performance budget" rows are missing from the brief's §5.7. | Record them in Task 12's verdict tables from the existing checker and JVM outputs. Nothing new is measured. |
 | OQ-A598 | (13) `sessionFirstMs` has no `budgets.json` row, so "Session known, signed out" is never checked. | Add a `startup` row with plan.md's values (reference 50 ms, low-end 100 ms, emulator report). No plan.md value changes. |
+
+### Task 3 review finding (2026-11-22)
+
+The first real R8 configuration comparison found extra consumer rules from `kotlinx-coroutines-test-jvm` in the perf variants, transitively through `:core:testing`. Perf imports only `LargeTimelineFixtures`; the coroutine test dispatcher is unused. Task 3 excludes `kotlinx-coroutines-test` and its JVM artifact on the two perf runtime classpaths (both the direct fixture edge and the transitive edge through `:core:data-mock` reach the test helpers). Debug and test dependencies stay unchanged. The final R8 comparison and builds are recorded in `docs/release.md`; no app keep rule is broadened.

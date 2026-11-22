@@ -168,3 +168,11 @@ configurations
 configurations
     .matching { it.name == "benchmarkReleaseImplementation" || it.name == "nonMinifiedReleaseImplementation" }
     .configureEach { project.dependencies.addProvider(name, libs.androidx.metrics.performance) }
+
+// Perf uses fixture data, never the test dispatcher provider exported by the test helpers.
+configurations
+    .matching { it.name == "benchmarkReleaseRuntimeClasspath" || it.name == "nonMinifiedReleaseRuntimeClasspath" }
+    .configureEach {
+        exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-test")
+        exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-test-jvm")
+    }
