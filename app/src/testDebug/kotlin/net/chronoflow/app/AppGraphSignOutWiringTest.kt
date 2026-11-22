@@ -1,6 +1,5 @@
 package net.chronoflow.app
 
-import android.app.Application
 import androidx.test.core.app.ApplicationProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
@@ -39,13 +38,13 @@ import kotlin.time.Duration.Companion.seconds
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 @Logic
 @RunWith(ParameterizedRobolectricTestRunner::class)
-@Config(sdk = [36], application = Application::class)
+@Config(sdk = [36], application = SessionTestApplication::class)
 class AppGraphSignOutWiringTest(
     private val unauthorized: Boolean,
 ) {
     @Test fun signOutNavigatesErasesAccountFilesAndRejectsTheOldToken() =
         runTest(timeout = 60.seconds) {
-            val app = ApplicationProvider.getApplicationContext<Application>()
+            val app = ApplicationProvider.getApplicationContext<SessionTestApplication>()
             val dispatcher = StandardTestDispatcher(testScheduler)
             val root = withContext(Dispatchers.IO) { Files.createTempDirectory("graph-sign-out").toFile() }
             val graph =
@@ -60,6 +59,7 @@ class AppGraphSignOutWiringTest(
                             dispatchers = AppDispatchers(dispatcher, dispatcher, dispatcher),
                         ),
                 )
+            app.graph = graph
             try {
                 // Account teardown needs a session and account DB, not the UI seed's full trip/plan synchronization.
                 graph.sessionSync.setEnabled(false)

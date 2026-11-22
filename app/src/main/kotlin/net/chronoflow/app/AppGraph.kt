@@ -436,6 +436,7 @@ class AppGraph(
                     finishWipe = wiper::finish,
                     logout = { dataSources.forSession(it).signOut() },
                     detach = {
+                        withContext(dispatchers.io) { ReminderWork.cancelAll(app) }
                         accountModel.detach()
                         withContext(dispatchers.main) { onSignedOut() }
                     },
