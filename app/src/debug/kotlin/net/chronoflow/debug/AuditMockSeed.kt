@@ -21,6 +21,29 @@ internal object AuditMockSeed {
         now: Instant,
     ): MockServerState {
         if (seed.testId == null) return original
+        val offset =
+            if (seed.auditScreen == "today") {
+                when (seed.auditState) {
+                    "future" -> 365L
+                    "completed" -> -365L
+                    else -> 0L
+                }
+            } else {
+                0L
+            }
+        val shifted =
+            if (offset == 0L) {
+                null
+            } else {
+                MockAppSeed
+                    .make(
+                        now.plusSeconds(offset * 86400),
+                        seed.unverified,
+                        seed.walkthroughSeen,
+                        seed.termsPending,
+                    ).accounts
+                    .getValue(MockScenarioValues.demoID)
+            }
         val countdown = seed.auditScreen == "verify" && seed.auditState in setOf("throttle", "failedThrottle")
         return original.copy(
             accounts =
@@ -29,8 +52,8 @@ internal object AuditMockSeed {
                         account
                     } else {
                         account.copy(
-                            trips = if (seed.emptyTrips) emptyList() else account.trips,
-                            details = if (seed.emptyTrips) emptyMap() else account.details,
+                            trips = if (seed.emptyTrips) emptyList() else shifted?.trips ?: account.trips,
+                            details = if (seed.emptyTrips) emptyMap() else shifted?.details ?: account.details,
                             resendAvailableAt =
                                 if (countdown) {
                                     now.epochSecond + now.nano / 1_000_000_000.0 + 60
@@ -49,7 +72,11 @@ internal object AuditMockSeed {
         now: Instant,
         io: CoroutineDispatcher,
     ) = withContext(io) {
-        if (seed.testId == null || (!seed.emptyTrips && seed.auditScreen != "verify")) return@withContext
+        if (seed.testId == null ||
+            (!seed.emptyTrips && seed.auditScreen !in setOf("verify", "today"))
+        ) {
+            return@withContext
+        }
         val store = FileMockStateStore(root)
         val original = store.load() ?: MockAppSeed.make(now, seed.unverified, seed.walkthroughSeen, seed.termsPending)
         store.save(transform(original, seed, now))

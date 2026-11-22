@@ -52,6 +52,16 @@ class AuditPolicyTest {
         assertEquals(5, AuditPolicy.shouldIgnore(finding(AuditCheck.TextSize)))
     }
 
+    @Test fun nativeSheetDismissStripOnlyIgnoresTouchTarget() {
+        val native = finding(AuditCheck.TouchTarget, tag = null, actionable = true).copy(nativeSheetDismissStrip = true)
+        assertEquals(6, AuditPolicy.shouldIgnore(native))
+        assertNull(AuditPolicy.shouldIgnore(native.copy(check = AuditCheck.TextContrast)))
+        assertNull(AuditPolicy.shouldIgnore(native.copy(check = AuditCheck.ImageContrast)))
+        assertNull(AuditPolicy.shouldIgnore(native.copy(check = AuditCheck.Other)))
+        assertNull(AuditPolicy.shouldIgnore(native.copy(testTag = "app.button")))
+        assertNull(AuditPolicy.shouldIgnore(native.copy(actionable = false)))
+    }
+
     @Test fun unknownCheckNeverIgnored() {
         assertNull(
             AuditPolicy.shouldIgnore(

@@ -9,6 +9,7 @@ data class AuditFinding(
     val enabled: Boolean,
     val actionable: Boolean,
     val fullyVisible: Boolean,
+    val nativeSheetDismissStrip: Boolean = false,
 )
 
 object AuditPolicy {
@@ -19,10 +20,18 @@ object AuditPolicy {
         val contrast = f.check == AuditCheck.TextContrast || f.check == AuditCheck.ImageContrast
         return when {
             f.check == AuditCheck.TextContrast && f.testTag in welcomeContrast -> 1
+
             f.check == AuditCheck.TextContrast && f.testTag == "sign-in.guest" -> 2
+
             !f.enabled && f.actionable && (contrast || f.check == AuditCheck.TouchTarget) -> 3
+
             contrast && !f.fullyVisible -> 4
+
             f.check == AuditCheck.TextSize -> 5
+
+            f.check == AuditCheck.TouchTarget && f.nativeSheetDismissStrip && f.testTag == null && f.enabled &&
+                f.actionable -> 6
+
             else -> null
         }
     }
