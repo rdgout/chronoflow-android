@@ -52,8 +52,17 @@ class CheckReleaseApkTest(unittest.TestCase):
     def test_tooling_runtime(self): self.assert_forbidden_package("androidx.compose.ui.tooling.SomeTool")
 
     def test_preview_annotation_package_is_allowed(self):
-        self.packages += "P d 1 1 20 androidx.compose.ui.tooling.preview\n"
+        self.packages += "P d 1 1 20 androidx.compose.ui.tooling\nP d 1 1 20 androidx.compose.ui.tooling.preview\nC d 1 1 20 androidx.compose.ui.tooling.preview.Preview\n"
         self.assert_clean()
+
+    def test_bare_tooling_class_is_forbidden(self):
+        self.packages += "P d 1 1 20 androidx.compose.ui.tooling\nC d 1 1 20 androidx.compose.ui.tooling\n"
+        result = self.check()
+        self.assertEqual(result.returncode, 1, result.stderr + result.stdout)
+        self.assertIn("FAIL class: androidx.compose.ui.tooling", result.stdout)
+
+    def test_tooling_subpackage_is_forbidden(self):
+        self.assert_forbidden_package("androidx.compose.ui.tooling.data")
 
     def test_only_declared_release_perf_stub_is_allowed(self):
         self.packages += "P d 1 1 20 net.chronoflow.app.perf\nC d 1 1 20 net.chronoflow.app.perf.TripPageEntry\n"

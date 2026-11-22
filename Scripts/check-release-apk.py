@@ -52,6 +52,8 @@ def allowed_stubs(directory):
 
 
 def forbidden_class(name, stubs, package=False):
+    if package and name == "androidx.compose.ui.tooling":
+        return False
     if name == "androidx.compose.ui.tooling.preview" or name.startswith("androidx.compose.ui.tooling.preview."):
         return False
     if name == "net.chronoflow.app.perf" and package:
