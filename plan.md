@@ -3552,7 +3552,7 @@ Acceptance evidence and the pending host checks are recorded in [`docs/settings-
 - [x] 4. Build the connectivity and reminders page.
 - [x] 5. Show the reminders state on preferences.
 - [x] 6. Offer reminders after the first saved trip.
-- [ ] 7. Add guards and board captures.
+- [x] 7. Add guards and board captures.
 - [ ] 8. Drive the permission dialog on the emulator.
 - [ ] 9. Record phase 12c results and open questions.
 

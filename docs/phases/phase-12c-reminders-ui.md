@@ -445,3 +445,6 @@ If the leave-installed property is not honoured, or the precondition fails after
 
 
 **R20. Task 4 test boundaries.** Exercise the production `RemindersSeed` parser/apply/queue and `beginReminderPermissionRequest` helper directly with fake authorization and real preferences/SQL, without constructing an application graph. `TestSeeds` supplies `RemindersSeed.queue` to `SeedRunner`'s existing `onSessionReady` path, before its writer closes; this avoids opening a second writer. The page route is `RemindersRoute(vm, …)`; `RemindersScreen(state, onEvent)` stays stateless as required by the user.
+
+
+**R21. Task 7 native geometry.** M3 segmented buttons intentionally overlap adjacent borders by 1 dp. Keep the text, 48 dp touch-target, safe-area and ink guards; check non-overlap on the other controls and check the segments' containment, non-adjacent separation and adjacent shared-border width explicitly. Do not change the landed native wrapper's geometry or weaken the shared guard.
