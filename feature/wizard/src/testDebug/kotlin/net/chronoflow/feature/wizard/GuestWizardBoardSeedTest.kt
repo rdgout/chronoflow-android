@@ -2,6 +2,7 @@ package net.chronoflow.feature.wizard
 
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonPrimitive
+import net.chronoflow.core.model.contracts.Language
 import net.chronoflow.core.model.contracts.PromptKind
 import net.chronoflow.core.testing.wizard.InMemoryWizardDraftStore
 import net.chronoflow.core.wizard.model.MemberWizardDrafts
@@ -9,8 +10,10 @@ import net.chronoflow.core.wizard.model.MemberWizardModel
 import net.chronoflow.core.wizard.model.MemberWizardStep
 import net.chronoflow.core.wizard.model.WizardCredits
 import net.chronoflow.core.wizard.model.WizardMode
+import net.chronoflow.core.wizard.model.WizardPresentation
 import net.chronoflow.core.wizard.model.guestAnsweredQuestionCount
 import net.chronoflow.core.wizard.model.optionalPrompts
+import net.chronoflow.core.wizard.model.reviewInput
 import net.chronoflow.feature.wizard.debug.GuestWizardBoardSeed
 import net.chronoflow.feature.wizard.debug.WizardBoardCaptureSeed
 import org.junit.Assert.assertEquals
@@ -92,6 +95,26 @@ class GuestWizardBoardSeedTest(
                             { WizardBoardCaptureSeed.now },
                         )
                     assertEquals(2, model.guestAnsweredQuestionCount)
+                    if (name == "WizardFineTuneGuest") {
+                        assertEquals(
+                            listOf(
+                                PromptKind.Room,
+                                PromptKind.LatestWake,
+                                PromptKind.SeatSide,
+                                PromptKind.Cups,
+                                PromptKind.LightDevice,
+                                PromptKind.BlueBlockers,
+                            ),
+                            model.optionalPrompts.map { it.kind },
+                        )
+                        val input = draft.form.reviewInput(draft.form.identity, draft.state.profile)
+                        assertEquals(
+                            List(6) { "Add" },
+                            model.optionalPrompts.map { prompt ->
+                                WizardPresentation.promptAnswerText(prompt, input, Language.En) { key, _ -> key }
+                            },
+                        )
+                    }
                     assertFalse(
                         model.optionalPrompts.any {
                             it.kind in

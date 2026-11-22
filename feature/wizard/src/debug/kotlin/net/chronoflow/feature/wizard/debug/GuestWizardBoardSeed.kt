@@ -9,6 +9,7 @@ import net.chronoflow.core.wizard.model.WizardEnd
 import net.chronoflow.core.wizard.model.WizardMode
 import net.chronoflow.core.wizard.model.WizardSleepOverride
 import net.chronoflow.core.wizard.model.inputFingerprint
+import net.chronoflow.core.wizard.model.reviewInput
 import net.chronoflow.feature.wizard.shell.WizardUiOverride
 import net.chronoflow.feature.wizard.ui.WizardInitialPresentation
 import java.time.Instant
@@ -112,6 +113,27 @@ object GuestWizardBoardSeed {
                 base.fieldErrors
             }
         var draft = base.copy(form = form, state = state, fieldErrors = errors)
+        if (name == "WizardFineTuneGuest") {
+            val unanswered =
+                form.copy(
+                    legs = form.legs.map { it.copy(seatWindow = null) },
+                    stays = form.stays.map { it.copy(bedAvailableMode = null, bedAvailableFromLocal = null) },
+                    preparation = form.preparation.copy(latestWake = null),
+                )
+            val review = checkNotNull(state.review)
+            val prompts = WizardCompletionPrompts.make(unanswered.reviewInput(null).input, state.profile)
+            draft =
+                draft.copy(
+                    form = unanswered,
+                    state =
+                        state.copy(
+                            review =
+                                review.copy(
+                                    prompts = prompts,
+                                ),
+                        ),
+                )
+        }
         if (state.step == MemberWizardStep.ready || state.step == MemberWizardStep.fineTune) {
             draft = draft.copy(state = draft.state.copy(checkedInput = draft.inputFingerprint))
         }
