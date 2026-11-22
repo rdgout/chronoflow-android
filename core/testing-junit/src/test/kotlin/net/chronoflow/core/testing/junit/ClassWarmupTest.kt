@@ -19,6 +19,9 @@ class ClassWarmupTest {
             assertTrue(report.contains("\"warmups\":[{\"class\":\"${javaClass.name}\",\"sdk\":\"36\""))
             assertTrue(report.contains("\"name\":\"native \\\"fonts\\\"\""))
             assertTrue(Regex("\"ms\":\\d+").containsMatchIn(report))
+            val started = Regex("\"startedNanos\":(\\d+)").find(report)!!.groupValues[1].toLong()
+            val ended = Regex("\"endedNanos\":(\\d+)").find(report)!!.groupValues[1].toLong()
+            assertTrue(ended >= started)
         }
 
     @Test fun recordsDurationWhenTheWarmupFails() =
