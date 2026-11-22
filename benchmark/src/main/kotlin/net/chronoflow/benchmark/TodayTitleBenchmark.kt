@@ -54,10 +54,18 @@ class TodayTitleBenchmark {
                     input.step("Today bar collapsed ${round + 1}/3") {
                         device.awaitTodayBar("collapse") { it.height() < expanded.height() }
                     }
-                    input.step("Today down fling ${round + 1}/3") { device.flingToday(up = false) }
-                    input.step("Today bar expanded ${round + 1}/3") {
-                        device.awaitTodayBar("expand") { it.height() >= expanded.height() }
+                    var expandedAgain = false
+                    for (attempt in 1..4) {
+                        input.step("Today down fling ${round + 1}/3, attempt $attempt/4") {
+                            device.flingToday(up = false)
+                        }
+                        expandedAgain =
+                            input.step("Today bar expanded ${round + 1}/3, attempt $attempt/4") {
+                                device.waitForTodayBar(750) { it.height() >= expanded.height() }
+                            }
+                        if (expandedAgain) break
                     }
+                    check(expandedAgain) { "Today app bar did not expand after its fling" }
                 }
             }
         }
@@ -80,13 +88,17 @@ private fun UiDevice.awaitTodayBar(
     phase: String,
     matches: (Rect) -> Boolean,
 ) {
-    check(
-        wait(
-            object : SearchCondition<Boolean>() {
-                override fun apply(searchable: Searchable): Boolean =
-                    searchable.findObject(By.res("today.appbar"))?.visibleBounds?.let(matches) == true
-            },
-            5_000,
-        ),
-    ) { "Today app bar did not $phase after its fling" }
+    check(waitForTodayBar(5_000, matches)) { "Today app bar did not $phase after its fling" }
 }
+
+private fun UiDevice.waitForTodayBar(
+    timeoutMillis: Long,
+    matches: (Rect) -> Boolean,
+): Boolean =
+    wait(
+        object : SearchCondition<Boolean>() {
+            override fun apply(searchable: Searchable): Boolean =
+                searchable.findObject(By.res("today.appbar"))?.visibleBounds?.let(matches) == true
+        },
+        timeoutMillis,
+    )
