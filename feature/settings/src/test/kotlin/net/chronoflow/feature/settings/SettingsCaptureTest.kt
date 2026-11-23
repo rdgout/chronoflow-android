@@ -25,11 +25,7 @@ class SettingsCaptureTest(
     @Test fun capture() {
         show { SettingsBoardFixture(state, nativeSheet = true, shell = true) }
         val name = "${board}_pixel8_${language.tag}_${if (dark) "dark" else "light"}"
-        if (state == "PendingSheet") {
-            BoardCapture.captureWindow(compose, name, "settings.capture.window")
-        } else {
-            BoardCapture.capture(compose, name)
-        }
+        captureSettingsBoard(compose, name, window = state == "PendingSheet")
     }
 
     companion object {
@@ -47,5 +43,17 @@ class SettingsCaptureTest(
                 arrayOf("SetStates", "SyncStates", AppLanguage.En, false),
                 arrayOf("SetStatesMore", "StoredStates", AppLanguage.En, false),
             )
+    }
+}
+
+internal fun captureSettingsBoard(
+    compose: androidx.compose.ui.test.SemanticsNodeInteractionsProvider,
+    name: String,
+    window: Boolean,
+) {
+    if (window) {
+        BoardCapture.captureWindow(compose, name, "settings.capture.window")
+    } else {
+        BoardCapture.capture(compose, name)
     }
 }

@@ -8,6 +8,15 @@ import net.chronoflow.debug.DebugRouteLabel
 import net.chronoflow.feature.launch.LaunchController
 
 internal object LaunchPlatform {
+    val passwordPromptSeed: String? get() =
+        if (net.chronoflow.debug.DebugSeedRouting.current
+                ?.settingsRoute == "twoFactorSetup"
+        ) {
+            net.chronoflow.core.datamock.MockScenarioValues.password
+        } else {
+            null
+        }
+
     private val wizardSeeds by lazy { java.util.WeakHashMap<AppGraph, net.chronoflow.debug.WizardDebugSeeds>() }
 
     fun prepareWizard(

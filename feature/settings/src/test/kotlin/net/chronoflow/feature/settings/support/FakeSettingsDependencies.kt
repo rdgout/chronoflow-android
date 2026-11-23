@@ -1,7 +1,10 @@
 package net.chronoflow.feature.settings.support
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.job
 import kotlinx.serialization.json.JsonObject
 import net.chronoflow.core.model.OutboxChange
 import net.chronoflow.core.model.ProfileChange
@@ -20,7 +23,30 @@ import net.chronoflow.core.testing.FakePlanClock
 import net.chronoflow.feature.settings.SettingsDependencies
 import java.time.ZoneOffset
 
-class FakeSettingsDependencies : SettingsDependencies {
+class FakeSettingsDependencies(
+    private val clipboardScope: kotlinx.coroutines.CoroutineScope? = null,
+) : SettingsDependencies {
+    override val securityScope by lazy {
+        val owner = checkNotNull(clipboardScope)
+        CoroutineScope(owner.coroutineContext + SupervisorJob(owner.coroutineContext.job))
+    }
+    var security: suspend (net.chronoflow.core.model.api.AccountSecurityChange) ->
+    net.chronoflow.core.model.api.AccountSecurityResult = {
+        net.chronoflow.core.model.api.AccountSecurityResult.Changed
+    }
+
+    override suspend fun requestSecurity(change: net.chronoflow.core.model.api.AccountSecurityChange) = security(change)
+
+    override var passwordPromptSeed: String? = null
+    val clipboardPort = RecordingClipboardPort()
+    override val clipboard by lazy {
+        net.chronoflow.feature.settings.security.SensitiveClipboard(
+            clipboardPort,
+            checkNotNull(clipboardScope),
+            "ChronoFlow",
+        )
+    }
+
     override val snapshot = SessionSnapshot(StoredSession("fixture", "019a562b-8000-7000-8000-000000000071"), 1)
     val account =
         MutableStateFlow<AccountRecord?>(AccountRecord(snapshot.session.accountId, "Rick Gout", "rick@example.com"))
@@ -81,10 +107,39 @@ class FakeSettingsDependencies : SettingsDependencies {
     override val clock = FakePlanClock(settingsNow)
     override val zone = ZoneOffset.UTC
 
-    override suspend fun formatter(): Nothing = error("No old sync date in this fixture")
+    var makeFormatter: suspend () -> net.chronoflow.core.plan.CopyLineFormatter = {
+        net.chronoflow.core.plan
+            .CopyLineFormatter(SettingsFixture.catalog)
+    }
+
+    override suspend fun formatter() = makeFormatter()
 
     override suspend fun enqueueSettings(
         section: SettingsSection,
         patch: JsonObject,
     ) = saveSettings(section, patch)
+}
+
+class RecordingClipboardPort : net.chronoflow.feature.settings.security.ClipboardPort {
+    var text: String? = null
+    var sensitive = false
+    var stamp = 0L
+
+    override fun set(
+        label: String,
+        text: String,
+        sensitive: Boolean,
+    ): Long {
+        this.text = text
+        this.sensitive = sensitive
+        return ++stamp
+    }
+
+    override fun currentTimestamp(): Long = stamp
+
+    override fun clear() {
+        text = null
+    }
+
+    override fun toString(): String = "RecordingClipboardPort(***)"
 }

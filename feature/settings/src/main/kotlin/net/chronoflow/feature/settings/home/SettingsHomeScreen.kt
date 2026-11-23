@@ -93,6 +93,7 @@ enum class SettingsDestination(
         R.string.settings_security,
         R.string.settings_password_two_factor,
         "settings.security",
+        true,
     ),
     BodyClock(
         Route.BodyClock,

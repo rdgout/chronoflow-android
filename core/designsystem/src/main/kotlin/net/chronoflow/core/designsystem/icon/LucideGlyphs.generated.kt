@@ -500,6 +500,15 @@ object LucideGlyphs {
             ),
         )
 
+    val Smartphone =
+        LucideGlyph(
+            "smartphone",
+            listOf(
+                LucidePath("M7 2h10a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2h-10a2 2 0 0 1-2-2v-16a2 2 0 0 1 2-2Z", false),
+                LucidePath("M12 18h.01", false),
+            ),
+        )
+
     val Sparkles =
         LucideGlyph(
             "sparkles",

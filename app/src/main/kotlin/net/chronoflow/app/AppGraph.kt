@@ -357,12 +357,27 @@ class AppGraph(
             )
         }
     val gateRouter: SessionGateRouter by routerLazy
+    private val settingsClipboardLazy =
+        lazy {
+            net.chronoflow.feature.settings.security.SensitiveClipboard(
+                net.chronoflow.feature.settings.security.AndroidClipboardPort(
+                    checkNotNull(app.getSystemService(android.content.ClipboardManager::class.java)),
+                ),
+                appScope,
+                app.getString(net.chronoflow.core.ui.R.string.clipboard_label),
+            )
+        }
+    val settingsClipboard by settingsClipboardLazy
+
     val activation by lazy {
         SessionActivation(
             appScope,
             { dataSources.evictIdleConnections() },
             { sessionSync.setEnabled(it) },
-            { hooks.onForeground() },
+            {
+                if (settingsClipboardLazy.isInitialized()) settingsClipboard.foreground()
+                hooks.onForeground()
+            },
             { controller.retryUnauthorized() },
             { readiness.retry() },
             { controller.activeSession() },

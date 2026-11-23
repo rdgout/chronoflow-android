@@ -8,6 +8,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.ModalBottomSheetProperties
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarData
@@ -38,6 +39,7 @@ fun CfModalBottomSheet(
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
     sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+    properties: ModalBottomSheetProperties = ModalBottomSheetProperties(),
     content: @Composable ColumnScope.() -> Unit,
 ) {
     ModalBottomSheet(
@@ -45,6 +47,7 @@ fun CfModalBottomSheet(
         // A sheet has its own window and cannot inherit the activity root's semantics export.
         modifier.semantics { testTagsAsResourceId = true },
         sheetState = sheetState,
+        properties = properties,
         sheetMaxWidth = SheetMetrics.maxWidth,
         shape = CfTheme.shapes.sheetTop,
         containerColor = CfTheme.colors.card,
@@ -87,10 +90,14 @@ fun CfAlertDialog(
     confirm: CfDialogAction,
     onDismissRequest: () -> Unit,
     dismiss: CfDialogAction? = null,
+    testTag: String? = null,
 ) {
     AlertDialog(
         onDismissRequest,
-        modifier = Modifier.semantics { testTagsAsResourceId = true },
+        modifier =
+            Modifier
+                .then(if (testTag == null) Modifier else Modifier.testTag(testTag))
+                .semantics { testTagsAsResourceId = true },
         confirmButton = { DialogAction(confirm, "cf.dialog.confirm") },
         dismissButton = dismiss?.let { { DialogAction(it, "cf.dialog.dismiss") } },
         title = { Text(title) },
