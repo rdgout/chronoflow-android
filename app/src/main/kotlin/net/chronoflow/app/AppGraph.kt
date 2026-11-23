@@ -77,6 +77,10 @@ class AppGraph(
     internal val launchScope get() = appScope
     internal val processToken = "${Process.myPid()}:${Process.getStartElapsedRealtime()}"
     val launch: LaunchController get() = launchProvider?.invoke() ?: LaunchPlatform.controller(this)
+    val copyCatalogs: net.chronoflow.core.plan.CopyCatalogProvider by lazy {
+        net.chronoflow.core.plan
+            .CopyCatalogProvider(dispatchers.io)
+    }
     val planClock: PlanClock by lazy { SystemPlanClock(app) }
     private val rootMutex by lazy { Mutex() }
     private var resolvedRoot: File? = null

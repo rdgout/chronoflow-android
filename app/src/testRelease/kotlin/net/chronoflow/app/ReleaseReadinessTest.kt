@@ -22,6 +22,16 @@ import org.junit.Test
 import kotlin.time.Duration.Companion.seconds
 
 class ReleaseReadinessTest {
+    @Test fun shellSeedsAndRefreshProbeAreAbsent() {
+        org.junit.Assert.assertNull(LaunchPlatform.shellStart())
+        org.junit.Assert.assertSame(
+            net.chronoflow.core.sync.refresh.RefreshDebugProbe.None,
+            LaunchPlatform.refreshProbe,
+        )
+        missing("net.chronoflow.debug.DebugRefreshProbe")
+        missing("net.chronoflow.debug.DebugShellStart")
+    }
+
     @Test fun passkeyCapabilityIsShippedOff() {
         val message = "Flip only with S1–S3 evidence (docs/passkeys.md)"
         assertFalse(message, net.chronoflow.core.model.passkey.PasskeyCapability.SERVER_READY)

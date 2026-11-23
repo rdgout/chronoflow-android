@@ -32,6 +32,8 @@ The reference and low-end gates stay open until a device exists (OQ-A22).
 | 2026-11-17 | d47ae14-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | benchmarkRelease, Partial(Require) | 100.5/93.5/107.3 | PASS |
 | 2026-11-18 | 88cad27-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | benchmarkRelease, Partial(Require) | 106.3/99.6/119.5 | FAIL |
 | 2026-11-18 | 88cad27-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | benchmarkRelease, Partial(Require) | 107.3/98.9/114.5 | PASS |
+| 2026-11-19 | c3192ed-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | benchmarkRelease, Partial(Require) | 125.0/112.3/145.4 | PASS |
+| 2026-11-19 | c3192ed-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | benchmarkRelease, Partial(Require) | 131.0/116.0/143.7 | PASS |
 
 Device rows: open: device only (OQ-A22).
 
@@ -95,6 +97,8 @@ Every mandated validation command was executed; there is no unrun tier to substi
 | 2026-11-17 | d47ae14-dirty | emulator | sdk_gphone64_arm64 | 60 | benchmarkRelease, Partial(Require) | 38.5 | 9.3 | 191.0 | 93.5/100.0 | PASS |
 | 2026-11-18 | 88cad27-dirty | emulator | sdk_gphone64_arm64 | 60 | benchmarkRelease, Partial(Require) | 40.4 | 8.9 | 191.0 | 97.1/100.0 | PASS |
 | 2026-11-18 | 88cad27-dirty | emulator | sdk_gphone64_arm64 | 60 | benchmarkRelease, Partial(Require) | 40.3 | 12.3 | 191.0 | 99.8/100.0 | PASS |
+| 2026-11-19 | c3192ed-dirty | emulator | sdk_gphone64_arm64 | 60 | benchmarkRelease, Partial(Require) | 47.5 | 10.8 | 191.0 | 98.2/100.0 | PASS |
+| 2026-11-19 | c3192ed-dirty | emulator | sdk_gphone64_arm64 | 60 | benchmarkRelease, Partial(Require) | 51.4 | 16.1 | 190.0 | 98.4/100.0 | PASS |
 
 ## Phase 3a: startup measurements
 
@@ -238,6 +242,19 @@ Orchestrator, 2026-11-18, Apple M4 Max host (indexers idle); `make perf`, pixel 
 
 Run 1 (`build/perf/startup/20261118T114418Z-88cad27-…`) exited 1: one `welcomeInteractiveMs` iteration was 0.8 ms over its hard gate (one late frame; the other nine were 2550–2565 ms). Run 2 (`build/perf/startup/20261118T114735Z-88cad27-…`) exited 0, with its maximum 0.07 ms under the gate. The gate (2550 ms designed hand-off plus one 60 Hz frame plus 1 ms) leaves no room for a single late emulator frame; this is recorded as a follow-up rather than relaxed here. Cold TTID moved from 95.8 ms (Phase 3a row) to 106–107 ms, +11%, inside the ±25% flag threshold. See [Phase 4e results](phase-4e-results.md) for functional validation.
 
+
+## Phase 6a session (2026-11-19)
+
+Emulator `pixel` (API 36, 4 cores / 2 GB), `benchmarkRelease`, `Partial(Require)`, host load 2–3. Run with `make perf` on `c3192ed`, before and after `make baseline-profile`.
+
+| Metric | Before regeneration | After regeneration | 4e (`88cad27`, run 2) |
+|---|---|---|---|
+| Cold TTID median/min/max ms | 125.0 / 112.3 / 145.4 | 131.0 / 116.0 / 143.7 | 107.3 / 98.9 / 114.5 |
+| `first-commit` median ms | 47.5 | 51.4 | 40.3 |
+| Warm TTID median ms | 27.5 | 30.6 | — |
+| Launch `frameOverrunMs` P99 | 10.8 | 16.1 | 12.3 |
+
+Every hard gate passed in both runs. Cold TTID is report-only and far inside the plan target (median ≤ 400 ms). Still, signed-out cold start has drifted +17–22% since 4e, and regenerating the profiles did not recover it. `first-commit` grew by about 11 ms, so the extra cost is before the first composition commit, on the signed-out welcome path. The 6a shell is not on that path. The 5c launch-intent capture and the 5d eager `auth.verification` collector are. Follow-up: OQ-A247.
 
 ## Release size
 

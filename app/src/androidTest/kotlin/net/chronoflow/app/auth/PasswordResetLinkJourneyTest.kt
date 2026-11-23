@@ -36,6 +36,7 @@ class PasswordResetLinkJourneyTest : ScreenTest() {
         val graph = app.graph
         compose.waitUntilExactlyOneExists(hasTestTag("forgot.email"), 15_000)
         compose.onNodeWithTag("forgot.email").performTextInput("demo@example.com")
+        waitForImeToSettle("forgot.submit")
         compose.onNodeWithTag("forgot.submit").performScrollTo().performClick()
         compose.waitUntilExactlyOneExists(hasTestTag("forgot.notice"), 15_000)
         val link =
@@ -51,6 +52,7 @@ class PasswordResetLinkJourneyTest : ScreenTest() {
         compose.waitUntilExactlyOneExists(hasTestTag("reset.password"), 15_000)
         compose.onNodeWithTag("reset.password").performTextInput("NewPassword12!")
         compose.onNodeWithTag("reset.confirmation").performTextInput("NewPassword12!")
+        waitForImeToSettle("reset.submit")
         compose.onNodeWithTag("reset.submit").performScrollTo().performClick()
         compose.waitUntilExactlyOneExists(hasTestTag("reset.continue"), 15_000)
         compose.onNodeWithTag("reset.continue").performClick()

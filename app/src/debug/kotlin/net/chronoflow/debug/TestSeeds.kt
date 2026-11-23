@@ -38,6 +38,8 @@ object TestSeeds {
         sessionCipher: SessionCipher? = null,
         dispatchers: AppDispatchers? = null,
     ) = withContext(io) {
+        DebugShellStart.reset()
+        DebugRefreshProbe.reset()
         UITestTimeline.record("seed-begin", seed)
         if (seed.testId != null) {
             val app = context.applicationContext as ChronoFlowApp

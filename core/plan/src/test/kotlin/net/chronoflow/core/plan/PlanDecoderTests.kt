@@ -93,7 +93,7 @@ class PlanDecoderTests {
                         throw IndexOutOfBoundsException()
                     }
                 }
-            decoder.detail(TripPlanSnapshot(record, checks))
+            decoder.detail(TripPlanSnapshot(plan = record, checks = checks))
             assertThat(readsOnWorker.isNotEmpty()).isEqualTo(true)
             assertThat(readsOnWorker.all { it }).isEqualTo(true)
         }
@@ -137,7 +137,7 @@ class PlanDecoderTests {
             val key = block.checkKey!!
             val row =
                 CheckMarkRecord(record.tripId, record.inputHash, key.type.raw, key.localDate, key.ordinal, "done", "t")
-            val merged = decoder.detail(TripPlanSnapshot(record, listOf(row)))!!
+            val merged = decoder.detail(TripPlanSnapshot(plan = record, checks = listOf(row)))!!
             assertThat(merged.checkState.marks.size).isEqualTo(1)
             assertThat(decoder.detail(record).checkState.marks).isEmpty()
             assertThat(decoder.decodeCount).isEqualTo(1)
