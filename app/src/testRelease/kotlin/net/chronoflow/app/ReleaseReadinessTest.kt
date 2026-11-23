@@ -36,4 +36,16 @@ class ReleaseReadinessTest {
     fun releaseIsNotDebuggable() {
         assertThat(BuildConfig.DEBUG).isFalse()
     }
+
+    @Test
+    fun releaseShipsNoActivityTestHooksOrRecordingFixtures() {
+        val names =
+            MainActivity::class.java.declaredFields.map { it.name } +
+                MainActivity::class.java.declaredMethods.map { it.name }
+        val removedHooks = listOf("fontPreloadOverride", "themeProbe")
+        assertThat(names.any { name -> removedHooks.any { name.contains(it, ignoreCase = true) } }).isFalse()
+        missing("net.chronoflow.app.RootThemeTest")
+        missing("net.chronoflow.app.RootThemeTest\$RecordingApplication")
+        missing("net.chronoflow.app.RootThemeTest\$RecordingFontPreloader")
+    }
 }

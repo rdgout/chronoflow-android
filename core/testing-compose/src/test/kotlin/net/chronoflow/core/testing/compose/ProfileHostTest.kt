@@ -10,9 +10,9 @@ import androidx.compose.ui.unit.LayoutDirection
 import assertk.assertThat
 import assertk.assertions.isBetween
 import assertk.assertions.isEqualTo
+import net.chronoflow.core.designsystem.layout.LocalSafeInsets
 import net.chronoflow.core.testing.DeviceProfiles
 import net.chronoflow.core.testing.tiers.Logic
-import net.chronoflow.core.ui.LocalSafeInsets
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.RuleChain

@@ -31,11 +31,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import assertk.assertFailure
 import assertk.assertions.isInstanceOf
+import net.chronoflow.core.designsystem.layout.LocalSafeInsets
+import net.chronoflow.core.designsystem.semantics.ellipsizable
 import net.chronoflow.core.model.config.AppLanguage
 import net.chronoflow.core.testing.DeviceProfiles
 import net.chronoflow.core.testing.tiers.Logic
-import net.chronoflow.core.ui.LocalSafeInsets
-import net.chronoflow.core.ui.semantics.ellipsizable
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.RuleChain

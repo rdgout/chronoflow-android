@@ -15,8 +15,8 @@ import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import net.chronoflow.core.designsystem.semantics.Ellipsizable
 import net.chronoflow.core.testing.DeviceProfile
-import net.chronoflow.core.ui.semantics.Ellipsizable
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -135,11 +135,12 @@ object Guards {
                 val ellipsized = (0 until layout.lineCount).any { layout.isLineEllipsized(it) }
                 // hasVisualOverflow is true for any text narrower than its paragraph, so measure the lines instead.
                 val lastLine = layout.lineCount - 1
+                // Centered line edges round independently; their difference can exceed the rounded text width by one pixel.
                 val clipped =
                     layout.multiParagraph.didExceedMaxLines ||
                         (0..lastLine).any {
                             layout.getLineRight(it) - layout.getLineLeft(it) >
-                                layout.size.width + TOLERANCE
+                                layout.size.width + 1f
                         } ||
                         layout.getLineBottom(lastLine) > layout.size.height + TOLERANCE
                 if (ellipsized || clipped) {
@@ -240,6 +241,7 @@ object Guards {
         rule: SemanticsNodeInteractionsProvider,
         profile: DeviceProfile,
         minInkFraction: Float = 0.005f,
+        minChannelDifference: Int = 16,
     ) {
         val image = rule.onRoot().captureToImage()
         val (width, height) = windowPx(profile)
@@ -254,7 +256,7 @@ object Guards {
         for (p in pixels) counts.merge(p, 1, Int::plus)
         val background = counts.maxBy { it.value }.key
         var ink = 0
-        for (p in pixels) if (differs(p, background)) ink++
+        for (p in pixels) if (differs(p, background, minChannelDifference)) ink++
         val fraction = ink.toFloat() / pixels.size
         if (fraction <
             minInkFraction
@@ -266,11 +268,12 @@ object Guards {
     private fun differs(
         a: Int,
         b: Int,
+        minimum: Int,
     ): Boolean =
-        abs((a ushr 24) - (b ushr 24)) > 16 ||
-            abs(((a shr 16) and 0xFF) - ((b shr 16) and 0xFF)) > 16 ||
-            abs(((a shr 8) and 0xFF) - ((b shr 8) and 0xFF)) > 16 ||
-            abs((a and 0xFF) - (b and 0xFF)) > 16
+        abs((a ushr 24) - (b ushr 24)) > minimum ||
+            abs(((a shr 16) and 0xFF) - ((b shr 16) and 0xFF)) > minimum ||
+            abs(((a shr 8) and 0xFF) - ((b shr 8) and 0xFF)) > minimum ||
+            abs((a and 0xFF) - (b and 0xFF)) > minimum
 
     fun assertAll(
         rule: SemanticsNodeInteractionsProvider,

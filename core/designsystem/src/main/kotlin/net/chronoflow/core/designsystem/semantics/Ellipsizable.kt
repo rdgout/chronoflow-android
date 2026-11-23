@@ -1,4 +1,4 @@
-package net.chronoflow.core.ui.semantics
+package net.chronoflow.core.designsystem.semantics
 
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.SemanticsPropertyKey
