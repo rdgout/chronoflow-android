@@ -1,6 +1,7 @@
 package net.chronoflow.app
 
 import android.app.Application
+import android.content.ComponentName
 import android.os.Process
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
@@ -9,6 +10,7 @@ import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -18,16 +20,24 @@ import net.chronoflow.app.auth.VerificationSessionAdapter
 import net.chronoflow.app.auth.mockResetMail
 import net.chronoflow.app.links.AuthLinkDispatcher
 import net.chronoflow.app.links.AuthLinkRouting
+import net.chronoflow.app.reminders.AndroidReminderStrings
+import net.chronoflow.app.reminders.AppLanguageSource
+import net.chronoflow.app.reminders.AppReminderRuntime
+import net.chronoflow.app.reminders.ReminderSessionHooks
 import net.chronoflow.app.wizard.SessionTripWizardDependencies
 import net.chronoflow.core.data.clock.SystemPlanClock
 import net.chronoflow.core.data.passkey.CredentialManagerClient
 import net.chronoflow.core.data.passkey.PasskeyAnchor
+import net.chronoflow.core.data.reminders.AndroidReminderAlarms
+import net.chronoflow.core.data.reminders.AndroidReminderNotices
+import net.chronoflow.core.data.reminders.ReminderPermissions
+import net.chronoflow.core.data.reminders.ReminderService
+import net.chronoflow.core.data.reminders.ReminderWork
 import net.chronoflow.core.data.repository.AccountModel
 import net.chronoflow.core.data.repository.OutboxRepository
 import net.chronoflow.core.data.session.AccountReadinessRepository
 import net.chronoflow.core.data.session.AccountWiper
 import net.chronoflow.core.data.session.GuestSecrets
-import net.chronoflow.core.data.session.NoopSessionHooks
 import net.chronoflow.core.data.session.SessionAccountDatabase
 import net.chronoflow.core.data.session.SessionHooks
 import net.chronoflow.core.data.sync.ConnectivitySyncPathMonitor
@@ -38,6 +48,7 @@ import net.chronoflow.core.datastore.DeviceIdentityStore
 import net.chronoflow.core.datastore.DevicePreferences
 import net.chronoflow.core.datastore.KeystoreGuestSecretStore
 import net.chronoflow.core.datastore.KeystoreSessionStore
+import net.chronoflow.core.datastore.WipeMarker
 import net.chronoflow.core.datastore.androidDeviceName
 import net.chronoflow.core.model.guest.GuestSecretStore
 import net.chronoflow.core.model.passkey.CredentialClient
@@ -47,11 +58,14 @@ import net.chronoflow.core.model.session.SessionStore
 import net.chronoflow.core.model.session.readStoredSession
 import net.chronoflow.core.model.store.StoreFailure
 import net.chronoflow.core.navigation.LaunchIntentHandler
+import net.chronoflow.core.navigation.ReminderTapRouter
 import net.chronoflow.core.navigation.RootNavigator
 import net.chronoflow.core.navigation.Route
 import net.chronoflow.core.navigation.toRoute
 import net.chronoflow.core.network.DataSourceFactory
+import net.chronoflow.core.plan.CopyLineFormatter
 import net.chronoflow.core.plan.PlanClock
+import net.chronoflow.core.plan.PlanDecoder
 import net.chronoflow.core.sync.SessionSync
 import net.chronoflow.core.sync.SyncScheduler
 import net.chronoflow.core.sync.session.AccountReadinessSource
@@ -68,6 +82,7 @@ import net.chronoflow.feature.auth.verify.VerificationCoordinator
 import net.chronoflow.feature.launch.LaunchController
 import net.chronoflow.feature.launch.LaunchTrace
 import java.io.File
+import java.time.Instant
 
 class AppGraph(
     private val app: Application,
@@ -213,7 +228,11 @@ class AppGraph(
                 namespace,
                 AndroidAccountDriverFactory(app),
                 dispatchers.io,
-                detach = { sessionGraphs.drop() },
+                detach = {
+                    reminderTaps.clear()
+                    reminderService.detach()
+                    sessionGraphs.drop()
+                },
             )
         }
     val sessionAccounts: SessionAccountDatabase by accountsLazy
@@ -223,10 +242,59 @@ class AppGraph(
             sessionStore.readStoredSession()?.token
         }, dispatchers.io)
     }
+    val reminderPermissions by lazy { ReminderPermissions(app, devicePreferences, dispatchers.io) }
+    val reminderStrings by lazy { AndroidReminderStrings(app) }
+    val appLanguage by lazy { AppLanguageSource(languageApplier, dispatchers.io) }
+    val reminderNotices by lazy { AndroidReminderNotices(app, dispatchers.io, reminderStrings::channelName) }
+    private val reminderServiceLazy =
+        lazy {
+            ReminderService(
+                AndroidReminderAlarms(app, dispatchers.io),
+                reminderNotices,
+                permission = { reminderPermissions.refresh() },
+                language = { appLanguage.current() },
+                strings = reminderStrings,
+                formatter = { CopyLineFormatter(copyCatalogs.catalog()) },
+                decoder = PlanDecoder(dispatchers.default),
+                clock = { reminderRuntime.clock() },
+                dispatcher = dispatchers.default,
+            )
+        }
+    val reminderService: ReminderService by reminderServiceLazy
+    val reminderTaps by lazy { ReminderTapRouter() }
+    private val reminderDeliveryGate by lazy {
+        net.chronoflow.core.data.reminders
+            .ReminderDeliveryGate()
+    }
+    val reminderRuntime by lazy {
+        AppReminderRuntime(
+            io = dispatchers.io,
+            scope = appScope,
+            notificationIcon = R.drawable.ic_stat_moon,
+            component = { ComponentName(app, MainActivity::class.java) },
+            clock = { Instant.now() },
+            sessionStore = sessionStore,
+            wipeMarker = { WipeMarker(File(storageRoot(), namespace.directoryName), dispatchers.io) },
+            prepareBackground = { activation.prepareBackground() },
+            startSessionGraphs = { sessionGraphs.start() },
+            session = { readiness.session() },
+            attachedAccount = reminderService.attachedAccount,
+            reschedule = { reminderService.reschedule() },
+            delivered = reminderService::delivered,
+            ensureChannel = { reminderNotices.ensureChannel(appLanguage.current()) },
+            deliveryGate = reminderDeliveryGate,
+        )
+    }
     val accountModel by lazy { AccountModel(appScope) }
     val hooks: SessionHooks by lazy {
         net.chronoflow.app.guest
-            .GuestSessionHooks(guestWizardStore, NoopSessionHooks)
+            .GuestSessionHooks(
+                guestWizardStore,
+                ReminderSessionHooks(
+                    { reminderService.reschedule() },
+                    { reminderService.detach() },
+                ),
+            )
     }
     val rootNavigator by lazy { RootNavigator() }
     internal val guestRecoveryScheduler by lazy {
@@ -319,7 +387,10 @@ class AppGraph(
     }
     val authLinkRouting: AuthLinkRouting by lazy { AuthLinkRouting(appScope, resetRouter, auth.verification) }
 
-    val launchIntentHandler: LaunchIntentHandler by lazy { LaunchIntentHandler {} }
+    val launchIntentHandler: LaunchIntentHandler by lazy {
+        net.chronoflow.app.reminders
+            .ReminderTapDispatcher(reminderTaps)
+    }
     private val syncLazy: Lazy<SessionSync> =
         lazy {
             SessionSync(
@@ -368,11 +439,15 @@ class AppGraph(
                         ).pending().size
                     },
                     flush = { sessionSync.refreshNow() },
-                    beginWipe = wiper::begin,
+                    beginWipe = { id -> reminderDeliveryGate.beginWipe { wiper.begin(id) } },
                     erase = wiper::erase,
                     finishWipe = wiper::finish,
                     logout = { dataSources.forSession(it).signOut() },
                     detach = {
+                        withContext(dispatchers.io) {
+                            ReminderWork.cancelAll(app)
+                            reminderNotices.removeDelivered()
+                        }
                         accountModel.detach()
                         withContext(dispatchers.main) { onSignedOut() }
                     },
@@ -412,6 +487,11 @@ class AppGraph(
                 appScope,
                 dispatchers.io,
                 copyCatalogs = copyCatalogs,
+                attachReminders = { reminderService.attach(it) },
+                detachReminders = { reminderService.detach() },
+                clearReminderTaps = { reminderTaps.clear() },
+                ensureRefill = { ReminderWork.ensureRefill(app) },
+                rescheduleReminders = { reminderService.reschedule() },
             ).also {
                 it.start()
             }
@@ -472,6 +552,7 @@ class AppGraph(
         if (firstCommit.isCompleted) return
         LaunchTrace.beginSession()
         firstCommit.complete(Unit)
+        appScope.launch(dispatchers.io) { reminderRuntime.ensureChannel() }
     }
 
     suspend fun finishLaunch() =
@@ -528,6 +609,7 @@ class AppGraph(
             stopSyncIfStarted()
             if (graphsLazy.isInitialized()) sessionGraphs.close()
             if (accountsLazy.isInitialized()) sessionAccounts.close()
+            if (reminderServiceLazy.isInitialized()) reminderService.close()
             if (readinessLazy.isInitialized()) readiness.close()
             if (controllerLazy.isInitialized()) controller.close()
             appScope.cancel()

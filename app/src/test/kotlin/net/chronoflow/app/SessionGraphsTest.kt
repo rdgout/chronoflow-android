@@ -86,4 +86,57 @@ class SessionGraphsTest {
                 f.close()
             }
         }
+
+    @Test fun reminderAttachmentPrecedesTheAccountModel() =
+        runTest(timeout = 60.seconds) {
+            val f = AppSessionFixture(StandardTestDispatcher(testScheduler), backgroundScope)
+            f.attachReminders = { assertEquals(AccountModel.LoadState.Unknown, f.model.state.value) }
+            try {
+                f.controller.accept(sessionResult())
+                assertTrue(eventually { f.model.state.value is AccountModel.LoadState.Loaded })
+                assertTrue(f.reminderEvents.indexOf("attach") < f.reminderEvents.indexOf("refill"))
+            } finally {
+                f.close()
+            }
+        }
+
+    @Test fun staleReminderAttachmentIsDetachedWithoutAttachingTheModel() =
+        runTest(timeout = 60.seconds) {
+            val f = AppSessionFixture(StandardTestDispatcher(testScheduler), backgroundScope)
+            val entered = kotlinx.coroutines.CompletableDeferred<Unit>()
+            val release = kotlinx.coroutines.CompletableDeferred<Unit>()
+            f.attachReminders = {
+                entered.complete(Unit)
+                release.await()
+            }
+            try {
+                f.controller.accept(sessionResult())
+                entered.await()
+                f.controller.signOut(true, true)
+                f.reminderEvents.clear()
+                release.complete(Unit)
+                runCurrent()
+                assertTrue("detach" in f.reminderEvents)
+                assertTrue("refill" !in f.reminderEvents)
+                assertEquals(AccountModel.LoadState.Unknown, f.model.state.value)
+            } finally {
+                release.complete(Unit)
+                f.close()
+            }
+        }
+
+    @Test fun dropClearsTapsThenRemindersThenTheModel() =
+        runTest(timeout = 60.seconds) {
+            val f = AppSessionFixture(StandardTestDispatcher(testScheduler), backgroundScope)
+            try {
+                f.controller.accept(sessionResult())
+                assertTrue(eventually { f.model.state.value is AccountModel.LoadState.Loaded })
+                f.reminderEvents.clear()
+                f.graphs.drop()
+                assertEquals(listOf("taps", "detach"), f.reminderEvents)
+                assertEquals(AccountModel.LoadState.Unknown, f.model.state.value)
+            } finally {
+                f.close()
+            }
+        }
 }

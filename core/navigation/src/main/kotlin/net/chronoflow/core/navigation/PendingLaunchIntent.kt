@@ -24,7 +24,19 @@ data class ReminderTapExtras(
     val blockId: String? = null,
     val accountId: String? = null,
     val inputHash: String? = null,
-)
+) {
+    companion object {
+        fun parse(
+            tripId: String?,
+            blockId: String?,
+            accountId: String?,
+            inputHash: String?,
+        ): ReminderTapExtras? {
+            if (tripId.isNullOrEmpty() || tripId.any { it == '/' || it == '?' || it == '#' }) return null
+            return ReminderTapExtras(tripId, blockId, accountId, inputHash)
+        }
+    }
+}
 
 fun interface LaunchIntentHandler {
     suspend fun handle(intent: PendingLaunchIntent)

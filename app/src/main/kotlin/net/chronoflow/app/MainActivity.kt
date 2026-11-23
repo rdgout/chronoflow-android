@@ -57,7 +57,10 @@ class MainActivity : ComponentActivity() {
         val freshLaunch =
             savedInstanceState == null && (intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) == 0
         graph.pendingLaunchIntents.capture(intent, restored = savedInstanceState != null)
-        setIntent(Intent(intent).setData(null))
+        setIntent(
+            net.chronoflow.app.reminders
+                .sanitizedLaunchIntent(intent),
+        )
         graph.authLinks.deliver()
         val overrides = LaunchPlatform.overrides(intent, graph)
         val kind = launch.onActivityCreated(savedInstanceState, overrides.skipOverlay, overrides)

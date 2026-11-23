@@ -71,6 +71,7 @@ androidx-window = { module = "androidx.window:window", version.ref = "window" }
 androidx-datastore = { module = "androidx.datastore:datastore", version.ref = "datastore" }
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
 androidx-work-runtime = { module = "androidx.work:work-runtime", version.ref = "work" }
+androidx-work-testing = { module = "androidx.work:work-testing", version.ref = "work" }
 androidx-tracing = { module = "androidx.tracing:tracing", version.ref = "tracing" }
 androidx-tracing-ktx = { module = "androidx.tracing:tracing-ktx", version.ref = "tracing" }
 androidx-profileinstaller = { module = "androidx.profileinstaller:profileinstaller", version.ref = "profileinstaller" }

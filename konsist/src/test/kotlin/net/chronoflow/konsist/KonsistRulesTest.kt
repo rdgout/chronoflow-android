@@ -43,7 +43,11 @@ class KonsistRulesTest : KonsistTest() {
 
     @Test fun noWorkManagerOutsideRemindersRejectsPlantedViolation() {
         assertFailure { noWorkManagerOutsideReminders(violations("noWorkManagerOutsideReminders")) }
-            .messageContains("noWorkManagerOutsideReminders violated")
+            .all {
+                messageContains("noWorkManagerOutsideReminders violated")
+                messageContains("Other.kt")
+                messageContains("BackgroundFlush.kt")
+            }
     }
 
     @Test fun noWorkManagerOutsideRemindersAllowsControl() =

@@ -7,12 +7,15 @@ android {
 }
 
 dependencies {
+    implementation(libs.androidx.work.runtime)
+    testImplementation(libs.androidx.work.testing)
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services.auth)
     implementation(project(":core:datastore"))
     testImplementation(testFixtures(project(":core:sync")))
     testImplementation(project(":core:database-testing"))
     api(project(":core:plan"))
+    api(project(":core:reminders"))
     api(project(":core:sync"))
     api(project(":core:database"))
     implementation(libs.kotlinx.serialization.json)
@@ -26,6 +29,9 @@ dependencies {
     implementation(libs.kotlinx.coroutines.core)
 
     testImplementation(project(":core:testing"))
+    testImplementation(project(":core:ui"))
+    testImplementation(platform(libs.compose.bom))
+    testImplementation(libs.androidx.datastore.preferences)
     testImplementation(project(":core:testing-junit"))
     implementation(project(":core:wizard"))
     testImplementation(libs.junit4)

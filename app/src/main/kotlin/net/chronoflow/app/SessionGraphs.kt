@@ -7,6 +7,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.filterNotNull
@@ -33,14 +34,25 @@ class SessionGraphs(
     private val scope: CoroutineScope,
     private val io: CoroutineDispatcher = Dispatchers.IO,
     private val copyCatalogs: net.chronoflow.core.plan.CopyCatalogProvider? = null,
+    private val attachReminders: suspend (net.chronoflow.core.database.AccountDatabase) -> Unit,
+    private val detachReminders: suspend () -> Unit,
+    private val clearReminderTaps: () -> Unit,
+    private val ensureRefill: suspend () -> Unit,
+    private val rescheduleReminders: suspend () -> Unit,
 ) {
     private val mutableCurrent = MutableStateFlow<SessionGraph?>(null)
     val current = mutableCurrent.asStateFlow()
     private val context = scope.coroutineContext.minusKey(Job)
     private var observer: Job? = null
+    private var reminderEvents: Job? = null
 
     fun start() {
         if (observer != null) return
+        reminderEvents =
+            scope.launch {
+                net.chronoflow.app.reminders
+                    .rescheduleRemindersAfterSync(sync.events(), rescheduleReminders)
+            }
         observer =
             scope.launch {
                 controller.updates.filterNotNull().collect { update ->
@@ -58,6 +70,12 @@ class SessionGraphs(
                         ) {
                             return@collect
                         }
+                        attachReminders(database)
+                        if (controller.epoch != update.epoch || controller.presence != update.presence) {
+                            detachReminders()
+                            return@collect
+                        }
+                        withContext(io) { ensureRefill() }
                         mutableCurrent.value?.scope?.cancel()
                         val graph =
                             SessionGraph(
@@ -86,14 +104,19 @@ class SessionGraphs(
 
     suspend fun drop() =
         withContext(NonCancellable + context) {
+            clearReminderTaps()
+            detachReminders()
             mutableCurrent.value?.scope?.cancel()
             mutableCurrent.value = null
             accountModel.detach()
         }
 
-    suspend fun close() {
-        observer?.cancel()
-        observer = null
-        drop()
-    }
+    suspend fun close() =
+        withContext(NonCancellable) {
+            observer?.cancelAndJoin()
+            observer = null
+            reminderEvents?.cancelAndJoin()
+            reminderEvents = null
+            drop()
+        }
 }

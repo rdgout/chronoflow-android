@@ -1,8 +1,31 @@
 package net.chronoflow.core.navigation.shell
 
+import net.chronoflow.core.navigation.ReminderTapExtras
 import net.chronoflow.core.navigation.Route
 
 object ShellNav {
+    fun reminderTap(
+        state: ShellNavState,
+        tap: ReminderTapExtras,
+        token: String,
+    ): ShellNavState =
+        state.copy(
+            selected = ShellTab.Trips,
+            stacks =
+                state.stacks + (
+                    ShellTab.Trips to
+                        listOf(
+                            Route.Trips,
+                            Route.TripPage(
+                                tripId = tap.tripId,
+                                blockId = tap.blockId,
+                                notificationInputHash = tap.inputHash,
+                                notificationToken = token,
+                            ),
+                        )
+                ),
+        )
+
     fun root(tab: ShellTab): Route =
         when (tab) {
             ShellTab.Today -> Route.Today

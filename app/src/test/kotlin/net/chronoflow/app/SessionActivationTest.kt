@@ -192,4 +192,53 @@ class SessionActivationTest {
             stop.await()
             assertEquals(listOf("evict", "enabled:true", "enabled:false"), events)
         }
+
+    @Test fun prepareBackgroundDisablesSyncOnlyBeforeTheFirstStart() =
+        runTest(timeout = 60.seconds) {
+            val enabled = mutableListOf<Boolean>()
+            val activation = SessionActivation(backgroundScope, {}, { enabled += it }, {}, {}, {}, { null }, {})
+            activation.prepareBackground()
+            assertEquals(listOf(false), enabled)
+            activation.setActive(true)
+            assertEquals(listOf(false, true), enabled)
+            activation.prepareBackground()
+            activation.setActive(false)
+            activation.prepareBackground()
+            assertEquals(listOf(false, true, false), enabled)
+        }
+
+    @Test fun foregroundReschedulesAfterTheGuestHook() =
+        runTest(timeout = 60.seconds) {
+            val events = mutableListOf<String>()
+            val dispatcher = StandardTestDispatcher(testScheduler)
+            val root =
+                net.chronoflow.core.database.testing.TestRoots
+                    .temporaryStoreRoot()
+            val guest =
+                net.chronoflow.core.wizard.model.GuestWizardStore(
+                    {
+                        events += "guest"
+                        java.io.File(root, "guest.json")
+                    },
+                    dispatcher,
+                    { net.chronoflow.core.testing.reminders.reminderNow },
+                )
+            val reminders =
+                net.chronoflow.app.reminders.ReminderSessionHooks(
+                    { events += "reschedule" },
+                    { events += "detach" },
+                )
+            try {
+                val hooks =
+                    net.chronoflow.app.guest
+                        .GuestSessionHooks(guest, reminders)
+                val activation = SessionActivation(backgroundScope, {}, {}, hooks::onForeground, {}, {}, { null }, {})
+                activation.setActive(true)
+                assertEquals(listOf("guest", "reschedule"), events)
+                hooks.onSessionEnding()
+                assertEquals(listOf("guest", "reschedule", "detach"), events)
+            } finally {
+                root.deleteRecursively()
+            }
+        }
 }

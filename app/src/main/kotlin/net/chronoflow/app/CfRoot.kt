@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.hideFromAccessibility
@@ -77,6 +78,10 @@ internal fun CfRoot(
     initialTheme: ThemeChoice = ThemeChoice.System,
     content: (@Composable () -> Unit)? = null,
 ) {
+    val reminderLanguage =
+        LocalResources.current.configuration.locales[0]
+            .language
+    LaunchedEffect(graph, reminderLanguage) { graph.reminderService.reschedule() }
     val root by graph.rootNavigator.state.collectAsState()
     val displayedRoute = root.route ?: graph.launch.route?.toRoute()
     val activity = LocalActivity.current

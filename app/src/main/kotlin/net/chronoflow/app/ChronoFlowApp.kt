@@ -1,11 +1,24 @@
 package net.chronoflow.app
 
 import android.app.Application
+import android.util.Log
+import androidx.work.Configuration
 import net.chronoflow.app.diagnostics.DebugStrictMode
 import net.chronoflow.app.diagnostics.LaunchPath
 import net.chronoflow.feature.launch.LaunchTrace
 
-open class ChronoFlowApp : Application() {
+open class ChronoFlowApp :
+    Application(),
+    Configuration.Provider,
+    net.chronoflow.core.data.reminders.ReminderHost {
+    override val reminderRuntime get() = graph.reminderRuntime
+    override val workManagerConfiguration: Configuration
+        get() =
+            Configuration
+                .Builder()
+                .setMinimumLoggingLevel(if (BuildConfig.DEBUG) Log.INFO else Log.ERROR)
+                .build()
+
     val launchPath = LaunchPath()
 
     lateinit var graph: AppGraph

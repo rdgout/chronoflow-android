@@ -22,6 +22,12 @@ class SessionActivation(
     private val resume: suspend (SessionSnapshot) -> Unit,
 ) : DefaultLifecycleObserver {
     private val mutex = Mutex()
+    private var startedOnce = false
+
+    suspend fun prepareBackground() =
+        mutex.withLock {
+            if (!startedOnce) setEnabled(false)
+        }
 
     override fun onStart(owner: LifecycleOwner) {
         scope.launch { setActive(true) }
@@ -36,6 +42,7 @@ class SessionActivation(
             if (!active) {
                 withContext(NonCancellable) { setEnabled(false) }
             } else {
+                startedOnce = true
                 evictIdleConnections()
                 setEnabled(true)
                 onForeground()
