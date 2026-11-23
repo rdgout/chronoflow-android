@@ -622,7 +622,7 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A37 | Settings column on wide windows | 560 dp (`07` OQ-11) | 10a |
 | OQ-A38 | Debug key in production `assetlinks.json`? | Never | 13 |
 | OQ-A39 | AAB language splits | Off (in-app language switch) | 13 |
-| OQ-A40 | iOS deferred "keep pending edits on login upsert" | Already done at the pin (`SessionAccountDatabase.swift:29–48`, `StoreApplication.swift:51–60`); 4d ports it as it is, with store-level `LoginUpsertTests`. Tell iOS only that its deferred-fix checkbox (`plan.md:2327`) can be ticked | 4d |
+| OQ-A40 | iOS deferred "keep pending edits on login upsert" | Already done at the pin (`SessionAccountDatabase.swift:29–48`, `StoreApplication.swift:51–60`); 4d ports it as it is, with store-level `LoginUpsertTests`. Tell iOS only that its deferred-fix checkbox (`plan.md:2327`) can be ticked. 4d: store-level `LoginUpsertTests` added. | 4d |
 | OQ-A41 | Play Data safety answers, shared with the undecided iOS privacy label | `14 §9.2` answers | 13 |
 | OQ-A42 | Material chrome has no Android boards (`08` OQ 1) | Build per the Material mapping, capture each component light/dark en/nl in Phase 14, and ask the designer to confirm | 2, 14 |
 | OQ-A43 | Adaptive icon horizon crop (`08` OQ 15) | Ship `_design/canvas/icon/android/*` unchanged | 0b |
@@ -748,6 +748,11 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A164 | (4c-15) How do string limits and password classes retain Swift Unicode semantics? | Apply one shared BreakIterator(Locale.ROOT) grapheme counter to every Swift String.count limit, including passwords, passkey names/challenges/assertions/claim fields and airport queries. Classify password code points with Character.getType; use codePointCount only for Swift unicodeScalars.count (device and sign-up names). Verify emoji and decomposed accents at limits, Ä as uppercase, and rejection of all-uppercase passwords. | 4c |
 | OQ-A165 | (4c-1) Split guest mock review and registration claim into 11a/11b? | Port the full intertwined MockDataSource now, including sign-in/passkey claim replay and guest registration. 11a/11b verify the mock and retain their UI/API work. | 4c, 11a, 11b |
 | OQ-A166 | (4c-13) Should 4e repeat mock-class release lookups? | No: 4c adds mockDataSourceIsAbsent for MockDataSource, MockAppSeed, MockServerState and MockScenarioValues. 4e retains its other release-readiness assertions and reuses this proof. | 4c, 4e |
+| OQ-A167 | (4d-4) iOS still lists login upsert as deferred although the pin preserves pending edits. | Port the pin unchanged; 4d adds store-level LoginUpsertTests, while the feature-level tests stay with Phases 8 and 10a–10b. OQ-A40 records the implemented behavior. | 4d, 8, 10a–10b |
+| OQ-A168 | (4d-5) Which phase owns the validated network callback monitor? | 4d builds and tests ConnectivitySyncPathMonitor with the current state first; 4e wires it through SessionSync.makePath. It remains a trigger hint. | 4d, 4e |
+| OQ-A169 | (4d-12) How can JVM sync and session logic share StoreFailure with the Android database? | Move the unchanged failure type to :core:model, package net.chronoflow.core.model.store. The database and 4e import that one definition. | 4d, 4e |
+| OQ-A170 | (4d-14) Who owns SyncLifecycle and SessionSync, also described by 4e? | 4d ports both with ActiveSyncDatabase, event replay and plan retention. 4e reuses them, makes SessionAccountStore implement ActiveSyncDatabase, adds requestStart and wires the monitor; it does not add a second NetworkSyncHint or SessionSync. | 4d, 4e |
+| OQ-A171 | (4d-17) WorkManager is forbidden outside reminders, but 12b needs Configuration.Provider on the app Application. | Keep the rule literal in 4d. In 12b, add one named exception for the Application file and record it; background sync and flush remain forbidden. | 4d, 12b |
 | OQ-0a-22 | Native libraries in the bundle? | Allow only `libandroidx.graphics.path.so` (Compose graphics-path; excluding it breaks Path conversion below API 34); fail on any other `.so` | 0a, 13 |
 | OQ-0b-1 | Where does `PlanMetrics` live? `08 §3.1` lists it inside `CfDimens`, but its consumer `:core:plan` is a JVM module that cannot depend on `:core:designsystem` | `core/plan/…/generated/PlanMetrics.generated.kt` (Double, dp), as iOS keeps it in `PlanCore` | 0b, 1b, 1c |
 | OQ-0b-2 | Port all iOS TokenGen outputs now (Auth, Settings, Terms, Welcome, PlanUI, Press, LaunchPaint, TypeMetrics), or only colors, sky and type? | All of them now (the iOS files are exact goldens and Phases 2, 3a, 3c, 5a, 9 and 10 need them) | 0b |
@@ -1834,24 +1839,32 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
   - `Packages/ChronoFlowKit/Sources/AppCore/OutboxChange.swift`
   - `Packages/ChronoFlowKit/Tests/SyncTests/`
 
-**Delivers.** Ports SyncEngine and the outbox rules: the full pull in the iOS order, one flight per epoch with coalescing, the 1 s debounce and refreshNow, backoff with retry-after, FIFO chains, rekeying, the stale-plan rule, final refusal with undo, and parked unsupported kinds. It adds the repositories whose mutations write their outbox row in the same transaction, and plan retention leases with eviction. It builds the login upsert that preserves pending local edits, which iOS still lists as a deferred fix. The iOS sync suite (35+ cases) is ported as JVM tests.
+**Delivers.** Ports SyncEngine and the outbox rules: the full pull in the iOS order, one flight per epoch with coalescing, the 1 s debounce and refreshNow, backoff with retry-after, FIFO chains, rekeying, the stale-plan rule, final refusal with undo, and parked unsupported kinds. It adds the repositories whose mutations write their outbox row in the same transaction, and plan retention leases with eviction. It builds the login upsert that preserves pending local edits, which iOS still lists as a deferred fix. The iOS sync suite (115 cases including the LocalStore cases moved from 4a) is ported as JVM tests.
 
 **Tasks**
-- [ ] **SyncEngine** (`core/sync/…`).
+- [x] **Task 0: shared store failure and JDBC test driver.** Move StoreFailure to :core:model and the JDBC helpers to test-only :core:database-testing; guard imports with Konsist.
+- [x] **Task 1: stored outbox payloads.**
+- [x] **Task 2: sync values, failure policy and plan retention.**
+- [x] **Task 3b: repository observation and AccountModel.**
+- [x] **Task 4: full pull.**
+- [x] **Task 6: sync engine flights.**
+- [x] **Task 9: network path monitor.**
+
+- [x] **SyncEngine** (`core/sync/…`).
   - Pull order: users/me → account → trips → one transaction → details.
   - One flight per epoch, with coalescing, a 1 s debounce, and `refreshNow`.
   - Backoff is `min(1 s × 2^n, 5 min)`, or a larger `retryAfterSeconds` from the server.
   - Every response is checked against the epoch.
-- [ ] **Outbox**, ported from `OutboxChange`.
+- [x] **Outbox**, ported from `OutboxChange`.
   - FIFO by `(created_at, id)`, with chains per `settings:<section>`, `trip:<tripId>` and kind.
   - Rekeying, and the stale-plan rule.
   - A final refusal is recorded in `settings.syncFailure`, and the change is undone (`StoreApplication.refuse`). Final means any 4xx except 401, 408, 425 and 429, and not email-unverified. Walkthrough rows are never refused. A stale check-off (409, or 422 on `plan_input_hash` or with the `form` sentence "This plan has changed. Refresh it before marking this step.") is kept for rekeying, never refused. A refused check-off with a notice sets its trip's `plan_versions.detail_version` to NULL (iOS `OutboxFlusher.swift:93–107`).
   - Unsupported kinds are parked (OQ 31).
   - A 401 signals a forced wipe, except that a walkthrough POST 401 keeps its row.
   - A 403 `email_unverified` goes to the verify gate and never wipes.
-- [ ] **Repositories** (`core/data/…/repository/`): trips, plans, marks, settings and walkthrough. Every mutation writes its domain row and its outbox row in one transaction. Plans have retention leases and eviction. Also port `AccountModel` and the LocalStore cases moved from 4a: `RecordsTests.allRecordsRoundTripUnknownJSONNullsAndCompositeKeys` and `repositoriesBindKeysAndOrderOutboxByTimestampThenID` (without their draft halves), and all six `RepositoryObservationTests`. Build on 4a's `RecordMapping` and `AccountDatabase.observe`.
-- [ ] **Preserving login upsert** (OQ-A40), a port of iOS `SessionAccountDatabase.upsert` (`SessionAccountDatabase.swift:29–48`). Server data never overwrites a field that has a pending outbox change. Tests cover the RN `store-account.ts:10–23,46–64` scenario and its reverse.
-- [ ] **Ported tests.** Port iOS `Tests/SyncTests` (35+ cases) to the JVM with `FakeDataSource`, a fake clock and the JDBC driver, keeping the names.
+- [x] **Repositories** (`core/data/…/repository/`): trips, plans, marks, settings and walkthrough. Every mutation writes its domain row and its outbox row in one transaction. Plans have retention leases and eviction. Also port `AccountModel` and the LocalStore cases moved from 4a: `RecordsTests.allRecordsRoundTripUnknownJSONNullsAndCompositeKeys` and `repositoriesBindKeysAndOrderOutboxByTimestampThenID` (without their draft halves), and all six `RepositoryObservationTests`. Build on 4a's `RecordMapping` and `AccountDatabase.observe`.
+- [x] **Preserving login upsert** (OQ-A40), a port of iOS `SessionAccountDatabase.upsert` (`SessionAccountDatabase.swift:29–48`). Server data never overwrites a field that has a pending outbox change. Tests cover the RN `store-account.ts:10–23,46–64` scenario and its reverse.
+- [x] **Ported tests.** Port iOS `Tests/SyncTests` (115 cases including the LocalStore cases moved from 4a) to the JVM with `ScriptedSource`, a fake clock and the JDBC driver, keeping the names.
 
 **Acceptance**
 - Every ported case and the upsert cases pass.

@@ -72,7 +72,6 @@ class ContractsTests {
         }.isInstanceOf<SerializationException>()
     }
 
-    // The outbox half of the Swift test lands with the outbox in 4d.
     @Test
     fun inputWireKeysAndOutboxRoundTrips() {
         val input =
@@ -97,6 +96,77 @@ class ContractsTests {
         assertThat(obj["language"]).isEqualTo(JsonPrimitive("nl"))
         assertThat(obj.containsKey("deviceID")).isEqualTo(false)
         assertThat(ApiJson.response.decodeFromString(RegisterInput.serializer(), text)).isEqualTo(input)
+    }
+
+    @Test fun inputWireKeysAndOutboxRoundTripsOutbox() {
+        val change = net.chronoflow.core.model.OutboxChange.Walkthrough
+        assertThat(
+            net.chronoflow.core.model.store.OutboxPayload.change(
+                net.chronoflow.core.model.store.OutboxPayload
+                    .record(change, "id", "now"),
+            ),
+        ).isEqualTo(change)
+    }
+
+    @Test fun inputWireKeysAndOutboxRoundTripsOutboxProfile() =
+        outboxRoundTrip(
+            net.chronoflow.core.model.OutboxChange.Profile(
+                net.chronoflow.core.model
+                    .ProfileChange("Test", "test@example.com"),
+            ),
+        )
+
+    @Test fun inputWireKeysAndOutboxRoundTripsOutboxPolicies() =
+        outboxRoundTrip(
+            net.chronoflow.core.model.OutboxChange
+                .Policies("1.0"),
+        )
+
+    @Test fun inputWireKeysAndOutboxRoundTripsOutboxSettings() =
+        outboxRoundTrip(
+            net.chronoflow.core.model.OutboxChange.Settings(
+                net.chronoflow.core.model.SettingsSection.Reminders,
+                JsonObject(mapOf("light" to JsonPrimitive(true))),
+            ),
+        )
+
+    @Test fun inputWireKeysAndOutboxRoundTripsOutboxCheckOff() =
+        outboxRoundTrip(
+            net.chronoflow.core.model.OutboxChange.CheckOff(
+                net.chronoflow.core.model.CheckOffChange(
+                    "test",
+                    "fake",
+                    net.chronoflow.core.model.contracts.BlockType.Sleep,
+                    "2026-11-10",
+                    1,
+                    null,
+                ),
+            ),
+        )
+
+    @Test fun inputWireKeysAndOutboxRoundTripsOutboxUnsupported() {
+        val payload = JsonObject(mapOf("future" to kotlinx.serialization.json.JsonNull))
+        val row =
+            net.chronoflow.core.model.store
+                .OutboxRecord("id", "complete-trip", payload.toString(), "now")
+        assertThat(
+            net.chronoflow.core.model.store.OutboxPayload
+                .change(row),
+        ).isEqualTo(
+            net.chronoflow.core.model.OutboxChange.Unsupported(
+                net.chronoflow.core.model.OutboxKind.CompleteTrip,
+                payload,
+            ),
+        )
+    }
+
+    private fun outboxRoundTrip(change: net.chronoflow.core.model.OutboxChange) {
+        assertThat(
+            net.chronoflow.core.model.store.OutboxPayload.change(
+                net.chronoflow.core.model.store.OutboxPayload
+                    .record(change, "id", "now"),
+            ),
+        ).isEqualTo(change)
     }
 
     private val assertionJson =

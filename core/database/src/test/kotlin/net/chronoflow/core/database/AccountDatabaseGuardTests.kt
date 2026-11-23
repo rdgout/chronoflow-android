@@ -15,6 +15,7 @@ import net.chronoflow.core.model.AccountID
 import net.chronoflow.core.model.session.SessionMutationPermit
 import net.chronoflow.core.model.session.StaleSessionException
 import net.chronoflow.core.model.session.SyncEpoch
+import net.chronoflow.core.model.store.StoreFailure
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse

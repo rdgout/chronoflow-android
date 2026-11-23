@@ -19,6 +19,7 @@ import net.chronoflow.core.database.testing.long
 import net.chronoflow.core.database.testing.string
 import net.chronoflow.core.model.AccountID
 import net.chronoflow.core.model.session.StorageNamespace
+import net.chronoflow.core.model.store.StoreFailure
 import org.junit.After
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals

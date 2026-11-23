@@ -6,8 +6,8 @@ import app.cash.sqldelight.db.SqlSchema
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import net.chronoflow.core.database.AccountDb
 import net.chronoflow.core.database.AccountDriverFactory
-import net.chronoflow.core.database.StoreFailure
 import net.chronoflow.core.database.checkConfiguration
+import net.chronoflow.core.model.store.StoreFailure
 import java.io.File
 import java.sql.SQLException
 import java.util.Properties
