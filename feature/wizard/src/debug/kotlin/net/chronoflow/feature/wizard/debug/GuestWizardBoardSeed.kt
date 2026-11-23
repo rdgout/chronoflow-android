@@ -48,6 +48,7 @@ object GuestWizardBoardSeed {
     fun presentation(board: String): WizardInitialPresentation =
         WizardBoardCaptureSeed.presentation(shared(board)).copy(
             discardDialogVisible = WizardBoardCaptureSeed.baseName(board) == "WizardDiscardGuest",
+            presentSignUp = board.startsWith("GuestSignup"),
         )
 
     fun uiOverride(board: String): WizardUiOverride? =

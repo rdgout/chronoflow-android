@@ -2,9 +2,12 @@ package net.chronoflow.app.guest
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalResources
 import androidx.lifecycle.ProcessLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.MutableCreationExtras
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
@@ -16,7 +19,6 @@ import net.chronoflow.app.auth.LazyPublicDataSource
 import net.chronoflow.core.navigation.WizardMode
 import net.chronoflow.feature.wizard.TripWizardDependenciesKey
 import net.chronoflow.feature.wizard.TripWizardViewModel
-import net.chronoflow.feature.wizard.guest.GuestSignUpLauncher
 import net.chronoflow.feature.wizard.shell.WizardRoot
 import net.chronoflow.feature.wizard.ui.WizardInitialPresentationKey
 
@@ -30,6 +32,14 @@ internal fun GuestWizardRoute(
         remember(graph, revision, locale) {
             viewModelFactory {
                 initializer {
+                    val signup =
+                        GuestSignupCoordinator(
+                            graph.auth,
+                            graph.rootNavigator,
+                            revision,
+                            LaunchPlatform.guestSignupSeed,
+                            LaunchPlatform.guestSignupPrefill,
+                        )
                     val dependencies =
                         GuestWizardDependencies(
                             graph.guestWizardStore,
@@ -40,10 +50,7 @@ internal fun GuestWizardRoute(
                             graph.dispatchers,
                             CoroutineScope(graph.appScope.coroutineContext + graph.dispatchers.io),
                             { LaunchPlatform.guestWizardInstant ?: graph.planClock.now },
-                            GuestSignUpLauncher { onDismissed ->
-                                LaunchPlatform.guestSignUpRequested()
-                                onDismissed()
-                            },
+                            signup,
                             graph.copyCatalogs,
                             seed =
                                 if (LaunchPlatform.guestWizardSeedEnabled) {
@@ -60,6 +67,7 @@ internal fun GuestWizardRoute(
                         }, graph.guestWizardStore, graph.guestSecrets, graph.dispatchers),
                         graph.appScope,
                         LaunchPlatform.guestWizardPresentation,
+                        signup,
                     )
                 }
             }
@@ -90,4 +98,8 @@ internal fun GuestWizardRoute(
         holder.observeForeground(model, ProcessLifecycleOwner.get().lifecycle)
     }
     WizardRoot(model) { holder.close(model) }
+    holder.signup?.let { coordinator ->
+        val shown by coordinator.presentation.collectAsStateWithLifecycle()
+        shown?.let { presentation -> key(presentation.id) { GuestSignupRoute(presentation, coordinator) } }
+    }
 }

@@ -168,7 +168,7 @@ private class Fixture(
             },
             { "id" },
             { "test" },
-            { sessionCalls++ },
+            { _, _ -> sessionCalls++ },
         )
     val reset =
         GuestResetLinkRouter({ presence }, updates, scope.backgroundScope) {

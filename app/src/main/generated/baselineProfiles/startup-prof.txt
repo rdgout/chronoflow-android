@@ -16693,7 +16693,7 @@ SPLkotlin/text/StringsKt__StringsKt;->contains(Ljava/lang/CharSequence;Ljava/lan
 SPLkotlin/text/StringsKt__StringsKt;->endsWith$default(Ljava/lang/CharSequence;CZILjava/lang/Object;)Z
 HSPLkotlin/text/StringsKt__StringsKt;->endsWith(Ljava/lang/CharSequence;CZ)Z
 SPLkotlin/text/StringsKt__StringsKt;->getLastIndex(Ljava/lang/CharSequence;)I
-SPLkotlin/text/StringsKt__StringsKt;->indexOf$default(Ljava/lang/CharSequence;CIZILjava/lang/Object;)I
+HSPLkotlin/text/StringsKt__StringsKt;->indexOf$default(Ljava/lang/CharSequence;CIZILjava/lang/Object;)I
 SPLkotlin/text/StringsKt__StringsKt;->indexOf$default(Ljava/lang/CharSequence;Ljava/lang/String;IZILjava/lang/Object;)I
 HSPLkotlin/text/StringsKt__StringsKt;->indexOf(Ljava/lang/CharSequence;CIZ)I
 SPLkotlin/text/StringsKt__StringsKt;->indexOf(Ljava/lang/CharSequence;Ljava/lang/String;IZ)I
@@ -19567,6 +19567,7 @@ SPLnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda20;-><init>()V
 SPLnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda20;-><init>(Lnet/chronoflow/app/AppGraph;)V
 SPLnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda20;->invoke()Ljava/lang/Object;
 Lnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda21;
+SPLnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda21;-><init>()V
 SPLnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda21;-><init>(Lnet/chronoflow/app/AppGraph;)V
 SPLnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda21;->invoke()Ljava/lang/Object;
 Lnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda22;
@@ -19629,7 +19630,7 @@ PLnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda35;->invoke()Ljava/lang/Ob
 Lnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda36;
 SPLnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda36;-><init>()V
 SPLnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda36;-><init>(Lnet/chronoflow/app/AppGraph;)V
-SPLnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda36;->invoke()Ljava/lang/Object;
+PLnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda36;->invoke()Ljava/lang/Object;
 Lnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda37;
 SPLnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda37;-><init>()V
 SPLnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda37;-><init>(Lnet/chronoflow/app/AppGraph;)V
@@ -19658,6 +19659,7 @@ SPLnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda42;-><init>()V
 PLnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda42;-><init>(Lnet/chronoflow/app/AppGraph;)V
 PLnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda42;->invoke()Ljava/lang/Object;
 Lnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda43;
+SPLnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda43;-><init>()V
 PLnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda43;-><init>(Lnet/chronoflow/app/AppGraph;)V
 PLnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda43;->invoke()Ljava/lang/Object;
 Lnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda44;
@@ -19668,6 +19670,7 @@ SPLnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda45;-><init>()V
 PLnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda45;-><init>(Lnet/chronoflow/app/AppGraph;)V
 PLnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda45;->invoke()Ljava/lang/Object;
 Lnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda46;
+SPLnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda46;-><init>()V
 PLnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda46;-><init>(Lnet/chronoflow/app/AppGraph;)V
 SPLnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda46;->invoke()Ljava/lang/Object;
 Lnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda47;
@@ -19680,6 +19683,7 @@ SPLnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda48;-><init>(Lnet/chronofl
 SPLnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda48;->invoke()Ljava/lang/Object;
 Lnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda49;
 PLnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda49;-><init>(Lnet/chronoflow/app/AppGraph;)V
+SPLnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda49;->invoke()Ljava/lang/Object;
 Lnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda5;
 SPLnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda5;-><init>()V
 SPLnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda5;-><init>(Lnet/chronoflow/app/AppGraph;)V
@@ -19690,6 +19694,7 @@ SPLnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda50;->invoke()Ljava/lang/O
 Lnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda51;
 PLnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda51;-><init>()V
 SPLnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda51;-><init>(Lnet/chronoflow/app/AppGraph;)V
+SPLnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda51;->invoke()Ljava/lang/Object;
 Lnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda52;
 PLnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda52;-><init>(Lnet/chronoflow/app/AppGraph;)V
 Lnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda53;
@@ -19697,9 +19702,12 @@ PLnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda53;-><init>(Lnet/chronoflo
 PLnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda53;->invoke()Ljava/lang/Object;
 Lnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda54;
 SPLnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda54;-><init>()V
-SPLnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda54;-><init>(Lnet/chronoflow/app/AppGraph;)V
+PLnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda54;-><init>(Lnet/chronoflow/app/AppGraph;)V
+PLnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda54;->invoke()Ljava/lang/Object;
 Lnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda55;
 PLnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda55;-><init>(Lnet/chronoflow/app/AppGraph;)V
+Lnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda56;
+PLnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda56;-><init>(Lnet/chronoflow/app/AppGraph;)V
 Lnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda59;
 SPLnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda59;-><init>(Lnet/chronoflow/app/AppGraph;)V
 Lnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda6;
@@ -19712,6 +19720,11 @@ Lnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda61;
 PLnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda61;-><init>(Lnet/chronoflow/app/AppGraph;)V
 Lnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda62;
 PLnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda62;-><init>()V
+SPLnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda62;-><init>(Lnet/chronoflow/app/AppGraph;)V
+Lnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda63;
+PLnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda63;-><init>(Lnet/chronoflow/app/AppGraph;)V
+Lnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda64;
+PLnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda64;-><init>()V
 Lnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda7;
 SPLnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda7;-><init>()V
 SPLnet/chronoflow/app/AppGraph$$ExternalSyntheticLambda7;-><init>(Lnet/chronoflow/app/AppGraph;)V
@@ -19770,6 +19783,10 @@ Lnet/chronoflow/app/AppGraph$activation$2$7;
 SPLnet/chronoflow/app/AppGraph$activation$2$7;-><init>(Lnet/chronoflow/app/AppGraph;Lkotlin/coroutines/Continuation;)V
 Lnet/chronoflow/app/AppGraph$auth$2$1;
 PLnet/chronoflow/app/AppGraph$auth$2$1;-><init>(Lnet/chronoflow/app/AppGraph;Lkotlin/coroutines/Continuation;)V
+Lnet/chronoflow/app/AppGraph$auth$2$10;
+PLnet/chronoflow/app/AppGraph$auth$2$10;-><init>(Lnet/chronoflow/app/AppGraph;Lkotlin/coroutines/Continuation;)V
+Lnet/chronoflow/app/AppGraph$auth$2$11;
+PLnet/chronoflow/app/AppGraph$auth$2$11;-><init>(Lnet/chronoflow/app/AppGraph;Lkotlin/coroutines/Continuation;)V
 Lnet/chronoflow/app/AppGraph$auth$2$2;
 PLnet/chronoflow/app/AppGraph$auth$2$2;-><init>(Lnet/chronoflow/app/AppGraph;)V
 Lnet/chronoflow/app/AppGraph$auth$2$3;
@@ -20560,6 +20577,8 @@ Lnet/chronoflow/app/auth/AuthServices;
 PLnet/chronoflow/app/auth/AuthServices;->$r8$lambda$xTXGgkq4BN6OwsU_gi1yeEllosE(Lnet/chronoflow/app/auth/AuthServices;)Lnet/chronoflow/feature/auth/verify/VerificationCoordinator;
 PLnet/chronoflow/app/auth/AuthServices;-><init>(Lnet/chronoflow/core/navigation/RootNavigator;Lkotlinx/coroutines/CoroutineScope;Lnet/chronoflow/app/AppDispatchers;Lnet/chronoflow/core/model/DataSource;Lnet/chronoflow/feature/auth/model/SessionAcceptor;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;ZLnet/chronoflow/feature/auth/model/passkey/PasskeyAssertionProviding;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function0;)V
 PLnet/chronoflow/app/auth/AuthServices;-><init>(Lnet/chronoflow/core/navigation/RootNavigator;Lkotlinx/coroutines/CoroutineScope;Lnet/chronoflow/app/AppDispatchers;Lnet/chronoflow/core/model/DataSource;Lnet/chronoflow/feature/auth/model/SessionAcceptor;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;ZLnet/chronoflow/feature/auth/model/passkey/PasskeyAssertionProviding;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+PLnet/chronoflow/app/auth/AuthServices;-><init>(Lnet/chronoflow/core/navigation/RootNavigator;Lkotlinx/coroutines/CoroutineScope;Lnet/chronoflow/app/AppDispatchers;Lnet/chronoflow/core/model/DataSource;Lnet/chronoflow/feature/auth/model/SessionAcceptor;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function3;ZLnet/chronoflow/feature/auth/model/passkey/PasskeyAssertionProviding;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;)V
+PLnet/chronoflow/app/auth/AuthServices;-><init>(Lnet/chronoflow/core/navigation/RootNavigator;Lkotlinx/coroutines/CoroutineScope;Lnet/chronoflow/app/AppDispatchers;Lnet/chronoflow/core/model/DataSource;Lnet/chronoflow/feature/auth/model/SessionAcceptor;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function3;ZLnet/chronoflow/feature/auth/model/passkey/PasskeyAssertionProviding;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 PLnet/chronoflow/app/auth/AuthServices;->access$getNavigator$p(Lnet/chronoflow/app/auth/AuthServices;)Lnet/chronoflow/core/navigation/RootNavigator;
 PLnet/chronoflow/app/auth/AuthServices;->access$setForgotModel$p(Lnet/chronoflow/app/auth/AuthServices;Lnet/chronoflow/feature/auth/model/ForgotPasswordModel;)V
 PLnet/chronoflow/app/auth/AuthServices;->access$setResetModel$p(Lnet/chronoflow/app/auth/AuthServices;Lnet/chronoflow/feature/auth/model/ResetPasswordModel;)V
@@ -20571,6 +20590,7 @@ PLnet/chronoflow/app/auth/AuthServices$$ExternalSyntheticLambda0;-><init>(Lnet/c
 PLnet/chronoflow/app/auth/AuthServices$$ExternalSyntheticLambda0;->invoke()Ljava/lang/Object;
 Lnet/chronoflow/app/auth/AuthServices$$ExternalSyntheticLambda1;
 PLnet/chronoflow/app/auth/AuthServices$$ExternalSyntheticLambda1;-><init>(Lnet/chronoflow/app/auth/AuthServices;Lnet/chronoflow/feature/auth/model/SessionAcceptor;ZLnet/chronoflow/feature/auth/model/passkey/PasskeyAssertionProviding;)V
+PLnet/chronoflow/app/auth/AuthServices$$ExternalSyntheticLambda1;-><init>(Lnet/chronoflow/app/auth/AuthServices;Lnet/chronoflow/feature/auth/model/SessionAcceptor;ZLnet/chronoflow/feature/auth/model/passkey/PasskeyAssertionProviding;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;)V
 Lnet/chronoflow/app/auth/AuthServices$2;
 PLnet/chronoflow/app/auth/AuthServices$2;-><init>(Lnet/chronoflow/app/auth/AuthServices;Lkotlin/jvm/internal/Ref$ObjectRef;Lkotlin/coroutines/Continuation;)V
 PLnet/chronoflow/app/auth/AuthServices$2;->create(Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Lkotlin/coroutines/Continuation;
@@ -20581,12 +20601,23 @@ Lnet/chronoflow/app/auth/AuthServices$2$1;
 PLnet/chronoflow/app/auth/AuthServices$2$1;-><init>(Lnet/chronoflow/app/auth/AuthServices;Lkotlin/jvm/internal/Ref$ObjectRef;)V
 PLnet/chronoflow/app/auth/AuthServices$2$1;->emit(Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 PLnet/chronoflow/app/auth/AuthServices$2$1;->emit(Lnet/chronoflow/core/navigation/RootState;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+Lnet/chronoflow/app/auth/AuthServices$4;
+PLnet/chronoflow/app/auth/AuthServices$4;-><init>(Lnet/chronoflow/app/auth/AuthServices;Lkotlin/jvm/internal/Ref$ObjectRef;Lkotlin/coroutines/Continuation;)V
+PLnet/chronoflow/app/auth/AuthServices$4;->create(Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Lkotlin/coroutines/Continuation;
+PLnet/chronoflow/app/auth/AuthServices$4;->invoke(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+PLnet/chronoflow/app/auth/AuthServices$4;->invoke(Lkotlinx/coroutines/CoroutineScope;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+PLnet/chronoflow/app/auth/AuthServices$4;->invokeSuspend(Ljava/lang/Object;)Ljava/lang/Object;
+Lnet/chronoflow/app/auth/AuthServices$4$1;
+PLnet/chronoflow/app/auth/AuthServices$4$1;-><init>(Lnet/chronoflow/app/auth/AuthServices;Lkotlin/jvm/internal/Ref$ObjectRef;)V
+PLnet/chronoflow/app/auth/AuthServices$4$1;->emit(Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+PLnet/chronoflow/app/auth/AuthServices$4$1;->emit(Lnet/chronoflow/core/navigation/RootState;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 Lnet/chronoflow/app/auth/AuthServices$identity$1;
 PLnet/chronoflow/app/auth/AuthServices$identity$1;-><init>(Lnet/chronoflow/app/auth/AuthServices;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)V
 Lnet/chronoflow/app/auth/AuthServices$name$1;
 PLnet/chronoflow/app/auth/AuthServices$name$1;-><init>(Lnet/chronoflow/app/auth/AuthServices;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)V
 Lnet/chronoflow/app/auth/AuthServices$router$1;
 PLnet/chronoflow/app/auth/AuthServices$router$1;-><init>(Lnet/chronoflow/app/auth/AuthServices;Lkotlin/jvm/functions/Function1;)V
+PLnet/chronoflow/app/auth/AuthServices$router$1;-><init>(Lnet/chronoflow/app/auth/AuthServices;Lkotlin/jvm/functions/Function3;)V
 Lnet/chronoflow/app/auth/AuthServicesKt;
 PLnet/chronoflow/app/auth/AuthServicesKt;->access$isAuth(Lnet/chronoflow/core/navigation/Route;)Z
 PLnet/chronoflow/app/auth/AuthServicesKt;->isAuth(Lnet/chronoflow/core/navigation/Route;)Z
@@ -20784,6 +20815,7 @@ Lnet/chronoflow/app/shell/AppShellKt$$ExternalSyntheticLambda7;
 SPLnet/chronoflow/app/shell/AppShellKt$$ExternalSyntheticLambda7;-><init>(Lnet/chronoflow/app/AppGraph;Lnet/chronoflow/app/shell/ShellViewModel;Landroidx/compose/runtime/State;Landroidx/compose/runtime/State;)V
 Lnet/chronoflow/app/shell/AppShellKt$AppShell$1$1;
 SPLnet/chronoflow/app/shell/AppShellKt$AppShell$1$1;-><init>(Lnet/chronoflow/app/AppGraph;Landroidx/compose/runtime/State;Lnet/chronoflow/app/wizard/WizardLauncher;Landroidx/compose/runtime/State;Lkotlin/coroutines/Continuation;)V
+SPLnet/chronoflow/app/shell/AppShellKt$AppShell$1$1;-><init>(Lnet/chronoflow/app/AppGraph;Landroidx/compose/runtime/State;Lnet/chronoflow/app/wizard/WizardLauncher;Lnet/chronoflow/app/shell/ShellViewModel;Landroidx/compose/runtime/State;Lkotlin/coroutines/Continuation;)V
 SPLnet/chronoflow/app/shell/AppShellKt$AppShell$1$1;-><init>(Lnet/chronoflow/app/shell/ShellViewModel;Lkotlin/coroutines/Continuation;)V
 SPLnet/chronoflow/app/shell/AppShellKt$AppShell$1$1;-><init>(Lnet/chronoflow/app/wizard/WizardLauncher;Lkotlin/coroutines/Continuation;)V
 SPLnet/chronoflow/app/shell/AppShellKt$AppShell$1$1;->create(Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Lkotlin/coroutines/Continuation;
@@ -20908,6 +20940,13 @@ SPLnet/chronoflow/app/shell/AppShellScaffoldKt$$ExternalSyntheticLambda9;-><init
 SPLnet/chronoflow/app/shell/AppShellScaffoldKt$$ExternalSyntheticLambda9;-><init>(Lnet/chronoflow/core/navigation/Route;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function3;)V
 SPLnet/chronoflow/app/shell/AppShellScaffoldKt$$ExternalSyntheticLambda9;->invoke(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
 SPLnet/chronoflow/app/shell/AppShellScaffoldKt$$ExternalSyntheticLambda9;->invoke(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+Lnet/chronoflow/app/shell/RememberShellViewModelKt;
+SPLnet/chronoflow/app/shell/RememberShellViewModelKt;->$r8$lambda$OEtaoC0umMeH1vydrcDoTgw9uNk(Lnet/chronoflow/core/navigation/Route;Landroidx/lifecycle/viewmodel/CreationExtras;)Lnet/chronoflow/app/shell/ShellViewModel;
+SPLnet/chronoflow/app/shell/RememberShellViewModelKt;->rememberShellViewModel$lambda$0$0(Lnet/chronoflow/core/navigation/Route;Landroidx/lifecycle/viewmodel/CreationExtras;)Lnet/chronoflow/app/shell/ShellViewModel;
+SPLnet/chronoflow/app/shell/RememberShellViewModelKt;->rememberShellViewModel(Lnet/chronoflow/core/navigation/Route;Landroidx/compose/runtime/Composer;I)Lnet/chronoflow/app/shell/ShellViewModel;
+Lnet/chronoflow/app/shell/RememberShellViewModelKt$$ExternalSyntheticLambda0;
+SPLnet/chronoflow/app/shell/RememberShellViewModelKt$$ExternalSyntheticLambda0;-><init>(Lnet/chronoflow/core/navigation/Route;)V
+SPLnet/chronoflow/app/shell/RememberShellViewModelKt$$ExternalSyntheticLambda0;->invoke(Ljava/lang/Object;)Ljava/lang/Object;
 Lnet/chronoflow/app/shell/ShellViewModel;
 SPLnet/chronoflow/app/shell/ShellViewModel;-><init>(Lnet/chronoflow/core/navigation/shell/ShellNavState;)V
 SPLnet/chronoflow/app/shell/ShellViewModel;->getMutableState()Lnet/chronoflow/core/navigation/shell/ShellNavState;
@@ -26297,6 +26336,8 @@ SPLnet/chronoflow/feature/trip/timeline/TimelineJankTaggerKt$$ExternalSyntheticL
 Lnet/chronoflow/feature/wizard/ui/WizardInitialPresentation;
 SPLnet/chronoflow/feature/wizard/ui/WizardInitialPresentation;-><init>(Ljava/lang/String;ZLjava/lang/String;)V
 SPLnet/chronoflow/feature/wizard/ui/WizardInitialPresentation;-><init>(Ljava/lang/String;ZLjava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+SPLnet/chronoflow/feature/wizard/ui/WizardInitialPresentation;-><init>(Ljava/lang/String;ZLjava/lang/String;Z)V
+SPLnet/chronoflow/feature/wizard/ui/WizardInitialPresentation;-><init>(Ljava/lang/String;ZLjava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
 Lokhttp3/CertificatePinner$$ExternalSyntheticBUOutline0;
 Lokhttp3/HttpUrl;
 SPLokhttp3/HttpUrl;-><clinit>()V

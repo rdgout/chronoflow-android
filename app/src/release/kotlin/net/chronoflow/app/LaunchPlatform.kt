@@ -52,7 +52,8 @@ internal object LaunchPlatform {
         now: java.time.Instant,
     ): net.chronoflow.core.wizard.model.MemberWizardDraft = draft
 
-    val guestSignUpRequested: () -> Unit = {}
+    val guestSignupSeed: net.chronoflow.app.guest.GuestSignupSeeding? = null
+    val guestSignupPrefill: net.chronoflow.app.guest.GuestSignupPrefilling? = null
 
     fun welcomeDestinations(navigator: RootNavigator): WelcomeDestinations = RoutedWelcomeDestinations(navigator)
 

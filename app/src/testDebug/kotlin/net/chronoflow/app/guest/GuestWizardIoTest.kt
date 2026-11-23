@@ -275,7 +275,7 @@ class GuestWizardIoTest {
                 AppDispatchers(main, io, worker),
                 writer,
                 now,
-                GuestSignUpLauncher { it() },
+                GuestSignUpLauncher { it.signUpDismissed(needsReview = false, onGuestRoute = true) },
                 seed = { original ->
                     val draft = GuestWizardBoardSeed.draft(original, "WizardGuestJourney", Locale.ENGLISH, now())
                     persistedDraft = draft

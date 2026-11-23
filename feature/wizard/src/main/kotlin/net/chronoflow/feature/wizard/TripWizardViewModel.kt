@@ -61,6 +61,7 @@ import net.chronoflow.core.wizard.model.finishReturn
 import net.chronoflow.core.wizard.model.finishRoute
 import net.chronoflow.core.wizard.model.finishSleep
 import net.chronoflow.core.wizard.model.firstScreen
+import net.chronoflow.core.wizard.model.guestReviewExpired
 import net.chronoflow.core.wizard.model.hasChanges
 import net.chronoflow.core.wizard.model.isEditing
 import net.chronoflow.core.wizard.model.navigationPath
@@ -87,6 +88,7 @@ import net.chronoflow.feature.wizard.answers.WizardAnswerSheetState
 import net.chronoflow.feature.wizard.checking.CheckingOutcome
 import net.chronoflow.feature.wizard.checking.WizardHapticCue
 import net.chronoflow.feature.wizard.finetune.promptLegIndex
+import net.chronoflow.feature.wizard.guest.GuestSignUpHost
 import net.chronoflow.feature.wizard.shell.WizardEvent
 import net.chronoflow.feature.wizard.shell.WizardExit
 import net.chronoflow.feature.wizard.shell.WizardStepKey
@@ -107,7 +109,8 @@ class TripWizardViewModel(
     entry: WizardEntry,
     deps: TripWizardDependencies?,
     presentation: WizardInitialPresentation = WizardInitialPresentation(),
-) : ViewModel() {
+) : ViewModel(),
+    GuestSignUpHost {
     private val mutableFormatter = MutableStateFlow<net.chronoflow.core.plan.CopyLineFormatter?>(null)
     val copyFormatter = mutableFormatter.asStateFlow()
     private val uiOverride = deps?.uiOverride
@@ -301,6 +304,42 @@ class TripWizardViewModel(
                 }
             }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
 
+    private suspend fun requestGuestSignUp(model: MemberWizardModel) {
+        val launcher = signUpLauncher ?: return
+        if (model.guestAuthenticationPresented) return
+        model.setGuestAuthenticationPresented(true)
+        model.flush()
+        if (model.closed || model.persistenceFailed) {
+            model.setGuestAuthenticationPresented(false)
+        } else {
+            launcher.request(this)
+        }
+    }
+
+    override fun signUpDismissed(
+        needsReview: Boolean,
+        onGuestRoute: Boolean,
+    ) {
+        if (viewModelScope.coroutineContext[kotlinx.coroutines.Job]?.isActive != true) return
+        val model = wizard ?: return
+        model.setGuestAuthenticationPresented(false)
+        if (!onGuestRoute || model.closed) return
+        if (needsReview) model.guestReviewExpired()
+        model.readyTick()
+    }
+
+    override suspend fun prepareSignIn() {
+        if (viewModelScope.coroutineContext[kotlinx.coroutines.Job]?.isActive != true) return
+        val model = wizard ?: return
+        model.setGuestSigningIn(true)
+        model.flush()
+    }
+
+    override fun reviewExpired() {
+        if (viewModelScope.coroutineContext[kotlinx.coroutines.Job]?.isActive != true) return
+        wizard?.guestReviewExpired()
+    }
+
     init {
         if (deps == null) {
             mutableState.value = TripWizardUiState.LoadFailed(DataFailure.Unauthorized(401))
@@ -355,6 +394,7 @@ class TripWizardViewModel(
                     var previousSnapshot: net.chronoflow.core.wizard.model.MemberWizardSnapshot? = null
                     var cue: WizardHapticCue? = null
                     var previousStep: WizardStepKey? = null
+                    var presentSignUp = presentation.presentSignUp && deps.guest
                     model.snapshots.collect { snapshot ->
                         val previous = previousSnapshot
                         val outcome =
@@ -417,21 +457,9 @@ class TripWizardViewModel(
                                     cue = cue,
                                 )
                             }
-                        if (snapshot.saveOutcome == WizardSaveOutcome.signUpRequested &&
-                            !snapshot.guestAuthenticationPresented && signUpLauncher != null
-                        ) {
-                            model.setGuestAuthenticationPresented(true)
-                            model.flush()
-                            if (model.closed || model.persistenceFailed) {
-                                model.setGuestAuthenticationPresented(false)
-                            } else {
-                                signUpLauncher.request {
-                                    if (viewModelScope.coroutineContext[kotlinx.coroutines.Job]?.isActive == true) {
-                                        model.setGuestAuthenticationPresented(false)
-                                        if (!model.closed) model.readyTick()
-                                    }
-                                }
-                            }
+                        if (snapshot.saveOutcome == WizardSaveOutcome.signUpRequested || presentSignUp) {
+                            presentSignUp = false
+                            requestGuestSignUp(model)
                         }
                     }
                 } catch (_: CancellationException) {

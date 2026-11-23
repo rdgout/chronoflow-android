@@ -279,9 +279,11 @@ private fun model(
         PasskeyCapability(method == AuthenticationMethod.Passkey),
         passkey = { result },
         accepted = {
-            _,
-            _,
+            acceptedResult,
+            acceptedMethod,
             ->
+            assertEquals(result, acceptedResult)
+            assertEquals(method, acceptedMethod)
             accepted()
         },
         onTwoFactor = {},

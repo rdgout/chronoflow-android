@@ -11,6 +11,7 @@ import net.chronoflow.core.model.DataSource
 import net.chronoflow.core.model.api.SessionResult
 import net.chronoflow.core.model.auth.AuthenticationMethod
 import net.chronoflow.core.model.auth.ResetPasswordLink
+import net.chronoflow.core.model.guest.GuestClaim
 import net.chronoflow.core.model.passkey.PasskeyCapability
 import net.chronoflow.core.model.passkey.PasskeyFailure
 import net.chronoflow.core.navigation.RootNavigator
@@ -33,11 +34,13 @@ class AuthServices(
     session: SessionAcceptor,
     deviceIdentity: suspend () -> String,
     deviceName: suspend () -> String,
-    routeAcceptedSession: suspend () -> Unit,
+    routeAcceptedSession: suspend (SessionResult, AuthenticationMethod) -> Unit,
     passkeyCapability: PasskeyCapability = PasskeyCapability.Shipped,
     assertionProvider: PasskeyAssertionProviding = DeterministicAssertionProvider { throw PasskeyFailure.Unavailable },
     val mockMail: (suspend (String) -> Boolean)? = null,
     private val verificationFactory: (() -> VerificationCoordinator)? = null,
+    claim: suspend () -> GuestClaim? = { null },
+    guestReviewExpired: suspend (GuestClaim) -> Unit = {},
 ) {
     val verification: VerificationCoordinator by lazy { checkNotNull(verificationFactory)() }
     private val nameMutex = Mutex()
@@ -74,7 +77,7 @@ class AuthServices(
                 result: SessionResult,
                 method: AuthenticationMethod,
             ) {
-                routeAcceptedSession()
+                routeAcceptedSession(result, method)
             }
         }
     private val identity: suspend () -> String = { withContext(dispatchers.io) { deviceIdentity() } }
@@ -90,10 +93,12 @@ class AuthServices(
             deviceIdentity = identity,
             deviceName = name,
             passkeyCapability = passkeyCapability,
-            passkey = PasskeySignIn(source, assertionProvider, identity, name)::signIn,
+            passkey = PasskeySignIn(source, assertionProvider, identity, name, claim)::signIn,
             accepted = router::acceptedSession,
             onTwoFactor = router::twoFactor,
             onLeaveTwoFactor = router::backToSignIn,
+            claim = claim,
+            guestReviewExpired = guestReviewExpired,
         )
     }
 

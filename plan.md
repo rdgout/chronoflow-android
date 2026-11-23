@@ -466,7 +466,7 @@ Every screen scrolls when height-constrained. The minimum width is 280 dp; below
 ### Android spec: seeds and test hooks (debug only)
 
 - **Seed names** are identical to iOS (`12 §2`): `CF_AUTH_TEST_ID`, `CF_UI_TEST_PROFILE=screen|launch`, `CF_AUTH_TEST_SIGNED_IN=demo|twofactor`, `CF_AUTH_TEST_WALKTHROUGH_SEEN`, `CF_AUTH_TEST_UNVERIFIED`, `CF_AUTH_TEST_TERMS_PENDING` (the three flags equal `"1"`), `CF_AUTH_TEST_AUDIT_SCREEN`/`STATE`, `CF_AUTH_TEST_LINK` (test-id gated HTTPS link, captured in memory before MainActivity and omitted from forwarded extras), `CF_PLAN_TEST_ROUTE=trips|trip:<id>[:list]`, `CF_PLAN_TEST_POSITION=summary`, `CF_PLAN_TEST_SHEET=step:<id>|legend`, `CF_SETTINGS_ROUTE`, `CF_WIZARD_AUTO_OPEN`, `CF_WIZARD_BOARD_CAPTURE`, `CF_GUEST_WIZARD`, `CF_GUEST_WIZARD_JOURNEY`, `CF_GUEST_RECOVERY_BOARD`, `CF_MOCK_DELAY` (default 0).
-- **Guest wizard seed roles:** `CF_GUEST_WIZARD_JOURNEY=1` + `CF_WIZARD_BOARD_CAPTURE=WizardReadyGuest` keeps Welcome and opens frozen Ready after Plan my trip (sign-up hand-off). `CF_GUEST_WIZARD=1` + `CF_WIZARD_BOARD_CAPTURE=WizardGuestJourney` opens live Sleep directly for the first-review IO smoke test; despite its legacy name, this seed no longer starts at Where. `CF_GUEST_RECOVERY_BOARD=WizardSleep` tests quiet draft recovery.
+- **Guest wizard seed roles:** `CF_GUEST_WIZARD_JOURNEY=1` binds the debug sign-up prefill (Traveller / guest-journey@example.com), on any board. `CF_GUEST_WIZARD=1` + `CF_WIZARD_BOARD_CAPTURE=WizardGuestJourney` opens live Sleep for the claim journey and the unchanged first-review IO smoke test, using the real clock and a server-minted token/secret. `CF_GUEST_WIZARD=1` + `CF_WIZARD_BOARD_CAPTURE=GuestSignup|GuestSignupFailed|GuestSignupRetry|GuestSignupReview` presents the sheet once over frozen guest Ready. `CF_GUEST_RECOVERY_BOARD=WizardSleep` tests quiet draft recovery. No passwords or link inputs are forwarded as intent extras.
 - **Intent extras:** `cf.trip-page=S1…S6|large30|large60|<uuid>`, `cf.timeline-fixtures`, `cf.settings.theme`, `cf.settings.language`, `cf.reduceMotion`, `cf.passkeyCapability` (debug only: `1`/`true`, `0`/`false`; otherwise no override), `cf.freezeAt`, `cf.readyAt`, `cf.mainThreadStall`, `cf.holdSplash`, `cf.session`, `cf.gate`, `cf.stored`, `cf.readyDelay`, `cf.mode`.
 - **Launch diagnostics** (String extras, debug and perf only): `cf.session=in|signedIn|out|signedOut|never` (default native), `cf.gate=verify|terms|walkthrough|app` (default app), `cf.stored=yes|no|never` (default yes), `cf.readyDelay` in finite seconds `0…60` (default 0). Presence of any stub key injects `StubReadiness`; otherwise every variant uses `StoredDataReadiness` (OQ-A172). `cf.readyDelay` is an absolute time on the shared launch clock, not a second delay from collection.
 - **Fixed diagnostic endings:** `cf.mode=ready|slow|welcome` bypasses readiness. Ready/slow leave the route empty after removal; welcome publishes Welcome under the overlay, with a measured moon target and optional frozen intro. `cf.readyAt` is finite ms `0…60000`, default 4600, for slow mode. `cf.mainThreadStall` uses the same ms range and blocks from 300 ms after t0. Invalid values use the defaults. Release parsing and stalls are no-ops. `cf.freezeAt` still freezes a debug frame; `cf.holdSplash` remains debug only.
@@ -1142,6 +1142,19 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A541 | (11a OQ-11a-9) The board's guest Checking/Fine-tune/Where/Outbound have no Dark/NL wrappers. | Guard them in dark and nl through the shared props; capture only the 12 named wrappers. | 11a |
 | OQ-A542 | (11a OQ-11a-10) `WizardReadyGuest` draws "Questions 3 answered" (from the retired 3-question era); guests now answer at most 2. | Render the model count ("2 answered" with the seed); record the difference in `docs/wizard.md`. | 11a |
 | OQ-A543 | (11a OQ-11a-11) `WizardFineTuneGuest` draws a fixed row list (room, wake, seat, drinks, light, blue). | Render the rows the review and preferences produce (iOS); the seed matches the board as closely as the mock allows; record differences in `docs/wizard.md`. | 11a |
+| OQ-A544 | (11b OQ-11b-1) plan.md lists `GuestExcluded` for 11b, but the board is the retired health-answers screen; iOS left it unimported (iOS OQ 47) and `05` l.90 says "do not build". | Do not build it. Guests use `WizardExcluded` (9e; exits in 11a). Note it next to the plan box. | 11b |
+| OQ-A545 | (11b OQ-11b-2) The board's password hint says "At least 10 characters."; the server policy is 12+. | Use `AuthPasswordPolicy.hint()` (the 12-character hint), as iOS. | 11b |
+| OQ-A546 | (11b OQ-11b-3) The board's backdrop is the superseded `GuestReview`. | Present the sheet over guest Ready (`WizardReadyGuest`/`Free`), as iOS. | 11b |
+| OQ-A547 | (11b OQ-11b-4) The guest sheet draws only the guest banner, so "email already in use" shows the generic Failed banner, and a field-only validation failure shows no banner at all (`guestState` stays `Ready`). | iOS parity; field messages still show. | 11b |
+| OQ-A548 | (11b OQ-11b-5) The member Sign up screen (5d) also sends a live guest claim; on expiry it shows no banner (iOS `form.banner == nil`). | iOS parity; no new copy. | 11b |
+| OQ-A549 | (11b OQ-11b-6) iOS throws `CancellationError` when acceptance targets another account or a stale session. | `GuestAcceptanceSuperseded : CancellationException` (4a `SyncEpoch.check()` precedent): the caller ends silently. | 11b |
+| OQ-A550 | (11b OQ-11b-7) Stored form of the continuation (iOS uses Swift `Codable`). | `{"kind":"trip","tripId":…}` / `{"kind":"memberWizard"}` / `{"kind":"trips"}` in settings section `guestContinuation`; a corrupt row is dropped on consume. | 11b |
+| OQ-A551 | (11b OQ-11b-8) Two-factor sign-in drops an unregistered guest draft (no `tripId` from two-factor). | iOS user decision 2026-11-10: My trips; sync surfaces a claimed trip. | 11b |
+| OQ-A552 | (11b OQ-11b-9) Member Sign up has a show-password row; the guest sheet has none. | None, as the board and iOS. | 11b |
+| OQ-A553 | (11b OQ-11b-10) iOS seeds the guest sheet state through a `#if DEBUG` method. | A constructor default `initialGuestState = Ready`; only the debug seed passes another value. | 11b |
+| OQ-A554 | (11b OQ-11b-11) The M3 drag handle slot (48 dp) differs from the board's 5 px grabber + 12 px top padding and from iOS, whose system grabber overlays the content and whose column starts 20 pt (`space5`) below the sheet top. | Phase 2's M3 handle, content top padding 0 below it (title at 48 dp vs 20 pt on iOS); record in `docs/wizard.md`. | 11b |
+| OQ-A555 | (11b OQ-11b-12) iOS 18n's "Valet claim gate" (register → verify → claimed trip in en/nl; password → member seed; two-factor → My trips) needs the user's local backend. | Not run; recorded as open for the user. Mock coverage stands in. | 11b |
+| OQ-A556 | (11b OQ-11b-13) A rotation while the sheet is open loses typed passwords. | Accepted (secrets never saveable); name and email survive. | 11b |
 | OQ-0a-22 | Native libraries in the bundle? | Allow only `libandroidx.graphics.path.so` (Compose graphics-path; excluding it breaks Path conversion below API 34); fail on any other `.so` | 0a, 13 |
 | OQ-0b-1 | Where does `PlanMetrics` live? `08 §3.1` lists it inside `CfDimens`, but its consumer `:core:plan` is a JVM module that cannot depend on `:core:designsystem` | `core/plan/…/generated/PlanMetrics.generated.kt` (Double, dp), as iOS keeps it in `PlanCore` | 0b, 1b, 1c |
 | OQ-0b-2 | Port all iOS TokenGen outputs now (Auth, Settings, Terms, Welcome, PlanUI, Press, LaunchPaint, TypeMetrics), or only colors, sky and type? | All of them now (the iOS files are exact goldens and Phases 2, 3a, 3c, 5a, 9 and 10 need them) | 0b |
@@ -3374,19 +3387,39 @@ Acceptance evidence and the pending host checks are recorded in [`docs/settings-
   - `Packages/ChronoFlowKit/Sources/AppCore/GuestSessionContinuation.swift`
   - `App/AppTabs.swift` (l.341–369)
 
-**Delivers.** Builds the guest sign-up sheet over guest Ready (a 520 dp column on wide windows) with its failed, retry and review states and the excluded guest state. Registration carries the claim, and the guest continuation is consumed after verification so the claimed trip opens. Credits always come from the server, and one emulator journey goes from the guest wizard to a claimed trip.
+**Delivers.** Builds the guest sign-up sheet over guest Ready (a 520 dp column on wide windows) with its failed, retry and review states. Guests use the existing WizardExcluded state. Registration carries the claim, and the guest continuation is consumed after verification so the claimed trip opens. Credits always come from the server, and one emulator journey goes from the guest wizard to a claimed trip.
 
 **Tasks**
-- [ ] **Guest sign-up sheet** (`GuestSignup`, `GuestSignupFailed`, `GuestSignupRetry`, `GuestSignupReview`) over guest Ready, with a 520 dp column on wide windows; plus `GuestExcluded`.
-- [ ] **Claim**, porting `GuestClaim` (mock side ported in 4c, OQ-A165).
+- [x] **Guest sign-up sheet** (`GuestSignup`, `GuestSignupFailed`, `GuestSignupRetry`, `GuestSignupReview`) over guest Ready, with a 520 dp column on wide windows; `GuestExcluded` not built (iOS OQ 47; retired by no health data; guests use `WizardExcluded`).
+- [x] **Claim**, porting `GuestClaim` (mock side ported in 4c, OQ-A165).
   - Register with the claim.
   - Claim on sign-in and on passkey sign-in (18i).
   - Consume `GuestSessionContinuation` after verification, so the claimed trip opens (18j; iOS `AppTabs.swift:341–369`).
-- [ ] **Credits** come only from the server (OQ-A18).
-- [ ] **Tests.**
+- [x] **Credits** come only from the server (OQ-A18).
+- [x] **Tests.**
   - The ported 18d, 18i, 18j and 18n cases.
   - Guards.
   - One emulator journey: guest wizard → sign up → verify through the mock inbox → the claimed trip page.
+
+**Implementation (brief tasks)**
+
+- [x] Task 1: guest claim and continuation types.
+- [x] Task 2: read and expire the guest claim.
+- [x] Task 3: member wizard guest seed.
+- [x] Task 4: account continuation store.
+- [x] Task 5: guest session acceptance.
+- [x] Task 6: sign-up claim and guest states.
+- [x] Task 7: password and passkey claims.
+- [x] Task 8: acceptance wiring.
+- [x] Task 9: shell continuation routing.
+- [x] Task 10: guest sign-up host seam.
+- [x] Task 11: guest sign-up sheet.
+- [x] Task 12: guest sign-up presentation.
+- [x] Task 13: guest sign-up guards and captures.
+- [x] Task 14: guest claim integration.
+- [x] Task 15: guest journey and keyboard.
+
+**User-run follow-up:** the Valet claim gate remains open (OQ-A555): registration → verification → claimed trip in en/nl, password → member seed, and two-factor → My trips. Shipped passkeys remain disabled (A15). Startup profiles and cold/warm startup numbers require `make baseline-profile` and `make perf`; the user runs these.
 
 **Acceptance**
 - The claimed trip opens after verification.

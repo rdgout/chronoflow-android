@@ -29,9 +29,14 @@ import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.unit.dp
 import net.chronoflow.core.designsystem.theme.CfTheme
 
-private object SheetMetrics {
+object CfSheetMetrics {
     // plan.md's window policy and OQ-A57 cap native sheets independently of board dimensions.
     val maxWidth = 640.dp
+}
+
+@Composable
+fun CfSheetDragHandle(modifier: Modifier = Modifier) {
+    BottomSheetDefaults.DragHandle(modifier.minimumInteractiveComponentSize())
 }
 
 @Composable
@@ -48,11 +53,11 @@ fun CfModalBottomSheet(
         modifier.semantics { testTagsAsResourceId = true },
         sheetState = sheetState,
         properties = properties,
-        sheetMaxWidth = SheetMetrics.maxWidth,
+        sheetMaxWidth = CfSheetMetrics.maxWidth,
         shape = CfTheme.shapes.sheetTop,
         containerColor = CfTheme.colors.card,
         contentColor = CfTheme.colors.cardForeground,
-        dragHandle = { BottomSheetDefaults.DragHandle(Modifier.minimumInteractiveComponentSize()) },
+        dragHandle = { CfSheetDragHandle() },
         scrimColor = BottomSheetDefaults.ScrimColor,
         content = content,
     )

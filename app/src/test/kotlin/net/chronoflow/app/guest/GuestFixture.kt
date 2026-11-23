@@ -42,7 +42,7 @@ internal class GuestFixture(
             dispatchers,
             scope.backgroundScope,
             { clock.now },
-            GuestSignUpLauncher { it() },
+            GuestSignUpLauncher { it.signUpDismissed(needsReview = false, onGuestRoute = true) },
         )
 
     fun exits() = GuestWizardExits(navigator, navigator.state.value.revision, { presence }, store, secrets, dispatchers)

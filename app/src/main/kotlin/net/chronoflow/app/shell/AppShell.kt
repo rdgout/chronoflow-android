@@ -14,7 +14,9 @@ import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import net.chronoflow.app.ChronoFlowApp
 import net.chronoflow.app.LaunchPlatform
+import net.chronoflow.app.guest.GuestContinuationRunner
 import net.chronoflow.app.trip.TripPageRoute
+import net.chronoflow.core.data.guest.GuestContinuationRepository
 import net.chronoflow.core.model.contracts.Language
 import net.chronoflow.core.navigation.Route
 import net.chronoflow.core.navigation.shell.ShellTab
@@ -39,9 +41,18 @@ internal fun AppShell(
     val launcher = holder.wizardLauncher(wizardDependencies, graph.dispatchers.io)
     val wizardLocale = rememberUpdatedState(LocalConfiguration.current.locales[0])
     LaunchedEffect(sessionGraph?.epoch) {
-        val epoch = sessionGraph?.epoch ?: return@LaunchedEffect
+        val session = sessionGraph ?: return@LaunchedEffect
+        val epoch = session.epoch
         if (LaunchPlatform.prepareWizard(graph, epoch, wizardLocale.value)) launcher.open()
         if (graph.wizardRecoveryCheck.shouldOpen(epoch)) launcher.open()
+        GuestContinuationRunner(
+            GuestContinuationRepository(session.database, session.permit),
+            gate = graph.readiness::gate,
+            isCurrent = { graph.controller.activeSession() == session.snapshot },
+            onTrip = holder::wizardSaved,
+            onTrips = holder::guestTrips,
+            onMemberWizard = launcher::open,
+        ).run()
     }
     LaunchedEffect(holder) { LaunchPlatform.shellStart()?.let(holder::seed) }
     androidx.compose.runtime.CompositionLocalProvider(

@@ -140,6 +140,19 @@ class AppShellTest {
         compose.onNodeWithTag("cf.nav.rail").assertDoesNotExist()
     }
 
+    @Test fun debugProbeTracksTheSelectedTopRoute() {
+        host()
+        compose.runOnIdle {
+            assertEquals(Route.Trips, ShellRouteProbe.route)
+            holder.wizardSaved("claimed-trip")
+        }
+        compose.runOnIdle {
+            assertEquals("claimed-trip", (ShellRouteProbe.route as? Route.TripPage)?.tripId)
+            holder.select(ShellTab.Settings)
+        }
+        compose.runOnIdle { assertEquals(Route.Settings, ShellRouteProbe.route) }
+    }
+
     @Test
     @Config(qualifiers = "w841dp-h701dp-420dpi")
     fun railFrom600() {

@@ -2,6 +2,7 @@ package net.chronoflow.app.guest
 
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import net.chronoflow.feature.wizard.TripWizardDependencies
@@ -13,8 +14,13 @@ internal class GuestWizardHolder(
     val exits: GuestWizardExits,
     private val scope: CoroutineScope,
     val presentation: WizardInitialPresentation = WizardInitialPresentation(),
+    val signup: GuestSignupCoordinator? = null,
 ) : ViewModel() {
     private var foreground: GuestWizardForeground? = null
+
+    init {
+        signup?.bind(viewModelScope)
+    }
 
     fun close(model: TripWizardViewModel) {
         scope.launch { exits.close(model.wizard?.draft) { model.discard() } }
@@ -32,6 +38,7 @@ internal class GuestWizardHolder(
     }
 
     override fun onCleared() {
+        signup?.clear()
         foreground?.close()
     }
 }

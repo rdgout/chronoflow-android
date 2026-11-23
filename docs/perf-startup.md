@@ -40,6 +40,7 @@ The reference and low-end gates stay open until a device exists (OQ-A22).
 | 2026-11-20 | 5cb57682-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | benchmarkRelease, Partial(Require) | 132.9/123.0/144.0 | FAIL |
 | 2026-11-21 | 683eadcf-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | benchmarkRelease, Partial(Require) | 132.1/121.8/152.5 | PASS |
 | 2026-11-22 | 069adafd-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | benchmarkRelease, Partial(Require) | 122.6/112.2/141.0 | PASS |
+| 2026-11-22 | fe9268ac-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | benchmarkRelease, Partial(Require) | 128.3/117.1/144.9 | PASS |
 
 Device rows: open: device only (OQ-A22).
 
@@ -111,6 +112,7 @@ Every mandated validation command was executed; there is no unrun tier to substi
 | 2026-11-20 | 5cb57682-dirty | emulator | sdk_gphone64_arm64 | 60 | benchmarkRelease, Partial(Require) | 52.0 | 12.0 | 191.0 | 98.4/100.0 | PASS |
 | 2026-11-21 | 683eadcf-dirty | emulator | sdk_gphone64_arm64 | 60 | benchmarkRelease, Partial(Require) | 50.6 | 12.5 | 190.0 | 99.8/100.0 | PASS |
 | 2026-11-22 | 069adafd-dirty | emulator | sdk_gphone64_arm64 | 60 | benchmarkRelease, Partial(Require) | 48.0 | 12.9 | 190.0 | 98.1/100.0 | PASS |
+| 2026-11-22 | fe9268ac-dirty | emulator | sdk_gphone64_arm64 | 60 | benchmarkRelease, Partial(Require) | 48.1 | 12.6 | 188.0 | 99.9/100.0 | PASS |
 
 ## Phase 3a: startup measurements
 
@@ -303,6 +305,7 @@ Near-miss to watch: `welcomeInteractiveMs` (hard 2567.7 ms, min 2549, both from 
 | 2026-11-20 | 5cb57682-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | 1.0 | light | benchmarkRelease, Partial(Require) | 124.4 | 2061.8 | FixtureTodaySource | FAIL |
 | 2026-11-21 | 683eadcf-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | 1.0 | light | benchmarkRelease, Partial(Require) | 127.6 | 2060.4 | FixtureTodaySource | REPORT |
 | 2026-11-22 | 069adafd-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | 1.0 | light | benchmarkRelease, Partial(Require) | 119.1 | 2050.0 | FixtureTodaySource | REPORT |
+| 2026-11-22 | fe9268ac-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | 1.0 | light | benchmarkRelease, Partial(Require) | 121.8 | 2048.8 | FixtureTodaySource | REPORT |
 
 ## Phase 9c — wizard shell and Where (2026-11-20)
 

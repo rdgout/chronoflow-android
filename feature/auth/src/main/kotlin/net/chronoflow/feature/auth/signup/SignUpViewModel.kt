@@ -74,7 +74,7 @@ class SignUpViewModel(
         val job =
             viewModelScope.launch(start = CoroutineStart.LAZY) {
                 try {
-                    model.submit(password, confirmation, language, commitAutofill)
+                    model.submit(password, confirmation, language, commitAutofill = commitAutofill)
                 } finally {
                     if (request === currentCoroutineContext()[Job]) request = null
                 }

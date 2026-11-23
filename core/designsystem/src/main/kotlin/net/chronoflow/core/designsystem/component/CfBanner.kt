@@ -43,6 +43,7 @@ fun CfBanner(
     announce: Boolean = true,
     testTag: String? = null,
     actionTestTag: String? = null,
+    actionEnabled: Boolean = true,
 ) {
     val c = CfTheme.colors
     val shape = RoundedCornerShape(AuthTokens.bannerRadius.dp)
@@ -73,7 +74,7 @@ fun CfBanner(
                         .minimumInteractiveComponentSize()
                         .heightIn(min = AuthTokens.touch.dp)
                         .then(if (actionTestTag == null) Modifier else Modifier.testTag(actionTestTag))
-                        .cfClickable(requireNotNull(onAction))
+                        .cfClickable(requireNotNull(onAction), enabled = actionEnabled)
                         .padding(vertical = AuthTokens.fieldGap.dp),
                     color = c.foreground,
                     style = CfTheme.type.authStrong,
