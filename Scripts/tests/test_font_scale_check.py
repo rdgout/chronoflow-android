@@ -30,6 +30,13 @@ class FontScaleCheckTest(unittest.TestCase):
         with self.assertRaisesRegex(font.DeviceFailure, 'scale not applied'):
             font.compare(dict.fromkeys(('1.0', '1.3', '2.0'), self.capped))
 
+    def test_system_ui_node_change_does_not_prove_scale_was_applied(self):
+        unchanged_small = self.capped.replace(
+            '<hierarchy>', '<hierarchy><node package="com.android.systemui" class="android.widget.TextView" '
+            'resource-id="clock" bounds="[0,0][20,20]"/>')
+        with self.assertRaisesRegex(font.DeviceFailure, 'scale not applied'):
+            font.compare({'1.0': unchanged_small, '1.3': self.capped, '2.0': self.capped})
+
     def test_exception_restores_scale(self):
         calls = []
         scale = ['1.0']

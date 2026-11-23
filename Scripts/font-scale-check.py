@@ -10,10 +10,8 @@ from audit_device import Device, DeviceFailure, ROOT, PACKAGE, bounds
 
 def geometry(xml):
     tagged, text = {}, {}
-    for index, node in enumerate(ET.fromstring(xml).iter('node')):
-        package = node.get('package', PACKAGE)
-        if package != PACKAGE:
-            continue
+    app_nodes = (node for node in ET.fromstring(xml).iter('node') if node.get('package', PACKAGE) == PACKAGE)
+    for index, node in enumerate(app_nodes):
         raw = node.get('bounds')
         if not raw:
             continue
