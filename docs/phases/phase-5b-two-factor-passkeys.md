@@ -908,7 +908,7 @@ The tests:
 
 - **`docs/passkeys.md`:**
   - Why the capability is false.
-  - **S1:** `assetlinks.json` with `delegate_permission/common.get_login_creds` for `net.chronoflow.app.native` and the release signing SHA-256 only, never the debug key (OQ-A38).
+  - **S1:** `assetlinks.json` with `delegate_permission/common.get_login_creds` for `net.chronoflow.app` and the release signing SHA-256 only, never the debug key (OQ-A38).
   - **S2:** `android:apk-key-hash:<base64url(sha256(cert DER))>` in the server's passkey allowed origins, computed with:
     ```
     keytool -exportcert -alias <alias> -keystore <ks> | openssl sha256 -binary | openssl base64 | tr '+/' '-_' | tr -d '='

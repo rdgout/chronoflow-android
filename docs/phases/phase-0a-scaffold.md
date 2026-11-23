@@ -14,7 +14,7 @@ When this phase ends:
 
 1. `/Users/rickgout/Sites/chronoflow-android` is a git repository. `main` holds exactly one commit, the docs commit. `feat/phase-0a-scaffold` stacks the phase's commits on top of it.
 2. `./gradlew` (Gradle 9.9.1) configures and builds every module of the A3 module graph, with the configuration cache reused on the second run, and with KGP 2.4.21 on the build classpath.
-3. A minimal `:app` installs and launches as `net.chronoflow.app.native.debug` on the `pixel` emulator, under debug StrictMode with `penaltyDeath` for main-thread disk or network work on the launch path.
+3. A minimal `:app` installs and launches as `net.chronoflow.app.debug` on the `pixel` emulator, under debug StrictMode with `penaltyDeath` for main-thread disk or network work on the launch path.
 4. Spotless (ktlint 1.8.0 + Compose rules 0.6.8), Lint as errors, Kotlin `allWarningsAsErrors`, the Konsist rules, `verifyReleaseManifest` and the bundle-size gate are wired, and each rule fails on a planted violation.
 5. The `Makefile`, `Scripts/ci.sh`, `Scripts/run-tier.sh`, `Scripts/emulator.sh` and `Scripts/measure-tiers.sh` exist, with tests.
 6. `docs/tooling.md` records the warm times of `make quick` and `make check` (three runs each) and what the worker sandbox can and cannot run.
@@ -135,7 +135,7 @@ Every module's `build.gradle.kts` applies **exactly one** module-kind convention
 | `:konsist` | `konsist/` | `chronoflow.jvm.library` | `net.chronoflow.konsist` |
 | `:tools:tokengen` | `tools/tokengen/` | `chronoflow.jvm.library` | `net.chronoflow.tools.tokengen` |
 
-- `applicationId = "net.chronoflow.app.native"`; debug `applicationIdSuffix = ".debug"`. **`native` is a Java keyword**: it appears only in `applicationId`, never in a `namespace`, package or directory.
+- `applicationId = "net.chronoflow.app"`; debug `applicationIdSuffix = ".debug"`. **`native` is a Java keyword**: never use it as a namespace or Kotlin package segment. Final id: user, 2026-11-23 (A2/OQ-A1).
 - `data-mock` has a hyphen; its package is `datamock`.
 - Skeleton modules contain only `build.gradle.kts`. No placeholder classes.
 
@@ -348,7 +348,7 @@ Shared helpers (internal, same package): `KotlinOptions.kt` (`configureKotlin()`
 
 Module files:
 - Every module of §5.1 gets a `build.gradle.kts` with its one plugin and, for Android modules, `android { namespace = "<namespace>" }`.
-- `app/build.gradle.kts`: `android { namespace = "net.chronoflow.app"; defaultConfig { applicationId = "net.chronoflow.app.native" } }`, and `implementation(project(...))` of every `:feature:*` module (only `:app` knows the features) and of every `:core:*` module **except two**: `:core:data-mock` is `debugImplementation` only (A6: release contains no mock code; 0e adds the perf configurations), and `:core:testing` is never a main dependency (`testImplementation` / `androidTestImplementation` only; Task 5 adds the latter). For this task, `app/src/main/AndroidManifest.xml` is `<manifest />`; Task 5 fills it.
+- `app/build.gradle.kts`: `android { namespace = "net.chronoflow.app"; defaultConfig { applicationId = "net.chronoflow.app" } }`, and `implementation(project(...))` of every `:feature:*` module (only `:app` knows the features) and of every `:core:*` module **except two**: `:core:data-mock` is `debugImplementation` only (A6: release contains no mock code; 0e adds the perf configurations), and `:core:testing` is never a main dependency (`testImplementation` / `androidTestImplementation` only; Task 5 adds the latter). For this task, `app/src/main/AndroidManifest.xml` is `<manifest />`; Task 5 fills it.
 - `stability_config.conf` at the root, one line: `java.time.*`.
 - `version.properties` (§5.6).
 - `app/debug.keystore`, generated once:
@@ -412,28 +412,28 @@ Tests (cheapest tier first; follow AGENTS.md "Tests"):
 - `LaunchPathViolationPolicyTest` (JVM, `app/src/test/kotlin/net/chronoflow/app/diagnostics/`): active + I/O + a `net.chronoflow.app.X` frame → `true`; inactive → `false`; not I/O → `false`; I/O with only `android.*`/`java.*` frames → `false`. Plus `LaunchPathTest`: starts active, `end()` makes it inactive, a second `end()` is harmless.
 - `DataExtractionRulesTest` (JVM, `app/src/test/…/`): parses `src/main/res/xml/data_extraction_rules.xml` (the test's working directory is `app/`); both sections exist, contain no `<include>`, and exclude `root` and `device_root` at `.`.
 - `DebugNetworkSecurityConfigTest` (JVM, `app/src/testDebug/kotlin/net/chronoflow/app/`): parses `src/debug/res/xml/network_security_config.xml`; base config is cleartext `false`; exactly one domain config, cleartext `true`, exactly one domain `10.0.2.2` with `includeSubdomains="false"`.
-- `DebugAppIdentityTest` (JVM, `app/src/testDebug/…`): `BuildConfig.APPLICATION_ID == "net.chronoflow.app.native.debug"`, `BuildConfig.DEBUG` is `true`.
-- `ReleaseAppIdentityTest` (JVM, `app/src/testRelease/…`): `BuildConfig.APPLICATION_ID == "net.chronoflow.app.native"`, `BuildConfig.DEBUG` is `false`. This also proves `testReleaseUnitTest` exists and runs.
+- `DebugAppIdentityTest` (JVM, `app/src/testDebug/…`): `BuildConfig.APPLICATION_ID == "net.chronoflow.app.debug"`, `BuildConfig.DEBUG` is `true`.
+- `ReleaseAppIdentityTest` (JVM, `app/src/testRelease/…`): `BuildConfig.APPLICATION_ID == "net.chronoflow.app"`, `BuildConfig.DEBUG` is `false`. This also proves `testReleaseUnitTest` exists and runs.
 - `AppLaunchSmokeTest` (emulator, `@Smoke` **on the class**, because 0e's `TierRegistryTest` counts class-level tier annotations only; `app/src/androidTest/kotlin/net/chronoflow/app/`), one method `launchesAsNativeDebugUnderStrictMode`:
   - `@get:Rule val compose = createAndroidComposeRule<MainActivity>()`;
   - `compose.waitUntil(5_000) { !(compose.activity.application as ChronoFlowApp).launchPath.isActive }`;
-  - asserts `compose.activity.packageName == "net.chronoflow.app.native.debug"` and the lifecycle is at least `RESUMED`.
+  - asserts `compose.activity.packageName == "net.chronoflow.app.debug"` and the lifecycle is at least `RESUMED`.
   - A launch-path violation crashes the process, which fails the run. Under 10 s. No `Thread.sleep`.
 
 Commands (record outputs in `docs/tooling.md`, Task 10):
 ```sh
 ./gradlew :app:installDebug
-$ANDROID_HOME/platform-tools/adb -s emulator-5554 shell pm list packages | grep net.chronoflow.app.native.debug
-$ANDROID_HOME/platform-tools/adb -s emulator-5554 shell am start -W -n net.chronoflow.app.native.debug/net.chronoflow.app.MainActivity
-$ANDROID_HOME/platform-tools/adb -s emulator-5554 shell pidof net.chronoflow.app.native.debug
+$ANDROID_HOME/platform-tools/adb -s emulator-5554 shell pm list packages | grep net.chronoflow.app.debug
+$ANDROID_HOME/platform-tools/adb -s emulator-5554 shell am start -W -n net.chronoflow.app.debug/net.chronoflow.app.MainActivity
+$ANDROID_HOME/platform-tools/adb -s emulator-5554 shell pidof net.chronoflow.app.debug
 $ANDROID_HOME/build-tools/37.0.0/aapt2 dump badging app/build/outputs/apk/debug/app-debug.apk | grep -E "^package|sdkVersion|targetSdkVersion"
 ```
-Expected: package listed; `Status: ok`; a pid; `package: name='net.chronoflow.app.native.debug'`, `sdkVersion:'29'`, `targetSdkVersion:'36'`.
+Expected: package listed; `Status: ok`; a pid; `package: name='net.chronoflow.app.debug'`, `sdkVersion:'29'`, `targetSdkVersion:'36'`.
 
 Edges:
 - If the smoke test crashes on a violation whose stack has no `net.chronoflow.` frame, the policy is wrong; fix the policy, not the test.
 - If a violation does have our frame, our code did main-thread I/O: fix the code. Exception: if the only `net.chronoflow.` frames are our lifecycle overrides (`ChronoFlowApp.onCreate`, `MainActivity.onCreate`) and the I/O happens inside a framework or AndroidX call they make (`super.onCreate`, `setContent`), do not weaken the policy and do not add an allowlist: stop, record the full stack in `docs/tooling.md`, and report it in the hand-back for the orchestrator to decide.
-- If the system rejects the `native` segment at install, stop, record the exact error, and apply OQ-A1's fallback `net.chronoflow.app.android` only after the orchestrator confirms.
+- The final id is `net.chronoflow.app` (user, 2026-11-23; OQ-A1); the earlier Java-keyword install fallback is retired.
 
 Commit: `feat(app): add minimal app shell with debug strictmode`.
 
@@ -533,7 +533,7 @@ Command: `./gradlew :konsist:test` passes (all rules on the project, all planted
 
 **7a. `verifyReleaseManifest`.** Commit: `build: verify the release manifest`.
 
-- Pure rules in `build-logic/convention/src/main/kotlin/net/chronoflow/buildlogic/manifest/ManifestRules.kt`: `fun check(manifestXml: String, applicationId: String, allowedExportedComponents: Set<String>): List<ManifestViolation>`, where `ManifestViolation(rule: Rule, detail: String)` and `enum class Rule`. Parse with `DocumentBuilderFactory` (namespace-aware; `http://apache.org/xml/features/disallow-doctype-decl` = true). Android namespace `http://schemas.android.com/apk/res/android`. AGP's merged manifest writes fully qualified `android:name` values, and its `package` attribute is the applicationId (`net.chronoflow.app.native`), **not** the code namespace, so never resolve names against `package`. Write every planted manifest with fully qualified names; if a name still starts with `.`, resolve it against `net.chronoflow.app` (the `:app` namespace).
+- Pure rules in `build-logic/convention/src/main/kotlin/net/chronoflow/buildlogic/manifest/ManifestRules.kt`: `fun check(manifestXml: String, applicationId: String, allowedExportedComponents: Set<String>): List<ManifestViolation>`, where `ManifestViolation(rule: Rule, detail: String)` and `enum class Rule`. Parse with `DocumentBuilderFactory` (namespace-aware; `http://apache.org/xml/features/disallow-doctype-decl` = true). Android namespace `http://schemas.android.com/apk/res/android`. AGP's merged manifest writes fully qualified `android:name` values, and its `package` attribute is the applicationId (`net.chronoflow.app`), **not** the code namespace, so never resolve names against `package`. Write every planted manifest with fully qualified names; if a name still starts with `.`, resolve it against `net.chronoflow.app` (the `:app` namespace).
 
 | Rule | Fails when |
 |---|---|
@@ -680,7 +680,7 @@ Targets (all `.PHONY`):
 **`Scripts/targeted.py`**: `ONLY="<module>:<Class>[#method] …"`, where `<module>` is a Gradle path without the leading colon (`konsist`, `core:plan`, `app`) and `<Class>` a simple name.
 - The class is instrumented if `<module dir>/src/androidTest/**/<Class>.kt` exists; its fully qualified name comes from that file's `package` line.
 - Instrumented, default: `$(GRADLE) :<module>:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=<fqcn>[#method]` (several classes comma-separated) through `run-tier.sh targeted-emu --device`.
-- Instrumented with `REUSE_BUILD=1`: `adb -s $ANDROID_SERIAL shell am instrument -w -r -e class <fqcn>[#method] -e timeout_msec 60000 net.chronoflow.app.native.debug.test/androidx.test.runner.AndroidJUnitRunner` (no build, no install), run under the device lock as `python3 -I Scripts/device_lock.py -- adb …` (OQ-0a-21).
+- Instrumented with `REUSE_BUILD=1`: `adb -s $ANDROID_SERIAL shell am instrument -w -r -e class <fqcn>[#method] -e timeout_msec 60000 net.chronoflow.app.debug.test/androidx.test.runner.AndroidJUnitRunner` (no build, no install), run under the device lock as `python3 -I Scripts/device_lock.py -- adb …` (OQ-0a-21).
 - Otherwise: `:<module>:test` for JVM modules, `:<module>:testDebugUnitTest` for Android modules, with `--tests '*.<Class>[.<method>]'`, through `run-tier.sh targeted`.
 - Selectors for the same module and kind share one Gradle invocation. An unknown module or class exits 2 before anything runs. `--print` prints the commands instead of running them.
 - `Scripts/tests/test_targeted.py` (with `--print`): `konsist:KonsistRulesTest#noGlobalScope` → `:konsist:test --tests '*.KonsistRulesTest.noGlobalScope'`; `app:AppLaunchSmokeTest` → `connectedDebugAndroidTest` with `class=net.chronoflow.app.AppLaunchSmokeTest` through `run-tier.sh targeted-emu --device`; the same with `REUSE_BUILD=1` → the `am instrument` line prefixed with `python3 -I Scripts/device_lock.py --`; `nope:X` → exit 2.
@@ -741,13 +741,13 @@ All must hold on `feat/phase-0a-scaffold`. The orchestrator runs what the sandbo
 1. `git rev-list --count main` is `1`; that commit has no `docs/phases/` file. The branch holds Tasks 1–10 as atomic Conventional Commits with no trailers, and `plan.md` Phase 0a has all nine checkboxes ticked.
 2. `./gradlew --version` reports Gradle 9.9.1 (or 9.6.0 with OQ-A35 recorded). `./gradlew buildEnvironment | grep kotlin-gradle-plugin` resolves 2.4.21. A second `./gradlew help` prints `Reusing configuration cache.`
 3. `./gradlew assembleDebug` builds every module; `./gradlew :app:assembleRelease` builds with R8.
-4. `aapt2 dump badging` shows `net.chronoflow.app.native.debug`, `sdkVersion:'29'`, `targetSdkVersion:'36'`. `adb shell pm list packages` lists it. `AppLaunchSmokeTest` passes under the launch-path `penaltyDeath` policy.
+4. `aapt2 dump badging` shows `net.chronoflow.app.debug`, `sdkVersion:'29'`, `targetSdkVersion:'36'`. `adb shell pm list packages` lists it. `AppLaunchSmokeTest` passes under the launch-path `penaltyDeath` policy.
 5. `./gradlew :konsist:test` passes, and every rule's planted violation is rejected and every control allowed. `./gradlew :build-logic:convention:test` passes, with every planted manifest failing exactly its rule. `./gradlew :app:verifyReleaseManifest` passes on the real app.
 6. `make size` prints the bundle line with verdict `OK` and no `.so`.
 7. Warm, with `pixel` booted: median `make quick` < 60 s and median `make check` < 300 s over three runs, recorded in `docs/tooling.md` with `build/tier-timings.json`.
 8. `Scripts/ci.sh` exits 0 on a clean clone of the branch.
 9. A not-yet-landed target (`make tokens`) prints its phase and exits 1. `make generate` and `make generators-check` exit 0.
-10. `grep -rn "chronoflow.app.native" --include='*.kt' --include='*.kts' --include='*.xml' .` (excluding `build/`, `docs/`, `_design/`) matches only the `applicationId` line, the identity tests, the targeted script's test package, and test fixtures.
+10. Verify the final applicationId and debug suffix in the identity tests and manifest fixtures. StorageNamespace service/alias strings retain the pinned iOS names (OQ-A629); they are independent of the applicationId.
 11. `docs/tooling.md` has all eight sections; every deviation names its OQ.
 
 ---
@@ -837,4 +837,4 @@ Each default is what you build. If one turns out wrong, record it in `docs/tooli
 | OQ-0a-20 | `plan.md:453` allows five permissions, but androidx.core (≥ 1.9, so 1.19.1) merges `<uses-permission android:name="<applicationId>.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"/>`, so a strict five-name allowlist fails the real app. | Allow that one app-scoped, signature-level name in `ManifestRules` (§5.5) and list it in `docs/tooling.md` section 7; do not remove it with `tools:node="remove"` (androidx.core's `ContextCompat.registerReceiver` needs it). In the Task 7a commit, append "plus androidx.core's `<applicationId>.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` (OQ-0a-20)" to the `plan.md:453` bullet. |
 | OQ-0a-21 | Parallel worktrees share one `pixel` (`emulator-5554`) and one applicationId, so two device tiers at once overwrite each other's APKs and interleave instrumentation. | A host-wide `fcntl` lock (`Scripts/device_lock.py`, `~/.android/cf-emulator.lock`) serializes every device tier (`run_tier.py --device`) and every `emulator.sh` subcommand except `busy`; JVM and Robolectric tiers stay parallel (review 2026-11-16). |
 
-Inherited user questions that touch this phase keep their `plan.md` defaults: OQ-A1 (`net.chronoflow.app.native`; fallback `net.chronoflow.app.android` only if the `native` segment is rejected), OQ-A2 (minSdk 29), OQ-A27 (foojay JDK 21; fallback: the user installs `zulu@21`, or Robolectric `sdk = 34` on JDK 17), OQ-A31 (no remote, never push), OQ-A35 (Gradle 9.9.1, else 9.6.0).
+Inherited user questions that touch this phase keep their `plan.md` defaults: OQ-A1 (resolved: `net.chronoflow.app`, user, 2026-11-23), OQ-A2 (minSdk 29), OQ-A27 (foojay JDK 21; fallback: the user installs `zulu@21`, or Robolectric `sdk = 34` on JDK 17), OQ-A31 (no remote, never push), OQ-A35 (Gradle 9.9.1, else 9.6.0).

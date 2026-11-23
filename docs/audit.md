@@ -2144,7 +2144,7 @@ locked device capture run also passes (149 PNGs, 142.177 s). These replace the
 pre-pause screenshots rather than supplying stored image references. No PNG is
 committed. The latest metadata probe again lists only pixel/API 36 at 1080 × 2400,
 420 dpi and font scale 1.0, with both accessibility services installed. Its
-read-only App Links probe reports `Error: package net.chronoflow.app.native.debug
+read-only App Links probe reports `Error: package net.chronoflow.app.debug
 unavailable` (exit 1), because connected tests had uninstalled that package. The
 earlier 1024 state above is historical, not a fresh association verdict; no
 verifier reset or forced verification was run.

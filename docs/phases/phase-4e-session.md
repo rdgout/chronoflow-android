@@ -783,7 +783,7 @@ T5/T6 test dependency: the source-startup suspension case first exercises `contr
   - "Android spec: navigation and routes" (l.402): `Reset(email, token)` → `Reset(email)`, the token held in memory (OQ-4e-5).
 - Note in `docs/tooling.md` the seeded signed-in `adb` command:
   ```sh
-  adb shell am start -n net.chronoflow.app.native.debug/net.chronoflow.debug.SeedReceiverActivity \
+  adb shell am start -n net.chronoflow.app.debug/net.chronoflow.debug.SeedReceiverActivity \
     --es CF_AUTH_TEST_ID "$(uuidgen | tr A-Z a-z)" --es CF_AUTH_TEST_SIGNED_IN demo --es CF_AUTH_TEST_WALKTHROUGH_SEEN 1
   ```
 

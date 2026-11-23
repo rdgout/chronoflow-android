@@ -155,6 +155,8 @@ Commit: `feat(model): add session store, sync epoch and mutation permit`. Ticks 
       val sessionKeyAlias: String get() = "$keychainService.session"   // Android-only (A5 "<ns>.session")
   }
   ```
+  Storage service/alias names remain unchanged after the applicationId decision (user, 2026-11-23; OQ-A629).
+
   [R, from F `docs/research/02-ios-architecture.md` §4.1–§4.2] The `<ns>` of the plan's alias `<ns>.session` is the namespace's key alias, which research 02 sets to the iOS Keychain service (the iOS session item is service `keychainService`, account `session`). The `<ns>` of a **path** is `directoryName`.
 - `StoredSession.kt` [F `SessionStore.swift:3–19`]:
   - `data class StoredSession(val token: String, val accountId: String)`; `toString()` = `"StoredSession(token=<redacted>, accountId=$accountId)"`.
@@ -737,7 +739,7 @@ Per table it records `columns` (`cid`, `name`, `type`, `notnull`, `default`, `pk
 - `StoredSession.parse` rejects blank values after trimming and keeps the original values; `readStoredSession` deletes unparseable data; `loadSession` maps any error to `signedOut` [F `SessionStore.swift`].
 - `UUIDv7.generate` returns `UUID`; `DeviceIdentityStore` validates 36 characters, version 7 and variant `10`, returns lower case, caches only after success; `deviceName` keeps a grapheme prefix with cumulative scalars ≤ 255 [F `DeviceIdentityStore.swift`].
 - `KeychainSessionStore`: service `namespace.keychainService`, account `session`, accessibility `WhenUnlockedThisDeviceOnly`; `errSecItemNotFound` → nil; other statuses throw [F].
-- `StorageNamespace`: `ChronoFlow`/`ChronoFlowMock`; `net.chronoflow.app.native`/`net.chronoflow.app.native.mock` [F].
+- `StorageNamespace`: `ChronoFlow`/`ChronoFlowMock`; `net.chronoflow.app`/`net.chronoflow.app.mock` [F].
 
 ### A.4 Android facts
 
