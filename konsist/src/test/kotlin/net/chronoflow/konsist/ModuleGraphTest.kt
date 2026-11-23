@@ -126,4 +126,48 @@ class ModuleGraphTest {
         assertFailure { dataMockOnlyInDebugAndPerf(File(planted, "dataMock"), skipResources = false) }
             .messageContains("core:data-mock is used outside debug and the perf variants")
     }
+
+    private val testingLine = Regex("""project\(\s*":core:testing"\s*\)""")
+    private val testingAllowed =
+        listOf(
+            Regex("""^(testImplementation|androidTestImplementation|debugImplementation)\("""),
+            Regex("""^\.configureEach \{ project\.dependencies\.add\(name, project\(":core:testing"\)\) }$"""),
+        )
+
+    /** `:core:testing` holds the fixtures: `:app` takes it only for tests, debug and the perf variants (plan.md 1d). */
+    private fun testingOnlyInTestDebugAndPerf(
+        root: File,
+        skipResources: Boolean,
+    ) {
+        val bad =
+            walk(root, skipResources)
+                .filter { it.relativeTo(root).invariantSeparatorsPath == "app/build.gradle.kts" }
+                .flatMap { file ->
+                    val lines = file.readLines()
+                    lines.indices
+                        .filter { testingLine.containsMatchIn(lines[it]) }
+                        .filterNot { index ->
+                            val line = lines[index].trim()
+                            val fallback =
+                                line.startsWith(".configureEach") &&
+                                    lines.getOrNull(index - 1)?.trim()?.let {
+                                        it.startsWith(".matching") &&
+                                            it.contains("benchmarkReleaseImplementation") &&
+                                            it.contains("nonMinifiedReleaseImplementation")
+                                    } == true
+                            testingAllowed.any { it.containsMatchIn(line) } &&
+                                (!line.startsWith(".configureEach") || fallback)
+                        }.map { "${file.relativeTo(root).path}:${it + 1}" }
+                }.toList()
+        check(bad.isEmpty()) { "core:testing is used outside tests, debug and the perf variants: $bad" }
+    }
+
+    @Test
+    fun testingOnlyInTestDebugAndPerf() = testingOnlyInTestDebugAndPerf(projectRoot(), skipResources = true)
+
+    @Test
+    fun testingOnlyInTestDebugAndPerfRejectsPlantedViolation() {
+        assertFailure { testingOnlyInTestDebugAndPerf(File(planted, "testing"), skipResources = false) }
+            .messageContains("core:testing is used outside tests, debug and the perf variants")
+    }
 }

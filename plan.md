@@ -692,6 +692,11 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-0e-27 | `:core:testing-compose` needs Material 3 for `Text` and `minimumInteractiveComponentSize` in its probes and self-tests | `api(libs.compose.material3)`; it is a test-helper module and is never a main dependency | 0e |
 | OQ-0e-28 | The brief's tests loop profiles × languages × themes | `LayoutMatrix` in `:core:testing-compose` is the default (user, 2026-11-16): light only; `small` and `largeFont` in nl, `pixel8` once in en; `LayoutMatrix.wide` adds `foldInner` and `landscapeSideNav` in en | 0e |
 | OQ-0e-29 | Applying a seeded app locale recreates the running `SeedReceiverActivity`, which applied the seed twice | The receiver declares `configChanges="locale|layoutDirection|uiMode|fontScale"` in the debug manifest | 0e |
+| OQ-1d-16 | The brief's safe-area guard has no exemption, but blocks below the fold failed it: `performScrollTo` aligns a node's bottom with the scroll container's bottom, and `trip.scroll` fills the window under `Scaffold(contentWindowInsets = 0)`, so that bottom lies inside the navigation inset. The real UI is fine (bottom content padding = safe inset + gutter). A long sleep tile's hit frame is also taller than the safe window | `Guards.settledBounds` scrolls on until the node lies inside the viewport and the safe area; a node taller than that must keep its cross axis inside the safe area and at least 48 dp visible. `TimelinePageGuardTest` has no safe-area exemption and exempts the `trip.block.*` tags only from the overlap guard (OQ-1d-5); the touch-target guard has no exemption. It runs the phone matrix (`small`-nl, `largeFont`-nl, `pixel8`-en) because the page has no wide layout before 6e | 1d |
+| OQ-1d-17 | The brief says the `release` source set is not seen by `benchmarkRelease` and `nonMinifiedRelease`; it is (a duplicate `TripPageEntry` failed to compile) | The release stub lives in `app/src/releaseNoPerf/kotlin`, wired to the `release` variant only through `onVariants` | 1d |
+| OQ-1d-18 | The brief wants the repository, ViewModel and clock logic in plain JVM tests, but `android.os.Trace` is unmocked there | `TimelineTracer` (Android, None) is the seam; the draw lambdas call `android.os.Trace` directly (no allocation), and `androidx.tracing` is not added | 1d |
+| OQ-1d-19 | The brief prewarms drawings at a 411.0 dp window, but the page reads the whole pixel width (`pixel8`: 1078 px / 2.625 = 410.67 dp), so keys differ by 1 px | `TimelineTestHost.prewarm` takes the window width the page sees | 1d |
+| OQ-1d-20 | `ReleaseReadinessTest` cannot assert `LargeTimelineFixtures` is absent because `testImplementation(:core:testing)` puts it on the release unit-test classpath | Acceptance #4 (`./gradlew :app:dependencies --configuration releaseRuntimeClasspath \| grep -c core:testing` = 0) proves the absence | 1d |
 
 ## Tasks
 
@@ -1227,25 +1232,25 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 **Delivers.** Hosts the timeline in Compose without UI polish. A LazyColumn holds one keyed item per day; drawings are built off the main thread behind a placeholder and replayed in drawWithCache inside their own graphics layer, with one pointerInput per day, the isolated NowLine and the invisible semantics overlay. The phase adds the system plan clock (a minute ticker plus time, zone and date broadcasts) and a debug TimelineProbe whose Robolectric tests prove the invalidation gates (scroll 0/0, minute 0/1, day boundary 0/2, a check-off redraws one day). A perf entry opens S1–S6, large30 and large60 from fixtures through the cf.trip-page extra and emits the cf.timeline.firstFrame trace.
 
 **Tasks**
-- [ ] **TimelinePage** (`feature/trip/…/timeline/TimelinePage.kt`).
+- [x] **TimelinePage** (`feature/trip/…/timeline/TimelinePage.kt`).
   - A `LazyColumn` with one item per day (`key = dayId`, `contentType = "day"`).
   - A plain sticky day header from the generated type and color tokens; the designed header comes in 6b.
   - A minimal M3 day menu (`trip.dayMenu.day.<n>`) and a plain end item (`trip.plan.end`).
-- [ ] **DayTimeline composable.**
+- [x] **DayTimeline composable.**
   - Its size comes from constraints only.
   - It requests its drawing from `TimelineDrawingRepository`, which builds on `Dispatchers.Default.limitedParallelism(2)`, prefetches ±2 days and uses the 1c cache.
   - Until the drawing is ready it draws a placeholder (background and ticks). It then replays it in `Modifier.drawWithCache` inside `graphicsLayer {}`.
   - One `pointerInput` resolves taps through `HitIndex`; for now it only invokes a callback, and the sheet comes in 6d.
   - `TimelineTargets` become invisible semantics nodes with labels, `traversalIndex` and `onClick`.
-- [ ] **NowLine.** It is the only clock reader. It is placed with `Modifier.offset { }` from the minute state, so a tick invalidates only the NowLine.
-- [ ] **SystemPlanClock** (`core/data/…/clock/`).
+- [x] **NowLine.** It is the only clock reader. It is placed with `Modifier.offset { }` from the minute state, so a tick invalidates only the NowLine.
+- [x] **SystemPlanClock** (`core/data/…/clock/`).
   - Minute ticks aligned to the wall minute.
   - `ACTION_TIME_TICK`, `ACTION_TIME_CHANGED`, `ACTION_TIMEZONE_CHANGED` and `ACTION_DATE_CHANGED` receivers, registered only while the app is started.
   - `cf.freezeAt` freezes it in debug and perf builds.
-- [ ] **TimelineProbe.**
+- [x] **TimelineProbe.**
   - A `staticCompositionLocalOf<TimelineProbe?> { null }`. The debug implementation counts compositions and static draws per day key.
   - `TimelineInvalidationTest` (Robolectric, in `make quick`, OQ-A30) asserts the `04 §10.2` table over all 60 days of large60.
-- [ ] **Perf entry**, in `app/src/perf/` and `app/src/debug/`.
+- [x] **Perf entry**, in `app/src/perf/` and `app/src/debug/`.
   - `cf.trip-page=S1…S6|large30|large60` opens `TimelinePage` from fixtures through `FixtureTimelineSource`. `:core:testing` is a perf and debug dependency only.
   - Traces: `cf.timeline.firstFrame` (async, from ViewModel start to two frames after the first non-placeholder draw), `cf.timeline.build`, `cf.timeline.replay`, and the counter `cf.timeline.placeholder`.
   - Test tags `trip.page` and `trip.timeline.ready`.

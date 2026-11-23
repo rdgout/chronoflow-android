@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
@@ -222,6 +223,30 @@ class GuardsSelfTest {
             )
         }
         assertOnlyFails(Guard.SafeArea)
+    }
+
+    @Composable
+    private fun FullWindowScroller(padded: Boolean) {
+        ProfileHost(profile) {
+            Box(Modifier.fillMaxSize().background(Color.White).verticalScroll(rememberScrollState())) {
+                Column(if (padded) Modifier.windowInsetsPadding(LocalSafeInsets.current) else Modifier) {
+                    Box(Modifier.fillMaxWidth().height(1500.dp))
+                    Box(Modifier.testTag("below.fold").size(48.dp).clickable {})
+                }
+            }
+        }
+    }
+
+    @Test
+    fun belowTheFoldNodeWithBottomPaddingPassesSafeArea() {
+        composeRule.setContent { FullWindowScroller(padded = true) }
+        Guards.assertInteractiveInSafeArea(composeRule, profile)
+    }
+
+    @Test
+    fun belowTheFoldNodeWithoutBottomPaddingFailsSafeArea() {
+        composeRule.setContent { FullWindowScroller(padded = false) }
+        assertFailure { Guards.assertInteractiveInSafeArea(composeRule, profile) }.isInstanceOf(AssertionError::class)
     }
 
     @Test

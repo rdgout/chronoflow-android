@@ -48,3 +48,46 @@ Reviewed against the `Plan` and `PlanDark` boards. iOS at `f391a1fa` wins over t
 - **Continuation chevrons.** Drawn as the iOS 8 x 4 dp line pair (`TimelineRenderer.swift`, two 1 dp lines of `smallGap` reach), not the boards' Lucide chevron-up and chevron-down at 12 px.
 - **Zone line.** Drawn as the iOS dash pattern (2 on, 4 off, round caps, `emphasisBorder` wide), not the boards' 2 px dotted border.
 - **Top hour label.** A day's first hour label at y = 0 is drawn cut off at the top, as iOS draws it. The boards hide it.
+
+## Phase 1d: timeline host
+
+Worker, 2026-11-17. No performance claim is made here; 1e measures. Numbers are `pending` until then.
+
+### Harness outcome (Task 3, OQ-1d-3)
+
+`TimelineProbeHarnessTest` (Robolectric, `@GraphicsMode(NATIVE)`, SDK 36), `make targeted ONLY="feature:trip:TimelineProbeHarnessTest"`: all three controls pass, so draw counts are asserted in Robolectric and OQ-1d-3's instrumented fallback is not needed.
+
+- Draws only run when the test forces one: a Compose draw lambda does not run on `waitForIdle()` alone under Robolectric. Every test settles with `waitForIdle()` followed by `onRoot().captureToImage()`, which draws the window.
+- Control 1: a state read in `drawWithCache { onDrawBehind { } }` redraws exactly once per write.
+- Control 2: a child with `graphicsLayer()` keeps its draw count when its parent's `drawBehind` state changes; the same child without a layer is redrawn (negative control).
+- Control 3: moving a layer with `Modifier.offset { }` from state does not redraw it.
+
+### Perf entry runs (Task 8)
+
+Worker, 2026-11-17, emulator `pixel` (API 36), debug build, animator scales 0, `--es cf.trip-page <name> --es cf.freezeAt 2026-11-15T08:00:00Z`. Emulator numbers are regression signals, not device claims.
+
+| Fixture | `trip.timeline.ready` nodes (uiautomator dump) | `grep -c StrictMode` | crashes |
+|---|---|---|---|
+| S1, S2, S3, S4, S5, S6, large30, large60 | 1 each | 0 each | 0 |
+
+Screenshots: `build/captures/phase-1d/<name>.png` (evidence that each fixture renders, not board captures).
+
+Perfetto (`adb shell perfetto -t 15s -a net.chronoflow.app.native.debug gfx view sched dalvik`, large60, 15 swipes; trace `build/phase-1d.pftrace`, queried with the Python trace processor):
+
+- `cf.timeline.build`: 17 slices, all on `DefaultDispatch*` threads, none on the main thread.
+- `cf.timeline.replay`: 13 slices, all on the main thread. `cf.timeline.placeholder`: 1 slice.
+- `cf.timeline.firstFrame`: one async slice, 818 ms before the fix (debug build on the emulator, large60; it included fixture generation). It now starts after the fixture is generated, as in iOS `TripPageDiagnosticRoot`, and covers decode, layout, prepare, typeface load and the first build. Pending 1e for any budget.
+- `cf.timeline.firstFrame` after generating the fixture before the section starts (2026-11-17, `pixel`, debug build, cold start, large60, Perfetto `-t 8s -a net.chronoflow.app.native.debug gfx view sched dalvik`, three runs, `build/phase-1d-after-{1,2,3}.pftrace`): 212 ms, 225 ms, 214 ms. The old 818 ms included the roughly 579 ms large60 generator.
+
+### Compose stability (`./gradlew :feature:trip:compileReleaseKotlin -PcomposeReports=true`)
+
+```
+restartable skippable ... fun ...timeline.DayTimeline(  stable day, layout, key, dayIndex, availableWidthDp, repository, resources, clock, onBlock, onFirstReplay, prefetch, modifier)
+restartable skippable ... fun ...timeline.NowLine(  stable clock, dayId, widthDp, modifier)
+restartable skippable ... fun ...timeline.DayHeaderLine(  stable day, colors, minHeight)
+restartable skippable ... fun ...timeline.TimelineTargets(  stable drawing, dayId, onBlock, modifier)
+```
+
+### Invalidation guard
+
+`TimelineInvalidationTest` (Robolectric, `@Logic`, in `make quick`): scrolling 120 deltas plus a current-day boundary 0 static compositions and draws; minute tick 1 clock composition (day 0 only); day boundary 2; check-off redraws only its day. Removing `graphicsLayer()` from the static layer fails the minute-tick and day-boundary tests (static draws of an untouched day 0 vs 1).
