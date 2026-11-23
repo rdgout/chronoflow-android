@@ -41,6 +41,7 @@ class TripPageTestRig(
     initialSnapshot: net.chronoflow.core.model.store.TripPlanSnapshot? = null,
     fetchDetail: suspend (String) -> Unit = {},
     makePath: () -> net.chronoflow.core.sync.SyncPathMonitoring? = { null },
+    applyChecks: Boolean = false,
 ) {
     val detail = LargeTimelineFixtures.fixture(fixture).detail
     val source = initialSnapshot?.let { FakeTripPageSource(it) } ?: FakeTripPageSource.fixture(fixture)
@@ -77,6 +78,12 @@ class TripPageTestRig(
                         initialTimeline = initialTimeline,
                         fetchDetail = fetchDetail,
                         makePath = makePath,
+                        enqueueCheck = { change ->
+                            if (applyChecks) {
+                                val value = source.snapshot.value
+                                source.snapshot.value = value.copy(pendingChecks = value.pendingChecks + change)
+                            }
+                        },
                     )
                 }
             },
@@ -93,6 +100,7 @@ class TripPageTestRig(
             TripPageEvent.ToggleView -> vm.toggleView()
             TripPageEvent.SaveAnchor -> vm.saveAnchor()
             is TripPageEvent.Block -> vm.selectBlock(event.id)
+            is TripPageEvent.Check -> vm.checkFromAccessibility(event.id, event.status)
             else -> Unit
         }
     }

@@ -2,6 +2,7 @@ package net.chronoflow.app
 
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import net.chronoflow.core.data.repository.AccountRepository
 import net.chronoflow.core.data.repository.OutboxRepository
 import net.chronoflow.core.data.repository.SettingsRepository
@@ -13,6 +14,8 @@ import net.chronoflow.core.plan.CopyCatalogProvider
 import net.chronoflow.core.plan.PlanDecoder
 import net.chronoflow.core.plan.PlanPreparer
 import net.chronoflow.core.sync.SessionSync
+import net.chronoflow.core.sync.SyncEvent
+import net.chronoflow.core.sync.refusal.RefusedChangeModel
 import net.chronoflow.feature.trip.page.DefaultTripPlanPipeline
 
 data class SessionGraph(
@@ -27,6 +30,20 @@ data class SessionGraph(
     val dataSource: DataSource,
     val scope: CoroutineScope,
 ) {
+    val refusedChanges = RefusedChangeModel()
+
+    init {
+        scope.launch {
+            try {
+                sync.events().collect { event ->
+                    if (event is SyncEvent.Finished && event.epoch == epoch) refusedChanges.receive(event.result)
+                }
+            } finally {
+                refusedChanges.clear()
+            }
+        }
+    }
+
     private var planDecoder: PlanDecoder? = null
     private var planPreparer: PlanPreparer? = null
 

@@ -12,7 +12,11 @@ class RouteSerializationTest(
     private val route: Route,
 ) {
     @Test fun routesRoundTripThroughJson() {
-        assertEquals(route, Json.decodeFromString(Route.serializer(), Json.encodeToString(Route.serializer(), route)))
+        val expected = if (route is Route.TripPage) route.copy(notificationToken = null) else route
+        assertEquals(
+            expected,
+            Json.decodeFromString(Route.serializer(), Json.encodeToString(Route.serializer(), route)),
+        )
     }
 
     companion object {

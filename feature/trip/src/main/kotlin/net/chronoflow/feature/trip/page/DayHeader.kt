@@ -3,6 +3,7 @@ package net.chronoflow.feature.trip.page
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,13 +19,19 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -35,6 +42,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import net.chronoflow.core.designsystem.effect.cfFocusRing
 import net.chronoflow.core.designsystem.icon.LucideGlyphs
 import net.chronoflow.core.designsystem.icon.imageVector
 import net.chronoflow.core.designsystem.theme.CfTheme
@@ -49,7 +57,17 @@ import net.chronoflow.feature.trip.timeline.TimelineProbe.Kind
 fun DayHeader(
     day: PreparedDay,
     modifier: Modifier = Modifier,
+    requestFocus: Boolean = false,
+    onFocusRequest: () -> Unit = {},
 ) {
+    val requester = remember { FocusRequester() }
+    val handled by rememberUpdatedState(onFocusRequest)
+    LaunchedEffect(requestFocus) {
+        if (requestFocus) {
+            requester.requestFocus()
+            handled()
+        }
+    }
     val probe = LocalTimelineProbe.current
     SideEffect { probe?.composed(Kind.HEADER, day.id) }
     var expanded by rememberSaveable(day.id) { mutableStateOf(false) }
@@ -77,7 +95,12 @@ fun DayHeader(
                 }
             Text(
                 heading,
-                Modifier.semantics { heading() }.testTag("trip.dayHeader.${day.id}"),
+                Modifier
+                    .cfFocusRing(RectangleShape)
+                    .focusRequester(requester)
+                    .focusable()
+                    .semantics { heading() }
+                    .testTag("trip.dayHeader.${day.id}"),
                 style = type.planDayTitle,
             )
         }, zone = {

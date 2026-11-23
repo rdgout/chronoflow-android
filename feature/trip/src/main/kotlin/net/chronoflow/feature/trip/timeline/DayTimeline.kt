@@ -55,6 +55,8 @@ fun DayTimeline(
     onFirstReplay: () -> Unit,
     prefetch: (dayIndex: Int, key: DayDrawingKey) -> Unit,
     modifier: Modifier = Modifier,
+    actions: net.chronoflow.core.plan.step.DayCheckActions = day.checkActions,
+    onCheck: (String, net.chronoflow.core.model.contracts.CheckStatus?) -> Unit = { _, _ -> },
     headings: @Composable () -> Unit = {},
 ) {
     val probe = LocalTimelineProbe.current
@@ -125,7 +127,7 @@ fun DayTimeline(
             Box(Modifier.size(geometry.width.dp, layout.height.dp)) {
                 Spacer(Modifier.matchParentSize().then(staticLayer).then(taps))
                 NowLine(clock, dayId, geometry.width)
-                TimelineTargets(drawing, dayId, onBlock, Modifier.matchParentSize())
+                TimelineTargets(drawing, dayId, onBlock, Modifier.matchParentSize(), actions, onCheck)
             }
         }
     }

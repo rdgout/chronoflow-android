@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -48,6 +49,8 @@ fun TripPageRoute(
     modifier: Modifier = Modifier,
     onTrips: (() -> Unit)? = null,
     onToday: (() -> Unit)? = null,
+    onRouteChange: (Route.TripPage) -> Unit = {},
+    onWizard: (net.chronoflow.core.navigation.WizardMode) -> Unit = {},
 ) {
     val appContext = LocalContext.current.applicationContext
     val graph = (appContext as ChronoFlowApp).graph
@@ -64,14 +67,26 @@ fun TripPageRoute(
             TripPageArgs(route.tripId, route.dayId, route.blockId, summary, route.awaitingSync)
         }
     val factory =
-        remember(args, appContext, language, freeze) { tripPageViewModelFactory(args, appContext, language, freeze) }
+        remember(args, appContext, language, freeze) {
+            tripPageViewModelFactory(
+                args,
+                appContext,
+                language,
+                freeze,
+                route.sheet ?: LaunchPlatform.initialTripSheet,
+                route.notificationInputHash,
+            )
+        }
+    val vm: TripPageViewModel = viewModel(key = "trip:${route.tripId}", factory = factory)
+    TrackTripPageSheet(vm, route, onRouteChange)
     Box(modifier.fillMaxSize().testTag("route.tripPage")) {
         TripPage(
-            viewModel(key = "trip:${route.tripId}", factory = factory),
+            vm,
             onBack,
             onSettings,
             onTrips = onTrips,
             onToday = onToday,
+            onWizard = onWizard,
         )
     }
 }
@@ -82,6 +97,8 @@ internal fun tripPageViewModelFactory(
     context: Context,
     language: Language,
     freezeClock: Boolean,
+    initialSheet: net.chronoflow.core.navigation.TripSheet? = null,
+    notificationInputHash: String? = null,
 ) = viewModelFactory {
     initializer {
         val graph = checkNotNull(this[AppGraphKey])
@@ -92,7 +109,7 @@ internal fun tripPageViewModelFactory(
         TripPageViewModel(
             args,
             DbTripPageSource(session),
-            if (freezeClock) FixedPlanClock(Instant.now()) else graph.planClock,
+            if (freezeClock) FixedPlanClock(LaunchPlatform.frozenTripInstant ?: Instant.now()) else graph.planClock,
             session.tripPlanPipeline(compute, graph.copyCatalogs, graph.dispatchers.io),
             createSavedStateHandle(),
             language,
@@ -107,6 +124,30 @@ internal fun tripPageViewModelFactory(
             epoch = session.snapshot.epoch,
             initiallySyncCompleted = false,
             initialTimeline = !LaunchPlatform.startTripInList,
+            initialSheet = initialSheet,
+            notificationInputHash = notificationInputHash,
+            isCurrent = { graph.sessionGraphs.current.value === session },
+            enqueueCheck = { change ->
+                val permit =
+                    graph.controller.mutationPermit(session.snapshot)
+                        ?: throw net.chronoflow.core.model.session
+                            .StaleSessionException()
+                withContext(graph.dispatchers.io) {
+                    session.outbox.enqueue(
+                        net.chronoflow.core.model.OutboxChange
+                            .CheckOff(change),
+                        permit = permit,
+                    )
+                }
+            },
+            reportCheckFailure = { error ->
+                if (net.chronoflow.app.BuildConfig.DEBUG) {
+                    android.util.Log.w(
+                        "CfTrip",
+                        "check-off not saved: ${error::class.simpleName}",
+                    )
+                }
+            },
         )
     }
 }
@@ -120,3 +161,17 @@ private fun ioPath(
 
         override suspend fun stop() = withContext(io) { path.stop() }
     }
+
+@Composable
+internal fun TrackTripPageSheet(
+    vm: TripPageViewModel,
+    route: Route.TripPage,
+    onRouteChange: (Route.TripPage) -> Unit,
+) {
+    val update by rememberUpdatedState(onRouteChange)
+    val sheet by vm.sheet.collectAsStateWithLifecycle()
+    val resolved by vm.sheetResolved.collectAsStateWithLifecycle()
+    androidx.compose.runtime.LaunchedEffect(sheet, resolved) {
+        if (resolved && route.sheet != sheet) update(route.copy(sheet = sheet))
+    }
+}

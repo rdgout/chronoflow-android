@@ -231,6 +231,17 @@ private fun ReadyTripPage(
                 if (dark) TimelinePalette.Dark else TimelinePalette.Light,
             )
         }
+    var focusDay by remember { mutableStateOf<String?>(null) }
+    val focusHandled = remember { { focusDay = null } }
+    val onCheck =
+        remember(onEvent) {
+            {
+                id: String,
+                status: net.chronoflow.core.model.contracts.CheckStatus?,
+                ->
+                onEvent(TripPageEvent.Check(id, status))
+            }
+        }
     val onFirstReplay = remember(state.firstFrame) { state.firstFrame::onReplay }
     val onBlock = remember(onEvent) { { id: String -> onEvent(TripPageEvent.Block(id)) } }
     BoxWithConstraints(Modifier.fillMaxSize().testTag("trip.page")) {
@@ -253,7 +264,8 @@ private fun ReadyTripPage(
                                 snapshotFlow { currentState.value.ui.plan }.first {
                                     it?.layouts?.containsKey(command.dayId) == true
                                 } ?: return@launch
-                            listState.requestScrollToItem(replacement.listIndex.headerIndex(command.dayId), 0)
+                            listState.scrollToItem(replacement.listIndex.headerIndex(command.dayId), 0)
+                            if (command.animated) focusDay = command.dayId
                             return@launch
                         }
                         val latest = currentState.value.ui.plan ?: return@launch
@@ -286,6 +298,7 @@ private fun ReadyTripPage(
                         } else {
                             listState.scrollToItem(target.first, target.second)
                         }
+                        if (command.animated) focusDay = command.dayId
                     }
             }
         }
@@ -313,7 +326,7 @@ private fun ReadyTripPage(
                 item("h:${day.id}", "dayHeader") {
                     Box(
                         Modifier.testTag("trip.headerItem.${day.id}").padding(top = PlanMetrics.sectionGap.dp),
-                    ) { DayHeader(day) }
+                    ) { DayHeader(day, requestFocus = focusDay == day.id, onFocusRequest = focusHandled) }
                 }
                 if (state.timeline) {
                     item("t:${day.id}", "dayTimeline") {
@@ -337,6 +350,8 @@ private fun ReadyTripPage(
                             onBlock,
                             onFirstReplay,
                             state.prefetch,
+                            actions = day.checkActions,
+                            onCheck = onCheck,
                             headings = { LaneHeadings(null) },
                         )
                     }
@@ -348,7 +363,16 @@ private fun ReadyTripPage(
                             if (row.zone) {
                                 ZoneChangeCard(row, onBlock, rowPadding)
                             } else {
-                                DayListRow(row, state.clocks.clock(day.id), onBlock, rowPadding)
+                                DayListRow(
+                                    row,
+                                    state.clocks.clock(day.id),
+                                    onBlock,
+                                    rowPadding,
+                                    actions =
+                                        day.checkActions.byBlock[row.blockId]
+                                            ?: net.chronoflow.core.plan.step.StepActions.None,
+                                    onCheck = onCheck,
+                                )
                             }
                         }
                     }

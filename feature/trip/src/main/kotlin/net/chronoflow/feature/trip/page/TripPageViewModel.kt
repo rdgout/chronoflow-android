@@ -3,12 +3,15 @@ package net.chronoflow.feature.trip.page
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
@@ -19,17 +22,31 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import net.chronoflow.core.model.CheckOffChange
+import net.chronoflow.core.model.DataFailure
+import net.chronoflow.core.model.contracts.CheckStatus
 import net.chronoflow.core.model.contracts.Language
+import net.chronoflow.core.model.device.DeviceIdentityFailure
+import net.chronoflow.core.model.session.SessionFailure
+import net.chronoflow.core.model.store.LocalMutationFailure
+import net.chronoflow.core.model.store.StoreFailure
+import net.chronoflow.core.navigation.TripSheet
 import net.chronoflow.core.plan.CopyFormat
 import net.chronoflow.core.plan.CopyLineFormatter
 import net.chronoflow.core.plan.PlanClock
+import net.chronoflow.core.plan.actions.TripActionsAvailability
 import net.chronoflow.core.plan.drawing.DayDrawingCache
 import net.chronoflow.core.plan.drawing.DayDrawingKey
 import net.chronoflow.core.plan.drawing.TextMetrics
 import net.chronoflow.core.plan.drawing.TimelineTraceNames
 import net.chronoflow.core.plan.generated.TimelinePalette
+import net.chronoflow.core.plan.step.StepBadge
+import net.chronoflow.core.plan.step.StepSheetState
+import net.chronoflow.core.plan.step.stepSheetState
 import net.chronoflow.core.plan.trippage.TripPageAnchor
 import net.chronoflow.core.plan.trippage.TripPageInputs
 import net.chronoflow.core.plan.trippage.TripPageState
@@ -45,12 +62,15 @@ import net.chronoflow.core.sync.SyncResult
 import net.chronoflow.core.sync.SyncState
 import net.chronoflow.core.sync.refresh.RefreshDebugProbe
 import net.chronoflow.core.sync.refresh.RefreshFeedbackModel
+import net.chronoflow.feature.trip.actions.TripActionsUi
 import net.chronoflow.feature.trip.state.TripPageFetchModel
 import net.chronoflow.feature.trip.timeline.DayClocks
 import net.chronoflow.feature.trip.timeline.DrawingRequest
 import net.chronoflow.feature.trip.timeline.TimelineDrawingRepository
 import net.chronoflow.feature.trip.timeline.TimelineTracer
 import net.chronoflow.feature.trip.timeline.host.FirstTimelineFrameTrace
+import java.io.IOException
+import java.security.GeneralSecurityException
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 
@@ -82,6 +102,11 @@ class TripPageViewModel(
     epoch: Long = 0,
     initiallySyncCompleted: Boolean = true,
     initialTimeline: Boolean = true,
+    private val initialSheet: TripSheet? = null,
+    private val notificationInputHash: String? = null,
+    private val isCurrent: () -> Boolean = { true },
+    private val enqueueCheck: suspend (CheckOffChange) -> Unit = {},
+    private val reportCheckFailure: (Throwable) -> Unit = {},
 ) : ViewModel() {
     private val lease: PlanLease
 
@@ -97,8 +122,25 @@ class TripPageViewModel(
     val ui: StateFlow<TripPageUi> = _ui.asStateFlow()
     private val _anchor = MutableStateFlow(savedAnchor)
     val anchor: StateFlow<TripPageAnchor> = _anchor.asStateFlow()
-    private val _selectedStepId = MutableStateFlow<String?>(null)
-    val selectedStepId: StateFlow<String?> = _selectedStepId.asStateFlow()
+    private val _sheet = MutableStateFlow<TripSheet?>(null)
+    val sheet: StateFlow<TripSheet?> = _sheet.asStateFlow()
+    private val _sheetResolved = MutableStateFlow(initialSheet == null)
+    val sheetResolved: StateFlow<Boolean> = _sheetResolved.asStateFlow()
+    val selectedStep: StateFlow<TripSheet.Step?> =
+        sheet
+            .map { it as? TripSheet.Step }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+    private val _checkBusy = MutableStateFlow(false)
+    val checkBusy: StateFlow<Boolean> = _checkBusy.asStateFlow()
+
+    private data class CheckExpectation(
+        val blockId: String,
+        val status: CheckStatus?,
+    )
+
+    private var pendingAnnouncement: CheckExpectation? = null
+    private val announcementEvents = Channel<StepBadge?>(Channel.BUFFERED)
+    val announcements: Flow<StepBadge?> = announcementEvents.receiveAsFlow()
     private val commands = Channel<ScrollCommand>(Channel.BUFFERED)
     val scrollCommands: Flow<ScrollCommand> = commands.receiveAsFlow()
     private val planFlow = MutableStateFlow<ReadyPlan?>(null)
@@ -109,6 +151,39 @@ class TripPageViewModel(
     private val syncCompleted = MutableStateFlow(initiallySyncCompleted)
     private val fetchModel = TripPageFetchModel(args.tripId, fetchDetail, makePath(), viewModelScope)
     val online = fetchModel.online
+    val stepSheet: StateFlow<StepSheetState?> =
+        combine(sheet, outputFlow, clock.values()) { selected, output, now ->
+            if (selected is TripSheet.Step) {
+                withContext(compute) {
+                    stepSheetState(
+                        output?.plan?.detail,
+                        selected.blockId,
+                        now.toEpochMilli(),
+                        formatter(),
+                        output?.page?.language ?: language,
+                        output?.page?.timeFormat ?: net.chronoflow.core.model.contracts.TimeFormat.Value24,
+                    )
+                }
+            } else {
+                null
+            }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    val tripActions: StateFlow<TripActionsUi?> =
+        combine(ui, online) { page, connected ->
+            val card = page.page.card
+            val header = page.page.actionsHeader
+            if (card == null || header == null) {
+                null
+            } else {
+                TripActionsUi(
+                    args.tripId,
+                    header,
+                    TripActionsAvailability(card.canEdit, card.canDuplicate, connected, false),
+                )
+            }
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
     private val _timeline = MutableStateFlow(initialTimeline)
     val timeline: StateFlow<Boolean> = _timeline.asStateFlow()
 
@@ -220,6 +295,61 @@ class TripPageViewModel(
                 fetch = fetchModel.fetch.value,
             ).state()
         _ui.value = TripPageUi(state, out.title, out.plan, out.page)
+        if (!_sheetResolved.value && state != TripPageState.Loading) {
+            _sheet.value =
+                when (val initial = initialSheet) {
+                    is TripSheet.Step -> {
+                        initial.takeIf {
+                            state == TripPageState.Ready &&
+                                out.plan
+                                    ?.detail
+                                    ?.plan
+                                    ?.blocks
+                                    ?.any { it.id == initial.blockId } == true
+                        }
+                    }
+
+                    TripSheet.TripActions -> {
+                        initial.takeIf { out.page.card != null }
+                    }
+
+                    else -> {
+                        initial
+                    }
+                }
+            _sheetResolved.value = true
+        }
+        if (state == TripPageState.Ready && notificationInputHash != null &&
+            savedState.get<Boolean>(NOTIFICATION_HANDLED) != true
+        ) {
+            savedState[NOTIFICATION_HANDLED] = true
+            if (out.plan
+                    ?.detail
+                    ?.plan
+                    ?.meta
+                    ?.inputHash == notificationInputHash
+            ) {
+                args.blockId?.let(::openStep)
+            }
+        }
+        val pending = pendingAnnouncement
+        if (pending != null) {
+            val block =
+                out.plan?.prepared?.days?.asSequence()?.flatMap { it.blocks.asSequence() }?.firstOrNull {
+                    it.id ==
+                        pending.blockId
+                }
+            if (block != null && block.status == pending.status) {
+                pendingAnnouncement = null
+                announcementEvents.trySend(
+                    when (pending.status) {
+                        CheckStatus.Done -> StepBadge.Done
+                        null -> null
+                        else -> StepBadge.Skipped
+                    },
+                )
+            }
+        }
     }
 
     private suspend fun acceptPreparedPlan(
@@ -282,8 +412,88 @@ class TripPageViewModel(
 
     fun consumeSummaryPosition(): Boolean = (firstOpen && args.startAtSummary).also { firstOpen = false }
 
-    fun selectBlock(id: String) {
-        _selectedStepId.value = id
+    fun selectBlock(id: String) = openStep(id)
+
+    fun openStep(blockId: String) {
+        if (ui.value.state == TripPageState.Ready &&
+            planFlow.value
+                ?.detail
+                ?.plan
+                ?.blocks
+                ?.any { it.id == blockId } == true
+        ) {
+            _sheet.value = TripSheet.Step(blockId)
+        }
+    }
+
+    fun openLegend() {
+        _sheet.value = TripSheet.Legend
+    }
+
+    fun openTripActions() {
+        if (ui.value.page.card != null) _sheet.value = TripSheet.TripActions
+    }
+
+    fun dismissSheet() {
+        _sheet.value = null
+    }
+
+    fun setCheck(
+        blockId: String,
+        status: CheckStatus?,
+    ) {
+        submitCheck(blockId, status, false)
+    }
+
+    fun checkFromAccessibility(
+        blockId: String,
+        status: CheckStatus?,
+    ) {
+        submitCheck(blockId, status, true)
+    }
+
+    private fun submitCheck(
+        blockId: String,
+        status: CheckStatus?,
+        announce: Boolean,
+    ) {
+        if (_checkBusy.value || !isCurrent()) return
+        val detail = planFlow.value?.detail ?: return
+        val block = detail.plan.blocks.firstOrNull { it.id == blockId && it.actionable } ?: return
+        val key = block.checkKey ?: return
+        val change =
+            CheckOffChange(args.tripId, detail.plan.meta.inputHash, key.type, key.localDate, key.ordinal, status)
+        _checkBusy.value = true
+        if (announce) pendingAnnouncement = CheckExpectation(blockId, status)
+        viewModelScope.launch {
+            var saved = false
+            try {
+                enqueueCheck(change)
+                saved = true
+            } catch (cancelled: CancellationException) {
+                if (!currentCoroutineContext().isActive) throw cancelled
+                reportCheckFailure(cancelled)
+            } catch (error: SessionFailure) {
+                reportCheckFailure(error)
+            } catch (error: DataFailure) {
+                reportCheckFailure(error)
+            } catch (error: DeviceIdentityFailure) {
+                reportCheckFailure(error)
+            } catch (error: StoreFailure) {
+                reportCheckFailure(error)
+            } catch (error: LocalMutationFailure) {
+                reportCheckFailure(error)
+            } catch (error: IOException) {
+                reportCheckFailure(error)
+            } catch (error: GeneralSecurityException) {
+                reportCheckFailure(error)
+            } catch (error: RuntimeException) {
+                reportCheckFailure(error)
+            } finally {
+                if (!saved && announce) pendingAnnouncement = null
+                _checkBusy.value = false
+            }
+        }
     }
 
     fun setLanguage(language: Language) {
@@ -346,9 +556,11 @@ class TripPageViewModel(
         fetchModel.stop()
         lease.release()
         commands.close()
+        announcementEvents.close()
     }
 
     private companion object {
+        const val NOTIFICATION_HANDLED = "trip.notificationStepHandled"
         const val DAY = "trip.anchor.day"
         const val DATE = "trip.anchor.labelDate"
         const val OFFSET = "trip.anchor.offset"

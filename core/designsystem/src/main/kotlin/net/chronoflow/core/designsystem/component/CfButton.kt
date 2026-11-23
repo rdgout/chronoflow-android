@@ -75,6 +75,7 @@ fun CfButton(
     minHeight: Dp = Dp.Unspecified,
     textStyle: TextStyle = CfTheme.type.authLabel,
     contentPadding: PaddingValues? = null,
+    leadingIconSize: Dp = AuthTokens.icon.dp,
 ) {
     require(!loading || loadingDescription != null) { "A loading button needs a localized loadingDescription" }
     val c = CfTheme.colors
@@ -134,7 +135,7 @@ fun CfButton(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (loading) CfSpinner()
-            if (leadingIcon != null) Icon(leadingIcon, null, Modifier.size(AuthTokens.icon.dp))
+            if (leadingIcon != null) Icon(leadingIcon, null, Modifier.size(leadingIconSize))
             Text(text, Modifier.weight(1f, fill = false), color = ink, style = textStyle, textAlign = TextAlign.Center)
         }
     }

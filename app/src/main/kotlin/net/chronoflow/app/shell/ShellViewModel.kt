@@ -35,6 +35,18 @@ internal class ShellViewModel(
         state = ShellNav.push(state, route)
     }
 
+    fun replaceRoute(
+        old: Route.TripPage,
+        next: Route.TripPage,
+    ) {
+        val stacks =
+            state.stacks.mapValues { (_, stack) ->
+                val index = stack.lastIndexOf(old)
+                if (index < 0) stack else stack.toMutableList().apply { set(index, next) }.toList()
+            }
+        state = state.copy(stacks = stacks)
+    }
+
     fun openTrip(tripId: String) {
         state = ShellNav.openTrip(state, tripId)
     }

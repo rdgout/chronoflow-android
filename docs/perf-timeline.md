@@ -70,6 +70,8 @@ make baseline-profile                      # regenerates the committed profiles
 | 2026-11-17 | 3a3a442 | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | host | benchmarkRelease, Partial(Require), bounded-swipe-v3 | 67.6/85.0 | 3.3/4.3/5.7 | 2.2/4.8 | -8.1 | 0.0/0.0 | 0.0/0.0 | 0 | 0.8 | 105.6 | -0.2 | 55 | 3 | ok | ok | PASS |
 | 2026-11-19 | 984736e | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | trip | benchmarkRelease, Partial(Require), bounded-swipe-v3 | 99.3/105.3 | 3.8/4.7/6.1 | 2.7/4.3 | -5.3 | 0.0/0.0 | 0.0/0.0 | 0 | 0.5 | 107.2 | -0.1 | 6346 | 4 | ok | ok | PASS |
 | 2026-11-19 | 9c60131 | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | trip | benchmarkRelease, Partial(Require), bounded-swipe-v3 | 82.7/100.0 | 3.8/5.1/6.7 | 3.0/4.7 | -4.6 | 0.0/0.0 | 0.0/0.0 | 0 | 0.4 | 106.9 | 0.2 | 571 | 3 | ok | ok | PASS |
+| 2026-11-19 | d61c3ac | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | trip | benchmarkRelease, Partial(Require), bounded-swipe-v3 | 98.9/100.2 | 3.7/4.8/6.6 | 2.8/4.6 | -5.5 | 0.0/0.0 | 0.0/0.0 | 0 | 0.5 | 108.1 | 0.1 | 571 | 3 | ok | ok | PASS |
+| 2026-11-19 | b869739 | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | trip | benchmarkRelease, Partial(Require), bounded-swipe-v3 | 83.3/84.1 | 3.7/4.8/6.7 | 3.0/4.7 | -4.6 | 0.1/0.1 | 0.1/0.3 | 0 | 0.5 | 108.2 | 0.1 | 571 | 3 | ok | ok | PASS |
 
 `-dirty` marks a run made with uncommitted changes (here the regenerated baseline profile, committed right after).
 
@@ -470,3 +472,58 @@ Frames (~2,100), recompositions (571), builds and replays (40/40), placeholders 
 
 **Not run:** the separate StrictMode sweep (remote open, list, pull) and an independent capture review. The ready-list pixel smoke test logged zero IO violations.
 
+
+
+## Phase 6d — interactions (2026-11-19)
+
+Host evidence: MacBook-Pro-van-Rick.local, macOS 27.2.1, JDK 17 Gradle / JDK 21 test toolchain, JVM budget build and debug Robolectric native graphics. Command: `make timing`, serial after the remaining quick checks. Six gates pass, 2.30 s tier wall (2.35 s shell wall). These are host measurements, not emulator or device claims.
+
+| Preparation fixture | Mean ms | Maximum ms of ten samples | Gate ms per sample |
+|---|---:|---:|---:|
+| S3 | 2.8 | 4.3 | 40 |
+| large30 | 4.1 | 4.7 | 100 |
+| large60 | 6.5 | 7.9 | 200 |
+
+| large60 width dp | Largest day median ms | Largest day maximum ms (report only) | Total median ms | Largest drawing bytes |
+|---|---:|---:|---:|---:|
+| 360 | 0.07 | 0.10 | 0.8 | 11,795 |
+| 411 | 0.04 | 0.05 | 0.6 | 11,795 |
+| 841 | 0.05 | 0.14 | 1.3 | 14,089 |
+
+Drawing gates remain median ≤1 ms per day, total median ≤5 ms per width, ≤512 KiB per drawing. XML and raw sample output: `build/phase6d-review/timing/` and `core/plan/build/test-results/timingTest/`.
+
+The button and custom-action check-off guards both pass. Only day k rebuilds its static layer and targets; the unchanged visible days have zero static/target/clock/header changes. Day k has one static composition, 1–2 draws and 1–2 target compositions: check actions can arrive before the asynchronous replacement drawing. The clock stays unchanged. The list guard proves a scroll moves within one day with zero row/chrome compositions and zero composition passes; its header-crossing positive control observes composition. The original timeline scroll guard stays green.
+
+`./gradlew :feature:trip:compileReleaseKotlin -PcomposeReports=true` passes (4 s Gradle wall). Release report excerpts, with every listed parameter marked `stable`:
+
+```text
+restartable skippable ... fun net.chronoflow.feature.trip.timeline.DayTimeline(
+  stable day: PreparedDay
+  stable layout: DayLayout
+  stable key: DayDrawingKey
+  stable actions: DayCheckActions?
+  stable onCheck: Function2<String, CheckStatus?, Unit>?
+  ... all other parameters stable
+)
+restartable skippable ... fun net.chronoflow.feature.trip.timeline.TimelineTargets(
+  stable drawing: State<DayDrawing?>
+  stable dayId: String
+  stable onBlock: Function1<String, Unit>
+  stable modifier: Modifier?
+  stable actions: DayCheckActions?
+  stable onCheck: Function2<String, CheckStatus?, Unit>?
+)
+```
+
+The baseline journey now opens a checkable block, expands the native sheet, checks it, undoes it and closes it using bounded structural-tag waits. The perf-only source feeds pending checks through the real decoder. Its JVM test passes. The timeline/list measurement workloads and checker thresholds are unchanged.
+
+**Emulator runs (orchestrator, 2026-11-19, `make perf-timeline`, quiet host):**
+
+| Commit | Profiles | First frame mean/max ms | Timeline CPU P50/P90/P99 ms | List CPU P50/P90/P99 ms | Main/RT P99 ms | Jank % max | Result |
+|---|---|---:|---:|---:|---:|---:|---|
+| d61c3ac | 6c profiles | 98.9/100.2 | 3.7/4.8/6.6 | 3.4/4.4/5.9 | 2.8/4.6 | 0.0 | PASS |
+| b869739 | regenerated with the step-sheet journey | 83.1/84.1 | 3.7/4.8/6.7 | 3.5/4.5/6.0 | 3.0/4.7 | 0.1 | PASS |
+
+Both runs sit inside the trip CPU band, next to the 9c60131 row (3.8/5.1/6.7), with zero placeholders, zero main-thread builds and RSS growth under 0.2 MiB. No ±25% FLAGGED line. These are the first in-band `listScroll` numbers. They close OQ-A291: on a quiet host the 6c-and-later stack measures like 6b, so the 6c misses were environmental.
+
+**Profiles:** `make baseline-profile` first failed at "native sheet missing", because the sheet window did not export its test tags. After 6028332 the profiles regenerate in about 4 min; they are committed in b869739.

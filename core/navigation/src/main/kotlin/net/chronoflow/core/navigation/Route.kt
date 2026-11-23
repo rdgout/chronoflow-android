@@ -63,9 +63,11 @@ sealed interface Route : NavKey {
         val blockId: String? = null,
         val awaitingSync: Boolean = false,
         val notificationInputHash: String? = null,
-        val notificationToken: String? = null,
+        @kotlinx.serialization.Transient val notificationToken: String? = null,
         val sheet: TripSheet? = null,
-    ) : Route
+    ) : Route {
+        override fun toString(): String = stateKey()
+    }
 
     @Serializable data class Wizard(
         val mode: WizardMode,
@@ -78,6 +80,8 @@ sealed interface Route : NavKey {
     ) : TripSheet
 
     @Serializable data object Legend : TripSheet
+
+    @Serializable data object StepsLegend : TripSheet
 
     @Serializable data object TripActions : TripSheet
 }
@@ -151,6 +155,7 @@ private fun TripSheet.stateKey(): String =
     when (this) {
         is TripSheet.Step -> stateKey("step", blockId)
         TripSheet.Legend -> "legend"
+        TripSheet.StepsLegend -> "stepsLegend"
         TripSheet.TripActions -> "tripActions"
     }
 
