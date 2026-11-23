@@ -14,7 +14,7 @@ finish_perf_archive() {
   if [ -d "$PERF_OUTPUT_DIR" ]; then
     mv "$PERF_OUTPUT_DIR" "$PERF_ARCHIVE/connected_android_test_additional_output" || return 1
   fi
-  local xml="benchmark/build/outputs/androidTest-results/connected/benchmarkRelease"
+  local xml="${1:-benchmark/build/outputs/androidTest-results/connected/benchmarkRelease}"
   if [ -d "$xml" ]; then cp -R "$xml" "$PERF_ARCHIVE/androidTest-results" || return 1; fi
   RESULTS_DIR="$PERF_ARCHIVE/connected_android_test_additional_output/benchmarkRelease"
 }
