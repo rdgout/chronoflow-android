@@ -270,17 +270,28 @@ fun insetsOnlyAtRoot(scope: KoScope) {
     fail("insetsOnlyAtRoot", violations)
 }
 
+private val mockFixtureImports =
+    mapOf(
+        "MockAppSeed.kt" to setOf("Fixtures", "Template", "LargeTimelineFixtures"),
+        "MockTripFixtures.kt" to setOf("Template"),
+        "MockTripGeneration.kt" to setOf("MockTripTemplates", "Template"),
+    )
+
 fun testingNotInMain(scope: KoScope) {
+    val prefix = "net.chronoflow.core.testing"
     val violations =
         scope
             .moduleFiles()
             .filter { it.sourceSet == "main" && !it.module.startsWith("core/testing") }
-            .filter { file ->
-                file.imports.any {
-                    it == "net.chronoflow.core.testing" ||
-                        it.startsWith("net.chronoflow.core.testing.")
-                }
-            }.map { it.path }
+            .flatMap { file ->
+                file.imports
+                    .filter { it == prefix || it.startsWith("$prefix.") }
+                    .filterNot { imported ->
+                        file.module == "core/data-mock" &&
+                            imported.removePrefix("$prefix.") in
+                            mockFixtureImports[file.path.substringAfterLast('/')].orEmpty()
+                    }.map { "${file.path}: $it" }
+            }
     fail("testingNotInMain", violations)
 }
 
@@ -390,4 +401,18 @@ fun noHttpLoggingInterceptor(scope: KoScope) {
             .filter { file -> file.imports.any { it == "okhttp3.logging" || it.startsWith("okhttp3.logging.") } }
             .map { it.path }
     fail("noHttpLoggingInterceptor", violations)
+}
+
+fun onlyDebugAndPerfImportTheMock(scope: KoScope) {
+    val prefix = "net.chronoflow.core.datamock"
+    val violations =
+        scope
+            .moduleFiles()
+            .filterNot { file ->
+                file.module == "core/data-mock" || file.sourceSet?.let(::isTestSourceSet) == true ||
+                    (file.module == "app" && file.sourceSet in setOf("debug", "perf"))
+            }.flatMap { file ->
+                file.imports.filter { it == prefix || it.startsWith("$prefix.") }.map { "${file.path}: $it" }
+            }
+    fail("onlyDebugAndPerfImportTheMock", violations)
 }
