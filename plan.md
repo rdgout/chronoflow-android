@@ -483,10 +483,10 @@ Every screen scrolls when height-constrained. The minimum width is 280 dp; below
 
 | Context | en | nl | Replaces (iOS) |
 |---|---|---|---|
-| 2FA intro (b1) | "You need an authenticator app." | "Je hebt een authenticator-app nodig." | iOS b1 |
-| Passkeys intro | "Sign in with your fingerprint, face or screen lock instead of your password." | "Log in met je vingerafdruk, gezicht of schermvergrendeling in plaats van je wachtwoord." | Face ID wording |
-| Notifications blocked step | "Tap Open phone settings and turn on notifications for ChronoFlow." | "Tik op Telefooninstellingen openen en zet meldingen voor ChronoFlow aan." | iOS Settings steps |
-| Recovery-codes file name | "Recovery codes.txt" | Dutch from the catalog | — |
+| 2FA intro (b1) | "You need an authenticator app." | "Je hebt een authenticator-app nodig." | settings "You need an authenticator app, like the one built into Passwords on iPhone." |
+| Passkeys intro | "Sign in with your fingerprint, face or screen lock instead of your password." | "Log in met je vingerafdruk, gezicht of schermvergrendeling in plaats van je wachtwoord." | settings "Sign in with Face ID, a fingerprint or your screen lock instead of your password." |
+| Notifications blocked step | "Tap Open phone settings and turn on notifications for ChronoFlow." | "Tik op Telefooninstellingen openen en zet meldingen voor ChronoFlow aan." | reminders "Open your phone's Settings.", "Tap Notifications, then ChronoFlow." and "Turn on Allow notifications." |
+| Recovery-codes file name | "Recovery codes.txt" | "Herstelcodes.txt" | — |
 
 
 ## Performance budget
@@ -637,6 +637,11 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-0b-8 | Open-source licences screen for the OFL fonts | Ship the OFL texts in `assets/licenses/`; no screen until a board exists | 0b |
 | OQ-0b-9 | `UnusedResources` findings for outputs consumed later (fonts, `launch_moon`, `launch_sky_top`, `ic_stat_moon`) | Path-scoped ignores in `lint.xml`, each naming its consuming phase (2, 3a, 12b) and removed by that phase | 0b, 2, 3a, 12b |
 | OQ-0b-10 | The brief asked for a port of fdlibm `erf`; the sources are not available offline | `Erf.kt` uses the all-positive power series 2/sqrt(pi)·exp(−x²)·Σ 2ⁿx²ⁿ⁺¹/(2n+1)!!, which matches libm to 1e-15 (`ErfTest`, 8 points) and the iOS `LaunchPaint` goldens to 1e-9. Replace it with fdlibm if bit-exactness is ever needed | 0b |
+| OQ-0c-1 | Emit iOS keys that an Android overlay entry replaces, or omit them? | **Omit.** Their lock names stay reserved, and `CopyIndex` redirects single-key replacements. | 0c, 5b, 10c, 12c |
+| OQ-0c-2 | Which iOS "notifications blocked" steps does the one Android step replace? | `Open your phone's Settings.`, `Tap Notifications, then ChronoFlow.` and `Turn on Allow notifications.` (the list in iOS `Settings/RemindersView.swift:116`). Keep `Come back here. Reminders switch on by themselves.` (Phase 12c re-checks the permission on resume, as iOS does). | 12c |
+| OQ-0c-3 | Should `CopyIndex` cover every key, or only an allowlist of runtime keys? | **Every emitted main key.** Ported models carry English keys as on iOS; the cost is one generated `when` per table and no allocation at load. | 0c, 5a–5d, 6d, 7, 9c–9d |
+| OQ-0c-4 | Where does the debug-only `Debug route: %@` live? The 4e brief (§5.8, OQ-4e-6, its release test) names it `app_debug_route` in `app/src/debug/res/values{,-nl}/`. | **`app_debug_route_x` in `core/ui/src/debug/res/values{,-nl}/strings_ios_debug.xml`**, generated (the lock name; `10` OQ-L8). 4e uses `net.chronoflow.core.ui.R.string.app_debug_route_x` from `app/src/debug` and its release test asserts that `net.chronoflow.core.ui.R.string` has no field `app_debug_route_x`. The orchestrator corrects the 3b brief (its `RoutePlaceholder` lives in `app/src/main` and says to find the name in `strings_ios.xml`: the debug text must move to `app/src/debug`, because main code cannot reference a debug-only resource), the 4e brief, and 9c's reference to "the 4e `app_debug_route` pattern", before 3b starts. | 3b, 4e, 9c |
+| OQ-0c-5 | Does AGP's generated locale config list only en and nl? | Expected yes. If AAR locales appear, set `androidResources.localeFilters` to `en`, `nl` in `:app` so the system per-app language list shows exactly en and nl (A17, `10 §9.9`) and Material components never show a third language; record the extra locales here and in `docs/l10n.md`. | 0c, 13 |
 
 ## Tasks
 
@@ -867,25 +872,25 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 **Delivers.** Builds tools/l10n/xcstrings2android.py from the research prototype. It reads the 13 iOS String Catalogs at the pinned commit and writes namespaced en and nl string resources with plurals, a stable name lock and an Android-only overlay. The phase copies PlanCopy.json verbatim with a SHA-256 check, generates CopyIndex.kt for keys resolved at runtime, enables generateLocaleConfig and turns the translation Lint checks into errors. After this phase no visible string can exist without its Dutch twin.
 
 **Tasks**
-- [ ] **Generator** `tools/l10n/xcstrings2android.py` (stdlib, `python3 -I`), built from the `10` Appendix A prototype (`10-copy-l10n.md:430`).
+- [x] **Generator** `tools/l10n/xcstrings2android.py` (stdlib, `python3 -I`), built from the `10` Appendix A prototype (`10-copy-l10n.md:430`).
   - It reads the 13 catalogs at `tools/ios-pin.txt` through `git -C $IOS_REPO show`.
   - It writes `core/ui/src/main/res/values/strings_ios.xml` and `values-nl/strings_ios.xml`.
   - Names are `<table>_<slug>`, capped at 48 characters, with a sha1-6 suffix on collision. They are frozen in the append-only `tools/l10n/names.lock.json`.
   - Placeholders: `%@` and `%d` become positional `%1$s` and `%1$d`. Plurals use `one` and `other`. It escapes `'`, `"`, `@`, `?`, `\n` and `%%`.
   - It has a `--check` mode.
   - Test: `tools/l10n/test_xcstrings2android.py` covers positional arguments, plurals, escaping, collisions, lock stability, and the 9 keys that share English but differ in Dutch per table.
-- [ ] **Android-only overlay.**
+- [x] **Android-only overlay.**
   - `tools/l10n/android-only.json`: each entry has a name, en, nl, `replaces`, and `review: "needs review"`.
   - It generates `strings_android.xml` in en and nl with the four OQ-A12 strings.
   - `core/ui/src/main/res/values/strings_untranslatable.xml` holds `app_name` "ChronoFlow".
-- [ ] **Plan copy.** Copy `PlanCopy.json` verbatim to `core/plan/src/main/resources/plan_copy.json`, with its hash in `tools/l10n/plan_copy.sha256`. Add `make plan-copy` and its check.
-- [ ] **CopyIndex.kt** (generated, `:core:ui`): maps an iOS key to its `R.string` or `R.plurals` id per table. It serves keys resolved at runtime: server error codes, reminder kinds and enum labels.
-- [ ] **Locale wiring.**
+- [x] **Plan copy.** Copy `PlanCopy.json` verbatim to `core/plan/src/main/resources/plan_copy.json`, with its hash in `tools/l10n/plan_copy.sha256`. Add `make plan-copy` and its check.
+- [x] **CopyIndex.kt** (generated, `:core:ui`): maps an iOS key to its `R.string` or `R.plurals` id per table. It serves keys resolved at runtime: server error codes, reminder kinds and enum labels.
+- [x] **Locale wiring.**
   - `app_name` already sits in `core/ui/src/main/res/values/strings_untranslatable.xml` (done in 0a, OQ-0a-4).
   - `:app` sets `androidResources { generateLocaleConfig = true }` and adds `app/src/main/res/resources.properties` (`unqualifiedResLocale=en`). (done in 0a)
   - Lint errors: `MissingTranslation`, `ExtraTranslation`, `StringFormatInvalid`, `StringFormatCount` and `PluralsCandidate`.
   - A Konsist rule forbids a string literal as the first argument of `Text(` outside tests and previews.
-- [ ] **StringParityTest** (JVM, parses the XML): every en name has an nl twin with the same placeholders and plural quantities. Record the counts.
+- [x] **StringParityTest** (JVM, parses the XML): every en name has an nl twin with the same placeholders and plural quantities. Record the counts.
 
 **Acceptance**
 - The generator reproduces the committed XML, and `--check` fails on drift.

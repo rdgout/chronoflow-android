@@ -1,0 +1,10 @@
+{
+  "auth_use_at_least_n_characters": {
+    "ids": ["PluralsCandidate"],
+    "reason": "iOS ships this as a plain string with a fixed password length; the number is a server rule, not a count of items, and parity fixes the text."
+  },
+  "auth_use_no_more_than_n_characters": {
+    "ids": ["PluralsCandidate"],
+    "reason": "iOS ships this as a plain string with a fixed password length; the number is a server rule, not a count of items, and parity fixes the text."
+  }
+}
