@@ -9,7 +9,7 @@ Design B (plan.md A12): a `LazyColumn` with one item per day. Each day's `DayDra
 `cf.trip-page=S1...S6|large30|large60` opens the timeline page from a fixture (debug and the perf variants only). `cf.freezeAt=<ISO instant>` freezes the plan clock; every benchmark uses `2026-10-13T08:00:00Z`, so large60 opens on day 0 as the iOS perf page does (OQ-1e-7).
 
 ```
-adb shell am start -n net.chronoflow.app.native.debug/net.chronoflow.app.MainActivity --es cf.trip-page large60 --es cf.freezeAt 2026-10-13T08:00:00Z
+adb shell am start -n net.chronoflow.app.debug/net.chronoflow.app.MainActivity --es cf.trip-page large60 --es cf.freezeAt 2026-10-13T08:00:00Z
 ```
 
 ## 3. Four guarantee layers
@@ -328,12 +328,12 @@ Worker, 2026-11-17, emulator `pixel` (API 36), debug build, animator scales 0, `
 
 Screenshots: `build/captures/phase-1d/<name>.png` (evidence that each fixture renders, not board captures).
 
-Perfetto (`adb shell perfetto -t 15s -a net.chronoflow.app.native.debug gfx view sched dalvik`, large60, 15 swipes; trace `build/phase-1d.pftrace`, queried with the Python trace processor):
+Perfetto (`adb shell perfetto -t 15s -a net.chronoflow.app.debug gfx view sched dalvik`, large60, 15 swipes; trace `build/phase-1d.pftrace`, queried with the Python trace processor):
 
 - `cf.timeline.build`: 17 slices, all on `DefaultDispatch*` threads, none on the main thread.
 - `cf.timeline.replay`: 13 slices, all on the main thread. `cf.timeline.placeholder`: 1 slice.
 - `cf.timeline.firstFrame`: one async slice, 818 ms before the fix (debug build on the emulator, large60; it included fixture generation). It now starts after the fixture is generated, as in iOS `TripPageDiagnosticRoot`, and covers decode, layout, prepare, typeface load and the first build. Pending 1e for any budget.
-- `cf.timeline.firstFrame` after generating the fixture before the section starts (2026-11-17, `pixel`, debug build, cold start, large60, Perfetto `-t 8s -a net.chronoflow.app.native.debug gfx view sched dalvik`, three runs, `build/phase-1d-after-{1,2,3}.pftrace`): 212 ms, 225 ms, 214 ms. The old 818 ms included the roughly 579 ms large60 generator.
+- `cf.timeline.firstFrame` after generating the fixture before the section starts (2026-11-17, `pixel`, debug build, cold start, large60, Perfetto `-t 8s -a net.chronoflow.app.debug gfx view sched dalvik`, three runs, `build/phase-1d-after-{1,2,3}.pftrace`): 212 ms, 225 ms, 214 ms. The old 818 ms included the roughly 579 ms large60 generator.
 
 ### Compose stability (`./gradlew :feature:trip:compileReleaseKotlin -PcomposeReports=true`)
 
@@ -579,7 +579,7 @@ Required evidence for timelineFirstFrame, timelineScroll, timelineLastDay, listS
 
 ```sh
 adb -s emulator-5554 logcat -c
-adb -s emulator-5554 shell am start -n net.chronoflow.app.native.debug/net.chronoflow.app.MainActivity --es cf.trip-page large60 --es cf.freezeAt 2026-10-13T08:00:00Z
+adb -s emulator-5554 shell am start -n net.chronoflow.app.debug/net.chronoflow.app.MainActivity --es cf.trip-page large60 --es cf.freezeAt 2026-10-13T08:00:00Z
 adb -s emulator-5554 logcat -d | grep -c StrictMode
 ```
 

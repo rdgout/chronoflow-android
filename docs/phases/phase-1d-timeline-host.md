@@ -448,7 +448,7 @@ Also in this commit: the `stability_config.conf` lines and `@Stable` annotations
 mkdir -p build/captures/phase-1d
 for f in S1 S2 S3 S4 S5 S6 large30 large60; do
   adb logcat -c
-  adb shell am start -W -n net.chronoflow.app.native.debug/net.chronoflow.app.MainActivity --es cf.trip-page $f
+  adb shell am start -W -n net.chronoflow.app.debug/net.chronoflow.app.MainActivity --es cf.trip-page $f
   # am start -W returns at the first frame, possibly before the first drawing: poll up to 5 times (a shell script, not a test)
   for i in 1 2 3 4 5; do
     adb shell uiautomator dump /sdcard/ui.xml >/dev/null
@@ -457,8 +457,8 @@ for f in S1 S2 S3 S4 S5 S6 large30 large60; do
   adb exec-out screencap -p > build/captures/phase-1d/$f.png
   adb logcat -d | grep -c StrictMode   # must print 0
 done
-adb shell perfetto -o /data/misc/perfetto-traces/phase-1d.pftrace -t 15s -a net.chronoflow.app.native.debug gfx view sched dalvik &
-adb shell am start -S -n net.chronoflow.app.native.debug/net.chronoflow.app.MainActivity --es cf.trip-page large60
+adb shell perfetto -o /data/misc/perfetto-traces/phase-1d.pftrace -t 15s -a net.chronoflow.app.debug gfx view sched dalvik &
+adb shell am start -S -n net.chronoflow.app.debug/net.chronoflow.app.MainActivity --es cf.trip-page large60
 for i in $(seq 1 15); do adb shell input swipe 540 1800 540 400 100; done
 wait; adb pull /data/misc/perfetto-traces/phase-1d.pftrace build/
 ```

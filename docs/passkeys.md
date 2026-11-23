@@ -8,7 +8,7 @@ The Android ceremony cannot be verified against the server yet (A15, OQ-A12/OQ-A
 
 | Item | Required evidence before enabling the capability |
 |---|---|
-| S1 | `https://app.chronoflow.net/.well-known/assetlinks.json` serves `delegate_permission/common.get_login_creds` for `net.chronoflow.app.native`, with the approved release/app-signing certificate SHA-256 fingerprint. Never publish the committed debug-key fingerprint (OQ-A38). Record the deployed response and certificate identity. |
+| S1 | `https://app.chronoflow.net/.well-known/assetlinks.json` serves `delegate_permission/common.get_login_creds` for `net.chronoflow.app`, with the approved release/app-signing certificate SHA-256 fingerprint. Never publish the committed debug-key fingerprint (OQ-A38). Record the deployed response and certificate identity. |
 | S2 | The server's allowed origins include `android:apk-key-hash:<base64url(sha256(cert DER))>` for that same signing certificate. Record the deployed configuration and a successful Android assertion verification. |
 | S3 | Passkey management is merged and deployed. Record the server revision and management verification. |
 
@@ -24,12 +24,12 @@ Keep keystore passwords outside commands, source control and logs. This phase ch
 
 Use a Play-enabled physical device with a configured credential provider and a passkey for `app.chronoflow.net`. The pixel `google_apis` AVD proves functional UI behavior, not a real Credential Manager/server ceremony.
 
-The test APK's actual package and certificate must match S1/S2. The ordinary debug APK has a `.debug` applicationId suffix and the committed debug key, so it does not satisfy the production association. Prepare an explicitly approved matching device-test signing/package configuration before attempting the ceremony; do not add the debug fingerprint to the production association or change the shipped gate to work around this prerequisite.
+The test APK's actual package and certificate must match S1/S2. The ordinary debug APK is `net.chronoflow.app.debug`; its package and local/staging certificate must match that environment’s S1/S2 configuration (user, 2026-11-23). It does not satisfy the production package/certificate association. Prepare an explicitly approved matching device-test signing/package configuration before attempting the ceremony; do not add the debug fingerprint to the production association or change the shipped gate to work around this prerequisite.
 
 Build that debug-capable test configuration with `-Pcf.dataSource=api` (the normal debug compile entry is `./gradlew :app:assembleDebug -Pcf.dataSource=api`). Apply the override through the debug seed receiver so `DebugSeedRouting.current` is populated before the new auth model is constructed:
 
 ```sh
-adb shell am start -n net.chronoflow.app.native/net.chronoflow.debug.SeedReceiverActivity \
+adb shell am start -n net.chronoflow.app/net.chronoflow.debug.SeedReceiverActivity \
   --es CF_AUTH_TEST_ID 0199a3c0-0000-7000-8000-000000000005 \
   --es CF_UI_TEST_PROFILE screen \
   --es CF_AUTH_TEST_AUDIT_SCREEN sign-in \

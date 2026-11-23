@@ -415,7 +415,7 @@ All commands run from the repo root with `ANDROID_HOME` set (AGENTS.md "Commands
 4. `./gradlew :tools:tokengen:test` passes with 84/84 base hex, 16/16 derived, 33 + 33 ramp stops, every metric and type golden, and the determinism test. Each test is under 1 s (`build/test-results/*/timings.json` or the Gradle report).
 5. `./gradlew :core:designsystem:testDebugUnitTest --tests '*FontHashTest'` and `./gradlew :app:testDebugUnitTest --tests '*AdaptiveIconTest' --tests '*LauncherIconInflationTest' --tests '*NotificationIconTest' --tests '*LaunchMoonAssetTest'` pass.
 6. `make quick` passes (warm, < 60 s). `make check` passes with `pixel` booted: Lint is clean with warnings as errors, including `IconColors` and `MonochromeLauncherIcon`, and `generators-check` is included.
-7. `./gradlew :app:assembleDebug` installs `net.chronoflow.app.native.debug`, which shows the ChronoFlow moon icon. The three screenshots of task 10 are in `docs/assets.md`.
+7. `./gradlew :app:assembleDebug` installs `net.chronoflow.app.debug`, which shows the ChronoFlow moon icon. The three screenshots of task 10 are in `docs/assets.md`.
 8. `make size` still passes (≈ 0.6 MB of fonts and ≈ 0.2 MB of moon PNGs added).
 9. `git -C /Users/rickgout/Sites/chronoflow-ios status --porcelain` and `git -C /Users/rickgout/Sites/chronoflow-ios rev-parse HEAD` are unchanged from before the phase (read-only proof).
 10. There are 9 or 10 atomic Conventional Commits with no trailers, and the 7 `plan.md` checkboxes of Phase 0b are ticked in the commits named above.

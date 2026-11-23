@@ -303,7 +303,7 @@ The main thread is `thread.is_main_thread = 1 OR thread.tid = process.pid`, join
 Fallback if `TraceMetric` cannot be subclassed in 1.5.0: `TraceSectionMetric(…, Mode.Count, targetPackageOnly = true)` for the totals, and `frameCount × 1000 / refreshHz` for the window. With this fallback build-on-main cannot be measured, so the window is computed by 0e's no-window path, and `timelineBuildOnMainCount` comes from the Task 7 SQL review of one trace per run. Record the fallback.
 
 **`TimelineBenchmark.kt`** (`@Perf`, `@RunWith(AndroidJUnit4::class)`, `@get:Rule val rule = MacrobenchmarkRule()`):
-- `packageName` comes from `InstrumentationRegistry.getArguments().getString("targetAppId") ?: "net.chronoflow.app.native"`, as in `StartupBenchmark`.
+- `packageName` comes from `InstrumentationRegistry.getArguments().getString("targetAppId") ?: "net.chronoflow.app"`, as in `StartupBenchmark`.
 - Every test uses `compilationMode = CompilationMode.Partial(BaselineProfileMode.Require)`.
 - Metrics that need it get `@OptIn(ExperimentalMetricApi::class)`.
 - **Async first-frame slice** [verify on the first run; `04 §15` risk 16]. `cf.timeline.firstFrame` is an async section (`Trace.beginAsyncSection`), which Perfetto puts on a process track, not a thread track. Check that `timelineFirstFrameFirstMs` appears with plausible values (hundreds of ms, never 0). Fallback if `TraceSectionMetric` misses process-track slices: add `timelineFirstFrameMs` to `TimelineTraceMetric`'s `firstFrame = true` mode (`SELECT dur FROM slice JOIN process_track ON slice.track_id = process_track.id JOIN process USING(upid) WHERE slice.name = 'cf.timeline.firstFrame' AND process.name = '<pkg>' ORDER BY ts LIMIT 1`, / 1e6), drop the `TraceSectionMetric` from `timelineFirstFrame`'s metrics, map the key to itself in `RAW_KEYS`, and record it. Never change the trace to a sync section: begin and end are in different main-thread messages, so a sync section would mis-nest.
@@ -427,7 +427,7 @@ Leave the line `Perfetto UI review: pending (reviewer)` for the Opus reviewer.
 
 **`docs/perf-timeline.md`**: restructure it into these sections, in this order, keeping 1b's, 1c's and 1d's recorded content:
 1. Architecture under test: design B in three lines, citing plan A12.
-2. Fixtures and direct launch: `cf.trip-page=S1…S6|large30|large60`, `cf.freezeAt`, and the `adb shell am start -n net.chronoflow.app.native.debug/net.chronoflow.app.MainActivity --es cf.trip-page large60 --es cf.freezeAt 2026-10-13T08:00:00Z` command.
+2. Fixtures and direct launch: `cf.trip-page=S1…S6|large30|large60`, `cf.freezeAt`, and the `adb shell am start -n net.chronoflow.app.debug/net.chronoflow.app.MainActivity --es cf.trip-page large60 --es cf.freezeAt 2026-10-13T08:00:00Z` command.
 3. Four guarantee layers: JVM budgets (1b, 1c, in quick); invalidation (1d, in quick); Macrobenchmarks (`make perf-timeline`, required for every timeline change); the device review (`04 §10.4`, before release).
 4. Budgets: the §5 table.
 5. How to run and read: the commands, and where the JSON and traces land.
@@ -506,7 +506,7 @@ The orchestrator runs any command your sandbox cannot.
 8. All seven plan.md 1e boxes are ticked, each in the commit that completed it. The commits are atomic Conventional Commits with no trailers.
 9. The debug build of large60 is StrictMode-clean:
    1. `adb logcat -c`;
-   2. `adb shell am start -W -n net.chronoflow.app.native.debug/net.chronoflow.app.MainActivity --es cf.trip-page large60 --es cf.freezeAt 2026-10-13T08:00:00Z`;
+   2. `adb shell am start -W -n net.chronoflow.app.debug/net.chronoflow.app.MainActivity --es cf.trip-page large60 --es cf.freezeAt 2026-10-13T08:00:00Z`;
    3. `adb shell input swipe 540 1800 540 400 100`, 15 times;
    4. `adb logcat -d | grep -c StrictMode` prints `0`.
 10. Cleanup: `make emu-down`, then report `make du`.
@@ -523,7 +523,7 @@ Reproduce each finding before you send it back.
 - [ ] `timelineFirstFrame` runs **10** `COLD` iterations and waits for `trip.timeline.presented`, so the async slice closes inside the trace.
 - [ ] `timelineLastDay` scrolls the menu at most 12 times and the page at most 6 times, and waits for `LAST_DAY_TAG`. There is no unbounded loop.
 - [ ] Every setup calls `assertAnimatorsOn()`. There is no `Thread.sleep` or `SystemClock.sleep`. `topDay()` is one `findObjects` call.
-- [ ] The target is `net.chronoflow.app.native` (not `.debug`), and every intent carries `cf.freezeAt=2026-10-13T08:00:00Z`.
+- [ ] The target is `net.chronoflow.app` (not `.debug`), and every intent carries `cf.freezeAt=2026-10-13T08:00:00Z`.
 
 **Metrics and checker**
 - [ ] `cf.timeline.placeholder` and `cf.timeline.build` are synchronous slices. The presented marker flips in the same callback that ends `cf.timeline.firstFrame`, and only after a real replay. It takes `State<Boolean>`, is 1 dp, and sits after the `LazyColumn`, outside every day item.

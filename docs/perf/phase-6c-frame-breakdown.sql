@@ -6,7 +6,7 @@ FROM slice s
 JOIN thread_track tt ON tt.id = s.track_id
 JOIN thread t USING (utid)
 JOIN process p USING (upid)
-WHERE p.name = 'net.chronoflow.app.native'
+WHERE p.name = 'net.chronoflow.app'
   AND ((t.tid = p.pid AND s.name LIKE 'Choreographer#doFrame%')
        OR (t.name = 'RenderThread' AND s.name LIKE 'DrawFrame%'))
 GROUP BY t.name;
@@ -19,7 +19,7 @@ JOIN thread_track tt ON tt.id = s.track_id
 JOIN thread t USING (utid)
 JOIN process p USING (upid)
 JOIN slice c ON c.parent_id = s.id
-WHERE p.name = 'net.chronoflow.app.native'
+WHERE p.name = 'net.chronoflow.app'
   AND ((t.tid = p.pid AND s.name LIKE 'Choreographer#doFrame%')
        OR (t.name = 'RenderThread' AND s.name LIKE 'DrawFrame%'))
 GROUP BY t.name, c.name

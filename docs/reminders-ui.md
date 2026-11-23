@@ -61,14 +61,14 @@ Commands (each device operation uses the device lock):
 
 ```sh
 python3 -I Scripts/device_lock.py -- /opt/homebrew/share/android-commandlinetools/platform-tools/adb -s emulator-5554 shell am start -W \
-  -n net.chronoflow.app.native.debug/net.chronoflow.debug.SeedReceiverActivity \
+  -n net.chronoflow.app.debug/net.chronoflow.debug.SeedReceiverActivity \
   --es CF_AUTH_TEST_ID 01900000-0000-7000-8000-0000000012c0 --es CF_UI_TEST_PROFILE screen \
   --es CF_AUTH_TEST_SIGNED_IN demo --es CF_AUTH_TEST_WALKTHROUGH_SEEN 1 \
   --es cf.notificationAuthorization undetermined --es cf.firstTripReminders 1 \
   --es CF_PLAN_TEST_ROUTE trip:0199a3c0-0000-7000-8000-000000000001 \
   --es cf.settings.language en --es cf.settings.theme light --es cf.reduceMotion 1
 python3 -I Scripts/device_lock.py -- /opt/homebrew/share/android-commandlinetools/platform-tools/adb -s emulator-5554 exec-out screencap -p > build/captures-device/WizardReminders_device.png
-python3 -I Scripts/device_lock.py -- /opt/homebrew/share/android-commandlinetools/platform-tools/adb -s emulator-5554 shell am force-stop net.chronoflow.app.native.debug
+python3 -I Scripts/device_lock.py -- /opt/homebrew/share/android-commandlinetools/platform-tools/adb -s emulator-5554 shell am force-stop net.chronoflow.app.debug
 # Repeat the seeded am start above, omitting --es cf.firstTripReminders 1.
 python3 -I Scripts/device_lock.py -- /opt/homebrew/share/android-commandlinetools/platform-tools/adb -s emulator-5554 exec-out screencap -p > build/captures-device/WizardReminders_after_relaunch_device.png
 python3 -I Scripts/device_lock.py -- /opt/homebrew/share/android-commandlinetools/platform-tools/adb -s emulator-5554 logcat -d -s StrictMode

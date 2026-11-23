@@ -164,7 +164,7 @@ All JVM and Robolectric tests run on the **JUnit Platform** with the **Vintage**
 
 ## 6. Tasks
 
-**Step 0 (no commit): measure the `pixel` insets first**, because T5 needs them and T7 needs T5. Run `make emu`, install and launch the 0a debug app (`adb shell am start -n net.chronoflow.app.native.debug/net.chronoflow.app.MainActivity`), then `adb shell dumpsys window | grep -i -E "insetssource|statusBars|navigationBars|displayCutout|mandatorySystemGestures"` and `adb shell wm size; adb shell wm density; adb shell settings get secure navigation_mode` (`0` three-button, `1` two-button, `2` gesture; pixel8's `"navigation"` value in T5 follows this output, not an assumption). Keep the verbatim output for T5. If your sandbox cannot run `adb`, ask the orchestrator for exactly these commands' output and continue with T1–T4 meanwhile.
+**Step 0 (no commit): measure the `pixel` insets first**, because T5 needs them and T7 needs T5. Run `make emu`, install and launch the 0a debug app (`adb shell am start -n net.chronoflow.app.debug/net.chronoflow.app.MainActivity`), then `adb shell dumpsys window | grep -i -E "insetssource|statusBars|navigationBars|displayCutout|mandatorySystemGestures"` and `adb shell wm size; adb shell wm density; adb shell settings get secure navigation_mode` (`0` three-button, `1` two-button, `2` gesture; pixel8's `"navigation"` value in T5 follows this output, not an assumption). Keep the verbatim output for T5. If your sandbox cannot run `adb`, ask the orchestrator for exactly these commands' output and continue with T1–T4 meanwhile.
 
 Each task below is one commit: Conventional Commits, lower-case imperative subject, **no trailer**. Tick plan.md boxes only as §7 says. Never commit a measured value you did not measure.
 
@@ -490,7 +490,7 @@ Dependencies (`app/build.gradle.kts`, each on its own line, only if the stack to
 - `app/src/debug/AndroidManifest.xml` (merge with 0a's): `<activity android:name="net.chronoflow.debug.SeedReceiverActivity" android:exported="true" android:excludeFromRecents="true" android:noHistory="true" android:theme="@android:style/Theme.Translucent.NoTitleBar" />`. If Lint warns about the exported activity, suppress with `tools:ignore` on this element only.
 - Document manual use in `docs/tooling.md`:
   ```sh
-  adb shell am start -n net.chronoflow.app.native.debug/net.chronoflow.debug.SeedReceiverActivity \
+  adb shell am start -n net.chronoflow.app.debug/net.chronoflow.debug.SeedReceiverActivity \
     --es CF_AUTH_TEST_ID "$(uuidgen | tr A-Z a-z)" --es CF_UI_TEST_PROFILE screen --es cf.settings.language nl
   ```
 
@@ -606,7 +606,7 @@ T15 adds the perf assertions. Also run `./gradlew :app:verifyReleaseManifest`: t
   class StartupBenchmark {
       @get:Rule val rule = MacrobenchmarkRule()
       private val packageName: String =
-          InstrumentationRegistry.getArguments().getString("targetAppId") ?: "net.chronoflow.app.native"
+          InstrumentationRegistry.getArguments().getString("targetAppId") ?: "net.chronoflow.app"
 
       @Test fun startupCold() = rule.measureRepeated(
           packageName = packageName,
@@ -631,7 +631,7 @@ T15 adds the perf assertions. Also run `./gradlew :app:verifyReleaseManifest`: t
         }
     }
     ```
-    The `?: "net.chronoflow.app.native"` fallback keeps the benchmark correct either way (the perf variants have no suffix).
+    The `?: "net.chronoflow.app"` fallback keeps the benchmark correct either way (the perf variants have no suffix).
 - `Scripts/emulator.sh ensure` writes the GPU mode it booted with to `build/emulator/gpu-mode` (`host` for 0a's flags); 1e reads it. Extend 0a's `Scripts/tests/test_emulator.py`: `ensure` from a cold (fake) boot writes `host` to that file.
 - `Scripts/perf-startup.sh`, run by `make perf` as `$(RUN_TIER) perf --device --results 'benchmark/build/outputs/androidTest-results/connected/**/*.xml' -- Scripts/perf-startup.sh` (`--device` takes the host-wide emulator lock, 0a OQ-0a-21). No `--emulator` and no `--timings`: the 10 s emulator budget does not apply to benchmarks, whose gates are the checker's. The script mirrors 1e's `perf-timeline.sh`:
   1. require exactly one device (`adb get-state`);

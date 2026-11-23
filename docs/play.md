@@ -2,7 +2,7 @@
 
 ## Identity
 
-ApplicationId `net.chronoflow.app.native`; versionName **0.1.0**, versionCode **10000**, from version.properties. minSdk **29**, targetSdk **36**, compileSdk **37**. OQ-A1 keeps this identity until the user confirms that the RN app never shipped on Play; a switch before the first upload also changes assetlinks and the passkey origin. No identity or version was changed in Phase 13.
+ApplicationId `net.chronoflow.app`; versionName **0.1.0**, versionCode **10000**, from version.properties. minSdk **29**, targetSdk **36**, compileSdk **37**. OQ-A1 is resolved (user, 2026-11-23): RN never shipped on Play, so this is the final applicationId. Debug remains `net.chronoflow.app.debug`; server assetlinks will list production and local/staging debug with their matching certificates. The RN comparison now uses separate installation passes ([protocol](perf-rn.md)). No version was changed.
 
 Enrol in Play App Signing: Google holds the app-signing key; the upload key stays outside the repository. [Release signing](release.md#upload-key) describes CF_UPLOAD_* and the signed/unsigned proofs. No production key was created by the worker.
 
@@ -56,15 +56,27 @@ Serve `https://app.chronoflow.net/.well-known/assetlinks.json` as HTTP 200 / app
   ],
   "target": {
     "namespace": "android_app",
-    "package_name": "net.chronoflow.app.native",
+    "package_name": "net.chronoflow.app",
     "sha256_cert_fingerprints": [
       "<Play app-signing certificate SHA-256, AA:BB:… form>"
+    ]
+  }
+}, {
+  "relation": [
+    "delegate_permission/common.handle_all_urls",
+    "delegate_permission/common.get_login_creds"
+  ],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "net.chronoflow.app.debug",
+    "sha256_cert_fingerprints": [
+      "<Local/staging signing certificate SHA-256, AA:BB:… form>"
     ]
   }
 }]
 ```
 
-Never the committed debug key (OQ-A38). Add the upload key only if sideloaded release builds must verify links (OQ-A208, formerly 5c OQ-5c-4). Redo the association on an applicationId or key change. Publishing this file does not enable the shipped passkey capability; S1–S3 and Play-signed acceptance remain required. No server association or verifier state was changed by this phase.
+The debug entry is for local/staging; never the committed debug key in the production association (OQ-A38). Add the upload key only if sideloaded release builds must verify links (OQ-A208, formerly 5c OQ-5c-4). Redo the association on an applicationId or key change. Publishing this file does not enable the shipped passkey capability; S1–S3 and Play-signed acceptance remain required. No server association or verifier state was changed by this phase.
 
 ## Server dependencies S1–S6
 

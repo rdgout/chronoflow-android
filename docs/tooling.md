@@ -13,7 +13,7 @@ Mirrors iOS `Docs/tooling.md` "Phase 0 verified results". Every entry says who r
 | JDK 21 for tests | foojay provisioned `~/.gradle/jdks/eclipse_adoptium-21-aarch64-os_x.2` (Temurin 21.0.13) | Worker |
 | `compileSdk` form | `compileSdk = 37` works with the installed `android-37.0` platform (OQ-0a-13); the `release(37)` fallback was not needed | Worker |
 | `android.onlyEnableUnitTestForTheTestedBuildType=false` | accepted; `:app:testReleaseUnitTest` runs `ReleaseAppIdentityTest` | Worker |
-| `aapt2 dump badging` (debug APK) | `package: name='net.chronoflow.app.native.debug' versionCode='10000' versionName='0.1.0'`, `minSdkVersion:'29'`, `targetSdkVersion:'36'` (aapt2 37 prints `minSdkVersion`, not `sdkVersion`) | Worker |
+| `aapt2 dump badging` (debug APK) | `package: name='net.chronoflow.app.debug' versionCode='10000' versionName='0.1.0'`, `minSdkVersion:'29'`, `targetSdkVersion:'36'` (aapt2 37 prints `minSdkVersion`, not `sdkVersion`) | Worker |
 
 ## 2. Sandbox capabilities
 
@@ -70,19 +70,19 @@ Runner: worker, `pixel` (emulator-5554), debug build.
 
 ```
 ./gradlew :app:installDebug                         -> Installed on 1 device.
-adb -s emulator-5554 shell pm list packages | grep native.debug -> package:net.chronoflow.app.native.debug
-adb -s emulator-5554 shell am start -W -n net.chronoflow.app.native.debug/net.chronoflow.app.MainActivity
+adb -s emulator-5554 shell pm list packages | grep native.debug -> package:net.chronoflow.app.debug
+adb -s emulator-5554 shell am start -W -n net.chronoflow.app.debug/net.chronoflow.app.MainActivity
   -> Status: ok, LaunchState: COLD, TotalTime: 351, WaitTime: 353
-adb -s emulator-5554 shell pidof net.chronoflow.app.native.debug -> 3875
+adb -s emulator-5554 shell pidof net.chronoflow.app.debug -> 3875
 ```
 
-The `native` segment installs, so OQ-A1 keeps `net.chronoflow.app.native`. `AppLaunchSmokeTest.launchesAsNativeDebugUnderStrictMode`: passed in 0.37 s (`build/test-results/smoke/timings.json`), under the launch-path `penaltyDeath` policy.
+The `native` segment installs, so OQ-A1 keeps `net.chronoflow.app`. `AppLaunchSmokeTest.launchesAsNativeDebugUnderStrictMode`: passed in 0.37 s (`build/test-results/smoke/timings.json`), under the launch-path `penaltyDeath` policy.
 
 `adb logcat -d -s StrictMode` after the launch shows `DiskReadViolation` lines from other processes on the shared emulator (pid 1763, framework frames only, none with a `net.chronoflow.` frame: `grep -c net.chronoflow` prints `0`). They are logged by the policy and are not fatal (OQ-0a-2).
 
 ## 7. Merged manifest inventory (release, OQ-0a-10)
 
-Permissions: `INTERNET`, `ACCESS_NETWORK_STATE`, `net.chronoflow.app.native.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` (androidx.core, OQ-0a-20).
+Permissions: `INTERNET`, `ACCESS_NETWORK_STATE`, `net.chronoflow.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` (androidx.core, OQ-0a-20).
 
 `androidx.startup.InitializationProvider` meta-data entries: `androidx.emoji2.text.EmojiCompatInitializer`, `androidx.lifecycle.ProcessLifecycleInitializer`, `androidx.profileinstaller.ProfileInstallerInitializer`.
 
@@ -164,7 +164,7 @@ Worker, 2026-11-17, same host as section 4 (Apple M4 Max). Every command ran in 
 - `./gradlew :app:dependencies --configuration releaseRuntimeClasspath | grep -c core:testing`: `0` (2026-11-17). This is the proof that `LargeTimelineFixtures` ships in no release (OQ-1d-20).
 - `"benchmarkReleaseImplementation"(project(":core:data-mock"))` fails (`Configuration with name 'benchmarkReleaseImplementation' not found`), so `app/build.gradle.kts` uses the `configurations.matching { … }.configureEach { project.dependencies.add(name, project(":core:data-mock")) }` fallback (OQ-0e-26). `ModuleGraphTest.dataMockOnlyInDebugAndPerf` accepts it and rejects a planted `implementation(...)`.
 - `:app:testReleaseUnitTest :app:verifyReleaseManifest` pass; `ReleaseReadinessTest` proves no seed or perf class and `PERF_ENTRY == false` in release.
-- `android.experimental.self-instrumenting` was not set and `StartupBenchmark` ran, so the baseline profile plugin covers it. The benchmark reads `targetAppId` from the instrumentation arguments and falls back to `net.chronoflow.app.native`, the perf variants' id.
+- `android.experimental.self-instrumenting` was not set and `StartupBenchmark` ran, so the baseline profile plugin covers it. The benchmark reads `targetAppId` from the instrumentation arguments and falls back to `net.chronoflow.app`, the perf variants' id.
 
 ### Timeouts (OQ-A29)
 
@@ -175,22 +175,22 @@ A temporary `HangCapProbeTest` (`@Smoke`, `CountDownLatch(1).await(70, SECONDS)`
 - Phase 10b Body clock board states (debug only; install `app/build/outputs/apk/debug/app-debug.apk` first if the connected-test runner removed it). Each command supplies a fresh test id, applies the fixture before demo sign-in, and opens the stateless Body clock page:
 
   ```sh
-  adb shell am start -n net.chronoflow.app.native.debug/net.chronoflow.debug.SeedReceiverActivity \
+  adb shell am start -n net.chronoflow.app.debug/net.chronoflow.debug.SeedReceiverActivity \
     --es CF_AUTH_TEST_ID "$(uuidgen | tr A-Z a-z)" --es CF_UI_TEST_PROFILE screen \
     --es CF_AUTH_TEST_SIGNED_IN demo --es CF_AUTH_TEST_WALKTHROUGH_SEEN 1 \
     --es CF_SETTINGS_ROUTE bodyClock --es CF_SETTINGS_BOARD_STATE bodyMissing
 
-  adb shell am start -n net.chronoflow.app.native.debug/net.chronoflow.debug.SeedReceiverActivity \
+  adb shell am start -n net.chronoflow.app.debug/net.chronoflow.debug.SeedReceiverActivity \
     --es CF_AUTH_TEST_ID "$(uuidgen | tr A-Z a-z)" --es CF_UI_TEST_PROFILE screen \
     --es CF_AUTH_TEST_SIGNED_IN demo --es CF_AUTH_TEST_WALKTHROUGH_SEEN 1 \
     --es CF_SETTINGS_ROUTE bodyClock --es CF_SETTINGS_BOARD_STATE bodyReady
 
-  adb shell am start -n net.chronoflow.app.native.debug/net.chronoflow.debug.SeedReceiverActivity \
+  adb shell am start -n net.chronoflow.app.debug/net.chronoflow.debug.SeedReceiverActivity \
     --es CF_AUTH_TEST_ID "$(uuidgen | tr A-Z a-z)" --es CF_UI_TEST_PROFILE screen \
     --es CF_AUTH_TEST_SIGNED_IN demo --es CF_AUTH_TEST_WALKTHROUGH_SEEN 1 \
     --es CF_SETTINGS_ROUTE bodyClock --es CF_SETTINGS_BOARD_STATE bodyAdjusted
 
-  adb shell am start -n net.chronoflow.app.native.debug/net.chronoflow.debug.SeedReceiverActivity \
+  adb shell am start -n net.chronoflow.app.debug/net.chronoflow.debug.SeedReceiverActivity \
     --es CF_AUTH_TEST_ID "$(uuidgen | tr A-Z a-z)" --es CF_UI_TEST_PROFILE screen \
     --es CF_AUTH_TEST_SIGNED_IN demo --es CF_AUTH_TEST_WALKTHROUGH_SEEN 1 \
     --es CF_SETTINGS_ROUTE bodyClock --es CF_SETTINGS_BOARD_STATE bodyExcluded
@@ -200,7 +200,7 @@ A temporary `HangCapProbeTest` (`@Smoke`, `CountDownLatch(1).await(70, SECONDS)`
 
 - Manual use:
   ```sh
-  adb shell am start -n net.chronoflow.app.native.debug/net.chronoflow.debug.SeedReceiverActivity \
+  adb shell am start -n net.chronoflow.app.debug/net.chronoflow.debug.SeedReceiverActivity \
     --es CF_AUTH_TEST_ID "$(uuidgen | tr A-Z a-z)" --es CF_UI_TEST_PROFILE screen --es cf.settings.language nl
   adb logcat -d -s UITestTimeline   # CF_UI_TIMELINE ... event=seed-begin / seed-applied
   ```
@@ -242,7 +242,7 @@ Phase 2 gate close-out: the standalone quick run failed two rule budgets (1193/1
 python3 -I Scripts/device_lock.py -- ./gradlew --console=plain :benchmark:connectedBenchmarkReleaseAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=net.chronoflow.benchmark.ProcessDeathLaunchTest -Pandroid.testInstrumentationRunnerArguments.timeout_msec=60000
 ```
 
-The test launches the explicit `MainActivity` component with `am start -W`, kills the background process with `am kill`, waits for its PID to disappear through `UiDevice.wait`, then proves the relaunch has a different PID and shows `launch.opening`. It explicitly disables Reduce Motion so the splash remains observable with functional animator scales at 0. Both `benchmarkRelease` and `nonMinifiedRelease` target `net.chronoflow.app.native` (also the `targetAppId` fallback); `app.root` and `route.*` tags are exposed by the main-source root in release variants. `make baseline-profile` selects only `BaselineProfileGenerator`: benchmark rule filtering alone cannot exclude this plain JUnit test.
+The test launches the explicit `MainActivity` component with `am start -W`, kills the background process with `am kill`, waits for its PID to disappear through `UiDevice.wait`, then proves the relaunch has a different PID and shows `launch.opening`. It explicitly disables Reduce Motion so the splash remains observable with functional animator scales at 0. Both `benchmarkRelease` and `nonMinifiedRelease` target `net.chronoflow.app` (also the `targetAppId` fallback); `app.root` and `route.*` tags are exposed by the main-source root in release variants. `make baseline-profile` selects only `BaselineProfileGenerator`: benchmark rule filtering alone cannot exclude this plain JUnit test.
 
 To diagnose only startup on the pixel emulator, under the same device lock (no profile generation or history append):
 
@@ -363,7 +363,7 @@ Output: `0` (grep exits 1 for no matches). The APK's only native library basenam
 Start a fresh process-isolated debug seed with the iOS account and gate keys:
 
 ```sh
-adb shell am start -n net.chronoflow.app.native.debug/net.chronoflow.debug.SeedReceiverActivity \
+adb shell am start -n net.chronoflow.app.debug/net.chronoflow.debug.SeedReceiverActivity \
   --es CF_AUTH_TEST_ID "$(uuidgen | tr A-Z a-z)" --es CF_AUTH_TEST_SIGNED_IN demo --es CF_AUTH_TEST_WALKTHROUGH_SEEN 1
 ```
 
@@ -385,7 +385,7 @@ Start the debug-only seeded journey on pixel:
 
 ```sh
 adb -s emulator-5554 shell am start \
-  -n net.chronoflow.app.native.debug/net.chronoflow.debug.SeedReceiverActivity \
+  -n net.chronoflow.app.debug/net.chronoflow.debug.SeedReceiverActivity \
   --es CF_AUTH_TEST_ID "$(uuidgen | tr A-Z a-z)" \
   --es CF_UI_TEST_PROFILE screen \
   --es CF_AUTH_TEST_SIGNED_IN demo \
@@ -406,7 +406,7 @@ Authorization (blocked page; `undetermined`, `granted` and `unsupported` are als
 
 ```sh
 python3 -I Scripts/device_lock.py -- "$ANDROID_HOME/platform-tools/adb" -s emulator-5554 shell am start -W \
-  -n net.chronoflow.app.native.debug/net.chronoflow.debug.SeedReceiverActivity \
+  -n net.chronoflow.app.debug/net.chronoflow.debug.SeedReceiverActivity \
   --es CF_AUTH_TEST_ID 01900000-0000-7000-8000-0000000012c1 --es CF_UI_TEST_PROFILE screen \
   --es CF_AUTH_TEST_SIGNED_IN demo --es CF_AUTH_TEST_WALKTHROUGH_SEEN 1 \
   --es CF_SETTINGS_ROUTE reminders --es cf.notificationAuthorization blocked
@@ -416,7 +416,7 @@ Request bookkeeping (real permission source):
 
 ```sh
 python3 -I Scripts/device_lock.py -- "$ANDROID_HOME/platform-tools/adb" -s emulator-5554 shell am start -W \
-  -n net.chronoflow.app.native.debug/net.chronoflow.debug.SeedReceiverActivity \
+  -n net.chronoflow.app.debug/net.chronoflow.debug.SeedReceiverActivity \
   --es CF_AUTH_TEST_ID 01900000-0000-7000-8000-0000000012c2 --es CF_UI_TEST_PROFILE screen \
   --es CF_AUTH_TEST_SIGNED_IN demo --es CF_AUTH_TEST_WALKTHROUGH_SEEN 1 \
   --es CF_SETTINGS_ROUTE reminders --es cf.notificationPermissionRequested 1
@@ -426,7 +426,7 @@ First-trip sheet over a seeded trip:
 
 ```sh
 python3 -I Scripts/device_lock.py -- "$ANDROID_HOME/platform-tools/adb" -s emulator-5554 shell am start -W \
-  -n net.chronoflow.app.native.debug/net.chronoflow.debug.SeedReceiverActivity \
+  -n net.chronoflow.app.debug/net.chronoflow.debug.SeedReceiverActivity \
   --es CF_AUTH_TEST_ID 01900000-0000-7000-8000-0000000012c3 --es CF_UI_TEST_PROFILE screen \
   --es CF_AUTH_TEST_SIGNED_IN demo --es CF_AUTH_TEST_WALKTHROUGH_SEEN 1 \
   --es cf.notificationAuthorization undetermined --es cf.firstTripReminders 1 \
