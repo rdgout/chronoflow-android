@@ -44,7 +44,71 @@ The StrictMode collector initially included eight stale benchmark XML cases. No 
 
 The 57 parity entries comprise 56 iOS reference pairs and launcher. Launch frame alignment uses the first black-to-content boundary where observable, otherwise the explicitly recorded recording-start fallback. These comparisons establish structure and appearance evidence, not pixel equality between rendering platforms.
 
-Phase 13 final gates below are **pending (orchestrator/user)** on this final stack. Historical Phase 13 passes do not close the launch-clock/profile refresh after `89f3dd7f`, the Medium bar change or the timeline-adjacent expansion fix. The worker did not run these tiers:
+### Review round 1 (2026-11-23)
+
+The orchestrator reports the pre-review `3ee86fd2` gates passed: `make check` in
+295 s, size 4.16 MB, `make release-check` and `make release-smoke` (their wall times
+were not supplied). These are baseline results, not reruns on the review fixes.
+
+F3 first created `backup/2026-11-23/phase-14-pre-r1`, then used a scripted,
+non-interactive, signed rebase. At rewritten head `6a35ba37`, **`git diff backup/2026-11-23/phase-14-pre-r1 HEAD` was empty (exit 0)** and the tree object was
+identical. Only subsequent F1/F2/F4/F5/F6 fixes change that tree. The separate
+`exp/fraunces-titles` ref remains `f61bba93c8d17e94df7efb53d1b56087702d931b`;
+it was not rebased or modified. Evidence: `build/review-r1/rewrite-result.json`.
+
+| History repair | Rewritten commit |
+| --- | --- |
+| `9b18c4d1`, including the import ordering correction | `66982aa1` |
+| `356b78f0` Today title benchmark | `e7a6775d` |
+| `1265c16b` bounded return to top | `535b86a6` |
+| `b30594b9` bar/refresh ordering | `d4f5faa0` |
+| `2d980d75` language test setup | `a432d4d1` |
+| `47b9fa52` loaded-content waits | `ca24c1c4` |
+| Tooling extracted from `9b98e2fe` | `7858fa8e` — `test(audit): record matrix results per avd` |
+| Documentation remaining from `9b98e2fe` | `4ec94ccb` — `docs(audit): record the matrix, strictmode and device runs` |
+| `3ee86fd2` verification record | `6a35ba37` |
+
+F1 leaves Robustness unchecked until T2/fold/resize acceptance is observed. F2
+checks all four Today title metrics from the fresh archive, with REPORT-only
+thresholds for every device class. F4 uses app-only node ordinals; the regression test fails before the fix, then correctly rejects unchanged
+app bounds with only SystemUI changes as “scale not applied”. The nine saved 1.0/1.3/2.0 XML sets also pass re-evaluation
+with the corrected classifier (`build/review-r1/f4-saved-dumps.json`); this is
+an offline recheck, not a new device sweep. F5 shuts down the selected T2 AVD
+before returning a failed matrix status. No T2 device was started to test it.
+
+F6 uses generated 24/12/16 dp start/end/top padding. The exact pinned Material 3
+1.5.0-beta01 source (`DatePicker.kt:2625–2626`) confirms those title values and
+the unchanged native headline's 24/12/12 dp start/end/bottom values. The source
+artifact stays under `build/review-r1/`. The production-component guard measures
+actual tagged title/container bounds in all four profiles; it rejects 24 dp end
+padding before the fix and passes with 12 dp. No copy assertion, new token or
+new screen is introduced.
+
+| Check | Exit | Wall (s) | Outcome / evidence |
+| --- | ---: | ---: | --- |
+| F1 question-register check | 0 | 0.034 | pass; `build/review-r1/f1-docs/` |
+| F2 benchmark checker tests | 0 | 2.868 | pass; `build/review-r1/f2-benchmarks/` |
+| F2 Makefile guards | 0 | 0.089 | pass; `build/review-r1/f2-makefile/` |
+| F2 existing title archive, offline check | 0 | 0.040 | pass; no benchmark executed; `build/review-r1/f2-archived/` |
+| F4 SystemUI negative control before fix | 1 | 0.056 | expected failure: DeviceFailure not raised; `build/review-r1/f4-red/` |
+| F4 font-scale guards after fix | 0 | 0.054 | pass; `build/review-r1/f4-font-scale/` |
+| F5 shutdown-order guard before fix | 1 | 0.059 | expected failure: shutdown followed exit; `build/review-r1/f5-red/` |
+| F5 Makefile guards after fix | 0 | 0.093 | pass; `build/review-r1/f5-makefile/` |
+| F6 exact-inset guard before fix | 2 | 17.008 | expected failure in all four profiles: end inset 24 instead of 12; `build/review-r1/f6-red/` |
+| F6 picker guards after fix | 0 | 9.323 | 10 passed; `build/review-r1/f6-targeted/` |
+| Design-system/core-UI layout tier | 0 | 18.884 | 282 passed, no overruns/hangs; `build/review-r1/layout/` |
+| Formatting | 0 | 23.804 | pass; `build/review-r1/format/` |
+| App/design-system/core-UI lint | 0 | 41.492 | pass; `build/review-r1/lint/` |
+| PickerDateTime capture refresh | 0 | 49.468 | 16 passed / 2,100 unrelated skipped; 16 fresh JVM PNGs; `build/review-r1/captures/` |
+| Final make quick (once) | 0 | 91.507 | 6,389 JVM/logic + 64 build-logic + 441 Python + seven timing cases passed; no overruns/hangs; `build/review-r1/quick/` |
+
+The review quick run passes all checks, but **91.507 s** exceeds the 60 s warm
+target; it was not repeated. Its main tier is 53.040 s; the Script tests are
+31.210 s. Capture outputs remain uncommitted under `build/captures/` and no
+emulator/performance/T2/profile tier ran in this review. No new OQ or suppression
+was added. Robustness and Accessibility remain open pending their stated gates.
+
+Phase 13 final gates below are **pending (orchestrator/user)** on the post-review stack. Historical Phase 13 passes do not close the launch-clock/profile refresh after `89f3dd7f`, the Medium bar change or the timeline-adjacent expansion fix. The worker did not run these tiers:
 
 ```sh
 make check
@@ -184,4 +248,4 @@ OQ-A617 (native navigation-strip scrim), OQ-A618 (native AM/PM target) and OQ-A6
 
 ## 8. Outcome of Phase 14
 
-**Outcome of Phase 14.** Board coverage is complete for all 188 required screen groups (194 total groups, 1,450 required cells), with every difference fixed or recorded; fresh JVM/Robolectric captures, pixel captures, 57 parity entries, the nine-screen font cap and all nine process-death cases are verified. StrictMode reports zero ChronoFlow violations and four explained test-library reads. The single final quick run passes every case without per-test overruns/hangs, but its 89.914 s total exceeds the 60 s warm target and was not repeated. The full native audit exits remain failed on the retained AM/PM target finding (OQ-A618); isolated language/readiness corrections pass. Computed contrast defaults (OQ-A619), designer approval, board PNG exports, manual TalkBack/Switch Access/keyboard, T2/fold/real split, final release/check/profile/performance and physical-device gates remain open with closing procedures. S3 is source-merged; server deployment and S1/S2/S4–S6 remain unverified or open. The committed Medium bar and refresh fix are retained; the separate Fraunces experiment has no measurable incremental emulator cost in the user-supplied results and awaits the user’s decision. This completes the audit implementation and verification record, not production acceptance; no missing, failed or manual gate is counted as a pass.
+**Outcome of Phase 14.** Board coverage is complete for all 188 required screen groups (194 total groups, 1,450 required cells), with every difference fixed or recorded; fresh JVM/Robolectric captures, pixel captures, 57 parity entries, the nine-screen font cap and all nine process-death cases are verified. StrictMode reports zero ChronoFlow violations and four explained test-library reads. The pre-review quick run passes every case without per-test overruns/hangs, but its 89.914 s total exceeds the 60 s warm target. Review round 1 also passes every check, in 91.507 s, with no retry; the warm-time target remains open. The full native audit exits remain failed on the retained AM/PM target finding (OQ-A618); isolated language/readiness corrections pass. Computed contrast defaults (OQ-A619), designer approval, board PNG exports, manual TalkBack/Switch Access/keyboard, T2/fold/real split, final release/check/profile/performance and physical-device gates remain open with closing procedures. S3 is source-merged; server deployment and S1/S2/S4–S6 remain unverified or open. The committed Medium bar and refresh fix are retained; the separate Fraunces experiment has no measurable incremental emulator cost in the user-supplied results and awaits the user’s decision. This completes the audit implementation and verification record, not production acceptance; no missing, failed or manual gate is counted as a pass.
