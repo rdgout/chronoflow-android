@@ -40,7 +40,10 @@ class TripPageBoardCaptureTest(
         if (case.board == "PlanDayMenu") fixture.openMenu(compose)
         compose.mainClock.advanceTimeByFrame()
         compose.waitForIdle()
-        BoardCapture.capture(fixture.bitmap(compose), "${case.board}_pixel8_${case.language.tag}_${case.theme}")
+        BoardCapture.capture(
+            fixture.bitmap(compose),
+            "${case.board}_${case.profile.name}_${case.language.tag}_${case.theme}",
+        )
     }
 
     companion object {

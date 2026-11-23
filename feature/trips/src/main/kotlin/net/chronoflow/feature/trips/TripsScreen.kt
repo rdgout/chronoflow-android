@@ -48,7 +48,7 @@ import net.chronoflow.core.designsystem.generated.PlanUITokens
 import net.chronoflow.core.designsystem.icon.MaterialSymbols
 import net.chronoflow.core.designsystem.layout.LocalSafeInsets
 import net.chronoflow.core.designsystem.layout.WindowPolicy
-import net.chronoflow.core.designsystem.system.CfLargeTopAppBar
+import net.chronoflow.core.designsystem.system.CfMediumTopAppBar
 import net.chronoflow.core.designsystem.system.CfPullToRefreshBox
 import net.chronoflow.core.designsystem.theme.CfTheme
 import net.chronoflow.core.model.config.AppLanguage
@@ -131,20 +131,31 @@ fun TripsContent(
         ).plus(insets, LocalLayoutDirection.current)
     val itemModifier = Modifier.widthIn(max = WindowPolicy.listCardMaxWidthDp.dp).fillMaxWidth()
     Scaffold(
-        modifier.fillMaxSize().testTag("trips.screen").nestedScroll(scrollBehavior.nestedScrollConnection),
+        modifier.fillMaxSize().testTag("trips.screen"),
         containerColor = CfTheme.colors.background,
         contentWindowInsets = WindowInsets(0),
         topBar = {
-            CfLargeTopAppBar(stringResource(R.string.screens_my_trips), scrollBehavior, actions = {
-                IconButton(onNewTrip, Modifier.testTag("trips.create")) {
-                    Icon(MaterialSymbols.Add, stringResource(R.string.screens_new_trip))
-                }
-            })
+            CfMediumTopAppBar(
+                stringResource(
+                    R.string.screens_my_trips,
+                ),
+                scrollBehavior,
+                Modifier.testTag("trips.appbar"),
+                actions = {
+                    IconButton(onNewTrip, Modifier.testTag("trips.create")) {
+                        Icon(MaterialSymbols.Add, stringResource(R.string.screens_new_trip))
+                    }
+                },
+            )
         },
     ) { scaffoldPadding ->
         CfPullToRefreshBox(refreshState.refreshing, onRefresh, Modifier.fillMaxSize().padding(scaffoldPadding)) {
+            // Consume downward overscroll in the app bar before pull-to-refresh.
             LazyColumn(
-                Modifier.fillMaxSize().testTag("trips.list"),
+                Modifier
+                    .fillMaxSize()
+                    .nestedScroll(scrollBehavior.nestedScrollConnection)
+                    .testTag("trips.list"),
                 state = listState,
                 contentPadding = padding,
                 horizontalAlignment = Alignment.CenterHorizontally,

@@ -180,7 +180,7 @@ class TripStatesFixture(
                                 ),
                             )
                         CfNavigationSuiteScaffold(
-                            CfNavLayout.Bar,
+                            if (profile.widthDp >= 600) CfNavLayout.Rail else CfNavLayout.Bar,
                             items,
                             1,
                             {},

@@ -102,19 +102,26 @@ avd-create:
 	@if [ -z "$(AVD)" ]; then echo "usage: make avd-create AVD=fold|small|api29" >&2; exit 1; fi
 	Scripts/emulator.sh create $(AVD)
 
+MATRIX_AVDS = $(if $(strip $(ONLY)),$(strip $(ONLY)),fold small api29)
 matrix:
-	@set -e; for avd in fold small api29; do \
-	  case $$avd in fold) port=5556;; small) port=5558;; api29) port=5560;; esac; \
-	  if ! $(ANDROID_HOME)/cmdline-tools/latest/bin/avdmanager list avd -c | grep -qx $$avd; then \
-	    echo "make matrix: avd '$$avd' is missing; run: make avd-create AVD=$$avd" >&2; exit 1; \
-	  fi; \
-	done; \
-	for avd in fold small api29; do \
-	  case $$avd in fold) port=5556;; small) port=5558;; api29) port=5560;; esac; \
-	  Scripts/emulator.sh ensure $$avd; \
-	  ANDROID_SERIAL=emulator-$$port $(RUN_TIER) smoke-$$avd --device --results 'app/build/outputs/androidTest-results/connected/**/*.xml' -- $(GRADLE) $(SMOKE_TASK); \
-	  Scripts/emulator.sh down $$avd; \
-	done
+	$(if $(filter-out fold small api29,$(MATRIX_AVDS)),$(error matrix: ONLY must name fold, small or api29))
+	python3 -I Scripts/device_lock.py -- bash -ec ' \
+	  for avd in $(MATRIX_AVDS); do \
+	    if ! $(ANDROID_HOME)/cmdline-tools/latest/bin/avdmanager list avd -c | grep -qx "$$avd"; then \
+	      echo "make matrix: avd '\''$$avd'\'' is missing; run: make avd-create AVD=$$avd" >&2; exit 1; \
+	    fi; \
+	  done; \
+	  for avd in $(MATRIX_AVDS); do \
+	    case $$avd in fold) port=5556;; small) port=5558;; api29) port=5560;; esac; \
+	    status=0; \
+	    Scripts/emulator.sh ensure "$$avd" || status=$$?; \
+	    if [ "$$status" = 0 ]; then \
+	      ANDROID_SERIAL=emulator-$$port $(RUN_TIER) smoke-$$avd --device --emulator --results "app/build/outputs/androidTest-results/connected/**/*.xml" -- $(GRADLE) $(SMOKE_TASK) || status=$$?; \
+	      python3 -I Scripts/matrix-result.py --avd "$$avd" --input "build/test-results/smoke-$$avd/timings.json" --output "build/audit/matrix/$$avd.json" || status=$$?; \
+	    fi; \
+	    Scripts/emulator.sh down "$$avd" || status=$$?; \
+	    if [ "$$status" != 0 ]; then exit "$$status"; fi; \
+	  done'
 
 du:
 	@du -sh ~/.gradle/caches ~/.android/avd build 2>/dev/null || true
@@ -166,6 +173,26 @@ mock-seed-check:
 perf:
 	$(RUN_TIER) perf --device --results 'benchmark/build/outputs/androidTest-results/connected/**/*.xml' -- Scripts/perf-startup.sh
 
+.PHONY: perf-today-title
+perf-today-title:
+	$(RUN_TIER) perf-today-title --device --results 'benchmark/build/outputs/androidTest-results/connected/benchmarkRelease/**/*.xml' -- bash -ec ' \
+	  ADB="$${ADB:-$${ANDROID_HOME}/platform-tools/adb}"; PERF_SUITE=perf-today-title; \
+	  source Scripts/perf-device.sh; resolve_perf_device; \
+	  trap '\''Scripts/emulator.sh prep-functional "$$SERIAL"'\'' EXIT; \
+	  Scripts/emulator.sh prep-perf "$$SERIAL"; \
+	  PERF_OUTPUT_DIR=benchmark/build/outputs/connected_android_test_additional_output; \
+	  source Scripts/perf-archive.sh; \
+	  begin_perf_archive today-title default "$$(git rev-parse --short HEAD)"; \
+	  status=0; \
+	  $(GRADLE) :benchmark:connectedBenchmarkReleaseAndroidTest \
+	    -Pandroid.testInstrumentationRunnerArguments.class=net.chronoflow.benchmark.TodayTitleBenchmark \
+	    -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.enabledRules=Macrobenchmark \
+	    -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.suppressErrors=EMULATOR \
+	    -Pandroid.testInstrumentationRunnerArguments.timeout_msec=300000 || status=$$?; \
+	  finish_perf_archive; \
+	  python3 -I Scripts/check-benchmarks.py --suite today-title --device-class unknown --results-dir "$$RESULTS_DIR" || status=$$?; \
+	  exit $$status'
+
 snapshots:
 	$(RUN_TIER) snapshots $(RESULTS_DEBUG) $(TIMINGS_DEBUG) -- $(GRADLE) $(if $(SNAPSHOT_RECORD),recordRoborazziDebug,verifyRoborazziDebug) -Pcf.tier=snapshot
 
@@ -173,11 +200,23 @@ captures:
 ifeq ($(DEVICE),1)
 	python3 -I Scripts/device_lock.py -- python3 -I Scripts/capture-device.py "$(ONLY)"
 else
-	rm -rf build/captures
+	python3 -I Scripts/prepare-captures.py build/captures --only "$(ONLY)" --append "$(if $(filter 1,$(APPEND)),1,0)"
 	$(RUN_TIER) captures $(RESULTS_DEBUG) $(TIMINGS_DEBUG) -- $(GRADLE) testDebugUnitTest --rerun -Pcf.tier=capture -Pcf.captureOnly=$(ONLY)
 	@n=$$(find build/captures -name '*.png' 2>/dev/null | wc -l | tr -d ' '); echo "captures: $$n PNGs in build/captures"; \
 	  if [ "$$n" = 0 ] && [ -z "$(ONLY)" ]; then echo "captures: no PNGs written" >&2; exit 1; fi
 endif
+
+.PHONY: audit-coverage
+audit-coverage:
+	python3 -I Scripts/board-coverage.py --canvas _design/canvas/canvas.json --scope tools/audit/board-scope.json --captures build/captures --out build/audit
+
+.PHONY: ios-parity
+ios-parity:
+	python3 -I Scripts/device_lock.py -- python3 -I Scripts/ios-parity.py $(if $(ONLY),--only "$(ONLY)")
+
+.PHONY: a11y
+a11y:
+	python3 -I Scripts/device_lock.py -- bash -c 'Scripts/emulator.sh ensure && exec $(RUN_TIER) a11y --device --emulator --results "app/build/outputs/androidTest-results/connected/**/*.xml" -- $(GRADLE) :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.package=net.chronoflow.app.audit -Pandroid.testInstrumentationRunnerArguments.notAnnotation=net.chronoflow.core.testing.tiers.Capture $(if $(filter 1,$(FULL)),-Pandroid.testInstrumentationRunnerArguments.cf.auditFull=1)'
 
 perf-timeline:
 	$(RUN_TIER) perf-timeline --device --results 'benchmark/build/outputs/androidTest-results/connected/benchmarkRelease/**/*.xml' -- bash -c ' \
@@ -211,3 +250,33 @@ release-smoke:
 .PHONY: perf-rn
 perf-rn:
 	$(RUN_TIER) perf-rn --device --results 'benchmark/build/outputs/androidTest-results/connected/**/*.xml' -- Scripts/perf-compare-rn.sh
+
+.PHONY: font-scale-check
+font-scale-check:
+	python3 -I Scripts/device_lock.py -- sh -ec 'Scripts/emulator.sh ensure; $(GRADLE) :app:installDebug; python3 -I Scripts/font-scale-check.py'
+
+.PHONY: audit-suite
+audit-suite:
+	python3 -I Scripts/device_lock.py -- bash -c 'Scripts/emulator.sh ensure || exit $$?; status=0; $(RUN_TIER) audit-suite --device --emulator --results "app/build/outputs/androidTest-results/connected/**/*.xml" -- $(GRADLE) :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.notClass=net.chronoflow.app.reminders.RemindersPermissionDeviceTest -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true -Pandroid.testInstrumentationRunnerArguments.cf.audit.language=nl -Pandroid.testInstrumentationRunnerArguments.cf.audit.theme=dark -Pandroid.testInstrumentationRunnerArguments.cf.audit.reduceMotion=1 || status=$$?; $(RUN_TIER) audit-permission --device --emulator --results "build/reminders-permission/result.xml" -- python3 -I Scripts/reminders_permission.py --audit || status=$$?; exit $$status'
+
+.PHONY: process-death
+process-death:
+	python3 -I Scripts/device_lock.py -- sh -ec 'Scripts/emulator.sh ensure; $(GRADLE) :app:installDebug; python3 -I Scripts/process-death-sweep.py $(if $(ONLY),--only "$(ONLY)")'
+
+AUDIT_ANDROID_MODULES := $(subst /,:,$(patsubst %/src/androidTest,%,$(wildcard */src/androidTest */*/src/androidTest)))
+.PHONY: strictmode-run
+strictmode-run:
+	python3 -I Scripts/device_lock.py -- bash -c ' \
+	  set -u; \
+	  Scripts/emulator.sh ensure || exit $$?; \
+	  mkdir -p build/audit; \
+	  adb_cmd="$${ADB:-$${ANDROID_HOME}/platform-tools/adb}"; serial="$${ANDROID_SERIAL:-emulator-5554}"; \
+	  "$$adb_cmd" -s "$$serial" logcat -G 16M || exit $$?; \
+	  "$$adb_cmd" -s "$$serial" logcat -c || exit $$?; \
+	  status=0; \
+	  $(RUN_TIER) strictmode --device --emulator $(foreach module,$(AUDIT_ANDROID_MODULES),--results "$(subst :,/,$(module))/build/outputs/androidTest-results/connected/debug/**/*.xml") -- $(GRADLE) $(AUDIT_ANDROID_MODULES:%=:%:connectedDebugAndroidTest) -Pandroid.testInstrumentationRunnerArguments.notClass=net.chronoflow.app.reminders.RemindersPermissionDeviceTest --max-workers=1 --continue -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true || status=$$?; \
+	  $(RUN_TIER) strictmode-permission --device --emulator --results "build/reminders-permission/result.xml" -- python3 -I Scripts/reminders_permission.py || status=$$?; \
+	  python3 -I Scripts/ios-parity.py || status=$$?; \
+	  "$$adb_cmd" -s "$$serial" logcat -d -v threadtime > build/audit/strictmode-logcat.txt || exit $$?; \
+	  python3 -I Scripts/strictmode-scan.py build/audit/strictmode-logcat.txt || status=$$?; \
+	  exit $$status'

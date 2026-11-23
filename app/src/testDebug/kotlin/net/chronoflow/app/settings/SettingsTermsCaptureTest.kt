@@ -10,8 +10,8 @@ import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import net.chronoflow.core.designsystem.theme.ChronoFlowTheme
 import net.chronoflow.core.model.api.AccountPolicies
 import net.chronoflow.core.model.contracts.BlockType
-import net.chronoflow.core.testing.DeviceProfiles
 import net.chronoflow.core.testing.compose.BoardCapture
+import net.chronoflow.core.testing.compose.BoardCaptureCell
 import net.chronoflow.core.testing.compose.ProfileHost
 import net.chronoflow.core.testing.compose.ProfileRule
 import net.chronoflow.core.testing.compose.captureWindow
@@ -25,19 +25,25 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.RuleChain
 import org.junit.runner.RunWith
+import org.robolectric.ParameterizedRobolectricTestRunner
 import org.robolectric.Robolectric
-import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 @Capture
-@RunWith(RobolectricTestRunner::class)
+@RunWith(ParameterizedRobolectricTestRunner::class)
 @Config(sdk = [36], application = android.app.Application::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
-class SettingsTermsCaptureTest {
+class SettingsTermsCaptureTest(
+    private val cell: BoardCaptureCell,
+) {
     private val compose = createEmptyComposeRule()
 
-    @get:Rule val rules: RuleChain = RuleChain.outerRule(ProfileRule(DeviceProfiles.pixel8)).around(compose)
+    @get:Rule val rules: RuleChain =
+        RuleChain
+            .outerRule(
+                ProfileRule(cell.profile, cell.language, cell.dark),
+            ).around(compose)
 
     @Test fun capture() {
         org.robolectric.nativeruntime.DefaultNativeRuntimeLoader
@@ -46,8 +52,8 @@ class SettingsTermsCaptureTest {
         val host = Robolectric.buildActivity(ComponentActivity::class.java).setup()
         try {
             host.get().setContent {
-                ProfileHost(DeviceProfiles.pixel8) {
-                    ChronoFlowTheme(reduceMotion = true) {
+                ProfileHost(cell.profile) {
+                    ChronoFlowTheme(darkTheme = cell.dark, reduceMotion = true) {
                         Box(Modifier.fillMaxSize().testTag("terms.capture.window")) {
                             TermsScreen(
                                 TermsUiState(
@@ -80,9 +86,15 @@ class SettingsTermsCaptureTest {
                 }
             }
             compose.waitForIdle()
-            BoardCapture.captureWindow(compose, "SignOutPending_pixel8_en_light", "terms.capture.window")
+            BoardCapture.captureWindow(compose, "SignOutPending_${cell.suffix}", "terms.capture.window")
         } finally {
             host.pause().stop().destroy()
         }
+    }
+
+    companion object {
+        @JvmStatic
+        @ParameterizedRobolectricTestRunner.Parameters(name = "{0}")
+        fun cases() = BoardCaptureCell.standard.map { arrayOf(it) }
     }
 }

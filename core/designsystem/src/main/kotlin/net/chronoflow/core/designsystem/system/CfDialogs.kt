@@ -59,7 +59,10 @@ fun CfModalBottomSheet(
         contentColor = CfTheme.colors.cardForeground,
         dragHandle = { CfSheetDragHandle() },
         scrimColor = BottomSheetDefaults.ScrimColor,
-        content = content,
+        content = {
+            CfEscapeKeyHandler(properties.shouldDismissOnBackPress, onDismissRequest)
+            content()
+        },
     )
 }
 

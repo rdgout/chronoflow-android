@@ -1,0 +1,37 @@
+# Material chrome audit
+
+2026-11-22. `pixel` / `emulator-5554`, API 36, debug; emulator evidence only. The final `make captures DEVICE=1 APPEND=1 ONLY=material` run passed all 44 parameterized cases in 83.70 s, with 68 full-screen PNGs under `build/captures/device/material/`. Every file is an uncropped 1080 × 2400 screenshot with actual status/navigation bars. Measured case times, including setup/teardown, are in `material/timings.jsonl`: maximum 6.501 s. Logs, JUnit results and earlier timing records remain under `build/phase14/material/`. No PNG is committed or made a snapshot reference.
+
+Earlier attempts exposed two capture defects: awaiting the result capsule during a slow request, and taking a screenshot before its semantics had reached a rendered frame. The result and indicator now have separate captures, and the helper awaits two hardware frame commits from every visible window before taking the screenshot. Visual review confirmed the previously absent Dutch alert/segmented content and result capsule are present. The unqualified targeted method attempt selected zero tests and is failed verification, not a pass; `8461d410` now rejects empty emulator suites. The four refresh variants were checked using their full parameterized method names before the final complete run.
+
+In the table, `<cell>` means each of `pixel_en_light`, `pixel_nl_light`, `pixel_en_dark`, `pixel_nl_dark`; paths are relative to `build/captures/device/material/`. Native Material geometry is retained. The tint column carries plan.md's Material mapping; the sheet's established board-specific card override is explicit. Capture generation is complete; OQ-A42 still requires the designer's decision.
+
+| Board element | Android component | Tint | Wrapper | Where in the app | Captures | Tint test | Designer status |
+|---|---|---|---|---|---|---|---|
+| Tab bar | `NavigationSuiteScaffold` (bar/rail) | Selected icon/label `primary`, indicator `muted`, unselected `mutedForeground` | `CfNavigationSuiteScaffold` | Today | `TabBar_Today_<cell>.png` | `CfNavigationSuiteScaffoldTest#selectedAndUnselectedIconsUseTheTokens` | awaiting designer (OQ-A42) |
+| Medium titles | `MediumTopAppBar`, 112 dp expanded, collapsing | `background` container, `foreground` text | `CfMediumTopAppBar` | Settings home, expanded and after one swipe up | `MediumTitle_expanded_<cell>.png`, `MediumTitle_collapsed_<cell>.png` | `SystemTintTest#appBarUsesTheScrolledContainerAfterItsNativeStateChanges` (shared app-bar colors) | awaiting designer (OQ-A42) |
+| Sheets | `ModalBottomSheet` | Mapping: `popover`, `border` handle; landed board wrapper uses `card` surface (docs/design-system.md) | `CfModalBottomSheet` | Opening sleep block; steps legend | `Sheet_step_<cell>.png`, `Sheet_legend_<cell>.png` | `SystemDialogTintTest#sheetKeepsTheCardSurface` | awaiting designer (OQ-A42) |
+| Alerts | `AlertDialog` | `popover`, actions `dawnText`, destructive `destructive` | `CfAlertDialog` | Both call sites: wizard discard (destructive), password-prompt reset confirmation | `Alert_discardDestructive_<cell>.png`, `Alert_passwordReset_<cell>.png` | `SystemDialogTintTest#alertKeepsThePopoverSurface` (surface; destructive action is source-mapped) | awaiting designer (OQ-A42) |
+| Switch | `Switch` | Track `dawn`/`input`, thumb `dawnForeground` | `CfSwitch` | Preferences Sleep, on/off | `Switch_on_<cell>.png`, `Switch_off_<cell>.png` | `SystemTintTest#nativeSwitchSegmentsAndProgressUseTheExplicitOverrides` | awaiting designer (OQ-A42) |
+| Segmented control | `SingleChoiceSegmentedButtonRow` | Selected `systemSelected` | `CfSegmentedButtons` | Both call sites: wizard stop question, reminders lead time (granted debug permission seed) | `Segmented_wizardStops_<cell>.png`, `Segmented_reminderLead_<cell>.png` | `SystemTintTest#nativeSwitchSegmentsAndProgressUseTheExplicitOverrides` | awaiting designer (OQ-A42) |
+| Date picker | `DatePickerDialog` / `DatePicker` | `toM3()` roles plus explicit dawn selection/popover overrides | `CfDatePickerDialog` | Outbound departure date | `DatePicker_outbound_<cell>.png` | `ToM3Test#everyMaterialRoleIsMappedInBothAppearances`; date-specific tint is captured, not asserted by SystemTintTest/SystemDialogTintTest | awaiting designer (OQ-A42) |
+| Time picker | `TimePicker` in native dialog | `toM3()` roles / popover | `CfTimePickerDialog` | Outbound departure time; phone hour cycle retained | `TimePicker_outbound_<cell>.png` | `TimePickerTintTest#timePickerSurfaceKeepsThePopoverToken`; `ToM3Test#everyMaterialRoleIsMappedInBothAppearances` | awaiting designer (OQ-A42) |
+| Toast | `Snackbar` | `foreground` container, `background` text/actions | `CfSnackbarHost` | Language saved: select the target language from the other language; debug presentation counter is the wait | `Snackbar_languageSaved_<cell>.png` | `SystemDialogTintTest#snackbarContainerBodyAndActionUseInverseTokens` | awaiting designer (OQ-A42) |
+| Pull to refresh | `PullToRefreshBox` indicator and designed capsule overlay | `dawn`; popover indicator surface | `CfPullToRefreshBox`, `RefreshFeedbackCapsule` | My trips, UiAutomator swipe; slow request for indicator, separately seeded zero-delay completion for result capsule | `PullToRefresh_indicator_<cell>.png`, `PullToRefresh_resultCapsule_<cell>.png` | `SystemTintTest#refreshingIndicatorUsesThePopoverContainer` | awaiting designer (OQ-A42) |
+| Progress | `LinearProgressIndicator`, 4 dp | `dawn` on `muted` | `CfLinearProgress` | Wizard Where | `Progress_wizardWhere_<cell>.png` | `SystemTintTest#nativeSwitchSegmentsAndProgressUseTheExplicitOverrides` | awaiting designer (OQ-A42) |
+| System bars | Platform status/navigation bars | Light/dark icons selected for the actual background | `MainActivity.applySystemBars` / edge-to-edge policy | Every capture | All 68 files; no separate cropped asset | Existing system-bar policy/guard tests; observed in full-screen captures | awaiting designer (OQ-A42) |
+
+The wide rail is visible in the existing Robolectric captures `Today_foldInner_en_dark.png`, `Today_foldInner_nl_light.png`, `Trips_foldInner_en_dark.png`, `Trips_foldInner_nl_light.png`, `SetHome_foldInner_en_dark.png`, `SetHome_foldInner_nl_light.png` under `build/captures/`. Those are JVM layouts, not fold/hinge or real system-bar evidence.
+
+The refresh result capsule is emitted after completion; it is not present beside the in-flight spinner. The two captures document those existing states without changing their timing. The debug-only presentation counter proves the transient capsule was presented. No screen test asserts its copy. The brief's R8 records this mechanical correction.
+
+| Event | Android constant | Wrapper mapping | Status |
+|---|---|---|---|
+| Selection | `SEGMENT_TICK` | `AndroidHaptics` → `SegmentTick` | not observable on the emulator; device gate |
+| Switch on/off | `TOGGLE_ON` / `TOGGLE_OFF` | `ToggleOn` / `ToggleOff` | not observable on the emulator; device gate |
+| Light | `CONTEXT_CLICK` | `ContextClick` | not observable on the emulator; device gate |
+| Success | `CONFIRM` | `Confirm` | not observable on the emulator; device gate |
+| Warning/error | `REJECT` | `Reject` | not observable on the emulator; device gate |
+| Medium | `LONG_PRESS` | `LongPress` | not observable on the emulator; device gate |
+
+`AndroidHapticsTest#everyEventMapsToThePlatformFeedback` covers the mapping. A physical-device feel pass remains pending (orchestrator/user); splash and Welcome have no haptics.

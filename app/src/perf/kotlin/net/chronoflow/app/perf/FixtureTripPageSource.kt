@@ -17,6 +17,7 @@ import net.chronoflow.core.plan.trippage.PlanPreferences
 import net.chronoflow.core.sync.PlanRetention
 import net.chronoflow.core.sync.SyncResult
 import net.chronoflow.core.testing.LargeTimelineFixtures
+import net.chronoflow.feature.trip.page.TripPageArgs
 import net.chronoflow.feature.trip.page.TripPageSource
 
 class FixtureTripPageSource(
@@ -59,4 +60,25 @@ class FixtureTripPageSource(
     override fun hold(tripId: String) = retention.hold(tripId)
 
     override suspend fun refresh(): SyncResult? = null
+}
+
+internal data class DiagnosticTripPageInput(
+    val bytes: ByteArray,
+    val args: TripPageArgs,
+) {
+    companion object {
+        fun load(name: String): DiagnosticTripPageInput =
+            DiagnosticTripPageInput(
+                LargeTimelineFixtures.detailBytes(name),
+                TripPageArgs(
+                    "fixture-$name",
+                    dayId =
+                        LargeTimelineFixtures
+                            .fixture(name)
+                            .detail.plan.days
+                            .firstOrNull()
+                            ?.id,
+                ),
+            )
+    }
 }

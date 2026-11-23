@@ -33,6 +33,7 @@ data class TestSeed(
     val raw: Map<String, String>,
     val ignoredKeys: Set<String>,
     val signedIn: SeedAccount? = null,
+    val emptyTrips: Boolean = false,
     val walkthroughSeen: Boolean = false,
     val termsPending: Boolean = false,
     val unverified: Boolean = false,
@@ -68,6 +69,7 @@ data class TestSeed(
             Regex("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
         private val settingsRoutes =
             setOf(
+                "none",
                 "profile",
                 "account",
                 "language",
@@ -194,6 +196,7 @@ data class TestSeed(
                 raw = accepted.filterKeys { it !in nonStringKeys },
                 ignoredKeys = ignored,
                 signedIn = signedIn,
+                emptyTrips = flag("CF_REFRESH_TEST_EMPTY_TRIPS"),
                 walkthroughSeen = walkthroughSeen,
                 termsPending = termsPending,
                 walkthroughPending = walkthroughPending,

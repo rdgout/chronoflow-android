@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
@@ -192,7 +193,7 @@ internal fun AirportResultRow(
     ) {
         Text(
             airport.iata,
-            Modifier.width(SheetMetrics.codeWidth.dp).testTag("wizard.airport.code.${airport.iata}"),
+            Modifier.widthIn(min = SheetMetrics.codeWidth.dp).testTag("wizard.airport.code.${airport.iata}"),
             style = CfTheme.type.style(CfTypeScale.wizardSearchCode),
             color = CfTheme.colors.foreground,
         )

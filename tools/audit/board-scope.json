@@ -1,0 +1,85 @@
+{
+  "schema": 1,
+  "excluded": {
+    "superseded": [
+      "TripEditor",
+      "TripEditorErrors",
+      "EditorStates",
+      "TripReview*",
+      "ReviewAnswer",
+      "ReviewStates",
+      "TripDiscard*",
+      "TripCalculating",
+      "TripNoCredits",
+      "DarkTripEditor",
+      "DarkTripReview",
+      "GuestFlight",
+      "GuestHealth",
+      "GuestSleep",
+      "GuestReview",
+      "GuestStates",
+      "WizardOutboundStopNew*"
+    ],
+    "retiredHealth": [
+      "WizardQBipolar*",
+      "WizardQCaffeine*",
+      "WizardQClot*",
+      "WizardQEye*",
+      "WizardQPregnant*"
+    ],
+    "outOfScope": [
+      "Calendar*",
+      "LiveActivity",
+      "DataDownload*",
+      "SetData",
+      "SetPaywall",
+      "SetCancel",
+      "TripDelete",
+      "AuthEmailChanged",
+      "PasswordPromptEmail",
+      "WizardCheckPractice*"
+    ]
+  },
+  "kinds": {
+    "nonScreen": {
+      "SplashSpec": "Geometry specification; covered by LaunchLayout tests (0b/3a).",
+      "WizardSpec": "Rules deck; covered by wizard model tests (9a\u20139h).",
+      "WizardCopy": "Copy deck; covered by generated en/nl string tests (0c/9a\u20139h).",
+      "AppIcon": "Launcher icon; evidenced by the launcher shot in Task 4."
+    },
+    "wideOnly": {
+      "PlanWide": "Wide sibling of Plan.",
+      "PlanWideScrolled": "Wide sibling of PlanScrolled.",
+      "PlanWideDayMenu": "Wide sibling of PlanDayMenu.",
+      "PlanRemoteWide": "Wide sibling of PlanRemote.",
+      "PlanRemoteWideOffline": "Wide sibling of PlanRemoteOffline.",
+      "PasswordPromptWide": "Wide sibling of PasswordPrompt (OQ-A502).",
+      "Set2FAWide": "Wide sibling of Set2FA.",
+      "Set2FAManageWide": "Wide sibling of Set2FAManage."
+    },
+    "phoneWithWideSibling": {
+      "Plan": "Separate PlanWide group covers foldInner.",
+      "PlanScrolled": "Separate PlanWideScrolled group covers foldInner.",
+      "PlanDayMenu": "Separate PlanWideDayMenu group covers foldInner.",
+      "PlanRemote": "Separate PlanRemoteWide group covers foldInner.",
+      "PlanRemoteOffline": "Separate PlanRemoteWideOffline group covers foldInner.",
+      "PasswordPrompt": "Separate PasswordPromptWide group covers foldInner.",
+      "Set2FA": "Separate Set2FAWide group covers foldInner.",
+      "Set2FAManage": "Separate Set2FAManageWide group covers foldInner."
+    },
+    "largeFontOnly": {
+      "WizardQShiftLarge": "The board specifically demonstrates larger text."
+    }
+  },
+  "cellExemptions": {},
+  "notBuilt": {
+    "GuestExcluded": {
+      "phase": "11b",
+      "reason": "Retired health-answers screen; iOS OQ 47 and OQ-A544 leave it unbuilt. Guests use WizardExcluded."
+    },
+    "PolicyReader": {
+      "phase": "8",
+      "reason": "No in-app policy-reader screen is built: PolicyLinks opens the external policy URL in a native Custom Tab (OQ-A32/OQ-A339/OQ-A346). The board draws an in-app reader that the pinned iOS/landed Phase 8 scope does not build. External browser content and chrome need device review."
+    }
+  }
+}

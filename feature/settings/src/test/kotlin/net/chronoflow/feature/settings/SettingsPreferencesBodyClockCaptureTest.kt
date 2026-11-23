@@ -1,8 +1,7 @@
 package net.chronoflow.feature.settings
 
-import net.chronoflow.core.model.config.AppLanguage
-import net.chronoflow.core.testing.DeviceProfiles
 import net.chronoflow.core.testing.compose.BoardCapture
+import net.chronoflow.core.testing.compose.BoardCaptureCell
 import net.chronoflow.core.testing.tiers.Capture
 import net.chronoflow.feature.settings.support.SettingsScreenTest
 import org.junit.Test
@@ -18,42 +17,26 @@ import org.robolectric.annotation.GraphicsMode
 class SettingsPreferencesBodyClockCaptureTest(
     private val board: String,
     private val state: String,
-    private val language: AppLanguage,
-    dark: Boolean,
-) : SettingsScreenTest(DeviceProfiles.pixel8, language, dark) {
+    private val cell: BoardCaptureCell,
+) : SettingsScreenTest(cell.profile, cell.language, cell.dark) {
     @Test fun capture() {
-        show { SettingsBoardFixture(state, shell = true) }
-        BoardCapture.capture(compose, "${board}_pixel8_${language.tag}_${if (dark) "dark" else "light"}")
+        show { SettingsBoardFixture(state, wide = profile.widthDp >= 600, shell = true) }
+        BoardCapture.capture(compose, "${board}_${cell.suffix}")
     }
 
     companion object {
         @JvmStatic
-        @ParameterizedRobolectricTestRunner.Parameters(name = "{0}-{1}-{2}-{3}")
+        @ParameterizedRobolectricTestRunner.Parameters(name = "{0}-{1}-{2}")
         fun cases(): List<Array<Any>> {
             val preferences =
-                AppLanguage.entries.flatMap { language ->
-                    listOf(false, true).map { dark ->
-                        arrayOf<Any>(
-                            if (language ==
-                                AppLanguage.Nl
-                            ) {
-                                "SetPreferencesNL"
-                            } else {
-                                "SetPreferences"
-                            },
-                            "Preferences",
-                            language,
-                            dark,
-                        )
-                    }
+                BoardCaptureCell.standard.map { cell ->
+                    arrayOf<Any>("SetPreferences", "Preferences", cell)
                 }
             val body =
                 listOf("bodyMissing", "bodyReady", "bodyAdjusted", "bodyExcluded").flatMap { state ->
-                    val themes = if (state in setOf("bodyMissing", "bodyReady")) listOf(false, true) else listOf(false)
-                    themes.flatMap { dark ->
-                        listOf("intro", "about", "sleep", "caffeine", "light", "health").map { section ->
-                            val board = if (dark) "DarkSetBodyClock" else "SetBodyClock"
-                            arrayOf<Any>("${board}_$state-$section", "$state-$section", AppLanguage.En, dark)
+                    listOf("intro", "about", "sleep", "caffeine", "light", "health").flatMap { section ->
+                        BoardCaptureCell.standard.map { cell ->
+                            arrayOf<Any>("SetBodyClock_$state-$section", "$state-$section", cell)
                         }
                     }
                 }

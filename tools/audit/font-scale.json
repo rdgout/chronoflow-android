@@ -1,0 +1,93 @@
+{
+  "schema": 1,
+  "screens": [
+    {
+      "name": "welcome",
+      "seeds": {},
+      "wait": "welcome.plan"
+    },
+    {
+      "name": "sign-in",
+      "seeds": {
+        "CF_AUTH_TEST_AUDIT_SCREEN": "sign-in"
+      },
+      "wait": "sign-in.submit"
+    },
+    {
+      "name": "today",
+      "seeds": {
+        "CF_AUTH_TEST_SIGNED_IN": "demo",
+        "CF_AUTH_TEST_WALKTHROUGH_SEEN": "1",
+        "CF_MOCK_DELAY": "0",
+        "CF_PLAN_TEST_FREEZE_CLOCK": "1"
+      },
+      "wait": "today.screen"
+    },
+    {
+      "name": "trips",
+      "seeds": {
+        "CF_AUTH_TEST_SIGNED_IN": "demo",
+        "CF_AUTH_TEST_WALKTHROUGH_SEEN": "1",
+        "CF_MOCK_DELAY": "0",
+        "CF_PLAN_TEST_FREEZE_CLOCK": "1",
+        "CF_PLAN_TEST_ROUTE": "trips"
+      },
+      "wait": "trips.screen"
+    },
+    {
+      "name": "trip-timeline",
+      "seeds": {
+        "CF_AUTH_TEST_SIGNED_IN": "demo",
+        "CF_AUTH_TEST_WALKTHROUGH_SEEN": "1",
+        "CF_MOCK_DELAY": "0",
+        "CF_PLAN_TEST_FREEZE_CLOCK": "1",
+        "CF_PLAN_TEST_ROUTE": "trip:0199a3c0-0000-7000-8000-000000000001"
+      },
+      "wait": "trip.page"
+    },
+    {
+      "name": "trip-list",
+      "seeds": {
+        "CF_AUTH_TEST_SIGNED_IN": "demo",
+        "CF_AUTH_TEST_WALKTHROUGH_SEEN": "1",
+        "CF_MOCK_DELAY": "0",
+        "CF_PLAN_TEST_FREEZE_CLOCK": "1",
+        "CF_PLAN_TEST_ROUTE": "trip:0199a3c0-0000-7000-8000-000000000001:list"
+      },
+      "wait": "trip.page"
+    },
+    {
+      "name": "settings",
+      "seeds": {
+        "CF_AUTH_TEST_SIGNED_IN": "demo",
+        "CF_AUTH_TEST_WALKTHROUGH_SEEN": "1",
+        "CF_MOCK_DELAY": "0",
+        "CF_PLAN_TEST_FREEZE_CLOCK": "1",
+        "CF_SETTINGS_ROUTE": "none"
+      },
+      "wait": "settings.screen"
+    },
+    {
+      "name": "preferences",
+      "seeds": {
+        "CF_AUTH_TEST_SIGNED_IN": "demo",
+        "CF_AUTH_TEST_WALKTHROUGH_SEEN": "1",
+        "CF_MOCK_DELAY": "0",
+        "CF_PLAN_TEST_FREEZE_CLOCK": "1",
+        "CF_SETTINGS_ROUTE": "preferences"
+      },
+      "wait": "settings.preferences.screen"
+    },
+    {
+      "name": "wizard-outbound",
+      "seeds": {
+        "CF_AUTH_TEST_SIGNED_IN": "demo",
+        "CF_AUTH_TEST_WALKTHROUGH_SEEN": "1",
+        "CF_MOCK_DELAY": "0",
+        "CF_PLAN_TEST_FREEZE_CLOCK": "1",
+        "CF_WIZARD_BOARD_CAPTURE": "WizardOutbound"
+      },
+      "wait": "wizard.flight-time"
+    }
+  ]
+}

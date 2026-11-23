@@ -11,7 +11,7 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import kotlinx.coroutines.test.runTest
 import net.chronoflow.core.designsystem.theme.ChronoFlowTheme
-import net.chronoflow.core.model.config.AppLanguage
+import net.chronoflow.core.testing.compose.BoardCaptureCell
 import net.chronoflow.core.testing.compose.ProfileHost
 import net.chronoflow.core.testing.compose.ProfileRule
 import net.chronoflow.core.testing.tiers.Capture
@@ -38,17 +38,13 @@ import kotlin.time.Duration.Companion.seconds
 @Config(sdk = [36])
 class WizardBoardCaptureTest(
     private val board: String,
+    private val cell: BoardCaptureCell,
 ) {
     private val compose = createComposeRule()
-    private val language = if (board.endsWith("NL") || board == "WizardQShiftLarge") AppLanguage.Nl else AppLanguage.En
-    private val dark = "Dark" in board
+    private val language = cell.language
+    private val dark = cell.dark
     private var previousHourCycle: String? = null
-    private val profile =
-        when (board) {
-            "PickerTime" -> wizardBoardProfile.copy(widthDp = 375, heightDp = 812)
-            "WizardQShiftLarge" -> wizardBoardProfile.copy(fontScale = 1.3f)
-            else -> wizardBoardProfile
-        }
+    private val profile = cell.profile
 
     @get:Rule val rules: RuleChain =
         RuleChain
@@ -125,9 +121,9 @@ class WizardBoardCaptureTest(
                     "WizardQAgeMember",
                 )
             ) {
-                "${board}_noBoard"
+                "${board}_noBoard_${cell.suffix}"
             } else {
-                board
+                "${board}_${cell.suffix}"
             },
             state.sheet != null || state.discardDialogVisible || state.sleep?.openTime != null ||
                 state.answerSheet != null,
@@ -136,7 +132,14 @@ class WizardBoardCaptureTest(
 
     companion object {
         @JvmStatic
-        @ParameterizedRobolectricTestRunner.Parameters(name = "{0}")
-        fun cases() = WizardBoardCaptureSeed.names
+        @ParameterizedRobolectricTestRunner.Parameters(name = "{0}-{1}")
+        fun cases() =
+            WizardBoardCaptureSeed.names
+                .filter {
+                    WizardBoardCaptureSeed.baseName(it) == it || it == "WizardQShiftLarge"
+                }.flatMap { board ->
+                    val cells = if (board == "WizardQShiftLarge") BoardCaptureCell.large else BoardCaptureCell.standard
+                    cells.map { cell -> arrayOf<Any>(board, cell) }
+                }
     }
 }

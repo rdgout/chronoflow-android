@@ -9,9 +9,8 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import net.chronoflow.core.testing.DeviceProfile
-import net.chronoflow.core.testing.SafeInsetsDp
 import net.chronoflow.core.testing.compose.BoardCapture
+import net.chronoflow.core.testing.compose.BoardCaptureCell
 import net.chronoflow.core.testing.compose.ProfileRule
 import net.chronoflow.core.testing.tiers.Capture
 import org.junit.Rule
@@ -31,13 +30,18 @@ import kotlin.time.Duration.Companion.seconds
 @Config(sdk = [36], application = android.app.Application::class)
 class GuestSignupCaptureTest(
     private val board: String,
+    private val cell: BoardCaptureCell,
 ) {
     private val compose = createEmptyComposeRule()
 
-    @get:Rule val rules: RuleChain = RuleChain.outerRule(ProfileRule(profile)).around(compose)
+    @get:Rule val rules: RuleChain =
+        RuleChain
+            .outerRule(
+                ProfileRule(cell.profile, cell.language, cell.dark),
+            ).around(compose)
 
     @Test fun captureGuestSignupBoard() {
-        val fixture = GuestSignupScreenFixture(board, profile)
+        val fixture = GuestSignupScreenFixture(board, cell.profile, cell.language, cell.dark)
         Dispatchers.setMain(fixture.dispatcher)
         GuestSignupTestActivity.fixture = fixture
         val controller = Robolectric.buildActivity(GuestSignupTestActivity::class.java).setup()
@@ -46,7 +50,7 @@ class GuestSignupCaptureTest(
                 fixture.scheduler.runCurrent()
                 compose.onNodeWithTag("guest-signup.name").isDisplayed()
             }
-            BoardCapture.capture(compose, board)
+            BoardCapture.capture(compose, "${board}_${cell.suffix}")
         } finally {
             controller.pause().stop().destroy()
             runTest(fixture.dispatcher, timeout = 60.seconds) {
@@ -64,20 +68,11 @@ class GuestSignupCaptureTest(
     }
 
     companion object {
-        private val profile =
-            DeviceProfile(
-                "guestSignupBoard",
-                375,
-                812,
-                3f,
-                1f,
-                "gesture",
-                SafeInsetsDp(0f, 0f, 0f, 0f),
-                "GuestSignup board",
-            )
-
         @JvmStatic
-        @ParameterizedRobolectricTestRunner.Parameters(name = "{0}")
-        fun boards(): List<String> = listOf("GuestSignup", "GuestSignupFailed", "GuestSignupRetry", "GuestSignupReview")
+        @ParameterizedRobolectricTestRunner.Parameters(name = "{0}-{1}")
+        fun boards(): List<Array<Any>> =
+            listOf("GuestSignup", "GuestSignupFailed", "GuestSignupRetry", "GuestSignupReview").flatMap { board ->
+                BoardCaptureCell.standard.map { cell -> arrayOf<Any>(board, cell) }
+            }
     }
 }

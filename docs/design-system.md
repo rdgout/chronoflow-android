@@ -16,7 +16,7 @@ Behaviour is ported from iOS `f391a1fa`; designed surfaces use the current `_des
 | `CfBadge`, `CfPill`, `CfPillGroup` | `SetStates`, `ItemDetail` | `SettingsBadge`, `SettingsRadioGroup` |
 | `CfBanner`, `CfNotice` | `AuthStates`, `SetStates` | `AuthBanner`, `AuthNotice` |
 | `CfSkeleton` | `SheetStates`, `SetStates` | `SettingsLoadingRows` |
-| `CfTopAppBar`, `CfLargeTopAppBar`, `CfBackButton` | Material mapping; no Android boards | iOS plan navigation-title decision: system font, bold, collapsing |
+| `CfTopAppBar`, `CfMediumTopAppBar`, `CfBackButton` | Material mapping; no Android boards | User 2026-11-22: MediumTopAppBar, 112 dp expanded, system font bold, exit-until-collapsed; supersedes the 2026-11-10 large-title decision |
 | `CfSwitch`, `cfToggleable`, `CfSegmentedButtons` | Material mapping | native Toggle / Picker |
 | `CfLinearProgress`, `CfPullToRefreshBox` | Material mapping | native ProgressView / refresh |
 | `CfModalBottomSheet`, `CfAlertDialog`, `CfSnackbarHost`, picker dialogs | Material mapping, `ItemDetail` | native sheets, alerts and pickers; Snackbar is Android's replacement for FeedbackToast |

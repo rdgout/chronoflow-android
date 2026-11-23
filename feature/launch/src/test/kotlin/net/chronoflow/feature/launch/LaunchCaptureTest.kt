@@ -5,6 +5,7 @@ import net.chronoflow.core.model.config.AppLanguage
 import net.chronoflow.core.testing.DeviceProfile
 import net.chronoflow.core.testing.DeviceProfiles
 import net.chronoflow.core.testing.compose.BoardCapture
+import net.chronoflow.core.testing.compose.BoardCaptureCell
 import net.chronoflow.core.testing.compose.ProfileRule
 import net.chronoflow.core.testing.tiers.Capture
 import org.junit.Rule
@@ -52,6 +53,12 @@ class LaunchCaptureTest(
                     } +
                         listOf(arrayOf<Any>(p, dark, 0, true, AppLanguage.En))
                 }
-            } + listOf(arrayOf<Any>(DeviceProfiles.pixel8, false, 0, false, AppLanguage.Nl))
+            } +
+                BoardCaptureCell.standard
+                    .filterNot {
+                        it.profile == DeviceProfiles.pixel8 && it.language == AppLanguage.En
+                    }.map { cell ->
+                        arrayOf<Any>(cell.profile, cell.dark, 1000, false, cell.language)
+                    }
     }
 }

@@ -1,0 +1,6 @@
+11-22 10:00:00.000 100 100 D StrictMode: StrictMode policy violation; ~duration=4 ms: android.os.strictmode.DiskReadViolation
+11-22 10:00:00.001 200 100 D StrictMode: StrictMode policy violation; ~duration=1 ms: android.os.strictmode.DiskWriteViolation
+11-22 10:00:00.002 100 101 D StrictMode: StrictMode policy violation; ~duration=2 ms: android.os.strictmode.NetworkViolation
+11-22 10:00:00.003 100 100 D StrictMode:     at net.chronoflow.app.Example.read(Example.kt:3)
+11-22 10:00:00.004 100 101 D StrictMode:     at androidx.example.Library.network(Library.java:2)
+11-22 10:00:00.005 200 100 D StrictMode:     at com.google.example.Library.write(Library.java:2)

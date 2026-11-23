@@ -20,8 +20,8 @@ import net.chronoflow.core.model.config.AppLanguage
 import net.chronoflow.core.model.contracts.Language
 import net.chronoflow.core.model.contracts.TimeFormat
 import net.chronoflow.core.plan.CopyLineFormatter
-import net.chronoflow.core.testing.DeviceProfiles
 import net.chronoflow.core.testing.compose.BoardCapture
+import net.chronoflow.core.testing.compose.BoardCaptureCell
 import net.chronoflow.core.testing.compose.ProfileHost
 import net.chronoflow.core.testing.compose.ProfileRule
 import net.chronoflow.core.testing.tiers.Capture
@@ -41,10 +41,10 @@ import kotlin.time.Duration.Companion.seconds
 @Config(sdk = [36])
 class TodayBoardCaptureTest(
     private val board: String,
-    private val language: Language,
-    private val dark: Boolean,
+    private val cell: BoardCaptureCell,
 ) {
-    private val profile = DeviceProfiles.pixel8.copy(widthDp = 390, heightDp = 844)
+    private val profile = cell.profile
+    private val language = if (cell.language == AppLanguage.Nl) Language.Nl else Language.En
     private val compose = createComposeRule()
 
     @get:Rule val rules: RuleChain =
@@ -59,7 +59,7 @@ class TodayBoardCaptureTest(
                     } else {
                         AppLanguage.En
                     },
-                    dark,
+                    cell.dark,
                 ),
             ).around(compose)
 
@@ -83,7 +83,7 @@ class TodayBoardCaptureTest(
         val clock = MinuteClock(mutableStateOf(if (board == "TodayRowStates") TodayBoardFixture.rowNow else todayNow))
         compose.setContent {
             ProfileHost(profile) {
-                ChronoFlowTheme(darkTheme = dark, reduceMotion = true) {
+                ChronoFlowTheme(darkTheme = cell.dark, reduceMotion = true) {
                     if (board == "TodayRowStates") {
                         TodayRows(row, clock, language, formatter)
                     } else {
@@ -110,8 +110,20 @@ class TodayBoardCaptureTest(
                                 ),
                             )
                         val contentInsets = safe.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
-                        CfNavigationSuiteScaffold(CfNavLayout.Bar, items, 0, {
-                        }, Modifier.windowInsetsPadding(safe.only(WindowInsetsSides.Bottom))) {
+                        CfNavigationSuiteScaffold(
+                            if (profile.widthDp >=
+                                600
+                            ) {
+                                CfNavLayout.Rail
+                            } else {
+                                CfNavLayout.Bar
+                            },
+                            items,
+                            0,
+                            {
+                            },
+                            Modifier.windowInsetsPadding(safe.only(WindowInsetsSides.Bottom)),
+                        ) {
                             CompositionLocalProvider(LocalSafeInsets provides contentInsets) {
                                 TodayScreen(state, clock, language, formatter, TimeFormat.Value24, noTodayActions, {})
                             }
@@ -123,19 +135,17 @@ class TodayBoardCaptureTest(
         compose.waitForIdle()
         compose.mainClock.advanceTimeByFrame()
         compose.waitForIdle()
-        BoardCapture.capture(compose, "${board}_pixel8_${language.raw}_${if (dark) "dark" else "light"}")
+        BoardCapture.capture(compose, "${board}_${cell.suffix}")
     }
 
     companion object {
         @JvmStatic
-        @ParameterizedRobolectricTestRunner.Parameters(name = "{0}-{1}-{2}")
+        @ParameterizedRobolectricTestRunner.Parameters(name = "{0}-{1}")
         fun cases(): Collection<Array<Any>> {
             val boards =
                 listOf("Today", "TodayEmpty", "TodayFuture", "TodayLoading", "TodayCompleted", "TodayRowStates")
             return boards.flatMap { board ->
-                listOf(Language.En, Language.Nl).flatMap { lang ->
-                    listOf(false, true).map { dark -> arrayOf<Any>(board, lang, dark) }
-                }
+                BoardCaptureCell.standard.map { cell -> arrayOf<Any>(board, cell) }
             }
         }
     }

@@ -9,7 +9,7 @@ import org.robolectric.ParameterizedRobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
-/** Exercises CfLargeTopAppBar, CfTopAppBar, CfBackButton through the shared isolated gallery section. */
+/** Exercises CfMediumTopAppBar, CfTopAppBar, CfBackButton through the shared isolated gallery section. */
 @Layout
 @RunWith(ParameterizedRobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)

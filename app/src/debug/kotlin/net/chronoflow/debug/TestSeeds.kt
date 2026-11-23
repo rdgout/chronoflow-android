@@ -38,6 +38,7 @@ object TestSeeds {
         sessionCipher: SessionCipher? = null,
         dispatchers: AppDispatchers? = null,
     ) = withContext(io) {
+        AuditSeedStatus.prepared.set(false)
         DebugShellStart.reset()
         DebugRefreshProbe.reset()
         net.chronoflow.feature.settings.SettingsDebugCounters.languageSaved
@@ -63,7 +64,6 @@ object TestSeeds {
                     mutationsOffline = seed.mutationsOffline,
                     reminderPermission = reminders.permission,
                 )
-            DebugAppHooks.resetGraph(app, overrides)
             val credentials = KeystoreSessionStore(File(dir, "ChronoFlowMock/session.bin"), alias, cipher, io)
             val source = sourceForSeed(dir, overrides, io) { credentials.readStoredSession()?.token }
             SeedRunner(
@@ -73,7 +73,11 @@ object TestSeeds {
                 source,
                 io,
                 seedReminders = reminders::queue,
-                beforeSignIn = { SettingsBoardCaptureFixture.prepare(dir, seed, app.graph.planClock.now, io) },
+                beforeSignIn = {
+                    val now = app.graph.planClock.now
+                    SettingsBoardCaptureFixture.prepare(dir, seed, now, io)
+                    AuditMockSeed.prepare(dir, seed, now, io)
+                },
                 guestSecrets =
                     object : net.chronoflow.core.data.session.GuestSecrets {
                         override suspend fun deleteAll() =
@@ -86,6 +90,8 @@ object TestSeeds {
                                 ).deleteAll()
                     },
             ).reseed(seed.signedIn, seed.testId, seed.termsChangesPending, seed.settingsPending)
+            // A foreground callback may restore the session as soon as the graph is published.
+            DebugAppHooks.resetGraph(app, overrides)
             seed.authTestLink?.let { link ->
                 withContext(app.graph.dispatchers.main) { app.graph.pendingLaunchIntents.captureLink(link) }
             }

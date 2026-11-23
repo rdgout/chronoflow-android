@@ -36,7 +36,7 @@ import net.chronoflow.core.designsystem.layout.BoardMetrics
 import net.chronoflow.core.designsystem.layout.LocalSafeInsets
 import net.chronoflow.core.designsystem.layout.WindowPolicy
 import net.chronoflow.core.designsystem.system.CfBackButton
-import net.chronoflow.core.designsystem.system.CfLargeTopAppBar
+import net.chronoflow.core.designsystem.system.CfMediumTopAppBar
 import net.chronoflow.core.designsystem.theme.CfTheme
 import net.chronoflow.core.ui.R
 
@@ -62,7 +62,7 @@ fun SettingsLazyPage(
         contentColor = CfTheme.colors.cardForeground,
         contentWindowInsets = LocalSafeInsets.current.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom),
         topBar = {
-            CfLargeTopAppBar(
+            CfMediumTopAppBar(
                 stringResource(title),
                 scrollBehavior,
                 navigationIcon = onBack?.let { { CfBackButton(stringResource(R.string.auth_back), it) } },
@@ -110,9 +110,10 @@ fun SettingsPage(
         contentColor = CfTheme.colors.cardForeground,
         contentWindowInsets = LocalSafeInsets.current.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom),
         topBar = {
-            CfLargeTopAppBar(
+            CfMediumTopAppBar(
                 stringResource(title),
                 scrollBehavior,
+                Modifier.testTag("$testTag.appbar"),
                 navigationIcon = onBack?.let { { CfBackButton(stringResource(R.string.auth_back), it) } },
             )
         },

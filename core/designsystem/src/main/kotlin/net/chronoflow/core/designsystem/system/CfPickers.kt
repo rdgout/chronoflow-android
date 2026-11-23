@@ -6,6 +6,7 @@ package net.chronoflow.core.designsystem.system
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DatePickerDialog
@@ -24,6 +25,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
+import androidx.compose.ui.unit.dp
+import net.chronoflow.core.designsystem.generated.PlanUITokens
 import net.chronoflow.core.designsystem.theme.CfTheme
 
 @SuppressLint("ModifierParameter")
@@ -64,8 +67,16 @@ fun CfDatePickerDialog(
             DatePicker(state, colors = colors)
         } else {
             DatePicker(state, title = {
-                Column {
-                    title?.let { Text(it) }
+                Column(
+                    Modifier
+                        .testTag("cf.date.title.container")
+                        .padding(
+                            start = PlanUITokens.space6.dp,
+                            end = PlanUITokens.space3.dp,
+                            top = PlanUITokens.space4.dp,
+                        ),
+                ) {
+                    title?.let { Text(it, Modifier.testTag("cf.date.title")) }
                     supporting?.let { Text(it, Modifier.testTag("cf.date.supporting"), color = c.mutedForeground) }
                 }
             }, colors = colors)

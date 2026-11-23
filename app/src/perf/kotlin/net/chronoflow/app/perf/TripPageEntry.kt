@@ -22,9 +22,7 @@ import net.chronoflow.core.plan.FixedPlanClock
 import net.chronoflow.core.plan.PlanClock
 import net.chronoflow.core.plan.PlanDecoder
 import net.chronoflow.core.plan.PlanPreparer
-import net.chronoflow.core.testing.LargeTimelineFixtures
 import net.chronoflow.feature.trip.page.DefaultTripPlanPipeline
-import net.chronoflow.feature.trip.page.TripPageArgs
 import net.chronoflow.feature.trip.page.TripPageViewModel
 import net.chronoflow.feature.trip.timeline.TextPaintMetrics
 import net.chronoflow.feature.trip.timeline.TimelineTypefaces
@@ -60,10 +58,10 @@ private fun TripPage(
     clock: PlanClock,
 ) {
     // The fixture is generated before the ViewModel exists: its init begins the first-frame section, which must not include generation.
-    val bytes by produceState<ByteArray?>(null, name) {
-        value = withContext(Dispatchers.Default) { LargeTimelineFixtures.detailBytes(name) }
+    val input by produceState<DiagnosticTripPageInput?>(null, name) {
+        value = withContext(Dispatchers.Default) { DiagnosticTripPageInput.load(name) }
     }
-    val fixture = bytes ?: return
+    val fixture = input ?: return
     val language = if (LocalConfiguration.current.locales[0].language == "nl") Language.Nl else Language.En
     val appContext = LocalContext.current.applicationContext
     // A locale change recreates the activity but keeps the ViewModel store, and the language is a constructor argument.
@@ -73,12 +71,12 @@ private fun TripPage(
             factory =
                 viewModelFactory {
                     initializer {
-                        val source = FixtureTripPageSource(name, fixture)
+                        val source = FixtureTripPageSource(name, fixture.bytes)
                         val catalogs = CopyCatalogProvider(Dispatchers.IO)
                         val decoder = PlanDecoder(Dispatchers.Default)
                         val preparer = PlanPreparer(decoder, catalogs, Dispatchers.Default)
                         TripPageViewModel(
-                            args = TripPageArgs("fixture-$name"),
+                            args = fixture.args,
                             source = source,
                             enqueueCheck = source::enqueueCheck,
                             pipeline = DefaultTripPlanPipeline(decoder, preparer, catalogs, Dispatchers.IO),

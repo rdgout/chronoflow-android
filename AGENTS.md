@@ -117,7 +117,15 @@ How the harness works:
 | `make targeted ONLY="<module>:<Class>[#method] …" [REUSE_BUILD=1]` | Runs only these tests: JVM and Robolectric tests through `--tests`, emulator tests through the runner's `class` argument. `REUSE_BUILD=1` runs `am instrument` against the installed APKs. |
 | `make snapshots` / `SNAPSHOT_RECORD=1 make snapshots` | Compares or records the opt-in stored Roborazzi references. |
 | `make captures [ONLY=<screens>] [DEVICE=1]` | Board captures into `build/captures/`, one PNG per board state, named after the board. Runs on Robolectric, or on the emulator with `DEVICE=1`. |
+| `make audit-coverage` | Audit only; never called by `make check`. Host/Python coverage report for board groups/cells and capture paths; no device. |
+| `make ios-parity` | Audit only; never called by `make check`. Needs booted `pixel` and an installed debug APK; locked 56 iOS reference pairs plus launcher into `build/audit/ios-parity/`. |
+| `make a11y [FULL=1]` | Audit only; never called by `make check`. Needs booted `pixel`; locked seeded accessibility cases, en/light by default or all en/nl × light/dark variants. The primary smoke cases also run individually in `check`. |
+| `make font-scale-check` | Audit only; never called by `make check`. Needs booted `pixel`; locked nine-screen 1.0/1.3/2.0 geometry/capture sweep, restores scale 1.0. |
+| `make audit-suite` | Audit only; never called by `make check`. Needs booted `pixel`; locked full app emulator suite under Dutch, dark and Reduce Motion, including the isolated permission case. |
+| `make process-death` | Audit only; never called by `make check`. Needs booted `pixel`; locked unseeded debug-mock cold recovery sweep, clears app data per case; save-resume remains JVM-proven. |
+| `make strictmode-run` | Audit only; never called by `make check`. Needs booted `pixel`; one lock across full native suites, isolated permission case, parity, logcat and app/third-party scan. |
 | `make perf` | `StartupBenchmark` (cold and warm, `CompilationMode.Partial`), then `Scripts/check-benchmarks.py`. Sets the animator scales to 1 and restores them afterwards. |
+| `make perf-today-title` | Today title collapse/return-to-top benchmark with startup and frame metrics; performance tier under the device lock, animator scales 1 then restored. |
 | `make perf-timeline` | `TimelineBenchmark` (first frame; 15 flings × 3 iterations on large60; last day), then `check-benchmarks.py`. Required for every timeline change. |
 | `make baseline-profile` | Regenerates the committed baseline and startup profiles. |
 | `make tokens` / `make fonts` / `make assets` | Generates the tokens / copies the fonts and checks their hash manifest / rasterizes the launch moon and builds the icons. |
@@ -131,7 +139,7 @@ How the harness works:
 | `make emu` / `make emu-down` | Boots the headless `pixel` emulator with the functional device prep / stops every running emulator. |
 | `make emu-clean` | Wipes the `pixel` data. Refuses while tests run. |
 | `make avd-create AVD=fold\|small\|api29` | Creates a T2 AVD. On request only. |
-| `make matrix` | On request only: the `@Smoke` set on `fold`, `small` and `api29`. |
+| `make matrix [ONLY=fold\|small\|api29]` | On request only: locked `@Smoke` set on the three T2 AVDs, or one failed AVD after a fix; validated per-AVD summaries in `build/audit/matrix/`. |
 | `make du` | Prints `du -sh ~/.gradle/caches ~/.android/avd build` and the size of each worktree. |
 | `Scripts/ci.sh` | Runs `make generate check`, then fails if any generated file changed (`git diff --exit-code`). |
 

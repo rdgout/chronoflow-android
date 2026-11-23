@@ -1,0 +1,276 @@
+{
+  "schema": 1,
+  "cases": [
+    {
+      "name": "welcome",
+      "steps": [
+        {
+          "wait": "welcome.plan"
+        }
+      ],
+      "expectAfter": [
+        "welcome.plan"
+      ],
+      "expectAbsent": [
+        "sign-in.email",
+        "wizard.window"
+      ]
+    },
+    {
+      "name": "sign-in-typed",
+      "steps": [
+        {
+          "tap": "welcome.signIn"
+        },
+        {
+          "text": "sign-in.email",
+          "value": "demo@example.com"
+        }
+      ],
+      "expectAfter": [
+        "welcome.plan"
+      ],
+      "expectAbsent": [
+        "sign-in.email"
+      ],
+      "emptyEmail": true
+    },
+    {
+      "name": "today",
+      "signedIn": true,
+      "steps": [
+        {
+          "wait": "today.screen"
+        }
+      ],
+      "expectAfter": [
+        "today.screen"
+      ],
+      "expectAbsent": [
+        "wizard.window"
+      ]
+    },
+    {
+      "name": "trips",
+      "signedIn": true,
+      "steps": [
+        {
+          "tap": "tab.trips"
+        },
+        {
+          "wait": "trips.screen"
+        }
+      ],
+      "expectAfter": [
+        "today.screen"
+      ],
+      "expectAbsent": [
+        "trips.screen"
+      ]
+    },
+    {
+      "name": "trip-sheet",
+      "signedIn": true,
+      "steps": [
+        {
+          "tap": "tab.trips"
+        },
+        {
+          "tap": "trip.0199a3c0-0000-7000-8000-000000000001"
+        },
+        {
+          "tap": "trip.block.*"
+        },
+        {
+          "wait": "step.sheet"
+        }
+      ],
+      "expectAfter": [
+        "today.screen"
+      ],
+      "expectAbsent": [
+        "trip.page",
+        "step.sheet",
+        "legend.sheet"
+      ]
+    },
+    {
+      "name": "settings-sub",
+      "signedIn": true,
+      "steps": [
+        {
+          "tap": "tab.settings"
+        },
+        {
+          "tap": "settings.preferences"
+        },
+        {
+          "wait": "settings.preferences.screen"
+        }
+      ],
+      "expectAfter": [
+        "today.screen"
+      ],
+      "expectAbsent": [
+        "settings.preferences.screen"
+      ]
+    },
+    {
+      "name": "password-prompt",
+      "signedIn": true,
+      "steps": [
+        {
+          "tap": "tab.settings"
+        },
+        {
+          "tap": "settings.security"
+        },
+        {
+          "tap": "settings.security.twoFactor"
+        },
+        {
+          "tap": "settings.twoFactor.enable"
+        },
+        {
+          "text": "settings.security.prompt.password",
+          "value": "password"
+        }
+      ],
+      "expectAfter": [
+        "today.screen"
+      ],
+      "expectAbsent": [
+        "settings.security.prompt.sheet",
+        "settings.security.prompt.dialog",
+        "settings.security.prompt.password"
+      ]
+    },
+    {
+      "name": "wizard-recovery",
+      "signedIn": true,
+      "steps": [
+        {
+          "tap": "tab.trips"
+        },
+        {
+          "tap": "trips.create"
+        },
+        {
+          "tap": "wizard.from"
+        },
+        {
+          "text": "wizard.airport.query",
+          "value": "AMS"
+        },
+        {
+          "tap": "wizard.airport.AMS"
+        },
+        {
+          "tap": "wizard.to"
+        },
+        {
+          "text": "wizard.airport.query",
+          "value": "HND"
+        },
+        {
+          "tap": "wizard.airport.HND"
+        },
+        {
+          "tap": "wizard.where.continue"
+        },
+        {
+          "wait": "wizard.0.departure.date"
+        }
+      ],
+      "expectAfter": [
+        "wizard.0.departure.date"
+      ],
+      "expectAbsent": [
+        "step.sheet",
+        "settings.security.prompt.sheet"
+      ],
+      "inspectSteps": [
+        {
+          "tap": "wizard.back"
+        }
+      ],
+      "airports": {
+        "wizard.from": "AMS",
+        "wizard.to": "HND"
+      },
+      "finishSteps": [
+        {
+          "tap": "wizard.where.continue"
+        },
+        {
+          "wait": "wizard.0.departure.date"
+        }
+      ]
+    },
+    {
+      "name": "guest-recovery",
+      "steps": [
+        {
+          "tap": "welcome.plan"
+        },
+        {
+          "tap": "wizard.from"
+        },
+        {
+          "text": "wizard.airport.query",
+          "value": "AMS"
+        },
+        {
+          "tap": "wizard.airport.AMS"
+        },
+        {
+          "tap": "wizard.to"
+        },
+        {
+          "text": "wizard.airport.query",
+          "value": "HND"
+        },
+        {
+          "tap": "wizard.airport.HND"
+        },
+        {
+          "tap": "wizard.where.continue"
+        },
+        {
+          "wait": "wizard.0.departure.date"
+        }
+      ],
+      "prepareGuestSleep": true,
+      "expectAfter": [
+        "wizard.sleep.continue"
+      ],
+      "expectAbsent": [
+        "sign-in.email",
+        "step.sheet"
+      ],
+      "inspectSteps": [
+        {
+          "tap": "wizard.back"
+        },
+        {
+          "tap": "wizard.back"
+        }
+      ],
+      "airports": {
+        "wizard.from": "AMS",
+        "wizard.to": "HND"
+      },
+      "finishSteps": [
+        {
+          "tap": "wizard.where.continue"
+        },
+        {
+          "tap": "wizard.outbound.continue"
+        },
+        {
+          "wait": "wizard.sleep.continue"
+        }
+      ]
+    }
+  ]
+}

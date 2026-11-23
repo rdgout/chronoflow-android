@@ -22,6 +22,39 @@ def check(*args):
 
 
 class CheckBenchmarksTest(unittest.TestCase):
+    def test_today_title_requires_every_metric_even_when_report_only(self):
+        for section, metric in [('sampledMetrics', 'frameDurationCpuMs'), ('sampledMetrics', 'frameOverrunMs'),
+                                ('metrics', 'timeToInitialDisplayMs'), ('metrics', 'frameCount')]:
+            with self.subTest(metric=metric):
+                root = temp_dir(self)
+                fixture = FIXTURES / 'today-title/pass/fixture-benchmarkData.json'
+                data = json.loads(fixture.read_text())
+                del data['benchmarks'][0][section][metric]
+                (root / fixture.name).write_text(json.dumps(data))
+                result = check('--suite', 'today-title', '--device-class', 'unknown', '--results-dir', str(root))
+                self.assertEqual(1, result.returncode, result.stderr)
+                self.assertIn(metric + ' is missing', result.stderr)
+
+    def test_today_title_missing_metric_fixture_fails(self):
+        result = check('--suite', 'today-title', '--device-class', 'emulator',
+                       '--results-dir', str(FIXTURES / 'today-title/missing-overrun'))
+        self.assertEqual(1, result.returncode)
+        self.assertIn('todayTitleCollapse frameOverrunMs is missing', result.stderr)
+
+    def test_today_title_reports_without_a_new_threshold(self):
+        root = temp_dir(self)
+        fixture = FIXTURES / 'today-title/pass/fixture-benchmarkData.json'
+        data = json.loads(fixture.read_text())
+        data['benchmarks'][0]['sampledMetrics']['frameDurationCpuMs']['P90'] = 1000.0
+        data['benchmarks'][0]['metrics']['timeToInitialDisplayMs']['median'] = 5000.0
+        (root / fixture.name).write_text(json.dumps(data))
+        for device in ('emulator', 'reference', 'lowEnd', 'unknown'):
+            with self.subTest(device=device):
+                result = check('--suite', 'today-title', '--device-class', device, '--results-dir', str(root))
+                self.assertEqual(0, result.returncode, result.stderr)
+                self.assertEqual(6, result.stdout.count('REPORT'))
+                self.assertNotIn('FAIL', result.stdout)
+
     def test_startup_pass_on_emulator_reports(self):
         result = check("--suite", "startup", "--device-class", "emulator", "--results-dir", str(FIXTURES / "startup/pass"))
         self.assertEqual(result.returncode, 0, result.stderr)

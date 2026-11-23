@@ -3,10 +3,10 @@ package net.chronoflow.feature.auth.shell
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import net.chronoflow.core.designsystem.theme.ChronoFlowTheme
 import net.chronoflow.core.testing.compose.BoardCapture
+import net.chronoflow.core.testing.compose.BoardCaptureCell
 import net.chronoflow.core.testing.compose.ProfileHost
 import net.chronoflow.core.testing.compose.ProfileRule
 import net.chronoflow.core.testing.tiers.Capture
-import net.chronoflow.feature.auth.signin.authBoard
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.RuleChain
@@ -20,21 +20,21 @@ import org.robolectric.annotation.GraphicsMode
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(sdk = [36])
 class AuthStatesCaptureTest(
-    private val dark: Boolean,
+    private val cell: BoardCaptureCell,
 ) {
-    private val profile = authBoard.copy(name = "authStatesBoard", heightDp = 1900)
+    private val profile = cell.profile.copy(heightDp = 1900)
     private val compose = createComposeRule()
 
-    @get:Rule val rules: RuleChain = RuleChain.outerRule(ProfileRule(profile, dark = dark)).around(compose)
+    @get:Rule val rules: RuleChain = RuleChain.outerRule(ProfileRule(profile, cell.language, cell.dark)).around(compose)
 
     @Test fun capturesEveryAuthBannerContext() {
-        compose.setContent { ProfileHost(profile) { ChronoFlowTheme(darkTheme = dark) { AuthStatesSample() } } }
-        BoardCapture.capture(compose, "AuthStates_en_${if (dark) "dark" else "light"}")
+        compose.setContent { ProfileHost(profile) { ChronoFlowTheme(darkTheme = cell.dark) { AuthStatesSample() } } }
+        BoardCapture.capture(compose, "AuthStates_${cell.suffix}")
     }
 
     companion object {
         @JvmStatic
-        @ParameterizedRobolectricTestRunner.Parameters(name = "dark={0}")
-        fun cases() = listOf(arrayOf(false), arrayOf(true))
+        @ParameterizedRobolectricTestRunner.Parameters(name = "{0}")
+        fun cases() = BoardCaptureCell.standard.map { arrayOf(it) }
     }
 }

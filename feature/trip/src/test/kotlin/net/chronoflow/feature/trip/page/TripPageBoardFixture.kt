@@ -37,6 +37,7 @@ import net.chronoflow.core.plan.planDate
 import net.chronoflow.core.testing.DeviceProfile
 import net.chronoflow.core.testing.DeviceProfiles
 import net.chronoflow.core.testing.LargeTimelineFixtures
+import net.chronoflow.core.testing.compose.BoardCaptureCell
 import net.chronoflow.core.ui.R
 import net.chronoflow.feature.trip.timeline.TextPaintMetrics
 import net.chronoflow.feature.trip.timeline.TimelineTestFonts
@@ -62,6 +63,7 @@ class TripPageBoardFixture(
             "S1",
             checkNotNull(planDate(detail.plan.days[dayIndex].startUtc)).plusSeconds(9 * 3600L),
             startAtSummary = case.board == "PlanTimelineTop",
+            initialTimeline = case.board != "PlanEnd" && case.board != "PlanEndNoText",
             language =
                 if (case.language ==
                     AppLanguage.Nl
@@ -140,8 +142,20 @@ class TripPageBoardFixture(
                                     "tab.settings",
                                 ),
                             )
-                        CfNavigationSuiteScaffold(CfNavLayout.Bar, items, 1, {
-                        }, Modifier.windowInsetsPadding(safe.only(WindowInsetsSides.Bottom))) {
+                        CfNavigationSuiteScaffold(
+                            if (case.profile.widthDp >=
+                                600
+                            ) {
+                                CfNavLayout.Rail
+                            } else {
+                                CfNavLayout.Bar
+                            },
+                            items,
+                            1,
+                            {
+                            },
+                            Modifier.windowInsetsPadding(safe.only(WindowInsetsSides.Bottom)),
+                        ) {
                             CompositionLocalProvider(
                                 LocalSafeInsets provides
                                     safe.only(
@@ -176,7 +190,9 @@ class TripPageBoardFixture(
             }
 
             "PlanEnd", "PlanEndNoText" -> {
-                compose.runOnIdle { list.requestScrollToItem(rig.model.index.end) }
+                val end =
+                    if (case.profile.widthDp >= 600) rig.model.index.end else rig.model.listIndex.end
+                compose.runOnIdle { list.requestScrollToItem(end) }
             }
         }
         compose.waitForIdle()
@@ -187,20 +203,8 @@ class TripPageBoardFixture(
         compose.waitForIdle()
     }
 
-    fun bitmap(compose: ComposeContentTestRule): Bitmap {
-        val root = compose.onNodeWithTag(ROOT_TAG)
-        val bitmap = checkNotNull(root.captureToImage().asAndroidBitmap().copy(Bitmap.Config.ARGB_8888, true))
-        if (case.board == "PlanDayMenu") {
-            val popup = compose.onNode(isPopup())
-            val offset = popup.fetchSemanticsNode().positionOnScreen - root.fetchSemanticsNode().positionOnScreen
-            val menu = popup.captureToImage().asAndroidBitmap()
-            check(offset.x.isFinite() && offset.y.isFinite())
-            check(offset.x >= -1 && offset.y >= -1)
-            check(offset.x + menu.width <= bitmap.width + 1 && offset.y + menu.height <= bitmap.height + 1)
-            Canvas(bitmap).drawBitmap(menu, offset.x, offset.y, null)
-        }
-        return bitmap
-    }
+    fun bitmap(compose: ComposeContentTestRule): Bitmap =
+        tripBoardBitmap(compose, ROOT_TAG, case.board == "PlanDayMenu")
 
     fun close() {
         rig.close()
@@ -248,10 +252,32 @@ class TripPageBoardFixture(
 
         fun captureCases(): List<TripPageBoardCase> =
             (boards + "PlanEndNoText").flatMap { board ->
-                AppLanguage.entries.map { TripPageBoardCase(board, DeviceProfiles.pixel8, it) }
-            } +
-                listOf("Plan", "PlanScrolled").flatMap { board ->
-                    AppLanguage.entries.map { TripPageBoardCase(board, DeviceProfiles.pixel8, it, true) }
-                }
+                val cells =
+                    if (board in setOf("Plan", "PlanScrolled", "PlanDayMenu")) {
+                        BoardCaptureCell.phoneWithWideSibling
+                    } else {
+                        BoardCaptureCell.standard
+                    }
+                cells.map { cell -> TripPageBoardCase(board, cell.profile, cell.language, cell.dark) }
+            }
     }
+}
+
+fun tripBoardBitmap(
+    compose: ComposeContentTestRule,
+    rootTag: String,
+    menu: Boolean,
+): Bitmap {
+    val root = compose.onNodeWithTag(rootTag)
+    val bitmap = checkNotNull(root.captureToImage().asAndroidBitmap().copy(Bitmap.Config.ARGB_8888, true))
+    if (menu) {
+        val popup = compose.onNode(isPopup())
+        val offset = popup.fetchSemanticsNode().positionOnScreen - root.fetchSemanticsNode().positionOnScreen
+        val menuBitmap = popup.captureToImage().asAndroidBitmap()
+        check(offset.x.isFinite() && offset.y.isFinite())
+        check(offset.x >= -1 && offset.y >= -1)
+        check(offset.x + menuBitmap.width <= bitmap.width + 1 && offset.y + menuBitmap.height <= bitmap.height + 1)
+        Canvas(bitmap).drawBitmap(menuBitmap, offset.x, offset.y, null)
+    }
+    return bitmap
 }

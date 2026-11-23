@@ -57,14 +57,41 @@ class TierRegistryTest : KonsistTest() {
         }.messageContains("TwoTierRobolectricTest")
     }
 
-    @Test fun emulatorClassesHaveSmokeOrCapture() = emulatorClassesHaveSmokeOrCapture(projectScope)
+    @Test fun emulatorClassesHaveSmokeCaptureOrAudit() = emulatorClassesHaveSmokeCaptureOrAudit(projectScope)
 
     @Test fun untaggedEmulatorClassIsRejected() {
         assertFailure {
-            emulatorClassesHaveSmokeOrCapture(
+            emulatorClassesHaveSmokeCaptureOrAudit(
                 planted("app/src/androidTest/kotlin/net/chronoflow/app/UntaggedEmulatorTest.kt"),
             )
         }.messageContains("UntaggedEmulatorTest")
+    }
+
+    @Test fun auditIsEmulatorOnly() = auditIsEmulatorOnly(projectScope)
+
+    @Test fun auditEmulatorClassIsAllowed() =
+        emulatorClassesHaveSmokeCaptureOrAudit(
+            allowed("app/src/androidTest/kotlin/net/chronoflow/app/AuditEmulatorTest.kt"),
+        )
+
+    @Test fun twoEmulatorTiersAreRejected() {
+        assertFailure {
+            emulatorClassesHaveSmokeCaptureOrAudit(
+                planted("app/src/androidTest/kotlin/net/chronoflow/app/SmokeAndAuditTest.kt"),
+            )
+        }.messageContains("SmokeAndAuditTest")
+    }
+
+    @Test fun auditOnJvmIsRejected() {
+        assertFailure {
+            auditIsEmulatorOnly(planted("app/src/test/kotlin/net/chronoflow/app/AuditJvmTest.kt"))
+        }.messageContains("AuditJvmTest")
+    }
+
+    @Test fun auditOnRobolectricIsRejected() {
+        assertFailure {
+            auditIsEmulatorOnly(planted("app/src/test/kotlin/net/chronoflow/app/AuditRobolectricTest.kt"))
+        }.messageContains("AuditRobolectricTest")
     }
 
     @Test fun benchmarkClassesArePerf() = benchmarkClassesArePerf(projectScope)

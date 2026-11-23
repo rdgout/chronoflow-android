@@ -1,4 +1,5 @@
 [versions]
+checkerQual = "3.22.1"
 zxing = "3.5.4"
 agp = "9.5.1"
 kotlin = "2.4.21"
@@ -41,6 +42,7 @@ konsist = "0.18.1"
 bundletool = "1.18.3"
 
 [libraries]
+checker-qual = { module = "org.checkerframework:checker-qual", version.ref = "checkerQual" }
 androidx-espresso-intents = { module = "androidx.test.espresso:espresso-intents", version.ref = "espresso" }
 zxing-core = { module = "com.google.zxing:core", version.ref = "zxing" }
 kotlin-compiler-embeddable = { module = "org.jetbrains.kotlin:kotlin-compiler-embeddable", version.ref = "kotlin" }
@@ -49,6 +51,7 @@ compose-ui = { module = "androidx.compose.ui:ui" }
 compose-ui-graphics = { module = "androidx.compose.ui:ui-graphics" }
 compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
 compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
+compose-ui-test-junit4-accessibility = { module = "androidx.compose.ui:ui-test-junit4-accessibility" }
 compose-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4" }
 compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest" }
 compose-foundation = { module = "androidx.compose.foundation:foundation" }

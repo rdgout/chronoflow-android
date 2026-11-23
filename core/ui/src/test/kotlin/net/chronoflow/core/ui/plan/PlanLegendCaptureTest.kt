@@ -1,9 +1,8 @@
 package net.chronoflow.core.ui.plan
 
 import androidx.compose.ui.test.junit4.v2.createComposeRule
-import net.chronoflow.core.model.config.AppLanguage
-import net.chronoflow.core.testing.DeviceProfiles
 import net.chronoflow.core.testing.compose.BoardCapture
+import net.chronoflow.core.testing.compose.BoardCaptureCell
 import net.chronoflow.core.testing.compose.ProfileRule
 import net.chronoflow.core.testing.tiers.Capture
 import org.junit.Rule
@@ -20,9 +19,9 @@ import org.robolectric.annotation.GraphicsMode
 @Config(sdk = [36])
 class PlanLegendCaptureTest(
     private val state: String,
-    private val dutch: Boolean,
+    private val cell: BoardCaptureCell,
 ) {
-    private val case = SheetCase(state, DeviceProfiles.pixel8, if (dutch) AppLanguage.Nl else AppLanguage.En, dutch)
+    private val case = SheetCase(state, cell.profile, cell.language, cell.dark)
     private val compose = createComposeRule()
 
     @get:Rule val rules: RuleChain =
@@ -37,14 +36,15 @@ class PlanLegendCaptureTest(
                 if (state == "full") LegendSheetContent({}) else PriorityLegendContent({})
             }
         }
-        val suffix = if (dutch) "nl_dark" else "en_light"
-        BoardCapture.capture(compose, "PlanLegend_${if (state == "priorities") "priorities_" else ""}pixel8_$suffix")
+        BoardCapture.capture(compose, "PlanLegend_${if (state == "priorities") "priorities_" else ""}${cell.suffix}")
     }
 
     companion object {
         @JvmStatic
         @ParameterizedRobolectricTestRunner.Parameters(name = "{0}-{1}")
         fun cases(): List<Array<Any>> =
-            listOf(arrayOf("full", false), arrayOf("full", true), arrayOf("priorities", false))
+            listOf("full", "priorities").flatMap { state ->
+                BoardCaptureCell.standard.map { cell -> arrayOf<Any>(state, cell) }
+            }
     }
 }

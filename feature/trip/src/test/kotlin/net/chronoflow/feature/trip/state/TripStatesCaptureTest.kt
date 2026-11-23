@@ -38,7 +38,7 @@ class TripStatesCaptureTest(
         fixture.start(compose, navigation = true)
         compose.mainClock.advanceTimeByFrame()
         compose.waitForIdle()
-        BoardCapture.capture(compose, "${case.board}_pixel8_${case.language.tag}_${case.theme}")
+        BoardCapture.capture(compose, "${case.board}_${case.profile.name}_${case.language.tag}_${case.theme}")
     }
 
     companion object {

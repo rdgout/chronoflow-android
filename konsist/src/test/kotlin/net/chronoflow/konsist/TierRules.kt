@@ -5,7 +5,7 @@ import com.lemonappdev.konsist.api.container.KoScope
 import com.lemonappdev.konsist.api.declaration.KoClassDeclaration
 
 private val robolectricTiers = setOf("Logic", "Layout", "Snapshot", "Capture")
-private val allTiers = robolectricTiers + setOf("Smoke", "Perf")
+private val allTiers = robolectricTiers + setOf("Smoke", "Perf", "Audit")
 
 private fun fail(
     rule: String,
@@ -68,7 +68,7 @@ fun robolectricClassesHaveOneTier(scope: KoScope) {
     fail("robolectricClassesHaveOneTier", violations)
 }
 
-fun emulatorClassesHaveSmokeOrCapture(scope: KoScope) {
+fun emulatorClassesHaveSmokeCaptureOrAudit(scope: KoScope) {
     val violations =
         scope
             .classes()
@@ -76,9 +76,19 @@ fun emulatorClassesHaveSmokeOrCapture(scope: KoScope) {
                 moduleOf(cls.path) != null &&
                     sourceSetOf(cls.path)?.startsWith("androidTest") == true &&
                     cls.hasTests()
-            }.filter { cls -> cls.annotationNames().intersect(setOf("Smoke", "Capture")).size != 1 }
-            .map { "${it.path}: ${it.name} needs exactly one of @Smoke, @Capture" }
-    fail("emulatorClassesHaveSmokeOrCapture", violations)
+            }.filter { cls -> cls.annotationNames().intersect(setOf("Smoke", "Capture", "Audit")).size != 1 }
+            .map { "${it.path}: ${it.name} needs exactly one of @Smoke, @Capture, @Audit" }
+    fail("emulatorClassesHaveSmokeCaptureOrAudit", violations)
+}
+
+fun auditIsEmulatorOnly(scope: KoScope) {
+    fail(
+        "auditIsEmulatorOnly",
+        unitTestClasses(scope)
+            .filter {
+                "Audit" in it.annotationNames()
+            }.map { "${it.path}: ${it.name} uses @Audit outside androidTest" },
+    )
 }
 
 fun benchmarkClassesArePerf(scope: KoScope) {

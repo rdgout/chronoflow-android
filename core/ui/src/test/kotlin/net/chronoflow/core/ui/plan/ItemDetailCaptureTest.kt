@@ -2,8 +2,8 @@ package net.chronoflow.core.ui.plan
 
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import net.chronoflow.core.model.config.AppLanguage
-import net.chronoflow.core.testing.DeviceProfiles
 import net.chronoflow.core.testing.compose.BoardCapture
+import net.chronoflow.core.testing.compose.BoardCaptureCell
 import net.chronoflow.core.testing.compose.ProfileRule
 import net.chronoflow.core.testing.tiers.Capture
 import org.junit.Rule
@@ -20,9 +20,10 @@ import org.robolectric.annotation.GraphicsMode
 @Config(sdk = [36])
 class ItemDetailCaptureTest(
     private val state: String,
-    private val dutch: Boolean,
+    private val cell: BoardCaptureCell,
 ) {
-    private val case = SheetCase(state, DeviceProfiles.pixel8, if (dutch) AppLanguage.Nl else AppLanguage.En, dutch)
+    private val dutch = cell.language == AppLanguage.Nl
+    private val case = SheetCase(state, cell.profile, cell.language, cell.dark)
     private val compose = createComposeRule()
 
     @get:Rule val rules: RuleChain =
@@ -33,28 +34,16 @@ class ItemDetailCaptureTest(
 
     @Test fun capture() {
         compose.setContent { SheetFixture(case) { StepSheetContent(sheetState(state, dutch), false, {}, {}) } }
-        BoardCapture.capture(
-            compose,
-            if (state ==
-                "gone"
-            ) {
-                "SheetStates_stepGone_pixel8_en_light"
-            } else {
-                "ItemDetail_${state}_pixel8_${if (dutch) "nl_dark" else "en_light"}"
-            },
-        )
+        val board = if (state == "gone") "SheetStates_stepGone" else "ItemDetail_$state"
+        BoardCapture.capture(compose, "${board}_${cell.suffix}")
     }
 
     companion object {
         @JvmStatic
         @ParameterizedRobolectricTestRunner.Parameters(name = "{0}-{1}")
         fun cases(): List<Array<Any>> =
-            listOf(
-                arrayOf("running", false),
-                arrayOf("done", false),
-                arrayOf("skipped", false),
-                arrayOf("gone", false),
-                arrayOf("running", true),
-            )
+            listOf("running", "done", "skipped", "gone").flatMap { state ->
+                BoardCaptureCell.standard.map { cell -> arrayOf<Any>(state, cell) }
+            }
     }
 }

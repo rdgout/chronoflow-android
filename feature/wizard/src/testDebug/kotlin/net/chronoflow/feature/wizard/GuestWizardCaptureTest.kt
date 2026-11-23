@@ -3,11 +3,12 @@ package net.chronoflow.feature.wizard
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import kotlinx.coroutines.test.runTest
 import net.chronoflow.core.designsystem.theme.ChronoFlowTheme
-import net.chronoflow.core.model.config.AppLanguage
+import net.chronoflow.core.testing.compose.BoardCaptureCell
 import net.chronoflow.core.testing.compose.ProfileHost
 import net.chronoflow.core.testing.compose.ProfileRule
 import net.chronoflow.core.testing.tiers.Capture
 import net.chronoflow.feature.wizard.debug.GuestWizardBoardSeed
+import net.chronoflow.feature.wizard.debug.WizardBoardCaptureSeed
 import net.chronoflow.feature.wizard.shell.WizardScreen
 import org.junit.Rule
 import org.junit.Test
@@ -25,15 +26,16 @@ import kotlin.time.Duration.Companion.seconds
 @Config(sdk = [36])
 class GuestWizardCaptureTest(
     private val board: String,
+    private val cell: BoardCaptureCell,
 ) {
     private val compose = createComposeRule()
-    private val language = if (board.endsWith("NL")) AppLanguage.Nl else AppLanguage.En
-    private val dark = "Dark" in board
+    private val language = cell.language
+    private val dark = cell.dark
 
     @get:Rule val rules: RuleChain =
         RuleChain
             .outerRule(
-                ProfileRule(wizardBoardProfile, language, dark),
+                ProfileRule(cell.profile, language, dark),
             ).around(compose)
 
     @Test fun capturesTheBoardState() {
@@ -43,7 +45,7 @@ class GuestWizardCaptureTest(
         val motion = board == "WizardCheckingGuest"
         if (motion) compose.mainClock.autoAdvance = false
         compose.setContent {
-            ProfileHost(wizardBoardProfile) {
+            ProfileHost(cell.profile) {
                 ChronoFlowTheme(darkTheme = dark, reduceMotion = !motion) { WizardScreen(state, formatter, {}) }
             }
         }
@@ -51,12 +53,15 @@ class GuestWizardCaptureTest(
             compose.mainClock.advanceTimeByFrame()
             compose.mainClock.advanceTimeBy(2_936, ignoreFrameDuration = true)
         }
-        captureWizard(compose, board, state.discardDialogVisible)
+        captureWizard(compose, "${board}_${cell.suffix}", state.discardDialogVisible)
     }
 
     companion object {
         @JvmStatic
-        @ParameterizedRobolectricTestRunner.Parameters(name = "{0}")
-        fun cases() = GuestWizardBoardSeed.names
+        @ParameterizedRobolectricTestRunner.Parameters(name = "{0}-{1}")
+        fun cases() =
+            GuestWizardBoardSeed.names.filter { WizardBoardCaptureSeed.baseName(it) == it }.flatMap { board ->
+                BoardCaptureCell.standard.map { cell -> arrayOf<Any>(board, cell) }
+            }
     }
 }
