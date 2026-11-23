@@ -269,14 +269,14 @@ One row per line of plan.md "Material mapping" (l.414–448). For each, capture 
 | `Progress` | the wizard's 4 dp bar on `WizardWhere` |
 | `SystemBars` | status-bar and navigation-bar icon contrast is visible in every full-screen capture; no separate file |
 
-### 5.10 Server dependencies, verified 2026-11-16 at web `origin/main` `e36368ec` (local refs, no fetch)
+### 5.10 Server dependencies, reverified 2026-11-23 at web `origin/main` `c0dbbb53` (local refs, no fetch)
 
 | # | Status | Evidence |
 |---|---|---|
 | S1 `assetlinks.json` | **Open** | No `assetlinks` route or file on `origin/main`; only `/.well-known/passkey-endpoints` (`routes/settings.php:48–53`) and the AASA controller (`app/Http/Controllers/AppleAppSiteAssociationController.php`) |
 | S2 `android:apk-key-hash` origin | **Open** | `config/fortify.php:150` `'allowed_origins' => [config('app.url')]` |
-| S3 passkey management merge | **Open** | `feat/mobile-api-passkey-management` at `1f4a2684` is not an ancestor of `origin/main` (`git merge-base --is-ancestor` fails) |
-| S4 delete without `verified` | **Open** | `routes/api.php:83–84` `Route::delete('account', …)->middleware(['verified', 'throttle:api-credential'])`; web `settings/profile` delete sits in the `['auth', 'verified']` group (`routes/settings.php`) |
+| S3 passkey management merge | **Merged; deployment unverified** | PR #114 was squash-merged as `b5977837`, which is an ancestor of local `origin/main` `c0dbbb53`. The old feature tip `1f4a2684` is not an ancestor; the relevant API controllers/routes/passkey tests have an empty diff. This source proof does not establish production deployment or Play-signed acceptance. |
+| S4 delete without `verified` | **Open** | `routes/api.php:93–94` `Route::delete('account', …)->middleware(['verified', 'throttle:api-credential'])`; web `settings/profile` delete sits in the `['auth', 'verified']` group (`routes/settings.php`) |
 | S5 production demo account | **Open** | Not visible in code; production data |
 | S6 iOS AASA `applinks` | **Open** | `config/services.php:29–35` lists only `webcredentials` apps `2UMFLSCBZ6.net.chronoflow.app.native`, `2UMFLSCBZ6.net.chronoflow.app` |
 
@@ -512,7 +512,7 @@ Fix commits sit between task commits and tick nothing. Every commit is a Convent
 - [ ] **Process death** runs unseeded and proves a cold launch (overlay seen) for every case; the wizard case checks the restored airports, not just "the wizard is open".
 - [ ] **StrictMode**: the scan's "ours" rule reads frames, not the tag; the logcat buffer was enlarged; a fix moved work to IO rather than allowing the violation.
 - [ ] **Matrix and device claims**: emulator numbers never written as device numbers; every "open: device only" names the command that closes it; T2 AVDs kept and `make du` recorded.
-- [ ] **Source repos untouched**: no `git fetch`/checkout in `chronoflow-new`, `chronoflow-ios`, `chronoflow-mobile`; S1–S6 evidence cites `origin/main` `e36368ec` paths.
+- [ ] **Source repos untouched**: no `git fetch`/checkout in `chronoflow-new`, `chronoflow-ios`, `chronoflow-mobile`; S1–S6 state evidence cites local `origin/main` `c0dbbb53` paths; the API contract pin remains `e36368ec`.
 - [ ] **Docs**: `docs/audit.md` follows §5.4 for every group; `docs/verification.md` has the "Outcome of Phase 14" paragraph, mirrored in plan.md; AGENTS.md command rows added; new OQs numbered as the next free `OQ-A` ids.
 
 ---
