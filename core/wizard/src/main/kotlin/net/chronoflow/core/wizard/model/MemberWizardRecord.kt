@@ -2,10 +2,13 @@ package net.chronoflow.core.wizard.model
 
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import net.chronoflow.core.model.FieldMessage
 import net.chronoflow.core.model.api.ApiJson
 
 object MemberWizardRecord {
+    private val recoveryJson = Json(ApiJson.response) { encodeDefaults = true }
+
     const val ID = "member-wizard"
     const val EXPIRY_MILLIS = 1_800_000L
 
@@ -30,16 +33,16 @@ object MemberWizardRecord {
                 sourceChange = cleaned.sourceChange?.let { it.copy(form = withoutGuestSecret(it.form)) },
             )
         return Payload(
-            ApiJson.response.encodeToString(form),
-            ApiJson.response.encodeToString(state),
-            ApiJson.response.encodeToString(draft.fieldErrors),
+            recoveryJson.encodeToString(form),
+            recoveryJson.encodeToString(state),
+            recoveryJson.encodeToString(draft.fieldErrors),
         )
     }
 
     fun decode(payload: Payload): MemberWizardDraft? =
         try {
-            val form = ApiJson.response.decodeFromString<WizardForm>(payload.form)
-            var state = ApiJson.response.decodeFromString<MemberWizardState>(payload.state).discardRetiredValues()
+            val form = recoveryJson.decodeFromString<WizardForm>(payload.form)
+            var state = recoveryJson.decodeFromString<MemberWizardState>(payload.state).discardRetiredValues()
             if (form.legs.size !in 1..WizardForm.maxFlights || form.stays.size != form.legs.size ||
                 form.returnBoundary !in 1..form.legs.size
             ) {
@@ -68,7 +71,7 @@ object MemberWizardRecord {
                 MemberWizardDraft(
                     form,
                     state,
-                    ApiJson.response.decodeFromString<Map<String, FieldMessage>>(payload.fieldErrors),
+                    recoveryJson.decodeFromString<Map<String, FieldMessage>>(payload.fieldErrors),
                 )
             }
         } catch (_: SerializationException) {

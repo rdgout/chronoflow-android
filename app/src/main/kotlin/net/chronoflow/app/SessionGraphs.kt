@@ -1,6 +1,8 @@
 package net.chronoflow.app
 
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
@@ -29,6 +31,7 @@ class SessionGraphs(
     private val sync: SessionSync,
     private val source: suspend (StoredSession) -> DataSource,
     private val scope: CoroutineScope,
+    private val io: CoroutineDispatcher = Dispatchers.IO,
 ) {
     private val mutableCurrent = MutableStateFlow<SessionGraph?>(null)
     val current = mutableCurrent.asStateFlow()
@@ -48,6 +51,7 @@ class SessionGraphs(
                     val databaseMatches = signedIn != null && database?.accountID?.rawValue == signedIn.accountId
                     if (databaseMatches && snapshot != null && snapshot.epoch == update.epoch) {
                         val dataSource = source(snapshot.session)
+                        val permit = controller.mutationPermit(snapshot)
                         if (controller.activeSession() != snapshot ||
                             accountModel.attachmentToken != token
                         ) {
@@ -66,6 +70,8 @@ class SessionGraphs(
                                 sync,
                                 dataSource,
                                 CoroutineScope(scope.coroutineContext + SupervisorJob(scope.coroutineContext[Job])),
+                                permit = permit,
+                                wizardIo = io,
                             )
                         mutableCurrent.value = graph
                         accountModel.attach(graph.accounts, update.epoch, token)

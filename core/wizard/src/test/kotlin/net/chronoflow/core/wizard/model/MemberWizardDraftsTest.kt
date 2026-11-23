@@ -6,9 +6,9 @@ import net.chronoflow.core.model.api.ApiJson
 import net.chronoflow.core.model.contracts.AirportRef
 import net.chronoflow.core.model.contracts.ApiTripInputSnapshot
 import net.chronoflow.core.testing.Fixtures
+import net.chronoflow.core.testing.wizard.generationInput
+import net.chronoflow.core.testing.wizard.generationReview
 import net.chronoflow.core.wizard.generation.TripGenerationState
-import net.chronoflow.core.wizard.generationInput
-import net.chronoflow.core.wizard.generationReview
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull

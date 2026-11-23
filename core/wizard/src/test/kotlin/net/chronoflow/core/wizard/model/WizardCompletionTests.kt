@@ -3,7 +3,7 @@ package net.chronoflow.core.wizard.model
 import kotlinx.serialization.json.JsonPrimitive
 import net.chronoflow.core.model.contracts.PromptKind
 import net.chronoflow.core.model.contracts.TripDirection
-import net.chronoflow.core.wizard.generationReview
+import net.chronoflow.core.testing.wizard.generationReview
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull

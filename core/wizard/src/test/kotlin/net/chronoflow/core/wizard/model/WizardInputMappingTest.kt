@@ -5,7 +5,7 @@ import net.chronoflow.core.model.DataFailure
 import net.chronoflow.core.model.api.ApiJson
 import net.chronoflow.core.model.contracts.ApiTripInputSnapshot
 import net.chronoflow.core.testing.Fixtures
-import net.chronoflow.core.wizard.generationInput
+import net.chronoflow.core.testing.wizard.generationInput
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Test

@@ -12,9 +12,10 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import net.chronoflow.core.model.DataFailure
 import net.chronoflow.core.model.api.ApiTripReviewInput
+import net.chronoflow.core.testing.wizard.CheckingTestClock
+import net.chronoflow.core.testing.wizard.generationInput
+import net.chronoflow.core.testing.wizard.generationReview
 import net.chronoflow.core.wizard.generation.TripGenerationReviewResult
-import net.chronoflow.core.wizard.generationInput
-import net.chronoflow.core.wizard.generationReview
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull

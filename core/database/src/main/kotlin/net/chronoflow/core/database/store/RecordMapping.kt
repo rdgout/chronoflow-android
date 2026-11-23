@@ -3,12 +3,14 @@ package net.chronoflow.core.database.store
 import net.chronoflow.core.database.Account
 import net.chronoflow.core.database.AccountSql
 import net.chronoflow.core.database.Check_marks
+import net.chronoflow.core.database.Drafts
 import net.chronoflow.core.database.Outbox
 import net.chronoflow.core.database.Plan_versions
 import net.chronoflow.core.database.Settings
 import net.chronoflow.core.database.Trips
 import net.chronoflow.core.model.store.AccountRecord
 import net.chronoflow.core.model.store.CheckMarkRecord
+import net.chronoflow.core.model.store.DraftRecord
 import net.chronoflow.core.model.store.JSONDocument
 import net.chronoflow.core.model.store.OutboxRecord
 import net.chronoflow.core.model.store.PlanVersionRecord
@@ -306,4 +308,95 @@ fun AccountSql.deleteCheckMark(
     ordinal: Int,
 ) {
     queries.checkMarksQueries.deleteCheckMark(tripId, inputHash, type, localDate, ordinal.toLong())
+}
+
+private fun Drafts.record(): DraftRecord =
+    DraftRecord(
+        id = id,
+        tripId = trip_id,
+        form = form,
+        baseForm = base_form,
+        dirty = dirty != 0L,
+        review = review,
+        token = token,
+        inputRevision = input_revision.toInt(),
+        reviewRevision = review_revision?.toInt(),
+        wizardSourceRevision = wizard_source_revision,
+        wizardReview = wizard_review,
+        furthestStep = furthest_step,
+        wizardState = wizard_state,
+        sourceRevision = source_revision,
+        saveFailure = save_failure,
+        fieldErrors = field_errors,
+        updatedAt = updated_at,
+    )
+
+fun AccountSql.fetchDraft(id: String): DraftRecord? =
+    queries.draftsQueries
+        .draftById(id)
+        .executeAsOneOrNull()
+        ?.record()
+
+fun AccountSql.fetchListedDrafts(): List<DraftRecord> =
+    queries.draftsQueries.listedDrafts().executeAsList().map {
+        it.record()
+    }
+
+fun AccountSql.deleteDraft(id: String) = queries.draftsQueries.deleteDraft(id)
+
+private fun DraftRecord.validateJson() {
+    JSONDocument.requireValid(form)
+    baseForm?.let(JSONDocument::requireValid)
+    review?.let(JSONDocument::requireValid)
+    wizardReview?.let(JSONDocument::requireValid)
+    wizardState?.let(JSONDocument::requireValid)
+    sourceRevision?.let(JSONDocument::requireValid)
+    saveFailure?.let(JSONDocument::requireValid)
+    fieldErrors?.let(JSONDocument::requireValid)
+}
+
+fun AccountSql.saveDraft(record: DraftRecord) {
+    record.validateJson()
+    queries.draftsQueries.saveDraft(
+        record.id,
+        record.tripId,
+        record.form,
+        record.baseForm,
+        record.dirty.sql(),
+        record.review,
+        record.token,
+        record.inputRevision.toLong(),
+        record.reviewRevision?.toLong(),
+        record.wizardSourceRevision,
+        record.wizardReview,
+        record.furthestStep,
+        record.wizardState,
+        record.sourceRevision,
+        record.saveFailure,
+        record.fieldErrors,
+        record.updatedAt,
+    )
+}
+
+fun AccountSql.insertDraft(record: DraftRecord) {
+    record.validateJson()
+    queries.draftsQueries.insertDraft(
+        record.id,
+        record.tripId,
+        record.form,
+        record.baseForm,
+        record.dirty.sql(),
+        record.review,
+        record.token,
+        record.inputRevision.toLong(),
+        record.reviewRevision?.toLong(),
+        record.wizardSourceRevision,
+        record.wizardReview,
+        record.furthestStep,
+        record.wizardState,
+        record.sourceRevision,
+        record.saveFailure,
+        record.fieldErrors,
+        record.updatedAt,
+    )
 }

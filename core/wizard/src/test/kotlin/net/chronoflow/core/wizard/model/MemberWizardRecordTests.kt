@@ -8,9 +8,9 @@ import net.chronoflow.core.model.FieldMessage
 import net.chronoflow.core.model.api.ApiJson
 import net.chronoflow.core.model.contracts.ProfilePreferences
 import net.chronoflow.core.model.contracts.PromptKind
-import net.chronoflow.core.wizard.generationInput
-import net.chronoflow.core.wizard.generationReview
-import net.chronoflow.core.wizard.wizardAirport
+import net.chronoflow.core.testing.wizard.generationInput
+import net.chronoflow.core.testing.wizard.generationReview
+import net.chronoflow.core.testing.wizard.wizardAirport
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull

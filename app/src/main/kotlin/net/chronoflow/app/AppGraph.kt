@@ -298,6 +298,7 @@ class AppGraph(
                 sessionSync,
                 dataSources::forSession,
                 appScope,
+                dispatchers.io,
             ).also {
                 it.start()
             }

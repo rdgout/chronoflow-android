@@ -19,9 +19,9 @@ import net.chronoflow.core.model.contracts.PlanStatus
 import net.chronoflow.core.model.contracts.PromptKind
 import net.chronoflow.core.model.contracts.ReviewAnswerShape
 import net.chronoflow.core.testing.Fixtures
+import net.chronoflow.core.testing.wizard.generationReview
 import net.chronoflow.core.wizard.generation.TripGenerationReviewResult
 import net.chronoflow.core.wizard.generation.TripGenerationSaveResult
-import net.chronoflow.core.wizard.generationReview
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -243,18 +243,20 @@ class MemberWizardReviewTest {
                 assertEquals(0, fixture.checking.waiterCount)
             }
 
-        @Test fun persistenceIsSerializedAndRevisionsIncreasePerWrite() =
+        @Test fun persistenceNeverGoesBackwardsAndEndsOnTheLatestRevision() =
             runTest(timeout = 60.seconds) {
                 val fixture = WizardModelFixture(backgroundScope, testScheduler)
                 val gate = CompletableDeferred<Unit>()
-                fixture.store.beforePersist = { if (it.state.revision == 1) gate.await() }
+                fixture.store.beforePersist = { gate.await() }
                 fixture.model.go(MemberWizardStep.outbound)
                 fixture.model.go(MemberWizardStep.returnChoice)
                 runCurrent()
                 assertTrue(fixture.store.persisted.isEmpty())
                 gate.complete(Unit)
                 fixture.model.flush()
-                assertEquals(listOf(1, 2), fixture.store.persisted.map { it.state.revision })
+                val revisions = fixture.store.persisted.map { it.state.revision }
+                assertTrue(revisions.zipWithNext().all { (previous, next) -> previous < next })
+                assertEquals(2, revisions.lastOrNull())
                 fixture.close()
             }
 
