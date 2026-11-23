@@ -1,5 +1,6 @@
 package net.chronoflow.core.testing.compose
 
+import android.graphics.Bitmap
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.SemanticsNodeInteractionsProvider
 import androidx.compose.ui.test.captureToImage
@@ -21,6 +22,18 @@ object BoardCapture {
         rule: SemanticsNodeInteractionsProvider,
         name: String,
     ) {
+        val target = targetFor(name)
+        val bitmap = rule.onRoot().captureToImage().asAndroidBitmap()
+        write(bitmap, target)
+    }
+
+    /** Writes a bitmap drawn outside Compose (the timeline drawing replay) under the same name and filter rules. */
+    fun capture(
+        bitmap: Bitmap,
+        name: String,
+    ) = write(bitmap, targetFor(name))
+
+    private fun targetFor(name: String): File {
         require(validName.matches(name) && !name.contains("..")) { "invalid capture name '$name'" }
         val only =
             System
@@ -34,9 +47,14 @@ object BoardCapture {
         val dir =
             System.getProperty("cf.capturesDir")
                 ?: throw IllegalStateException("cf.capturesDir is not set; run make captures")
-        val target = File(dir, "$name.png")
+        return File(dir, "$name.png")
+    }
+
+    private fun write(
+        bitmap: Bitmap,
+        target: File,
+    ) {
         target.parentFile?.mkdirs()
-        val bitmap = rule.onRoot().captureToImage().asAndroidBitmap()
-        target.outputStream().use { bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it) }
+        target.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
     }
 }

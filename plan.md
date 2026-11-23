@@ -628,6 +628,13 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A47 | App Startup initializers other than ProcessLifecycle and ProfileInstaller (for example EmojiCompat, merged by Compose text) | Remove them (AGENTS "Performance"). Compose then draws emoji with the phone's own font, so emoji newer than that font show as boxes on old phones. 3a records the inventory and the measured saving | 3a, 13 |
 | OQ-A48 | The JVM preparation budgets (S3 40 ms, large30 100 ms, large60 200 ms) sit 5 to 25 times above the first measurements (means 3, 4.5, 7 ms). Tighten them? | No: keep the iOS limits (iOS `plan.md:1734`); measured numbers live in `docs/perf-timeline.md` | 1b, 1e |
 | OQ-A49 | `tools/fixtures/extract_mock_seed.py` has no Python unit test | Covered by `make mock-seed-check` (in `generators-check`) and `MockTripTemplatesTest`; 4c adds a Python test when `MockAppSeed` lands | 1b, 4c |
+| OQ-A50 | Dot period: plan 1c said an 8 × 8 cell; iOS `dotStep` and the board use 7 dp (OQ-1c-1). | 7 dp (the plan text is amended). Affects 1c. |
+| OQ-A51 | Hatch phase: iOS centres the 2 dp stripe on the line through the tile corner; the board runs it from 0 to 2 dp (OQ-1c-2). | The board (a 1 dp difference). Affects 1c. |
+| OQ-A52 | Pre-composite tolerance (OQ-1c-9). Measured on Robolectric: shapes, patterns, glyphs and outlines differ from a `saveLayerAlpha` reference by at most 3/255 (double 8-bit rounding, up to 25% of pixels on hatch stripes); with text, glyph edge pixels differ by up to 16/255 on about 2-3% of pixels because Skia's glyph contrast pre-blend depends on the text colour. | Gate 3/255 everywhere outside the TEXT line boxes; inside them 20/255, with at most 5% of the tile area beyond 3/255; not the plan's 1/255. The marked case uses core priority, so the core bar is under group alpha. Affects 1c. |
+| OQ-A53 | The drawing carries no page background: iOS fills `background` inside its PDF (OQ-1c-11). | Omit it; the list paints the background. Affects 1c, 1d. |
+| OQ-A54 | `CLIP_TILE` only when a tile's content can leave its quadratic shape, instead of always clipping as iOS does (OQ-1c-17). | Conditional, by the exact square-root test; pixel-identical. Affects 1c. |
+| OQ-A55 | A text run narrower than "…" is dropped; iOS clips the full line to its rect (OQ-1c-20). | Drop the run (at most a one-glyph sliver differs). Affects 1c. |
+| OQ-A56 | `DayDrawing`'s constructor is public (the brief said internal) so the `saveLayerAlpha` reference test can slice an op list from `:feature:trip` tests. | Public, documented as builder and test use only. Affects 1c. |
 | OQ-0a-22 | Native libraries in the bundle? | Allow only `libandroidx.graphics.path.so` (Compose graphics-path; excluding it breaks Path conversion below API 34); fail on any other `.so` | 0a, 13 |
 | OQ-0b-1 | Where does `PlanMetrics` live? `08 §3.1` lists it inside `CfDimens`, but its consumer `:core:plan` is a JVM module that cannot depend on `:core:designsystem` | `core/plan/…/generated/PlanMetrics.generated.kt` (Double, dp), as iOS keeps it in `PlanCore` | 0b, 1b, 1c |
 | OQ-0b-2 | Port all iOS TokenGen outputs now (Auth, Settings, Terms, Welcome, PlanUI, Press, LaunchPaint, TypeMetrics), or only colors, sky and type? | All of them now (the iOS files are exact goldens and Phases 2, 3a, 3c, 5a, 9 and 10 need them) | 0b |
@@ -1177,20 +1184,20 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 **Delivers.** Implements the per-day static drawing as an immutable struct-of-arrays op list (DayDrawing), built by a pure JVM builder in :core:plan behind a TextMetrics interface. The builder follows the iOS renderer's draw order, category styles and tile content rules. The phase adds the Android TextPaint metrics, the hit index, the accessibility target list, the replay onto a native Canvas with shared resources (hatch and dot shaders, parsed lucide paths) and the bounded DayDrawingCache. JVM and Robolectric tests hold the build budgets (5 ms per day, 150 ms per width, 512 KiB per drawing) and reference-free render guards in light and dark.
 
 **Tasks**
-- [ ] **DayDrawing.kt** (`:core:plan`): op codes in a `ByteArray`, coordinates in a `FloatArray`, colors in an `IntArray`, plus text runs and path ids. It is immutable and reports `estimatedBytes`.
-- [ ] **DayDrawingBuilder.kt.**
+- [x] **DayDrawing.kt** (`:core:plan`): op codes in a `ByteArray`, coordinates in a `FloatArray`, colors in an `IntArray`, plus text runs and path ids. It is immutable and reports `estimatedBytes`.
+- [x] **DayDrawingBuilder.kt.**
   - Same draw order as iOS `TimelineRenderer.swift`.
   - Category styles (`04 §3.8`) from `TimelinePalette.generated.kt`, and the tile content rules (`§3.9`).
   - The compact rule: no text inside tiles below a 640 dp window width, or in tiny tiles.
   - Group alpha is pre-composited.
   - It draws markers, zone bands, ticks, and hatch and dot fills.
   - It measures through a `TextMetrics` interface (`measure`, `ellipsize`, `lineHeight`) and emits `HitIndex` and `TimelineTargets`.
-- [ ] **Android side** (`feature/trip/…/timeline/`).
+- [x] **Android side** (`feature/trip/…/timeline/`).
   - `TextPaintMetrics`: one `TextPaint` per build job, the 0b fonts, font scale ≤ 1.3.
-  - `TimelineResources`: the hatch as a `LinearGradient` with `Shader.TileMode.REPEAT`, an 8 × 8 dot-cell `BitmapShader`, and lucide paths parsed once.
+  - `TimelineResources`: the hatch as a `LinearGradient` with `Shader.TileMode.REPEAT`, a 7 dp dot-cell `BitmapShader` (iOS `dotStep`, OQ-1c-1), and lucide paths parsed once.
   - `DrawScope.replay(drawing, resources)` draws on `drawContext.canvas.nativeCanvas` and never measures.
-- [ ] **DayDrawingCache.kt.** An LRU keyed by (dayId, revision, widthPx, dark, fontScale, language). Limits: ≤ 4 MiB, ≤ 512 KiB per drawing, ≤ 8 entries; it evicts by bytes, then by count.
-- [ ] **Tests.**
+- [x] **DayDrawingCache.kt.** An LRU keyed by (dayId, revision, widthPx, dark, fontScale, language). Limits: ≤ 4 MiB, ≤ 512 KiB per drawing, ≤ 8 entries; it evicts by bytes, then by count.
+- [x] **Tests.**
   - `DayDrawingBudgetTest` (`@TimingGate`, run serially by `make timing`, fake metrics): after 3 warm-up passes, the median of 5 measured passes stays ≤ 5 ms per day and ≤ 150 ms per width for large60 at 360, 411 and 841 dp (the max is reported, never gated); ≤ 512 KiB per drawing.
   - `DayDrawingCacheTest`: equal keys reuse the entry; dark, width and font scale miss; the caps hold.
   - `DrawOrderGoldenTest`: the S3 day-1 op list against a reviewed golden.

@@ -25,6 +25,7 @@ GENERATORS += strings
 GENERATORS += plan-copy
 GENERATORS += contracts
 GENERATORS += mock-seed
+GENERATORS += vectors
 GENERATOR_CHECKS += tokens-check
 GENERATOR_CHECKS += fonts-check
 GENERATOR_CHECKS += assets-check
@@ -32,9 +33,10 @@ GENERATOR_CHECKS += strings-check
 GENERATOR_CHECKS += plan-copy-check
 GENERATOR_CHECKS += contracts-check
 GENERATOR_CHECKS += mock-seed-check
+GENERATOR_CHECKS += vectors-check
 
 .PHONY: quick check test timing format lint targeted generate generators-check size emu emu-down emu-clean avd-create matrix du
-.PHONY: plan-copy-check strings-check tokens tokens-check fonts fonts-check icons assets assets-check strings plan-copy contracts contracts-check snapshots captures perf perf-timeline baseline-profile mock-seed mock-seed-check
+.PHONY: plan-copy-check strings-check tokens tokens-check fonts fonts-check icons assets assets-check strings plan-copy contracts contracts-check snapshots captures perf perf-timeline baseline-profile mock-seed mock-seed-check vectors vectors-check
 
 quick:
 	$(RUN_TIER) quick $(RESULTS_JVM) $(RESULTS_DEBUG) $(TIMINGS_JVM) $(TIMINGS_DEBUG) -- $(GRADLE) spotlessCheck $(JVM_MODULES:%=:%:test) testDebugUnitTest -Pcf.tier=quick
@@ -147,6 +149,13 @@ contracts:
 contracts-check:
 	python3 -I tools/contracts-gen/copy_fixtures.py --ios-repo "$(IOS_REPO)" --check
 	python3 -I tools/contracts-gen/generate_kotlin.py --web-repo "$(WEB_REPO)" --check
+
+vectors:
+	python3 -I tools/icons/generate_icons.py
+
+vectors-check:
+	python3 -I tools/icons/generate_icons.py --check
+	python3 -I -m unittest discover -s tools/icons -t tools/icons -p 'test_*.py'
 
 mock-seed:
 	python3 -I tools/fixtures/extract_mock_seed.py --ios-repo "$(IOS_REPO)"
