@@ -3714,7 +3714,7 @@ Acceptance evidence and the pending host checks are recorded in [`docs/settings-
   - Manual TalkBack, Switch Access and keyboard passes over the plan, auth and wizard screens.
   - Contrast.
   - Font scales 1.0, 1.3 and 2.0, where 2.0 must render as 1.3.
-- [x] **Robustness.** Task 16 tooling, observed runs and execution handoff complete (2026-11-23); T2/fold/real split and physical acceptance remain pending (orchestrator/user), and full-suite OQ-A618 failures remain open. See `docs/audit.md` and `docs/device-matrix.md`.
+- [ ] **Robustness.** Task 16 tooling, observed runs and execution handoff complete (2026-11-23); T2/fold/real split and physical acceptance remain pending (orchestrator/user), and full-suite OQ-A618 failures remain open. See `docs/audit.md` and `docs/device-matrix.md`.
   - Process death (`adb shell am kill` while in the background) on every top-level route ends in a cold launch.
   - Wizard recovery and save resume.
   - Fold, split and resize on the `fold` AVD.

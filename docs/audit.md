@@ -2173,6 +2173,6 @@ unseeded mock recovery, not a production/demo-account or physical-device claim;
 Calculating save-resume remains the existing JVM proof, not swept on device.
 
 Task 16 tooling, observed runs and the explicit execution handoff are complete.
-The Robustness plan tick covers that delivery; acceptance still requires the
-pending T2 matrix, fold/real split and physical gates. Full native-suite verdicts
+The Robustness plan box remains open: acceptance still requires the pending T2
+matrix, fold/real split and physical gates. Full native-suite verdicts
 and the OQ-A618 failures remain nonzero as recorded above.
