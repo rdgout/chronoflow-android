@@ -20,7 +20,7 @@ import net.chronoflow.core.model.contracts.Language
 import net.chronoflow.core.ui.R
 import net.chronoflow.core.ui.l10n.generated.CopyIndex
 import net.chronoflow.core.ui.l10n.generated.CopyTable
-import net.chronoflow.feature.settings.components.SettingsPage
+import net.chronoflow.core.ui.settings.SettingsPage
 import net.chronoflow.feature.settings.components.settingsFormatArguments
 import net.chronoflow.feature.settings.security.SecretField
 import net.chronoflow.feature.settings.security.SecurityFeedbackHost

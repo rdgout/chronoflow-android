@@ -203,6 +203,8 @@ internal class SettingsFixture(
 
             override fun sessionUpdates() = controller.updates.filterNotNull()
 
+            override suspend fun reminderPermission() = net.chronoflow.core.reminders.ReminderPermission.Granted
+
             override suspend fun isCurrent() = controller.activeSession() == snapshot
 
             override suspend fun signOut(discardPending: Boolean) =

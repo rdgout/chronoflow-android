@@ -96,6 +96,8 @@ internal class SessionSettingsDependencies(
 
     override fun sessionUpdates() = app.controller.updates.filterNotNull()
 
+    override suspend fun reminderPermission() = app.reminderPermission()
+
     override suspend fun isCurrent() = app.controller.activeSession() == snapshot
 
     override suspend fun signOut(discardPending: Boolean) = app.controller.signOut(snapshot, discardPending)

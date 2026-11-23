@@ -3,6 +3,7 @@ package net.chronoflow.core.designsystem
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -42,6 +43,17 @@ class CfSegmentedButtonsTest {
         compose.onNodeWithTag("segments.1").assertIsEnabled().performClick()
         assertEquals(listOf(1), selections)
         assertEquals(listOf(HapticEvent.Selection), haptics)
+    }
+
+    @Test fun minusOneAllowsNoSelectedOptionAndATapSelectsAValidOne() {
+        compose.setContent {
+            ChronoFlowTheme(reduceMotion = true) {
+                CfSegmentedButtons(listOf("", ""), -1, selections::add, testTag = "segments")
+            }
+        }
+        compose.onNodeWithTag("segments.0").assertIsNotSelected()
+        compose.onNodeWithTag("segments.1").assertIsNotSelected().performClick()
+        assertEquals(listOf(1), selections)
     }
 
     @Test fun aDisabledOptionExposesMaterialSemanticsAndHasNoFeedback() {

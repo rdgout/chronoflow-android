@@ -60,8 +60,8 @@ import net.chronoflow.core.designsystem.theme.CfTheme
 import net.chronoflow.core.model.contracts.Language
 import net.chronoflow.core.ui.R
 import net.chronoflow.core.ui.secure.SecureWindow
+import net.chronoflow.core.ui.settings.SettingsPage
 import net.chronoflow.feature.settings.components.SettingsEyebrow
-import net.chronoflow.feature.settings.components.SettingsPage
 import net.chronoflow.feature.settings.components.SettingsStoredState
 import net.chronoflow.feature.settings.security.prompt.SettingsPasswordPrompt
 import net.chronoflow.feature.settings.security.prompt.SettingsPasswordPromptHost

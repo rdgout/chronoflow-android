@@ -24,8 +24,8 @@ import net.chronoflow.core.designsystem.component.CfCard
 import net.chronoflow.core.designsystem.component.CfTextField
 import net.chronoflow.core.designsystem.generated.PlanUITokens
 import net.chronoflow.core.ui.R
+import net.chronoflow.core.ui.settings.SettingsPage
 import net.chronoflow.feature.settings.components.SettingsOfflineHint
-import net.chronoflow.feature.settings.components.SettingsPage
 import net.chronoflow.feature.settings.components.SettingsReadOnlyField
 import net.chronoflow.feature.settings.components.SettingsStoredState
 

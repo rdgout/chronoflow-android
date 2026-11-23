@@ -12,6 +12,12 @@ def recipes(text):
 
 
 class MakefileTest(unittest.TestCase):
+    def test_permission_dialog_is_excluded_then_runs_alone_with_apks_kept(self):
+        text = (ROOT / "Makefile").read_text()
+        self.assertIn("notClass=net.chronoflow.app.reminders.RemindersPermissionDeviceTest", text)
+        self.assertIn("leaveApksInstalledAfterRun=true", text)
+        self.assertIn("reminders-permission --device --emulator", text)
+
     def test_device_recipes_take_the_lock(self):
         text = (ROOT / "Makefile").read_text()
         offenders = [

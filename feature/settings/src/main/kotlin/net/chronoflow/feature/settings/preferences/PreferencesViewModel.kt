@@ -29,12 +29,14 @@ data class PreferencesUiState(
     val editor: SettingsPreferencesModel.State? = null,
     val theme: ThemeChoice = ThemeChoice.System,
     val themeFailure: Boolean = false,
+    val reminders: net.chronoflow.core.reminders.ReminderSettings? = null,
+    val reminderPermission: net.chronoflow.core.reminders.ReminderPermission? = null,
 ) {
     val failure: Boolean get() = themeFailure || editor?.failure == true
 }
 
 class PreferencesViewModel(
-    deps: SettingsDependencies,
+    private val deps: SettingsDependencies,
     private val theme: ThemeDependencies,
     main: CoroutineDispatcher,
 ) : ViewModel(CoroutineScope(SupervisorJob() + main)) {
@@ -45,6 +47,7 @@ class PreferencesViewModel(
     val ui = mutableUi.asStateFlow()
 
     init {
+        refreshReminderPermission()
         pages.start()
         viewModelScope.launch {
             pages.ui.collect { page ->
@@ -67,7 +70,16 @@ class PreferencesViewModel(
                         editor.receive(section)
                     }
                 }
-                mutableUi.update { it.copy(pages = page, editor = model?.state?.value.takeIf { sectionAvailable }) }
+                mutableUi.update {
+                    it.copy(
+                        pages = page,
+                        editor = model?.state?.value.takeIf { sectionAvailable },
+                        reminders =
+                            net.chronoflow.core.reminders.ReminderSettings.decode(
+                                page.settings.firstOrNull { row -> row.section == "reminders" }?.value,
+                            ),
+                    )
+                }
             }
         }
         viewModelScope.launch {
@@ -76,6 +88,15 @@ class PreferencesViewModel(
                 mutableUi.update { it.copy(theme = ThemeChoice.System) }
             }) {
                 theme.theme.collect { choice -> mutableUi.update { it.copy(theme = choice) } }
+            }
+        }
+    }
+
+    fun refreshReminderPermission() {
+        viewModelScope.launch {
+            settingsAttempt(failed = { mutableUi.update { it.copy(reminderPermission = null) } }, cancelled = {}) {
+                val permission = deps.reminderPermission()
+                mutableUi.update { it.copy(reminderPermission = permission) }
             }
         }
     }

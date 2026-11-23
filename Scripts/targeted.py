@@ -67,7 +67,17 @@ def plan(selectors):
     for (module, kind), items in groups.items():
         gradle_path = ":" + module
         if kind == "instrumented":
-            if os.environ.get("REUSE_BUILD") == "1":
+            permission_class = "net.chronoflow.app.reminders.RemindersPermissionDeviceTest"
+            if any(item.split("#")[0] == permission_class for item in items):
+                if len(items) != 1:
+                    fail("run RemindersPermissionDeviceTest alone; it requires a revoked permission")
+                install = [] if os.environ.get("REUSE_BUILD") == "1" else ["--install"]
+                commands.append(
+                    ["Scripts/run-tier.sh", "targeted-permission", "--device", "--emulator", "--results",
+                     "build/reminders-permission/result.xml", "--", "python3", "-I", "Scripts/reminders_permission.py"]
+                    + install
+                )
+            elif os.environ.get("REUSE_BUILD") == "1":
                 adb = os.environ.get("ADB") or os.path.join(
                     os.environ.get("ANDROID_HOME", "/opt/homebrew/share/android-commandlinetools"), "platform-tools", "adb"
                 )

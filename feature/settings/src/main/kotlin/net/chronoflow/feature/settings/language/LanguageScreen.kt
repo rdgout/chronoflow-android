@@ -24,9 +24,9 @@ import net.chronoflow.core.designsystem.system.CfSnackbarHost
 import net.chronoflow.core.designsystem.theme.CfTheme
 import net.chronoflow.core.model.config.LanguageChoice
 import net.chronoflow.core.ui.R
+import net.chronoflow.core.ui.settings.SettingsPage
 import net.chronoflow.feature.settings.SettingsDebugCounters
 import net.chronoflow.feature.settings.components.SettingsOption
-import net.chronoflow.feature.settings.components.SettingsPage
 import net.chronoflow.feature.settings.components.SettingsRadioCards
 
 sealed interface LanguageEvent {

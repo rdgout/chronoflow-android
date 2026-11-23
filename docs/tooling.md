@@ -397,3 +397,40 @@ adb -s emulator-5554 shell am start \
 Accept terms, then Next / Next / Done reaches Today while mutation sends remain offline. The only automated native journey is `make targeted ONLY="app:OnboardingJourneyTest"` (the targeted runner owns the device lock). `CF_AUTH_TEST_TERMS_CHANGES_PENDING=1` adds one preference change for Phase 10a's Terms sign-out confirmation; it does not hold sends offline by itself.
 
 Validation and the 24 board captures are recorded in [Phase 8 results](phase-8-results.md).
+
+## Reminder seeds (Phase 12c)
+
+These three keys are ignored without `CF_AUTH_TEST_ID`. Authorization overrides are debug only and govern the scheduler, reminders page and Preferences row together. Omit authorization to use the real system state. Invalid authorization means undetermined. The requested flag records the one request; it does not grant the OS permission. The first-trip seed queues `wizardReminders = "pending"` through the real store; normal consumption writes `"seen"` before presentation.
+
+Authorization (blocked page; `undetermined`, `granted` and `unsupported` are also supported):
+
+```sh
+python3 -I Scripts/device_lock.py -- "$ANDROID_HOME/platform-tools/adb" -s emulator-5554 shell am start -W \
+  -n net.chronoflow.app.native.debug/net.chronoflow.debug.SeedReceiverActivity \
+  --es CF_AUTH_TEST_ID 01900000-0000-7000-8000-0000000012c1 --es CF_UI_TEST_PROFILE screen \
+  --es CF_AUTH_TEST_SIGNED_IN demo --es CF_AUTH_TEST_WALKTHROUGH_SEEN 1 \
+  --es CF_SETTINGS_ROUTE reminders --es cf.notificationAuthorization blocked
+```
+
+Request bookkeeping (real permission source):
+
+```sh
+python3 -I Scripts/device_lock.py -- "$ANDROID_HOME/platform-tools/adb" -s emulator-5554 shell am start -W \
+  -n net.chronoflow.app.native.debug/net.chronoflow.debug.SeedReceiverActivity \
+  --es CF_AUTH_TEST_ID 01900000-0000-7000-8000-0000000012c2 --es CF_UI_TEST_PROFILE screen \
+  --es CF_AUTH_TEST_SIGNED_IN demo --es CF_AUTH_TEST_WALKTHROUGH_SEEN 1 \
+  --es CF_SETTINGS_ROUTE reminders --es cf.notificationPermissionRequested 1
+```
+
+First-trip sheet over a seeded trip:
+
+```sh
+python3 -I Scripts/device_lock.py -- "$ANDROID_HOME/platform-tools/adb" -s emulator-5554 shell am start -W \
+  -n net.chronoflow.app.native.debug/net.chronoflow.debug.SeedReceiverActivity \
+  --es CF_AUTH_TEST_ID 01900000-0000-7000-8000-0000000012c3 --es CF_UI_TEST_PROFILE screen \
+  --es CF_AUTH_TEST_SIGNED_IN demo --es CF_AUTH_TEST_WALKTHROUGH_SEEN 1 \
+  --es cf.notificationAuthorization undetermined --es cf.firstTripReminders 1 \
+  --es CF_PLAN_TEST_ROUTE trip:0199a3c0-0000-7000-8000-000000000001
+```
+
+Run the real dialog journey alone with `make targeted ONLY="app:RemindersPermissionDeviceTest"`. It installs the APKs, revokes/clears flags outside instrumentation under the device lock, runs exactly that class, and writes `build/reminders-permission/result.xml` plus the tier timing report. `REUSE_BUILD=1` skips installation. In `make check`, the main smoke run excludes this class and keeps the APKs installed, then the same isolated runner executes it. A missing APK, missing metric or instrumentation failure fails the tier. Permission is never revoked inside a test process.

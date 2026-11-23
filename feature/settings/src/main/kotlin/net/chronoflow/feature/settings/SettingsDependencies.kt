@@ -66,6 +66,8 @@ interface SettingsDependencies {
 
     fun sessionUpdates(): Flow<SessionUpdate>
 
+    suspend fun reminderPermission(): net.chronoflow.core.reminders.ReminderPermission
+
     suspend fun isCurrent(): Boolean
 
     suspend fun signOut(discardPending: Boolean): SignOutResult

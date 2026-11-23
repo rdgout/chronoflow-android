@@ -131,7 +131,7 @@ internal fun AppShell(
                     route == Route.Security || route == Route.Password || route == Route.TwoFactorSettings ||
                     route == Route.Language || route == Route.Preferences || route == Route.BodyClock ||
                     route == Route.Passkeys ||
-                    route == Route.Plan
+                    route == Route.Plan || route == Route.Reminders
                 ) {
                     net.chronoflow.app.settings.SettingsEntry(
                         graph,

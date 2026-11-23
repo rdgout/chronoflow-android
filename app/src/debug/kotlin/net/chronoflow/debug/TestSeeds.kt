@@ -48,6 +48,10 @@ object TestSeeds {
             val dir = File(context.filesDir, "uitests/${seed.testId}")
             val alias = "ChronoFlowMock.uitest.${seed.testId}"
             val cipher = sessionCipher ?: AndroidKeystoreSessionCipher()
+            val reminders =
+                net.chronoflow.debug.reminders.RemindersSeed
+                    .from(seed)
+            reminders.apply(DevicePreferences.shared(context))
             val overrides =
                 GraphOverrides(
                     dir,
@@ -57,6 +61,7 @@ object TestSeeds {
                     cipher,
                     dispatchers,
                     mutationsOffline = seed.mutationsOffline,
+                    reminderPermission = reminders.permission,
                 )
             DebugAppHooks.resetGraph(app, overrides)
             val credentials = KeystoreSessionStore(File(dir, "ChronoFlowMock/session.bin"), alias, cipher, io)
@@ -67,6 +72,7 @@ object TestSeeds {
                 AndroidAccountDriverFactory(context),
                 source,
                 io,
+                seedReminders = reminders::queue,
                 beforeSignIn = { SettingsBoardCaptureFixture.prepare(dir, seed, app.graph.planClock.now, io) },
                 guestSecrets =
                     object : net.chronoflow.core.data.session.GuestSecrets {

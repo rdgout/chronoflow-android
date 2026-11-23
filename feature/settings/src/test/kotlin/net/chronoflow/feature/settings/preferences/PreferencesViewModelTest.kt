@@ -33,6 +33,36 @@ import java.io.IOException
 import kotlin.time.Duration.Companion.seconds
 
 class PreferencesViewModelTest {
+    @Test fun reminderPermissionRefreshesWithoutWriting() =
+        runTest(timeout = 60.seconds) {
+            val deps = preferencesDeps()
+            withPreferences(deps) { vm ->
+                assertEquals(net.chronoflow.core.reminders.ReminderPermission.Granted, vm.ui.value.reminderPermission)
+                deps.reminderAuthorization = net.chronoflow.core.reminders.ReminderPermission.Blocked
+                vm.refreshReminderPermission()
+                runCurrent()
+                assertEquals(net.chronoflow.core.reminders.ReminderPermission.Blocked, vm.ui.value.reminderPermission)
+                assertTrue(deps.rows.value.isEmpty())
+            }
+        }
+
+    @Test fun remindersDecodeFromTheRawSettingsRowAndFollowChanges() =
+        runTest(timeout = 60.seconds) {
+            val deps = preferencesDeps()
+            val raw = """{"light":true,"avoid":false,"caffeine":false,"winddown":false,"leadMin":15}"""
+            deps.settings.value += SettingsRecord("reminders", raw)
+            withPreferences(deps) { vm ->
+                assertEquals(
+                    15,
+                    vm.ui.value.reminders
+                        ?.leadMin,
+                )
+                deps.settings.value = deps.settings.value.filterNot { it.section == "reminders" }
+                runCurrent()
+                assertNull(vm.ui.value.reminders)
+            }
+        }
+
     @Test fun travelToggleSavesTheCompleteGroupAndOnlyItsChangedKey() =
         runTest(timeout = 60.seconds) {
             val deps = preferencesDeps()

@@ -18,6 +18,7 @@ data class GraphOverrides(
     val sessionCipher: SessionCipher? = null,
     val dispatchers: AppDispatchers? = null,
     val mutationsOffline: Boolean = false,
+    val reminderPermission: net.chronoflow.app.reminders.ReminderPermissionOverride? = null,
 ) {
     companion object {
         val None = GraphOverrides()

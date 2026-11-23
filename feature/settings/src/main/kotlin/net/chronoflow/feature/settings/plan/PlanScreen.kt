@@ -14,7 +14,7 @@ import net.chronoflow.core.designsystem.generated.PlanUITokens
 import net.chronoflow.core.designsystem.system.CfPullToRefreshBox
 import net.chronoflow.core.model.contracts.Language
 import net.chronoflow.core.ui.R
-import net.chronoflow.feature.settings.components.SettingsPage
+import net.chronoflow.core.ui.settings.SettingsPage
 
 data class PlanScreenState(
     val plan: SettingsPlanState = SettingsPlanState(null, null, false, false),
