@@ -69,6 +69,8 @@ class SessionTripWizardDependencies(
         )
     override val writerScope = CoroutineScope(session.scope.coroutineContext + io)
 
+    override suspend fun recover() = store.recover()
+
     override suspend fun start() = store.start()
 
     override suspend fun startTrip(

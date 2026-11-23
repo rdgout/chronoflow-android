@@ -106,13 +106,13 @@ fun TripPage(
     onToday: (() -> Unit)? = null,
     onWizard: (net.chronoflow.core.navigation.WizardMode) -> Unit = {},
 ) {
-    val tripActions by viewModel.tripActions.collectAsStateWithLifecycle()
+    val hasActions by viewModel.hasTripActions.collectAsStateWithLifecycle()
     val state =
         rememberTripPageScreenState(
             viewModel,
             onSettings != null,
             onLegend != null,
-            onActions != null && tripActions != null,
+            onActions != null && hasActions,
             onToday != null,
         )
     val scope = rememberCoroutineScope()

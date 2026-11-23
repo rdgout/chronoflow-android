@@ -46,6 +46,65 @@ class WizardBackHandlingTest {
         assertEquals(listOf(WizardEvent.RequestClose), events)
     }
 
+    @Test fun backOnEditReadyRequestsClose() {
+        host(
+            screenState().copy(
+                step = net.chronoflow.feature.wizard.shell.WizardStepKey.Ready,
+                path =
+                    listOf(
+                        net.chronoflow.feature.wizard.shell.WizardStepKey.Outbound,
+                        net.chronoflow.feature.wizard.shell.WizardStepKey.Ready,
+                    ),
+                firstScreen = true,
+            ),
+        )
+        compose.runOnIdle { dispatcher.onBackPressed() }
+        assertEquals(listOf(WizardEvent.RequestClose), events)
+    }
+
+    @Test fun backOnDuplicateTimesRequestsClose() {
+        host(
+            screenState(
+                routeDraft().let {
+                    it.copy(
+                        state =
+                            it.state.copy(step = net.chronoflow.core.wizard.model.MemberWizardStep.outbound),
+                    )
+                },
+            ).copy(firstScreen = true),
+        )
+        compose.runOnIdle { dispatcher.onBackPressed() }
+        assertEquals(listOf(WizardEvent.RequestClose), events)
+    }
+
+    @Test fun backOnEditCheckingFailureRequestsClose() {
+        val state =
+            screenState().copy(
+                step = net.chronoflow.feature.wizard.shell.WizardStepKey.Checking,
+                path =
+                    listOf(
+                        net.chronoflow.feature.wizard.shell.WizardStepKey.Outbound,
+                        net.chronoflow.feature.wizard.shell.WizardStepKey.Checking,
+                    ),
+                firstScreen = true,
+                checking =
+                    net.chronoflow.feature.wizard.checking.WizardCheckingUi(
+                        net.chronoflow.feature.wizard.ui
+                            .WizardCopy("Checking your changes"),
+                        "AMS",
+                        "NRT",
+                        emptyList(),
+                        false,
+                        net.chronoflow.feature.wizard.checking.CheckFailureKind.Offline,
+                        0,
+                        true,
+                    ),
+            )
+        host(state)
+        compose.runOnIdle { dispatcher.onBackPressed() }
+        assertEquals(listOf(WizardEvent.RequestClose), events)
+    }
+
     @Test fun backWithTheDialogOpenDismissesIt() {
         host(screenState().copy(discardDialogVisible = true))
         compose.runOnIdle { dispatcher.onBackPressed() }

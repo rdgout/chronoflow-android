@@ -9,10 +9,12 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.CompletableDeferred
 import net.chronoflow.core.designsystem.theme.ChronoFlowTheme
 import net.chronoflow.core.model.contracts.CheckMark
 import net.chronoflow.core.model.contracts.CheckStatus
 import net.chronoflow.core.model.store.CheckMarkRecord
+import net.chronoflow.core.plan.actions.TripAction
 import net.chronoflow.core.plan.checkIdentity
 import net.chronoflow.core.plan.generated.PlanMetrics
 import net.chronoflow.core.testing.DeviceProfiles
@@ -21,6 +23,9 @@ import net.chronoflow.core.testing.compose.ProfileRule
 import net.chronoflow.core.testing.compose.WindowSizeFake
 import net.chronoflow.core.testing.compose.WindowSizeFakeHost
 import net.chronoflow.core.testing.tiers.Logic
+import net.chronoflow.feature.trip.actions.TripWizardPrepareOutcome
+import net.chronoflow.feature.trip.actions.TripWizardPreparer
+import net.chronoflow.feature.trip.page.TripPage
 import net.chronoflow.feature.trip.timeline.TimelineProbe.Kind
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -70,8 +75,36 @@ class TimelineInvalidationTest {
         list: Boolean = false,
         applyChecks: Boolean = false,
         wide: Boolean = false,
+        wizardPreparer: TripWizardPreparer? = null,
+        realPage: Boolean = false,
     ) {
-        host = TimelineTestHost(startAtSummary = summary, initialTimeline = !list, applyChecks = applyChecks)
+        host =
+            TimelineTestHost(
+                startAtSummary = summary,
+                initialTimeline = !list,
+                applyChecks = applyChecks,
+                wizardPreparer = wizardPreparer,
+            )
+        if (wizardPreparer != null) {
+            val snapshot = host.source.snapshot.value
+            val card =
+                net.chronoflow.core.testing.LargeTimelineFixtures
+                    .fixture("large60")
+                    .card
+                    .copy(canEdit = true)
+            host.source.snapshot.value =
+                snapshot.copy(
+                    trip =
+                        snapshot.trip!!.copy(
+                            card =
+                                net.chronoflow.core.model.api.ApiJson.response.encodeToString(
+                                    net.chronoflow.core.model.contracts.TripCardView
+                                        .serializer(),
+                                    card,
+                                ),
+                        ),
+                )
+        }
         val density = composeRule.density
         val width =
             if (wide) {
@@ -86,7 +119,7 @@ class TimelineInvalidationTest {
             CompositionLocalProvider(LocalTimelineProbe provides probe) {
                 WindowSizeFakeHost(window, insets = DeviceProfiles.pixel8.insets) {
                     ChronoFlowTheme(reduceMotion = reduceMotion) {
-                        host.Content()
+                        if (realPage) TripPage(host.vm, {}, null) else host.Content()
                         listState = host.listState
                     }
                 }
@@ -321,6 +354,42 @@ class TimelineInvalidationTest {
                 .values
                 .sum(),
         )
+    }
+
+    @Test fun actionBusyChangesDoNotRecomposePageChrome() {
+        val gate = CompletableDeferred<TripWizardPrepareOutcome>()
+        start(wizardPreparer = TripWizardPreparer { _, _ -> gate.await() }, realPage = true)
+        val passes = composeRule.runOnIdle { CompositionPassProbe() }
+        try {
+            val beforePasses = passes.count
+            val before = probe.snapshot()
+            composeRule.runOnIdle { host.vm.startAction(TripAction.Edit) }
+            settle()
+            assertTrue(
+                "the real action must become busy",
+                host.vm.tripActions.value!!
+                    .availability.busy,
+            )
+            gate.complete(TripWizardPrepareOutcome.Ignored)
+            settle()
+            assertTrue(
+                "the real action must finish",
+                !host.vm.tripActions.value!!
+                    .availability.busy,
+            )
+            assertEquals("busy must not schedule a page composition", 0, passes.count - beforePasses)
+            val delta = probe.snapshot().delta(before)
+            assertEquals(
+                "busy belongs to the sheet, not page chrome",
+                0,
+                delta.composed
+                    .filterKeys { it.kind in setOf(Kind.PILLS, Kind.COMPACT, Kind.ANCHOR) }
+                    .values
+                    .sum(),
+            )
+        } finally {
+            composeRule.runOnIdle { passes.close() }
+        }
     }
 
     @Test fun scrollingWithinOneDayDoesNotRecomposePageChrome() {

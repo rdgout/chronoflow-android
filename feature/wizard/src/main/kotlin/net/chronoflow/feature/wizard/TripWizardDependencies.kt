@@ -26,6 +26,8 @@ interface TripWizardDependencies {
 
     suspend fun copyFormatter(): net.chronoflow.core.plan.CopyLineFormatter? = null
 
+    suspend fun recover(): MemberWizardDraft? = null
+
     suspend fun start(): MemberWizardDraft
 
     suspend fun startTrip(

@@ -26,7 +26,6 @@ fun TripPageSheets(
     val sheet by vm.sheet.collectAsStateWithLifecycle()
     val state by vm.stepSheet.collectAsStateWithLifecycle()
     val busy by vm.checkBusy.collectAsStateWithLifecycle()
-    val actions by vm.tripActions.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
     val dismiss: () -> Unit = {
@@ -54,31 +53,19 @@ fun TripPageSheets(
         }
 
         TripSheet.TripActions -> {
+            val actions by vm.tripActions.collectAsStateWithLifecycle()
             actions?.let { ui ->
-                val actionState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-                val close: () -> Unit = { scope.launch { actionState.hide() }.invokeOnCompletion { vm.dismissSheet() } }
-                CfModalBottomSheet(vm::dismissSheet, Modifier.testTag("trip.sheet"), sheetState = actionState) {
-                    net.chronoflow.feature.trip.actions.TripActionsContent(ui, { action ->
-                        if (ui.availability.enabled(action)) {
-                            scope.launch {
-                                try {
-                                    actionState.hide()
-                                } finally {
-                                    vm.dismissSheet()
-                                }
-                                onWizard(
-                                    if (action == net.chronoflow.core.plan.actions.TripAction.Edit) {
-                                        net.chronoflow.core.navigation.WizardMode
-                                            .Edit(ui.tripId)
-                                    } else {
-                                        net.chronoflow.core.navigation.WizardMode
-                                            .Duplicate(ui.tripId)
-                                    },
-                                )
-                            }
-                        }
-                    }, close)
-                }
+                val failure by vm.actionFailure.collectAsStateWithLifecycle()
+                val pendingWizardRequest by vm.pendingWizardRequest.collectAsStateWithLifecycle()
+                net.chronoflow.feature.trip.actions.TripActionsWindow(
+                    ui,
+                    failure,
+                    vm::startAction,
+                    vm::dismissSheet,
+                    pendingWizardRequest,
+                    onWizard,
+                    vm::acknowledgeWizardRequest,
+                )
             }
         }
 

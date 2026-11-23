@@ -76,6 +76,10 @@ make baseline-profile                      # regenerates the committed profiles
 | 2026-11-19 | e61c4550 | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | trip-wide | benchmarkRelease, Partial(Require), bounded-swipe-v3 | n/a/n/a | 3.6/4.5/6.4 | 3.4/5.1 | -5.8 | 0.0/0.0 | 0.0/0.0 | 0 | 0.7 | 107.7 | -0.1 | 513 | 5 | ok | — | PASS |
 | 2026-11-19 | 8edb8455 | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | trip | benchmarkRelease, Partial(Require), bounded-swipe-v3 | 98.1/99.8 | 3.5/4.6/6.5 | 2.8/4.7 | -5.1 | 0.1/0.2 | 0.1/0.4 | 0 | 0.7 | 109.1 | 0.4 | 571 | 3 | ok | ok | PASS |
 | 2026-11-19 | 8edb8455 | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | trip-wide | benchmarkRelease, Partial(Require), bounded-swipe-v3 | n/a/n/a | 3.5/4.4/7.2 | 4.5/12.6 | -5.5 | 0.5/1.4 | 2.2/6.5 | 0 | 0.3 | 108.3 | 0.9 | 527 | 5 | ok | — | PASS |
+| 2026-11-20 | 62472d29 | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | trip | benchmarkRelease, Partial(Require), bounded-swipe-v3 | 99.5/100.6 | 3.8/7.2/11.8 | 5.8/8.8 | 1.8 | 1.3/2.1 | 5.1/8.9 | 0 | 1.1 | 109.1 | 0.0 | 571 | 3 | ok | ok | BAND |
+| 2026-11-20 | 62472d29 | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | trip-wide | benchmarkRelease, Partial(Require), bounded-swipe-v3 | n/a/n/a | 3.3/4.2/6.2 | 3.5/4.9 | -7.4 | 0.0/0.0 | 0.0/0.0 | 0 | 0.3 | 109.0 | -0.5 | 526 | 5 | ok | — | BAND |
+| 2026-11-20 | 62472d29 | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | trip | benchmarkRelease, Partial(Require), bounded-swipe-v3 | 98.9/99.9 | 3.6/4.6/6.4 | 3.0/4.7 | -5.4 | 0.0/0.0 | 0.0/0.0 | 0 | 0.7 | 109.2 | 0.3 | 571 | 3 | ok | ok | PASS |
+| 2026-11-20 | 62472d29 | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | trip-wide | benchmarkRelease, Partial(Require), bounded-swipe-v3 | n/a/n/a | 3.4/4.3/6.3 | 3.3/5.1 | -6.1 | 0.0/0.0 | 0.0/0.0 | 0 | 0.4 | 108.5 | -0.0 | 526 | 5 | ok | — | PASS |
 
 `-dirty` marks a run made with uncommitted changes (here the regenerated baseline profile, committed right after).
 
@@ -589,3 +593,14 @@ Phase 7 Task 2 JVM measurement (`make targeted ONLY="core:plan:TodayTests core:p
 
 
 Phase 7 Task 6 invalidation proof (`make targeted ONLY="feature:today:TodayInvalidationTest"`, Robolectric API 36, debug tests, pixel8 width/test-only tall viewport): quiet minute = **0** SCREEN/HERO/PANEL/ROW recompositions, **1** per changed clock leaf (six leaves). Marked rows have no leaf. The plain-Instant row negative control records **1** ROW recomposition. Both cases pass; this is a JVM scope-count proof, not a device frame-time claim.
+
+
+## Phase 9h review round 1: marker publication (2026-11-20)
+
+The parallel logic suite reproduced `TimelinePerfMarkersTest` failing while both Choreographer callbacks had completed. Temporary diagnostics recorded replay at uptime 310 ms, callback 1 at 325 ms, callback 2 at 340 ms, and `presented == true` at the assertion at 372 ms; semantics still exposed `trip.timeline.opening`. The production marker read its flag in composition, so tag publication could lag the two-frame trace endpoint. Reading it in the semantics lambda invalidates the marker directly. The trace’s callbacks, first real replay, drawing pipeline, `NowLine` and benchmark journeys are unchanged. All diagnostics were removed; the existing marker test and frame count are unchanged.
+
+Worker evidence: Robolectric API 36, pixel8 profile, debug unit tests on the macOS host. The unchanged marker class passed five consecutive executions alongside the app, wizard, plan and network logic suites in parallel Gradle test processes. Test outputs were forced to execute; the temporary init script allows four trip forks and eight Gradle workers. Command wall times: **20.438 / 21.262 / 18.513 / 26.438 / 26.013 s**. The marker cases took **2.714 / 3.340 / 3.191 / 2.865 / 2.749 s**, each the fork’s first Robolectric SDK case (20 s allowance). These are test-harness cold costs, not app first-frame measurements. XML and timing evidence: `/private/tmp/9h-review-proof/review-loaded-1` through `review-loaded-5`; diagnostic XML: `/private/tmp/9h-review-marker-diagnostic.xml`.
+
+The page now observes the boolean availability of actions; the full busy state is collected inside the open sheet. `TimelineInvalidationTest.actionBusyChangesDoNotRecomposePageChrome` renders the real page and toggles the real preparer. Its initial mutation proof failed with 16 composition passes before these fixes; the final guard records **zero** passes and zero chrome compositions. The targeted class passes all **13** cases in **3.945 s** (command **7.923 s**); the new case is **0.091 s**. No drawing, main-thread build, clock, blur, layer or per-frame allocation path was added.
+
+No emulator performance or profile tier was run, per the orchestrator. Host follow-up commands remain `make perf-timeline` and `make baseline-profile`; record their normal first-frame, CPU/jank, RSS, placeholder, main-thread build, replay, recomposition and GC metrics here. No startup path changed, so no new startup measurement is claimed.

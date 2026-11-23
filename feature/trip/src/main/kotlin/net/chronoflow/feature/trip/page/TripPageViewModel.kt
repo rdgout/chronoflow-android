@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.receiveAsFlow
@@ -35,9 +36,11 @@ import net.chronoflow.core.model.session.SessionFailure
 import net.chronoflow.core.model.store.LocalMutationFailure
 import net.chronoflow.core.model.store.StoreFailure
 import net.chronoflow.core.navigation.TripSheet
+import net.chronoflow.core.navigation.WizardMode
 import net.chronoflow.core.plan.CopyFormat
 import net.chronoflow.core.plan.CopyLineFormatter
 import net.chronoflow.core.plan.PlanClock
+import net.chronoflow.core.plan.actions.TripAction
 import net.chronoflow.core.plan.actions.TripActionsAvailability
 import net.chronoflow.core.plan.drawing.DayDrawingCache
 import net.chronoflow.core.plan.drawing.DayDrawingKey
@@ -62,7 +65,11 @@ import net.chronoflow.core.sync.SyncResult
 import net.chronoflow.core.sync.SyncState
 import net.chronoflow.core.sync.refresh.RefreshDebugProbe
 import net.chronoflow.core.sync.refresh.RefreshFeedbackModel
+import net.chronoflow.feature.trip.actions.TripActionFailure
+import net.chronoflow.feature.trip.actions.TripActionFailureEvent
 import net.chronoflow.feature.trip.actions.TripActionsUi
+import net.chronoflow.feature.trip.actions.TripWizardPrepareOutcome
+import net.chronoflow.feature.trip.actions.TripWizardPreparer
 import net.chronoflow.feature.trip.state.TripPageFetchModel
 import net.chronoflow.feature.trip.timeline.DayClocks
 import net.chronoflow.feature.trip.timeline.DrawingRequest
@@ -107,6 +114,7 @@ class TripPageViewModel(
     private val isCurrent: () -> Boolean = { true },
     private val enqueueCheck: suspend (CheckOffChange) -> Unit = {},
     private val reportCheckFailure: (Throwable) -> Unit = {},
+    private val preparer: TripWizardPreparer? = null,
 ) : ViewModel() {
     private val checkOffWriter =
         net.chronoflow.core.data.plan
@@ -172,8 +180,14 @@ class TripPageViewModel(
             }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
+    private val openingWizard = MutableStateFlow(false)
+    private val mutableActionFailure = MutableStateFlow<TripActionFailureEvent?>(null)
+    val actionFailure: StateFlow<TripActionFailureEvent?> = mutableActionFailure.asStateFlow()
+    private val mutablePendingWizardRequest = MutableStateFlow<WizardMode?>(null)
+    val pendingWizardRequest: StateFlow<WizardMode?> = mutablePendingWizardRequest.asStateFlow()
+
     val tripActions: StateFlow<TripActionsUi?> =
-        combine(ui, online) { page, connected ->
+        combine(ui, online, openingWizard) { page, connected, opening ->
             val card = page.page.card
             val header = page.page.actionsHeader
             if (card == null || header == null) {
@@ -182,10 +196,13 @@ class TripPageViewModel(
                 TripActionsUi(
                     args.tripId,
                     header,
-                    TripActionsAvailability(card.canEdit, card.canDuplicate, connected, false),
+                    TripActionsAvailability(card.canEdit, card.canDuplicate, connected, opening),
                 )
             }
         }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    val hasTripActions: StateFlow<Boolean> =
+        tripActions.map { it != null }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
     private val _timeline = MutableStateFlow(initialTimeline)
     val timeline: StateFlow<Boolean> = _timeline.asStateFlow()
@@ -434,8 +451,48 @@ class TripPageViewModel(
     }
 
     fun openTripActions() {
+        mutableActionFailure.value = null
         if (ui.value.page.card != null) _sheet.value = TripSheet.TripActions
     }
+
+    fun startAction(action: TripAction) {
+        if (openingWizard.value || mutablePendingWizardRequest.value != null) return
+        val actions = tripActions.value ?: return
+        if (!actions.availability.copy(busy = false).enabled(action)) return
+        mutableActionFailure.value = null
+        openingWizard.value = true
+        viewModelScope.launch {
+            try {
+                when (val outcome = preparer?.prepare(args.tripId, action) ?: TripWizardPrepareOutcome.Ignored) {
+                    TripWizardPrepareOutcome.Ready -> {
+                        mutablePendingWizardRequest.value =
+                            if (action == TripAction.Edit) {
+                                WizardMode.Edit(args.tripId)
+                            } else {
+                                WizardMode.Duplicate(args.tripId)
+                            }
+                    }
+
+                    TripWizardPrepareOutcome.Ignored -> {}
+
+                    is TripWizardPrepareOutcome.Failed -> {
+                        mutableActionFailure.value =
+                            TripActionFailureEvent(
+                                when {
+                                    outcome.offline -> TripActionFailure.Offline
+                                    action == TripAction.Duplicate -> TripActionFailure.Duplicate
+                                    else -> TripActionFailure.Edit
+                                },
+                            )
+                    }
+                }
+            } finally {
+                openingWizard.value = false
+            }
+        }
+    }
+
+    fun acknowledgeWizardRequest(): Boolean = mutablePendingWizardRequest.getAndUpdate { null } != null
 
     fun dismissSheet() {
         _sheet.value = null

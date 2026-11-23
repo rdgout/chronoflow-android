@@ -8,6 +8,8 @@ import net.chronoflow.core.wizard.model.MemberWizardModel
 import net.chronoflow.core.wizard.model.allowsSleepOverride
 import net.chronoflow.core.wizard.model.checkingTitle
 import net.chronoflow.core.wizard.model.exclusionWasSaved
+import net.chronoflow.core.wizard.model.firstScreen
+import net.chronoflow.core.wizard.model.hasChanges
 import net.chronoflow.core.wizard.model.isEditing
 import net.chronoflow.core.wizard.model.navigationPath
 import net.chronoflow.core.wizard.model.optionalPrompts
@@ -62,6 +64,8 @@ internal fun TestScope.boardState(
                 sleepComplete = model.sleepComplete,
                 exclusionWasSaved = model.exclusionWasSaved,
                 isEditing = model.isEditing,
+                hasChanges = model.hasChanges,
+                firstScreen = model.firstScreen,
                 optionalPrompts = model.optionalPrompts,
                 checkingTitle = model.checkingTitle,
                 allowsSleepOverride = model.allowsSleepOverride,

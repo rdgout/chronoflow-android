@@ -944,7 +944,7 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A348 | Walkthrough progress height differs between the old brief and Phase 7. | Reuse OQ-A334: native `CfLinearProgress`, 80 × 6 dp. Pinned walkthrough reuses `DayProgressRow` and specifies no different height. | 8 |
 | OQ-A349 | (9a OQ-9a-1) The plan gives 9b "checking timers / 250 ms" and the ViewModel. Where does the iOS model class (`MemberWizardModel`) live? | **9a** ports it as a pure class on an injected scope; 9b hosts it in `TripWizardViewModel` and owns the DB store, service and search. 9b's timer items become wiring and integration tests. | 9a, 9b |
 | OQ-A350 | (9a OQ-9a-2) Sleep after a return flight: no board value; the model value (0.50) is below ReturnFlight 55 | Settled by OQ-A418: show the model's 0.50 after ReturnFlight 0.55, as iOS at the pin; 9c's existing bar animates in both directions | 9a, 9c |
-| OQ-A351 | (9a OQ-9a-3) Edit progress: iOS floor 0.95; every edit board draws 100 | 1.0 on every edit step | 9a, 9c |
+| OQ-A351 | (9a OQ-9a-3) Edit progress: iOS floor 0.95; every edit board draws 100 | Settled by OQ-A461: the initial edit path keeps its 1.0 floor; revisited input steps clear the floor and use their step weights, as iOS at the pin | 9a, 9c |
 | OQ-A352 | (9a OQ-9a-4) Guest "checking your answers": no board value | 0.64 on `checking` and `excluded` while checking answers (bar holds at the last question); first check 0.42 (`WizardCheckingGuest`); No plan otherwise 0.60 (`WizardExcluded`, guest) | 9a, 9c |
 | OQ-A353 | (9a OQ-9a-5) Back on Duplicate's Times and edit Checking failure (`06` OQ 2) | Board: `firstScreen`, no pop; system back acts as × (9c) | 9a, 9c |
 | OQ-A354 | (9a OQ-9a-6) Date text: Apple templates vs fixed tables | Fixed en/nl tables with 0d's `Language`; en year form `EEE, d MMM y` keeps Apple's comma [A] | 9a |
@@ -1043,6 +1043,18 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A447 | (9g OQ-9g-9) The board Calculating card draws a 64 dp dawn-tinted disc behind the spinner, radius 26, padding 32/20 and a soft shadow; iOS shows a bare large spinner in `.wizardCard()` (radius 16, padding 32 all round, no shadow). | Board card and disc with `CfSpinner` 30 dp; static clock under Reduce Motion (iOS). | 9g |
 | OQ-A448 | (9g OQ-9g-10) "Latest wake-up" row has no iOS accessibility id. | `wizard.ready.latest-wake-up`. | 9g |
 | OQ-A449 | (9g OQ-9g-11) iOS freezes completion boards with a `#if DEBUG` model method; 9f replaced it with the `WizardUiOverride` seam (OQ-9f-16), which does not stop `readyTick`. | Reuse 9f's seam; `readyTick()`/`readyForeground()` in the ViewModel return at once while the override is set. No model-level freeze. | 9g |
+| OQ-A450 | (9h OQ-9h-1) 9b's ViewModel loads Edit/Duplicate itself (`startTrip` in `init`), which would show the wizard before the load and needs an unboarded loading/error state; iOS loads first, on the sheet. | Prepare on the sheet (`TripWizardPreparer` → `startTrip`), then push the route; the VM recovers the prepared row and falls back to `startTrip` only when the row does not match. | 9h |
+| OQ-A451 | (9h OQ-9h-2) iOS shows the action failure as `FeedbackToast` inside the sheet. | M3 Snackbar inside the sheet (OQ-A5), `SnackbarDuration.Short`, tag `trip.actions.failure`; capture `TripActionsFailure_noBoard`. | 9h |
+| OQ-A452 | (9h OQ-9h-3) The busy actions sheet has no board; iOS disables rows and Cancel with no spinner. | iOS: disabled rows ("Needs a connection." subtitle, as 6d draws disabled rows), Cancel disabled, no dismiss; capture `TripActionsBusy_noBoard`. | 9h |
+| OQ-A453 | (9h OQ-9h-4) A failed in-wizard load (fallback path only, e.g. a restored overlay route after the 30-minute row expired) has no board (`06` OQ 9, OQ-9b-12). | Close the wizard quietly (`WizardExit.Trips`); retain the existing generic warning log (R2). | 9h |
+| OQ-A454 | (9h OQ-9h-5) 9c expected 9h to add a `WizardExit` case for edit. Clearing the overlay already returns to the trip page under it (board `exitHref` Plan). | No new case; `Trips` = clear the overlay; save uses 9g's `Saved`. | 9h |
+| OQ-A455 | (9h OQ-9h-6) `WizardEditChanged` draws the edit-return note; the iOS seed's baseline already has the return, so iOS shows the edit note. | iOS seed and rule (EditNote); record the difference. | 9h |
+| OQ-A456 | (9h OQ-9h-7) `WizardExcludedEdit` draws the shift-work line plus "Your doctor can tell you what's safe when you travel."; the iOS seed uses the under-18 reason; the server sends one shift reason and no doctor line. | Seed the server's shift-work reason; no doctor line (server copy wins, as 9e); record it. | 9h |
+| OQ-A457 | (9h OQ-9h-8) The iOS `WizardReturnWeb` seed has no edit context, so it shows "New trip" and the plain add-return hint; the board shows "Edit trip" and "· 1 credit". | Seed the edit context (board); the rule is iOS's. | 9h |
+| OQ-A458 | (9h OQ-9h-9) Board back targets from revisited edit steps go to Ready (`backHref` l.262); iOS's `navigationPath` goes to the previous input step (Coming back? → Times). | iOS (9a's model, unchanged); record it. | 9h |
+| OQ-A459 | (9h OQ-9h-11) "Ends after {{count}} nights" has no singular in the iOS catalog ("Ends after 1 nights"). | Use the catalog string as is; report to the iOS session; nights < 2 is rare on web trips. | 9h |
+| OQ-A460 | (9h OQ-9h-12) iOS checks `canEdit`/`canDuplicate` from the card; the plan and 6d keep that. A trip whose `tripInput` shape fails `loadTrip` (legs > 16, bad boundary) throws `Server(null)`. | Treated as "other" failure (edit: server copy; duplicate: duplicate copy). | 9h |
+| OQ-A461 | (9h) OQ-A351 requires 1.0 on every edit step, but pinned iOS clears the floor on revisited input steps and WizardReturnWeb draws 45%. | Orchestrator decision, 2026-11-20: OQ-A351 was a plan default. Keep the 1.0 floor on initial edit Checking, its failures and first Ready (the recorded difference from iOS 0.95); after a revisit, use iOS `go()` floor clearing and `max(progressFloor ?: 0, stepProgress)`. Coming back? is 0.45, and later Checking/Ready use their step weights. | 9a, 9h |
 | OQ-0a-22 | Native libraries in the bundle? | Allow only `libandroidx.graphics.path.so` (Compose graphics-path; excluding it breaks Path conversion below API 34); fail on any other `.so` | 0a, 13 |
 | OQ-0b-1 | Where does `PlanMetrics` live? `08 §3.1` lists it inside `CfDimens`, but its consumer `:core:plan` is a JVM module that cannot depend on `:core:designsystem` | `core/plan/…/generated/PlanMetrics.generated.kt` (Double, dp), as iOS keeps it in `PlanCore` | 0b, 1b, 1c |
 | OQ-0b-2 | Port all iOS TokenGen outputs now (Auth, Settings, Terms, Welcome, PlanUI, Press, LaunchPaint, TypeMetrics), or only colors, sky and type? | All of them now (the iOS files are exact goldens and Phases 2, 3a, 3c, 5a, 9 and 10 need them) | 0b |
@@ -2979,20 +2991,38 @@ Implementation commits (brief §7):
 **Delivers.** Wires Edit and Duplicate from the trip actions sheet. Edit loads the trip input, reviews it with the source revision and saves with PUT, covering every edit variant (changed elsewhere, return removed or added, no credits, web trip ending), the edit checking and failure cards, excluded-on-edit and the discard-changes alert. Duplicate opens on the times step with empty dates and the copied-from line.
 
 **Tasks**
-- [ ] **Edit**, from the trip actions sheet.
+- [x] **Edit**, from the trip actions sheet.
   - Load the input snapshot, review it with the source revision, and save with `PUT trips/{id}`.
   - Variants: `WizardEdit`, `WizardEditChanged`, `WizardEditNoReturn`, `WizardEditReturn`, `WizardEditReturnNoCredits`, `WizardEditWeb` and `WizardReturnWeb`.
   - The edit checking and failure cards (`WizardCheckingEdit`, `WizardCheckOfflineEdit`, `WizardCheckServerEdit`) and `WizardExcludedEdit`.
   - The discard-changes alert (`WizardDiscardEdit`).
-- [ ] **Duplicate** (`WizardDuplicate`): opens on the times step with empty dates and the copied-from line.
-- [ ] **Tests.**
+- [x] **Duplicate** (`WizardDuplicate`): opens on the times step with empty dates and the copied-from line.
+- [x] **Tests.**
   - The ported 17d cases.
   - Guards.
   - One emulator journey: edit a trip → save → the trip page shows the new revision.
 
+Implementation commits:
+- [x] Task 1: prepared-row entry and first-screen back handling.
+- [x] Task 2: edit Ready mapping.
+- [x] Task 3: edit Ready rendering and discard checks.
+- [x] Task 4: web end choice and duplicate subtitle.
+- [x] Task 5: trip actions preparation and busy/failure states.
+- [x] Task 6: app preparer and dependency wiring.
+- [x] Task 7: edit and duplicate board seeds.
+- [x] Task 8: guards and board captures.
+- [x] Task 9: actions-to-wizard entry tests.
+- [x] Task 10: edit emulator journey.
+- [x] Task 11: acceptance documentation and open questions.
+
 **Acceptance**
 - Edit uses the source revision, and a changed-elsewhere trip shows `WizardEditChanged`.
 - Duplicate starts with empty dates.
+
+**Verification (2026-11-20, review round 1):** All review findings are addressed. The unchanged timeline marker test passes five consecutive loaded executions and the single final `make quick`; 5,097 measured cases have zero budget overruns. Quick takes 71.281 s on this worker, above the 60 s warm target. All 1,150 touched-module layout cases, touched-module lint and the pixel edit journey (4.828 s) pass; both ReturnWeb captures are refreshed. The earlier 185 release cases remain the Phase 9h release evidence. See `docs/wizard.md` for the publication-race evidence, named board differences and host follow-up commands.
+
+**Review round 2 verification (2026-11-21):** Prepared wizard requests remain in ViewModel StateFlow until atomic acknowledgement immediately before opening. Single-scheduler JVM cases prove retention across a disposed collector, no replay after acknowledgement and no overwrite by another action. Targeted trip/window/app entry tests and all 13 timeline invalidation cases pass. `make format` and the single `make quick` pass with zero timing-budget overruns; quick takes 64.543 s on this worker, above the 60 s warm target. Round 1’s host check and timeline performance run are already verified (timeline record `bb5a22cc`). See `docs/wizard.md` for the final request hand-off and evidence.
+
 
 ### Phase 10a: Settings home, sign-out and account pages (`feat/phase-10a-settings-home`)
 

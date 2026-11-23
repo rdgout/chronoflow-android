@@ -315,7 +315,7 @@ data class WizardChromeUi(
                 }
             return WizardChromeUi(
                 if (active.wizard.draft.state.edit == null) NavTitle.NewTrip else NavTitle.EditTrip,
-                step != MemberWizardStep.calculating && active.path.isNotEmpty() &&
+                !active.firstScreen && step != MemberWizardStep.calculating && active.path.isNotEmpty() &&
                     (step != MemberWizardStep.checking || (checking?.failure != null && !active.isEditing)),
                 step != MemberWizardStep.calculating,
                 active.progress.toFloat(),
@@ -480,6 +480,7 @@ data class WizardUiState(
     val discardMessage: WizardCopy = WizardCopy("What you entered is not saved."),
     val discardTitle: WizardCopy = WizardCopy("Discard this trip?"),
     val discardConfirmLabel: WizardCopy = WizardCopy("Discard"),
+    val firstScreen: Boolean = false,
 ) {
     companion object {
         fun from(
@@ -539,6 +540,7 @@ data class WizardUiState(
                     net.chronoflow.feature.wizard.calculating.CalculatingUi
                         .from(draft),
                 cue = active.cue,
+                firstScreen = active.firstScreen,
                 discardTitle = WizardCopy(if (active.isEditing) "Discard your changes?" else "Discard this trip?"),
                 discardConfirmLabel = WizardCopy(if (active.isEditing) "Discard changes" else "Discard"),
                 discardMessage =
@@ -618,6 +620,7 @@ data class WizardUiState(
                             draft,
                             active.wizard.choicePending,
                             !closing && !active.wizard.persistenceFailed && !active.wizard.reviewing,
+                            language = language,
                         )
                     } else {
                         null
