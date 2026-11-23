@@ -68,6 +68,8 @@ make baseline-profile                      # regenerates the committed profiles
 | 2026-11-17 | 8b5db6a-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | host | benchmarkRelease, Partial(Require), bounded-swipe-v3 | 66.8/84.0 | 2.2/9.1/57.8 | 27.9/81.9 | 65.2 | 9.8/28.4 | 209.1/604.3 | 0 | 4.3 | 102.9 | -1.7 | 56 | 3 | ok | ok | INVALID (busy host; CPU BAND) |
 | 2026-11-17 | 8b5db6a-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | host | benchmarkRelease, Partial(Require), bounded-swipe-v3 | 156.4/226.1 | 2.4/11.5/113.1 | 48.0/165.3 | 150.8 | 12.0/22.6 | 372.7/970.8 | 0 | 1.4 | 102.7 | -1.7 | 56 | 3 | ok | ok | INVALID (busy host; CPU BAND) |
 | 2026-11-17 | 3a3a442 | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | host | benchmarkRelease, Partial(Require), bounded-swipe-v3 | 67.6/85.0 | 3.3/4.3/5.7 | 2.2/4.8 | -8.1 | 0.0/0.0 | 0.0/0.0 | 0 | 0.8 | 105.6 | -0.2 | 55 | 3 | ok | ok | PASS |
+| 2026-11-19 | 984736e | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | trip | benchmarkRelease, Partial(Require), bounded-swipe-v3 | 99.3/105.3 | 3.8/4.7/6.1 | 2.7/4.3 | -5.3 | 0.0/0.0 | 0.0/0.0 | 0 | 0.5 | 107.2 | -0.1 | 6346 | 4 | ok | ok | PASS |
+| 2026-11-19 | 9c60131 | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | trip | benchmarkRelease, Partial(Require), bounded-swipe-v3 | 82.7/100.0 | 3.8/5.1/6.7 | 3.0/4.7 | -4.6 | 0.0/0.0 | 0.0/0.0 | 0 | 0.4 | 106.9 | 0.2 | 571 | 3 | ok | ok | PASS |
 
 `-dirty` marks a run made with uncommitted changes (here the regenerated baseline profile, committed right after).
 
@@ -391,3 +393,45 @@ Observed values, retained only as the invalid run's evidence: initial first-fram
 The first scroll trace includes a **1673.533 ms PathStencilCoverOp**, **1728.106 ms flush commands** and **1681.548 ms main-thread postAndWait**. These are observations from the invalid run, not causal evidence against the timeline. Query output: `build/phase3a-validation/timeline-band-slices.txt`. No timing budget, workload or marker fallback was changed. Raw archives: `build/perf/timeline/20261117T103423Z-8b5db6a-dirty-light-1.0-bounded-swipe-v3.0uwwyu/` and `build/perf/timeline/20261117T103934Z-8b5db6a-dirty-light-1.0-bounded-swipe-v3.8atRZd/`. Full log: `build/phase3a-validation/perf-timeline.log`.
 
 The resumed worker did not re-run `make perf`, `make perf-timeline` or `make baseline-profile`, per the orchestrator's instruction. Quiet-host scheduling belongs to the orchestrator.
+
+
+## Phase 6b: real trip page
+
+2026-11-19, `feat/phase-6b-trip-page`. The perf entry now uses `TripPageViewModel` and the same `TripPageScreen` as the database-backed route. `benchmark/budgets.json` selects Page `trip`; the first passing trip row starts a separate CPU baseline. Historical host rows are not trip-page evidence. No budget changed.
+
+Measured by the orchestrator on 2026-11-19 (`make perf-timeline`, then `make baseline-profile`). Pixel / emulator-5554, sdk_gphone64_arm64, API 36, host GPU, 60 Hz, en / light / font 1.0, benchmarkRelease, Partial(Require), large60, bounded-swipe-v3. These are emulator gates and reports, never physical-device claims.
+
+The first run, at 984736e (archive `build/perf/timeline/20261119T022453Z-984736e-light-1.0-bounded-swipe-v3.mTbytA`), passed every gate but reported `timelineRecomposeCount` 6346 / 6201 / 6296 per scroll iteration, about three compositions per frame, against 55 on the 1e host page. Its cause was trip-page chrome that read `LazyListState` in composition (the same pattern as OQ-1e-15), fixed in 1f7d790 and 9c60131. `TimelineInvalidationTest#scrollingWithinOneDayDoesNotRecomposePageChrome` now guards it. The run at 9c60131 (archive `build/perf/timeline/20261119T030901Z-9c60131-light-1.0-bounded-swipe-v3.MA0uVc`) is the trip-page baseline:
+
+| Metric | Gate or comparison | Phase 6b, 9c60131 |
+|---|---|---|
+| First timeline frame mean / max | max ≤ 800 ms | 84.2 / 100.0 ms, PASS |
+| TTID mean | report | 102.1 ms |
+| Decode / prepare / typeface mean | report | 10.0 / 11.1 / 0.9 ms |
+| Frame CPU P50 / P90 / P99 | first `trip` row: starts the band | 3.8 / 5.1 / 6.7 ms |
+| Main / RenderThread P99 | report | 3.0 / 4.7 ms |
+| Frame overrun P99, jank %, hitch ms/s | report | -4.6 ms, 0.0 %, 0.0 ms/s |
+| Peak RSS anon / growth | peak ≤ 150 MiB; growth > 40 MiB warns | 106.9 MiB / 0.2 MiB, PASS |
+| Builds on main | 0 | 0, PASS |
+| Placeholder episodes per iteration | ≤ 6 | 0, PASS |
+| Builds / replays per iteration, replay max | report | 40 / 40, 0.4 ms |
+| Recompositions / GC per iteration | report | 571 / 3 (was 6346 / 4 at 984736e) |
+| Last day / end reachability | last day selected, end reached | PASS |
+| Baseline / startup profiles | non-empty; TripPage, DayHeader, SummaryCard | regenerated; `BaselineProfileFilesTest` passes |
+
+The 571 compositions are the same in all three iterations, about 13 for each of the 43 day advances, and the guard proves zero while scrolling within one day. Attributing them to the day-change chrome (top bar title, pills, compact header, day menu) is an inference from the code, not trace-proven. No trend flags apply, because this is the first `trip` row. The StrictMode fixture sweep and a manual trace review were not run for this phase.
+
+Host evidence: the retargeted six-case `TimelineInvalidationTest` passes (suite 3.628 s; individual maximum 2.804 s). Its sustained 120 × 1 dp scroll case takes 0.307 s, the summary minute case 0.090 s, and the perf presented-marker case 0.058 s. These are Robolectric test wall times, not timeline runtime metrics. The static drawing layer, off-main builder, clock isolation and all budget thresholds remain intact.
+
+`make timing` passes all six serial JVM gates in **11.62 s wall** (Gradle 11 s), MacBook-Pro-van-Rick.local / Apple silicon, JDK 21 test toolchain, `:core:plan:timingTest`, one worker. This is host evidence, with no emulator or device build. Decode/layout/preparation samples and drawing samples remain below their existing gates:
+
+| Host measurement | Mean / maximum or median | Unit |
+|---|---|---|
+| S3 decode/layout/preparation | 3.2 / 4.8 | ms |
+| large30 decode/layout/preparation | 5.0 / 5.5 | ms |
+| large60 decode/layout/preparation | 8.4 / 10.3 | ms |
+| Drawing total median, 360 / 411 / 841 dp | 1.5 / 0.8 / 1.6 | ms |
+| Largest day median, 360 / 411 / 841 dp | 0.07 / 0.05 / 0.05 | ms |
+| Drawing bytes maximum, 360 / 411 / 841 dp | 11795 / 11795 / 14089 | bytes |
+
+The synthetic benchmark-checker tests now use Page `trip` for their matching-history fixtures and Page `host` for the isolation case. All 38 checker tests pass; no runtime threshold or history row was changed.

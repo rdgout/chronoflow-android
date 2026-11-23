@@ -65,7 +65,7 @@ class TripRepository(
                 val hash = trip?.currentInputHash
                 val plan = if (hash == null) flowOf(null) else planValues(tripId, hash)
                 combine(plan, checkValues(tripId, hash ?: ""), pendingCheckOffs(tripId)) { p, c, o ->
-                    TripPlanSnapshot(trip = trip, plan = p, checks = c, pendingChecks = o)
+                    TripPlanSnapshot(trip = trip, plan = p, checks = c.sortedBy { it.markedAt }, pendingChecks = o)
                 }
             }.distinctUntilChanged()
 

@@ -7,12 +7,14 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import kotlinx.coroutines.CompletableDeferred
+import net.chronoflow.core.designsystem.theme.ChronoFlowTheme
 import net.chronoflow.core.testing.DeviceProfiles
 import net.chronoflow.core.testing.FakeTextMetrics
 import net.chronoflow.core.testing.compose.ProfileHost
 import net.chronoflow.core.testing.compose.ProfileRule
 import net.chronoflow.core.testing.tiers.Logic
 import net.chronoflow.feature.trip.timeline.TimelineProbe.Kind
+import org.junit.After
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -44,6 +46,10 @@ class TimelinePerfMarkersTest {
             },
         )
 
+    @After fun close() {
+        host.close()
+    }
+
     private fun settle() {
         composeRule.waitForIdle()
         composeRule.onRoot().captureToImage()
@@ -53,7 +59,7 @@ class TimelinePerfMarkersTest {
         composeRule.mainClock.autoAdvance = false
         composeRule.setContent {
             CompositionLocalProvider(LocalTimelineProbe provides probe) {
-                ProfileHost(DeviceProfiles.pixel8) { TimelinePage(host.viewModel, onBlock = {}) }
+                ProfileHost(DeviceProfiles.pixel8) { ChronoFlowTheme { host.Content() } }
             }
         }
         composeRule.mainClock.advanceTimeByFrame()
@@ -61,7 +67,7 @@ class TimelinePerfMarkersTest {
         composeRule.onNodeWithTag("trip.timeline.opening").assertExists()
         composeRule.onNodeWithTag("trip.timeline.presented").assertDoesNotExist()
         composeRule.onNodeWithTag("trip.timeline.preparing").assertExists()
-        val openingDay = host.model.openingDayId
+        val openingDay = host.vm.anchor.value.dayID!!
         assertTrue("the placeholder drew", probe.snapshot().drew(Kind.STATIC, openingDay) >= 1)
 
         gate.complete(Unit)

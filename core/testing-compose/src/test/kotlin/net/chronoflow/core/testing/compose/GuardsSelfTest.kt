@@ -65,7 +65,7 @@ class GuardsSelfTest {
         inside: @Composable () -> Unit = {},
     ) {
         ProfileHost(profile) {
-            Box(Modifier.fillMaxSize().background(Color.White)) {
+            Box(Modifier.fillMaxSize().background(Color.White).testTag("guard.root")) {
                 Column(Modifier.windowInsetsPadding(LocalSafeInsets.current)) {
                     Text(
                         "Title",
@@ -115,6 +115,7 @@ class GuardsSelfTest {
     fun goodLayoutPassesEveryGuard() {
         composeRule.setContent { GoodLayout() }
         Guards.assertAll(composeRule, profile, headings)
+        Guards.assertAll(composeRule, profile, headings, rootTag = "guard.root", scrollIntoView = false)
     }
 
     @Test
@@ -223,6 +224,9 @@ class GuardsSelfTest {
             )
         }
         assertOnlyFails(Guard.SafeArea)
+        assertFailure {
+            Guards.assertInteractiveInSafeArea(composeRule, profile, scrollIntoView = false)
+        }.isInstanceOf(AssertionError::class)
     }
 
     @Composable

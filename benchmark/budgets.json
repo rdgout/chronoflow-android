@@ -385,7 +385,7 @@
       }
     }
   ],
-  "timelinePage": "host",
+  "timelinePage": "trip",
   "timelineReportOnly": {
     "timelineScroll": [
       "timelineScrollWindowMs",

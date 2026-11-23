@@ -22,7 +22,7 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 import kotlin.time.Duration.Companion.seconds
 
-class DetailValuesTest {
+class TripPlanObservationTest {
     @Test fun unknownTripEmitsAnEmptySnapshot() =
         runTest(timeout = 60.seconds) {
             val store = SyncStore(StandardTestDispatcher(testScheduler))
@@ -143,6 +143,43 @@ class DetailValuesTest {
                     expectNoEvents()
                     repository.upsert(trip.copy(revision = "changed"))
                     assertEquals("changed", awaitItem().trip?.revision)
+                    cancelAndIgnoreRemainingEvents()
+                }
+            } finally {
+                withContext(NonCancellable) { store.close() }
+            }
+        }
+
+    @Test fun marksAreOrderedByMarkedAt() =
+        runTest(timeout = 60.seconds) {
+            val store = SyncStore(StandardTestDispatcher(testScheduler))
+            try {
+                val mark = CheckMarkRecord(syncTrip, "hash", "sleep", "2026-11-10", 1, "done", "2")
+                store.database.write { sql ->
+                    sql.saveCheckMark(mark)
+                    sql.saveCheckMark(mark.copy(ordinal = 2, markedAt = "1"))
+                }
+                TripRepository(store.database).detailValues(syncTrip).test {
+                    assertEquals(listOf("1", "2"), awaitItem().checks.map { it.markedAt })
+                    cancelAndIgnoreRemainingEvents()
+                }
+            } finally {
+                withContext(NonCancellable) { store.close() }
+            }
+        }
+
+    @Test fun changingTheInputHashSelectsTheStoredPlan() =
+        runTest(timeout = 60.seconds) {
+            val store = SyncStore(StandardTestDispatcher(testScheduler))
+            try {
+                val repository = TripRepository(store.database)
+                val plan = PlanVersionRecord(syncTrip, "next", "{}".encodeToByteArray(), "now")
+                repository.store(plan, emptyList())
+                repository.detailValues(syncTrip).test {
+                    val first = awaitItem()
+                    assertNull(first.plan)
+                    repository.upsert(first.trip!!.copy(currentInputHash = "next"))
+                    assertEquals(plan, awaitItem().plan)
                     cancelAndIgnoreRemainingEvents()
                 }
             } finally {
