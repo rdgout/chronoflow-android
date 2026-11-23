@@ -12,6 +12,13 @@ def recipes(text):
 
 
 class MakefileTest(unittest.TestCase):
+    def test_today_title_checks_the_fresh_archived_metrics(self):
+        result = run(['make', '-n', 'perf-today-title'], cwd=ROOT)
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertIn('Scripts/check-benchmarks.py --suite today-title --device-class unknown --results-dir "$RESULTS_DIR"', result.stdout)
+        self.assertLess(result.stdout.index('finish_perf_archive;'), result.stdout.index('Scripts/check-benchmarks.py'))
+        self.assertIn('|| status=$?;', result.stdout)
+
     def test_permission_dialog_is_excluded_then_runs_alone_with_apks_kept(self):
         text = (ROOT / "Makefile").read_text()
         self.assertIn("notClass=net.chronoflow.app.reminders.RemindersPermissionDeviceTest", text)

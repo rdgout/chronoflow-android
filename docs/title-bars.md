@@ -26,7 +26,11 @@ functional prep afterwards. Today evidence (JSON, traces and XML) is archived
 under `build/perf/today-title/`, named with the commit. Startup evidence and
 budget results use `docs/perf-startup.md` and `build/perf/startup/` as usual.
 Compare TTID/TTFD and frame CPU/overrun percentiles against the system-font run;
-apply the existing plan.md performance budgets. A missing metric fails evidence.
+apply the existing plan.md performance budgets to startup separately. The Today
+title check requires `frameDurationCpuMs`, `frameOverrunMs`,
+`timeToInitialDisplayMs` and `frameCount` for `todayTitleCollapse` from the fresh
+archive. Missing metrics fail evidence; every Today title value is REPORT-only
+for every device class, with no new performance threshold.
 No device performance measurement has been run for this side task.
 
 The wrapper rename changes profile symbols. Profile regeneration remains an

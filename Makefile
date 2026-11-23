@@ -187,7 +187,9 @@ perf-today-title:
 	    -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.enabledRules=Macrobenchmark \
 	    -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.suppressErrors=EMULATOR \
 	    -Pandroid.testInstrumentationRunnerArguments.timeout_msec=300000 || status=$$?; \
-	  finish_perf_archive; exit $$status'
+	  finish_perf_archive; \
+	  python3 -I Scripts/check-benchmarks.py --suite today-title --device-class unknown --results-dir "$$RESULTS_DIR" || status=$$?; \
+	  exit $$status'
 
 snapshots:
 	$(RUN_TIER) snapshots $(RESULTS_DEBUG) $(TIMINGS_DEBUG) -- $(GRADLE) $(if $(SNAPSHOT_RECORD),recordRoborazziDebug,verifyRoborazziDebug) -Pcf.tier=snapshot

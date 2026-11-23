@@ -20,7 +20,7 @@ RAW_KEYS = {
     "timelineFirstFrameMs": "timelineFirstFrameFirstMs",
 }
 SIGNED_RAW = {"frameOverrunMs"}
-CLASS_SUFFIX = {"startup": ".StartupBenchmark", "timeline": ".TimelineBenchmark", "launch": ".LaunchJankBenchmark", "compare": ".LaunchComparisonBenchmark"}
+CLASS_SUFFIX = {"startup": ".StartupBenchmark", "timeline": ".TimelineBenchmark", "launch": ".LaunchJankBenchmark", "compare": ".LaunchComparisonBenchmark", "today-title": ".TodayTitleBenchmark"}
 TIMELINE_HEADER = (
     "| Date | Commit | Class | Device | API | Hz | GPU | Font | Theme | Page | Build | First frame ms med/max | "
     "CPU P50/P90/P99 ms | Main/Render P99 ms | Overrun P99 ms | Jank % mean/max | Hitch ms/s mean/max | "

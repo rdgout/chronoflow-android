@@ -4,7 +4,8 @@
     "startup": "Startup",
     "timeline": "Timeline",
     "launch": "Launch",
-    "compare": "Compare"
+    "compare": "Compare",
+    "today-title": "Today title"
   },
   "startup": [
     {
@@ -983,6 +984,69 @@
         "report": true
       },
       "lowEnd": {
+        "report": true
+      }
+    }
+  ],
+  "today-title": [
+    {
+      "test": "todayTitleCollapse",
+      "metric": "frameDurationCpuMs",
+      "stat": "P90",
+      "unit": "ms",
+      "reference": {
+        "report": true
+      },
+      "lowEnd": {
+        "report": true
+      },
+      "emulator": {
+        "report": true
+      }
+    },
+    {
+      "test": "todayTitleCollapse",
+      "metric": "frameOverrunMs",
+      "stat": "P99",
+      "unit": "ms",
+      "signed": true,
+      "reference": {
+        "report": true
+      },
+      "lowEnd": {
+        "report": true
+      },
+      "emulator": {
+        "report": true
+      }
+    },
+    {
+      "test": "todayTitleCollapse",
+      "metric": "timeToInitialDisplayMs",
+      "stat": "median",
+      "unit": "ms",
+      "reference": {
+        "report": true
+      },
+      "lowEnd": {
+        "report": true
+      },
+      "emulator": {
+        "report": true
+      }
+    },
+    {
+      "test": "todayTitleCollapse",
+      "metric": "frameCount",
+      "stat": "each",
+      "unit": "count",
+      "reference": {
+        "report": true
+      },
+      "lowEnd": {
+        "report": true
+      },
+      "emulator": {
         "report": true
       }
     }

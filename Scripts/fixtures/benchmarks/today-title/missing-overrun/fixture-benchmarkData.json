@@ -1,0 +1,46 @@
+{
+  "benchmarks": [
+    {
+      "className": "net.chronoflow.benchmark.TodayTitleBenchmark",
+      "name": "todayTitleCollapse",
+      "metrics": {
+        "timeToInitialDisplayMs": {
+          "median": 120.4,
+          "minimum": 119.0,
+          "maximum": 125.0,
+          "runs": [
+            119.0,
+            120.4,
+            125.0
+          ]
+        },
+        "frameCount": {
+          "median": 300,
+          "minimum": 299,
+          "maximum": 310,
+          "runs": [
+            299,
+            300,
+            310
+          ]
+        }
+      },
+      "sampledMetrics": {
+        "frameDurationCpuMs": {
+          "P90": 18.5,
+          "runs": [
+            [
+              18.0
+            ],
+            [
+              18.5
+            ],
+            [
+              19.0
+            ]
+          ]
+        }
+      }
+    }
+  ]
+}
