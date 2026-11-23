@@ -1,27 +1,37 @@
-@file:OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+@file:OptIn(
+    kotlinx.coroutines.ExperimentalCoroutinesApi::class,
+    androidx.compose.runtime.InternalComposeTracingApi::class,
+)
 
 package net.chronoflow.app
 
 import android.app.Application
 import android.content.Intent
+import android.content.res.Configuration
 import android.os.Looper
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.AbstractApplier
 import androidx.compose.runtime.BroadcastFrameClock
+import androidx.compose.runtime.Composer
 import androidx.compose.runtime.Composition
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.CompositionTracer
 import androidx.compose.runtime.Recomposer
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.State
+import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalFontFamilyResolver
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.createFontFamilyResolver
+import androidx.core.view.WindowCompat
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -37,12 +47,15 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
+import net.chronoflow.core.designsystem.generated.CfDarkColors
 import net.chronoflow.core.designsystem.theme.LocalReduceMotion
+import net.chronoflow.core.model.config.ThemeChoice
 import net.chronoflow.core.testing.tiers.Logic
 import net.chronoflow.feature.launch.LaunchController
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -50,6 +63,7 @@ import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
+import org.robolectric.android.controller.ActivityController
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import org.robolectric.shadows.ShadowValueAnimator
@@ -166,6 +180,185 @@ class RootThemeTest {
         compose.mainClock.autoAdvance = false
         assertCfRootBindings(reduceMotion = true)
         assertCfRootBindings(reduceMotion = false)
+    }
+
+    @Config(sdk = [29, 30], application = Application::class)
+    @Test
+    fun cfRootAppliesTheStoredThemeWhenTheSystemIsLight() {
+        withStoredDarkRoot { _, _ ->
+            val pixel = compose.onNodeWithTag("app.root").captureToImage().toPixelMap()[0, 0]
+            assertEquals(CfDarkColors.background, pixel)
+        }
+    }
+
+    @Test
+    @Config(application = Application::class)
+    fun endingTheOverlayDoesNotRecomposeCfRoot() {
+        var roots = 0
+        val tracer =
+            object : CompositionTracer {
+                override fun isTraceInProgress() = true
+
+                override fun traceEventStart(
+                    key: Int,
+                    dirty1: Int,
+                    dirty2: Int,
+                    info: String,
+                ) {
+                    if (".CfRoot (" in info) roots++
+                }
+
+                override fun traceEventEnd() = Unit
+            }
+        Composer.setTracer(tracer)
+        try {
+            withStoredDarkRoot(overlayShowing = true) { graph, _ ->
+                assertTrue(roots > 0)
+                assertTrue(graph.launch.overlayActive)
+                compose.onNodeWithTag("launch.opening").assertExists()
+                roots = 0
+                compose.runOnIdle {
+                    graph.launch.overlayShowing = false
+                    androidx.compose.runtime.snapshots.Snapshot
+                        .sendApplyNotifications()
+                }
+                compose.mainClock.advanceTimeByFrame()
+                compose.mainClock.advanceTimeByFrame()
+                compose.onNodeWithTag("launch.opening").assertDoesNotExist()
+                compose.runOnIdle { assertEquals(0, roots) }
+            }
+        } finally {
+            Composer.setTracer(null)
+        }
+    }
+
+    @Config(sdk = [29, 30])
+    @Test
+    fun configurationCallbackIsFollowedByTheStoredThemeSystemBarEffect() {
+        compose.mainClock.autoAdvance = false
+        RuntimeEnvironment.setQualifiers("+night")
+        val app = RuntimeEnvironment.getApplication() as RecordingApplication
+        runTest(app.mainDispatcher, timeout = 60.seconds) { app.graph.deviceAppearance.setTheme(ThemeChoice.Dark) }
+        val host = Robolectric.buildActivity(MainActivity::class.java, intent(app)).setup()
+        val activity = host.get()
+        val bars = WindowCompat.getInsetsController(activity.window, activity.window.decorView)
+        val applied = mutableListOf<Boolean>()
+        try {
+            activity.setContent {
+                CfRoot(
+                    app.graph,
+                    false,
+                    true,
+                    CompletableDeferred(),
+                    null,
+                    destinations = RoutedWelcomeDestinations(app.graph.rootNavigator),
+                    onSystemBars = { night, overlay, sky ->
+                        applied += night
+                        ReflectionHelpers.callInstanceMethod<Unit>(
+                            activity,
+                            "applySystemBars",
+                            ClassParameter.from(Boolean::class.javaPrimitiveType, night),
+                            ClassParameter.from(Boolean::class.javaPrimitiveType, overlay),
+                            ClassParameter.from(Boolean::class.javaPrimitiveType, sky),
+                        )
+                    },
+                ) {}
+            }
+            compose.mainClock.advanceTimeByFrame()
+            app.mainDispatcher.scheduler.runCurrent()
+            compose.mainClock.advanceTimeByFrame()
+            compose.runOnIdle { assertTrue(applied.last()) }
+            assertFalse(bars.isAppearanceLightNavigationBars)
+            val before = applied.size
+            val configuration =
+                Configuration(activity.resources.configuration).apply {
+                    uiMode = (uiMode and Configuration.UI_MODE_NIGHT_MASK.inv()) or Configuration.UI_MODE_NIGHT_NO
+                }
+            compose.runOnIdle {
+                host.configurationChange(configuration)
+                assertSame(activity, host.get())
+                assertEquals(
+                    Configuration.UI_MODE_NIGHT_NO,
+                    activity.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK,
+                )
+            }
+            compose.mainClock.advanceTimeByFrame()
+            compose.runOnIdle {
+                assertTrue(
+                    "A configuration change must reapply the stored choice even when it remains Dark",
+                    applied.size > before,
+                )
+                assertTrue(applied.last())
+                assertFalse(bars.isAppearanceLightNavigationBars)
+            }
+        } finally {
+            host.pause().stop().destroy()
+            runTest(app.mainDispatcher, timeout = 60.seconds) {
+                withContext(NonCancellable) { app.graph.closeAndJoinForTest() }
+            }
+        }
+    }
+
+    private fun withStoredDarkRoot(
+        overlayShowing: Boolean = false,
+        block: (AppGraph, ActivityController<ComponentActivity>) -> Unit,
+    ) {
+        compose.mainClock.autoAdvance = false
+        RuntimeEnvironment.setQualifiers("+notnight")
+        val main = StandardTestDispatcher()
+        val launchScope = CoroutineScope(SupervisorJob() + main)
+        val app = RuntimeEnvironment.getApplication()
+        val launch =
+            LaunchController(moon = {
+                androidx.compose.ui.graphics
+                    .ImageBitmap(1, 1)
+            }, scope = launchScope)
+        launch.captureAppearance(app.resources.configuration)
+        launch.captureReduceMotion(false, null)
+        launch.overlayShowing = overlayShowing
+        val graph =
+            AppGraph(
+                app,
+                RecordingFontPreloader(),
+                launchProvider = { launch },
+                overrides = GraphOverrides(dispatchers = AppDispatchers(main = main, io = main, default = main)),
+            )
+        val host = Robolectric.buildActivity(ComponentActivity::class.java).setup()
+        try {
+            runTest(main, timeout = 60.seconds) { graph.deviceAppearance.setTheme(ThemeChoice.Dark) }
+            host.get().setContent {
+                CfRoot(
+                    graph,
+                    false,
+                    true,
+                    CompletableDeferred(),
+                    null,
+                    destinations = RoutedWelcomeDestinations(graph.rootNavigator),
+                ) {
+                }
+            }
+            compose.mainClock.advanceTimeByFrame()
+            main.scheduler.runCurrent()
+            compose.mainClock.advanceTimeByFrame()
+            main.scheduler.runCurrent()
+            compose.mainClock.advanceTimeByFrame()
+            compose.waitForIdle()
+            assertEquals(
+                Configuration.UI_MODE_NIGHT_NO,
+                host
+                    .get()
+                    .resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK,
+            )
+            block(graph, host)
+        } finally {
+            host.pause().stop().destroy()
+            runTest(main, timeout = 60.seconds) {
+                withContext(NonCancellable) {
+                    graph.closeAndJoinForTest()
+                    launchScope.coroutineContext.job.cancelAndJoin()
+                }
+            }
+        }
     }
 
     private fun assertCfRootBindings(reduceMotion: Boolean) {

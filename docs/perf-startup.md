@@ -38,6 +38,7 @@ The reference and low-end gates stay open until a device exists (OQ-A22).
 | 2026-11-20 | ed0c402f-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | benchmarkRelease, Partial(Require) | 127.5/116.1/136.5 | FAIL |
 | 2026-11-20 | ed0c402f-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | benchmarkRelease, Partial(Require) | 123.9/119.2/149.3 | PASS |
 | 2026-11-20 | 5cb57682-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | benchmarkRelease, Partial(Require) | 132.9/123.0/144.0 | FAIL |
+| 2026-11-21 | 683eadcf-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | benchmarkRelease, Partial(Require) | 132.1/121.8/152.5 | PASS |
 
 Device rows: open: device only (OQ-A22).
 
@@ -107,6 +108,7 @@ Every mandated validation command was executed; there is no unrun tier to substi
 | 2026-11-20 | ed0c402f-dirty | emulator | sdk_gphone64_arm64 | 60 | benchmarkRelease, Partial(Require) | 50.3 | 13.3 | 192.0 | 99.6/100.0 | PASS |
 | 2026-11-20 | ed0c402f-dirty | emulator | sdk_gphone64_arm64 | 60 | benchmarkRelease, Partial(Require) | 49.5 | 22.3 | 191.0 | 98.0/100.0 | PASS |
 | 2026-11-20 | 5cb57682-dirty | emulator | sdk_gphone64_arm64 | 60 | benchmarkRelease, Partial(Require) | 52.0 | 12.0 | 191.0 | 98.4/100.0 | PASS |
+| 2026-11-21 | 683eadcf-dirty | emulator | sdk_gphone64_arm64 | 60 | benchmarkRelease, Partial(Require) | 50.6 | 12.5 | 190.0 | 99.8/100.0 | PASS |
 
 ## Phase 3a: startup measurements
 
@@ -297,6 +299,7 @@ Near-miss to watch: `welcomeInteractiveMs` (hard 2567.7 ms, min 2549, both from 
 | 2026-11-20 | ed0c402f-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | 1.0 | light | benchmarkRelease, Partial(Require) | 125.4 | 2053.5 | FixtureTodaySource | FAIL |
 | 2026-11-20 | ed0c402f-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | 1.0 | light | benchmarkRelease, Partial(Require) | 127.5 | 2061.1 | FixtureTodaySource | REPORT |
 | 2026-11-20 | 5cb57682-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | 1.0 | light | benchmarkRelease, Partial(Require) | 124.4 | 2061.8 | FixtureTodaySource | FAIL |
+| 2026-11-21 | 683eadcf-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | 1.0 | light | benchmarkRelease, Partial(Require) | 127.6 | 2060.4 | FixtureTodaySource | REPORT |
 
 ## Phase 9c — wizard shell and Where (2026-11-20)
 
@@ -312,3 +315,18 @@ The wizard open path changed, so the profiles were regenerated (`make baseline-p
 | `introLastItemMs` (each) | — | 3200.1–3203.0 |
 
 The host was on battery but not in Low Power Mode (`powermode 2`), and every metric sits within 7% of the Phase 8 AC run, so the run stands. The `FAIL` rows above for 5cb57682 are this run under the old one-frame `welcomeInteractiveMs` gate: its first iteration was 2568.8 ms, 1.1 ms over 2567.7, the same first-iteration miss seen in 4e, 7 and 8 with the welcome path unchanged since 3c. OQ-A382 widens that emulator gate alone to two frames (2584.3 ms); re-checking the same results with `Scripts/check-benchmarks.py --suite startup` and `--suite launch` (emulator, 60 Hz) exits 0. Emulator numbers are reports, never device claims.
+
+## Phase 10b: theme launch-path handoff (2026-11-21)
+
+The root now resolves this device's theme before `RootThemeContent`. DataStore collection begins after `withFrameNanos`; below API 31 the initial choice uses the existing ≤64 B device-config read in `ConfigurationPolicy`. `Application.onCreate` is unchanged. A counting-flow guard fails when the frame barrier is removed and passes with it restored. The native theme cases pass on pixel API 36, including a separately seeded trip-screen toggle with zero debug IO violations. A manual dark cold-start capture has centre-top pixel `#06091C`; its `am start -W` output is an appearance check and is not a benchmark result.
+
+The user will measure startup and regenerate profiles on the host. Neither command was run by the worker:
+
+```sh
+make baseline-profile
+make perf
+```
+
+Record cold/warm TTID, TTFD, frame CPU/jank and RSS from the normal benchmark output here, including build/device and command, and commit the regenerated baseline/startup profiles. No new startup performance numbers are claimed for 10b. No benchmark journey or timeline/plan/trip-page source changed; `make perf-timeline` is not required by the phase's R10.
+
+Review round 1 moves overlay observation and the launch-finish effect into the root theme content lambda. `make targeted ONLY="app:RootThemeTest app:CfRootTest app:CfRootHandOffTest app:RootThemeChoiceTest"` passes 21 cases in 8.56 s tier wall time on the macOS host, JDK 21, debug Robolectric tests. `endingTheOverlayDoesNotRecomposeCfRoot` observes the actual overlay disappearing and **0** root compositions; restoring the original reads produces **1** and fails the guard. Explicit snapshot notification keeps the paused-frame fixture from reporting a false zero. API 29/30 tests also prove the stored choice reaches `CfRoot` and is reapplied to system bars after the real activity configuration callback, even when the resolved Dark choice stays unchanged. These are JVM wiring/scope checks, not startup performance measurements. The host will run the two commands above after this round; no performance/profile tier was run by the worker.

@@ -622,3 +622,21 @@ No emulator performance or profile tier was run, per the orchestrator. Host foll
 | 841 | 0.07 | 0.10 | 1.2 | 14,089 |
 
 The ten large60 `todayView` samples range from 0.49925 to 0.548583 ms (20 ms budget). Evidence: `core/plan/build/test-results/timingTest/TEST-*.xml`, `build/test-results/timing/timings.json`, `/tmp/chronoflow-10a-r1-quick.log`. No emulator performance run or profile regeneration is required for this Settings diff: the host review confirmed unchanged `Application.onCreate` and no new pre-frame reads.
+
+## Phase 10b: serial JVM budget check (2026-11-21)
+
+The single final quick run stopped at a stale glyph-count assertion. After the corrected method passed, the remaining quick stages ran separately, ending with `make timing` (`:core:plan:timingTest --max-workers=1`). All seven cases passed in 3.75 s tier wall time. The timing task executed freshly on the local macOS host using the JDK 21 JVM test toolchain. These are host JVM metrics, not Android frame-time or device claims. No timeline, trip-page, drawing-cache or plan source changed in 10b.
+
+| Preparation fixture | Mean ms | Max ms |
+|---|---:|---:|
+| S3 | 2.8 | 4.2 |
+| large30 | 4.1 | 5.2 |
+| large60 | 6.4 | 8.0 |
+
+| DayDrawing width dp | Worst day median ms | Worst day max ms | Total median ms | Max bytes |
+|---|---:|---:|---:|---:|
+| 360 | 0.06 | 0.08 | 0.9 | 11,795 |
+| 411 | 0.04 | 0.08 | 0.5 | 11,795 |
+| 841 | 0.05 | 0.08 | 1.4 | 14,089 |
+
+The ten large60 `todayView` samples range from 0.580625 to 0.641 ms (20 ms budget). Quick also passed the 13 `TimelineInvalidationTest` and 124 `ListInvalidationTest` cases unchanged. Evidence: `core/plan/build/test-results/timingTest/TEST-*.xml`, `build/test-results/timing/timings.json`, `build/phase-10b/final/quick-timings.json`, `/private/tmp/chronoflow-10b-timing.log`. No emulator performance/profile command was run. R10 does not require `make perf-timeline` for this diff; the root theme startup/profile handoff is recorded in `docs/perf-startup.md`.

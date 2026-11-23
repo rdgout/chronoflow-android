@@ -11,6 +11,10 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.SerializationException
+import kotlinx.serialization.json.JsonObject
+import net.chronoflow.core.model.SettingsSection
+import net.chronoflow.core.model.api.ApiJson
 import net.chronoflow.core.model.session.SessionPresence
 import net.chronoflow.core.model.session.StaleSessionException
 import net.chronoflow.core.model.store.AccountRecord
@@ -86,6 +90,15 @@ class SettingsPagesModel(
         deps.enqueueProfile(name, account.email)
     }
 
+    suspend fun enqueueSettings(
+        section: SettingsSection,
+        patch: JsonObject,
+    ) {
+        if (!active || !deps.isCurrent()) throw StaleSessionException()
+        currentCoroutineContext().ensureActive()
+        deps.enqueueSettings(section, patch)
+    }
+
     private fun failed() {
         if (active) mutableUi.update { it.copy(failed = true) }
     }
@@ -95,5 +108,16 @@ class SettingsPagesModel(
         tasks.forEach(Job::cancel)
         tasks.clear()
         mutableUi.value = SettingsPagesState()
+    }
+}
+
+internal fun SettingsPagesState.section(name: String): JsonObject? {
+    val value = settings.firstOrNull { it.section == name }?.value ?: return null
+    return try {
+        ApiJson.response.parseToJsonElement(value) as? JsonObject
+    } catch (_: SerializationException) {
+        null
+    } catch (_: IllegalArgumentException) {
+        null
     }
 }

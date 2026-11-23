@@ -56,6 +56,15 @@ object LucideGlyphs {
             ),
         )
 
+    val Bell =
+        LucideGlyph(
+            "bell",
+            listOf(
+                LucidePath("M10.268 21a2 2 0 0 0 3.464 0", false),
+                LucidePath("M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326", false),
+            ),
+        )
+
     val Calendar =
         LucideGlyph(
             "calendar",
@@ -369,6 +378,14 @@ object LucideGlyphs {
             ),
         )
 
+    val Minus =
+        LucideGlyph(
+            "minus",
+            listOf(
+                LucidePath("M5 12h14", false),
+            ),
+        )
+
     val Moon =
         LucideGlyph(
             "moon",
@@ -400,6 +417,15 @@ object LucideGlyphs {
             listOf(
                 LucidePath("M5 12h14", false),
                 LucidePath("M12 5v14", false),
+            ),
+        )
+
+    val RotateCcw =
+        LucideGlyph(
+            "rotate-ccw",
+            listOf(
+                LucidePath("M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8", false),
+                LucidePath("M3 3v5h5", false),
             ),
         )
 

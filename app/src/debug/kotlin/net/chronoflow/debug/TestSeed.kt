@@ -51,6 +51,7 @@ data class TestSeed(
     val walkthroughPending: Boolean = false,
     val termsChangesPending: Boolean = false,
     val settingsPending: Boolean = false,
+    val settingsBoardState: String? = null,
 ) {
     val mutationsOffline: Boolean get() = walkthroughPending || termsPending || settingsPending
 
@@ -155,6 +156,10 @@ data class TestSeed(
                     }
                 }
             val settingsRoute = parsed("CF_SETTINGS_ROUTE") { it.takeIf { route -> route in settingsRoutes } }
+            val settingsBoardState =
+                parsed("CF_SETTINGS_BOARD_STATE") {
+                    it.takeIf { state -> state in setOf("bodyMissing", "bodyReady", "bodyAdjusted", "bodyExcluded") }
+                }
             val wizardAutoOpen = flag("CF_WIZARD_AUTO_OPEN")
             return TestSeed(
                 testId = testId,
@@ -201,6 +206,7 @@ data class TestSeed(
                 freezePlanClock = freezePlanClock,
                 planSheet = planSheet,
                 settingsRoute = settingsRoute,
+                settingsBoardState = settingsBoardState,
                 wizardAutoOpen = wizardAutoOpen,
                 wizardBoardCapture = accepted["CF_WIZARD_BOARD_CAPTURE"],
             )

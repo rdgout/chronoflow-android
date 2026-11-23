@@ -26,6 +26,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.core)
 
     testImplementation(project(":core:testing"))
+    testImplementation(project(":core:testing-junit"))
     implementation(project(":core:wizard"))
     testImplementation(libs.junit4)
     testImplementation(libs.robolectric)

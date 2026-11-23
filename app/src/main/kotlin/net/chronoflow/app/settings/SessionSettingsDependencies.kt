@@ -2,10 +2,12 @@ package net.chronoflow.app.settings
 
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.JsonObject
 import net.chronoflow.app.AppGraph
 import net.chronoflow.app.SessionGraph
 import net.chronoflow.core.model.OutboxChange
 import net.chronoflow.core.model.ProfileChange
+import net.chronoflow.core.model.SettingsSection
 import net.chronoflow.core.model.session.StaleSessionException
 import net.chronoflow.core.plan.CopyLineFormatter
 import net.chronoflow.feature.settings.SettingsDependencies
@@ -48,4 +50,13 @@ internal class SessionSettingsDependencies(
     override val zone: ZoneId get() = ZoneId.systemDefault()
 
     override suspend fun formatter() = CopyLineFormatter(app.copyCatalogs.catalog())
+
+    override suspend fun enqueueSettings(
+        section: SettingsSection,
+        patch: JsonObject,
+    ) = withContext(app.dispatchers.io) {
+        val permit = app.controller.mutationPermit(snapshot) ?: throw StaleSessionException()
+        session.outbox.enqueue(OutboxChange.Settings(section, patch), permit)
+        Unit
+    }
 }

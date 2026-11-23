@@ -61,8 +61,14 @@ object TestSeeds {
             DebugAppHooks.resetGraph(app, overrides)
             val credentials = KeystoreSessionStore(File(dir, "ChronoFlowMock/session.bin"), alias, cipher, io)
             val source = sourceForSeed(dir, overrides, io) { credentials.readStoredSession()?.token }
-            SeedRunner(dir, credentials, AndroidAccountDriverFactory(context), source, io)
-                .reseed(seed.signedIn, seed.testId, seed.termsChangesPending, seed.settingsPending)
+            SeedRunner(
+                dir,
+                credentials,
+                AndroidAccountDriverFactory(context),
+                source,
+                io,
+                beforeSignIn = { SettingsBoardCaptureFixture.prepare(dir, seed, app.graph.planClock.now, io) },
+            ).reseed(seed.signedIn, seed.testId, seed.termsChangesPending, seed.settingsPending)
             seed.authTestLink?.let { link ->
                 withContext(app.graph.dispatchers.main) { app.graph.pendingLaunchIntents.captureLink(link) }
             }

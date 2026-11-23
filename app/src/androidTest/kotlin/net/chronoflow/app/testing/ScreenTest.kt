@@ -46,9 +46,9 @@ abstract class ScreenTest {
         private set
 
     /**
-     * Language and theme persist across tests, so every launch resets them to `system` unless [overrides] sets them.
+     * Language and theme persist across tests. A null override omits a default key when checking persistence.
      */
-    protected fun launch(overrides: Map<String, String> = emptyMap()): ActivityScenario<MainActivity> {
+    protected fun launch(overrides: Map<String, String?> = emptyMap()): ActivityScenario<MainActivity> {
         hideKeyboard()
         val launched = ActivityScenario.launch<MainActivity>(seededIntent(overrides))
         scenario = launched
@@ -62,14 +62,14 @@ abstract class ScreenTest {
         targetContext.startActivity(seededIntent(overrides))
     }
 
-    private fun seededIntent(overrides: Map<String, String>): Intent {
+    private fun seededIntent(overrides: Map<String, String?>): Intent {
         val extras =
             mapOf(
                 TestSeed.TEST_ID_KEY to UUID.randomUUID().toString(),
                 TestSeed.PROFILE_KEY to "screen",
                 "cf.settings.language" to "system",
                 "cf.settings.theme" to "system",
-            ) + overrides
+            ).plus(overrides).mapNotNull { (key, value) -> value?.let { key to it } }.toMap()
         seed = TestSeed.parse(extras)
         runBlocking { TestSeeds.apply(targetContext, seed, Dispatchers.IO) }
         return TestSeeds.forwardIntent(targetContext, seed)
