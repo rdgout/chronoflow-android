@@ -1,0 +1,53 @@
+{
+  "trips": [
+    {
+      "card": {
+        "id": "0199a3c0-0000-7000-8000-000000000010",
+        "from": {
+          "iata": "AMS",
+          "city": "Amsterdam",
+          "zone": "Europe/Amsterdam"
+        },
+        "to": {
+          "iata": "HND",
+          "city": "Tokyo",
+          "zone": "Asia/Tokyo"
+        },
+        "departLocal": "2026-10-14T14:30",
+        "arriveLocal": "2026-10-15T08:45",
+        "departureUtc": "2026-10-14T12:30Z",
+        "arrivalUtc": "2026-10-14T23:45Z",
+        "flightNumber": null,
+        "connections": [],
+        "offsetDifferenceMinutes": 420,
+        "progress": {
+          "status": "active",
+          "nextStep": null
+        },
+        "canDelete": true,
+        "canComplete": true,
+        "canReopen": false,
+        "canEdit": true,
+        "canDuplicate": true
+      },
+      "planInputHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "planStartUtc": "2026-10-13T05:30Z",
+      "planStartZone": "Europe/Amsterdam",
+      "planEndUtc": "2026-10-25T03:00Z",
+      "planEndDate": "2026-10-25",
+      "preparationDays": 1,
+      "adaptation": {
+        "goal": "partial",
+        "direction": "earlier",
+        "shiftMin": 420
+      },
+      "keepOffline": true,
+      "detailVersion": "v1",
+      "checkState": {
+        "planInputHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "marks": [],
+        "days": []
+      }
+    }
+  ]
+}

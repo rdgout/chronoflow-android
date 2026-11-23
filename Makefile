@@ -5,6 +5,8 @@ export ANDROID_HOME ?= /opt/homebrew/share/android-commandlinetools
 export JAVA_HOME ?= $(shell /usr/libexec/java_home -v 17)
 export ANDROID_SERIAL ?= emulator-5554
 IOS_REPO ?= /Users/rickgout/Sites/chronoflow-ios
+WEB_REPO ?= /Users/rickgout/Sites/chronoflow-new
+export IOS_REPO WEB_REPO
 GRADLE := ./gradlew --console=plain
 RUN_TIER := Scripts/run-tier.sh
 JVM_MODULES := core:model core:plan core:sync core:reminders core:wizard core:network core:data-mock core:testing konsist tools:tokengen
@@ -16,14 +18,16 @@ GENERATORS += tokens
 GENERATORS += icons
 GENERATORS += strings
 GENERATORS += plan-copy
+GENERATORS += contracts
 GENERATOR_CHECKS += tokens-check
 GENERATOR_CHECKS += fonts-check
 GENERATOR_CHECKS += assets-check
 GENERATOR_CHECKS += strings-check
 GENERATOR_CHECKS += plan-copy-check
+GENERATOR_CHECKS += contracts-check
 
 .PHONY: quick check test format lint targeted generate generators-check size emu emu-down emu-clean avd-create matrix du
-.PHONY: plan-copy-check strings-check tokens tokens-check fonts fonts-check icons assets assets-check strings plan-copy contracts snapshots captures perf perf-timeline baseline-profile
+.PHONY: plan-copy-check strings-check tokens tokens-check fonts fonts-check icons assets assets-check strings plan-copy contracts contracts-check snapshots captures perf perf-timeline baseline-profile
 
 quick:
 	$(RUN_TIER) quick --results '*/build/test-results/test/*.xml' --results '*/*/build/test-results/test/*.xml' --results 'build-logic/convention/build/test-results/test/*.xml' -- $(GRADLE) spotlessCheck $(JVM_MODULES:%=:%:test) :build-logic:convention:test
@@ -122,7 +126,12 @@ plan-copy-check:
 	python3 -I tools/l10n/plan_copy.py --ios "$(IOS_REPO)" --check
 
 contracts:
-	@echo "make $@: lands in Phase 0d (feat/phase-0d-contracts)" >&2; exit 1
+	python3 -I tools/contracts-gen/copy_fixtures.py --ios-repo "$(IOS_REPO)"
+	python3 -I tools/contracts-gen/generate_kotlin.py --web-repo "$(WEB_REPO)"
+
+contracts-check:
+	python3 -I tools/contracts-gen/copy_fixtures.py --ios-repo "$(IOS_REPO)" --check
+	python3 -I tools/contracts-gen/generate_kotlin.py --web-repo "$(WEB_REPO)" --check
 
 snapshots captures perf:
 	@echo "make $@: lands in Phase 0e (feat/phase-0e-test-harness)" >&2; exit 1
