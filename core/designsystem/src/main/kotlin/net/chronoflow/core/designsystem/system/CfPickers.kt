@@ -67,8 +67,16 @@ fun CfDatePickerDialog(
             DatePicker(state, colors = colors)
         } else {
             DatePicker(state, title = {
-                Column(Modifier.padding(horizontal = PlanUITokens.space6.dp).padding(top = PlanUITokens.space4.dp)) {
-                    title?.let { Text(it) }
+                Column(
+                    Modifier
+                        .testTag("cf.date.title.container")
+                        .padding(
+                            start = PlanUITokens.space6.dp,
+                            end = PlanUITokens.space3.dp,
+                            top = PlanUITokens.space4.dp,
+                        ),
+                ) {
+                    title?.let { Text(it, Modifier.testTag("cf.date.title")) }
                     supporting?.let { Text(it, Modifier.testTag("cf.date.supporting"), color = c.mutedForeground) }
                 }
             }, colors = colors)

@@ -19,6 +19,7 @@ import net.chronoflow.core.testing.compose.ProfileHost
 import net.chronoflow.core.testing.compose.ProfileRule
 import net.chronoflow.core.testing.tiers.Layout
 import net.chronoflow.core.ui.R
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -56,15 +57,31 @@ class DatePickerTitleLayoutTest(
             }
         }
         val dialog = compose.onNode(isDialog()).getUnclippedBoundsInRoot()
+        val container = compose.onNodeWithTag("cf.date.title.container").getUnclippedBoundsInRoot()
+        val title = compose.onNodeWithTag("cf.date.title", useUnmergedTree = true).getUnclippedBoundsInRoot()
         val supporting = compose.onNodeWithTag("cf.date.supporting", useUnmergedTree = true).getUnclippedBoundsInRoot()
         val pixel = with(compose.density) { 1.toDp() }
         assertTrue(
             "PickerDateTime title must clear the rounded left corner",
             supporting.left >= dialog.left + PlanUITokens.space6.dp - pixel,
         )
-        assertTrue(
-            "PickerDateTime title must clear the rounded right corner",
-            supporting.right <= dialog.right - PlanUITokens.space6.dp + pixel,
+        assertEquals(
+            "PickerDateTime title must keep M3 start padding",
+            PlanUITokens.space6,
+            (title.left - container.left).value,
+            pixel.value,
+        )
+        assertEquals(
+            "PickerDateTime title must keep M3 asymmetric end padding",
+            PlanUITokens.space3,
+            (container.right - maxOf(title.right, supporting.right)).value,
+            pixel.value,
+        )
+        assertEquals(
+            "PickerDateTime title must keep M3 top padding",
+            PlanUITokens.space4,
+            (title.top - container.top).value,
+            pixel.value,
         )
         assertTrue(
             "PickerDateTime title must clear the top corner",
