@@ -413,6 +413,21 @@ sys.exit(module.main(sys.argv[2:]))
         self.assertEqual(len(report["budgetChecks"]), 1)
         self.assertEqual(report["unbudgeted"], ["c.D#other"])
 
+    def test_ignored_xml_case_needs_no_listener_entry(self):
+        self._xml()
+        xml = self.root / "out/TEST-a.xml"
+        xml.write_text(xml.read_text().replace(
+            "</testsuite>", '<testcase classname="c.D" name="unsupported" time="0"><skipped/></testcase></testsuite>'
+        ))
+        self._timings([self._entry()])
+        result = self.tier("t", "--results", "out/*.xml", "--timings", "tm/*.json", "--",
+                           *self._write_during_run("out/TEST-a.xml", "tm/1.json"))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        report = self._report()
+        self.assertEqual(len(report["budgetChecks"]), 1)
+        self.assertEqual(report["tests"][1]["status"], "skipped")
+        self.assertNotIn("unbudgeted", report)
+
     def test_slowest_lists_top_ten(self):
         self._xml()
         self._timings([self._entry(ms=i, method="m%d" % i) for i in range(1, 16)] + [self._entry(ms=0)])

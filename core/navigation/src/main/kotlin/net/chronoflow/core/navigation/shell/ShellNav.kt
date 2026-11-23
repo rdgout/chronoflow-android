@@ -95,6 +95,14 @@ object ShellNav {
         start: ShellStart,
     ): ShellNavState =
         when (start) {
+            is ShellStart.Settings -> {
+                state.copy(
+                    selected = ShellTab.Settings,
+                    stacks = state.stacks + (ShellTab.Settings to (listOf(Route.Settings) + start.path)),
+                    overlay = null,
+                )
+            }
+
             is ShellStart.Tab -> {
                 select(state, start.tab)
             }

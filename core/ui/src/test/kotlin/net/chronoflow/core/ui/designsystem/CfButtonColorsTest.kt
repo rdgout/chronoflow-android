@@ -38,6 +38,7 @@ class CfButtonColorsTest(
                 "Secondary" to colors.secondary,
                 "Outline" to colors.background,
                 "Ghost" to colors.background,
+                "GhostDestructive" to colors.background,
                 "Destructive" to colors.destructive,
                 "Dawn" to colors.dawn,
                 "OnSky" to colors.skyCopyBackground.compositeOver(colors.background),

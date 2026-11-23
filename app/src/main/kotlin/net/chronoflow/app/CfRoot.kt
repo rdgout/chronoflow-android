@@ -217,8 +217,17 @@ internal fun CfRoot(
                                                 factory = TermsViewModel.Factory,
                                                 extras = onboardingExtras(graph),
                                             ),
-                                            signOutConfirmation = { _, _, _ ->
-                                                // Phase 10a supplies the pending-change confirmation sheet.
+                                            signOutConfirmation = { count, onStay, onDiscard ->
+                                                val current by graph.sessionGraphs.current.collectAsStateWithLifecycle()
+                                                current?.let { session ->
+                                                    val outbox = remember(session) { session.outbox.values() }
+                                                    net.chronoflow.app.settings.TermsSignOutConfirmation(
+                                                        count,
+                                                        outbox,
+                                                        onStay,
+                                                        onDiscard,
+                                                    )
+                                                }
                                             },
                                         )
                                     }

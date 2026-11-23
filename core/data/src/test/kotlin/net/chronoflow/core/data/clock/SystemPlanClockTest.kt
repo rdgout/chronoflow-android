@@ -39,6 +39,12 @@ class SystemPlanClockTest {
     private fun registered() =
         shadowOf(app).registeredReceivers.filter { it.intentFilter.hasAction(Intent.ACTION_TIME_TICK) }
 
+    @Test fun synchronousInstantUsesTheInjectedWallClockWithoutStartingAReceiver() {
+        val clock: net.chronoflow.core.plan.PlanClock = SystemPlanClock(app) { start }
+        assertEquals(Instant.ofEpochMilli(start), clock.now)
+        assertTrue(registered().isEmpty())
+    }
+
     @Test fun systemClockRefreshesForTimeZoneNotification() =
         runTest(timeout = 60.seconds) {
             val emitted = mutableListOf<Instant>()

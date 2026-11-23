@@ -148,6 +148,14 @@ class AppGraph(
         }
     }
     val devicePreferences by lazy { DevicePreferences.shared(app) }
+    val languageFeedback by lazy {
+        net.chronoflow.app.settings
+            .LanguageFeedback()
+    }
+    val languageApplier by lazy {
+        net.chronoflow.app.settings
+            .AppLanguageApplier(app, devicePreferences, dispatchers.io, languageFeedback)
+    }
     val deviceIdentity by lazy { DeviceIdentityStore(devicePreferences) }
     val wiper by lazy { AccountWiper(storageRoot, namespace, sessionStore, io = dispatchers.io) }
     private val accountsLazy: Lazy<SessionAccountDatabase> =

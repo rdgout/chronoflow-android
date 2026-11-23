@@ -83,7 +83,15 @@ internal fun AppShell(
                     )
                 }
             },
-            settings = { render.value(Route.Settings) },
+            settings = {
+                net.chronoflow.app.settings.SettingsEntry(
+                    graph,
+                    sessionGraph,
+                    Route.Settings,
+                    { if (!holder.back()) onRootBack() },
+                    holder::push,
+                )
+            },
             page = { route ->
                 if (route is Route.TripPage) {
                     TripPageRoute(
@@ -99,6 +107,14 @@ internal fun AppShell(
                 } else if (route is Route.Walkthrough) {
                     net.chronoflow.app.onboarding
                         .WalkthroughEntry(graph, replay = true) { holder.back() }
+                } else if (route == Route.Account || route == Route.Profile || route == Route.Language) {
+                    net.chronoflow.app.settings.SettingsEntry(
+                        graph,
+                        sessionGraph,
+                        route,
+                        { if (!holder.back()) onRootBack() },
+                        holder::push,
+                    )
                 } else {
                     render.value(route)
                 }

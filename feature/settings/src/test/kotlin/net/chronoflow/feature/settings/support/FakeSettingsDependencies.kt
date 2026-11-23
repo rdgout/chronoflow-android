@@ -1,0 +1,73 @@
+package net.chronoflow.feature.settings.support
+
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import net.chronoflow.core.model.OutboxChange
+import net.chronoflow.core.model.ProfileChange
+import net.chronoflow.core.model.session.SessionPresence
+import net.chronoflow.core.model.session.SessionSnapshot
+import net.chronoflow.core.model.session.SessionUpdate
+import net.chronoflow.core.model.session.SignOutResult
+import net.chronoflow.core.model.session.StoredSession
+import net.chronoflow.core.model.store.AccountRecord
+import net.chronoflow.core.model.store.OutboxPayload
+import net.chronoflow.core.model.store.OutboxRecord
+import net.chronoflow.core.model.store.SettingsRecord
+import net.chronoflow.core.sync.SyncEvent
+import net.chronoflow.core.testing.FakePlanClock
+import net.chronoflow.feature.settings.SettingsDependencies
+import java.time.ZoneOffset
+
+class FakeSettingsDependencies : SettingsDependencies {
+    override val snapshot = SessionSnapshot(StoredSession("fixture", "019a562b-8000-7000-8000-000000000071"), 1)
+    val account =
+        MutableStateFlow<AccountRecord?>(AccountRecord(snapshot.session.accountId, "Rick Gout", "rick@example.com"))
+    val settings = MutableStateFlow(emptyList<SettingsRecord>())
+    val rows = MutableStateFlow(emptyList<OutboxRecord>())
+    val events = MutableSharedFlow<SyncEvent>(replay = 1)
+    val updates = MutableStateFlow(SessionUpdate(SessionPresence.SignedIn(snapshot.session.accountId), 1))
+    var current = true
+    var requests = 0
+    var saves = 0
+    var save: suspend (String, String) -> Unit = { name, email ->
+        saves++
+        val change = OutboxChange.Profile(ProfileChange(name, email))
+        rows.value += OutboxPayload.record(change, "profile-$saves", "now")
+        account.value = account.value?.copy(name = name)
+    }
+
+    override fun account() = account
+
+    override fun settings() = settings
+
+    override fun outbox() = rows
+
+    override suspend fun pendingOutbox() = rows.value
+
+    override fun syncEvents() = events
+
+    override fun sessionUpdates() = updates
+
+    override suspend fun isCurrent() = current
+
+    override suspend fun signOut(discardPending: Boolean) =
+        if (discardPending || rows.value.isEmpty()) {
+            SignOutResult.SignedOut
+        } else {
+            SignOutResult.NeedsConfirmation(rows.value.size)
+        }
+
+    override suspend fun enqueueProfile(
+        name: String,
+        email: String,
+    ) = save(name, email)
+
+    override suspend fun requestSync() {
+        requests++
+    }
+
+    override val clock = FakePlanClock(settingsNow)
+    override val zone = ZoneOffset.UTC
+
+    override suspend fun formatter(): Nothing = error("No old sync date in this fixture")
+}

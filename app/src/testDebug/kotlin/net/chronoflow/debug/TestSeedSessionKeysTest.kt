@@ -48,6 +48,7 @@ class TestSeedSessionKeysTest(
                 "CF_PLAN_TEST_FREEZE_CLOCK" -> seed.freezePlanClock
                 "CF_PLAN_TEST_SHEET" -> seed.planSheet
                 "CF_SETTINGS_ROUTE" -> seed.settingsRoute
+                "CF_SETTINGS_TEST_PENDING" -> seed.settingsPending
                 "CF_WIZARD_AUTO_OPEN" -> seed.wizardAutoOpen
                 "CF_WIZARD_BOARD_CAPTURE" -> seed.wizardBoardCapture
                 else -> error("unlisted seed key")
@@ -87,13 +88,14 @@ class TestSeedSessionKeysTest(
                     Row("freeze", "CF_PLAN_TEST_FREEZE_CLOCK", "1", true, true, false),
                     Row("step", "CF_PLAN_TEST_SHEET", "step:block", true, TripSheet.Step("block"), false),
                     Row("settings", "CF_SETTINGS_ROUTE", "twoFactorSetup", true, "twoFactorSetup", false),
+                    Row("settings-pending", "CF_SETTINGS_TEST_PENDING", "1", true, true, false),
                     Row("wizard", "CF_WIZARD_AUTO_OPEN", "1", true, true, false),
                     Row("board", "CF_WIZARD_BOARD_CAPTURE", "WizardWhere", true, "WizardWhere", false),
                 )
 
             fun empty(key: String): Any? =
                 when (key) {
-                    "CF_AUTH_TEST_WALKTHROUGH_SEEN", "CF_WALKTHROUGH_TEST_PENDING", "CF_AUTH_TEST_TERMS_CHANGES_PENDING", "CF_AUTH_TEST_TERMS_PENDING", "CF_AUTH_TEST_UNVERIFIED", "CF_PLAN_TEST_POSITION", "CF_PLAN_TEST_FREEZE_CLOCK", "CF_WIZARD_AUTO_OPEN" -> false
+                    "CF_SETTINGS_TEST_PENDING", "CF_AUTH_TEST_WALKTHROUGH_SEEN", "CF_WALKTHROUGH_TEST_PENDING", "CF_AUTH_TEST_TERMS_CHANGES_PENDING", "CF_AUTH_TEST_TERMS_PENDING", "CF_AUTH_TEST_UNVERIFIED", "CF_PLAN_TEST_POSITION", "CF_PLAN_TEST_FREEZE_CLOCK", "CF_WIZARD_AUTO_OPEN" -> false
                     "CF_MOCK_DELAY" -> Duration.ZERO
                     else -> null
                 }

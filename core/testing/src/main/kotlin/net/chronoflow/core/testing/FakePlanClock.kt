@@ -13,7 +13,7 @@ class FakePlanClock(
     private val shared = MutableSharedFlow<Instant>(replay = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
 
     @Volatile
-    var now: Instant = start
+    override var now: Instant = start
         private set
 
     init {

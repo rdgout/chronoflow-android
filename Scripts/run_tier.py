@@ -260,9 +260,10 @@ def _bare(method):
 
 def budget_checks(tests, listener_entries, emulator):
     """Returns (checks, unbudgeted) for the run: listener entries, or one emulator entry per XML testcase."""
+    executed = [test for test in tests if test.get("status") != "skipped"]
     if emulator:
         checks = []
-        for test in tests:
+        for test in executed:
             ms = int(round(test["seconds"] * 1000))
             status = "over" if ms > BUDGETS["emulator"] else "ok"
             checks.append(
@@ -274,7 +275,7 @@ def budget_checks(tests, listener_entries, emulator):
     known |= {(e["class"], _bare(e["method"])) for e in listener_entries}
     unbudgeted = sorted(
         "%s#%s" % (t["class"], t["name"])
-        for t in tests
+        for t in executed
         if (t["class"], t["name"]) not in known and (t["class"], _bare(t["name"])) not in known
     )
     return list(listener_entries), unbudgeted

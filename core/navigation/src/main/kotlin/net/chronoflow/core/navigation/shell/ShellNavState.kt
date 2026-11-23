@@ -12,6 +12,10 @@ data class ShellNavState(
 )
 
 sealed interface ShellStart {
+    data class Settings(
+        val path: List<Route>,
+    ) : ShellStart
+
     data class Tab(
         val tab: ShellTab,
     ) : ShellStart

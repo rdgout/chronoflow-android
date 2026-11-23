@@ -136,6 +136,7 @@ dependencies {
     testImplementation(libs.assertk)
     testImplementation(libs.robolectric)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.androidx.datastore.preferences)
     testImplementation(project(":core:testing"))
     testImplementation(project(":core:testing-junit"))
     testImplementation(project(":core:testing-compose"))

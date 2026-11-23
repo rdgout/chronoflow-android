@@ -40,6 +40,8 @@ object TestSeeds {
     ) = withContext(io) {
         DebugShellStart.reset()
         DebugRefreshProbe.reset()
+        net.chronoflow.feature.settings.SettingsDebugCounters.languageSaved
+            .set(0)
         UITestTimeline.record("seed-begin", seed)
         if (seed.testId != null) {
             val app = context.applicationContext as ChronoFlowApp
@@ -60,7 +62,7 @@ object TestSeeds {
             val credentials = KeystoreSessionStore(File(dir, "ChronoFlowMock/session.bin"), alias, cipher, io)
             val source = sourceForSeed(dir, overrides, io) { credentials.readStoredSession()?.token }
             SeedRunner(dir, credentials, AndroidAccountDriverFactory(context), source, io)
-                .reseed(seed.signedIn, seed.testId, seed.termsChangesPending)
+                .reseed(seed.signedIn, seed.testId, seed.termsChangesPending, seed.settingsPending)
             seed.authTestLink?.let { link ->
                 withContext(app.graph.dispatchers.main) { app.graph.pendingLaunchIntents.captureLink(link) }
             }
