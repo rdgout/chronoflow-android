@@ -48,6 +48,22 @@ class MakefileTest(unittest.TestCase):
             self.assertNotIn("RunnerArguments.annotation=", recipe)
         self.assertIn("Scripts/reminders_permission.py --audit", audit)
 
+    def test_matrix_is_locked_and_supports_only_one_failed_avd(self):
+        result = run(["make", "-n", "matrix", "ONLY=small"], cwd=ROOT)
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertIn("device_lock.py -- bash -ec", result.stdout)
+        self.assertEqual(2, result.stdout.count("for avd in small;"))
+        self.assertIn("--device --emulator", result.stdout)
+        self.assertNotIn("for avd in fold", result.stdout)
+        syntax = run(["bash", "-n", "-c", result.stdout])
+        self.assertEqual(0, syntax.returncode, syntax.stderr)
+
+    def test_matrix_rejects_pixel_before_any_device_command(self):
+        result = run(["make", "-n", "matrix", "ONLY=pixel"], cwd=ROOT)
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn("ONLY must name fold, small or api29", result.stderr)
+        self.assertNotIn("device_lock.py", result.stdout)
+
     def test_device_recipes_take_the_lock(self):
         text = (ROOT / "Makefile").read_text()
         offenders = [

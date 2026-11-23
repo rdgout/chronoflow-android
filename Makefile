@@ -102,19 +102,24 @@ avd-create:
 	@if [ -z "$(AVD)" ]; then echo "usage: make avd-create AVD=fold|small|api29" >&2; exit 1; fi
 	Scripts/emulator.sh create $(AVD)
 
+MATRIX_AVDS = $(if $(strip $(ONLY)),$(strip $(ONLY)),fold small api29)
 matrix:
-	@set -e; for avd in fold small api29; do \
-	  case $$avd in fold) port=5556;; small) port=5558;; api29) port=5560;; esac; \
-	  if ! $(ANDROID_HOME)/cmdline-tools/latest/bin/avdmanager list avd -c | grep -qx $$avd; then \
-	    echo "make matrix: avd '$$avd' is missing; run: make avd-create AVD=$$avd" >&2; exit 1; \
-	  fi; \
-	done; \
-	for avd in fold small api29; do \
-	  case $$avd in fold) port=5556;; small) port=5558;; api29) port=5560;; esac; \
-	  Scripts/emulator.sh ensure $$avd; \
-	  ANDROID_SERIAL=emulator-$$port $(RUN_TIER) smoke-$$avd --device --results 'app/build/outputs/androidTest-results/connected/**/*.xml' -- $(GRADLE) $(SMOKE_TASK); \
-	  Scripts/emulator.sh down $$avd; \
-	done
+	$(if $(filter-out fold small api29,$(MATRIX_AVDS)),$(error matrix: ONLY must name fold, small or api29))
+	python3 -I Scripts/device_lock.py -- bash -ec ' \
+	  for avd in $(MATRIX_AVDS); do \
+	    if ! $(ANDROID_HOME)/cmdline-tools/latest/bin/avdmanager list avd -c | grep -qx "$$avd"; then \
+	      echo "make matrix: avd '\''$$avd'\'' is missing; run: make avd-create AVD=$$avd" >&2; exit 1; \
+	    fi; \
+	  done; \
+	  for avd in $(MATRIX_AVDS); do \
+	    case $$avd in fold) port=5556;; small) port=5558;; api29) port=5560;; esac; \
+	    Scripts/emulator.sh ensure "$$avd"; \
+	    status=0; \
+	    ANDROID_SERIAL=emulator-$$port $(RUN_TIER) smoke-$$avd --device --emulator --results "app/build/outputs/androidTest-results/connected/**/*.xml" -- $(GRADLE) $(SMOKE_TASK) || status=$$?; \
+	    python3 -I Scripts/matrix-result.py --avd "$$avd" --input "build/test-results/smoke-$$avd/timings.json" --output "build/audit/matrix/$$avd.json" || status=$$?; \
+	    if [ "$$status" != 0 ]; then exit "$$status"; fi; \
+	    Scripts/emulator.sh down "$$avd"; \
+	  done'
 
 du:
 	@du -sh ~/.gradle/caches ~/.android/avd build 2>/dev/null || true
