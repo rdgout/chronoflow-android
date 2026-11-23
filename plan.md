@@ -887,6 +887,25 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A302 | The step-gone capture needs a debug path (6d OQ-11) | `CF_PLAN_TEST_FORCE_GONE=1` only if it is a one-line debug branch; otherwise the Robolectric capture of Task 4 is the evidence | 6d |
 | OQ-A303 | The emulator journey's restart step depends on 4e seeding keeping the account DB across a relaunch (6d OQ-12) | Keep it if it does; otherwise the JDBC `CheckOffRestartTest` is the evidence, recorded in the PR | 6d |
 | OQ-A304 | Keyboard focus on invisible timeline targets adds one focus node per block (6d OQ-13) | **Accept.** Re-check `TimelineInvalidationTest`, the compose report and `make perf-timeline`; if a gate fails, make targets focusable only when `LocalInputModeManager.inputMode == Keyboard` and record it | 6d |
+| OQ-A305 | The board draws "Steps" above the list (PlanWide l.85, 111); iOS has the catalog key but never renders it (no `copy("Steps")` in `Sources/` at the pin). (6e OQ-1) | **No label** (iOS). | 6e |
+| OQ-A306 | Hour scale on wide: board 52 px/h, iOS 40 (`04` OQ-T1). (6e OQ-2) | **40 dp/h** everywhere; it keeps day heights width-independent, which makes the resize restore exact. | 6e |
+| OQ-A307 | Wide compact band: board one 36 px row (weekday/date in the gutter, lanes, "Steps"); iOS a title row over the lanes with a list-width spacer. (6e OQ-3) | **iOS**, height `max(36 sp, 32 sp + 4 dp)`. | 6e |
+| OQ-A308 | The breakpoint is the window width (iOS), but Android's rail is 80 dp: windows 600–~683 dp give a timeline column below its minimum width, so those days scroll sideways. (6e OQ-4) | **Keep the window breakpoint** (parity); the horizontal day scroll of 1d covers it. Revisit if the designer prefers a content-width breakpoint. | 6e |
+| OQ-A309 | A resize that changes the rendered mode (phone list ↔ wide timeline): iOS re-applies the list-mode offset to the new day. (6e OQ-5) | **Land on the day's top** (offset 0), like the iOS view toggle. | 6e |
+| OQ-A310 | Wide list container: `Column` + `verticalScroll` or a nested `LazyColumn` (`04 §9.12` suggests lazy above 12 rows). (6e OQ-6) | **`Column`** (≤ ~15 rows per day; large60 averages 12). Switch only if `timelineScrollWide` shows row composition in the trace. | 6e |
+| OQ-A311 | Pin lag: if the pinned list wobbles one frame behind the page on the emulator. (6e OQ-7) | **Per-item layout read retained.** Review round 1: the Robolectric guard passes with automatic clock advancement disabled, 120 deltas advanced exactly one frame each and four first-frame pin checks. An explicitly frame-delayed placement mutation fails the first check by 3 px; restored production placement passes. No fallback is needed for this hosted evidence; emulator visual/trace validation remains separate. Fallback: measure the `LazyColumn` in a page-level `Layout`, then place a per-visible-day list overlay from the fresh `layoutInfo`, forwarding drags to `listState` through a `NestedScrollConnection`. | 6e |
+| OQ-A312 | A wide benchmark needs a wide window on `pixel`. (6e OQ-8) | **`wm size 1840x2208`** in setup, reset in teardown and in the Makefile; report-only except RSS. | 6e |
+| OQ-A313 | Fold driving on the `fold` AVD: `adb emu fold`/`unfold` or `cmd device_state`. (6e OQ-9) | Console commands first, `device_state` fallback; verify on the first requested run. | 6e |
+| OQ-A314 | Page spacing: board main padding 12/20/40 and gap 16; iOS gap 12 and bottom 16 at every width. (6e OQ-10) | **iOS.** | 6e |
+| OQ-A315 | Board pins the full day header with the list at 144 px; iOS pins only the compact band. (6e OQ-11) | **Whatever 6b ships for the header**; the list pins below the compact band (iOS). | 6e |
+| OQ-A316 | Board title "Amsterdam → New York" with a "My trips" back label; iOS shows IATA codes and the system back. (6e OQ-12) | **iOS** (6b/6c already do). | 6e |
+| OQ-A317 | Dutch "Samenvatting van je plan" (board) vs "Plansamenvatting" (iOS catalog). (6e OQ-13) | **iOS catalog.** | 6e |
+| OQ-A318 | Wide list rows min 56 (board) vs the phone row (iOS uses one row at every width). (6e OQ-14) | **iOS row.** | 6e |
+| OQ-A319 | Skeleton shimmer (board `ChronoFlow.Skeleton`) vs static `muted` shapes (iOS). (6e OQ-15) | **Static** (iOS). | 6e |
+| OQ-A320 | Day menu on wide: the board draws a glass panel titled "Go to day" and labels it the system menu (Compose `DropdownMenu` on Android, `PlanWide.dc.html:180`); iOS shows the native menu titled "Go to a day". (6e OQ-16) | **6b's M3 `DropdownMenu`**, "Go to a day" (OQ-T9). | 6e |
+| OQ-A321 | Negative restore offsets (a header item just below the top) need `requestScrollToItem` with a negative offset. (6e OQ-17) | Use it if supported [verify]; else clamp at 0 as iOS does (`max(0, −minY)`), a shift of at most 36 sp. | 6e |
+| OQ-A322 | Wide skeleton day bar radius: board 18 (`PlanRemoteWide.dc.html:55`), iOS `rowRadius` 22 (`WidePlanSkeleton.swift:23`). (6e OQ-18) | **22** (iOS). | 6e |
+| OQ-A323 | Phone list mode outline: the original brief expected one in 6d, but landed 6d deferred it to 6e; iOS passes no `selectedBlockID` to the phone `DayListView` (`TripDayRow.swift:135`). (6e OQ-19) | **Keep 6d's phone behaviour (no outline)**; add the selected outline only to the wide column (iOS). | 6e |
 | OQ-0a-22 | Native libraries in the bundle? | Allow only `libandroidx.graphics.path.so` (Compose graphics-path; excluding it breaks Path conversion below API 34); fail on any other `.so` | 0a, 13 |
 | OQ-0b-1 | Where does `PlanMetrics` live? `08 §3.1` lists it inside `CfDimens`, but its consumer `:core:plan` is a JVM module that cannot depend on `:core:designsystem` | `core/plan/…/generated/PlanMetrics.generated.kt` (Double, dp), as iOS keeps it in `PlanCore` | 0b, 1b, 1c |
 | OQ-0b-2 | Port all iOS TokenGen outputs now (Auth, Settings, Terms, Welcome, PlanUI, Press, LaunchPaint, TypeMetrics), or only colors, sky and type? | All of them now (the iOS files are exact goldens and Phases 2, 3a, 3c, 5a, 9 and 10 need them) | 0b |
@@ -2460,13 +2479,13 @@ Implementation commits (brief §7):
 **Delivers.** Adds the side-by-side trip page from 600 dp (a 280 dp list column, 320 dp from 900 dp, no view toggle) and its remote states. Folding, unfolding, rotating and resizing keep the anchor (day and offset in the day) and any open sheet without recreating the activity. Tests use window-size fakes and the foldInner and landscapeSideNav profiles; the fold AVD check runs on request.
 
 **Tasks**
-- [ ] **Wide layout** (`TripPageLayout`). From 600 dp:
+- [x] **Wide layout** (`TripPageLayout`). From 600 dp:
   - a 280 dp list column (320 dp from 900 dp) beside the timeline, with no view toggle;
   - the wide day menu (`PlanWideDayMenu`);
   - the remote states (`PlanRemoteWide`, `PlanRemoteWideOffline`);
   - `WidePlanSkeleton`.
-- [ ] **In-place size changes** (A8 `configChanges`). Folding, unfolding, rotating and resizing keep `(dayId, offsetInDay)` and any open sheet. Port `TripScrollTracker`.
-- [ ] **Tests.**
+- [x] **In-place size changes** (A8 `configChanges`). Folding, unfolding, rotating and resizing keep `(dayId, offsetInDay)` and any open sheet. Port `TripScrollTracker`.
+- [x] **Tests.**
   - Robolectric width changes 411 → 841 → 411 dp keep the anchor.
   - Guards at `foldInner` and `landscapeSideNav`.
   - The `fold` AVD check runs only on request (T2).
@@ -2474,6 +2493,8 @@ Implementation commits (brief §7):
 **Acceptance**
 - The anchor and any open sheet survive every size change without recreating the activity.
 - The wide page matches the six `PlanWide*` and `PlanRemoteWide*` boards.
+
+**Validation (2026-11-19).** All eleven implementation tasks are complete. The single `make quick` pass succeeds in 55.37 s; app/trip lint passes in 34.60 s. All 29 wide layout cases and 17 board captures passed; resize tests retain day/offset, node identity and sheets. The wide scroll guard schedules zero composition passes for 120 deltas, and rejects a planted composition read with 240 passes. OQ-A305–OQ-A323 record the brief defaults. [Commands, wall times, brief patches and deferred checks](docs/phase-6e-validation.md), [pending perf/profile measurements](docs/perf-timeline.md#phase-6e--wide-and-foldable-page-2026-11-19) and the [on-request fold procedure](docs/device-matrix.md#fold-check-on-request) retain the evidence. Per user instruction, real perf/profile generation, full `make check`, debug StrictMode smoke measurement and T2 fold driving remain with the user. Pixel remains running.
 
 ### Phase 7: Today (`feat/phase-7-today`)
 

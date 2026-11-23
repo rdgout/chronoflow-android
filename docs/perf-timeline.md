@@ -72,6 +72,8 @@ make baseline-profile                      # regenerates the committed profiles
 | 2026-11-19 | 9c60131 | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | trip | benchmarkRelease, Partial(Require), bounded-swipe-v3 | 82.7/100.0 | 3.8/5.1/6.7 | 3.0/4.7 | -4.6 | 0.0/0.0 | 0.0/0.0 | 0 | 0.4 | 106.9 | 0.2 | 571 | 3 | ok | ok | PASS |
 | 2026-11-19 | d61c3ac | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | trip | benchmarkRelease, Partial(Require), bounded-swipe-v3 | 98.9/100.2 | 3.7/4.8/6.6 | 2.8/4.6 | -5.5 | 0.0/0.0 | 0.0/0.0 | 0 | 0.5 | 108.1 | 0.1 | 571 | 3 | ok | ok | PASS |
 | 2026-11-19 | b869739 | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | trip | benchmarkRelease, Partial(Require), bounded-swipe-v3 | 83.3/84.1 | 3.7/4.8/6.7 | 3.0/4.7 | -4.6 | 0.1/0.1 | 0.1/0.3 | 0 | 0.5 | 108.2 | 0.1 | 571 | 3 | ok | ok | PASS |
+| 2026-11-19 | e61c4550 | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | trip | benchmarkRelease, Partial(Require), bounded-swipe-v3 | 99.5/100.2 | 3.6/4.9/6.6 | 2.9/4.8 | -5.0 | 0.0/0.0 | 0.0/0.0 | 0 | 0.6 | 108.1 | -0.0 | 571 | 3 | ok | ok | PASS |
+| 2026-11-19 | e61c4550 | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | trip-wide | benchmarkRelease, Partial(Require), bounded-swipe-v3 | n/a/n/a | 3.6/4.5/6.4 | 3.4/5.1 | -5.8 | 0.0/0.0 | 0.0/0.0 | 0 | 0.7 | 107.7 | -0.1 | 513 | 5 | ok | — | PASS |
 
 `-dirty` marks a run made with uncommitted changes (here the regenerated baseline profile, committed right after).
 
@@ -527,3 +529,46 @@ The baseline journey now opens a checkable block, expands the native sheet, chec
 Both runs sit inside the trip CPU band, next to the 9c60131 row (3.8/5.1/6.7), with zero placeholders, zero main-thread builds and RSS growth under 0.2 MiB. No ±25% FLAGGED line. These are the first in-band `listScroll` numbers. They close OQ-A291: on a quiet host the 6c-and-later stack measures like 6b, so the 6c misses were environmental.
 
 **Profiles:** `make baseline-profile` first failed at "native sheet missing", because the sheet window did not export its test tags. After 6028332 the profiles regenerate in about 4 min; they are committed in b869739.
+
+## Phase 6e — wide and foldable page (2026-11-19)
+
+Implementation adds `TimelineBenchmark.timelineScrollWide`: 15 bounded flings × 3 iterations on large60 at `wm size 1840x2208` (about 701×841 dp at 420 dpi), using the same frame/memory/trace metrics as phone timeline scroll. Readiness checks use structural resource ids with bounded waits. The wide profile journey covers list selection, the step sheet, scrolling and a resize back to phone. Finally/@After cleanup, runner cleanup and the Makefile's trap reset the window; runner cleanup restores functional animator scales. The Makefile trap runs within the device lock.
+
+No emulator performance run or profile generation was performed, per user instruction. No Phase 6e timing, RSS, refresh-rate or jank result is claimed. Existing profile files remain from the prior measured stack until the following user-run regeneration. JVM invalidation proof: 120 within-day deltas schedule zero composition passes; the deliberate composition-read mutation schedules 240 and fails. Source/replay architecture stays A12 (no saveLayer, blur or TextMeasurer; NowLine owns the timeline clock).
+
+User-run commands, with `pixel` already running (`-gpu host`, API 36):
+
+```sh
+export ANDROID_HOME=/opt/homebrew/share/android-commandlinetools
+make baseline-profile
+make perf-timeline
+```
+
+Record the measured commit, actual refresh rate, font scale 1.0, theme and `benchmarkRelease` build. The checker retains phone Page `trip` and appends wide Page `trip-wide`; the wide page cannot enter phone CPU baselines. Wide emulator RSS is gated at 150 MiB; other wide values report, while missing metrics or iterations fail. Physical-device rows keep the phone values and remain open: device only (OQ-A22).
+
+Required evidence for timelineFirstFrame, timelineScroll, timelineLastDay, listScroll and timelineScrollWide: first-frame duration where applicable; raw frameDurationCpuMs P50/P90/P99, frameOverrunMs P99, jank %, hitch ratio, placeholder episodes where applicable, builds on main, replay/target times, recomposition/GC counts and peak anonymous RSS. Raw JSON and Perfetto traces are archived by the existing runner. Record each ±25% phone trend flag against the last three matching PASS rows with its cause; the flag itself is not a gate. Phone first-frame, RSS, placeholder, build-on-main and CPU-band gates still apply.
+
+**Emulator runs (orchestrator, 2026-11-19, `make perf-timeline`, pixel, `-gpu host`):**
+
+| Commit | Run | First frame mean/max ms | CPU P50/P90/P99 ms | Main/RT P99 ms | RSS max MiB | Result |
+|---|---|---:|---:|---:|---:|---|
+| 4dfa6642 | trip (phone) | 99.5/100.9 | 3.7/4.8/6.5 | 3.0/4.7 | 108.1 | PASS |
+| 4dfa6642 | trip-wide (`wm size 1840x2208`, 701 dp) | n/a | 3.6/4.5/6.4 | 3.4/4.9 | 108.0 | PASS |
+| e61c4550 | trip (phone) | 99.5/100.2 | 3.6/4.9/6.6 | 2.9/4.8 | 108.1 | PASS |
+| e61c4550 | trip-wide | n/a | 3.6/4.5/6.4 | 3.4/5.1 | 107.7 | PASS |
+
+`listScroll` CPU P99 was 6.0 ms in both runs. The 4dfa6642 run flagged `timelineReplayMaxMs 0.5 -> 0.9 (+80%)` (a trend flag, not a gate). The review found no code cause (the per-day replay path is unchanged), and the e61c4550 run measured 0.6 ms, so it was emulator noise. Zero placeholders, zero main-thread builds.
+
+**Profiles:** regenerated with the wide journey and committed in 4dfa6642. The round-1 fixes after it change no startup or journey path.
+
+**Pin lag (OQ-A311):** the wide invalidation guard now advances exactly one frame after each scroll delta (fad7add9). It passes, and a deliberately frame-delayed offset fails it by 3 px. The Perfetto and screen-recording inspection was not done; the one-frame guard stands in for it.
+
+**StrictMode smoke** (debug build, the large60 trip, two swipes; the commands below): 0 StrictMode lines.
+
+```sh
+adb -s emulator-5554 logcat -c
+adb -s emulator-5554 shell am start -n net.chronoflow.app.native.debug/net.chronoflow.app.MainActivity --es cf.trip-page large60 --es cf.freezeAt 2026-10-13T08:00:00Z
+adb -s emulator-5554 logcat -d | grep -c StrictMode
+```
+
+T2 fold driving is on request only; see `docs/device-matrix.md`.

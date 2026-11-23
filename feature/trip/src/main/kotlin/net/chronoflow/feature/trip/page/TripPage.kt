@@ -90,6 +90,7 @@ class TripPageScreenState(
     val canActions: Boolean,
     val timeline: Boolean = true,
     val canToday: Boolean = false,
+    val selectedBlock: () -> String? = { null },
 )
 
 @Suppress("ktlint:compose:vm-forwarding-check")
@@ -243,6 +244,11 @@ internal fun rememberTripPageScreenState(
     val anchor by viewModel.anchor.collectAsStateWithLifecycle()
     val refresh by viewModel.refreshState.collectAsStateWithLifecycle()
     val timeline by viewModel.timeline.collectAsStateWithLifecycle()
+    val sheet = viewModel.sheet.collectAsStateWithLifecycle()
+    val selectedBlock = remember(sheet) { { (sheet.value as? net.chronoflow.core.navigation.TripSheet.Step)?.blockId } }
+    val wide =
+        net.chronoflow.core.ui.window.LocalWindowSize.current.width.value >=
+            net.chronoflow.core.designsystem.layout.WindowPolicy.wideBreakpointDp
     val density = LocalDensity.current
     val listState =
         if (ui.state == TripPageState.Ready && ui.plan != null) {
@@ -251,7 +257,7 @@ internal fun rememberTripPageScreenState(
                 val target =
                     if (viewModel.consumeSummaryPosition()) {
                         0 to 0
-                    } else if (!timeline) {
+                    } else if (!timeline && !wide) {
                         (opening.dayID?.let { ui.plan!!.listIndex.headerIndex(it) } ?: 0) to 0
                     } else {
                         restoreTarget(ui.plan!!.index, opening, with(density) { opening.offset.dp.roundToPx() })
@@ -279,5 +285,6 @@ internal fun rememberTripPageScreenState(
         canActions,
         timeline,
         canToday,
+        selectedBlock,
     )
 }

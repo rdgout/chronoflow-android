@@ -23,12 +23,15 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFontFamilyResolver
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.hideFromAccessibility
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.MutableCreationExtras
@@ -46,6 +49,7 @@ import net.chronoflow.core.designsystem.theme.ChronoFlowTheme
 import net.chronoflow.core.designsystem.theme.warmFontsAfterFirstFrame
 import net.chronoflow.core.navigation.RootState
 import net.chronoflow.core.navigation.Route
+import net.chronoflow.core.ui.window.LocalWindowSize
 import net.chronoflow.feature.auth.forgot.ForgotPasswordRoute
 import net.chronoflow.feature.auth.reset.ResetPasswordRoute
 import net.chronoflow.feature.auth.shell.EmailAppLauncher
@@ -107,9 +111,12 @@ internal fun CfRoot(
     val currentRoute = rememberUpdatedState(displayedRoute)
     // Replacing the predicate disposes its reporter and can report before the overlay exits.
     ReportDrawnWhen(remember(graph) { { !graph.launch.overlayActive && currentRoute.value != null } })
+    val window = LocalWindowInfo.current.containerSize
+    val windowSize = with(LocalDensity.current) { DpSize(window.width.toDp(), window.height.toDp()) }
     ChronoFlowTheme(darkTheme = night, reduceMotion = reduceMotion) {
         CompositionLocalProvider(
             LocalSafeInsets provides WindowInsets.safeDrawing,
+            LocalWindowSize provides windowSize,
             LocalLayoutDirection provides LayoutDirection.Ltr,
             LocalTimelineJankTagger provides jankTagger,
         ) {

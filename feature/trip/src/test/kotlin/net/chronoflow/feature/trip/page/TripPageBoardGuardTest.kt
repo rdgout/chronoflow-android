@@ -7,12 +7,15 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.filter
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.isPopup
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onChildren
 import androidx.compose.ui.test.onNodeWithTag
+import net.chronoflow.core.plan.trippage.TripPageLayout
 import net.chronoflow.core.testing.compose.Guards
 import net.chronoflow.core.testing.compose.ProfileRule
 import net.chronoflow.core.testing.tiers.Layout
@@ -62,7 +65,14 @@ class TripPageBoardGuardTest(
             }
 
             "PlanScrolled", "PlanDayMenu" -> {
-                compose.onNodeWithTag("trip.compactHeader").onChildren().assertCountEquals(1)
+                val children = compose.onNodeWithTag("trip.compactHeader").onChildren()
+                val wide = TripPageLayout.resolve(case.profile.widthDp.toDouble()).isWide
+                children.assertCountEquals(if (wide) 3 else 1)
+                children.filter(hasTestTag("trip.lanes")).assertCountEquals(1)
+                if (wide) {
+                    children.filter(hasTestTag("trip.compactHeader.day")).assertCountEquals(1)
+                    children.filter(hasTestTag("trip.compactHeader.zone")).assertCountEquals(1)
+                }
             }
 
             "PlanTimelineTop" -> {

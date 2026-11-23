@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Text
@@ -23,11 +24,13 @@ import net.chronoflow.core.designsystem.icon.LucideGlyphs
 import net.chronoflow.core.designsystem.layout.LocalSafeInsets
 import net.chronoflow.core.designsystem.theme.CfTheme
 import net.chronoflow.core.plan.generated.PlanMetrics
-import net.chronoflow.core.plan.trippage.TripPageLayout
 import net.chronoflow.core.plan.trippage.TripPageState
 import net.chronoflow.core.ui.R
+import net.chronoflow.core.ui.window.LocalWindowSize
 import net.chronoflow.feature.trip.page.TripPageEvent
 import net.chronoflow.feature.trip.page.TripPageScreenState
+import net.chronoflow.feature.trip.wide.TripPageFrame
+import net.chronoflow.feature.trip.wide.WidePlanSkeleton
 
 @Composable
 internal fun TripPageStates(
@@ -37,15 +40,25 @@ internal fun TripPageStates(
     val safe = LocalSafeInsets.current
     val density = LocalDensity.current
     val direction = LocalLayoutDirection.current
+    val windowWidth =
+        LocalWindowSize.current.width.value
+            .toDouble()
     BoxWithConstraints(Modifier.fillMaxSize().testTag("trip.page")) {
-        val gutter = TripPageLayout.resolve(maxWidth.value.toDouble()).gutter.dp
         val left = with(density) { safe.getLeft(this, direction).toDp() }
         val right = with(density) { safe.getRight(this, direction).toDp() }
         val bottom = with(density) { safe.getBottom(this).toDp() }
+        val frame = TripPageFrame.resolve(windowWidth, maxWidth.value.toDouble() - left.value - right.value)
+        val gutter = frame.gutterDp.dp
         LazyColumn(
             state = rememberLazyListState(),
             modifier = Modifier.fillMaxSize().testTag("trip.scroll"),
-            contentPadding = PaddingValues(start = gutter + left, end = gutter + right, bottom = gutter + bottom),
+            contentPadding =
+                PaddingValues(
+                    start = gutter + left,
+                    end = gutter + right,
+                    bottom =
+                        PlanMetrics.gutter.dp + bottom,
+                ),
             verticalArrangement = Arrangement.spacedBy(PlanMetrics.sectionGap.dp),
         ) {
             if (state.ui.page.metadata
@@ -68,9 +81,15 @@ internal fun TripPageStates(
                     item("remoteSummary", "remoteSummary") { RemoteSummaryCard(state.ui.page, state.summaryClock) }
                 }
                 if (state.ui.state == TripPageState.RemoteOffline) {
-                    item("offline", "stateCard") { OfflineCard { onEvent(TripPageEvent.Retry) } }
+                    item("offline", "stateCard") { OfflineCard(frame.layout.isWide) { onEvent(TripPageEvent.Retry) } }
                 } else {
-                    item("skeleton", "skeleton") { TripPageSkeleton(state.ui.state == TripPageState.RemoteLoading) }
+                    item("skeleton", "skeleton") {
+                        if (state.ui.state == TripPageState.RemoteLoading && frame.layout.isWide) {
+                            WidePlanSkeleton(frame)
+                        } else {
+                            TripPageSkeleton(state.ui.state == TripPageState.RemoteLoading)
+                        }
+                    }
                 }
             }
         }
@@ -108,7 +127,10 @@ private fun NoPlanCard() {
 }
 
 @Composable
-private fun OfflineCard(onRetry: () -> Unit) {
+private fun OfflineCard(
+    wide: Boolean,
+    onRetry: () -> Unit,
+) {
     TripPageStateCard(
         LucideGlyphs.CloudUpload,
         CfTheme.colors.mutedForeground,
@@ -116,7 +138,8 @@ private fun OfflineCard(onRetry: () -> Unit) {
         CfTheme.type.planRemoteTitle,
         stringResource(R.string.plan_plans_for_active_trips_and_trips_in_aae908),
         "trip.remote.offline.title",
-        Modifier.testTag("trip.remote.offline"),
+        Modifier.padding(top = if (wide) PlanMetrics.sectionGap.dp else 0.dp).testTag("trip.remote.offline"),
+        wide = wide,
     ) {
         CfButton(
             stringResource(R.string.plan_try_again),

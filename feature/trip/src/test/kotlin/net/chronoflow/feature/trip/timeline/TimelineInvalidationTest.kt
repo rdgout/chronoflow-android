@@ -4,7 +4,9 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import net.chronoflow.core.designsystem.theme.ChronoFlowTheme
@@ -16,6 +18,8 @@ import net.chronoflow.core.plan.generated.PlanMetrics
 import net.chronoflow.core.testing.DeviceProfiles
 import net.chronoflow.core.testing.compose.ProfileHost
 import net.chronoflow.core.testing.compose.ProfileRule
+import net.chronoflow.core.testing.compose.WindowSizeFake
+import net.chronoflow.core.testing.compose.WindowSizeFakeHost
 import net.chronoflow.core.testing.tiers.Logic
 import net.chronoflow.feature.trip.timeline.TimelineProbe.Kind
 import org.junit.After
@@ -41,7 +45,11 @@ import org.robolectric.annotation.GraphicsMode
 class TimelineInvalidationTest {
     private val composeRule = createComposeRule()
 
-    @get:Rule val rules: RuleChain = RuleChain.outerRule(ProfileRule(DeviceProfiles.pixel8)).around(composeRule)
+    @get:Rule val rules: RuleChain =
+        RuleChain
+            .outerRule(
+                ProfileRule(DeviceProfiles.foldInner.copy(widthDp = 1000, heightDp = 914)),
+            ).around(composeRule)
 
     private val probe = CountingTimelineProbe()
     private lateinit var host: TimelineTestHost
@@ -61,17 +69,22 @@ class TimelineInvalidationTest {
         reduceMotion: Boolean = true,
         list: Boolean = false,
         applyChecks: Boolean = false,
+        wide: Boolean = false,
     ) {
         host = TimelineTestHost(startAtSummary = summary, initialTimeline = !list, applyChecks = applyChecks)
         val density = composeRule.density
-        host.prewarm(
-            density,
-            windowDp =
-                (DeviceProfiles.pixel8.widthDp * density.density).toInt() / density.density.toDouble(),
-        )
+        val width =
+            if (wide) {
+                841.0
+            } else {
+                (DeviceProfiles.pixel8.widthDp * density.density).toInt() / density.density.toDouble()
+            }
+        val pixels = kotlin.math.round(width * density.density).toInt()
+        host.prewarm(density, windowDp = pixels / density.density.toDouble())
+        val window = WindowSizeFake(DpSize(width.dp, 914.dp))
         composeRule.setContent {
             CompositionLocalProvider(LocalTimelineProbe provides probe) {
-                ProfileHost(DeviceProfiles.pixel8) {
+                WindowSizeFakeHost(window, insets = DeviceProfiles.pixel8.insets) {
                     ChronoFlowTheme(reduceMotion = reduceMotion) {
                         host.Content()
                         listState = host.listState
@@ -111,6 +124,127 @@ class TimelineInvalidationTest {
             for (kind in kinds) assertEquals("$kind composition of $id", 0, delta.composed(kind, id))
             assertEquals("static draws of $id", 0, delta.drew(Kind.STATIC, id))
         }
+    }
+
+    private fun assertWidePin() {
+        val list = composeRule.onNodeWithTag("trip.wide.list.${dayIds[0]}").fetchSemanticsNode().boundsInRoot
+        val band = composeRule.onNodeWithTag("trip.compactHeader").fetchSemanticsNode().boundsInRoot
+        assertEquals("the list pins in the same layout pass", band.bottom, list.top, 1f)
+    }
+
+    private fun wideScrollDeltas(count: Int) {
+        repeat(count) {
+            composeRule.runOnUiThread { listState!!.dispatchRawDelta(composeRule.density.density) }
+            composeRule.mainClock.advanceTimeByFrame()
+        }
+    }
+
+    @Test fun wideScrollInvalidatesNoStaticLayerOrRow() {
+        start(wide = true, reduceMotion = false)
+        composeRule.runOnIdle {
+            listState!!.requestScrollToItem(
+                host.model.index.timelineIndex(dayIds[0]),
+                with(composeRule.density) { 360.dp.roundToPx() },
+            )
+        }
+        settle()
+        val passes = composeRule.runOnIdle { CompositionPassProbe() }
+        composeRule.mainClock.autoAdvance = false
+        try {
+            val before = probe.snapshot()
+            val beforePasses = passes.count
+            assertTrue("both measured days are already composed", dayIds[1] in before.composedIds(Kind.STATIC))
+            wideScrollDeltas(1)
+            assertWidePin()
+            wideScrollDeltas(39)
+            assertWidePin()
+            wideScrollDeltas(40)
+            assertWidePin()
+            wideScrollDeltas(40)
+            assertWidePin()
+            composeRule.mainClock.autoAdvance = true
+            settle()
+            val delta = probe.snapshot().delta(before)
+            assertNothingStaticMoved(before, delta)
+            assertEquals("no composition during within-day scroll: ${delta.composed}", 0, passes.count - beforePasses)
+            assertEquals(
+                0,
+                delta.composed
+                    .filterKeys {
+                        it.kind in
+                            setOf(Kind.PILLS, Kind.COMPACT, Kind.LIST, Kind.LIST_ROW)
+                    }.values
+                    .sum(),
+            )
+            assertTrue(
+                delta.composed
+                    .filterKeys { it.kind == Kind.ANCHOR }
+                    .values
+                    .sum() <= 1,
+            )
+            val second = dayIds[1]
+            composeRule.runOnIdle {
+                listState!!.requestScrollToItem(host.model.index.headerIndex(second), thresholdPx)
+            }
+            settle()
+            val crossing = probe.snapshot().delta(before)
+            assertNothingStaticMoved(before, crossing)
+            for (id in before.composedIds(Kind.LIST)) {
+                assertEquals("LIST composition of $id across the boundary", 0, crossing.composed(Kind.LIST, id))
+            }
+            for (key in before.composedIds(Kind.LIST_ROW)) {
+                assertEquals(
+                    "list row composition of $key across the boundary",
+                    0,
+                    crossing.composed(Kind.LIST_ROW, key),
+                )
+            }
+            assertEquals(1, crossing.composed(Kind.COMPACT, second))
+            assertTrue(
+                "positive control: the day boundary updates the anchor menu",
+                crossing.composed
+                    .filterKeys { it.kind == Kind.ANCHOR }
+                    .values
+                    .sum() >= 1,
+            )
+        } finally {
+            composeRule.mainClock.autoAdvance = true
+            composeRule.runOnIdle { passes.close() }
+        }
+    }
+
+    @Test fun wideMinuteTickRedrawsOnlyTheClock() {
+        start(wide = true)
+        val before = probe.snapshot()
+        host.clock.advance(host.dayStart(0).plusSeconds(60))
+        settle()
+        val delta = probe.snapshot().delta(before)
+        assertNothingStaticMoved(before, delta, listOf(Kind.STATIC, Kind.HEADER, Kind.TARGETS))
+        assertEquals(1, delta.composed(Kind.CLOCK, dayIds[0]))
+        assertEquals(
+            0,
+            delta.composed
+                .filterKeys { it.kind == Kind.LIST }
+                .values
+                .sum(),
+        )
+    }
+
+    @Test fun wideSelectionRedrawsOneRow() {
+        start(wide = true)
+        val day = host.model.prepared.days[0]
+        val before = probe.snapshot()
+        composeRule.runOnIdle { host.vm.openStep(day.blocks[0].id) }
+        settle()
+        val delta = probe.snapshot().delta(before)
+        assertNothingStaticMoved(before, delta)
+        assertEquals(
+            0,
+            delta.composed
+                .filterKeys { it.kind == Kind.LIST || it.kind == Kind.LIST_ROW }
+                .values
+                .sum(),
+        )
     }
 
     @Test fun scrollingAndTicksInvalidateOnlyAffectedClockChildrenWhileScrolling() {

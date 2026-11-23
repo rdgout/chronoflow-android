@@ -27,7 +27,6 @@ import net.chronoflow.core.testing.FakeTextMetrics
 import net.chronoflow.core.testing.LargeTimelineFixtures
 import net.chronoflow.feature.trip.timeline.TimelineTestPlans
 import net.chronoflow.feature.trip.timeline.TimelineTracer
-import net.chronoflow.feature.trip.timeline.host.timelineAvailableWidthDp
 import net.chronoflow.feature.trip.timeline.host.timelineDrawingKey
 import java.time.Instant
 
@@ -42,6 +41,7 @@ class TripPageTestRig(
     fetchDetail: suspend (String) -> Unit = {},
     makePath: () -> net.chronoflow.core.sync.SyncPathMonitoring? = { null },
     applyChecks: Boolean = false,
+    val savedState: SavedStateHandle = SavedStateHandle(),
 ) {
     val detail = LargeTimelineFixtures.fixture(fixture).detail
     val source = initialSnapshot?.let { FakeTripPageSource(it) } ?: FakeTripPageSource.fixture(fixture)
@@ -67,7 +67,7 @@ class TripPageTestRig(
                             Dispatchers.Unconfined,
                             TimelineTracer.None,
                         ) {},
-                        SavedStateHandle(),
+                        savedState,
                         language,
                         Dispatchers.Unconfined,
                         Dispatchers.Unconfined,
@@ -174,7 +174,12 @@ class TripPageTestRig(
         safeLeft: Double = 0.0,
         safeRight: Double = 0.0,
     ) {
-        val available = timelineAvailableWidthDp(windowDp, safeLeft, safeRight)
+        val available =
+            net.chronoflow.feature.trip.wide.TripPageFrame
+                .resolve(
+                    windowDp,
+                    windowDp - safeLeft - safeRight,
+                ).timelineWidthDp
         for (day in model.prepared.days) {
             val key =
                 timelineDrawingKey(

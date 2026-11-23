@@ -6,13 +6,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
 import assertk.assertThat
 import assertk.assertions.isBetween
 import assertk.assertions.isEqualTo
 import net.chronoflow.core.designsystem.layout.LocalSafeInsets
 import net.chronoflow.core.testing.DeviceProfiles
 import net.chronoflow.core.testing.tiers.Logic
+import net.chronoflow.core.ui.window.LocalWindowSize
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.RuleChain
@@ -39,9 +42,11 @@ class ProfileHostTest(
     fun hostProvidesTheProfileInsetsAndWindowSize() {
         val profile = DeviceProfiles[name]
         var actual: List<Int> = emptyList()
+        var window = DpSize.Zero
         composeRule.setContent {
             val density = LocalDensity.current
             ProfileHost(profile) {
+                window = LocalWindowSize.current
                 val inner = LocalSafeInsets.current
                 actual =
                     listOf(
@@ -55,6 +60,7 @@ class ProfileHostTest(
         }
         composeRule.waitForIdle()
         assertThat(actual).isEqualTo(expected)
+        assertThat(window).isEqualTo(DpSize(profile.widthDp.dp, profile.heightDp.dp))
         val size = composeRule.onRoot().fetchSemanticsNode().size
         assertThat(size.width).isBetween(windowPx.first - 1, windowPx.first + 1)
         assertThat(size.height).isBetween(windowPx.second - 1, windowPx.second + 1)
@@ -65,6 +71,7 @@ class ProfileHostTest(
         @Parameters(name = "{0}")
         fun profiles(): Collection<Array<Any>> =
             listOf(
+                arrayOf("foldInner", listOf(132, 0, 63, 0), 2208 to 1840),
                 arrayOf("small", listOf(48, 0, 96, 0), 720 to 1280),
                 arrayOf("landscapeSideNav", listOf(63, 0, 0, 126), 2399 to 1079),
             )

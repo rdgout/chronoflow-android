@@ -439,3 +439,14 @@ fun noFlowDebounceInSync(scope: KoScope) {
         }
     fail("noFlowDebounceInSync", violations)
 }
+
+fun featureSizesComeFromTheWindow(scope: KoScope) {
+    val violations =
+        scope.moduleFiles().filter { it.module.startsWith("feature/") }.flatMap { file ->
+            Regex("""\b(screenWidthDp|screenHeightDp)\b""")
+                .findAll(file.text)
+                .map { "${file.path}: ${it.value}" }
+                .toList()
+        }
+    fail("featureSizesComeFromTheWindow", violations)
+}

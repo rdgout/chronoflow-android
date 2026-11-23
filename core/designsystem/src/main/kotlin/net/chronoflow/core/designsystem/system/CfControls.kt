@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
@@ -28,6 +29,7 @@ import androidx.compose.ui.node.currentValueOf
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import net.chronoflow.core.designsystem.generated.PlanUITokens
 import net.chronoflow.core.designsystem.haptics.HapticEvent
@@ -197,4 +199,13 @@ fun CfPullToRefreshBox(
             color = CfTheme.colors.dawn,
         )
     }, content = content)
+}
+
+@Composable
+fun CfCircularProgress(
+    strokeWidth: Dp,
+    modifier: Modifier = Modifier,
+    color: Color = CfTheme.colors.mutedForeground,
+) {
+    CircularProgressIndicator(modifier = modifier, color = color, strokeWidth = strokeWidth)
 }

@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -23,6 +24,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
@@ -47,6 +49,7 @@ import net.chronoflow.core.plan.trippage.TripPageLayout
 import net.chronoflow.core.plan.trippage.TripPageState
 import net.chronoflow.core.ui.R
 import net.chronoflow.core.ui.refresh.RefreshFeedbackCapsule
+import net.chronoflow.core.ui.window.LocalWindowSize
 import net.chronoflow.feature.trip.list.DayListRow
 import net.chronoflow.feature.trip.list.ZoneChangeCard
 import net.chronoflow.feature.trip.state.TripPageErrorPage
@@ -55,12 +58,20 @@ import net.chronoflow.feature.trip.timeline.DayTimeline
 import net.chronoflow.feature.trip.timeline.LocalTimelineJankTagger
 import net.chronoflow.feature.trip.timeline.TimelinePresentedMarker
 import net.chronoflow.feature.trip.timeline.TimelineResources
-import net.chronoflow.feature.trip.timeline.host.timelineAvailableWidthDp
 import net.chronoflow.feature.trip.timeline.host.timelineDrawingKey
 import net.chronoflow.feature.trip.timeline.recoverDrawingFailure
+import net.chronoflow.feature.trip.wide.TripPageFrame
+import net.chronoflow.feature.trip.wide.TripScrollTracker
+import net.chronoflow.feature.trip.wide.WideDayRow
+import net.chronoflow.feature.trip.wide.WideListRows
+import net.chronoflow.feature.trip.wide.WidePinSource
+import kotlin.math.roundToInt
 
 private class PageRestoration {
     var job: Job? = null
+    val tracker = TripScrollTracker()
+    var previousIndex: PageIndex? = null
+    var thresholdPx: Int = 0
 }
 
 @Composable
@@ -85,15 +96,21 @@ fun TripPageScreen(
         }
         return
     }
+    val windowWidth =
+        LocalWindowSize.current.width.value
+            .toDouble()
+    val wide = TripPageLayout.resolve(windowWidth).isWide
+    val renderedTimeline = state.timeline || wide
     val plan = state.ui.plan
     val listState = state.listState
     val showToggle =
-        when (state.ui.state) {
-            TripPageState.Ready, TripPageState.Loading, TripPageState.RemoteLoading -> true
-            else -> false
-        }
+        !wide &&
+            when (state.ui.state) {
+                TripPageState.Ready, TripPageState.Loading, TripPageState.RemoteLoading -> true
+                else -> false
+            }
     val dayId = state.anchor.dayID
-    val index = if (state.timeline) plan?.index else plan?.listIndex
+    val index = if (renderedTimeline) plan?.index else plan?.listIndex
     val restoration = remember(listState) { PageRestoration() }
     val header = if (dayId != null && plan?.layouts?.containsKey(dayId) == true) index?.headerIndex(dayId) else null
     var scrolled by remember(listState, header) {
@@ -138,6 +155,7 @@ fun TripPageScreen(
                 toggleEnabled = state.ui.state == TripPageState.Ready && plan != null,
                 onToggle = {
                     restoration.job?.cancel()
+                    restoration.tracker.cancelRestoration()
                     onEvent(TripPageEvent.ToggleView)
                     if (dayId != null && plan != null && listState != null) {
                         val next: PageIndex = if (state.timeline) plan.listIndex else plan.index
@@ -182,6 +200,7 @@ private fun ReadyTripPage(
     onEvent: (TripPageEvent) -> Unit,
 ) {
     val listState = checkNotNull(state.listState)
+    val pin = remember(listState) { WidePinSource(listState) }
     val density = LocalDensity.current
     val safe = LocalSafeInsets.current
     val direction = LocalLayoutDirection.current
@@ -189,14 +208,50 @@ private fun ReadyTripPage(
     val dark = CfTheme.colors.isDark
     val thresholdPx = with(density) { PlanMetrics.compactHeaderHeight.sp.roundToPx() }
     val fadePx = with(density) { PlanMetrics.compactFadeDistance.dp.toPx() }
-    val index: PageIndex = if (state.timeline) plan.index else plan.listIndex
+    val windowWidth =
+        LocalWindowSize.current.width.value
+            .toDouble()
+    val renderedTimeline = state.timeline || TripPageLayout.resolve(windowWidth).isWide
+    val index: PageIndex = if (renderedTimeline) plan.index else plan.listIndex
+    val sizeKey =
+        TripScrollTracker.SizeKey(
+            windowWidth.roundToInt(),
+            density.density,
+            TripPageLayout.resolve(windowWidth),
+            renderedTimeline,
+        )
+    SideEffect {
+        Snapshot.withoutReadObservation {
+            val info = listState.layoutInfo
+            val samples = info.visibleItemsInfo.map { TripScrollTracker.ItemSample(it.key, it.contentType, it.offset) }
+            val restore =
+                restoration.tracker.onSize(
+                    sizeKey,
+                    samples,
+                    info.viewportStartOffset,
+                    restoration.previousIndex ?: index,
+                    index,
+                    restoration.thresholdPx.takeIf { it > 0 } ?: thresholdPx,
+                    listState.isScrollInProgress,
+                )
+            restoration.previousIndex = index
+            restoration.thresholdPx = thresholdPx
+            if (restore != null) {
+                listState.requestScrollToItem(restore.index, restore.offsetPx)
+                restoration.tracker.lastCaptured?.let { captured ->
+                    onEvent(TripPageEvent.Select(captured.dayId, if (captured.onHeader) 0.0 else captured.offsetDp))
+                    onEvent(TripPageEvent.SaveAnchor)
+                }
+            }
+        }
+    }
     val days = plan.prepared.days
     val anchorId = state.anchor.dayID
     val currentState = rememberUpdatedState(state)
     val currentEvent = rememberUpdatedState(onEvent)
 
     fun offsetDp(id: String): Double =
-        if (!state.timeline) {
+        if (!renderedTimeline) {
             0.0
         } else {
             with(density) {
@@ -219,9 +274,9 @@ private fun ReadyTripPage(
         }
     }
     val tagger = LocalTimelineJankTagger.current
-    LaunchedEffect(tagger, anchorId, days, state.timeline) {
+    LaunchedEffect(tagger, anchorId, days, renderedTimeline) {
         val position = days.indexOfFirst { it.id == anchorId }
-        if (position >= 0) tagger?.onVisibleDay(position, if (state.timeline) "timeline" else "list")
+        if (position >= 0) tagger?.onVisibleDay(position, if (renderedTimeline) "timeline" else "list")
     }
     val resources =
         remember(density.density, dark) {
@@ -242,24 +297,50 @@ private fun ReadyTripPage(
                 onEvent(TripPageEvent.Check(id, status))
             }
         }
+    val clocks = state.clocks
+    val selectedBlock = state.selectedBlock
     val onFirstReplay = remember(state.firstFrame) { state.firstFrame::onReplay }
     val onBlock = remember(onEvent) { { id: String -> onEvent(TripPageEvent.Block(id)) } }
-    BoxWithConstraints(Modifier.fillMaxSize().testTag("trip.page")) {
+    val stickyTop =
+        with(density) {
+            maxOf(
+                (PlanMetrics.compactHeaderHeight.dp * fontScale).roundToPx(),
+                (
+                    (PlanMetrics.planListTitleLineHeight + PlanMetrics.planLaneLineHeight).dp * fontScale +
+                        PlanMetrics.smallGap.dp
+                ).roundToPx(),
+            )
+        }
+    BoxWithConstraints(
+        Modifier.fillMaxSize().testTag("trip.page").layout { measurable, constraints ->
+            pin.stickyTopPx = stickyTop
+            pin.bottomInsetPx = safe.getBottom(this)
+            pin.maxHeightPx = PlanMetrics.wideListMaxHeight.dp.roundToPx()
+            val child = measurable.measure(constraints)
+            layout(child.width, child.height) { child.placeRelative(0, 0) }
+        },
+    ) {
         val width = maxWidth.value.toDouble()
         val left = with(density) { safe.getLeft(this, direction).toDp() }
         val right = with(density) { safe.getRight(this, direction).toDp() }
         val bottom = with(density) { safe.getBottom(this).toDp() }
-        val gutter = TripPageLayout.resolve(width).gutter.dp
-        val available = timelineAvailableWidthDp(width, left.value.toDouble(), right.value.toDouble())
-        val compact = width < PlanMetrics.timelineLabelBreakpoint
+        val frame =
+            remember(windowWidth, width, left, right) {
+                TripPageFrame.resolve(windowWidth, width - left.value - right.value)
+            }
+        val gutter = frame.gutterDp.dp
+        val available = frame.timelineWidthDp
+        val compact = frame.compact
         val geometry = rememberUpdatedState(Triple(available, compact, density))
         val appearance = rememberUpdatedState(dark to reduceMotion)
+        val currentLayout = rememberUpdatedState(frame.layout)
         LaunchedEffect(state.commands, listState) {
             state.commands.collect { command ->
+                restoration.tracker.cancelRestoration()
                 restoration.job?.cancel()
                 restoration.job =
                     launch {
-                        if (!currentState.value.timeline) {
+                        if (!currentState.value.timeline && !currentLayout.value.isWide) {
                             val replacement =
                                 snapshotFlow { currentState.value.ui.plan }.first {
                                     it?.layouts?.containsKey(command.dayId) == true
@@ -305,7 +386,13 @@ private fun ReadyTripPage(
         LazyColumn(
             state = listState,
             modifier = Modifier.fillMaxSize().testTag("trip.scroll"),
-            contentPadding = PaddingValues(start = gutter + left, end = gutter + right, bottom = gutter + bottom),
+            contentPadding =
+                PaddingValues(
+                    start = gutter + left,
+                    end = gutter + right,
+                    bottom =
+                        PlanMetrics.gutter.dp + bottom,
+                ),
         ) {
             item("summary", "summary") {
                 SummaryCard(
@@ -328,31 +415,53 @@ private fun ReadyTripPage(
                         Modifier.testTag("trip.headerItem.${day.id}").padding(top = PlanMetrics.sectionGap.dp),
                     ) { DayHeader(day, requestFocus = focusDay == day.id, onFocusRequest = focusHandled) }
                 }
-                if (state.timeline) {
+                if (renderedTimeline) {
                     item("t:${day.id}", "dayTimeline") {
-                        DayTimeline(
-                            day,
-                            plan.layouts.getValue(day.id),
-                            timelineDrawingKey(
-                                day.id,
-                                plan.prepared.revision,
-                                available,
-                                density,
-                                dark,
-                                compact,
-                                plan.language,
-                            ),
-                            position,
-                            available,
-                            state.repository,
-                            resources,
-                            state.clocks.clock(day.id),
-                            onBlock,
-                            onFirstReplay,
-                            state.prefetch,
-                            actions = day.checkActions,
-                            onCheck = onCheck,
-                            headings = { LaneHeadings(null) },
+                        WideDayRow(
+                            day.id,
+                            frame,
+                            timeline = {
+                                DayTimeline(
+                                    day,
+                                    plan.layouts.getValue(day.id),
+                                    timelineDrawingKey(
+                                        day.id,
+                                        plan.prepared.revision,
+                                        available,
+                                        density,
+                                        dark,
+                                        compact,
+                                        plan.language,
+                                    ),
+                                    position,
+                                    available,
+                                    state.repository,
+                                    resources,
+                                    state.clocks.clock(day.id),
+                                    onBlock,
+                                    onFirstReplay,
+                                    state.prefetch,
+                                    actions = day.checkActions,
+                                    onCheck = onCheck,
+                                    headings = { LaneHeadings(null) },
+                                )
+                            },
+                            list =
+                                if (frame.layout.isWide && plan.layouts.containsKey(day.id)) {
+                                    {
+                                        WideListRows(
+                                            day,
+                                            plan.listRows[position],
+                                            clocks.clock(day.id),
+                                            selectedBlock,
+                                            pin,
+                                            onBlock,
+                                            onCheck,
+                                        )
+                                    }
+                                } else {
+                                    null
+                                },
                         )
                     }
                 } else {
@@ -426,16 +535,17 @@ private fun ReadyTripPage(
             visible,
             PaddingValues(start = gutter + left, end = gutter + right),
             Modifier.align(Alignment.TopStart),
-            timeline = state.timeline,
+            timeline = renderedTimeline,
+            wide = frame.takeIf { it.layout.isWide },
         )
-        if (!state.timeline) {
+        if (!renderedTimeline) {
             Box(Modifier.size(PlanMetrics.border.dp).testTag("trip.timeline.ready"))
         }
         Box(
             Modifier
                 .size(
                     PlanMetrics.border.dp,
-                ).testTag(if (state.timeline) "trip.mode.timeline" else "trip.mode.list"),
+                ).testTag(if (renderedTimeline) "trip.mode.timeline" else "trip.mode.list"),
         )
         TimelinePresentedMarker(state.firstFrame.presented, Modifier.align(Alignment.TopStart))
     }

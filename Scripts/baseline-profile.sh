@@ -35,7 +35,11 @@ for prop in ro.boot.qemu ro.kernel.qemu; do
   fi
 done
 
-trap '"$EMULATOR_SH" prep-functional "$SERIAL"' EXIT
+cleanup() {
+  dev shell wm size reset
+  "$EMULATOR_SH" prep-functional "$SERIAL"
+}
+trap cleanup EXIT
 "$EMULATOR_SH" prep-perf "$SERIAL"
 prep_status=$?
 if [ "$prep_status" != 0 ]; then
@@ -66,6 +70,9 @@ required = ("TripPageKt", "TripPageScreenKt", "DayHeaderKt", "SummaryCardKt")
 missing = [name for name in required if f"Lnet/chronoflow/feature/trip/page/{name};" not in profile]
 if missing:
     raise SystemExit("baseline-profile: missing trip page coverage: " + ", ".join(missing))
+for name in ("WideDayRowKt", "PinnedDayListKt", "WideListRowsKt", "TripScrollTracker"):
+    if f"Lnet/chronoflow/feature/trip/wide/{name};" not in profile:
+        raise SystemExit("baseline-profile: missing wide coverage: " + name)
 if "Lnet/chronoflow/feature/trip/list/DayListRowKt;" not in profile:
     raise SystemExit("baseline-profile: missing list row coverage: DayListRowKt")
 PYTHON
