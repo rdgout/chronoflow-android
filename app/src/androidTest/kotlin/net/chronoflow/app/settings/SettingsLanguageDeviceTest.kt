@@ -30,6 +30,8 @@ class SettingsLanguageDeviceTest : ScreenTest() {
                     "CF_AUTH_TEST_WALKTHROUGH_SEEN" to "1",
                     "CF_SETTINGS_ROUTE" to "language",
                     "CF_MOCK_DELAY" to "0",
+                    // Selecting the current choice is a no-op, including under Dutch audit defaults.
+                    "cf.settings.language" to "en",
                 ),
             )
         compose.waitUntilExactlyOneExists(hasTestTag("settings.language.choice.nl"), 5_000)
