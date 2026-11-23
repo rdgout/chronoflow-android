@@ -9,7 +9,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-APP = "net.chronoflow.app.native.debug"
+APP = "net.chronoflow.app.debug"
 TEST_CLASS = "net.chronoflow.app.reminders.RemindersPermissionDeviceTest"
 RUNNER = APP + ".test/androidx.test.runner.AndroidJUnitRunner"
 REPORT = ROOT / "build/reminders-permission/result.xml"

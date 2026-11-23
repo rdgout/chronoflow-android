@@ -8,7 +8,7 @@ import org.junit.Test
 class DebugAppIdentityTest {
     @Test
     fun debugBuildHasTheDebugApplicationId() {
-        assertThat(BuildConfig.APPLICATION_ID).isEqualTo("net.chronoflow.app.native.debug")
+        assertThat(BuildConfig.APPLICATION_ID).isEqualTo("net.chronoflow.app.debug")
         assertThat(BuildConfig.DEBUG).isTrue()
     }
 }

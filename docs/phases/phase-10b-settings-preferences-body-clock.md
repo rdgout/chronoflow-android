@@ -701,8 +701,8 @@ Each task is one commit. Tick the plan box named in a task in that same commit.
 5. `make check` passes with `pixel` booted. It includes `PreferencesThemeDeviceTest`, Lint (`MissingTranslation`, no literal strings), Konsist (no `:feature` → `:feature` edge, no `MaterialTheme.colorScheme` or `isSystemInDarkTheme()` in feature code), `testReleaseUnitTest` (no seed code in release) and `:app:verifyReleaseManifest` (no new permission).
 6. Manual cold-start check on `pixel`, with output pasted into the report:
    - set Dark in the app;
-   - `adb shell am force-stop net.chronoflow.app.native.debug`;
-   - `adb shell am start -W -n net.chronoflow.app.native.debug/net.chronoflow.app.MainActivity`;
+   - `adb shell am force-stop net.chronoflow.app.debug`;
+   - `adb shell am start -W -n net.chronoflow.app.debug/net.chronoflow.app.MainActivity`;
    - `adb exec-out screencap -p > splash.png` within the splash;
    - the centre-top pixel is `#06091C` (dark `skyTop`).
 

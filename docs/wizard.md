@@ -1549,9 +1549,9 @@ Manual process-kill evidence (pixel AVD, API 36, debug mock build): opened Plan 
 ```sh
 adb shell input keyevent KEYCODE_HOME
 adb shell uiautomator dump /sdcard/guest-home.xml
-adb shell am kill net.chronoflow.app.native.debug
-adb shell pidof net.chronoflow.app.native.debug
-adb shell am start -W -a android.intent.action.MAIN -c android.intent.category.LAUNCHER -n net.chronoflow.app.native.debug/net.chronoflow.app.MainActivity
+adb shell am kill net.chronoflow.app.debug
+adb shell pidof net.chronoflow.app.debug
+adb shell am start -W -a android.intent.action.MAIN -c android.intent.category.LAUNCHER -n net.chronoflow.app.debug/net.chronoflow.app.MainActivity
 adb exec-out screencap -p > build/captures/GuestRecoveryAfterKill.png
 ```
 
@@ -1719,7 +1719,7 @@ The journey now asserts the shell's selected top route is a trip page whose ID e
 
 **Keyboard diagnosis.** The two earlier candidate runs failed in the test body (1.769 s assertion; 6.673 s five-second timeout), while the host had also reported activity-window cleanup timing out. A further diagnostic run captured a persistent product defect before teardown: the confirmation field's full bottom was **1548 px**, below the keyboard top at **1517 px**, and its clipped bottom was exactly 1517 px. Both activity and focused sheet windows were **1080 × 2400 px**, reporting an **883 px** IME inset. The sheet's screen origin was (0,0), and its soft-input mode was 48 (`ADJUST_NOTHING`). The five-second diagnostic wait failed in 6.780 s total test time (Gradle 13 s), so this was not merely an early measurement or an origin mismatch.
 
-The failure screenshot was captured while the test was still holding the focused sheet open, using `adb exec-out screencap -p`: `build/diagnostics/11b-review1/failure.png`. Measurements and the window-manager dump are alongside it in `geometry.log` and `window.txt`. The PNG visibly shows the lower part of the confirmation field covered by the IME. These are local diagnostic artifacts; temporary test logging and the screenshot handshake were removed from the sources. An initial diagnostic setup tried `adb shell run-as net.chronoflow.app.native.debug rm -f cache/r1-ime-captured` before Gradle installed the app and returned `run-as: unknown package: net.chronoflow.app.native.debug`; removing that unnecessary pre-install cleanup resolved setup.
+The failure screenshot was captured while the test was still holding the focused sheet open, using `adb exec-out screencap -p`: `build/diagnostics/11b-review1/failure.png`. Measurements and the window-manager dump are alongside it in `geometry.log` and `window.txt`. The PNG visibly shows the lower part of the confirmation field covered by the IME. These are local diagnostic artifacts; temporary test logging and the screenshot handshake were removed from the sources. An initial diagnostic setup tried `adb shell run-as net.chronoflow.app.debug rm -f cache/r1-ime-captured` before Gradle installed the app and returned `run-as: unknown package: net.chronoflow.app.debug`; removing that unnecessary pre-install cleanup resolved setup.
 
 `GuestSignupContent` already applies `imePadding` around a scroll viewport, and its focus-driven reveal uses the same `AuthKeyboardReveal` as Phase 5d's full-screen sign-up form. M3 gives `CfModalBottomSheet` its own edge-to-edge window, uses `ADJUST_NOTHING` from API 30, and handles IME content insets. Pinned iOS `GuestSignupView` uses a keyboard-aware `ScrollView` in a large native sheet with interactive keyboard dismissal. No additional inset or soft-input override was needed.
 

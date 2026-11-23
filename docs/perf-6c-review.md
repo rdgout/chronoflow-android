@@ -16,7 +16,7 @@ Sources under `build/perf/timeline/`, each `TimelineBenchmark_timelineScroll_ite
 - `20261119T095549Z-4b036c7-light-1.0-bounded-swipe-v3.pR7qS5` (6c, first).
 - `20261119T100443Z-4b036c7-light-1.0-bounded-swipe-v3.tnloBZ` (6c, recheck).
 
-Parsed with Perfetto Python 0.59.1 and its SHA-verified mac-arm64 v59.1 trace processor, installed only in `build/phase6c-perf-review/`. Reproduction scripts, exact SQL, trace paths and JSON results are there (`inspect_traces.py`, `deeper.py`, `control_window.py`). App rows join `slice` → `thread_track` → `thread` → `process`, restricted to `process.name = 'net.chronoflow.app.native'`; frame rows select main-thread `Choreographer#doFrame%` and RenderThread `DrawFrame%`. Child rows join `child.parent_id = frame.id`. Durations are nanoseconds divided by 1e6; percentiles use Perfetto SQL `percentile(dur, 99)`.
+Parsed with Perfetto Python 0.59.1 and its SHA-verified mac-arm64 v59.1 trace processor, installed only in `build/phase6c-perf-review/`. Reproduction scripts, exact SQL, trace paths and JSON results are there (`inspect_traces.py`, `deeper.py`, `control_window.py`). App rows join `slice` → `thread_track` → `thread` → `process`, restricted to `process.name = 'net.chronoflow.app'`; frame rows select main-thread `Choreographer#doFrame%` and RenderThread `DrawFrame%`. Child rows join `child.parent_id = frame.id`. Durations are nanoseconds divided by 1e6; percentiles use Perfetto SQL `percentile(dur, 99)`.
 
 The reusable frame/child/control queries are committed in [phase-6c-frame-breakdown.sql](perf/phase-6c-frame-breakdown.sql).
 

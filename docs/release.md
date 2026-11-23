@@ -124,7 +124,7 @@ Merged permission lines:
 <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 <uses-permission android:name="android.permission.WAKE_LOCK" />
-<uses-permission android:name="net.chronoflow.app.native.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
+<uses-permission android:name="net.chronoflow.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
 ```
 
 Every exported component:

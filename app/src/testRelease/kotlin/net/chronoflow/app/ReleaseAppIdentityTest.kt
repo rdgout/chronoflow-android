@@ -8,7 +8,7 @@ import org.junit.Test
 class ReleaseAppIdentityTest {
     @Test
     fun releaseBuildHasTheProductionApplicationId() {
-        assertThat(BuildConfig.APPLICATION_ID).isEqualTo("net.chronoflow.app.native")
+        assertThat(BuildConfig.APPLICATION_ID).isEqualTo("net.chronoflow.app")
         assertThat(BuildConfig.DEBUG).isFalse()
     }
 }

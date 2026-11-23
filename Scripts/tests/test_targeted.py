@@ -38,6 +38,7 @@ class TargetedTest(unittest.TestCase):
         self.assertTrue(result.stdout.startswith("python3 -I Scripts/device_lock.py --"), result.stdout)
         self.assertIn("am instrument", result.stdout)
         self.assertIn("class net.chronoflow.app.AppLaunchSmokeTest", result.stdout)
+        self.assertIn("net.chronoflow.app.debug.test/androidx.test.runner.AndroidJUnitRunner", result.stdout)
 
     def test_permission_dialog_runs_alone_after_install_and_external_revoke(self):
         result = targeted("app:RemindersPermissionDeviceTest", env={"REUSE_BUILD": ""})

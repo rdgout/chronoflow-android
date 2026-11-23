@@ -6,7 +6,7 @@ Phase 14 evidence/resolutions are in [verification.md](verification.md#6-open-qu
 
 709 question rows, including legacy phase identifiers. OQ-A68 remains intentionally unused.
 
-- **OQ-A1** — `net.chronoflow.app.native` until the first Play upload; then `net.chronoflow.app` if RN never shipped on Play. If 0a finds the `native` segment rejected, use `net.chronoflow.app.android`. — Affected phases: 0a, 13.
+- **OQ-A1** — `net.chronoflow.app` until the first Play upload; then `net.chronoflow.app` if RN never shipped on Play. If 0a finds the `native` segment rejected, use `net.chronoflow.app.android`. — Affected phases: 0a, 13.
 
 - **OQ-A2** — 29 — Affected phases: 0a.
 

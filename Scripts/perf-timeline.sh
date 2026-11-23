@@ -71,7 +71,7 @@ if [ "$prep_status" != 0 ]; then
   exit "$prep_status"
 fi
 if [ "$IS_EMU" = 1 ] || [ "${PERF_CLEAR:-0}" = 1 ]; then
-  step "$ADB" -s "$SERIAL" shell pm clear net.chronoflow.app.native || true
+  step "$ADB" -s "$SERIAL" shell pm clear net.chronoflow.app || true
 else
   echo "state: as found (set PERF_CLEAR=1 to clear app data)"
 fi

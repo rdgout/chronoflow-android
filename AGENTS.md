@@ -156,7 +156,7 @@ How the harness works:
 ## Traps
 
 - **Splash keep condition.** Release it from the launch overlay's `onPlaced` callback (`overlayPlaced`). The system splash holds back drawing until the condition is false, so a flag set while drawing never flips, and the app hangs on the splash.
-- **`native` is a Java keyword.** It appears only in the `applicationId`, `net.chronoflow.app.native`. Namespaces and packages are `net.chronoflow.app`, `net.chronoflow.core.<module>` and `net.chronoflow.feature.<module>`. Each module's namespace must be distinct, because `android.uniquePackageNames` is on.
+- **`native` is a Java keyword.** Never use it as a namespace or Kotlin package segment. The final `applicationId` is `net.chronoflow.app` (user, 2026-11-23). Namespaces and packages are `net.chronoflow.app`, `net.chronoflow.core.<module>` and `net.chronoflow.feature.<module>`. Each module's namespace must be distinct, because `android.uniquePackageNames` is on.
 - **AGP 9 defaults stay on.** AGP's built-in Kotlin compiles Kotlin:
   - never apply `org.jetbrains.kotlin.android`;
   - never set `android.builtInKotlin=false` or `android.newDsl=false` (the RN app's opt-outs);

@@ -667,14 +667,14 @@ Rules for the journey:
 
 ### Task 10: Server doc, auth doc and plan (`docs(app): document app links and the reset flow`) [ticks "docs/app-links.md"]
 - **`docs/app-links.md`:**
-  - **What the app declares:** the §5.8 filter, and package `net.chronoflow.app.native`. The debug package `net.chronoflow.app.native.debug` never verifies, by design.
+  - **What the app declares:** the §5.8 filter, and package `net.chronoflow.app`. The debug package `net.chronoflow.app.debug` is listed for local/staging with its matching certificate (user, 2026-11-23; see `docs/app-links.md`).
   - **What the server must publish (S1).** `GET https://app.chronoflow.net/.well-known/assetlinks.json` must answer HTTP 200 with `Content-Type: application/json`, no redirect, no cookies and no auth, and must work outside maintenance mode. Serve it like the AASA route (`05 §15.6`):
     ```json
     [{
       "relation": ["delegate_permission/common.handle_all_urls",
                    "delegate_permission/common.get_login_creds"],
       "target": {"namespace": "android_app",
-                 "package_name": "net.chronoflow.app.native",
+                 "package_name": "net.chronoflow.app",
                  "sha256_cert_fingerprints": ["<Play app-signing certificate SHA-256, AA:BB:… form>"]}
     }]
     ```

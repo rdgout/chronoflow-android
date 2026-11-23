@@ -117,21 +117,21 @@ Lint used `./gradlew :app:lintDebug :feature:settings:lintDebug :feature:onboard
 The first manual start ran after the connected runner had removed the APK:
 
 ```text
-$ adb shell am start -W -n net.chronoflow.app.native.debug/net.chronoflow.app.MainActivity
-Starting: Intent { cmp=net.chronoflow.app.native.debug/net.chronoflow.app.MainActivity }
+$ adb shell am start -W -n net.chronoflow.app.debug/net.chronoflow.app.MainActivity
+Starting: Intent { cmp=net.chronoflow.app.debug/net.chronoflow.app.MainActivity }
 Error type 3
-Error: Activity class {net.chronoflow.app.native.debug/net.chronoflow.app.MainActivity} does not exist.
+Error: Activity class {net.chronoflow.app.debug/net.chronoflow.app.MainActivity} does not exist.
 ```
 
 After `adb install -r app/build/outputs/apk/debug/app-debug.apk`, the debug receiver seeded Preferences/Dark with a fresh test id. The separate manual cold-start check then ran under the device lock:
 
 ```text
-$ adb shell am force-stop net.chronoflow.app.native.debug
-$ adb shell am start -W -n net.chronoflow.app.native.debug/net.chronoflow.app.MainActivity
-Starting: Intent { cmp=net.chronoflow.app.native.debug/net.chronoflow.app.MainActivity }
+$ adb shell am force-stop net.chronoflow.app.debug
+$ adb shell am start -W -n net.chronoflow.app.debug/net.chronoflow.app.MainActivity
+Starting: Intent { cmp=net.chronoflow.app.debug/net.chronoflow.app.MainActivity }
 Status: ok
 LaunchState: COLD
-Activity: net.chronoflow.app.native.debug/net.chronoflow.app.MainActivity
+Activity: net.chronoflow.app.debug/net.chronoflow.app.MainActivity
 TotalTime: 483
 WaitTime: 484
 Complete

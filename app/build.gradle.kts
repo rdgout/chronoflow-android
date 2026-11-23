@@ -67,7 +67,7 @@ android {
     namespace = "net.chronoflow.app"
 
     defaultConfig {
-        applicationId = "net.chronoflow.app.native"
+        applicationId = "net.chronoflow.app"
         buildConfigField("boolean", "PERF_ENTRY", "false")
     }
 

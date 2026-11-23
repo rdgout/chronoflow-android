@@ -3,6 +3,7 @@ set -u
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 ADB="${ADB:-${ANDROID_HOME:-/opt/homebrew/share/android-commandlinetools}/platform-tools/adb}"
+export ADB
 PERF_SUITE="perf-compare-rn"
 source Scripts/perf-device.sh
 resolve_perf_device || exit $?
@@ -39,28 +40,59 @@ refuse_apk() { echo "RN comparison open: needs a prebuilt RN release APK from th
 sha="$(shasum -a 256 "$RN_APK" | awk '{print $1}')" || refuse_apk
 printf '%s  %s\n' "$sha" "$RN_APK"
 [ "$sha" = "$expected_sha" ] || refuse_apk
-step "$ADB" -s "$SERIAL" install -r "$RN_APK" || exit $?
-trap '"$EMULATOR_SH" prep-functional "$SERIAL"' EXIT
+NATIVE_APK="${NATIVE_APK:-app/build/outputs/apk/benchmarkRelease/app-benchmarkRelease.apk}"
+BENCHMARK_APK="${BENCHMARK_APK:-benchmark/build/outputs/apk/benchmarkRelease/benchmark-benchmarkRelease.apk}"
+PACKAGE=net.chronoflow.app
+uninstall_current() {
+  if [ -n "${PERF_COMPARE_RN_DRY_RUN:-}" ]; then
+    step "$ADB" -s "$SERIAL" uninstall "$PACKAGE"
+  else
+    local installed
+    installed="$(dev shell pm path "$PACKAGE")"
+    if [[ "$installed" == package:* ]]; then dev uninstall "$PACKAGE"; fi
+  fi
+}
+restore_native=0
+cleanup() {
+  local status=$?
+  if [ "$restore_native" = 1 ]; then
+    if uninstall_current && step "$ADB" -s "$SERIAL" install -r "$NATIVE_APK"; then
+      echo "perf-compare-rn: native benchmarkRelease reinstalled (app data reset)"
+    else
+      echo "perf-compare-rn: failed to restore native; the next native tier must reinstall it" >&2
+      status=1
+    fi
+  fi
+  "$EMULATOR_SH" prep-functional "$SERIAL" || status=1
+  exit "$status"
+}
+trap cleanup EXIT
+step "$GRADLEW" --console=plain :app:assembleBenchmarkRelease :benchmark:assembleBenchmarkRelease || exit $?
+step "$ADB" -s "$SERIAL" install -r "$BENCHMARK_APK" || exit $?
 "$EMULATOR_SH" prep-perf "$SERIAL" || exit $?
 scale="$(dev shell settings get global animator_duration_scale | tr -d '\r')"
 case "$scale" in 1|1.0) ;; *) echo "perf-compare-rn: animator_duration_scale is '$scale', not 1" >&2; exit 1 ;; esac
-args=(
-  :benchmark:connectedBenchmarkReleaseAndroidTest
-  -Pandroid.testInstrumentationRunnerArguments.class=net.chronoflow.benchmark.LaunchComparisonBenchmark
-  -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.enabledRules=Macrobenchmark
-  -Pandroid.testInstrumentationRunnerArguments.timeout_msec=300000
-)
 suppression=""
 if [ "$IS_EMU" = 1 ]; then suppression=EMULATOR; fi
 if [ "${RN_NOT_PROFILEABLE:-0}" = 1 ]; then suppression="${suppression:+$suppression,}NOT-PROFILEABLE"; fi
-if [ -n "$suppression" ]; then args+=("-Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.suppressErrors=$suppression"); fi
-if [ "${PERF_CLEAR:-0}" = 1 ]; then args+=(-Pandroid.testInstrumentationRunnerArguments.cf.perfClear=1); fi
 commit="$(git rev-parse --short HEAD)"
 if [ -n "$(git status --porcelain 2>/dev/null | grep -v " $HISTORY\$" || true)" ]; then commit="$commit-dirty"; fi
 begin_perf_archive compare "light-${FONT_SCALE:-1.0}" "$commit" || exit 1
-step "$GRADLEW" --console=plain "${args[@]}"
-gradle_status=$?
-finish_perf_archive || exit 1
+step rm -f build/perf-rn/Native.xml build/perf-rn/Rn.xml
+pass_status=0
+restore_native=1
+for target in Native Rn; do
+  uninstall_current || exit $?
+  apk="$NATIVE_APK"
+  if [ "$target" = Rn ]; then apk="$RN_APK"; fi
+  step "$ADB" -s "$SERIAL" install -r "$apk" || exit $?
+  python3 -I Scripts/perf-compare-pass.py "$target" \
+    --output "$PERF_OUTPUT_DIR/benchmarkRelease/$target" --report "build/perf-rn/$target.xml" \
+    --suppression "$suppression"
+  status=$?
+  if [ "$status" != 0 ]; then pass_status="$status"; fi
+done
+finish_perf_archive build/perf-rn || exit 1
 font="$(dev shell settings get system font_scale | tr -d '\r')"
 case "$font" in ''|null) font=1.0 ;; esac
 # shellcheck disable=SC2086
@@ -116,9 +148,9 @@ PYTHON
     fallback_status=1
   fi
 fi
-if [ "$gradle_status" != 0 ]; then
+if [ "$pass_status" != 0 ]; then
   echo "RN tooling: if the failure is NOT-PROFILEABLE, rerun with RN_NOT_PROFILEABLE=1 (OQ-13-3)" >&2
 fi
-if [ "$gradle_status" != 0 ]; then exit "$gradle_status"; fi
+if [ "$pass_status" != 0 ]; then exit "$pass_status"; fi
 if [ "$fallback_status" != 0 ]; then exit "$fallback_status"; fi
 exit "$check_status"

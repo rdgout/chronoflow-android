@@ -13,7 +13,7 @@ JVM_MODULES = {
     "core:data-mock", "core:testing", "core:testing-junit", "konsist", "tools:tokengen", "build-logic:convention",
 }
 GRADLE = ["./gradlew", "--console=plain"]
-APP_TEST_RUNNER = "net.chronoflow.app.native.debug.test/androidx.test.runner.AndroidJUnitRunner"
+APP_TEST_RUNNER = "net.chronoflow.app.debug.test/androidx.test.runner.AndroidJUnitRunner"
 
 
 def fail(message):

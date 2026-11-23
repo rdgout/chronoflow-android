@@ -52,7 +52,7 @@ class IosParityTest(unittest.TestCase):
         self.runner.sweep([entry])
         command = next(c for c in self.commands() if 'start' in c)
         self.assertEqual(['adb', '-s', 'emulator-5554', 'shell', 'am', 'start', '-W', '-n',
-                          'net.chronoflow.app.native.debug/net.chronoflow.debug.SeedReceiverActivity'], command[:9])
+                          'net.chronoflow.app.debug/net.chronoflow.debug.SeedReceiverActivity'], command[:9])
         extras = dict(zip(command[10::3], command[11::3]))
         self.assertEqual('screen', extras['CF_UI_TEST_PROFILE'])
         self.assertEqual('nl', extras['cf.settings.language'])

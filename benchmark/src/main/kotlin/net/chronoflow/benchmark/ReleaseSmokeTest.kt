@@ -100,7 +100,7 @@ class ReleaseSmokeTest {
     companion object {
         private val pkg get() =
             InstrumentationRegistry.getArguments().getString("targetAppId")
-                ?: "net.chronoflow.app.native"
+                ?: "net.chronoflow.app"
         private val device get() = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
 
         @BeforeClass @JvmStatic
