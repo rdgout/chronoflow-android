@@ -351,3 +351,23 @@ make targeted ONLY="app:SignedInColdLaunchSmokeTest"
 ```
 
 The initial sandbox attempts could not see the emulator: preparation returned `adb: device 'emulator-5554' not found`, and the compiled smoke run failed with `No connected devices!` (7.42 s wall). The user subsequently reported a passing `make check`, including `SignedInColdLaunchSmokeTest.signedInColdLaunchReachesToday` in **3.4 s** on **pixel** (review round 1, 2026-11-18). This supersedes the pending smoke status. Full validation, diagnostic history and delegated performance measurements are recorded in [Phase 4e results](phase-4e-results.md).
+
+
+## Phase 8 terms and walkthrough journey
+
+Start the debug-only seeded journey on pixel:
+
+```sh
+adb -s emulator-5554 shell am start \
+  -n net.chronoflow.app.native.debug/net.chronoflow.debug.SeedReceiverActivity \
+  --es CF_AUTH_TEST_ID "$(uuidgen | tr A-Z a-z)" \
+  --es CF_UI_TEST_PROFILE screen \
+  --es CF_AUTH_TEST_SIGNED_IN demo \
+  --es CF_AUTH_TEST_TERMS_PENDING 1 \
+  --es CF_WALKTHROUGH_TEST_PENDING 1 \
+  --es cf.settings.language en
+```
+
+Accept terms, then Next / Next / Done reaches Today while mutation sends remain offline. The only automated native journey is `make targeted ONLY="app:OnboardingJourneyTest"` (the targeted runner owns the device lock). `CF_AUTH_TEST_TERMS_CHANGES_PENDING=1` adds one preference change for Phase 10a's Terms sign-out confirmation; it does not hold sends offline by itself.
+
+Validation and the 24 board captures are recorded in [Phase 8 results](phase-8-results.md).

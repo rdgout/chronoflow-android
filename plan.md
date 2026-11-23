@@ -920,6 +920,18 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A334 | Today progress control (7 OQ-7-11). | Use the native `CfLinearProgress`, 80 × 6 dp, with one spoken progress summary and decorative track/icon. | 7 |
 | OQ-A335 | Plan a trip before the wizard lands (7 OQ-7-12). | Show the action and open the existing wizard-create seam, matching pinned iOS. | 7 |
 | OQ-A336 | Empty, Future and Completed JVM captures omit native app-bar title ink; an idle/frame/idle capture wait did not resolve it. | Keep the required `CfLargeTopAppBar`, which is unconditionally composed and structurally tagged. Record the unresolved capture difference; verify these short states on a device before accepting title fidelity. Do not imitate a native app bar. | 7 |
+| OQ-A337 | (8 OQ-8-1) `CategorySwatch` size: board `md` is 36 dp with a 16 dp icon; iOS draws 32 (`space8`). | Settled by 6a (OQ-6a-12): iOS, 32 dp; Small 28. Phase 8 reuses 6a's swatch and records no new question here beyond this note. | 8 |
+| OQ-A338 | (8 OQ-8-2) Sign-out from Terms with pending changes needs the `SignOutPending` sheet, which is 10a. | 8 builds the state, `stay()`, discard and a slot. Until 10a fills the slot, `NeedsConfirmation` shows nothing more and the user stays on Terms (Accept still works). | 8 |
+| OQ-A339 | (8 OQ-8-3) Policy URL in Dutch: the web serves `/nl/terms`; iOS always opens `/terms`. | `https://chronoflow.net/terms` for both languages (iOS parity; 05 OQ A19: confirm the host before release). | 8 |
+| OQ-A340 | (8 OQ-8-4) Walkthrough timeline preview: iOS shows titles only at ≥ 640 pt; the Android column is capped at 560 dp. | Keep the iOS rule, so every Android width shows the compact icon-only blocks, matching the board at phone width and `23-walkthrough.png`. | 8 |
+| OQ-A341 | (8 OQ-8-5) System back on the first-run walkthrough and on Terms. | Root behaviour (the activity finishes or goes to the background); no page-back. In replay, back = Skip (returns, no write). | 8 |
+| OQ-A342 | (8 OQ-8-6) A failed local walkthrough save has no board. | As iOS: no message; the buttons re-enable so the user can retry. | 8 |
+| OQ-A343 | (8 OQ-8-7) Dot animation easing: board CSS `ease`, iOS `easeInOut`. | `EaseInOut`, 150 ms; snap under Reduce Motion. | 8 |
+| OQ-A344 | (8 OQ-8-8) Terms copy: board placeholders (effective date, three changes) or the iOS/web generic summary. | iOS code (§4); the placeholders wait for server per-version fields. | 8 |
+| OQ-A345 | (8 OQ-8-9) Where `CategorySwatch` lives. | Settled by 6a: `:core:ui` `net.chronoflow.core.ui.plan` (OQ-6a-12); 6d, 7, 8 and 10b reuse it and never redefine it. | 8 |
+| OQ-A346 | (8 OQ-8-10) 5d's Custom Tab opener (`PolicyOpener`) lives in `:feature:auth`, which `:feature:onboarding` cannot use. | Phase 8 adds `PolicyLinks` in `:core:ui` with the same behaviour (no toolbar colour) and leaves 5d's code alone; a later cleanup may make 5d's opener delegate to it. | 8 |
+| OQ-A347 | (8 OQ-8-11) Hiding the tab bar under the replay needs a "no bar" layout that 6a's `CfNavLayout { Bar, Rail }` lacks. | Add `CfNavLayout.None` (`NavigationSuiteType.None`), chosen while the top entry `hidesShellChrome()`, with full insets for the content; no hide/show animation API (6a OQ-6a-9 still holds). Alternative not taken: 6a's full-screen `overlay` layer, which has no per-entry ViewModel store. | 8 |
+| OQ-A348 | Walkthrough progress height differs between the old brief and Phase 7. | Reuse OQ-A334: native `CfLinearProgress`, 80 × 6 dp. Pinned walkthrough reuses `DayProgressRow` and specifies no different height. | 8 |
 | OQ-0a-22 | Native libraries in the bundle? | Allow only `libandroidx.graphics.path.so` (Compose graphics-path; excluding it breaks Path conversion below API 34); fail on any other `.so` | 0a, 13 |
 | OQ-0b-1 | Where does `PlanMetrics` live? `08 §3.1` lists it inside `CfDimens`, but its consumer `:core:plan` is a JVM module that cannot depend on `:core:designsystem` | `core/plan/…/generated/PlanMetrics.generated.kt` (Double, dp), as iOS keeps it in `PlanCore` | 0b, 1b, 1c |
 | OQ-0b-2 | Port all iOS TokenGen outputs now (Auth, Settings, Terms, Welcome, PlanUI, Press, LaunchPaint, TypeMetrics), or only colors, sky and type? | All of them now (the iOS files are exact goldens and Phases 2, 3a, 3c, 5a, 9 and 10 need them) | 0b |
@@ -2563,15 +2575,15 @@ Implementation commits (brief §7):
 **Delivers.** Builds the three walkthrough pages. Skip and Done commit locally and enqueue the walkthrough change without waiting for sync; the first run ends on Today, and the replay variant returns to its caller. The phase builds the terms-update gate with its accept and failed states and the policy pages in a Custom Tab, with the gate order terms before walkthrough.
 
 **Tasks**
-- [ ] **Walkthrough** (`feature/onboarding/…`).
+- [x] **Walkthrough** (`feature/onboarding/…`).
   - Three pages.
   - Skip and Done commit locally and enqueue the walkthrough change without waiting for sync.
   - The first run ends on Today. `Walkthrough(replay = true)` returns to its caller (`WalkthroughReplay`).
-- [ ] **Terms update gate** (`TermsUpdate`, `TermsFailed`).
+- [x] **Terms update gate** (`TermsUpdate`, `TermsFailed`).
   - Accept posts the change, with a failed state and retry.
   - Policy pages (`PolicyReader`) open in a Custom Tab (`androidx.browser`, OQ-A32).
   - Terms come before the walkthrough, and missing policies keep the gate loading.
-- [ ] **Tests.**
+- [x] **Tests.**
   - The ported 17f and 17g cases, including a walkthrough POST 401 that keeps its row.
   - Guards.
   - One emulator journey: accept terms → walkthrough → Today.
@@ -2878,6 +2890,7 @@ Implementation commits (brief §7):
   - Rows with subtitles and badges, and the sign-out pill.
   - From 600 dp, a 560 dp column (OQ-A37).
 - [ ] **Sign out with pending changes** (`SignOutPending`, `SignOutPendingSettings`): Stay or Discard, through `SessionController.signOut`.
+  - Also fill the Terms `signOutConfirmation` slot (Phase 8).
 - [ ] **Shared states** (`SetStates`, `SetStatesMore`): loading, account not on this phone, saved and failed messages (Snackbar), refused change, and rows disabled offline.
 - [ ] **Account** (`SetAccount`), **Profile** (`SetProfile`) and **Language** (`SetLanguage`).
   - The language choice is `system`, `en` or `nl`. It goes through `LocaleManager` on API 33+, or the `device-config` file below 33, and recreates the activity.
@@ -2915,6 +2928,7 @@ Implementation commits (brief §7):
   - Time format and hidden categories: account settings, saved through the outbox.
   - The reminders row, which routes to 12c (a placeholder until then).
   - Replay walkthrough, through `Walkthrough(replay = true)`.
+    - Call `holder.push(Route.Walkthrough(replay = true))` from Preferences (Phase 8 tab entry, `hidesShellChrome`, `CfNavLayout.None`).
 - [ ] **Body clock** (`SetBodyClock`, `DarkSetBodyClock`).
   - Readiness variants and the sections about, sleep, caffeine, light and health, under the no-health-data rules.
   - Validation.

@@ -212,6 +212,18 @@ object LucideGlyphs {
             ),
         )
 
+    val FileText =
+        LucideGlyph(
+            "file-text",
+            listOf(
+                LucidePath("M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z", false),
+                LucidePath("M14 2v4a2 2 0 0 0 2 2h4", false),
+                LucidePath("M10 13H8", false),
+                LucidePath("M16 17H8", false),
+                LucidePath("M16 13h-2", false),
+            ),
+        )
+
     val Footprints =
         LucideGlyph(
             "footprints",

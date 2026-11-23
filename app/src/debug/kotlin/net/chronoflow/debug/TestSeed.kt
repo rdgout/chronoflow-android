@@ -48,7 +48,11 @@ data class TestSeed(
     val wizardBoardCapture: String? = null,
     val passkeyCapability: Boolean? = null,
     val authTestLink: String? = null,
+    val walkthroughPending: Boolean = false,
+    val termsChangesPending: Boolean = false,
 ) {
+    val mutationsOffline: Boolean get() = walkthroughPending || termsPending
+
     override fun toString(): String = "TestSeed(testId=$testId, profile=$profile, keys=${raw.keys})"
 
     companion object {
@@ -113,6 +117,8 @@ data class TestSeed(
                 parsed("CF_AUTH_TEST_SIGNED_IN") { value -> SeedAccount.entries.firstOrNull { it.raw == value } }
             val walkthroughSeen = flag("CF_AUTH_TEST_WALKTHROUGH_SEEN")
             val termsPending = flag("CF_AUTH_TEST_TERMS_PENDING")
+            val walkthroughPending = flag("CF_WALKTHROUGH_TEST_PENDING")
+            val termsChangesPending = flag("CF_AUTH_TEST_TERMS_CHANGES_PENDING")
             val unverified = flag("CF_AUTH_TEST_UNVERIFIED")
             val mockDelay =
                 parsed("CF_MOCK_DELAY") {
@@ -180,6 +186,8 @@ data class TestSeed(
                 signedIn = signedIn,
                 walkthroughSeen = walkthroughSeen,
                 termsPending = termsPending,
+                walkthroughPending = walkthroughPending,
+                termsChangesPending = termsChangesPending,
                 unverified = unverified,
                 authTestLink = parsed("CF_AUTH_TEST_LINK") { it.takeIf { url -> url.startsWith("https:") } },
                 auditScreen = accepted["CF_AUTH_TEST_AUDIT_SCREEN"],

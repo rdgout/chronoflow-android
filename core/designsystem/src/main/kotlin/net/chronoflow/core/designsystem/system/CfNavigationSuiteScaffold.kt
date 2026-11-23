@@ -14,7 +14,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import net.chronoflow.core.designsystem.theme.CfTheme
 
-enum class CfNavLayout { Bar, Rail }
+enum class CfNavLayout { Bar, Rail, None }
 
 data class CfNavItem(
     val label: String,
@@ -23,7 +23,7 @@ data class CfNavItem(
     val tag: String,
 )
 
-/** Uses the 1.4.0 layoutType overload to retain the standard, permanently visible bar and rail. */
+/** Uses explicit native layout types; the selected entry determines whether chrome is present. */
 @Composable
 fun CfNavigationSuiteScaffold(
     layout: CfNavLayout,
@@ -58,14 +58,19 @@ fun CfNavigationSuiteScaffold(
         )
     Box(modifier.testTag("app.tabs")) {
         NavigationSuiteScaffold(
-            modifier = Modifier.testTag(if (layout == CfNavLayout.Bar) "cf.nav.bar" else "cf.nav.rail"),
+            modifier =
+                Modifier.testTag(
+                    when (layout) {
+                        CfNavLayout.Bar -> "cf.nav.bar"
+                        CfNavLayout.Rail -> "cf.nav.rail"
+                        CfNavLayout.None -> "cf.nav.none"
+                    },
+                ),
             layoutType =
-                if (layout ==
-                    CfNavLayout.Bar
-                ) {
-                    NavigationSuiteType.NavigationBar
-                } else {
-                    NavigationSuiteType.NavigationRail
+                when (layout) {
+                    CfNavLayout.Bar -> NavigationSuiteType.NavigationBar
+                    CfNavLayout.Rail -> NavigationSuiteType.NavigationRail
+                    CfNavLayout.None -> NavigationSuiteType.None
                 },
             navigationSuiteItems = {
                 items.forEachIndexed { index, navItem ->
