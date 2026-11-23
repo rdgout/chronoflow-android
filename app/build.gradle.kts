@@ -89,6 +89,7 @@ android {
 
 dependencies {
     implementation(libs.androidx.navigation3.ui)
+    implementation(libs.androidx.lifecycle.viewmodel.navigation3)
     implementation(libs.androidx.lifecycle.process)
     testImplementation(project(":core:database-testing"))
     testImplementation(testFixtures(project(":feature:launch")))

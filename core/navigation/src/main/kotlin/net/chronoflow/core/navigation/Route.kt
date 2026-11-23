@@ -123,3 +123,52 @@ fun Route.debugName(): String =
         is Route.TripPage -> "tripPage"
         is Route.Wizard -> "wizard"
     }
+
+fun Route.stateKey(): String =
+    when (this) {
+        is Route.TripPage -> {
+            stateKey(debugName(), tripId, dayId, blockId, awaitingSync.toString(), sheet?.stateKey())
+        }
+
+        is Route.Reset -> {
+            stateKey(debugName(), email)
+        }
+
+        is Route.Walkthrough -> {
+            stateKey(debugName(), replay.toString())
+        }
+
+        is Route.Wizard -> {
+            stateKey(debugName(), mode.stateKey())
+        }
+
+        else -> {
+            debugName()
+        }
+    }
+
+private fun TripSheet.stateKey(): String =
+    when (this) {
+        is TripSheet.Step -> stateKey("step", blockId)
+        TripSheet.Legend -> "legend"
+        TripSheet.TripActions -> "tripActions"
+    }
+
+private fun WizardMode.stateKey(): String =
+    when (this) {
+        WizardMode.Create -> "create"
+        is WizardMode.Edit -> stateKey("edit", tripId)
+        is WizardMode.Duplicate -> stateKey("duplicate", tripId)
+    }
+
+private fun stateKey(
+    name: String,
+    vararg identity: String?,
+): String =
+    buildString {
+        append(name)
+        identity.forEach { value ->
+            append(':')
+            if (value == null) append('-') else append(value.length).append(':').append(value)
+        }
+    }

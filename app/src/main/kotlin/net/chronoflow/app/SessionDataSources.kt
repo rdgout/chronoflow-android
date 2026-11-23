@@ -14,6 +14,11 @@ import net.chronoflow.core.network.DataSourceFactory
 import java.io.File
 
 fun interface MockSources {
+    suspend fun latestVerificationLink(
+        source: DataSource,
+        context: net.chronoflow.feature.auth.model.VerificationContext,
+    ): net.chronoflow.core.model.api.SignedVerificationInput? = null
+
     suspend fun latestResetLink(
         source: DataSource,
         email: String,

@@ -63,7 +63,18 @@ class LaunchGateRoutingTest {
             ScreenSessionFixture.route(graph)
             runCurrent()
             ActivityScenario.launch<MainActivity>(TestSeeds.forwardIntent(app, seed)).use {
-                compose.onNodeWithTag("route.${expected.debugName()}").assertExists()
+                if (expected == Route.Verify) {
+                    compose.waitUntil(5_000) {
+                        testScheduler.runCurrent()
+                        graph.auth.verification.model.value
+                            ?.uiState
+                            ?.value
+                            ?.hasStatus == true
+                    }
+                    compose.onNodeWithTag("verify.open-email").assertExists()
+                } else {
+                    compose.onNodeWithTag("route.${expected.debugName()}").assertExists()
+                }
                 assertEquals(expected, graph.rootNavigator.state.value.route)
                 check(graph)
             }

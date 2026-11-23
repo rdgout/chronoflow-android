@@ -6,10 +6,14 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavEntry
+import androidx.navigation3.runtime.rememberDecoratedNavEntries
+import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import net.chronoflow.core.navigation.RootState
 import net.chronoflow.core.navigation.Route
+import net.chronoflow.core.navigation.stateKey
 
 @Composable
 internal fun RootContent(
@@ -27,17 +31,23 @@ internal fun RootContent(
         remember(state.route, revision) {
             state.route
                 ?.let { route ->
+                    val routeKey = route.stateKey()
                     listOf(
                         NavEntry(
                             route,
-                            contentKey = revision?.let { route to it } ?: route,
+                            contentKey = revision?.let { "$routeKey:$it" } ?: routeKey,
                         ) { currentContent.value(it) },
                     )
                 }.orEmpty()
         }
-    if (entries.isNotEmpty()) {
+    val decorated =
+        rememberDecoratedNavEntries(
+            entries,
+            listOf(rememberSaveableStateHolderNavEntryDecorator(), rememberViewModelStoreNavEntryDecorator()),
+        )
+    if (decorated.isNotEmpty()) {
         NavDisplay(
-            entries = entries,
+            entries = decorated,
             onBack = onBack,
             transitionSpec = { EnterTransition.None togetherWith ExitTransition.None },
             popTransitionSpec = { EnterTransition.None togetherWith ExitTransition.None },

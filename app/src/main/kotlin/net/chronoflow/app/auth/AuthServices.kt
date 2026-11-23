@@ -23,6 +23,7 @@ import net.chronoflow.feature.auth.model.passkey.DeterministicAssertionProvider
 import net.chronoflow.feature.auth.model.passkey.PasskeyAssertionProviding
 import net.chronoflow.feature.auth.model.passkey.PasskeySignIn
 import net.chronoflow.feature.auth.signin.SignInRouter
+import net.chronoflow.feature.auth.verify.VerificationCoordinator
 
 class AuthServices(
     private val navigator: RootNavigator,
@@ -36,7 +37,9 @@ class AuthServices(
     passkeyCapability: PasskeyCapability = PasskeyCapability.Shipped,
     assertionProvider: PasskeyAssertionProviding = DeterministicAssertionProvider { throw PasskeyFailure.Unavailable },
     val mockMail: (suspend (String) -> Boolean)? = null,
+    private val verificationFactory: (() -> VerificationCoordinator)? = null,
 ) {
+    val verification: VerificationCoordinator by lazy { checkNotNull(verificationFactory)() }
     private val nameMutex = Mutex()
     private var cachedName: String? = null
     val router: SignInRouter =

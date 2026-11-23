@@ -8,7 +8,6 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
-import net.chronoflow.core.designsystem.theme.ChronoFlowTheme
 import net.chronoflow.core.navigation.RootState
 import net.chronoflow.core.navigation.Route
 import net.chronoflow.core.testing.tiers.Layout
@@ -29,7 +28,7 @@ class RootContentTest {
 
     @Test fun termsRendersOneTaggedRoot() {
         compose.setContent {
-            ChronoFlowTheme {
+            RootContentTestHost {
                 RootContent(
                     RootState(Route.Terms, 1),
                     {},
@@ -44,7 +43,7 @@ class RootContentTest {
         var constructions = 0
         var presented = 0
         compose.setContent {
-            ChronoFlowTheme {
+            RootContentTestHost {
                 RootContent(state.value, {}) { route ->
                     val identity = remember { ++constructions }
                     SideEffect { presented = identity }
