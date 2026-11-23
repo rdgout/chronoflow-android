@@ -45,6 +45,7 @@ fi
 
 # Each collect runs up to 15 launches, far over the 60 s default; raise the cap rather than lower maxIterations.
 step "$GRADLEW" --console=plain :app:generateBaselineProfile \
+  -Pandroid.testInstrumentationRunnerArguments.class=net.chronoflow.benchmark.BaselineProfileGenerator \
   -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.enabledRules=BaselineProfile \
   -Pandroid.testInstrumentationRunnerArguments.timeout_msec=900000
 status=$?

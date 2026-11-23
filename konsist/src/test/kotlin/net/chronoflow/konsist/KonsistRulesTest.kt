@@ -40,7 +40,11 @@ class KonsistRulesTest {
 
     @Test fun launchModelImportsNoAndroidRejectsPlantedViolation() {
         assertFailure { launchModelImportsNoAndroid(violations("launchModelImportsNoAndroid")) }
-            .messageContains("launchModelImportsNoAndroid violated")
+            .all {
+                messageContains("launchModelImportsNoAndroid violated")
+                messageContains("CoreLaunch.kt: androidx.lifecycle.ViewModel")
+                messageContains("Example.kt: android.")
+            }
     }
 
     @Test fun launchModelImportsNoAndroidAllowsControl() =

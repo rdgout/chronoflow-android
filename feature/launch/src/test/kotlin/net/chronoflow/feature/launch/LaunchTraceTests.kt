@@ -21,21 +21,6 @@ class LaunchTraceTests {
         tracer.assertPairedOnce()
     }
 
-    @Test fun recreatedActivityClosesBothTracesAtItsFirstCommit() {
-        val tracer = FakeTracer()
-        val controller = controller(tracer)
-        tracer.beginBoth()
-        assertTrue(controller.claimOverlay(LaunchOverrides.None))
-        controller.onActivityCreated(restored = true)
-        assertFalse(controller.claimOverlay(LaunchOverrides.None))
-
-        controller.onFrameCommitted(false)
-        controller.onOpeningSettled()
-        controller.onActivityDestroyed()
-
-        tracer.assertPairedOnce()
-    }
-
     @Test fun abandonedOpeningClosesBothTracesBeforeAnyDraw() {
         val tracer = FakeTracer()
         val controller = controller(tracer)

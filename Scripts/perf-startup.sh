@@ -61,7 +61,7 @@ fi
 
 args=(
   ":benchmark:connectedBenchmarkReleaseAndroidTest"
-  "-Pandroid.testInstrumentationRunnerArguments.class=net.chronoflow.benchmark.StartupBenchmark,net.chronoflow.benchmark.LaunchJankBenchmark"
+  "-Pandroid.testInstrumentationRunnerArguments.class=net.chronoflow.benchmark.StartupBenchmark,net.chronoflow.benchmark.LaunchJankBenchmark,net.chronoflow.benchmark.ProcessDeathLaunchTest"
   "-Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.enabledRules=Macrobenchmark"
   "-Pandroid.testInstrumentationRunnerArguments.timeout_msec=300000"
 )

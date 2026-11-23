@@ -36,7 +36,7 @@ class PerfStartupTest(unittest.TestCase):
             path.write_text(body)
             path.chmod(0o755)
 
-    def perf(self, **extra):
+    def perf(self, script=PERF, **extra):
         env = {
             "ADB": str(self.tmp / "adb"),
             "ANDROID_SERIAL": "",
@@ -49,7 +49,7 @@ class PerfStartupTest(unittest.TestCase):
             "PERF_ARCHIVE_ROOT": str(self.tmp / "archives"),
         }
         env.update(extra)
-        return run([PERF], env, timeout=30)
+        return run([script], env, timeout=30)
 
     def calls(self):
         return self.log.read_text().splitlines()
@@ -101,7 +101,19 @@ class PerfStartupTest(unittest.TestCase):
         result = self.perf(PERF_STARTUP_DRY_RUN="1")
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("connectedBenchmarkReleaseAndroidTest", result.stdout)
+        self.assertIn("net.chronoflow.benchmark.ProcessDeathLaunchTest", result.stdout)
         self.assertFalse(any(c.startswith(("gradlew", "checker")) for c in self.calls()))
+
+    def test_profile_collection_only_runs_the_generator(self):
+        result = self.perf(script=str(SCRIPTS / "baseline-profile.sh"), BASELINE_PROFILE_DRY_RUN="1")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn(
+            "-Pandroid.testInstrumentationRunnerArguments.class=net.chronoflow.benchmark.BaselineProfileGenerator",
+            result.stdout,
+        )
+        self.assertIn("androidx.benchmark.enabledRules=BaselineProfile", result.stdout)
+        self.assertNotIn("ProcessDeathLaunchTest", result.stdout)
+        self.assertFalse(any(c.startswith("gradlew") for c in self.calls()))
 
 
 if __name__ == "__main__":

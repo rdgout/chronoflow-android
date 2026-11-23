@@ -43,6 +43,7 @@ android {
 }
 
 dependencies {
+    testImplementation(testFixtures(project(":feature:launch")))
     implementation(project(":feature:launch"))
     implementation(project(":feature:auth"))
     implementation(project(":feature:onboarding"))
@@ -85,6 +86,7 @@ dependencies {
     testImplementation(libs.robolectric)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(project(":core:testing"))
+    testImplementation(project(":core:testing-compose"))
 
     androidTestImplementation(libs.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.test.ext.junit)

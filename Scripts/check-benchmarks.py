@@ -162,7 +162,7 @@ def check(args, budgets):
             )
             outcomes.append(outcome)
             failed = failed or outcome == "FAIL"
-        if args.suite == "startup" and raw_key == "timeToInitialDisplayMs":
+        if args.suite == "startup" and entry["test"] == "startupCold" and raw_key == "timeToInitialDisplayMs":
             metrics = bench.get("metrics", {}).get(raw_key, {})
             values = {k: metrics.get(k) for k in ("median", "minimum", "maximum")}
     return (1 if failed else 0), outcomes, values, context

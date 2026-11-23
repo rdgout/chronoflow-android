@@ -45,6 +45,81 @@
             40.0,
             40.0
           ]
+        },
+        "timeToFullDisplayMs": {
+          "median": 2650.0,
+          "minimum": 2650.0,
+          "maximum": 2650.0,
+          "runs": [
+            2650.0,
+            2650.0,
+            2650.0,
+            2650.0,
+            2650.0,
+            2650.0,
+            2650.0,
+            2650.0,
+            2650.0,
+            2650.0
+          ]
+        },
+        "readyFirstMs": {
+          "median": 80.0,
+          "minimum": 80.0,
+          "maximum": 80.0,
+          "runs": [
+            80.0,
+            80.0,
+            80.0,
+            80.0,
+            80.0,
+            80.0,
+            80.0,
+            80.0,
+            80.0,
+            80.0
+          ]
+        },
+        "exitFirstMs": {
+          "median": 950.0,
+          "minimum": 950.0,
+          "maximum": 950.0,
+          "runs": [
+            950.0,
+            950.0,
+            950.0,
+            950.0,
+            950.0,
+            950.0,
+            950.0,
+            950.0,
+            950.0,
+            950.0
+          ]
+        }
+      },
+      "sampledMetrics": {}
+    },
+    {
+      "name": "startupWarm",
+      "className": "net.chronoflow.benchmark.StartupBenchmark",
+      "metrics": {
+        "timeToInitialDisplayMs": {
+          "median": 190.0,
+          "minimum": 180.0,
+          "maximum": 200.0,
+          "runs": [
+            190.0,
+            190.0,
+            190.0,
+            190.0,
+            190.0,
+            190.0,
+            190.0,
+            190.0,
+            190.0,
+            190.0
+          ]
         }
       },
       "sampledMetrics": {}

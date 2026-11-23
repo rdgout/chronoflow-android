@@ -16,6 +16,8 @@ object LaunchMetrics {
     const val STATUS_OFFSET_Y = 96.0
     const val STATUS_HEIGHT = 20.0
     const val STATUS_SIZE = 14.0
+    const val STATUS_DOT_RADIUS = 2f
+    const val STATUS_DOT_PITCH = 7f
     const val STATUS_GAP = 6.0
     const val STATUS_DOTS_WIDTH = 18.0
     const val HALO_RADIUS = 250f

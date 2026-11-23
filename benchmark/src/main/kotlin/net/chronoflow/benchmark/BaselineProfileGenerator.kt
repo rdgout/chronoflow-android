@@ -25,7 +25,8 @@ class BaselineProfileGenerator {
             pressHome()
             startActivityAndWait()
             check(device.wait(Until.hasObject(By.res("launch.opening")), 5000))
-            device.wait(Until.gone(By.res("launch.opening")), 1600)
+            check(device.wait(Until.gone(By.res("launch.opening")), 5000))
+            check(device.wait(Until.hasObject(By.res("route.welcome")), 2000))
         }
 
     @Test
