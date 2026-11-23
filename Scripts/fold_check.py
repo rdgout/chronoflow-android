@@ -12,7 +12,7 @@ import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parent.parent
 SERIAL = "emulator-5556"
-PACKAGE = "net.chronoflow.app.native.debug"
+PACKAGE = "net.chronoflow.app.debug"
 ACTIVITY = PACKAGE + "/net.chronoflow.app.MainActivity"
 RECEIVER = PACKAGE + "/net.chronoflow.debug.SeedReceiverActivity"
 TRIP = "0199a3c0-0000-7000-8000-000000000001"

@@ -11,13 +11,21 @@ class VerifyReleaseManifestTest {
         allowed: Set<String> = emptySet(),
     ): List<ManifestViolation> {
         val xml = checkNotNull(javaClass.getResource("/manifests/$file")) { "missing $file" }.readText()
-        return ManifestRules.check(xml, "net.chronoflow.app.native", allowed)
+        return ManifestRules.check(xml, "net.chronoflow.app", allowed)
     }
 
     private fun rulesOf(file: String) = check(file).map { it.rule }
 
     @Test
     fun validManifestHasNoViolation() = assertThat(check("valid.xml")).isEmpty()
+
+    @Test
+    fun dynamicReceiverPermissionFollowsTheApplicationId() {
+        val xml = checkNotNull(javaClass.getResource("/manifests/valid.xml")).readText()
+        assertThat(
+            ManifestRules.check(xml, "net.chronoflow.other", emptySet()).map { it.rule },
+        ).containsExactly(Rule.PERMISSION)
+    }
 
     @Test
     fun permissionOutsideTheAllowlistFails() = assertThat(rulesOf("permission.xml")).containsExactly(Rule.PERMISSION)

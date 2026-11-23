@@ -24,7 +24,7 @@ class StartupBenchmark {
     @get:Rule val rule = MacrobenchmarkRule()
 
     private val packageName: String =
-        InstrumentationRegistry.getArguments().getString("targetAppId") ?: "net.chronoflow.app.native"
+        InstrumentationRegistry.getArguments().getString("targetAppId") ?: "net.chronoflow.app"
 
     @Test
     fun startupCold() =

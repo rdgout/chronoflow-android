@@ -60,7 +60,7 @@ class AppLinkManifestRulesTest(
                 }
             }
         assertTrue(
-            ManifestRules.check(broken, "net.chronoflow.app.native", emptySet()).any { it.rule == Rule.APP_LINK },
+            ManifestRules.check(broken, "net.chronoflow.app", emptySet()).any { it.rule == Rule.APP_LINK },
         )
     }
 

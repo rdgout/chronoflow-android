@@ -17,7 +17,7 @@ class ProcessDeathLaunchTest {
     @Test fun killedProcessColdLaunchesWithTheSplash() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val device = UiDevice.getInstance(instrumentation)
-        val pkg = InstrumentationRegistry.getArguments().getString("targetAppId") ?: "net.chronoflow.app.native"
+        val pkg = InstrumentationRegistry.getArguments().getString("targetAppId") ?: "net.chronoflow.app"
 
         fun start() {
             val result =
