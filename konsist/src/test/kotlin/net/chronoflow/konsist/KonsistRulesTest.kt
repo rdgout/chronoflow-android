@@ -302,4 +302,20 @@ class KonsistRulesTest {
         assertTrue("Missing executable guard fixture", java.io.File(guards, "ExecutableGuardsTest.kt").isFile)
         designSystemPrimitivesHaveGuards(allowed("designSystemPrimitivesHaveGuards"), guards)
     }
+
+    @Test fun okhttpOnlyInCoreNetwork() = okhttpOnlyInCoreNetwork(projectScope)
+
+    @Test fun okhttpOnlyInCoreNetworkRejectsPlantedViolation() {
+        assertFailure { okhttpOnlyInCoreNetwork(violations("okhttpOnlyInCoreNetwork")) }
+            .messageContains("okhttpOnlyInCoreNetwork violated")
+    }
+
+    @Test fun okhttpOnlyInCoreNetworkAllowsControl() = okhttpOnlyInCoreNetwork(allowed("okhttpOnlyInCoreNetwork"))
+
+    @Test fun noHttpLoggingInterceptor() = noHttpLoggingInterceptor(projectScope)
+
+    @Test fun noHttpLoggingInterceptorRejectsPlantedViolation() {
+        assertFailure { noHttpLoggingInterceptor(violations("noHttpLoggingInterceptor")) }
+            .messageContains("noHttpLoggingInterceptor violated")
+    }
 }

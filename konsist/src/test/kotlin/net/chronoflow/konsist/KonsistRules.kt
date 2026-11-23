@@ -372,3 +372,22 @@ fun noDefaultLocaleZoneOrClockInLogic(scope: KoScope) {
             }
     fail("noDefaultLocaleZoneOrClockInLogic", violations)
 }
+
+fun okhttpOnlyInCoreNetwork(scope: KoScope) {
+    val violations =
+        scope
+            .moduleFiles()
+            .filter { it.module != "core/network" && it.sourceSet != null && !isTestSourceSet(it.sourceSet) }
+            .filter { file -> file.imports.any { it == "okhttp3" || it.startsWith("okhttp3.") } }
+            .map { it.path }
+    fail("okhttpOnlyInCoreNetwork", violations)
+}
+
+fun noHttpLoggingInterceptor(scope: KoScope) {
+    val violations =
+        scope
+            .moduleFiles()
+            .filter { file -> file.imports.any { it == "okhttp3.logging" || it.startsWith("okhttp3.logging.") } }
+            .map { it.path }
+    fail("noHttpLoggingInterceptor", violations)
+}
