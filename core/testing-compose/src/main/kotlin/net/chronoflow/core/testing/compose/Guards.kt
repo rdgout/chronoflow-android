@@ -322,12 +322,13 @@ object Guards {
         exemptTags: Set<String> = emptySet(),
         rootTag: String? = null,
         scrollIntoView: Boolean = true,
+        inkChannelDifference: Int = 16,
     ) {
         if (headingTags.isNotEmpty()) assertHeadings(rule, *headingTags.toTypedArray())
         assertTextFits(rule, profile, scrollIntoView)
         assertTouchTargets(rule, profile, exemptTags = exemptTags)
         assertInteractiveInSafeArea(rule, profile, exemptTags, scrollIntoView)
         assertNoInteractiveOverlap(rule, exemptTags)
-        assertInk(rule, profile, rootTag = rootTag)
+        assertInk(rule, profile, minChannelDifference = inkChannelDifference, rootTag = rootTag)
     }
 }

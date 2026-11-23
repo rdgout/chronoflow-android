@@ -14,6 +14,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import net.chronoflow.core.designsystem.icon.MaterialSymbols
@@ -90,11 +91,18 @@ fun CfBackButton(
     contentDescription: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    onSky: Boolean = false,
 ) {
     IconButton(
         onClick,
         modifier,
-    ) { Icon(MaterialSymbols.ArrowBack, contentDescription, tint = CfTheme.colors.foreground) }
+    ) {
+        Icon(
+            MaterialSymbols.ArrowBack,
+            contentDescription,
+            tint = if (onSky) CfTheme.colors.skyTitle else CfTheme.colors.foreground,
+        )
+    }
 }
 
 @Composable
@@ -103,6 +111,7 @@ fun CfCenterAlignedTopAppBar(
     modifier: Modifier = Modifier,
     navigationIcon: @Composable () -> Unit = {},
     actions: @Composable RowScope.() -> Unit = {},
+    onSky: Boolean = false,
 ) {
     androidx.compose.material3.CenterAlignedTopAppBar(
         title = title,
@@ -110,6 +119,17 @@ fun CfCenterAlignedTopAppBar(
         navigationIcon = navigationIcon,
         actions = actions,
         windowInsets = LocalSafeInsets.current.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
-        colors = appBarColors(),
+        colors =
+            if (onSky) {
+                TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.Transparent,
+                    scrolledContainerColor = Color.Transparent,
+                    navigationIconContentColor = CfTheme.colors.skyTitle,
+                    titleContentColor = CfTheme.colors.skyTitle,
+                    actionIconContentColor = CfTheme.colors.skyTitle,
+                )
+            } else {
+                appBarColors()
+            },
     )
 }

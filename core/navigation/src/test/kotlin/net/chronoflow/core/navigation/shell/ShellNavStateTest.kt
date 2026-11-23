@@ -123,4 +123,24 @@ class ShellNavStateTest {
             Route.TripPage("t1").toString(),
         )
     }
+
+    @Test fun tripErrorDestinationsClearBothTripPaths() {
+        val initial =
+            ShellNav.initial().copy(
+                stacks =
+                    mapOf(
+                        ShellTab.Today to listOf(Route.Today, Route.TripPage("today-trip")),
+                        ShellTab.Trips to listOf(Route.Trips, Route.TripPage("other-trip")),
+                        ShellTab.Settings to listOf(Route.Settings, Route.Plan),
+                    ),
+            )
+        val trips = ShellNav.leaveTripPage(initial, ShellTab.Trips)
+        assertEquals(ShellTab.Trips, trips.selected)
+        assertEquals(listOf(Route.Today), trips.stacks[ShellTab.Today])
+        assertEquals(listOf(Route.Trips), trips.stacks[ShellTab.Trips])
+        assertEquals(initial.stacks[ShellTab.Settings], trips.stacks[ShellTab.Settings])
+        val today = ShellNav.leaveTripPage(initial, ShellTab.Today)
+        assertEquals(ShellTab.Today, today.selected)
+        assertEquals(trips.stacks, today.stacks)
+    }
 }

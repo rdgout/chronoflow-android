@@ -2,8 +2,13 @@ package net.chronoflow.benchmark
 
 import android.content.Intent
 import android.graphics.Rect
+import android.os.SystemClock
+import android.view.InputDevice
+import android.view.MotionEvent
 import androidx.benchmark.macro.MacrobenchmarkScope
+import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
+import androidx.test.uiautomator.StaleObjectException
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
 import net.chronoflow.core.testing.LargeTimelineFixtures
@@ -15,7 +20,62 @@ const val FREEZE_AT = "2026-10-13T08:00:00Z"
 /** The last day of large60 (1b golden). */
 const val LAST_DAY_TAG = "trip.day.day-29871120-tour-9"
 
+const val LARGE60_OPENING_FIRST_BLOCK = "caffeine-no_caffeine-29866935-caffeine-day-0"
+
+private val listBlockTags = Pattern.compile("trip\\.block\\..*")
+
+fun UiDevice.topListBlock(): String? =
+    findObjects(By.res(listBlockTags))
+        .mapNotNull { row ->
+            try {
+                row.resourceName?.let { it to row.visibleBounds.top }
+            } catch (_: StaleObjectException) {
+                null
+            }
+        }.minByOrNull { it.second }
+        ?.first
+
 private const val READY_WAIT_MS = 10_000L
+
+fun cancelStaleTouch() {
+    val now = SystemClock.uptimeMillis()
+    val pointer =
+        MotionEvent.PointerProperties().apply {
+            id = 0
+            toolType = MotionEvent.TOOL_TYPE_FINGER
+        }
+    val cancel =
+        MotionEvent.obtain(
+            now,
+            now,
+            MotionEvent.ACTION_CANCEL,
+            1,
+            arrayOf(pointer),
+            arrayOf(MotionEvent.PointerCoords()),
+            0,
+            0,
+            1f,
+            1f,
+            0,
+            0,
+            InputDevice.SOURCE_TOUCHSCREEN,
+            MotionEvent.FLAG_CANCELED,
+        )
+    try {
+        // Rejection is harmless when the previous run left no pointer down.
+        InstrumentationRegistry.getInstrumentation().uiAutomation.injectInputEvent(cancel, false)
+    } finally {
+        cancel.recycle()
+    }
+}
+
+fun UiDevice.toggleTripView(list: Boolean) {
+    val toggle = By.res("trip.viewToggle").enabled(true)
+    check(wait(Until.hasObject(toggle), READY_WAIT_MS)) { "the view toggle never became enabled" }
+    checkNotNull(findObject(toggle)).click()
+    val mode = if (list) "trip.mode.list" else "trip.mode.timeline"
+    check(wait(Until.hasObject(By.res(mode)), READY_WAIT_MS)) { "$mode never appeared" }
+}
 
 private val large60DayTags by lazy {
     LargeTimelineFixtures.large60.detail.plan.days

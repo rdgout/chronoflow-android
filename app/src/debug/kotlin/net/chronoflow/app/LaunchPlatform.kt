@@ -8,6 +8,12 @@ import net.chronoflow.debug.DebugRouteLabel
 import net.chronoflow.feature.launch.LaunchController
 
 internal object LaunchPlatform {
+    val startTripInList: Boolean get() =
+        (
+            net.chronoflow.debug.DebugSeedRouting.current
+                ?.planRoute as? net.chronoflow.debug.PlanRouteSeed.Trip
+        )?.list ==
+            true
     val startTripAtSummary: Boolean get() =
         net.chronoflow.debug.DebugSeedRouting.current
             ?.planSummary == true

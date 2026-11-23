@@ -104,4 +104,12 @@ object PlanMetrics {
     const val pointsPerMinute: Double = pointsPerHour / 60
     // Android overlay: replaces PlanMetrics.touch (44 pt) as the minimum hit target, 04 OQ-T5, plan A10
     const val minTouchTarget: Double = 48.0
+    // Android overlay: replaces DayListView trailing status glyph size, phase 6c Task 5
+    const val listStatusIcon: Double = 18.0
+    // Android overlay: replaces DayListView trailing status glyph stroke, phase 6c Task 5
+    const val listStatusStroke: Double = 2.5
+    // Android overlay: replaces ErrorNotFound and ErrorServer button horizontal inset, phase 6c Task 7
+    const val errorPageHorizontal: Double = 24.0
+    // Android overlay: replaces ErrorNotFound and ErrorServer button bottom inset, phase 6c Task 7
+    const val errorPageBottom: Double = 48.0
 }

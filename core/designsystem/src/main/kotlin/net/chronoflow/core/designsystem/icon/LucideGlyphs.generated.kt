@@ -45,6 +45,20 @@ object LucideGlyphs {
             ),
         )
 
+    val Calendar =
+        LucideGlyph(
+            "calendar",
+            listOf(
+                LucidePath("M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-14a2 2 0 0 1-2-2v-14a2 2 0 0 1 2-2Z", false),
+                LucidePath("M16 2v4", false),
+                LucidePath("M8 2v4", false),
+                LucidePath("M3 10h18", false),
+                LucidePath("M8 14h.01", false),
+                LucidePath("M12 14h.01", false),
+                LucidePath("M16 14h.01", false),
+            ),
+        )
+
     val CalendarCheck =
         LucideGlyph(
             "calendar-check",
@@ -126,6 +140,16 @@ object LucideGlyphs {
                 LucidePath("m19.07 4.93-1.41 1.41", false),
                 LucidePath("M15.947 12.65a4 4 0 0 0-5.925-4.128", false),
                 LucidePath("M13 22H7a5 5 0 1 1 4.9-6H13a3 3 0 0 1 0 6Z", false),
+            ),
+        )
+
+    val CloudUpload =
+        LucideGlyph(
+            "cloud-upload",
+            listOf(
+                LucidePath("M12 13v8", false),
+                LucidePath("M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242", false),
+                LucidePath("m8 17 4-4 4 4", false),
             ),
         )
 

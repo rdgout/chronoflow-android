@@ -128,7 +128,14 @@ class TripPageViewModelTest {
                             TripPageArgs("fixture-S3", day?.let { days[it].id }),
                             source,
                             FakePlanClock(now),
-                            pipeline ?: DefaultTripPlanPipeline(decoder, preparer, TimelineTracer.None) {},
+                            pipeline
+                                ?: DefaultTripPlanPipeline(
+                                    decoder,
+                                    preparer,
+                                    catalogs,
+                                    dispatcher,
+                                    TimelineTracer.None,
+                                ) {},
                             saved,
                             Language.En,
                             dispatcher,

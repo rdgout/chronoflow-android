@@ -79,7 +79,7 @@ private fun TripPage(
                         TripPageViewModel(
                             args = TripPageArgs("fixture-$name"),
                             source = FixtureTripPageSource(name, fixture),
-                            pipeline = DefaultTripPlanPipeline(decoder, preparer),
+                            pipeline = DefaultTripPlanPipeline(decoder, preparer, catalogs, Dispatchers.IO),
                             savedState = createSavedStateHandle(),
                             clock = clock,
                             language = language,
