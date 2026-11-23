@@ -51,10 +51,10 @@ The orchestrator reports the pre-review `3ee86fd2` gates passed: `make check` in
 were not supplied). These are baseline results, not reruns on the review fixes.
 
 F3 first created `backup/2026-11-23/phase-14-pre-r1`, then used a scripted,
-non-interactive, signed rebase. At rewritten head `6a35ba37`, **`git diff backup/2026-11-23/phase-14-pre-r1 HEAD` was empty (exit 0)** and the tree object was
+non-interactive, signed rebase. At the rewritten verification-record head (now `854693f9` after round 2), **`git diff backup/2026-11-23/phase-14-pre-r1 HEAD` was empty (exit 0)** and the tree object was
 identical. Only subsequent F1/F2/F4/F5/F6 fixes change that tree. The separate
-`exp/fraunces-titles` ref remains `f61bba93c8d17e94df7efb53d1b56087702d931b`;
-it was not rebased or modified. Evidence: `build/review-r1/rewrite-result.json`.
+`exp/fraunces-titles` ref was not touched by the worker; the orchestrator later
+rebased it onto `d4f5faa0` (now `55162a54`, backup `backup/2026-11-23/exp-fraunces-pre-rebase`). Evidence: `build/review-r1/rewrite-result.json`.
 
 | History repair | Rewritten commit |
 | --- | --- |
@@ -64,9 +64,9 @@ it was not rebased or modified. Evidence: `build/review-r1/rewrite-result.json`.
 | `b30594b9` bar/refresh ordering | `d4f5faa0` |
 | `2d980d75` language test setup | `a432d4d1` |
 | `47b9fa52` loaded-content waits | `ca24c1c4` |
-| Tooling extracted from `9b98e2fe` | `7858fa8e` — `test(audit): record matrix results per avd` |
-| Documentation remaining from `9b98e2fe` | `4ec94ccb` — `docs(audit): record the matrix, strictmode and device runs` |
-| `3ee86fd2` verification record | `6a35ba37` |
+| Tooling extracted from `9b98e2fe` | `5fc0dbc0` — `test(audit): record matrix results per avd`, with its StrictMode glob fix split into `f0cbb77b` in round 2 |
+| Documentation remaining from `9b98e2fe` | `6f3e4f6a` — `docs(audit): record the matrix, strictmode and device runs` |
+| `3ee86fd2` verification record | `854693f9` |
 
 F1 leaves Robustness unchecked until T2/fold/resize acceptance is observed. F2
 checks all four Today title metrics from the fresh archive, with REPORT-only
@@ -126,6 +126,10 @@ FONT_SCALE=1.3 make perf-timeline
 ```
 
 Record the actual final commit, warm wall time, metric/result directory and verdict for each. `make size` must reject a newly introduced `.so`; no new dependency was added here. No budget or waiver is inferred from a missing run.
+
+### Review round 2 (2026-11-23)
+
+Round 2 found that `make matrix` could still leave a T2 emulator running when `ensure` failed, and that two commits mixed concerns. After `backup/2026-11-23/phase-14-pre-r2`, a non-interactive signed rebase split them; `git diff backup/2026-11-23/phase-14-pre-r2 cfa1eebf` is empty. Round 1's fix commits were renamed by that rebase: F1 `46f43558`, F2 `6c52a84d`, F4 `b364dd2f`, F5 `80cecd65`, F6 `31c449e1` (code and test) with its review record in `cfa1eebf`; the StrictMode results-glob fix is `f0cbb77b`, and the failed-boot shutdown is `4a1fb9d0`. Host `make check` passed at `edd5ef8b` (273 s), the pre-round-2 tree of `cfa1eebf`. Host `make check` also passed at `4a1fb9d0`. Round 3 found only this record's stale hashes, fixed here.
 
 ### User-requested side work during the pause
 
