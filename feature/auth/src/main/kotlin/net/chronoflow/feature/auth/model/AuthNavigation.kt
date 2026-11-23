@@ -7,6 +7,13 @@ class AuthNavigation {
     var challengeID: String? = null
         private set
 
+    var forgotEmail: String = ""
+        private set
+
+    fun forgot(email: String = "") {
+        forgotEmail = email
+    }
+
     fun twoFactor(challengeID: String): Boolean {
         if (challengeID.isBlank()) {
             cancelTwoFactor()
@@ -25,6 +32,7 @@ class AuthNavigation {
     }
 
     fun reset() {
+        forgotEmail = ""
         challengeID = null
     }
 

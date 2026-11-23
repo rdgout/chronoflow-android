@@ -7,6 +7,14 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class AuthNavigationTests {
+    @Test fun forgotStoresTheEmailAndResetClearsIt() {
+        val navigation = AuthNavigation()
+        navigation.forgot("a@b.c")
+        assertEquals("a@b.c", navigation.forgotEmail)
+        navigation.reset()
+        assertEquals("", navigation.forgotEmail)
+    }
+
     @Test fun blankAndWhitespaceChallengesCancelTwoFactor() {
         val navigation = AuthNavigation()
         assertTrue(navigation.twoFactor("artificial-challenge"))

@@ -14,6 +14,9 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import net.chronoflow.app.auth.AuthServices
 import net.chronoflow.app.auth.LazyPublicDataSource
+import net.chronoflow.app.auth.mockResetMail
+import net.chronoflow.app.links.AuthLinkDispatcher
+import net.chronoflow.app.links.AuthLinkRouting
 import net.chronoflow.core.data.clock.SystemPlanClock
 import net.chronoflow.core.data.passkey.CredentialManagerClient
 import net.chronoflow.core.data.passkey.PasskeyAnchor
@@ -51,6 +54,8 @@ import net.chronoflow.core.sync.session.SessionController
 import net.chronoflow.core.sync.session.SessionGateRouter
 import net.chronoflow.core.sync.session.SessionTeardown
 import net.chronoflow.core.sync.session.StoredDataReadiness
+import net.chronoflow.feature.auth.links.GuestResetLinkRouter
+import net.chronoflow.feature.auth.links.VerifyLinkReceiver
 import net.chronoflow.feature.auth.model.SessionAcceptor
 import net.chronoflow.feature.auth.model.passkey.DeterministicAssertionProvider
 import net.chronoflow.feature.auth.model.passkey.SystemPasskeyAssertionProvider
@@ -130,8 +135,9 @@ class AppGraph(
             )
         }
     val sessionAccounts: SessionAccountDatabase by accountsLazy
+    val mockSources: MockSources? by lazy { LaunchPlatform.mockSources(dispatchers.io) }
     val dataSources by lazy {
-        SessionDataSources(selection, storageRoot, overrides, LaunchPlatform.mockSources(dispatchers.io), {
+        SessionDataSources(selection, storageRoot, overrides, mockSources, {
             sessionStore.readStoredSession()?.token
         }, dispatchers.io)
     }
@@ -157,6 +163,7 @@ class AppGraph(
                     verification = ::onVerify,
                 )
             },
+            mockMail = mockResetMail(selection.source, mockSources, { dataSources.public() }) { auth.openReset(it) },
             passkeyCapability = passkeyCapability,
             assertionProvider =
                 if (selection.source == DataSourceFactory.Source.Mock) {
@@ -166,6 +173,18 @@ class AppGraph(
                 },
         )
     }
+
+    val authLinks: AuthLinkDispatcher by lazy {
+        AuthLinkDispatcher(pendingLaunchIntents) { authLinkRouting(it) }
+    }
+    val resetRouter: GuestResetLinkRouter by lazy {
+        GuestResetLinkRouter({ controller.presence }, controller.updates, appScope) {
+            rootNavigator.navigate(Route.SignIn)
+            auth.openReset(it)
+        }
+    }
+    val verifyLinks: VerifyLinkReceiver by lazy { VerifyLinkReceiver {} }
+    val authLinkRouting: AuthLinkRouting by lazy { AuthLinkRouting(appScope, resetRouter, verifyLinks) }
 
     val launchIntentHandler: LaunchIntentHandler by lazy { LaunchIntentHandler {} }
     private val syncLazy: Lazy<SessionSync> =
@@ -217,7 +236,7 @@ class AppGraph(
                     logout = { dataSources.forSession(it).signOut() },
                     detach = {
                         accountModel.detach()
-                        onSignedOut()
+                        withContext(dispatchers.main) { onSignedOut() }
                     },
                 ),
                 dispatchers.io,
@@ -285,7 +304,7 @@ class AppGraph(
 
     private val firstCommit by lazy { CompletableDeferred<Unit>() }
     internal val launchReadiness by lazy { FirstCommitReadiness(firstCommit, { readiness }, dispatchers.io) }
-    val launchBridge by lazy { LaunchSessionBridge(rootNavigator) }
+    val launchBridge by lazy { LaunchSessionBridge(rootNavigator) { authLinks.attach() } }
     val pendingLaunchIntents by lazy { PendingLaunchIntents() }
     private val finishMutex by lazy { Mutex() }
     private var launchFinished = false
@@ -298,6 +317,7 @@ class AppGraph(
 
     suspend fun finishLaunch() =
         finishMutex.withLock {
+            authLinks.attach()
             if (!launchFinished) {
                 launchFinished = true
                 gateRouter.start()
@@ -312,7 +332,10 @@ class AppGraph(
         }
 
     private fun onSignedOut() {
-        if (rootNavigator.state.value.route != Route.SignIn) rootNavigator.navigate(Route.SignIn)
+        val route = rootNavigator.state.value.route
+        // Both session observers can arrive after the pending link has opened its reset route.
+        if (route is Route.Reset && auth.resetModel?.isActive == true) return
+        if (route != Route.SignIn) rootNavigator.navigate(Route.SignIn)
     }
 
     suspend fun onVerify(epoch: Long) {

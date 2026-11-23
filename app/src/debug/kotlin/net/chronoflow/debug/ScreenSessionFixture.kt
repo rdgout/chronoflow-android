@@ -13,6 +13,7 @@ object ScreenSessionFixture {
     suspend fun route(
         graph: AppGraph,
         audit: String? = null,
+        auditState: String? = null,
     ) {
         val presence = graph.readiness.session()
         LaunchTrace.endSession()
@@ -31,6 +32,18 @@ object ScreenSessionFixture {
 
             "forgot" -> {
                 graph.rootNavigator.navigate(Route.Forgot)
+            }
+
+            "reset" -> {
+                if (auditState != "expired") {
+                    val source = graph.dataSources.public()
+                    source.requestPasswordReset(MockScenarioValues.demoEmail)
+                    val link = checkNotNull(graph.mockSources?.latestResetLink(source, MockScenarioValues.demoEmail))
+                    withContext(graph.dispatchers.main) {
+                        graph.rootNavigator.navigate(Route.SignIn)
+                        graph.auth.openReset(link)
+                    }
+                }
             }
 
             "two-factor" -> {

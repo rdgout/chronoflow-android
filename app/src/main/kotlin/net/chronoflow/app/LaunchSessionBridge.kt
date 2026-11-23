@@ -7,7 +7,9 @@ import net.chronoflow.feature.launch.model.LaunchState
 
 class LaunchSessionBridge(
     private val navigator: RootNavigator,
+    private val rootMounted: () -> Unit = {},
 ) {
+    private var attached = false
     private var launchRevision = navigator.state.value.revision
 
     fun update(state: LaunchState) {
@@ -15,6 +17,10 @@ class LaunchSessionBridge(
         if (navigator.state.value.revision != launchRevision) return
         navigator.navigate(route.toRoute())
         launchRevision = navigator.state.value.revision
+        if (!attached) {
+            attached = true
+            rootMounted()
+        }
     }
 }
 

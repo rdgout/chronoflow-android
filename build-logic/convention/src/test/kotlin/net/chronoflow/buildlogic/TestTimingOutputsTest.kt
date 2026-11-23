@@ -13,6 +13,26 @@ class TestTimingOutputsTest {
     private val project = ProjectBuilder.builder().build()
 
     @Test
+    fun executingATestReplacesOldTimingsAndMarksExecution() {
+        project.configureTestTimingOutputs()
+        val task = project.tasks.register("test", GradleTest::class.java).get()
+        val directory =
+            project.layout.buildDirectory
+                .dir("cf-timings/test")
+                .get()
+                .asFile
+        directory.mkdirs()
+        val oldTiming = directory.resolve("old.json").apply { writeText("{}") }
+        val marker = directory.resolve("execution.started")
+        assertThat(marker.exists()).isFalse()
+
+        task.actions.first().execute(task)
+
+        assertThat(oldTiming.exists()).isFalse()
+        assertThat(marker.isFile).isTrue()
+    }
+
+    @Test
     fun timingMeasurementsCannotBeRestoredFromTheBuildCache() {
         val existing = project.tasks.register("test", GradleTest::class.java).get()
         project.configureTestTimingOutputs()

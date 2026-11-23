@@ -31,7 +31,8 @@ class MetricsGoldenTest {
     fun planUITokens() = compare("PlanUITokens.generated.swift", 115, ui.metrics)
 
     @Test
-    fun authTokens() = compare("AuthTokens.generated.swift", 36, authTokens(repoRoot).metrics)
+    fun authTokens() =
+        compare("AuthTokens.generated.swift", 36, authTokens(repoRoot).metrics, setOf("headingCheckStroke"))
 
     @Test
     fun settingsTokens() {

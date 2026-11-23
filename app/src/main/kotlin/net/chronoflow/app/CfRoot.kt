@@ -22,6 +22,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFontFamilyResolver
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
@@ -35,12 +36,16 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import net.chronoflow.app.auth.SignInViewModelFactory
 import net.chronoflow.app.auth.TwoFactorViewModelFactory
+import net.chronoflow.core.designsystem.effect.skyBackground
 import net.chronoflow.core.designsystem.layout.LocalSafeInsets
 import net.chronoflow.core.designsystem.theme.CfTheme
 import net.chronoflow.core.designsystem.theme.ChronoFlowTheme
 import net.chronoflow.core.designsystem.theme.warmFontsAfterFirstFrame
 import net.chronoflow.core.navigation.RootState
 import net.chronoflow.core.navigation.Route
+import net.chronoflow.feature.auth.forgot.ForgotPasswordRoute
+import net.chronoflow.feature.auth.reset.ResetPasswordRoute
+import net.chronoflow.feature.auth.shell.EmailAppLauncher
 import net.chronoflow.feature.auth.signin.SignInScreen
 import net.chronoflow.feature.auth.twofactor.TwoFactorScreen
 import net.chronoflow.feature.launch.LaunchOverlay
@@ -85,7 +90,10 @@ internal fun CfRoot(
         content == null &&
             (
                 displayedRoute == null || displayedRoute == Route.Welcome ||
-                    (displayedRoute == Route.SignIn || displayedRoute == Route.TwoFactor)
+                    (
+                        displayedRoute == Route.SignIn || displayedRoute == Route.TwoFactor ||
+                            displayedRoute == Route.Forgot || displayedRoute is Route.Reset
+                    )
             )
     SideEffect { onSystemBars(night, overlayShowing, onSky || launchSky) }
     val currentRoute = rememberUpdatedState(displayedRoute)
@@ -135,6 +143,29 @@ internal fun CfRoot(
                                                 modifier = Modifier.testTag("route.welcome"),
                                             )
                                         }
+                                    }
+
+                                    is Route.Reset -> {
+                                        val model = graph.auth.resetModel
+                                        if (model == null) {
+                                            Box(Modifier.fillMaxSize().skyBackground(CfTheme.colors.isDark))
+                                            LaunchedEffect(Unit) { graph.rootNavigator.navigate(Route.SignIn) }
+                                        } else {
+                                            val context = LocalContext.current
+                                            val launcher = remember(context) { EmailAppLauncher(context) }
+                                            ResetPasswordRoute(model, launcher::open)
+                                        }
+                                    }
+
+                                    Route.Forgot -> {
+                                        val model =
+                                            remember(graph.auth) {
+                                                graph.auth.forgotModel
+                                                    ?: graph.auth.startForgot()
+                                            }
+                                        val context = LocalContext.current
+                                        val launcher = remember(context) { EmailAppLauncher(context) }
+                                        ForgotPasswordRoute(model, expired = false, openEmailApp = launcher::open)
                                     }
 
                                     Route.TwoFactor -> {

@@ -7,9 +7,11 @@ import android.net.Uri
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import net.chronoflow.core.navigation.Route
 import net.chronoflow.core.testing.tiers.Logic
 import net.chronoflow.debug.DebugAppHooks
@@ -58,7 +60,8 @@ class WarmLaunchIntentTest {
                             data = Uri.parse("https://app.chronoflow.net/x")
                         }
                     }
-                ActivityScenario.launch<MainActivity>(incoming).use {
+
+                suspend fun checkHandoff() {
                     assertEquals(LaunchKind.Warm, graph.launch.lastLaunchKind)
                     // The mount callback calls finishLaunch when no overlay remains.
                     graph.finishLaunch()
@@ -66,8 +69,13 @@ class WarmLaunchIntentTest {
                     assertNull("warm activity intent was left buffered", graph.pendingLaunchIntents.consume())
                     assertEquals(Route.Today, graph.rootNavigator.state.value.route)
                 }
+                if (reminder) {
+                    ActivityScenario.launch<MainActivity>(incoming).use { checkHandoff() }
+                } else {
+                    withLinkActivity(incoming) { checkHandoff() }
+                }
             } finally {
-                graph.close()
+                withContext(NonCancellable) { graph.close() }
             }
         }
 

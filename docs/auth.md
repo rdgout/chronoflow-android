@@ -1,8 +1,8 @@
-# Auth shell and Sign in
+# Authentication
 
-Phase 5a, 2026-11-18. The implementation follows the pinned iOS auth models and the AuthSignIn/AuthStates boards. Auth routes replace the root without transitions. Two-factor, Forgot, Sign up and the accepted-session destinations retain their existing route placeholders until their phases.
+The implementation follows the pinned iOS auth models and the auth boards. Auth routes replace the root without transitions. Sign in (5a), two-factor (5b) and password reset/App Links (5c) are implemented; Sign up and the accepted-session destinations retain their placeholders until their phases. The sections below retain each phase's verification record.
 
-Implementation and the focused JVM/Robolectric checks are complete. Both orchestrator-authorized follow-up checks pass: the unchanged keyboard test with the full keyboard after correcting functional device prep, and the complete `make quick` command in 31.88 s. Acceptance remains **open** for browser board comparison, manual autofill/TalkBack checks, and `make check`. No performance benchmark, baseline-profile, `make check` or other emulator tier ran.
+Phase 5a, 2026-11-18: implementation and the focused JVM/Robolectric checks are complete. Both orchestrator-authorized follow-up checks pass: the unchanged keyboard test with the full keyboard after correcting functional device prep, and the complete `make quick` command in 31.88 s. Acceptance remains **open** for browser board comparison, manual autofill/TalkBack checks, and `make check`. No performance benchmark, baseline-profile, `make check` or other emulator tier ran.
 
 ## Shell and tokens
 
@@ -369,3 +369,128 @@ Earlier implementation validation: 60 model/copy/sign-in cases passed in 16.29 s
 The initial Task 10 stop after two autofill assertion fixes is retained in the history. No production hint was removed. The orchestrator authorized the shared-value resolution: internal `contentHints` access is removed from the two-factor tests, and no reflection or visibility bypass was introduced. The phase adds no new copy. OQ-5b-1…11 are recorded as OQ-A193…OQ-A203; OQ-A194 records that both OTP hints shipped. Passkey server/device prerequisites and the capability flip procedure are in [Passkey sign-in](passkeys.md). `SERVER_READY` remains false.
 
 `make check`, perf/timeline measurements and profile regeneration were not run, as instructed. No Phase 5b performance-budget measurement is requested; only the release dependency size delta is recorded in [Startup performance](perf-startup.md#release-size).
+
+## Password reset and App Links (Phase 5c, 2026-11-18)
+
+Forgot, Reset, Expired and Done port the pinned iOS models and views. A successful reset returns HTTP 204 and creates no session. Continue returns to Sign in. The [App Links setup](app-links.md) documents the release manifest, server association and actual emulator evidence. Verify links reach a `VerifyLinkReceiver` seam; Phase 5d supplies the verification coordinator. Phase 5c does not call the verification endpoint.
+
+### State and request tables
+
+| Forgot / Expired state | Presentation and next action |
+|---|---|
+| Forgot, unsent | Empty editable email; Send reset link; back to Sign in |
+| Expired, unsent | Problem heading glyph; link email prefilled and editable; Send a new link sends directly |
+| Busy | Whole screen disabled, one pending-button spinner; tap and IME share one request lock |
+| Displayed field failure | Remain on form, localized email field error; first invalid field receives focus |
+| Offline / throttle / other failure | Remain on form with the context-specific banner; no client validation or countdown |
+| Sent, including unknown recipient | Identical notice interpolating the submitted email; Open email app and Back to sign in; further submit is ignored |
+| Expired after resend | Switch in place to the Forgot sent heading/subtitle and remove the problem glyph |
+| Cancel / back | Cancel the request, ignore late completion; back resets auth navigation and returns to Sign in |
+
+Editing after success cannot alter `sentEmail`. Mock mail looks up that submitted recipient, normalized only for inbox matching, and opens the latest mock reset link in the app. It is available only with debug mock sources. A real email launch uses the native `ACTION_MAIN` / `CATEGORY_APP_EMAIL` selector; a missing handler leaves the sent notice unchanged.
+
+| Reset state / event | Result |
+|---|---|
+| Valid in-memory link | Form with New password, full policy hint, confirmation and Save new password |
+| Missing/invalid link | Expired recovery form carrying the link email |
+| Submit | Snapshot both secrets into the public request; duplicate submit ignored |
+| HTTP 204 | Done, check glyph, honest signed-out copy and Continue → Sign in |
+| Invalid/expired-token validation key | Expired recovery, regardless of the field containing that key |
+| Other supported displayed-field validation | Remain on Form with localized field feedback |
+| Hidden/unknown validation or other failure | Designed banner, with supported displayed-field errors retained |
+| Every completed, failed or cancelled attempt | Clear both `SecretField`s in `finally` and release the busy lock |
+| System back / Continue | Cancel the current model and return to Sign in; form and Done have no drawn back |
+
+Submit paths rethrow cancellation before mapping `SessionFailure`, `DataFailure`, `DeviceIdentityFailure`, `StoreFailure`, `IOException`, `GeneralSecurityException` and `RuntimeException` to the designed feedback. Typed server keys resolve through the generated resources; no raw server message reaches the screen.
+
+### Ownership, secrets and launch hand-off
+
+| Value / work | Owner and lifetime |
+|---|---|
+| Forgot model and submitted email | `AuthServices.forgotModel`, survives activity recreation, cancelled and released on route exit |
+| Reset token, link and recovery model | `AuthServices.resetModel`; this is the in-memory holder from OQ-A175, with no separate holder class |
+| Route | `Reset(email)` only; never the token |
+| Password and confirmation | Composition-owned `remember { TextFieldState() }`; discarded on recreation and never saved |
+| Request | Composition-owned coroutine scope/job; disposal cancels it and the model ignores late completion |
+| Screen | Stateless `XScreen(state, onEvent)`; route adapters collect model state and own fields/focus |
+| Network, mock inbox, disk and Keystore | Existing source/store abstractions with injected IO dispatchers; no launch-time IO added |
+
+Opening another reset cancels the previous reset and Forgot models. The route observer reads the navigator's current route so a queued earlier Sign in emission cannot cancel a newly opened Reset model. There is no activity-scoped Forgot/Reset ViewModel retaining a cancelled model. `ResetPasswordLink` and `SignedVerificationInput` redact secrets in `toString()`. Saved-bundle tests inspect the actual activity registry and prove passwords/token are absent; a recreation retains the model but loses both typed passwords.
+
+`PendingLaunchIntents` captures fresh VIEW links in order, ignoring restored activities and history launches. Repeated equal URLs move to the end; the latest auth link wins. Cold `onCreate` captures then clears launch-intent data. Warm `onNewIntent` captures the incoming parameter and does not call `setIntent`: the original stored launch intent stays unchanged. Non-auth links remain with the existing `LaunchIntentHandler`, and reminder guards retain their earlier behaviour.
+
+The dispatcher attaches immediately after `LaunchSessionBridge` first navigates the launch route, matching iOS root mount beneath the overlay. `finishLaunch` is an idempotent backstop. The ending remains committed; Welcome uses the existing moon fallback target if the link replaces it. Dispatcher construction touches only the in-memory pending buffer. It resolves auth services only when delivering after attachment.
+
+`GuestResetLinkRouter` opens immediately only when signed out. Unknown or signed-in presence retains the latest pending reset until sign-out, then opens once. Both the session gate observer and teardown can report the same sign-out; `AppGraph.onSignedOut` preserves the newly opened Reset route, and teardown navigation runs on injected main. The real-session test covers this order without changing earlier route behaviour. Root swaps retain no transition.
+
+### Board comparison and settled adaptations
+
+The one capture invocation was:
+
+```sh
+make captures ONLY=AuthForgot,AuthReset,AuthResetDone,AuthResetExpired,auth/ForgotSent,auth/ExpiredSent,auth/ResetFieldErrors
+```
+
+It wrote **11 PNGs in 11.83 s**: eight English light/dark board states plus the sent, expired-sent and field-error states under `build/captures/`. Captures were visually reviewed against the local HTML's geometry, type and surface declarations and the settled iOS overrides. Forgot sent and Expired sent are byte-identical, as intended. Browser-rendered side-by-side review remains open; no browser comparison is claimed.
+
+| Board | Recorded difference / disposition |
+|---|---|
+| All four | Settled: plain generated sky, no dots; native 48 dp targets around the board's 40 dp primary-button visual; generated colors, spacing and typography in both themes |
+| `AuthForgot` | Settled: starts empty rather than `rick@example.com`; notice uses the submitted recipient and the catalog's “Check your inbox.” including its period; throttled banner uses “Too many requests.” and the request-specific body |
+| `AuthReset` | Settled: honest “Sign in with your new password once it's saved.” subtitle; “Save new password”; full 12-character/upper/lower/number/symbol/data-leak policy replaces the old 10-character hint; no drawn back |
+| `AuthReset` | Native adaptation: long policy wraps and increases card height; fields remain at least 48 dp and scroll rather than shrinking type |
+| `AuthResetDone` | Settled: “Password updated. Sign in with your new password.”; other devices are signed out; Continue → Sign in, no session; check glyph; no drawn back |
+| `AuthResetExpired` | Settled: editable link email; resend happens directly and switches to Forgot sent in place, including its heading/subtitle and no glyph |
+| `AuthResetExpired`, `AuthResetDone` | Settled: 48 dp minimum recovery/Continue buttons, 48 dp heading circle with 24 dp glyph and 8 dp below |
+| All four | Native adaptation: 48 dp opposite header slots replace 44 dp board slots, keeping the brand centred; intrinsic Android font wrapping changes line breaks/card height; standard underline is inherited from the auth shell |
+
+The guards cover `small`, `pixel8`, `foldInner`, `landscapeSideNav`, `largeFont` and Dutch with the root font cap. No copy or approval row was added; generated English/Dutch resources and `tools/l10n/android-only.json` are unchanged.
+
+### Swift test port map
+
+All Swift sources below are read at `f391a1fa`. Same-named Kotlin cases preserve the pinned assertions; Android-only cases add failure, secret, recreation and routing guards.
+
+| Swift suite / method | Kotlin selection |
+|---|---|
+| `AppCoreTests/AuthLinkTests`: `exactSignedVerificationShapeAndMalformedInputs`, `exactResetURLDecodesOnceAndKeepsPlusPercentAndUnicode` | `core:model:AuthLinkTests`, same methods; plus `PercentDecodingTest` and `AuthLinkUrlsTest` |
+| `ForgotPasswordModelTests`: `mockMailDeliveryUsesTheSubmittedRecipientEvenAfterLaterEdits`, `existingAndUnknownAddressesHaveIdenticalSuccessWithoutASession` | `feature:auth:ForgotPasswordModelTests`, same methods |
+| `fieldServerThrottleOfflineAndHiddenFailuresKeepTheFormAndEmail`, `serverValidatesBlankAndMalformedEmailWithoutClientValidation` | Same suite/names, one uniquely named parameter case per failure/input |
+| `busyLockIgnoresEditsAndDuplicateTapOrReturnAndCapturesSubmittedEmail` | Same suite/name, gated request |
+| `cancellationAndBackIgnoreLateCompletion` argument rows | Same suite, `cancellationAndBackIgnoreLateCompletionCancel` and `cancellationAndBackIgnoreLateCompletionBack` |
+| `emailAppMissingHandlerPreservesTheSentNoticeAndBackReturnsToSignIn`, `expiredResetCanPrefillANewFormWithoutReusingSentState` | Same suite/names |
+| `noticeUsesTypedInterpolationInEnglishAndDutch` | `feature:auth:ForgotPasswordCopyTest`, same method; resource-only assertions |
+| `ResetPasswordModelTests`: `mockMailResetClearsSecretsRevokesSessionsAndCannotBeReused`, `missingInvalidAndServerFieldMessagesUseDesignedStates`, `cancelAndDuplicateSubmissionIgnoreLateCompletion` | `feature:auth:ResetPasswordModelTests`, same methods |
+| `GuestResetLinkRouterTests.swift` extension of `ResetPasswordModelTests`: `unresolvedLaunchWaitsForSignedOutRestore`, `guestOpensImmediatelyAndDoesNotReplayOnLaterSessionUpdates` | File-based Kotlin suite `feature:auth:GuestResetLinkRouterTests`, same methods |
+| `activeSessionDefersLatestLinkUntilSignOut` argument rows | Same router suite, `activeSessionDefersLatestLinkUntilSignOutUnverified` / `…Verified`; real teardown additionally covered in `app:LinkRecreationTest` |
+| `AuthUniversalLinkTests`: `testSignedColdAndWarmBrowsingActivitiesReachTheSameRouter`, `testColdCaptureAndWarmActivityPreserveResetInputWithoutAScheme` | `app:AuthUniversalLinkTests`, same methods |
+
+Structural Robolectric suites cover shared glyph/email launcher/policy, both screens, guards and the manifest filter. Real-graph `ForgotRecreationTest` and `ResetRecreationTest` live in `:app`, preserving the feature-to-core dependency direction. JVM `ForgotRoutingTest`, `OpenResetTest`, intent policy/dispatcher/routing and seed tests cover behaviour without Compose copy assertions. A temporary plus-to-space decoder mutation failed the literal-plus parser assertion, then passed after restoration.
+
+### Integration patches and verification
+
+The preflight refresh is commit `a1bbafd`. It records the landed `DataFailure` status parameters, existing lazy public source, transitive test-model dependency, source-taking mock lookup, current `CfRoot` route switch and app-owned recreation fixtures. Screens follow the stronger stateless-screen rule. Reminder fresh-launch behaviour stays intact. The sign-out hand-off correction and the subsequent harness/intent follow-ups are recorded in the brief.
+
+The first Task 8 run hung because `ActivityScenario` matches activities with `Intent.filterEquals`, while cold-link scrubbing deliberately changes the URI. The orchestrator diagnosed this; link-launched Robolectric tests now use `Robolectric.buildActivity`/`ActivityController`, retaining all assertions. Non-link launches still use ActivityScenario. A later emulator teardown exposed the warm-intent variant of the same matching issue; the production fix preserves the original launch intent in `onNewIntent` (commit `ecfc7dd`). The added test asserts intent identity, no data, exactly one capture/navigation and no replay after recreation. Neither fix weakens the cold scrub.
+
+| Focused selection / command | Result | Wall time |
+|---|---|---|
+| Parser / percent decoding / URL helper | 24 pass; restored negative-control method passes | 6.61 s; restored 1.67 s |
+| Heading glyph / email launcher / password policy | 12 pass; generated token golden passes | 5.81 s; golden Gradle 2 s |
+| Forgot model/copy/navigation + app routing/ownership | 38 pass; busy-lock method also rerun after formatting | approximately 10.77 s; busy method tier 2.71 s |
+| Forgot screen/guards + activity recreation/back | 21 pass; 14 guard cases, each below 5 s | approximately 14.12 s |
+| Reset model + app routing/ownership | 28 pass | approximately 7.24 s |
+| Reset screen/policy/guards + corrected recreation fixture | 19 feature cases and three recreation methods pass; each guard below 5 s | feature Gradle 8 s; corrected app tier 7.25 s |
+| `GuestResetLinkRouterTests` | Five pass | 2.91 s |
+| Manifest rule suites | 22 pass, including malformed-filter controls | Gradle 14 s |
+| `LinkRecreationTest` affected cold / history / real-sign-out methods | Pass, test durations 2.524 / 2.328 / 2.666 s | tiers 9.33 / 4.45 / 4.76 s |
+| Task 8 app selection + Forgot/Reset recreation regressions | 54 pass, zero budget misses | 8.16 s |
+| `LinkRecreationTest#warmViewKeepsTheLaunchIntentAndCapturesTheLinkOnce` | Pass, test 3.819 s | 10.98 s |
+| `PasswordResetLinkJourneyTest` | Pass on pixel/API 36/debug; test 3.435 s, StrictMode IO counter zero, signed out with no session blob | 9.43 s |
+| `PendingLaunchIntentTest`, app pending/launch/reseed/auth ownership, release readiness | All pass | per-group Gradle 4 / 6 / 17 s |
+| `SignInGuardsTest` | 17 pass, slowest 3.362 s; zero budget misses | 14.22 s |
+| `./gradlew --console=plain :app:lintDebug :app:lintRelease :app:testReleaseUnitTest -Pcf.tier=quick :app:verifyReleaseManifest :app:analyzeReleaseR8Config` | Pass; 141 release unit tests, no failures; both Lint variants clean; exact manifest and R8 analysis pass | 96.05 s |
+| `make generators-check` | Pass; committed generated outputs match, en/nl parity and generator tests pass | 15.39 s |
+
+Logs, XML and available per-run timing JSON are retained under `build/phase5c-validation/`. The earlier failed journey took 47.631 s in teardown (tier 68.38 s); the authorized production fix and single retry above supersede it. No additional emulator journey was run. OQ-5c-1…9 are recorded as OQ-A205…OQ-A213. `CF_AUTH_TEST_LINK` is listed in the seed spec and is debug/test-ID gated, memory-only, and absent from release.
+
+The single final `make quick` follows the documentation commit; its exact command, exit status and wall time are retained in the validation directory and the final report. `make check`, performance tiers and profile regeneration are reserved for the orchestrator as instructed. Startup cold/warm TTID, launch first-frame/TTFD and launch-jank numbers remain unmeasured for this phase; no device performance claim is made. No dependency or native library was added.

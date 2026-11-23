@@ -18,8 +18,12 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.core.view.WindowCompat
 import androidx.test.core.app.ApplicationProvider
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
 import net.chronoflow.core.designsystem.generated.CfDarkColors
 import net.chronoflow.core.designsystem.generated.CfLightColors
+import net.chronoflow.core.model.auth.ResetPasswordLink
 import net.chronoflow.core.testing.tiers.Layout
 import net.chronoflow.feature.launch.LaunchOverrides
 import org.junit.Assert.assertEquals
@@ -33,6 +37,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
+import kotlin.time.Duration.Companion.seconds
 
 @Layout
 @RunWith(RobolectricTestRunner::class)
@@ -89,6 +94,40 @@ class CfRootTest {
     @Test fun lightScreenUsesDarkSystemBarIcons() = verifySystemBarFlags(false)
 
     @Test fun darkScreenUsesLightSystemBarIcons() = verifySystemBarFlags(true)
+
+    /** Android-only regression (new): Reset's navy sky needs light status icons without the launch overlay. */
+    @Test fun lightResetSkyUsesLightStatusBarIcons() {
+        RuntimeEnvironment.setQualifiers("+notnight")
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        val dispatcher = StandardTestDispatcher()
+        val graph =
+            AppGraph(
+                app,
+                overrides = GraphOverrides(dispatchers = AppDispatchers(dispatcher, Dispatchers.IO, dispatcher)),
+            )
+        graph.auth.openReset(ResetPasswordLink("reset-token", "person@example.com"))
+        var statusIcons: IconAppearance? = null
+        try {
+            compose.setContent {
+                CfRoot(
+                    graph,
+                    false,
+                    true,
+                    CompletableDeferred(),
+                    null,
+                    onSystemBars = { night, overlay, sky ->
+                        assertFalse(night)
+                        assertFalse(overlay)
+                        statusIcons = SystemBarStyles.statusBar(night, overlay, sky)
+                    },
+                )
+            }
+            compose.onNodeWithTag("reset.password").assertExists()
+            assertEquals(IconAppearance.LightIcons, statusIcons)
+        } finally {
+            runTest(dispatcher, timeout = 60.seconds) { graph.close() }
+        }
+    }
 
     @Test fun lightRootPaintsTheAppBackgroundWithoutAnOverlay() = verifyRootBackground(false)
 
