@@ -10,7 +10,7 @@ import android.os.LocaleList
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import net.chronoflow.app.MainActivity
-import net.chronoflow.app.config.DeviceConfigFile
+import net.chronoflow.core.datastore.DevicePreferences
 import net.chronoflow.core.model.config.LanguageChoice
 import net.chronoflow.core.model.config.ThemeChoice
 import java.io.File
@@ -29,19 +29,16 @@ object TestSeeds {
             dir.deleteRecursively()
             dir.mkdirs()
         }
-        var file = DeviceConfigFile.readForLaunch(context, sdkInt = 0)
-        var fileChanged = false
         seed.language?.let { language ->
+            DevicePreferences.shared(context).setLanguage(language, sdkInt)
             if (sdkInt >= 33) {
                 val tags = if (language == LanguageChoice.System) "" else language.raw
                 context.getSystemService(LocaleManager::class.java).applicationLocales =
                     LocaleList.forLanguageTags(tags)
-            } else {
-                file = file.copy(language = language)
-                fileChanged = true
             }
         }
         seed.theme?.let { theme ->
+            DevicePreferences.shared(context).setTheme(theme, sdkInt)
             if (sdkInt >= 31) {
                 val mode =
                     when (theme) {
@@ -50,12 +47,8 @@ object TestSeeds {
                         ThemeChoice.Dark -> UiModeManager.MODE_NIGHT_YES
                     }
                 context.getSystemService(UiModeManager::class.java).setApplicationNightMode(mode)
-            } else {
-                file = file.copy(theme = theme)
-                fileChanged = true
             }
         }
-        if (fileChanged) DeviceConfigFile.write(context, file, io)
         UITestTimeline.record("seed-applied", seed, "keys=${seed.raw.keys.sorted().joinToString(",")}")
         if (seed.ignoredKeys.isNotEmpty()) {
             UITestTimeline.record("seed-ignored", seed, "keys=${seed.ignoredKeys.sorted().joinToString(",")}")

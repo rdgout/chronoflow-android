@@ -2,7 +2,7 @@ package net.chronoflow.app
 
 import android.os.StrictMode
 import androidx.test.platform.app.InstrumentationRegistry
-import net.chronoflow.app.config.DeviceConfigFile
+import net.chronoflow.core.datastore.DeviceConfigFile
 import net.chronoflow.core.model.config.DeviceConfig
 import net.chronoflow.core.model.config.LanguageChoice
 import net.chronoflow.core.testing.tiers.Smoke

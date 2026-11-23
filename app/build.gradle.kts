@@ -37,6 +37,13 @@ android {
         generateLocaleConfig = true
     }
 
+    packaging {
+        jniLibs {
+            // Single-process DataStore does not use the native shared counter (OQ-A131).
+            excludes += "**/libdatastore_shared_counter.so"
+        }
+    }
+
     lint {
         checkDependencies = true
     }
@@ -93,6 +100,9 @@ dependencies {
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.uiautomator)
     androidTestImplementation(libs.assertk)
+    androidTestImplementation(libs.kotlinx.coroutines.test)
+    androidTestImplementation(libs.androidx.datastore.preferences)
+    androidTestImplementation(libs.sqldelight.android.driver)
     androidTestImplementation(project(":core:testing"))
     androidTestImplementation(project(":core:testing-compose")) {
         exclude(group = "org.robolectric")

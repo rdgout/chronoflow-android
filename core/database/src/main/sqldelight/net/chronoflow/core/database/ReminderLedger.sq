@@ -1,0 +1,8 @@
+CREATE TABLE reminder_ledger (
+  id INTEGER PRIMARY KEY,
+  trip_id TEXT NOT NULL,
+  input_hash TEXT NOT NULL,
+  send_at_ms INTEGER NOT NULL,
+  member_keys TEXT NOT NULL
+);
+CREATE INDEX reminder_ledger_send_at_ms ON reminder_ledger(send_at_ms);

@@ -7,7 +7,7 @@ import android.view.View
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import assertk.assertThat
 import assertk.assertions.isEqualTo
-import net.chronoflow.app.config.DeviceConfigFile
+import net.chronoflow.core.datastore.DeviceConfigFile
 import net.chronoflow.core.testing.tiers.Layout
 import org.junit.Test
 import org.junit.runner.RunWith

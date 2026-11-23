@@ -1,0 +1,5 @@
+CREATE TABLE check_marks (
+    trip_id TEXT NOT NULL, input_hash TEXT NOT NULL, type TEXT NOT NULL, local_date TEXT NOT NULL,
+    ordinal INTEGER NOT NULL, status TEXT NOT NULL, marked_at TEXT NOT NULL,
+    PRIMARY KEY (trip_id, input_hash, type, local_date, ordinal)
+);
