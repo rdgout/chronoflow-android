@@ -4,8 +4,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import net.chronoflow.app.WelcomeDestinations
+import net.chronoflow.core.navigation.RootNavigator
+import net.chronoflow.core.navigation.Route
 
-class DebugWelcomeDestinations : WelcomeDestinations {
+class DebugWelcomeDestinations(
+    private val navigator: RootNavigator,
+) : WelcomeDestinations {
     override var seam by mutableStateOf<String?>(null)
         private set
 
@@ -14,7 +18,7 @@ class DebugWelcomeDestinations : WelcomeDestinations {
     }
 
     override fun signIn() {
-        seam = "signIn"
+        navigator.navigate(Route.SignIn)
     }
 
     override fun closeSeam() {

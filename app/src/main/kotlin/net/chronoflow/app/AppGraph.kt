@@ -12,6 +12,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import net.chronoflow.app.auth.AuthServices
+import net.chronoflow.app.auth.LazyPublicDataSource
 import net.chronoflow.core.data.clock.SystemPlanClock
 import net.chronoflow.core.data.repository.AccountModel
 import net.chronoflow.core.data.repository.OutboxRepository
@@ -27,6 +29,7 @@ import net.chronoflow.core.datastore.AndroidKeystoreSessionCipher
 import net.chronoflow.core.datastore.DeviceIdentityStore
 import net.chronoflow.core.datastore.DevicePreferences
 import net.chronoflow.core.datastore.KeystoreSessionStore
+import net.chronoflow.core.datastore.androidDeviceName
 import net.chronoflow.core.model.session.SessionStore
 import net.chronoflow.core.model.session.readStoredSession
 import net.chronoflow.core.model.store.StoreFailure
@@ -43,6 +46,7 @@ import net.chronoflow.core.sync.session.SessionController
 import net.chronoflow.core.sync.session.SessionGateRouter
 import net.chronoflow.core.sync.session.SessionTeardown
 import net.chronoflow.core.sync.session.StoredDataReadiness
+import net.chronoflow.feature.auth.model.SessionAcceptor
 import net.chronoflow.feature.launch.LaunchController
 import net.chronoflow.feature.launch.LaunchTrace
 import java.io.File
@@ -127,6 +131,25 @@ class AppGraph(
     val accountModel by lazy { AccountModel(appScope) }
     val hooks: SessionHooks by lazy { NoopSessionHooks }
     val rootNavigator by lazy { RootNavigator() }
+    val welcomeDestinations: WelcomeDestinations by lazy { LaunchPlatform.welcomeDestinations(rootNavigator) }
+    val auth: AuthServices by lazy {
+        AuthServices(
+            rootNavigator,
+            appScope,
+            dispatchers,
+            LazyPublicDataSource { dataSources.public() },
+            SessionAcceptor { controller.accept(it) },
+            { deviceIdentity.identity() },
+            { androidDeviceName(app, dispatchers.io) },
+            {
+                readiness.routeAcceptedSession(
+                    navigate = { rootNavigator.navigate(it.toRoute()) },
+                    verification = ::onVerify,
+                )
+            },
+        )
+    }
+
     val launchIntentHandler: LaunchIntentHandler by lazy { LaunchIntentHandler {} }
     private val syncLazy: Lazy<SessionSync> =
         lazy {

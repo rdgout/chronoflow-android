@@ -29,14 +29,18 @@ import androidx.compose.ui.semantics.hideFromAccessibility
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.lifecycle.viewmodel.MutableCreationExtras
+import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
+import net.chronoflow.app.auth.SignInViewModelFactory
 import net.chronoflow.core.designsystem.layout.LocalSafeInsets
 import net.chronoflow.core.designsystem.theme.CfTheme
 import net.chronoflow.core.designsystem.theme.ChronoFlowTheme
 import net.chronoflow.core.designsystem.theme.warmFontsAfterFirstFrame
 import net.chronoflow.core.navigation.RootState
 import net.chronoflow.core.navigation.Route
+import net.chronoflow.feature.auth.signin.SignInScreen
 import net.chronoflow.feature.launch.LaunchOverlay
 import net.chronoflow.feature.launch.model.LaunchRoute
 import net.chronoflow.feature.launch.welcome.WelcomeScreen
@@ -50,7 +54,7 @@ internal fun CfRoot(
     reduceMotion: Boolean,
     firstCommit: Deferred<Unit>,
     jankTagger: TimelineJankTagger?,
-    destinations: WelcomeDestinations = LaunchPlatform.welcomeDestinations,
+    destinations: WelcomeDestinations = graph.welcomeDestinations,
     onSky: Boolean = false,
     onSystemBars: (Boolean, Boolean, Boolean) -> Unit = { _, _, _ -> },
     content: (@Composable () -> Unit)? = null,
@@ -75,7 +79,8 @@ internal fun CfRoot(
     val night = isSystemInDarkTheme()
     val overlayShowing = graph.launch.overlayActive
     // Skipped overlays wait for first commit before readiness can select a route.
-    val launchSky = content == null && (displayedRoute == null || displayedRoute == Route.Welcome)
+    val launchSky =
+        content == null && (displayedRoute == null || displayedRoute == Route.Welcome || displayedRoute == Route.SignIn)
     SideEffect { onSystemBars(night, overlayShowing, onSky || launchSky) }
     val currentRoute = rememberUpdatedState(displayedRoute)
     // Replacing the predicate disposes its reporter and can report before the overlay exits.
@@ -124,6 +129,17 @@ internal fun CfRoot(
                                                 modifier = Modifier.testTag("route.welcome"),
                                             )
                                         }
+                                    }
+
+                                    Route.SignIn -> {
+                                        val extras =
+                                            remember(
+                                                graph,
+                                            ) { MutableCreationExtras().apply { set(AppGraphKey, graph) } }
+                                        SignInScreen(
+                                            viewModel(factory = SignInViewModelFactory, extras = extras),
+                                            graph.auth.router,
+                                        )
                                     }
 
                                     else -> {

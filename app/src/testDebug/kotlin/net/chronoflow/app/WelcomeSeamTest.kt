@@ -60,12 +60,12 @@ class WelcomeSeamTest {
         org.junit.Assert.assertTrue(requireNotNull(launch.launchIntro).hasPlayed)
         val initial = compose.onNodeWithTag("welcome.wordmark").fetchSemanticsNode().boundsInRoot
         compose.onNodeWithTag("welcome.signIn").performClick()
-        compose.onNodeWithTag("route.signIn").assertExists()
+        compose.onNodeWithTag("sign-in.email").assertExists()
         compose.runOnIdle { back.onBackPressed() }
         val returned = compose.onNodeWithTag("welcome.wordmark").fetchSemanticsNode().boundsInRoot
         assertEquals(initial.top - 14 * DeviceProfiles.pixel8.density, returned.top, 0.5f)
         compose.onNodeWithTag("welcome.plan").performClick()
         compose.onNodeWithTag("route.guestWizard").assertExists()
-        compose.runOnIdle { LaunchPlatform.welcomeDestinations.closeSeam() }
+        compose.runOnIdle { graph.welcomeDestinations.closeSeam() }
     }
 }

@@ -25,7 +25,7 @@ class WelcomeJourneyTest : ScreenTest() {
         val signIn = hasTestTag("welcome.signIn") and hasClickAction()
         compose.waitUntilExactlyOneExists(signIn, 3_000)
         compose.onNode(signIn).performClick()
-        compose.waitUntilExactlyOneExists(hasTestTag("route.signIn"), 3_000)
+        compose.waitUntilExactlyOneExists(hasTestTag("sign-in.email"), 3_000)
         instrumentation.runOnMainSync { assertEquals(0, graph.ioViolationsForTest) }
     }
 }

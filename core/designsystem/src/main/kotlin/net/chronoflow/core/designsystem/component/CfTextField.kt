@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicSecureTextField
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.InputTransformation
 import androidx.compose.foundation.text.input.KeyboardActionHandler
 import androidx.compose.foundation.text.input.TextFieldDecorator
 import androidx.compose.foundation.text.input.TextFieldLineLimits
@@ -62,6 +63,7 @@ fun CfTextField(
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     onKeyboardAction: KeyboardActionHandler? = null,
     contentType: ContentType? = null,
+    inputTransformation: InputTransformation? = null,
 ) {
     val source = remember { MutableInteractionSource() }
     val focused by source.collectIsFocusedAsState()
@@ -70,6 +72,7 @@ fun CfTextField(
             state,
             Modifier.fillMaxWidth().fieldSemantics(label, error, contentType, testTag),
             enabled = enabled,
+            inputTransformation = inputTransformation,
             textStyle = CfTheme.type.authBody.copy(color = CfTheme.colors.cardForeground),
             keyboardOptions = keyboardOptions,
             onKeyboardAction = onKeyboardAction,
@@ -100,6 +103,7 @@ fun CfSecureTextField(
     keyboardOptions: KeyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
     onKeyboardAction: KeyboardActionHandler? = null,
     contentType: ContentType? = ContentType.Password,
+    inputTransformation: InputTransformation? = null,
 ) {
     val source = remember { MutableInteractionSource() }
     val focused by source.collectIsFocusedAsState()
@@ -108,6 +112,7 @@ fun CfSecureTextField(
             state,
             Modifier.fillMaxWidth().fieldSemantics(label, error, contentType, testTag),
             enabled = enabled,
+            inputTransformation = inputTransformation,
             textStyle = CfTheme.type.authBody.copy(color = CfTheme.colors.cardForeground),
             keyboardOptions = keyboardOptions,
             onKeyboardAction = onKeyboardAction,
