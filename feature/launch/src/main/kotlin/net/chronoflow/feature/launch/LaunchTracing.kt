@@ -17,6 +17,10 @@ interface LaunchTracing {
 
     fun endExit()
 
+    fun beginSession() {}
+
+    fun endSession() {}
+
     fun beginIntro() {}
 
     fun endIntro() {}
@@ -44,6 +48,10 @@ internal class LaunchTraceSession(
     override fun beginExit() = beginOnce("exit", 4)
 
     override fun endExit() = endOnce("exit", 4)
+
+    override fun beginSession() = beginOnce("session", 5)
+
+    override fun endSession() = endOnce("session", 5)
 
     override fun beginIntro() = beginOnce("intro", 6)
 

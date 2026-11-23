@@ -1,6 +1,7 @@
 package net.chronoflow.app
 
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.ReportDrawnWhen
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -12,10 +13,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFontFamilyResolver
@@ -31,6 +35,8 @@ import net.chronoflow.core.designsystem.layout.LocalSafeInsets
 import net.chronoflow.core.designsystem.theme.CfTheme
 import net.chronoflow.core.designsystem.theme.ChronoFlowTheme
 import net.chronoflow.core.designsystem.theme.warmFontsAfterFirstFrame
+import net.chronoflow.core.navigation.RootState
+import net.chronoflow.core.navigation.Route
 import net.chronoflow.feature.launch.LaunchOverlay
 import net.chronoflow.feature.launch.model.LaunchRoute
 import net.chronoflow.feature.launch.welcome.WelcomeScreen
@@ -50,6 +56,12 @@ internal fun CfRoot(
     content: (@Composable () -> Unit)? = null,
 ) {
     val seam = destinations.seam
+    val root by graph.rootNavigator.state.collectAsState()
+    val displayedRoute = root.route ?: graph.launch.route?.toRoute()
+    val activity = LocalActivity.current
+    LaunchedEffect(graph, graph.launch.overlayActive, displayedRoute) {
+        if (!graph.launch.overlayActive && displayedRoute != null) graph.finishLaunch()
+    }
     BackHandler(enabled = seam != null) { destinations.closeSeam() }
     val resolver = LocalFontFamilyResolver.current
     LaunchedEffect(resolver) {
@@ -62,9 +74,12 @@ internal fun CfRoot(
     }
     val night = isSystemInDarkTheme()
     val overlayShowing = graph.launch.overlayActive
-    val welcome = content == null && graph.launch.route == LaunchRoute.Welcome
-    SideEffect { onSystemBars(night, overlayShowing, onSky || welcome) }
-    ReportDrawnWhen { !graph.launch.overlayActive && graph.launch.route != null }
+    // Skipped overlays wait for first commit before readiness can select a route.
+    val launchSky = content == null && (displayedRoute == null || displayedRoute == Route.Welcome)
+    SideEffect { onSystemBars(night, overlayShowing, onSky || launchSky) }
+    val currentRoute = rememberUpdatedState(displayedRoute)
+    // Replacing the predicate disposes its reporter and can report before the overlay exits.
+    ReportDrawnWhen(remember(graph) { { !graph.launch.overlayActive && currentRoute.value != null } })
     ChronoFlowTheme(darkTheme = night, reduceMotion = reduceMotion) {
         CompositionLocalProvider(
             LocalSafeInsets provides WindowInsets.safeDrawing,
@@ -92,24 +107,28 @@ internal fun CfRoot(
                         ) {
                             content()
                         } else {
-                            when (val route = graph.launch.route) {
-                                LaunchRoute.Welcome -> {
-                                    if (seam != null) {
-                                        RoutePlaceholder(seam, LaunchPlatform.routeLabel)
-                                    } else if (!overlayShowing || graph.launch.fontsReady) {
-                                        WelcomeScreen(
-                                            graph.launch.launchIntro,
-                                            graph.launch.moonAnchorStore,
-                                            destinations::planMyTrip,
-                                            destinations::signIn,
-                                        )
+                            RootContent(
+                                RootState(displayedRoute, root.revision),
+                                onBack = { activity?.finish() },
+                            ) { route ->
+                                when (route) {
+                                    Route.Welcome -> {
+                                        if (seam != null) {
+                                            RoutePlaceholder(seam, LaunchPlatform.routeLabel)
+                                        } else if (!overlayShowing || graph.launch.fontsReady) {
+                                            WelcomeScreen(
+                                                graph.launch.launchIntro,
+                                                graph.launch.moonAnchorStore,
+                                                destinations::planMyTrip,
+                                                destinations::signIn,
+                                                modifier = Modifier.testTag("route.welcome"),
+                                            )
+                                        }
                                     }
-                                }
 
-                                null -> {}
-
-                                else -> {
-                                    RoutePlaceholder(route, LaunchPlatform.routeLabel)
+                                    else -> {
+                                        RoutePlaceholder(route, LaunchPlatform.routeLabel)
+                                    }
                                 }
                             }
                         }

@@ -6,10 +6,20 @@ import androidx.compose.ui.res.imageResource
 import net.chronoflow.app.perf.MainThreadStall
 import net.chronoflow.feature.launch.LaunchController
 
-internal fun newLaunchController(graph: AppGraph): LaunchController =
-    LaunchController(
+internal fun newLaunchController(graph: AppGraph): LaunchController {
+    val bridge = graph.launchBridge
+    return LaunchController(
         scope = graph.launchScope,
         processToken = graph.processToken,
+        readinessFactory = { graph.launchReadiness },
+        onFirstCommit = graph::onFirstCommit,
+        onStateChange = { state ->
+            if (state.session != null) {
+                net.chronoflow.feature.launch.LaunchTrace
+                    .endSession()
+            }
+            bridge.update(state)
+        },
         frameLog =
             if (BuildConfig.DEBUG) {
                 net.chronoflow.feature.launch
@@ -27,6 +37,7 @@ internal fun newLaunchController(graph: AppGraph): LaunchController =
             ImageBitmap.imageResource(resources, R.drawable.launch_moon)
         },
     )
+}
 
 internal fun launchExtras(intent: Intent?): Map<String, String> =
     listOf(

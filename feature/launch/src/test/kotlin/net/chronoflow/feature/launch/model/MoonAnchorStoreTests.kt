@@ -1,6 +1,6 @@
 package net.chronoflow.feature.launch.model
 
-import net.chronoflow.core.model.launch.SessionPresence
+import net.chronoflow.core.model.session.SessionPresence
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test

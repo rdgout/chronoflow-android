@@ -3,8 +3,8 @@ package net.chronoflow.feature.launch.model
 import net.chronoflow.core.model.launch.Gate
 import net.chronoflow.core.model.launch.LaunchEnding.App
 import net.chronoflow.core.model.launch.LaunchEnding.Welcome
-import net.chronoflow.core.model.launch.SessionPresence.SignedIn
-import net.chronoflow.core.model.launch.SessionPresence.SignedOut
+import net.chronoflow.core.model.session.SessionPresence.SignedIn
+import net.chronoflow.core.model.session.SessionPresence.SignedOut
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -44,9 +44,14 @@ class LaunchReadinessTests(
     ) = listOf(LaunchEffect.CommitExit(Welcome, ms.milliseconds, rect))
 
     @Test fun endingIsChosenOnceAndIntentNeverRoutes() {
+        val pending =
+            net.chronoflow.core.navigation
+                .PendingLaunchIntent(setOf("https://app.chronoflow.net/x"))
+        state = state.copy(pendingIntent = pending)
         assertEquals(emptyList<LaunchEffect>(), step(LaunchEvent.Session(SignedOut)))
         step(LaunchEvent.Session(SignedIn("later")))
         assertEquals(Welcome, state.ending)
+        assertEquals(pending, state.pendingIntent)
         assertEquals(LaunchRoute.Welcome, state.route)
         assertTrue(state.isReady)
     }

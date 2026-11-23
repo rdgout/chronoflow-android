@@ -88,7 +88,11 @@ android {
 }
 
 dependencies {
+    implementation(libs.androidx.navigation3.ui)
+    implementation(libs.androidx.lifecycle.process)
+    testImplementation(project(":core:database-testing"))
     testImplementation(testFixtures(project(":feature:launch")))
+    testImplementation(testFixtures(project(":core:sync")))
     implementation(project(":feature:launch"))
     implementation(project(":feature:auth"))
     implementation(project(":feature:onboarding"))

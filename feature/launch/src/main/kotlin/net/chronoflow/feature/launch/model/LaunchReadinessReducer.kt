@@ -2,7 +2,7 @@ package net.chronoflow.feature.launch.model
 
 import net.chronoflow.core.model.launch.Gate
 import net.chronoflow.core.model.launch.LaunchEnding
-import net.chronoflow.core.model.launch.SessionPresence
+import net.chronoflow.core.model.session.SessionPresence
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -18,6 +18,9 @@ fun Gate.launchRoute(): LaunchRoute =
     }
 
 data class LaunchState(
+    val pendingIntent: net.chronoflow.core.navigation.PendingLaunchIntent =
+        net.chronoflow.core.navigation
+            .PendingLaunchIntent(),
     val ending: LaunchEnding? = null,
     val session: SessionPresence? = null,
     val gate: Gate? = null,

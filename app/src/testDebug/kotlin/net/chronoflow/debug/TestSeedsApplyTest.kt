@@ -10,6 +10,8 @@ import assertk.assertions.isTrue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
+import net.chronoflow.app.AppDispatchers
+import net.chronoflow.app.SoftwareSessionCipher
 import net.chronoflow.core.datastore.DeviceConfigFile
 import net.chronoflow.core.testing.tiers.Logic
 import org.junit.Test
@@ -35,10 +37,13 @@ class TestSeedsApplyTest {
             val dir = File(context.filesDir, "uitests/$id")
             dir.mkdirs()
             File(dir, "stale").writeText("old")
+            val dispatcher = StandardTestDispatcher(testScheduler)
             TestSeeds.apply(
                 context,
                 TestSeed.parse(mapOf(TestSeed.TEST_ID_KEY to id)),
-                StandardTestDispatcher(testScheduler),
+                dispatcher,
+                sessionCipher = SoftwareSessionCipher(),
+                dispatchers = AppDispatchers(dispatcher, dispatcher, dispatcher),
             )
             assertThat(dir.isDirectory).isTrue()
             assertThat(File(dir, "stale").exists()).isFalse()

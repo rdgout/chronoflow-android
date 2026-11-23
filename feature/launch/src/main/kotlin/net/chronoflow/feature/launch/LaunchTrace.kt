@@ -2,7 +2,7 @@ package net.chronoflow.feature.launch
 
 import android.os.Trace
 
-/** Async cookies: launch 1, first-commit 2, ready 3, exit 4, intro 6; session 5 is reserved. */
+/** Async cookies: launch 1, first-commit 2, ready 3, exit 4, session 5, intro 6. */
 object LaunchTrace : LaunchTracing by LaunchTraceSession(
     begin = { name, cookie -> Trace.beginAsyncSection(name, cookie) },
     end = { name, cookie -> Trace.endAsyncSection(name, cookie) },
