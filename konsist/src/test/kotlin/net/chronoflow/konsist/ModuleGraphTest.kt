@@ -127,6 +127,49 @@ class ModuleGraphTest {
             .messageContains("core:data-mock is used outside debug and the perf variants")
     }
 
+    private val metricsLine = Regex("""metrics[.-]performance""")
+
+    private fun metricsPerformanceOnlyInDebugAndPerf(
+        root: File,
+        skipResources: Boolean,
+    ) {
+        val bad =
+            walk(root, skipResources)
+                .filter { it.name == "build.gradle.kts" }
+                .flatMap { file ->
+                    val lines = file.readLines()
+                    lines.indices
+                        .filter { metricsLine.containsMatchIn(lines[it]) }
+                        .filterNot { index ->
+                            val line = lines[index].trim()
+                            val inApp = file.relativeTo(root).invariantSeparatorsPath == "app/build.gradle.kts"
+                            val fallback =
+                                line.startsWith(".configureEach") &&
+                                    lines.getOrNull(index - 1)?.trim()?.let {
+                                        it.startsWith(".matching") &&
+                                            it.contains("benchmarkReleaseImplementation") &&
+                                            it.contains("nonMinifiedReleaseImplementation")
+                                    } == true
+                            inApp && (line.startsWith("debugImplementation(") || fallback)
+                        }.map { "${file.relativeTo(root).path}:${it + 1}" }
+                }.toList()
+        check(bad.isEmpty()) { "metrics-performance is used outside debug and the perf variants: $bad" }
+    }
+
+    @Test
+    fun metricsPerformanceOnlyInDebugAndPerf() =
+        metricsPerformanceOnlyInDebugAndPerf(projectRoot(), skipResources = true)
+
+    @Test
+    fun metricsPerformanceOnlyInDebugAndPerfRejectsPlantedViolation() {
+        assertFailure {
+            metricsPerformanceOnlyInDebugAndPerf(
+                File(planted, "metricsPerformance"),
+                skipResources = false,
+            )
+        }.messageContains("metrics-performance is used outside debug and the perf variants")
+    }
+
     private val testingLine = Regex("""project\(\s*":core:testing"\s*\)""")
     private val testingAllowed =
         listOf(

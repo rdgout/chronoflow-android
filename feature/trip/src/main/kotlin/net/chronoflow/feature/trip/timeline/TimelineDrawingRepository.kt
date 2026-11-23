@@ -15,6 +15,7 @@ import net.chronoflow.core.plan.drawing.DayDrawingBuilder
 import net.chronoflow.core.plan.drawing.DayDrawingCache
 import net.chronoflow.core.plan.drawing.DayDrawingKey
 import net.chronoflow.core.plan.drawing.TextMetrics
+import net.chronoflow.core.plan.drawing.TimelineTraceNames
 import net.chronoflow.core.plan.generated.TimelinePalette
 
 data class DrawingRequest(

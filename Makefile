@@ -3,7 +3,6 @@ SHELL := /bin/bash
 .NOTPARALLEL:
 export ANDROID_HOME ?= /opt/homebrew/share/android-commandlinetools
 export JAVA_HOME ?= $(shell /usr/libexec/java_home -v 17)
-export ANDROID_SERIAL ?= emulator-5554
 IOS_REPO ?= /Users/rickgout/Sites/chronoflow-ios
 WEB_REPO ?= /Users/rickgout/Sites/chronoflow-new
 export IOS_REPO WEB_REPO
@@ -176,5 +175,9 @@ captures:
 	@n=$$(find build/captures -name '*.png' 2>/dev/null | wc -l | tr -d ' '); echo "captures: $$n PNGs in build/captures"; \
 	  if [ "$$n" = 0 ] && [ -z "$(ONLY)" ]; then echo "captures: no PNGs written" >&2; exit 1; fi
 
-perf-timeline baseline-profile:
-	@echo "make $@: lands in Phase 1e (feat/phase-1e-timeline-perf)" >&2; exit 1
+perf-timeline:
+	$(RUN_TIER) perf-timeline --device --results 'benchmark/build/outputs/androidTest-results/connected/benchmarkRelease/**/*.xml' -- Scripts/perf-timeline.sh
+
+baseline-profile: export TIER_IDLE_TIMEOUT := 1200
+baseline-profile:
+	$(RUN_TIER) baseline-profile --device --results 'benchmark/build/outputs/androidTest-results/connected/**/*.xml' -- Scripts/baseline-profile.sh

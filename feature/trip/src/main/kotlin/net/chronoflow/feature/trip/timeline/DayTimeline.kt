@@ -31,6 +31,7 @@ import net.chronoflow.core.plan.DayLayout
 import net.chronoflow.core.plan.PreparedDay
 import net.chronoflow.core.plan.TimelineGeometry
 import net.chronoflow.core.plan.drawing.DayDrawingKey
+import net.chronoflow.core.plan.drawing.TimelineTraceNames
 import net.chronoflow.core.plan.generated.TimelinePalette
 import net.chronoflow.core.ui.R
 
@@ -77,6 +78,7 @@ fun DayTimeline(
     val currentOnBlock by rememberUpdatedState(onBlock)
     val currentOnFirstReplay by rememberUpdatedState(onFirstReplay)
     val dayId = day.id
+    val placeholderTrace = remember(dayId) { PlaceholderReplayTrace() }
     val staticLayer =
         remember(drawing, resources, placeholder, probe, dayId) {
             Modifier.graphicsLayer().drawWithCache {
@@ -84,6 +86,7 @@ fun DayTimeline(
                     probe?.drew(TimelineProbe.Kind.STATIC, dayId)
                     val d = drawing.value
                     if (d == null) {
+                        placeholderTrace.onPlaceholder()
                         Trace.beginSection(TimelineTraceNames.PLACEHOLDER)
                         drawIntoCanvas { placeholder.draw(it.nativeCanvas) }
                         Trace.endSection()
@@ -91,6 +94,7 @@ fun DayTimeline(
                         Trace.beginSection(TimelineTraceNames.REPLAY)
                         replay(d, resources)
                         Trace.endSection()
+                        placeholderTrace.onReplay()
                         currentOnFirstReplay()
                     }
                 }

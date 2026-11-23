@@ -20,6 +20,11 @@ androidComponents {
     onVariants(selector().withBuildType("nonMinifiedRelease")) { addPerfSources(it) }
 }
 
+baselineProfile {
+    mergeIntoMain = true
+    saveInSrc = true
+}
+
 android {
     namespace = "net.chronoflow.app"
 
@@ -61,6 +66,7 @@ dependencies {
     implementation(project(":core:ui"))
     debugImplementation(project(":core:data-mock"))
     debugImplementation(project(":core:testing"))
+    debugImplementation(libs.androidx.metrics.performance)
 
     implementation(libs.androidx.activity.compose)
     implementation(libs.compose.ui)
@@ -68,6 +74,7 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.profileinstaller)
+    baselineProfile(project(":benchmark"))
     implementation(libs.kotlinx.coroutines.android)
 
     testImplementation(libs.junit4)
@@ -91,3 +98,6 @@ configurations
 configurations
     .matching { it.name == "benchmarkReleaseImplementation" || it.name == "nonMinifiedReleaseImplementation" }
     .configureEach { project.dependencies.add(name, project(":core:testing")) }
+configurations
+    .matching { it.name == "benchmarkReleaseImplementation" || it.name == "nonMinifiedReleaseImplementation" }
+    .configureEach { project.dependencies.addProvider(name, libs.androidx.metrics.performance) }

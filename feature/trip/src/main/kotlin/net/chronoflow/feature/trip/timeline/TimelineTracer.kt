@@ -2,13 +2,6 @@ package net.chronoflow.feature.trip.timeline
 
 import android.os.Trace
 
-object TimelineTraceNames {
-    const val FIRST_FRAME = "cf.timeline.firstFrame"
-    const val BUILD = "cf.timeline.build"
-    const val REPLAY = "cf.timeline.replay"
-    const val PLACEHOLDER = "cf.timeline.placeholder"
-}
-
 /** The seam to `android.os.Trace`, so build and clock logic run in plain JVM tests (the platform class is unmocked there). */
 interface TimelineTracer {
     fun <T> section(

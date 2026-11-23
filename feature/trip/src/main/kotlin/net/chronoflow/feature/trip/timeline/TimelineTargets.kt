@@ -1,5 +1,7 @@
 package net.chronoflow.feature.trip.timeline
 
+import android.annotation.SuppressLint
+import android.os.Trace
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
@@ -17,6 +19,7 @@ import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.unit.Constraints
 import net.chronoflow.core.plan.drawing.DayDrawing
 import net.chronoflow.core.plan.drawing.TimelineTarget
+import net.chronoflow.core.plan.drawing.TimelineTraceNames
 import kotlin.math.roundToInt
 
 /**
@@ -25,6 +28,7 @@ import kotlin.math.roundToInt
  * own scope, so it recomposes once when the drawing arrives or changes. That is why it takes the `State` itself.
  */
 @Suppress("ktlint:compose:state-param-check")
+@SuppressLint("UnclosedTrace")
 @Composable
 fun TimelineTargets(
     drawing: State<DayDrawing?>,
@@ -34,7 +38,18 @@ fun TimelineTargets(
 ) {
     val probe = LocalTimelineProbe.current
     SideEffect { probe?.composed(TimelineProbe.Kind.TARGETS, dayId) }
-    val value = drawing.value
+    Trace.beginSection(TimelineTraceNames.TARGETS)
+    // No try/finally: the Compose compiler rejects them around composable calls, and an exception aborts composition anyway.
+    TargetsLayout(drawing.value, onBlock, modifier)
+    Trace.endSection()
+}
+
+@Composable
+private fun TargetsLayout(
+    value: DayDrawing?,
+    onBlock: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val targets = value?.targets.orEmpty()
     Layout(
         content = {

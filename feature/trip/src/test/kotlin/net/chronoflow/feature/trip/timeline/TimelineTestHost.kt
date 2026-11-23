@@ -8,6 +8,7 @@ import net.chronoflow.core.model.contracts.Language
 import net.chronoflow.core.model.contracts.TimeFormat
 import net.chronoflow.core.plan.drawing.DayDrawingBuilder
 import net.chronoflow.core.plan.drawing.DayDrawingCache
+import net.chronoflow.core.plan.drawing.TextMetrics
 import net.chronoflow.core.plan.generated.PlanMetrics
 import net.chronoflow.core.plan.planDate
 import net.chronoflow.core.testing.FakePlanClock
@@ -31,6 +32,7 @@ class TimelineTestHost(
     val language: Language = Language.En,
     clockStart: Instant? = null,
     val cache: DayDrawingCache = DayDrawingCache(maxBytes = 64L * 1024 * 1024, maxEntries = 64),
+    metrics: suspend () -> TextMetrics = { FakeTextMetrics() },
 ) {
     private val detail = LargeTimelineFixtures.fixture(fixture).detail
     val bytes: ByteArray = LargeTimelineFixtures.detailBytes(fixture)
@@ -56,7 +58,7 @@ class TimelineTestHost(
             language = language,
             compute = Dispatchers.Unconfined,
             buildDispatcher = Dispatchers.Unconfined,
-            metrics = { FakeTextMetrics() },
+            metrics = metrics,
             cache = cache,
             io = Dispatchers.Unconfined,
             tracer = TimelineTracer.None,

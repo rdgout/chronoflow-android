@@ -27,6 +27,12 @@ class ReleaseReadinessTest {
     }
 
     @Test
+    fun releaseShipsNoJankStats() {
+        missing("androidx.metrics.performance.JankStats")
+        missing("net.chronoflow.app.perf.JankStatsInstaller")
+    }
+
+    @Test
     fun releaseIsNotDebuggable() {
         assertThat(BuildConfig.DEBUG).isFalse()
     }
