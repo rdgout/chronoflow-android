@@ -34,6 +34,79 @@ class WizardCompletionBoardSeedTest(
         runTest(timeout = 60.seconds) {
             val draft = WizardBoardCaptureSeed.draft(board, Locale.ENGLISH)
             val override = checkNotNull(WizardBoardCaptureSeed.uiOverride(board))
+            if (board.startsWith("WizardReady") || board.startsWith("WizardSave") || board == "WizardCalculating") {
+                assertEquals(
+                    if (board ==
+                        "WizardCalculating"
+                    ) {
+                        MemberWizardStep.calculating
+                    } else {
+                        MemberWizardStep.ready
+                    },
+                    draft.state.step,
+                )
+                assertEquals(JsonPrimitive(1.5), draft.state.savedProfile?.get("blueBlockerMdfd"))
+                assertEquals(draft.inputFingerprint, draft.state.checkedInput)
+                assertEquals(draft.form.identity, draft.state.review!!.identity)
+                assertEquals(WizardBoardCaptureSeed.now, draft.state.reviewedAt)
+                assertEquals(
+                    when (board) {
+                        "WizardReadyUnlimited" -> net.chronoflow.core.wizard.model.WizardCredits.unlimited
+                        "WizardReadyFree" -> net.chronoflow.core.wizard.model.WizardCredits.free
+                        "WizardReadyOneFree" -> net.chronoflow.core.wizard.model.WizardCredits.oneFree
+                        "WizardReadyNoCredits" -> net.chronoflow.core.wizard.model.WizardCredits.unavailable
+                        else -> net.chronoflow.core.wizard.model.WizardCredits.credits
+                    },
+                    net.chronoflow.core.wizard.model.WizardCredits
+                        .of(draft.state.review!!),
+                )
+                assertEquals(
+                    when (board) {
+                        "WizardSaveOffline" -> net.chronoflow.core.wizard.model.WizardSaveFailure.Kind.offline
+                        "WizardSaveServer" -> net.chronoflow.core.wizard.model.WizardSaveFailure.Kind.server
+                        "WizardSaveThrottle" -> net.chronoflow.core.wizard.model.WizardSaveFailure.Kind.throttle
+                        else -> null
+                    },
+                    draft.state.saveFailure?.kind,
+                )
+                assertEquals(if (board == "WizardSaveThrottle") 42 else 0, override.retrySeconds)
+                assertEquals(board == "WizardReadyChecking", override.reviewing)
+                assertEquals(
+                    if (board ==
+                        "WizardReadyAdjusted"
+                    ) {
+                        "08:00"
+                    } else {
+                        "08:30"
+                    },
+                    draft.form.preparation.latestWake,
+                )
+                assertEquals(
+                    if (board ==
+                        "WizardReadyReturn"
+                    ) {
+                        2
+                    } else if (board in
+                        setOf("WizardReadyFree", "WizardReadyUnlimited")
+                    ) {
+                        0
+                    } else {
+                        1
+                    },
+                    draft.state.review!!
+                        .price!!
+                        .cost,
+                )
+                if (board == "WizardReadyReturn") {
+                    assertEquals(3, draft.form.legs.size)
+                    assertEquals(2, draft.form.returnBoundary)
+                    assertEquals("2026-10-12T23:25", draft.form.legs[0].arriveLocal)
+                    assertEquals("2026-10-13T02:05", draft.form.legs[1].departLocal)
+                    assertEquals("AMS", draft.form.legs[2].toIata)
+                }
+                assertNotNull(WizardBoardCaptureSeed.uiOverride(board + "DarkNL"))
+                return@runTest
+            }
             val checking = board.startsWith("WizardCheck")
             assertEquals(
                 if (checking) MemberWizardStep.checking else MemberWizardStep.fineTune,

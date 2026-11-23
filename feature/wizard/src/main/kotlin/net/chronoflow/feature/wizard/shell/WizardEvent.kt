@@ -4,6 +4,14 @@ import net.chronoflow.core.model.contracts.ApiAirportSuggestion
 import net.chronoflow.core.wizard.model.WizardAirportSheet
 
 sealed interface WizardEvent {
+    data class RevisitFromReady(
+        val row: net.chronoflow.feature.wizard.ready.ReadyRow,
+    ) : WizardEvent
+
+    data object ReadyTick : WizardEvent
+
+    data object ReadyForeground : WizardEvent
+
     data class LanguageChanged(
         val language: net.chronoflow.core.model.contracts.Language,
     ) : WizardEvent

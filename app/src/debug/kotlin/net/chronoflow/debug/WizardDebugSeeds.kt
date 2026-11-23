@@ -46,6 +46,18 @@ internal class WizardDebugSeeds {
                 override val presentation = WizardBoardCaptureSeed.presentation(board)
 
                 override fun dependencies(session: TripWizardDependencies): TripWizardDependencies {
+                    if (board == "WizardSaveJourney") {
+                        return object : TripWizardDependencies by session {
+                            override val uiOverride: net.chronoflow.feature.wizard.shell.WizardUiOverride? = null
+
+                            override suspend fun start() =
+                                net.chronoflow.feature.wizard.debug.WizardSaveJourney.apply(
+                                    session.start(),
+                                    locale,
+                                    session.now(),
+                                )
+                        }
+                    }
                     val memory = WizardMemoryDraftStore()
                     val search = FixedAirportSearch(board)
                     val searchClock = AtomicReference(WizardBoardCaptureSeed.now)

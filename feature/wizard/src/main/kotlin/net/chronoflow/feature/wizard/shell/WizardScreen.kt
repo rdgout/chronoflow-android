@@ -2,6 +2,7 @@
 
 package net.chronoflow.feature.wizard.shell
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -47,10 +48,12 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -75,12 +78,16 @@ import net.chronoflow.core.ui.R
 import net.chronoflow.core.wizard.model.MemberWizardStep
 import net.chronoflow.feature.wizard.TripWizardViewModel
 import net.chronoflow.feature.wizard.answers.WizardAnswerSheetHost
+import net.chronoflow.feature.wizard.calculating.WizardCalculatingStep
 import net.chronoflow.feature.wizard.checking.CheckingOutcome
 import net.chronoflow.feature.wizard.checking.WizardCheckingStep
 import net.chronoflow.feature.wizard.components.rememberServerCopy
 import net.chronoflow.feature.wizard.excluded.WizardExcludedStep
 import net.chronoflow.feature.wizard.finetune.WizardFineTuneStep
 import net.chronoflow.feature.wizard.questions.WizardQuestionStep
+import net.chronoflow.feature.wizard.ready.ReadyFooter
+import net.chronoflow.feature.wizard.ready.ReadyFooterUi
+import net.chronoflow.feature.wizard.ready.WizardReadyStep
 import net.chronoflow.feature.wizard.returnchoice.WizardReturnStep
 import net.chronoflow.feature.wizard.search.AirportSearchSheet
 import net.chronoflow.feature.wizard.sleep.WizardSleepStep
@@ -107,7 +114,19 @@ fun WizardRoot(
     val search by viewModel.searchState.collectAsStateWithLifecycle()
     val retryEnabled by viewModel.retryEnabled.collectAsStateWithLifecycle()
     val exit = rememberUpdatedState(onExit)
-    LaunchedEffect(viewModel) { viewModel.exit.collect { it?.let { target -> exit.value(target) } } }
+    val haptics = rememberUpdatedState(LocalHaptics.current)
+    LaunchedEffect(viewModel) {
+        viewModel.exit.collect { target ->
+            if (target != null) {
+                if (target is WizardExit.Saved &&
+                    viewModel.consumeSavedHaptic()
+                ) {
+                    haptics.value.perform(HapticEvent.Success)
+                }
+                exit.value(target)
+            }
+        }
+    }
     val events = remember(viewModel) { viewModel::onEvent }
     val active = state
     if (active == null) {
@@ -286,6 +305,7 @@ internal fun WizardFooter(
     step: WizardStepKey,
     onEvent: (WizardEvent) -> Unit,
 ) {
+    val haptics = LocalHaptics.current
     val id = chrome.footerId
     if (id == null) {
         chrome.footerHint?.let {
@@ -321,6 +341,10 @@ internal fun WizardFooter(
             ).testTag("wizard.$id.footer"),
         verticalArrangement = Arrangement.spacedBy(PlanUITokens.wizardControlGap.dp),
     ) {
+        if (chrome.readyFooter == ReadyFooterUi.CloseOnly) {
+            ReadyFooter(chrome.closeEnabled, onEvent)
+            return@Column
+        }
         if (chrome.secondaryClose) {
             CfButton(
                 WizardCopy("Close").resolve(),
@@ -342,6 +366,7 @@ internal fun WizardFooter(
                 stringResource(R.string.wizard_continue)
             },
             {
+                if (step == WizardStepKey.Ready) haptics.perform(HapticEvent.Medium)
                 onEvent(WizardEvent.Continue(step))
             },
             Modifier.testTag("wizard.$id.continue").semantics {
@@ -400,7 +425,7 @@ internal fun WizardStepHost(
                     )
                 }
             },
-        onBack = { onEvent(WizardEvent.Back) },
+        onBack = { if (state.step != WizardStepKey.Calculating) onEvent(WizardEvent.Back) },
         modifier = modifier,
         transitionSpec = {
             if (reduce) {
@@ -430,6 +455,8 @@ internal fun WizardStepHost(
             }
         },
     )
+    // BoxWithConstraints subcomposes this host; register the save lock after NavDisplay so it wins back dispatch.
+    BackHandler(enabled = state.step == WizardStepKey.Calculating) {}
 }
 
 @Composable
@@ -443,10 +470,10 @@ private fun WizardStepContent(
     val times = state.times
     val titleCopy =
         where?.title ?: times?.title ?: state.returnChoice?.title ?: state.sleep?.title ?: state.excluded?.title
-            ?: state.checking?.title ?: state.fineTune?.title
+            ?: state.checking?.title ?: state.fineTune?.title ?: state.ready?.title ?: state.calculating?.title
     val subtitleCopy =
         where?.subtitle ?: times?.subtitle ?: state.sleep?.subtitle ?: state.checking?.subtitle
-            ?: state.fineTune?.subtitle
+            ?: state.fineTune?.subtitle ?: state.calculating?.subtitle
     val serverCopy = rememberServerCopy(copyFormatter)
     val title = titleCopy?.resolve() ?: state.question?.let { serverCopy(it.title) }
     val heading: @Composable () -> Unit = {
@@ -468,6 +495,8 @@ private fun WizardStepContent(
                 if (title != null) {
                     heading()
                     when {
+                        state.calculating != null -> WizardCalculatingStep(state.calculating)
+                        state.ready != null -> WizardReadyStep(state.ready, copyFormatter, onEvent)
                         state.checking != null -> WizardCheckingStep(state.checking)
                         state.sleep != null -> WizardSleepStep(state.sleep, onEvent, copyFormatter)
                         state.question != null -> WizardQuestionStep(state.question, onEvent)
@@ -512,7 +541,10 @@ private fun WizardStepHeading(
                 .testTag("wizard.title")
                 .focusRequester(titleFocus)
                 .focusable()
-                .semantics { heading() },
+                .semantics {
+                    heading()
+                    if (key == WizardStepKey.Calculating) liveRegion = LiveRegionMode.Polite
+                },
             color = CfTheme.colors.foreground,
             style =
                 CfTheme.type.style(

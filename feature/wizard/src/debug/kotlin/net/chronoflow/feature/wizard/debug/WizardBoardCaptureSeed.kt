@@ -87,7 +87,7 @@ object WizardBoardCaptureSeed {
     fun uiOverride(board: String): net.chronoflow.feature.wizard.shell.WizardUiOverride? =
         WizardCompletionBoardSeed.uiOverride(baseName(board))
 
-    fun knows(board: String): Boolean = names.any { baseName(it) == baseName(board) }
+    fun knows(board: String): Boolean = board == "WizardSaveJourney" || names.any { baseName(it) == baseName(board) }
 
     fun presentation(board: String): WizardInitialPresentation =
         WizardInitialPresentation(
@@ -105,7 +105,13 @@ object WizardBoardCaptureSeed {
     fun draft(
         board: String,
         locale: Locale,
+        currentNow: Instant = now,
     ): MemberWizardDraft {
+        if (board ==
+            "WizardSaveJourney"
+        ) {
+            return WizardSaveJourney.apply(draft("WizardReturn", locale), locale, currentNow)
+        }
         require(knows(board)) { "Unknown wizard board" }
         val board = baseName(board)
         val airports =

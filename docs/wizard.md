@@ -1140,3 +1140,212 @@ make quick
 ```
 
 No required command was sandbox-blocked. No second quick run, emulator tier, perf/profile tier or `make check` was run. The `pixel` emulator remains running.
+
+## Phase 9g: ready and save
+
+2026-11-20. [Brief](phases/phase-9g-wizard-ready-save.md). Ready now projects the landed model's summary, rows, server price, banners and footer through `WizardUiState.from`. Its events call the existing model. Calculating consumes back, hides both toolbar actions and has no footer. A saved exit selects My trips and opens `TripPage(id, awaitingSync = true)`; the overlay guard protects later navigation from a replayed exit. The entry-scoped ViewModel consumes the success haptic once.
+
+### Ready geometry and values
+
+| Surface | Values / source |
+|---|---|
+| Content gap | `wizardContentGap` 14 dp |
+| Summary | Card fill, dawn 2 dp border, soft shadow, radius 26 dp; vertical padding 16, horizontal 18; gap 6 dp; `screenEyebrow`, `wizardReadySummary` 20/27, `wizardHint` 13/18 |
+| Rows | Card fill, border 1 dp, radius 16 dp; minimum target 48 dp; padding start/end/top/bottom 16/10/5/5; gap 8; label width 92 dp; `screenBody` 14/20 for labels and values |
+| Large text | Labels stack over values at capped font scale ≥ 1.2, with 2 dp gap; the content scrolls and the footer remains pinned |
+| Price | Horizontal padding 4 dp, gap 2; first line `wizardSubtitle` 16/22 in foreground, price value semibold; other lines `wizardHint` 13/18 |
+| No-credits footer | One full-width Close action, minimum 48 dp, `wizardSecondary`; shell footer padding 20/12, above the supplied safe bottom inset |
+| Calculating | Card fill, border 1 dp, soft shadow, radius 26, padding vertical/horizontal 32/20, gap 16; dawn disc 64 dp at 0.16 alpha; native `CfSpinner` 30 dp or a static 24 dp clock under Reduce Motion |
+
+The row route ends at `legs[returnBoundary - 1]`. Flight, Return, dates, Extras and Latest wake-up use the ported `WizardPresentation` functions. `ReadyText` records catalog calls symbolically, including nested arguments, until resources resolve them in the application language. Catalog equality remains stable while counting answered prompts. The via-flight key falls back from `CopyTable.Wizard` to `CopyTable.Android`; its en/nl overlay uses `{{flight}} · via {{airports}}` and replaces no iOS key (OQ-A356).
+
+Sleep takes enabled trip overrides first, then `profile.habitual_bed` / `habitual_wake`, then the saved camel-case profile fields. Missing times do not add a dash. Extras failures produce an empty value. OQ-A365 retains the existing half-even, whole-number rating display. Ready exposes an answer count and wake time rather than a rating. OQ-A433 continues to require numeric rating seeds.
+
+| Price state | Classification / first line | Following lines / footer |
+|---|---|---|
+| Paid one way | Server cost 1: Price **1 credit** | Server balance (including singular 1); primary |
+| Paid return | Seed cost 2: Price **2 credits** | Server balance; primary |
+| Unlimited | **Included in your subscription.**; no Price prefix | No balance; primary |
+| Free | Price **Free** | Free-trip explanation; primary |
+| One direction free | Price **1 credit** | Free-home explanation, then server balance; primary |
+| Unavailable | Server price still shown when present | Destructive, semibold balance when cost > 0 and not unlimited; Close only |
+| Null price | No price block; unavailable | Close only |
+| Null review | No summary or price block | Primary projection, enabled only if the model facts permit save |
+
+Classification uses `WizardCredits.of`: missing price, then blocked save, then unlimited, then zero cost, then return in `freeDirections`, then paid. No balance or cost comes from the screen.
+
+| Banner priority | Tone / content | Tag |
+|---|---|---|
+| Save failure | Error; offline / server / throttle catalog copy; positive throttle seconds use `LockoutWait` | `wizard.save.offline`, `.server`, `.throttle` |
+| Adjusted | Info; server reasons joined with one space | `wizard.ready.notice` |
+| Updated | Info; non-empty server summary and resolved Price/value joined with one space | `wizard.ready.notice` |
+
+The edit source-change branch belongs to 9h. Banner joining is pure UI-state code and has JVM assertions; screens have no copy assertions.
+
+| Footer condition | Label | Enabled / appearance |
+|---|---|---|
+| Unavailable | Close only | Existing footer-close/discard policy; no primary |
+| Reviewing | Checking… | Disabled, native spinner, alpha 0.7 |
+| Throttle, positive seconds | Try again in N s | Disabled, alpha 0.4 |
+| Throttle, zero seconds | Try again | Model `canSave` and shell guards |
+| Otherwise | Make my plan | Model `canSave` and shell guards |
+
+Ready sends its initial tick and then one each second while composed. The foreground observer skips its first STARTED event; later starts force a check only for unavailable credits. A UI override suppresses both events in the ViewModel. The countdown never submits a save. The production rows' Compose tracer count stays constant for 42 → 41 → 40. Row taps use Selection, except Latest wake-up; submit uses Medium; a changed non-null save failure emits Error. Saved uses Success once across root recreation.
+
+### Seeds and captures
+
+All completion boards use the existing debug override and frozen clock. `WizardSaveJourney` is accepted outside the capture name list and overrides only the starting draft: HND, now + 30 days, an arrival 18 local hours later, Return choice. It retains the session store, airport search, generation service and clock. The release test proves the journey seed class and board helpers are absent and the production override is null.
+
+`make captures ONLY=WizardReady,WizardSave,WizardCalculating` ran once and wrote these 24 PNGs under `build/captures/`: 23 designer boards and the supplemental throttle state. The host rendered and reviewed all 23 boards. The results below record that review: no other layout, spacing, colour or type differences were found beyond the accepted differences listed here and the spinner capture phase refined in review rounds 1–2. There are no stored snapshot references.
+
+For every Ready and Save board below, the footer sits lower in the capture because the capture supplies zero safe insets. Their ‹/× toolbar chip difference predates 9g and belongs to the landed 9c chrome. Calculating has neither footer nor toolbar actions.
+
+| Capture names (each `.png`) | Seed / expected source differences | Board comparison |
+|---|---|---|
+| WizardReady, WizardReadyDark, WizardReadyNL | Create, cost 1, balance 3 | Host reviewed: matches apart from pinned seed data, zero-inset footer and 9c chips described here |
+| WizardReadyReturn, WizardReadyReturnDarkNL | DXB stop and confirmed return; pinned seed cost **2**, board sample **1** | Host reviewed: uses the pinned one-way summary instead of the board's return summary; end date **Sun 18 Oct / zo 18 okt**, versus **Mon 26 Oct / ma 26 okt**; zero-inset footer and 9c chips |
+| WizardReadyUnlimited, WizardReadyUnlimitedDarkNL | Unlimited, no balance | Host reviewed: matches apart from pinned seed data, zero-inset footer and 9c chips |
+| WizardReadyFree, WizardReadyFreeDarkNL | Free-trip line | Host reviewed: matches apart from pinned seed data, zero-inset footer and 9c chips |
+| WizardReadyOneFree, WizardReadyOneFreeDarkNL | Return direction free, balance 3 | Host reviewed: matches apart from pinned seed data, zero-inset footer and 9c chips |
+| WizardReadyAdjusted, WizardReadyAdjustedDarkNL | Modified review, Latest wake-up 08:00; body is the server reason, rather than the board's illustrative sentence | Host reviewed: server reason and seed data follow iOS; zero-inset footer and 9c chips |
+| WizardReadyChecking, WizardReadyCheckingDarkNL | Busy primary at 0.7 alpha | Host layout review passed with the documented seed, footer and chip differences; round 2 captures use the closest native upper-right gap: start **348.5°**, sweep **307.3°**, versus board **0°**, **288°** (clockwise from 3 o'clock) |
+| WizardReadyNoCredits, WizardReadyNoCreditsDarkNL | Close only under A14; website action intentionally absent | Host reviewed: Close only follows A14; pinned seed data, zero-inset footer and 9c chips as above |
+| WizardSaveOffline, WizardSaveOfflineDarkNL | Offline failure | Host reviewed: matches apart from pinned seed data, zero-inset footer and 9c chips |
+| WizardSaveServer, WizardSaveServerDarkNL | Server failure | Host reviewed: matches apart from pinned seed data, zero-inset footer and 9c chips |
+| WizardCalculating, WizardCalculatingDarkNL | Native spinner; computed **10** days from 9–18 Oct inclusive, versus board sample **6** | Host layout review passed with the seed's day count; round 2 captures use the closest native upper-right gap: start **348.5°**, sweep **307.3°**, versus board **0°**, **288°** (clockwise from 3 o'clock) |
+| WizardSaveThrottle_noBoard | 42-second lockout with the server-failure banner look | No designer board |
+
+All Ready date lines use `planDateSummary` on the pinned seed summary (9–18 Oct), rather than the board's sample end date. The pinned CopyLine contains `shift` of kind minutes with value 420, so PlanCore formats **420 min**, as pinned iOS `CopyLineFormatter.formatMinutes(duration: false)` does, rather than the board's illustrative 7-hour wording. Extras counts all answered non-blocking prompts from the pinned seed and saved-profile defaults: 7 in the base capture and 11 with the multi-flight return; these differ from the boards' illustrative answer counts. These are source-data differences, not substitute visual designs.
+
+Specifically, `WizardReadyReturn` and `WizardReadyReturnDarkNL` retain the same one-way summary line as the other seeds: the Dutch capture says “420 min vroeger, vanaf 3 dagen voor je vertrek” rather than the board's return line. Pinned iOS `App/Debug/WizardCompletionBoardSeed.swift:111–122` supplies that line and `planEndDate = 2026-10-18` even for the return seed. Its dates therefore end on **zo 18 okt**, rather than the board's **ma 26 okt**. The host accepted these pinned-source differences.
+
+### Recovery and release evidence
+
+`WizardProcessDeathTest` builds account SQLite, file-backed mock server state, `MemberWizardStore`, `TripGenerationService` and the ViewModel factory directly under a plain Android Application. It never builds the app/session graph. Each recreation closes the old driver and cancels and joins ViewModel, service and writer scopes under `NonCancellable` before opening fresh instances over the same files. Its injected dispatchers use the test scheduler; it never derives an IO dispatcher from paused Android Main.
+
+| Process-death method | Result |
+|---|---|
+| calculatingRowResumesTheSaveWithTheSameIdentity | Fresh graph B first renders Calculating; its single POST has the same full identity; one trip results, exit carries its id, recovery row disappears |
+| lostResponseResumeReturnsTheSameTrip | Kill after the remote receipt is durable and before response delivery; B's same-identity POST returns A's id; total trip count rises by one |
+| savedTripIdRowSkipsTheCreate | Kill during pull after durable `savedTripId`; B sends zero save POSTs and exits with that id |
+| readyRowRechecksOnceAfterRecovery | B reviews once, renders Ready and does not save |
+| firstTripSaveLeavesTheRemindersOfferPending | Saved exit renders and `wizardReminders` remains JSON `"pending"` |
+| existingTripSaveDoesNotQueueTheOffer | Saved exit renders and the offer section remains absent |
+| expiredRowDoesNotResume | At 1,800 seconds, the old instance expires; B starts fresh at Where without review or save |
+
+The seven recovery cases passed. The six-case completion run took 7.36 s, with a 2.481 s cold first case and 0.109–0.242 s warm cases. The same-identity case passed separately in 5 s Gradle wall time. All 33 unchanged cases of `WizardSaveRecoveryTests`, `WizardCompletionTests` and `WizardFixtureScenarioTests` passed in 3.95 s wrapper wall time.
+
+The shell guard has a mutation proof: removing its `overlay is Route.Wizard` guard reset a later `TripPage("t2")` back to t1 and failed `savedWizardSelectsTripsAndOpensItsPageOnlyOnce`. Restoring the guard passed. The success-haptic test recreates `WizardRoot` and receives the replayed Saved exit with exactly one Success.
+
+### Brief refresh and decisions
+
+The branch preflight printed `feat/phase-9g-wizard-ready-save`. The cited upstream symbols were present; 63 primary identifiers were checked together, with signatures and call sites read separately. No further upstream-name mismatch required a pre-implementation refresh commit. Later task-specific clarifications were committed with their task (and the numeric-seed correction):
+
+- Refresh note 17: the pinned rating string versus 9f's numeric representation; OQ-A433 requires numeric seeds throughout. A separate signed fix corrected the new seed and its assertion after the plan cross-check. Rendered values are unchanged.
+- Refresh note 18: the process-death test belongs in `app/src/testDebug`, because the mock is a debug dependency.
+- Refresh note 19: the lost-response kill is after durable receipt creation and before response delivery. Delivered Offline already belongs to 9b's manual-retry coverage and would persist Ready.
+
+OQ-9g-1…11 are recorded as OQ-A439…OQ-A449 in order. OQ-A365 is resolved for this UI as described above. The via-flight overlay is in the Android-only copy approval table. All Phase 9g task boxes are ticked.
+
+### Validation record
+
+Commands and their complete logs/timing evidence are retained under `build/phase-9g-acceptance/`. Times below are wrapper wall time where a timing JSON was retained; otherwise they are explicitly labelled Gradle wall time. They are host/emulator measurements, not physical-device performance claims.
+
+| Command / selectors passed to `make targeted ONLY=…` | Result / wall time |
+|---|---|
+| `core:wizard:WizardCopyKeysTest#everyListedKeyResolves` | Passed; 4 s Gradle |
+| `make generators-check` | Passed; generator test output includes 49 l10n tests in 0.019 s; total wrapper wall time was not recorded |
+| `feature:wizard:ReadyPriceUiTest feature:wizard:ReadyCreditsSaveFailureTest feature:wizard:ReadyBannerUiTest feature:wizard:ReadyFooterUiTest feature:wizard:ReadyRowsUiTest feature:wizard:TripWizardViewModelReadyTest feature:wizard:WizardChromeUiTest feature:wizard:TripWizardViewModelFineTuneTest feature:wizard:TripWizardViewModelCheckingTest` | 65 passed; 7.62 s; slowest 85 ms |
+| `app:ShellViewModelOverlayTest` (after exit-type wiring) | 3 passed; 6.34 s |
+| `feature:wizard:ReadyStepTest feature:wizard:ReadyForegroundTest feature:wizard:ReadyTickTest` | Seven initially passed; ticker-removal fixture failed. Final targeted method passed after settling removal before measuring later ticks (5.23 s; cold case 1.999 s) |
+| `feature:wizard:CalculatingUiTest feature:wizard:CalculatingStepTest feature:wizard:WizardBackHandlingTest` | Screen/back cases passed; the day-count test initially supplied a null-summary fixture. Corrected targeted method passed (3.84 s); summary-null remains a separate zero-day case |
+| `feature:wizard:WizardCompletionBoardSeedTest feature:wizard:WizardBoardCaptureSeedTest feature:wizard:WizardSaveJourneySeedTest app:WizardDebugSeedsTest feature:wizard:ReadyStepTest feature:wizard:CalculatingStepTest` | Passed; feature group 17 s Gradle, app group 5.60 s wrapper |
+| `feature:wizard:WizardCompletionBoardSeedTest app:ReleaseReadinessTest` | Passed; feature group 3 s Gradle; release 13 cases, 9.34 s wrapper |
+| `app:ShellViewModelOverlayTest feature:wizard:WizardSavedExitTest feature:wizard:TripWizardViewModelReadyTest#savedExitKeepsTheTripId` | Passed; app 3 s Gradle; feature 2 cases, 6.92 s wrapper; cold Robolectric 2.377 s |
+| `app:ShellViewModelOverlayTest#savedWizardSelectsTripsAndOpensItsPageOnlyOnce` mutation / restoration | Expected mutation failure, 4 s Gradle; restored pass, 1 s Gradle |
+| `app:WizardProcessDeathTest#calculatingRowResumesTheSaveWithTheSameIdentity` | Initial fixture used the manifest Application and hit launch StrictMode under virtual IO. Selecting a plain Application removed that implicit app startup; pass, 5 s Gradle |
+| Other six `WizardProcessDeathTest` methods, selected individually in one call | Passed; 7.36 s; methods listed in recovery table |
+| `core:data:WizardSaveRecoveryTests core:data:WizardCompletionTests core:data:WizardFixtureScenarioTests` | 33 passed unchanged; 3.95 s |
+| `feature:wizard:WizardReadyGuardsTest` | 188 passed; 20.49 s; cold first 2.225 s; warm max 97 ms |
+| `make captures ONLY=WizardReady,WizardSave,WizardCalculating` | 24 passed captures, 482 prefix-filtered skips; 24 PNGs; 22.97 s |
+| `feature:wizard:WizardCompletionBoardSeedTest#draftMatchesTheCompletionBoard` (numeric seed correction) | Passed; 4 s Gradle |
+| `feature:wizard:ReadyBannerUiTest` (pure joining coverage) | 3 passed; 4 s Gradle |
+| `app:WizardJourneyTest#oneWayReviewSavesAndOpensTheTripPage app:WizardCalculatingBackTest` | Both passed on `pixel`, API 36; 17.03 s wrapper; journey **4.350 s**, seeded back check **3.522 s** |
+| `./gradlew :app:lintDebug :feature:wizard:lintDebug :app:verifyReleaseManifest :app:analyzeReleaseR8Config` | Passed; 46 s Gradle |
+| `Scripts/run-tier.sh phase-9g-layout … -- ./gradlew --console=plain :feature:wizard:testDebugUnitTest :app:testDebugUnitTest -Pcf.tier=layout` | 618 passed; 20.68 s |
+| `Scripts/run-tier.sh phase-9g-ui-layout … -- ./gradlew --console=plain :core:ui:testDebugUnitTest -Pcf.tier=layout` | 267 passed; 18.78 s |
+| `make quick` (once) | Failed first stage: wizard worker exited 137 before timing output. 4,417 collected assertions passed, with no case failure or hang; 39.36 s |
+| `Scripts/run-tier.sh phase-9g-wizard-quick … -- ./gradlew --console=plain :feature:wizard:testDebugUnitTest -Pcf.tier=quick --max-workers=1` | Missing wizard tier passed separately: 731 cases, 12.83 s; cold first 2.338 s; no overrun/hang |
+| `Scripts/run-tier.sh build-logic --results 'build-logic/convention/build/test-results/test/*.xml' -- ./gradlew --console=plain :build-logic:convention:test --max-workers=1` | 37 passed; 2.70 s |
+| `Scripts/test_scripts.sh` and the environment correction below | 170 scripts passed in 20.077 s; 24/25 contracts initially passed; final parity case passed in 0.101 s; remaining 49 l10n in 0.017 s and 11 icons in 0.074 s |
+| `make timing` | 7 certified up-to-date results; 2.83 s; no overrun/hang |
+
+The original quick failure is preserved; `make quick` was not rerun. Its exact failure was:
+
+```text
+Execution failed for task ':feature:wizard:testDebugUnitTest' (registered by plugin 'com.android.internal.library').
+> Test process encountered an unexpected problem.
+   > Process 'Gradle Test Executor 51' finished with non-zero exit value 137 (this value may indicate that the process was terminated with the SIGKILL signal, which is often caused by the system running out of memory)
+BUILD FAILED in 38s
+run-tier: feature/wizard/build/cf-timings/testDebugUnitTest wrote no timing files
+run-tier: feature/wizard/build/cf-timings/testDebugUnitTest has no matching passed stamp; rerun to measure it
+make: *** [quick] Error 1
+```
+
+The standalone tooling-stage invocation initially lacked the environment normally exported by Make. Its sole failed case printed `AssertionError: set IOS_REPO and WEB_REPO to run the iOS parity test (make exports them)`. After exporting `IOS_REPO=/Users/rickgout/Sites/chronoflow-ios` and `WEB_REPO=/Users/rickgout/Sites/chronoflow-new`, only that failed method and the two skipped groups ran:
+
+```sh
+python3 -I -m unittest discover -s tools/contracts-gen -t tools/contracts-gen -p 'test_generate_kotlin.py' -k test_matches_ios_generated_swift
+python3 -I -m unittest discover -s tools/l10n -t tools/l10n -p 'test_*.py'
+python3 -I -m unittest discover -s tools/icons -t tools/icons -p 'test_*.py'
+```
+
+All three passed. The original quick worker's exit 137 remains recorded as a failed result; the host subsequently ran the complete `make check` successfully in **3:18** before review round 1. The phase did not change test budgets or build-wide worker settings.
+
+The emulator journey asserted the debug main-thread IO counter was zero; its per-test logcat also contains no StrictMode/disk/network/launch-path violation. Both native tests ran once. No required command was blocked by adb or the sandbox. `pixel` remains running.
+
+The brief's `make check` acceptance command and all perf/profile tiers are excluded from the sandbox run instructions. The host's complete `make check` and board comparison are recorded above. Wizard profiles belong to Phase 13. This phase adds no runtime dependency or manifest entry; release manifest and R8 configuration analysis passed.
+
+The optional signature-status read `git log cf403752..HEAD --format='%h %G? %s'` produced no output and was interrupted with Ctrl-C (exit 130). Every `git commit -S` succeeded, and direct `git cat-file commit` inspection confirmed a PGP signature header on every phase commit. Cryptographic status verification was not completed by that optional log command.
+
+### Review round 1
+
+2026-11-20. Host acceptance before this round: `make check` passed in **3:18**, and all 23 designer boards were rendered and compared as recorded above.
+
+The Calculating back lock now registers immediately after `NavDisplay` inside `WizardStepHost`. Navigation 3 1.2.1 exposes no enable flag on this `NavDisplay` overload. Registering the consuming handler in the same subcomposition, after the display, gives it precedence over the display's handler and prevents the previous scene from owning predictive back.
+
+`CalculatingStepTest.calculatingOwnsTheNavigationBackHandler` checks the dispatcher's selected navigation history: its current entry is not a Nav3 `SceneInfo`, and it contains one entry, with no previous scene to preview. Restoring both production files to their original handler order made this exact test fail at the `SceneInfo` assertion (**4 s Gradle**, expected failure). Restoring the fix passed. The existing consumed-back and no-toolbar/footer checks remain unchanged.
+
+Calculating and ReadyChecking captures keep motion enabled and pause the test clock. Round 1 established the animation's first frame, then advanced **2,532 ms** to the native Material 3 indicator's three-quarter sweep before capture. `make captures ONLY=WizardCalculating,WizardReadyChecking` ran once and refreshed `WizardCalculating.png`, `WizardCalculatingDarkNL.png`, `WizardReadyChecking.png` and `WizardReadyCheckingDarkNL.png`; the other reviewed PNGs were preserved. The light captures showed a three-quarter sweep, but round 2 review identified its upper-left gap, roughly 90° from the boards' upper-right gap. The refined phase and its remaining native arc difference are recorded below and in the board table.
+
+Round logs, the expected-failure XML and timing JSON are retained in `build/phase-9g-review-round-1/`. No brief patch, new OQ, runtime dependency or manifest change was needed.
+
+| Command | Result / wall time |
+|---|---|
+| `make targeted ONLY='feature:wizard:CalculatingStepTest feature:wizard:WizardBackHandlingTest'` | 10 passed; **5.46 s**; regression 33 ms warm, cold first case 2.048 s; no timing overrun |
+| `make captures ONLY=WizardCalculating,WizardReadyChecking` | Four passed captures, 502 prefix-filtered skips; **18.57 s**; four PNGs refreshed |
+| `make format` | Passed; **12 s Gradle** final formatting run |
+| `./gradlew :app:lintDebug :feature:wizard:lintDebug --console=plain` | Passed; **17.16 s** |
+| `Scripts/run-tier.sh phase-9g-review-layout --results 'feature/wizard/build/test-results/testDebugUnitTest/*.xml' --timings 'feature/wizard/build/cf-timings/testDebugUnitTest/*.json' -- ./gradlew --console=plain :feature:wizard:testDebugUnitTest -Pcf.tier=layout` | 548 passed; **18.56 s**; slowest warm case 91 ms; no timing overrun |
+| `make quick` (once this round) | Passed; **61.29 s** total: 5,148 passing JVM/Robolectric results (3,330 measured this run), 37 build-logic results, tooling tests and seven certified timing cases; no overrun or hang; slowest warm case 630 ms |
+
+### Review round 2
+
+The host's complete `make check` passed after round 1. This round computes the capture phase from Material 3 1.4.0's `ProgressIndicator.kt` and `MotionTokens.kt`, rather than selecting it through repeated captures. Both boards use the `loader-circle` SVG `M21 12a9 9 0 1 1-6.219-8.56`: its centreline starts at **0°** (3 o'clock) and sweeps approximately **288°** clockwise, leaving an upper-right gap.
+
+The native animation repeats every 6,000 ms. Global rotation is **0.18° × t**; additional rotation rises by 90° over the first 300 ms of each 1,500 ms interval, with cubic Bézier easing `(0.05, 0.7, 0.1, 1)`, and holds between rises. Sweep grows linearly from **36°** to **313.2°** in the first 3,000 ms, then shrinks with cubic Bézier easing `(0.2, 0, 0, 1)`. The exact 288° sweep occurs near **2,727 ms** and **3,241 ms**, with start angles **310.9°** and **132.9°**; neither matches the board's 0° start.
+
+Minimizing the sum of squared circular errors at the two arc endpoints over one full cycle gives **2,935.6 ms**, rounded to **2,936 ms**. In that held-rotation interval, start is `0.18t + 180` modulo 360 and sweep is `36 + 0.0924t`. The captured start is **348.48°** and the sweep **307.2864°**, ending at **295.7664°**. The gap is now upper-right; the remaining start and end errors are approximately **−11.52°** and **+7.77°**, so the native arc is **19.29° longer** than the board. This difference applies to **WizardCalculating**, **WizardCalculatingDarkNL**, **WizardReadyChecking** and **WizardReadyCheckingDarkNL**, as their table rows record.
+
+The save-lock why-comment now identifies `BoxWithConstraints` as the component that subcomposes the whole `WizardStepHost`. The handler shares that subcomposition and registers after `NavDisplay` to win back dispatch; its behaviour is unchanged.
+
+`make captures ONLY=WizardCalculating,WizardReadyChecking` ran once this round. All four new PNGs were produced, their light variants were inspected for the upper-right gap, and the other reviewed captures were preserved. Logs, timing JSON and the phase calculation are retained under `build/phase-9g-review-round-2/`. No brief patch or new OQ was needed.
+
+| Command | Result / wall time |
+|---|---|
+| `make targeted ONLY='feature:wizard:CalculatingStepTest feature:wizard:ReadyStepTest feature:wizard:WizardBackHandlingTest'` | 15 passed; **7.77 s**; cold first case 2.044 s; slowest warm case 54 ms; no timing overrun |
+| `make captures ONLY=WizardCalculating,WizardReadyChecking` | Four passed captures, 502 prefix-filtered skips; **16.77 s**; four PNGs refreshed |
+| `make format` | Passed; **14 s Gradle** |
+| `./gradlew :app:lintDebug :feature:wizard:lintDebug --console=plain` | Passed; **23.23 s** |
+| `Scripts/run-tier.sh phase-9g-review-2-layout --results 'feature/wizard/build/test-results/testDebugUnitTest/*.xml' --timings 'feature/wizard/build/cf-timings/testDebugUnitTest/*.json' -- ./gradlew --console=plain :feature:wizard:testDebugUnitTest -Pcf.tier=layout` | 548 passed; **18.16 s**; slowest warm case 92 ms; no timing overrun |
+| `make quick` (once this round) | Passed; **62.01 s** total; 5,148 passing JVM/Robolectric results (3,330 measured this run), 37 build-logic results, all 255 tooling tests and seven certified timing cases; no overrun or hang |

@@ -164,6 +164,9 @@ internal fun checkingOutcome(
     next: net.chronoflow.core.wizard.model.MemberWizardSnapshot,
 ): CheckingOutcome? {
     if (previous == null) return null
+    if (next.draft.state.saveFailure != null && previous.draft.state.saveFailure != next.draft.state.saveFailure) {
+        return CheckingOutcome.Error
+    }
     if (previous.draft.state.step == MemberWizardStep.checking && previous.checking.ticks == 3 &&
         previous.checking.failure == null && next.draft.state.step != MemberWizardStep.checking
     ) {

@@ -82,9 +82,11 @@ class WizardBoardCaptureTest(
             state = boardState(board, Locale.forLanguageTag(language.tag))
             formatter = wizardCopyFormatter()
         }
+        val motion = board.startsWith("WizardCalculating") || board.startsWith("WizardReadyChecking")
+        if (motion) compose.mainClock.autoAdvance = false
         compose.setContent {
             ProfileHost(profile) {
-                ChronoFlowTheme(darkTheme = dark, reduceMotion = true) {
+                ChronoFlowTheme(darkTheme = dark, reduceMotion = !motion) {
                     val controller = LocalSoftwareKeyboardController.current
                     SideEffect { keyboard = controller }
                     WizardScreen(state, formatter, {})
@@ -102,10 +104,16 @@ class WizardBoardCaptureTest(
         if (state.answerSheet != null) compose.onNodeWithTag("wizard.answer.title").assertIsFocused()
         compose.runOnIdle { keyboard?.hide() }
         compose.waitForIdle()
+        if (motion) {
+            // M3 1.4.0 keyframes place both arc endpoints closest to the boards at this offset.
+            compose.mainClock.advanceTimeByFrame()
+            compose.mainClock.advanceTimeBy(2_936, ignoreFrameDuration = true)
+        }
         captureWizard(
             compose,
             if (board in
                 setOf(
+                    "WizardSaveThrottle",
                     "WizardWhereLimit",
                     "WizardOutboundScrollErrors",
                     "WizardSleepMember",
