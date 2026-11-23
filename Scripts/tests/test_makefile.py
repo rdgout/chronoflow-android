@@ -1,7 +1,7 @@
 import re
 import unittest
 
-from helpers import ROOT
+from helpers import ROOT, run
 
 DEVICE_MARKERS = re.compile(r"connected\w*AndroidTest|androidTest-results/connected|am instrument")
 
@@ -28,6 +28,14 @@ class MakefileTest(unittest.TestCase):
         self.assertNotIn("$(MAKE)", recipe)
         self.assertLess(recipe.index("Scripts/ios-parity.py"), recipe.index("logcat -d -v threadtime"))
         self.assertLess(recipe.index("logcat -d -v threadtime"), recipe.index("Scripts/strictmode-scan.py"))
+
+    def test_strictmode_collects_only_the_debug_modules_it_runs(self):
+        result = run(["make", "-n", "strictmode-run"], cwd=ROOT)
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertIn('--results "app/build/outputs/androidTest-results/connected/debug/**/*.xml"', result.stdout)
+        self.assertIn('--results "core/ui/build/outputs/androidTest-results/connected/debug/**/*.xml"', result.stdout)
+        self.assertNotIn('benchmark/build/', result.stdout)
+        self.assertNotIn('--results "*/build/', result.stdout)
 
     def test_audit_suites_include_the_isolated_permission_case_without_annotation_filters(self):
         text = (ROOT / "Makefile").read_text()

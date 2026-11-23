@@ -265,7 +265,7 @@ strictmode-run:
 	  "$$adb_cmd" -s "$$serial" logcat -G 16M || exit $$?; \
 	  "$$adb_cmd" -s "$$serial" logcat -c || exit $$?; \
 	  status=0; \
-	  $(RUN_TIER) strictmode --device --emulator --results "*/build/outputs/androidTest-results/connected/**/*.xml" --results "*/*/build/outputs/androidTest-results/connected/**/*.xml" -- $(GRADLE) $(AUDIT_ANDROID_MODULES:%=:%:connectedDebugAndroidTest) -Pandroid.testInstrumentationRunnerArguments.notClass=net.chronoflow.app.reminders.RemindersPermissionDeviceTest --max-workers=1 --continue -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true || status=$$?; \
+	  $(RUN_TIER) strictmode --device --emulator $(foreach module,$(AUDIT_ANDROID_MODULES),--results "$(subst :,/,$(module))/build/outputs/androidTest-results/connected/debug/**/*.xml") -- $(GRADLE) $(AUDIT_ANDROID_MODULES:%=:%:connectedDebugAndroidTest) -Pandroid.testInstrumentationRunnerArguments.notClass=net.chronoflow.app.reminders.RemindersPermissionDeviceTest --max-workers=1 --continue -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true || status=$$?; \
 	  $(RUN_TIER) strictmode-permission --device --emulator --results "build/reminders-permission/result.xml" -- python3 -I Scripts/reminders_permission.py || status=$$?; \
 	  python3 -I Scripts/ios-parity.py || status=$$?; \
 	  "$$adb_cmd" -s "$$serial" logcat -d -v threadtime > build/audit/strictmode-logcat.txt || exit $$?; \
