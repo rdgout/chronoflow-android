@@ -62,6 +62,8 @@ Write every new or changed test this way. These rules translate the iOS Tests ru
    - Layout and geometry → Robolectric Compose tests.
    - Emulator → only for native controls, navigation, system UI, IME, permissions and system appearance/locale.
    - Never test logic through a screen.
+   - **ViewModels carry the logic; screens stay thin** (user, 2026-11-16; iOS does the same with its `*Model` tests). A screen is a stateless `XScreen(state, onEvent)`; its ViewModel takes repositories, clock and dispatchers through its constructor. Test behaviour as JVM tests on the ViewModel's UI state (`runTest`, fake clock, fake repositories), never through Compose.
+   - **Never assert copy on a screen.** No test checks that a string appears on screen (no `onNodeWithText`, `hasText`, `assertTextEquals`). Copy is covered by the string generator tests (en/nl parity) and the board captures. Screen tests find nodes by test tag and check structure only.
 2. **One emulator journey per feature, at most.** Every other emulator test seeds a state and checks one screen.
 3. **Emulator tests launch seeded** (`docs/research/13-testing-tooling.md` §5). Never sign in through the form or click through earlier steps. Only the auth tests type credentials.
 4. **Exact queries and waits.**
@@ -120,7 +122,7 @@ How the harness works:
 | `make tokens` / `make fonts` / `make assets` | Generates the tokens / copies the fonts and checks their hash manifest / rasterizes the launch moon and builds the icons. |
 | `make strings` / `make plan-copy` / `make contracts` | Generates the en and nl strings from the iOS catalogs / copies `plan_copy.json` and checks its hash / generates the Kotlin contracts. |
 | `make generators-check` | Regenerates into `build/`, diffs against every committed output, and runs the generator tests. |
-| `make size` | Release bundle size for arm64, xxhdpi and en. Warns above 8 MB; fails above 12 MB or on any `.so` file. |
+| `make size` | Release bundle size for arm64, xxhdpi and en. Warns above 8 MB; fails above 12 MB or on any `.so` file except the OQ-0a-22 allow-list (plan.md). |
 | `make emu` / `make emu-down` | Boots the headless `pixel` emulator with the functional device prep / stops every running emulator. |
 | `make emu-clean` | Wipes the `pixel` data. Refuses while tests run. |
 | `make avd-create AVD=fold\|small\|api29` | Creates a T2 AVD. On request only. |

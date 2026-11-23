@@ -1,0 +1,93 @@
+SHELL := /bin/bash
+.DEFAULT_GOAL := quick
+.NOTPARALLEL:
+export ANDROID_HOME ?= /opt/homebrew/share/android-commandlinetools
+export JAVA_HOME ?= $(shell /usr/libexec/java_home -v 17)
+export ANDROID_SERIAL ?= emulator-5554
+GRADLE := ./gradlew --console=plain
+RUN_TIER := Scripts/run-tier.sh
+JVM_MODULES := core:model core:plan core:sync core:reminders core:wizard core:network core:data-mock core:testing konsist tools:tokengen
+SMOKE := net.chronoflow.core.testing.tiers.Smoke
+SMOKE_TASK := :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.annotation=$(SMOKE)
+GENERATORS :=
+GENERATOR_CHECKS :=
+
+.PHONY: quick check test format lint targeted generate generators-check size emu emu-down emu-clean avd-create matrix du
+.PHONY: tokens fonts assets strings plan-copy contracts snapshots captures perf perf-timeline baseline-profile
+
+quick:
+	$(RUN_TIER) quick --results '*/build/test-results/test/*.xml' --results '*/*/build/test-results/test/*.xml' --results 'build-logic/convention/build/test-results/test/*.xml' -- $(GRADLE) spotlessCheck $(JVM_MODULES:%=:%:test) :build-logic:convention:test
+	Scripts/test_scripts.sh
+
+check: quick
+	$(RUN_TIER) check --results 'app/build/test-results/**/*.xml' -- $(GRADLE) :app:lintDebug :app:testDebugUnitTest :app:testReleaseUnitTest :app:verifyReleaseManifest :app:analyzeReleaseR8Config
+	$(MAKE) generators-check
+	Scripts/emulator.sh ensure
+	$(RUN_TIER) smoke --device --results 'app/build/outputs/androidTest-results/connected/**/*.xml' -- $(GRADLE) $(SMOKE_TASK)
+
+test:
+	$(GRADLE) test
+
+format:
+	$(GRADLE) spotlessApply
+
+lint:
+	$(GRADLE) spotlessCheck :app:lintDebug :konsist:test
+
+targeted:
+	python3 -I Scripts/targeted.py $(ONLY)
+
+generate:
+	@if [ -z "$(strip $(GENERATORS))" ]; then echo "generate: no generators yet (0b, 0c, 0d add them)"; else $(MAKE) $(GENERATORS); fi
+
+generators-check:
+	@if [ -z "$(strip $(GENERATOR_CHECKS))" ]; then echo "generators-check: nothing to check yet"; else $(MAKE) $(GENERATOR_CHECKS); fi
+
+size:
+	$(GRADLE) :app:measureBundleSize
+
+emu:
+	Scripts/emulator.sh ensure
+
+emu-down:
+	Scripts/emulator.sh down
+
+emu-clean:
+	Scripts/emulator.sh wipe
+
+avd-create:
+	@if [ -z "$(AVD)" ]; then echo "usage: make avd-create AVD=fold|small|api29" >&2; exit 1; fi
+	Scripts/emulator.sh create $(AVD)
+
+matrix:
+	@set -e; for avd in fold small api29; do \
+	  case $$avd in fold) port=5556;; small) port=5558;; api29) port=5560;; esac; \
+	  if ! $(ANDROID_HOME)/cmdline-tools/latest/bin/avdmanager list avd -c | grep -qx $$avd; then \
+	    echo "make matrix: avd '$$avd' is missing; run: make avd-create AVD=$$avd" >&2; exit 1; \
+	  fi; \
+	done; \
+	for avd in fold small api29; do \
+	  case $$avd in fold) port=5556;; small) port=5558;; api29) port=5560;; esac; \
+	  Scripts/emulator.sh ensure $$avd; \
+	  ANDROID_SERIAL=emulator-$$port $(RUN_TIER) smoke-$$avd --device --results 'app/build/outputs/androidTest-results/connected/**/*.xml' -- $(GRADLE) $(SMOKE_TASK); \
+	  Scripts/emulator.sh down $$avd; \
+	done
+
+du:
+	@du -sh ~/.gradle/caches ~/.android/avd build 2>/dev/null || true
+	@git worktree list --porcelain | sed -n 's/^worktree //p' | while read -r wt; do du -sh "$$wt"; done
+
+tokens fonts assets:
+	@echo "make $@: lands in Phase 0b (feat/phase-0b-tokens)" >&2; exit 1
+
+strings plan-copy:
+	@echo "make $@: lands in Phase 0c (feat/phase-0c-strings)" >&2; exit 1
+
+contracts:
+	@echo "make $@: lands in Phase 0d (feat/phase-0d-contracts)" >&2; exit 1
+
+snapshots captures perf:
+	@echo "make $@: lands in Phase 0e (feat/phase-0e-test-harness)" >&2; exit 1
+
+perf-timeline baseline-profile:
+	@echo "make $@: lands in Phase 1e (feat/phase-1e-timeline-perf)" >&2; exit 1
