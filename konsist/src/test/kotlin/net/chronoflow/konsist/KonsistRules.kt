@@ -253,3 +253,92 @@ fun testingNotInMain(scope: KoScope) {
             }.map { it.path }
     fail("testingNotInMain", violations)
 }
+
+private val timeHygieneModules = setOf("core/plan", "core/sync", "core/reminders", "core/wizard")
+private val timeHygienePatterns =
+    listOf(
+        "Locale.getDefault",
+        "TimeZone.getDefault",
+        "ZoneId.systemDefault",
+        "System.currentTimeMillis",
+        "Instant.now(",
+        "LocalDate.now(",
+        "LocalDateTime.now(",
+        "LocalTime.now(",
+        "DecimalFormat(",
+        "ZonedDateTime.now(",
+        "OffsetDateTime.now(",
+        "Clock.systemDefaultZone",
+        "Clock.systemUTC",
+        "SimpleDateFormat",
+        "Calendar.getInstance",
+        "DateTimeFormatter.ofLocalized",
+        "String.format(",
+    )
+
+private class LocaleCall(
+    val regex: Regex,
+    val needsTopLevelComma: Boolean,
+)
+
+private val localeRequiredCalls =
+    listOf(
+        LocaleCall(Regex("DateTimeFormatter\\.ofPattern\\("), needsTopLevelComma = true),
+        LocaleCall(Regex("NumberFormat\\.get\\w*Instance\\("), needsTopLevelComma = false),
+        LocaleCall(Regex("DecimalFormatSymbols\\("), needsTopLevelComma = false),
+        LocaleCall(Regex("DecimalFormatSymbols\\.getInstance\\("), needsTopLevelComma = false),
+    )
+
+private fun callsWithoutLocale(
+    text: String,
+    call: LocaleCall,
+): List<String> =
+    call.regex
+        .findAll(text)
+        .mapNotNull { match ->
+            var depth = 1
+            var topLevelComma = false
+            var i = match.range.last + 1
+            while (i < text.length && depth > 0) {
+                when (text[i]) {
+                    '(' -> depth++
+                    ')' -> depth--
+                    ',' -> if (depth == 1) topLevelComma = true
+                }
+                i++
+            }
+            val args = text.substring(match.range.last + 1, i - 1)
+            val allowed =
+                if (call.needsTopLevelComma) {
+                    topLevelComma || text.startsWith(".withLocale(", i)
+                } else {
+                    args.isNotBlank()
+                }
+            if (allowed) null else match.value + ")"
+        }.toList()
+
+private val literalFormatRegex = Regex("\"\\s*\\.format\\(")
+
+fun noDefaultLocaleZoneOrClockInLogic(scope: KoScope) {
+    val violations =
+        scope
+            .moduleFiles()
+            .filter { it.module in timeHygieneModules && it.sourceSet == "main" }
+            .filterNot { it.path.endsWith(".generated.kt") || it.path.replace('\\', '/').contains("/generated/") }
+            .flatMap { file ->
+                val literal =
+                    timeHygienePatterns.filter { file.text.contains(it) } +
+                        localeRequiredCalls.flatMap { callsWithoutLocale(file.text, it) }
+                val formatted =
+                    if (literalFormatRegex.containsMatchIn(
+                            file.text,
+                        )
+                    ) {
+                        listOf("\"...\".format(")
+                    } else {
+                        emptyList()
+                    }
+                (literal + formatted).map { "${file.path}: $it" }
+            }
+    fail("noDefaultLocaleZoneOrClockInLogic", violations)
+}

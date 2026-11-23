@@ -116,4 +116,38 @@ class KonsistRulesTest {
     private companion object {
         val projectScope: KoScope by lazy { projectScope() }
     }
+
+    @Test fun noDefaultLocaleZoneOrClockInLogic() = noDefaultLocaleZoneOrClockInLogic(projectScope)
+
+    @Test fun noDefaultLocaleZoneOrClockInLogicRejectsPlantedViolation() {
+        assertFailure { noDefaultLocaleZoneOrClockInLogic(violations("noDefaultLocaleZoneOrClockInLogic")) }.all {
+            messageContains("noDefaultLocaleZoneOrClockInLogic violated")
+            messageContains("UsesLocaleGetDefault.kt")
+            messageContains("UsesTimeZoneGetDefault.kt")
+            messageContains("UsesZoneIdSystemDefault.kt")
+            messageContains("UsesCurrentTimeMillis.kt")
+            messageContains("UsesInstantNow.kt")
+            messageContains("UsesDateNow.kt")
+            messageContains("UsesClockSystem.kt")
+            messageContains("UsesLocalDateTimeNow.kt")
+            messageContains("UsesZonedDateTimeNow.kt")
+            messageContains("UsesOffsetDateTimeNow.kt")
+            messageContains("UsesClockSystemDefaultZone.kt")
+            messageContains("UsesOfPatternWithoutLocale.kt")
+            messageContains("UsesNumberFormatInstance.kt")
+            messageContains("UsesDecimalFormat.kt")
+            messageContains("UsesDecimalFormatSymbols.kt")
+            messageContains("UsesDecimalFormatSymbolsGetInstance.kt")
+            messageContains("UsesLocalTimeNow.kt")
+            messageContains("UsesSimpleDateFormat.kt")
+            messageContains("UsesCalendarInstance.kt")
+            messageContains("UsesLocalizedFormatter.kt")
+            messageContains("UsesStringFormat.kt")
+            messageContains("UsesLiteralFormat.kt")
+            messageContains("SyncUsesLocale.kt")
+        }
+    }
+
+    @Test fun noDefaultLocaleZoneOrClockInLogicAllowsControl() =
+        noDefaultLocaleZoneOrClockInLogic(allowed("noDefaultLocaleZoneOrClockInLogic"))
 }
