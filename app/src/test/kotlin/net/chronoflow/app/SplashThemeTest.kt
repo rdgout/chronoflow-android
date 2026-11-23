@@ -14,7 +14,7 @@ import org.robolectric.annotation.Config
 
 @Layout
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [29, 31, 36])
+@Config(sdk = [29, 31, 36], application = android.app.Application::class)
 class SplashThemeTest {
     @Test fun lightSplashUsesLaunchResources() = verify(false)
 

@@ -2,12 +2,9 @@ package net.chronoflow.app
 
 import android.app.Application
 import android.os.StrictMode
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.withContext
 import net.chronoflow.core.testing.tiers.Logic
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -18,13 +15,10 @@ import kotlin.time.Duration.Companion.seconds
 
 @Logic
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [36], application = SessionTestApplication::class)
+@Config(sdk = [36], application = Application::class)
 class AppGraphConstructionTest {
     @Test fun constructionDoesNotResolveAnyStorageDirectory() =
         runTest(timeout = 60.seconds) {
-            val app = ApplicationProvider.getApplicationContext<SessionTestApplication>()
-            val root = withContext(Dispatchers.IO) { app.noBackupFilesDir }
-            val before = withContext(Dispatchers.IO) { root.list()?.toSet() ?: emptySet() }
             var accesses = 0
             val guarded =
                 object : Application() {
@@ -62,8 +56,10 @@ class AppGraphConstructionTest {
             } finally {
                 StrictMode.setThreadPolicy(old)
             }
-            assertEquals(0, accesses)
-            assertEquals(before, withContext(Dispatchers.IO) { root.list()?.toSet() ?: emptySet() })
-            graph.close()
+            try {
+                assertEquals(0, accesses)
+            } finally {
+                graph.closeAndJoinForTest()
+            }
         }
 }

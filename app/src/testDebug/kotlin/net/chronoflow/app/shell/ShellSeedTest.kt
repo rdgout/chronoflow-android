@@ -1,48 +1,62 @@
 package net.chronoflow.app.shell
 
-import androidx.compose.ui.test.assertIsSelected
-import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.performClick
+import androidx.lifecycle.ViewModelStore
 import net.chronoflow.app.LaunchPlatform
-import net.chronoflow.app.SessionTestApplication
-import net.chronoflow.core.testing.tiers.Logic
+import net.chronoflow.core.navigation.Route
+import net.chronoflow.core.navigation.shell.ShellNav
+import net.chronoflow.core.navigation.shell.ShellTab
+import net.chronoflow.debug.DebugSeedRouting
+import net.chronoflow.debug.DebugShellStart
+import net.chronoflow.debug.TestSeed
+import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
-import org.robolectric.annotation.GraphicsMode
 
-@Logic
-@RunWith(RobolectricTestRunner::class)
-@GraphicsMode(GraphicsMode.Mode.NATIVE)
-@Config(sdk = [36], application = SessionTestApplication::class, qualifiers = "w411dp-h914dp-420dpi")
-class ShellSeedTest : ShellActivityFixture() {
+class ShellSeedTest {
+    private val holder = ShellViewModel(ShellNav.initial())
+    private val store = ViewModelStore().apply { put("shell", holder) }
+
+    @After fun close() {
+        store.clear()
+        DebugSeedRouting.current = null
+        DebugShellStart.reset()
+    }
+
+    private fun launch(route: String = "trips") {
+        DebugShellStart.reset()
+        DebugSeedRouting.current =
+            TestSeed.parse(
+                mapOf(
+                    TestSeed.TEST_ID_KEY to "0199a3c0-0000-7000-8000-000000000000",
+                    "CF_PLAN_TEST_ROUTE" to route,
+                ),
+            )
+        LaunchPlatform.shellStart()?.let(holder::seed)
+    }
+
     @Test fun tripsSeedSelectsMyTrips() {
         launch()
-        compose.onNodeWithTag("trips.screen").assertExists()
-        compose.onNodeWithTag("tab.trips").assertIsSelected()
+        assertEquals(ShellTab.Trips, holder.state.selected)
+        assertEquals(listOf(Route.Trips), holder.state.stacks.getValue(ShellTab.Trips))
     }
 
     @Test fun tripSeedPushesOntoToday() {
-        launch("trip:0199a3c0-0000-7000-8000-000000000010")
-        compose.onNodeWithTag("route.tripPage").assertExists()
-        compose.onNodeWithTag("tab.today").assertIsSelected()
+        val id = "0199a3c0-0000-7000-8000-000000000010"
+        launch("trip:$id")
+        assertEquals(ShellTab.Today, holder.state.selected)
+        assertEquals(listOf(Route.Today, Route.TripPage(id)), holder.state.stacks.getValue(ShellTab.Today))
     }
 
     @Test fun invalidSeedIsIgnored() {
         launch("invalid")
-        compose.onNodeWithTag("route.today").assertExists()
-        compose.onNodeWithTag("tab.today").assertIsSelected()
+        assertEquals(ShellNav.initial(), holder.state)
     }
 
     @Test fun secondCompositionDoesNotReapplyTheSeed() {
         launch()
-        compose.onNodeWithTag("tab.today").performClick()
-        compose.waitForIdle()
-        compose.mainClock.advanceTimeByFrame()
-        compose.onNodeWithTag("route.today").assertExists()
-        compose.onNodeWithTag("tab.today").assertIsSelected()
+        holder.select(ShellTab.Today)
         assertNull(LaunchPlatform.shellStart())
+        assertEquals(ShellTab.Today, holder.state.selected)
     }
 }

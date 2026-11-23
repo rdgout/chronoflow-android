@@ -36,7 +36,7 @@ import kotlin.time.Duration.Companion.seconds
 @Logic
 @OptIn(OkHttpInternalApi::class)
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [36])
+@Config(sdk = [36], application = android.app.Application::class)
 class OkHttpStartupTest {
     @Test fun clientBuildsOnIoWithoutTheStartupInitializerOrApplicationContext() =
         runTest(timeout = 60.seconds) {

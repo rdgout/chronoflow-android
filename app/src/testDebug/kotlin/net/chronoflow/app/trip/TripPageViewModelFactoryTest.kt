@@ -4,10 +4,13 @@ package net.chronoflow.app.trip
 
 import androidx.activity.ComponentActivity
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.MutableCreationExtras
 import androidx.test.core.app.ApplicationProvider
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -19,6 +22,7 @@ import net.chronoflow.app.AppDispatchers
 import net.chronoflow.app.AppGraphKey
 import net.chronoflow.app.SessionTestApplication
 import net.chronoflow.app.SoftwareSessionCipher
+import net.chronoflow.app.closeAndJoinForTest
 import net.chronoflow.core.model.contracts.Language
 import net.chronoflow.core.testing.tiers.Logic
 import net.chronoflow.debug.ScreenSessionFixture
@@ -63,6 +67,7 @@ class TripPageViewModelFactoryTest {
             )
             val graph = app.graph
             val activity = Robolectric.buildActivity(ComponentActivity::class.java).setup()
+            var modelJob: Job? = null
             try {
                 ScreenSessionFixture.route(graph)
                 val session =
@@ -76,13 +81,18 @@ class TripPageViewModelFactoryTest {
                         owner.defaultViewModelCreationExtras,
                     ).apply { set(AppGraphKey, graph) }
                 val factory = tripPageViewModelFactory(TripPageArgs(trip.id), app, Language.En, true)
-                ViewModelProvider(owner.viewModelStore, factory, extras)[TripPageViewModel::class.java]
+                val model = ViewModelProvider(owner.viewModelStore, factory, extras)[TripPageViewModel::class.java]
+                modelJob = checkNotNull(model.viewModelScope.coroutineContext[Job])
                 assertEquals(setOf(trip.id), session.sync.retention.withHeldPlans { it })
                 owner.viewModelStore.clear()
+                modelJob.join()
                 assertEquals(emptySet<String>(), session.sync.retention.withHeldPlans { it })
             } finally {
                 activity.pause().stop().destroy()
-                withContext(NonCancellable) { graph.close() }
+                withContext(NonCancellable) {
+                    modelJob?.cancelAndJoin()
+                    graph.closeAndJoinForTest()
+                }
                 Dispatchers.resetMain()
             }
         }

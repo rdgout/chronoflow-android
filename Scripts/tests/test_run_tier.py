@@ -348,11 +348,12 @@ sys.exit(module.main(sys.argv[2:]))
         self.assertEqual(self._report()["measuredTests"], 0)
 
     def test_exempt_and_warmup_pass(self):
-        self._xml(cases=(("a.B", "t1", "0.1"), ("a.B", "t2", "0.1")))
+        self._xml(cases=(("a.B", "t1", "0.1"), ("a.B", "t2", "0.1"), ("a.B", "t3", "2.5")))
         self._timings(
             [
                 self._entry(kind="robolectric", ms=12000, budget=20000, status="warmup"),
                 self._entry(ms=6000, budget=None, status="exempt", method="t2"),
+                self._entry(kind="robolectric", ms=2500, budget=3000, status="class-warmup", method="t3"),
             ]
         )
         result = self.tier("t", "--results", "out/*.xml", "--timings", "tm/*.json", "--",

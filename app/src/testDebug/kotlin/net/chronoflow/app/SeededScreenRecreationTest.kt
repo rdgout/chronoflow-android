@@ -67,7 +67,6 @@ class SeededScreenRecreationTest {
                     mapOf(
                         TestSeed.TEST_ID_KEY to UUID.randomUUID().toString(),
                         TestSeed.PROFILE_KEY to "screen",
-                        "CF_AUTH_TEST_SIGNED_IN" to "demo",
                         "CF_AUTH_TEST_WALKTHROUGH_SEEN" to "1",
                     ),
                 )
@@ -85,11 +84,11 @@ class SeededScreenRecreationTest {
                         .toSet()
                 ActivityScenario.launch<MainActivity>(TestSeeds.forwardIntent(app, seed)).use { scenario ->
                     commitAndDrain(scenario, graph, initial)
-                    assertEquals(Route.Today, graph.rootNavigator.state.value.route)
+                    assertEquals(Route.Welcome, graph.rootNavigator.state.value.route)
                     // Isolate activity first-frame routing from the initial gate observer's pending emission.
                     graph.gateRouter.stop()
                     runCurrent()
-                    graph.rootNavigator.navigate(Route.Settings)
+                    graph.rootNavigator.navigate(Route.SignIn)
                     val expected = graph.rootNavigator.state.value
                     val before =
                         graph.appScope.coroutineContext.job.children
@@ -99,7 +98,7 @@ class SeededScreenRecreationTest {
                     assertEquals(expected, graph.rootNavigator.state.value)
                 }
             } finally {
-                graph.close()
+                graph.closeAndJoinForTest()
             }
         }
 }

@@ -57,7 +57,7 @@ import org.robolectric.annotation.Config
 
 @Logic
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [36], qualifiers = "w411dp-h914dp-420dpi")
+@Config(sdk = [36], application = android.app.Application::class, qualifiers = "w411dp-h914dp-420dpi")
 class TripPageSheetRouteTest {
     @get:Rule val compose = createComposeRule()
     private val detail = LargeTimelineFixtures.fixture("S1").detail

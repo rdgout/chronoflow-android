@@ -11,7 +11,10 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import net.chronoflow.app.AppDispatchers
+import net.chronoflow.app.ChronoFlowApp
+import net.chronoflow.app.SessionTestApplication
 import net.chronoflow.app.SoftwareSessionCipher
+import net.chronoflow.app.closeAndJoinForTest
 import net.chronoflow.core.datastore.DeviceConfigFile
 import net.chronoflow.core.testing.tiers.Logic
 import org.junit.Test
@@ -23,7 +26,7 @@ import kotlin.time.Duration.Companion.seconds
 
 @Logic
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [36])
+@Config(sdk = [36], application = SessionTestApplication::class)
 @OptIn(ExperimentalCoroutinesApi::class)
 class TestSeedsApplyTest {
     private val context: Context get() = RuntimeEnvironment.getApplication()
@@ -38,15 +41,19 @@ class TestSeedsApplyTest {
             dir.mkdirs()
             File(dir, "stale").writeText("old")
             val dispatcher = StandardTestDispatcher(testScheduler)
-            TestSeeds.apply(
-                context,
-                TestSeed.parse(mapOf(TestSeed.TEST_ID_KEY to id)),
-                dispatcher,
-                sessionCipher = SoftwareSessionCipher(),
-                dispatchers = AppDispatchers(dispatcher, dispatcher, dispatcher),
-            )
-            assertThat(dir.isDirectory).isTrue()
-            assertThat(File(dir, "stale").exists()).isFalse()
+            try {
+                TestSeeds.apply(
+                    context,
+                    TestSeed.parse(mapOf(TestSeed.TEST_ID_KEY to id)),
+                    dispatcher,
+                    sessionCipher = SoftwareSessionCipher(),
+                    dispatchers = AppDispatchers(dispatcher, dispatcher, dispatcher),
+                )
+                assertThat(dir.isDirectory).isTrue()
+                assertThat(File(dir, "stale").exists()).isFalse()
+            } finally {
+                (context as ChronoFlowApp).graph.closeAndJoinForTest()
+            }
         }
 
     @Test

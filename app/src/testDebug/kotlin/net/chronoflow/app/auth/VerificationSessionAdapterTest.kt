@@ -8,6 +8,7 @@ import net.chronoflow.app.AppGraph
 import net.chronoflow.app.GraphOverrides
 import net.chronoflow.app.SessionTestApplication
 import net.chronoflow.app.SoftwareSessionCipher
+import net.chronoflow.app.closeAndJoinForTest
 import net.chronoflow.core.model.session.SessionSnapshot
 import net.chronoflow.core.model.session.StoredSession
 import net.chronoflow.core.testing.tiers.Logic
@@ -38,7 +39,7 @@ class VerificationSessionAdapterTest {
                 assertFalse(VerificationSessionAdapter(graph).confirm(stale, "demo@example.com"))
                 assertFalse(sync.isInitialized())
             } finally {
-                graph.close()
+                graph.closeAndJoinForTest()
             }
         }
 
@@ -62,7 +63,7 @@ class VerificationSessionAdapterTest {
                 sync.retention.withHeldPlans { assertEquals(emptySet<String>(), it) }
             } finally {
                 lease.release()
-                graph.close()
+                graph.closeAndJoinForTest()
             }
         }
 

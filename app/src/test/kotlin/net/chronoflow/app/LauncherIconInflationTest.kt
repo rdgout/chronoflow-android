@@ -14,7 +14,7 @@ import org.robolectric.annotation.Config
 
 @Logic
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [36])
+@Config(sdk = [36], application = android.app.Application::class)
 class LauncherIconInflationTest {
     @Test
     fun launcherIconInflatesToAnAdaptiveIconWithAllLayers() {

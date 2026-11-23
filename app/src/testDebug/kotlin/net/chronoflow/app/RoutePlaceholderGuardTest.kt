@@ -21,7 +21,7 @@ import org.robolectric.annotation.GraphicsMode
 
 @Layout
 @RunWith(ParameterizedRobolectricTestRunner::class)
-@Config(sdk = [36])
+@Config(sdk = [36], application = android.app.Application::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class RoutePlaceholderGuardTest(
     private val profile: DeviceProfile,
