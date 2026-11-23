@@ -1,6 +1,7 @@
 package net.chronoflow.feature.wizard.ui
 
 import androidx.compose.runtime.Immutable
+import net.chronoflow.core.model.FieldMessage
 import net.chronoflow.core.model.contracts.ApiAirportSuggestion
 import net.chronoflow.core.model.contracts.TimeFormat
 import net.chronoflow.core.wizard.model.MemberWizardDraft
@@ -11,8 +12,17 @@ import net.chronoflow.core.wizard.model.WizardMode
 import net.chronoflow.core.wizard.model.route
 import net.chronoflow.core.wizard.model.routeComplete
 import net.chronoflow.feature.wizard.TripWizardUiState
+import net.chronoflow.feature.wizard.answers.SUPPORTED_SHEET_KINDS
+import net.chronoflow.feature.wizard.answers.WizardAnswerSheetState
+import net.chronoflow.feature.wizard.answers.WizardAnswerSheetUi
+import net.chronoflow.feature.wizard.excluded.ExcludedNote
+import net.chronoflow.feature.wizard.excluded.WizardExcludedUi
+import net.chronoflow.feature.wizard.questions.WizardQuestionUi
 import net.chronoflow.feature.wizard.returnchoice.WizardReturnUi
 import net.chronoflow.feature.wizard.shell.WizardStepKey
+import net.chronoflow.feature.wizard.sleep.WizardSleepUi
+import net.chronoflow.feature.wizard.sleep.WizardTimeSheetUi
+import net.chronoflow.feature.wizard.sleep.clockString
 import net.chronoflow.feature.wizard.times.WizardPicker
 import net.chronoflow.feature.wizard.times.WizardTimesUi
 import net.chronoflow.feature.wizard.times.flightTimesComplete
@@ -25,6 +35,8 @@ data class WizardCopy(
     val key: String,
     val arguments: Map<String, String> = emptyMap(),
 )
+
+private val routeServerError = Regex("^legs\\.(\\d+)\\.(fromIata|toIata)$")
 
 enum class NavTitle { NewTrip, EditTrip }
 
@@ -112,6 +124,7 @@ data class WhereUi(
     val limitReached: Boolean,
     val showAddStop: Boolean,
     val complete: Boolean,
+    val serverErrors: Map<String, FieldMessage> = emptyMap(),
 ) {
     val title: WizardCopy get() = WizardCopy(if (home) "Your flight home" else "Where are you flying?")
     val subtitle: WizardCopy get() =
@@ -170,7 +183,13 @@ data class WhereUi(
                         },
                         locked,
                         stop,
-                        same && position == route.lastIndex,
+                        (same && position == route.lastIndex) || draft.fieldErrors[
+                            if (position == 0) {
+                                "legs.$start.fromIata"
+                            } else {
+                                "legs.${start + maxOf(0, position - 1)}.toIata"
+                            },
+                        ] != null,
                         if (locked) {
                             null
                         } else {
@@ -215,6 +234,15 @@ data class WhereUi(
                 !canAdd,
                 canAdd && stops > 0,
                 form.routeComplete(home),
+                draft.fieldErrors
+                    .filterKeys { field ->
+                        routeServerError
+                            .matchEntire(field)
+                            ?.groupValues
+                            ?.get(1)
+                            ?.toIntOrNull()
+                            ?.let { it in start until start + route.size - 1 } == true
+                    }.toSortedMap(),
             )
         }
     }
@@ -231,6 +259,9 @@ data class WizardChromeUi(
     val continueEnabled: Boolean,
     val routeComplete: Boolean,
     val footerHint: WizardCopy? = null,
+    val secondaryClose: Boolean = false,
+    val primaryPlain: Boolean = false,
+    val closeEnabled: Boolean = true,
 ) {
     companion object {
         fun from(
@@ -241,6 +272,14 @@ data class WizardChromeUi(
             val where = step == MemberWizardStep.whereTo || step == MemberWizardStep.returnRoute
             val complete =
                 when (step) {
+                    MemberWizardStep.excluded -> {
+                        true
+                    }
+
+                    MemberWizardStep.sleep -> {
+                        active.sleepComplete
+                    }
+
                     MemberWizardStep.outbound -> {
                         flightTimesComplete(active.wizard.draft, false)
                     }
@@ -267,15 +306,20 @@ data class WizardChromeUi(
                 when (step) {
                     MemberWizardStep.whereTo -> "where"
                     MemberWizardStep.returnRoute -> "return-route"
+                    MemberWizardStep.sleep -> "sleep"
+                    MemberWizardStep.excluded -> "excluded"
                     MemberWizardStep.outbound -> "outbound"
                     MemberWizardStep.returnFlight -> "return-flight"
                     else -> null
                 },
                 complete && !closing && !active.wizard.persistenceFailed && !active.wizard.reviewing,
                 complete,
+                secondaryClose = step == MemberWizardStep.excluded,
+                primaryPlain = step == MemberWizardStep.excluded,
+                closeEnabled = !closing,
                 footerHint =
                     if (step ==
-                        MemberWizardStep.returnChoice
+                        MemberWizardStep.returnChoice || step == MemberWizardStep.question
                     ) {
                         WizardCopy("Tap an answer to continue.")
                     } else {
@@ -392,6 +436,10 @@ data class WizardUiState(
     val retryEnabled: Boolean = true,
     val times: WizardTimesUi? = null,
     val returnChoice: WizardReturnUi? = null,
+    val sleep: WizardSleepUi? = null,
+    val answerSheet: WizardAnswerSheetUi? = null,
+    val question: WizardQuestionUi? = null,
+    val excluded: WizardExcludedUi? = null,
 ) {
     companion object {
         fun from(
@@ -402,6 +450,8 @@ data class WizardUiState(
             now: Instant = Instant.EPOCH,
             continueFailures: Int = 0,
             picker: WizardPicker? = null,
+            openTime: String? = null,
+            answerSheet: WizardAnswerSheetState? = null,
         ): WizardUiState {
             val draft = active.wizard.draft
             val key =
@@ -432,6 +482,52 @@ data class WizardUiState(
                             continueFailures,
                             picker,
                         )
+                    } else {
+                        null
+                    },
+                answerSheet =
+                    answerSheet
+                        ?.takeIf { sheet ->
+                            sheet.prompt.id == draft.state.promptSheetID &&
+                                sheet.prompt.kind in SUPPORTED_SHEET_KINDS && sheet.prompt in active.optionalPrompts
+                        }?.let { sheet ->
+                            WizardAnswerSheetUi(
+                                sheet,
+                                timeFormat,
+                                openTime
+                                    ?.takeIf {
+                                        it in setOf("free_day_bed", "free_day_wake")
+                                    }?.let { WizardTimeSheetUi(it, sheet.values[it].clockString()) },
+                            )
+                        },
+                excluded =
+                    if (key == WizardStepKey.Excluded) {
+                        WizardExcludedUi(
+                            draft.state.review
+                                ?.reasons
+                                .orEmpty(),
+                            when {
+                                active.isEditing -> ExcludedNote.Edit
+                                active.exclusionWasSaved -> ExcludedNote.Saved
+                                else -> ExcludedNote.Default
+                            },
+                        )
+                    } else {
+                        null
+                    },
+                question =
+                    if (key.step == MemberWizardStep.question) {
+                        WizardQuestionUi.from(
+                            draft,
+                            active.wizard.choicePending,
+                            !closing && !active.wizard.persistenceFailed && !active.wizard.reviewing,
+                        )
+                    } else {
+                        null
+                    },
+                sleep =
+                    if (key == WizardStepKey.Sleep) {
+                        WizardSleepUi.from(draft, continueFailures, timeFormat, openTime)
                     } else {
                         null
                     },

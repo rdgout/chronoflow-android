@@ -8,6 +8,7 @@ android {
 
 dependencies {
     implementation(project(":core:wizard"))
+    implementation(project(":core:plan"))
     implementation(libs.androidx.navigation3.ui)
     implementation(libs.androidx.activity.compose)
     testImplementation(project(":core:testing-compose"))

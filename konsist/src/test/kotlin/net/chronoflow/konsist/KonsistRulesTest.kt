@@ -10,6 +10,28 @@ import org.junit.BeforeClass
 import org.junit.Test
 
 class KonsistRulesTest : KonsistTest() {
+    @Test fun noRetiredHealthQuestions() = noRetiredHealthQuestions(projectScope)
+
+    @Test fun noRetiredHealthQuestionsRejectsPlantedViolation() {
+        assertFailure { noRetiredHealthQuestions(violations("noRetiredHealthQuestions")) }.all {
+            messageContains("noRetiredHealthQuestions violated")
+            messageContains("WizardQBipolar")
+            messageContains("WizardQCaffeine")
+            messageContains("WizardQClot")
+            messageContains("WizardQEye")
+            messageContains("WizardQPregnant")
+            messageContains("bipolar")
+            messageContains("eye_disease")
+            messageContains("pregnancy")
+            messageContains("vte")
+            messageContains("sleep_phase_disorder")
+            messageContains("oral_contraception")
+            messageContains("caffeine_ruled_out")
+        }
+    }
+
+    @Test fun noRetiredHealthQuestionsAllowsControl() = noRetiredHealthQuestions(allowed("noRetiredHealthQuestions"))
+
     @Test fun featureSizesComeFromTheWindow() = featureSizesComeFromTheWindow(projectScope)
 
     @Test fun featureSizesComeFromTheWindowRejectsPlantedViolation() {

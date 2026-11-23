@@ -7,6 +7,7 @@ import androidx.lifecycle.viewmodel.CreationExtras
 data class WizardInitialPresentation(
     val query: String? = null,
     val discardDialogVisible: Boolean = false,
+    val timeSheet: String? = null,
 )
 
 object WizardInitialPresentationKey : CreationExtras.Key<WizardInitialPresentation>

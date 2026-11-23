@@ -5,6 +5,7 @@ import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontSynthesis
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.unit.TextUnit
@@ -66,6 +67,7 @@ fun CfTypeSpec.toTextStyle(): TextStyle =
     TextStyle(
         fontFamily = face.fontFamily(),
         fontWeight = face.fontWeight(),
+        fontSynthesis = if (allowFontSynthesis) null else FontSynthesis.None,
         fontSize = size.sp,
         lineHeight = lineHeight?.sp ?: TextUnit.Unspecified,
         letterSpacing = letterSpacingEm.em,
@@ -108,6 +110,7 @@ class CfType {
                 CfTypeScale.wizardAirportPlaceholder,
                 CfTypeScale.wizardRow,
                 CfTypeScale.wizardButton,
+                CfTypeScale.wizardSheetTitle,
                 CfTypeScale.wizardSubtitle,
                 CfTypeScale.wizardChronotype,
                 CfTypeScale.wizardFieldLabel,

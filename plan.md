@@ -492,6 +492,7 @@ Every screen scrolls when height-constrained. The minimum width is 280 dp; below
 | Passkeys intro | "Sign in with your fingerprint, face or screen lock instead of your password." | "Log in met je vingerafdruk, gezicht of schermvergrendeling in plaats van je wachtwoord." | settings "Sign in with Face ID, a fingerprint or your screen lock instead of your password." |
 | Notifications blocked step | "Tap Open phone settings and turn on notifications for ChronoFlow." | "Tik op Telefooninstellingen openen en zet meldingen voor ChronoFlow aan." | reminders "Open your phone's Settings.", "Tap Notifications, then ChronoFlow." and "Turn on Allow notifications." |
 | Recovery-codes file name | "Recovery codes.txt" | "Herstelcodes.txt" | — |
+| `android_wizard_time_sheet_steps` (needs review) | Steps of 5 minutes. | Stappen van 5 minuten. | — |
 | `android_wizard_airport_field` (needs review) | Airport or city | Luchthaven of stad | wizard "Search airports" |
 | `android_wizard_search_hint` (needs review) | Type at least 2 letters to search. | Typ minstens 2 letters om te zoeken. | — |
 | `android_wizard_search_searching` (needs review) | Searching airports… | Luchthavens zoeken… | — |
@@ -941,7 +942,7 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A347 | (8 OQ-8-11) Hiding the tab bar under the replay needs a "no bar" layout that 6a's `CfNavLayout { Bar, Rail }` lacks. | Add `CfNavLayout.None` (`NavigationSuiteType.None`), chosen while the top entry `hidesShellChrome()`, with full insets for the content; no hide/show animation API (6a OQ-6a-9 still holds). Alternative not taken: 6a's full-screen `overlay` layer, which has no per-entry ViewModel store. | 8 |
 | OQ-A348 | Walkthrough progress height differs between the old brief and Phase 7. | Reuse OQ-A334: native `CfLinearProgress`, 80 × 6 dp. Pinned walkthrough reuses `DayProgressRow` and specifies no different height. | 8 |
 | OQ-A349 | (9a OQ-9a-1) The plan gives 9b "checking timers / 250 ms" and the ViewModel. Where does the iOS model class (`MemberWizardModel`) live? | **9a** ports it as a pure class on an injected scope; 9b hosts it in `TripWizardViewModel` and owns the DB store, service and search. 9b's timer items become wiring and integration tests. | 9a, 9b |
-| OQ-A350 | (9a OQ-9a-2) Sleep after a return flight: no board value; the model value (0.50) is below ReturnFlight 55 | 0.50 on every sleep step, as plan OQ-A36 / `06` OQ 1 ("sleep 50"); 9c's bar never animates downward, so it holds at 55 | 9a, 9c |
+| OQ-A350 | (9a OQ-9a-2) Sleep after a return flight: no board value; the model value (0.50) is below ReturnFlight 55 | Settled by OQ-A418: show the model's 0.50 after ReturnFlight 0.55, as iOS at the pin; 9c's existing bar animates in both directions | 9a, 9c |
 | OQ-A351 | (9a OQ-9a-3) Edit progress: iOS floor 0.95; every edit board draws 100 | 1.0 on every edit step | 9a, 9c |
 | OQ-A352 | (9a OQ-9a-4) Guest "checking your answers": no board value | 0.64 on `checking` and `excluded` while checking answers (bar holds at the last question); first check 0.42 (`WizardCheckingGuest`); No plan otherwise 0.60 (`WizardExcluded`, guest) | 9a, 9c |
 | OQ-A353 | (9a OQ-9a-5) Back on Duplicate's Times and edit Checking failure (`06` OQ 2) | Board: `firstScreen`, no pop; system back acts as × (9c) | 9a, 9c |
@@ -990,8 +991,27 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A396 | (9d OQ-9d-14) Dialog title and context: the `PickerDateTime` title "Flight 1 departs", "Local time at …", summary chip. | Catalog titles "Departure date/time", "Arrival date/time" + "Time in {{city}}"; no summary chip (iOS dropped it). | 9d |
 | OQ-A397 | (9d OQ-9d-15) Time dialog: dial only, or also the M3 keyboard-input toggle. | Whatever the Phase 2 wrapper offers (dial by default); revisit with 9e OQ-A8. | 9d |
 | OQ-A398 | (9d OQ-9d-16) Pill wrapping: WizardCopy wraps from AX1, which the 1.3 font cap never reaches; narrow widths still overflow. | Wrap when the inline row does not fit (iOS `ViewThatFits`), checked by the 280 dp + 1.3 guard. | 9d |
-| OQ-A399 | (9d OQ-9d-17) iOS `fieldCopy` looks a key up in the plan-copy catalog before the wizard table; the wizard has no plan-catalog formatter on this stack. | 9d resolves wizard-table keys (every key 9d produces) and shows the generic fallback otherwise; 9f adds the plan-catalog lookup when it routes server review errors back to Times. | 9d |
+| OQ-A399 | (9d OQ-9d-17) iOS `fieldCopy` looks a key up in the plan-copy catalog before the wizard table; the wizard has no plan-catalog formatter on this stack. | 9e adds shared catalog-first `fieldCopy` for Where and optional-answer errors. Times keeps 9d's wizard-table fallback until 9f routes server review errors there. | 9d, 9e, 9f |
 | OQ-A400 | (9d review 2) Choice-card chevrons use `rgba(120,120,128,0.7)` on the boards, but tokens.json, theme.css and generated colors have no corresponding chevron or iOS tertiary-label token. | Keep `mutedForeground` until a token exists; add no literal color or invented substitute. | 9d |
+| OQ-A401 | (9e OQ-9e-1) Rounding direction for the 5-minute step. | Nearest (remainder 0–2 down, 3–4 up), wrapping 23:58 → 00:00. | 9e |
+| OQ-A402 | (9e OQ-9e-2) Done on an untouched picker over an off-grid saved value (e.g. 07:12 from the web). | Write nothing; the value stays 07:12 until the user moves the dial. | 9e |
+| OQ-A403 | (9e OQ-9e-3) OQ-A36 says "minute precision"; OQ-A8 and the 9e plan say 5-minute rounding. | OQ-A8 for bed/wake and free-day times (phase-specific); flight times keep minute precision (9d). | 9e |
+| OQ-A404 | (9e OQ-9e-4) "Steps of 5 minutes." has no iOS key. | Android-only copy en/nl ("Stappen van 5 minuten."), marked needs review (OQ-A12 process). | 9e |
+| OQ-A405 | (9e OQ-9e-5) Time-sheet subtitle for the free-day pickers. | None; only the two usual times get "On a normal work or school day." (Settings catalog). | 9e |
+| OQ-A406 | (9e OQ-9e-6) Empty sleep value: iOS shows an unstored 12:00 picker. | Pill shows the muted "Time" placeholder; the dial opens at 12:00. | 9e |
+| OQ-A407 | (9e OQ-9e-7) Guest boards (Sleep, QAge, QShift*, Excluded) vs iOS member captures. | Board names seed **guest** drafts (render-only until 11a); test-only `…Member` seeds cover member copy. | 9e |
+| OQ-A408 | (9e OQ-9e-8) Question titles and excluded lines: board text vs server text. | Server text via the plan-copy catalog (iOS, `06 §11` item 5). | 9e |
+| OQ-A409 | (9e OQ-9e-9) Mapping the board's `large` variant to Android. | Text scales with `sp` (cap 1.3); option min height 72 dp at `fontScale ≥ 1.15` (Android "Large"), else 64 dp; captured at 1.3. | 9e |
+| OQ-A410 | (9e OQ-9e-10) iOS's ExcludedShift seed stores `shift_work = true` in the session profile, so its capture shows the default note, not the board's saved note. | Seed the answer only in `savedProfile` so `exclusionWasSaved` is true and the board's note shows. Report the iOS seed to the iOS session. | 9e |
+| OQ-A411 | (9e OQ-9e-11) Free-day question: board "How do you sleep on free days?" vs server text. | Server text "What time do you go to bed and wake up on free days?". | 9e |
+| OQ-A412 | (9e OQ-9e-12) The free-day sheet sits over Fine-tune, which 9f builds. | Capture over 9c's seam now; 9f re-captures `WizardSheetFreeSleep*` over Fine-tune and owns that comparison. | 9e |
+| OQ-A413 | (9e OQ-9e-13) Where the time sheet lives (10b also needs it). | `CfTimePickerSheet` in `:core:designsystem`, neutral (no rounding, no copy); callers round. | 9e |
+| OQ-A414 | (9e OQ-9e-14) Keyboard-input toggle (`TimeInput`) in the sheet (9d OQ-9d-15). | Dial only, `TimePickerDefaults.layoutType()`; revisit if device testing finds the dial cramped. | 9e |
+| OQ-A415 | (9e OQ-9e-15) "One column under 360 pt wide" for the chronotype grid. | One column when the grid's width < 320 dp (window < 360 dp minus gutters); AX1 is unreachable under the 1.3 cap. | 9e |
+| OQ-A416 | (9e OQ-9e-16) PickerTime draws Done/Cancel as stacked pill buttons, not M3 dialog text buttons. | Follow the board (Primary `Lg` above Ghost `Lg`). | 9e |
+| OQ-A417 | (9e OQ-9e-17) 9c handed route server errors on Where to 9e, though the 9e plan entry does not list them. | Build them here (Task 8): outline + `wizard.route.error.<key>` lines, as iOS. | 9e |
+| OQ-A418 | (9e OQ-9e-18) OQ-A350: Sleep after a return flight is 0.50, below ReturnFlight 0.55; the plan default says the bar "never animates downward, so it holds at 55". | iOS at the pin draws `model.progress` as-is (`MemberWizardSteps.swift` l.16–23) and OQ-A350 is a default, not a user decision: show 0.50; the bar moves down. Nothing to build (9c's bar animates both ways); record it. | 9e |
+| OQ-A419 | Board sheet titles ask Fraunces 600; neither app ships it; both render 500 (iOS parity). | Orchestrator decision, 9e review round 2: use the heaviest shipped face, Fraunces 500 (opsz20 at 17 sp), with synthesis off. Resolve requested Fraunces weights above 500 to 500 in tokengen; add no font. | 9e |
 | OQ-0a-22 | Native libraries in the bundle? | Allow only `libandroidx.graphics.path.so` (Compose graphics-path; excluding it breaks Path conversion below API 34); fail on any other `.so` | 0a, 13 |
 | OQ-0b-1 | Where does `PlanMetrics` live? `08 §3.1` lists it inside `CfDimens`, but its consumer `:core:plan` is a JVM module that cannot depend on `:core:designsystem` | `core/plan/…/generated/PlanMetrics.generated.kt` (Double, dp), as iOS keeps it in `PlanCore` | 0b, 1b, 1c |
 | OQ-0b-2 | Port all iOS TokenGen outputs now (Auth, Settings, Terms, Welcome, PlanUI, Press, LaunchPaint, TypeMetrics), or only colors, sky and type? | All of them now (the iOS files are exact goldens and Phases 2, 3a, 3c, 5a, 9 and 10 need them) | 0b |
@@ -2827,13 +2847,19 @@ Implementation commits (brief §7):
 **Delivers.** Builds the sleep step: usual bedtime and wake time with 5-minute rounding, and the free-day times sheet. It builds the only remaining questions, age band and shift work, including the large-text variant, and the excluded states for guests, saved shift-work answers and edits. Retired health questions are never built.
 
 **Tasks**
-- [ ] **Sleep** (`WizardSleep`).
-  - Usual bedtime and wake time use the M3 `TimePicker` in a sheet, rounded to 5 min on Done (OQ-A8, `PickerTime`).
-  - The free-day times sheet (`WizardSheetFreeSleep`).
-- [ ] **Questions.** Age band (`WizardQAge`) and shift work (`WizardQShift`, `WizardQShiftNL`, `WizardQShiftLarge`). They auto-advance after 250 ms and use `role = RadioButton`.
-- [ ] **Excluded states** (`WizardExcluded`, `WizardExcludedShift`), for guests, saved shift-work answers and edits.
-- [ ] **No retired questions.** A test proves that no retired health question is referenced; `WizardQBipolar`, `WizardQCaffeine`, `WizardQClot`, `WizardQEye` and `WizardQPregnant` stay unbuilt.
-- [ ] **Tests.** Rounding and validation, plus guards for each board.
+- [x] **Clock rounding**: nearest five minutes with midnight wrap; untouched and unchanged confirms write nothing (9e Task 1).
+- [x] **Time picker sheet**: neutral Material dial, hoisted state, shared colors, gallery and structural guards (9e Task 2).
+- [x] **Board drafts**: guest/member sleep, supported questions, excluded and free-day sheet seeds, with board capture profiles (9e Task 3).
+- [x] **Sleep** (`WizardSleep`).
+  - [x] Usual bedtime and wake time use the M3 `TimePicker` in a sheet, rounded to 5 min on Done (OQ-A8, `PickerTime`).
+  - [x] The free-day times sheet (`WizardSheetFreeSleep`).
+- [x] **Questions.** Age band (`WizardQAge`) and shift work (`WizardQShift`, `WizardQShiftNL`, `WizardQShiftLarge`). They auto-advance after 250 ms and use `role = RadioButton`.
+- [x] **Excluded states** (`WizardExcluded`, `WizardExcludedShift`), for guests, saved shift-work answers and edits.
+- [x] **Route errors**: scoped server errors on Where and the home route, with catalog-first field copy (9e Task 8).
+- [x] **No retired questions.** A test proves that no retired health question is referenced; `WizardQBipolar`, `WizardQCaffeine`, `WizardQClot`, `WizardQEye` and `WizardQPregnant` stay unbuilt.
+- [x] **Tests.** Rounding and validation, plus guards for each board.
+- [x] **Device check**: bedtime-sheet app language, phone hour cycle and IO StrictMode on `pixel` (9e Task 11).
+- [x] **Acceptance record**: `docs/wizard.md`, capture hand-off, Android-only copy and OQ-A401–OQ-A418 (9e Task 12).
 
 **Acceptance**
 - Values round to 5 min.

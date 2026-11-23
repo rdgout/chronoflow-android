@@ -23,4 +23,6 @@
     <string name="android_wizard_search_error_title">We konden geen luchthavens zoeken.</string>
     <!-- android: Check your connection and try again. (review: needs review) -->
     <string name="android_wizard_search_error_body">Controleer je verbinding en probeer het opnieuw.</string>
+    <!-- android: Steps of 5 minutes. (review: needs review) -->
+    <string name="android_wizard_time_sheet_steps">Stappen van 5 minuten.</string>
 </resources>
