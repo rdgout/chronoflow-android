@@ -256,3 +256,116 @@ fe8389e docs(auth): record sign-in decisions and acceptance
 ```
 
 The follow-up results are recorded by `docs(auth): record the passing follow-up checks`.
+
+
+## Two-factor (Phase 5b, 2026-11-18)
+
+Each password challenge creates a fresh process-memory `TwoFactorModel` owned by `SignInModel`. Its code is ASCII-filtered before truncation to six digits; recovery input is sent as typed. There is no auto-focus or six-digit auto-submit. Toggle clears proof and feedback. Every attempt clears the proof; explicit back cancels the request and clears the challenge. Switching apps and activity recreation keep the challenge/code in memory, while process death loses them. Nothing secret is a route argument or saveable field.
+
+Successful proof acceptance calls the same private `SignInModel.accept` as password/passkey sign-in, with `AuthenticationMethod.TwoFactor`. Acceptance and challenge disposal complete in the protected block if the caller is cancelled after the session commits. The app gate remains verify → terms → walkthrough → Today. There is no password autofill commit on this path because the password has already been cleared.
+
+The root entry and ViewModel factory live in `:app`, in `CfRoot` and `auth/TwoFactorViewModelFactory`. The activity-scoped ViewModel follows the current model rather than retaining visit state. Field initialization and synchronization read the authoritative in-memory model: the combined UI flow can lag behind an edit during recreation. The real activity recreation regression caught this race and passes after that correction. Root transitions remain disabled.
+
+### Board adaptations
+
+| Board (`DC/AuthTwoFactor.dc.html`) | Build instead | Why |
+|---|---|---|
+| A `pattern-dots` layer on the sky | Plain sky, no dots | iOS "No PatternDots" (`I/plan.md:479`), already in 5a's `AuthScreen` |
+| The code field prefilled with `482913`, and the error always drawn (l.55) | The field starts empty and is cleared after every attempt. A field error therefore shows an **empty** field with the error. | `TwoFactorModel.swift:56–59` |
+| "That code didn't work. Codes change every 30 seconds…" as the code error | Only for the `code` field when the server key is "The authentication code was not accepted. Try again."; other keys show their own copy | fix round 4, `AuthFormModel.swift:74–79`, 5a's `AuthFailureMapping` |
+| Verify is an `<a>` 40 px high (`h-10`); field 36 px; back 44 px | `CfButton` Primary `Lg` (40 dp visual, ≥ 48 dp target), field box ≥ 48 dp, back target 48 dp | 5a OQ-5a-4 |
+| Recovery placeholder `xxxx-xxxx` (l.58) | A placeholder only, never a value, from the `xxxx-xxxx` resource (not translated) | fix round 4, `I/plan.md:628` |
+| No footer | No footer | `TwoFactorView.swift:60–62` (`EmptyView()`) |
+
+The card orders banner, proof field, Primary Lg Verify, Ghost Lg toggle. Both modes reuse generated light/dark tokens, catalog en/nl copy, the existing failure-feedback/reveal code and one polite announcement per failure. Field errors are structural semantics, and hints disappear while an error is shown. There is no new Android-only string: b1 belongs to Set2FA in Phase 10c; `android_two_factor_intro_b1` is already generated in both languages and remains unused here.
+
+### Autofill contract
+
+Both hints shipped as `TwoFactorFieldSpec.CodeContentType = ContentType.SmsOtpCode + ContentType("2faAppOTPCode")`, using the public constructor and `plus` (OQ-A194, orchestrator follow-up). Recovery exposes no content type. This uses the public [Compose ContentType API](https://developer.android.com/reference/kotlin/androidx/compose/ui/autofill/package-summary).
+
+The single probe on the resolved Compose version returned `equality=false`; public descriptions were opaque `AndroidContentType@…` strings without hints. The final tests therefore check the shared production value's identity/wiring, keyboard traits and recovery omission. They use no internal accessor, visibility suppression or reflection; the reason for omitting a hint-level assertion is in `TwoFactorFieldSpecTest`'s KDoc. The temporary probe is removed; its output is retained in `build/phase5b-validation/autofill-probe.xml`.
+
+### Swift test port map
+
+All references below are read from iOS at `f391a1fa`. Coroutine/model behavior stays on the JVM. Parameter rows become independent named methods/cases. In this table `{…}` expands the suffixes on the original Swift method name.
+
+| Swift suite / method | Kotlin suite / method |
+|---|---|
+| `TwoFactorModelTests.emptyProofShowsOnlyTheActiveFieldError` | `feature:auth:TwoFactorModelTests#emptyProofShowsOnlyTheActiveFieldError{Code,Recovery}` |
+| `TwoFactorModelTests.latestCodeAcceptsThroughPasswordSessionPath` | `feature:auth:TwoFactorModelTests#latestCodeAcceptsThroughPasswordSessionPath{Verified,Unverified}` |
+| `TwoFactorModelTests.numericInputFiltersPastesAndAutoFillWithoutSubmitting` | `feature:auth:TwoFactorModelTests#numericInputFiltersPastesAndAutoFillWithoutSubmitting` |
+| `TwoFactorModelTests.recoveryIsSingleUseAndModeToggleClearsFeedback` | `feature:auth:TwoFactorModelTests#recoveryIsSingleUseAndModeToggleClearsFeedback` |
+| `TwoFactorModelTests.expiryAndFiveFailuresKeepTheReturnedFieldState` | `feature:auth:TwoFactorModelTests#expiryAndFiveFailuresKeepTheReturnedFieldState{Expired,Exhausted}` |
+| `TwoFactorModelTests.throttleServerOfflineAndHiddenFieldsUseKeptDefaults` | `feature:auth:TwoFactorModelTests#throttleServerOfflineAndHiddenFieldsUseKeptDefaults{Throttle,Server,Offline,Challenge,HiddenProof}` |
+| `TwoFactorModelTests.doubleSubmitBusyEditsToggleAndBackDiscardLateSuccess` | `feature:auth:TwoFactorModelTests#doubleSubmitBusyEditsToggleAndBackDiscardLateSuccess` |
+| `TwoFactorModelTests.taskCancellationClearsCodeWithoutPresentationOrAcceptance` | `feature:auth:TwoFactorModelTests#taskCancellationClearsCodeWithoutPresentationOrAcceptance` |
+| `TwoFactorModelTests.missingChallengeReturnsToSignInAndNewNavigationCannotRestoreSecrets` | `feature:auth:TwoFactorModelTests#missingChallengeReturnsToSignInAndNewNavigationCannotRestoreSecrets` |
+| `TwoFactorModelTests.sessionStorageFailureRemainsTypedAndShowsTheServerBanner` | `feature:auth:TwoFactorModelTests#sessionStorageFailureRemainsTypedAndShowsTheServerBanner{CredentialsUnavailable,DatabaseUnavailable,CredentialWrite,InvalidResult,Superseded}` |
+| `TwoFactorModelTests.backendMessagesLocalizeOnlyUnderTheDisplayedModeAndAnnouncementsAreConsumedOnce` | `feature:auth:TwoFactorModelTests#backendMessagesLocalizeOnlyUnderTheDisplayedModeAndAnnouncementsAreConsumedOnce{CodeMissing,CodeRejected,RecoveryMissing,RecoveryRejected}` |
+| `TwoFactorModelTests.onlySessionAcceptancePersistsATokenAndNeverTheChallengeOrProof` | `app:TwoFactorModelRoutingTests#onlySessionAcceptancePersistsATokenAndNeverTheChallengeOrProof` (debug JVM test, real controller, capturing stores) |
+| `SignInModelTests.committedSessionUsesStoredGateWithAndWithoutCancellation` two-factor iteration | Same method in `app:SignInModelRoutingTests`; 24 gate × cancellation × authentication-method cases total |
+| `PasskeySignInTests.mockPasskeyAcceptsVerifiedUnverifiedAndTwoFactorAccountsDirectly` | `feature:auth:PasskeySignInTests#mockPasskeyAcceptsVerifiedUnverifiedAndTwoFactorAccountsDirectly{Verified,Unverified,TwoFactor}` |
+| `PasskeySignInTests.canceledPromptIsSilentAndRetryAlwaysGetsFreshOptions` | `feature:auth:PasskeySignInTests#canceledPromptIsSilentAndRetryAlwaysGetsFreshOptions` |
+| `PasskeySignInTests.consumedExpiredCredentialThrottleServerAndOfflineFailuresRetryWithoutSession` | `feature:auth:PasskeySignInTests#consumedExpiredCredentialThrottleServerAndOfflineFailuresRetryWithoutSession` |
+| `PasskeySignInTests.failedCredentialConsumesChallengeAndRetryFetchesAnother` | `feature:auth:PasskeySignInTests#failedCredentialConsumesChallengeAndRetryFetchesAnother` |
+| `PasskeySignInTests.taskCancellationAfterAssertionNeverAcceptsOrCallsLogin` | `feature:auth:PasskeySignInTests#taskCancellationAfterAssertionNeverAcceptsOrCallsLogin` |
+| `PasskeyEncodingTests.binaryBytesRoundTripWithoutUTF8OrPaddingAndAllDTOFieldsUseBase64URL` | Same Kotlin suite/method; invalid-encoding inputs additionally split into `invalidEncoding…` methods |
+| `PasskeyEncodingTests.passkeyFieldFailuresUseOnlyDesignedBannerAndNeverLeakServerCopy` | Same name with `{Credential,Challenge}` suffixes |
+| `TwoFactorControlTests.testDisplayedCodeRejectsOverflowAndNonDigitsEvenWhenTheModelDoesNotChange` | `feature:auth:TwoFactorControlTests#displayedCodeRejectsOverflowAndNonDigitsEvenWhenTheModelDoesNotChange` (Robolectric, structure/input values only) |
+| `TwoFactorControlTests.testNativeInputTraitsAndModeToggleDiscardTheOldKeyboardConfiguration` | `feature:auth:TwoFactorControlTests#nativeInputTraitsAndModeToggleDiscardTheOldKeyboardConfiguration` (Robolectric, structure/input values only) |
+| `TwoFactorControlTests.testRecoveryPlaceholderSurvivesErrorsAndClearsWhenReturningToCode` | `feature:auth:TwoFactorControlTests#recoveryPlaceholderSurvivesErrorsAndClearsWhenReturningToCode` (Robolectric, structure/input values only) |
+| `TwoFactorControlTests.testFailedAttemptsRefocusTheEnabledFieldWithoutEditingAwayFeedback` | `feature:auth:TwoFactorControlTests#failedAttemptsRefocusTheEnabledFieldWithoutEditingAwayFeedback{Code,Recovery}` (Robolectric, structure/input values only) |
+| `TwoFactorControlTests.testBothDisplayedProofsFollowModelEditsAndAttemptClearingWithoutErasingErrors` | `feature:auth:TwoFactorControlTests#bothDisplayedProofsFollowModelEditsAndAttemptClearingWithoutErasingErrors{Code,Recovery}` (Robolectric, structure/input values only) |
+| `TwoFactorControlTests.testVerifyKeepsItsLabelAndSizeWhileBusyInBothLanguages` | `feature:auth:TwoFactorControlTests#verifyKeepsItsLabelAndSizeWhileBusyInBothLanguages{En,Nl}` (Robolectric, structure/input values only) |
+| `TwoFactorTests` number-pad journey | `app:TwoFactorJourneyTest#numberPadDoesNotAutoSubmitAndVerifyCompletesTheMockSession` |
+
+Backend en/nl assertions are in `TwoFactorCopyTest`, with one language/message per parameter case. Android additions cover the current-model ViewModel behavior, unchanged-proof feedback/redaction, code/recovery field specs, saved-state scanning/restoration, root routing/back/reentry/recreation, Credential Manager exception mapping/anchor lifetime, parsed request/response JSON and the shipped capability gate. Mock-backed persistence tests are in `app/src/testDebug`; the common gate/cancellation tests keep their existing `ScriptedSource` seam so release tests compile without a mock dependency.
+
+`testBothModesKeepInteractiveKeyboardDismissalAndVerticalBouncing` is not ported: Android uses system back for IME dismissal (research 05 OQ A11). `testRootCapMakesAX5EqualXXLarge` is covered through the existing `ConfigurationPolicyTest.fontScaleTwoIsCappedAtOnePointThree` root policy and the capped `largeFont` profile guards, rather than a duplicated UIKit pixel-equality test. The iOS `-cf.twoFactorServerFailure` flag is not ported; JVM mapping and Robolectric banner tests cover that state. An expired-challenge screen has no board; the returned field state is retained. Native provider autofill and spoken TalkBack checks remain manual; none is inferred from semantics or the keyboard checks.
+
+### Captures and comparison
+
+The original single `make captures ONLY=AuthTwoFactor` invocation wrote these 18 PNGs under `build/captures/` at 375 × 812 dp, density 3 and zero insets:
+
+- `AuthTwoFactor_code-attempts_en_dark.png`
+- `AuthTwoFactor_code-attempts_en_light.png`
+- `AuthTwoFactor_code-fieldError_en_dark.png`
+- `AuthTwoFactor_code-fieldError_en_light.png`
+- `AuthTwoFactor_code-fieldError_nl_light.png`
+- `AuthTwoFactor_code-none_en_dark.png`
+- `AuthTwoFactor_code-none_en_light.png`
+- `AuthTwoFactor_code-server_en_dark.png`
+- `AuthTwoFactor_code-server_en_light.png`
+- `AuthTwoFactor_recovery-attempts_en_dark.png`
+- `AuthTwoFactor_recovery-attempts_en_light.png`
+- `AuthTwoFactor_recovery-fieldError_en_dark.png`
+- `AuthTwoFactor_recovery-fieldError_en_light.png`
+- `AuthTwoFactor_recovery-none_en_dark.png`
+- `AuthTwoFactor_recovery-none_en_light.png`
+- `AuthTwoFactor_recovery-none_nl_light.png`
+- `AuthTwoFactor_recovery-server_en_dark.png`
+- `AuthTwoFactor_recovery-server_en_light.png`
+
+The 38 independent layout cases are eight states × small/nl, pixel8/en, foldInner/en and largeFont/nl in light; code/recovery attempts on landscapeSideNav/en/light; and four pixel8/en/dark states. They guard content, text, ink, targets, headings, placeholders and wide card centering/width. All pass with no timing misses.
+
+Native captures were inspected against `AuthTwoFactor`'s source anatomy and the Two-factor banner declarations in `AuthStates`: empty proof fields, placeholder-only recovery, banner-first placement, code/recovery errors, Primary/Ghost actions, plain sky, both themes and Dutch wrapping follow the settled table above. The larger native targets and font wrapping remain the documented adaptations. No stored screenshot references were added. A browser-rendered side-by-side board comparison remains open: the copied canvas references an absent `support.js`, and the earlier browser probe could not launch in the sandbox. No new board render or final reviewer acceptance is claimed.
+
+### Verification record
+
+The three requested emulator classes each ran once in this authorized follow-up, under `Scripts/run-tier.sh`'s device lock on pixel / API 36 / debug with functional animator settings. The seed performs the password challenge; the two-factor tests do not type credentials. The Sign-in keyboard test uses the extracted `AuthKeyboardAssertions` with its existing ≥100 dp IME precondition, stable-bounds check and status-bar/keyboard geometry assertions unchanged.
+
+| Selection | Result | Wall time |
+|---|---|---|
+| Public `ContentType` equality/description probe (temporary method) | Identity equality; descriptions omit hints; probe removed | 4.22 s |
+| `make targeted ONLY="feature:auth:TwoFactorFieldSpecTest feature:auth:TwoFactorControlTests#nativeInputTraitsAndModeToggleDiscardTheOldKeyboardConfiguration"` | Seven passed using public shared-value wiring | 12.79 s |
+| `make targeted ONLY="app:SignInKeyboardTest"` | Passed; test 1.450 s | 10.45 s |
+| `make targeted ONLY="app:TwoFactorJourneyTest"` | Passed; test 1.776 s; no auto-submit; session gate reached; StrictMode IO counter 0 | 6.89 s |
+| `make targeted ONLY="app:TwoFactorKeyboardTest"` | Both passed; code 1.432 s, recovery 0.885 s | 7.31 s |
+
+Follow-up logs, XML probe evidence and per-run timings are retained under `build/phase5b-validation/`. The final `make quick` invocation follows the docs commit; its full output is `build/phase5b-validation/final-quick.log`, with the normal tier timing/result files under `build/test-results/`. The orchestrator's end report records its exit status and wall time.
+
+Earlier implementation validation: 60 model/copy/sign-in cases passed in 16.29 s; field/control/screen/saved-state cases in 16.87 s; ViewModel cases in 7.97 s; 38 layout guards in 16.57 s; 18 captures in 13.13 s; passkey flow/client cases in 12.84 s; graph/seed/service/hidden-capability checks in 27.97 s; and the release capability/routing checks in 7.06 s. The first route/storage selection passed 43/44 cases in 20.45 s, exposing the recreation race; its corrected method passed in 5.36 s, with control/saved-state regressions in 6.52 s. The saved-state guard was proven with a temporary `rememberSaveable` mutation (expected failure in 6.69 s); restoring memory-only state passed in 4.52 s.
+
+The initial Task 10 stop after two autofill assertion fixes is retained in the history. No production hint was removed. The orchestrator authorized the shared-value resolution: internal `contentHints` access is removed from the two-factor tests, and no reflection or visibility bypass was introduced. The phase adds no new copy. OQ-5b-1…11 are recorded as OQ-A193…OQ-A203; OQ-A194 records that both OTP hints shipped. Passkey server/device prerequisites and the capability flip procedure are in [Passkey sign-in](passkeys.md). `SERVER_READY` remains false.
+
+`make check`, perf/timeline measurements and profile regeneration were not run, as instructed. No Phase 5b performance-budget measurement is requested; only the release dependency size delta is recorded in [Startup performance](perf-startup.md#release-size).

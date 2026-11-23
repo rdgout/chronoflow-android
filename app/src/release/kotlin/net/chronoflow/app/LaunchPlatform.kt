@@ -7,6 +7,9 @@ import net.chronoflow.core.navigation.RootNavigator
 import net.chronoflow.feature.launch.LaunchOverrides
 
 internal object LaunchPlatform {
+    val passkeyCapability: net.chronoflow.core.model.passkey.PasskeyCapability
+        get() = net.chronoflow.core.model.passkey.PasskeyCapability.Shipped
+
     fun mockSources(io: kotlinx.coroutines.CoroutineDispatcher): MockSources? = platformMockSources(io)
 
     fun welcomeDestinations(navigator: RootNavigator): WelcomeDestinations = RoutedWelcomeDestinations(navigator)

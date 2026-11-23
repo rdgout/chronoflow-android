@@ -4,6 +4,7 @@ import assertk.assertFailure
 import assertk.assertions.messageContains
 import com.lemonappdev.konsist.api.Konsist
 import com.lemonappdev.konsist.api.container.KoScope
+import org.junit.BeforeClass
 import org.junit.Test
 
 class TierRegistryTest {
@@ -103,6 +104,12 @@ class TierRegistryTest {
     }
 
     private companion object {
-        val projectScope: KoScope by lazy { projectScope() }
+        lateinit var projectScope: KoScope
+
+        @BeforeClass
+        @JvmStatic
+        fun buildProjectScope() {
+            projectScope = resolvedProjectScope()
+        }
     }
 }

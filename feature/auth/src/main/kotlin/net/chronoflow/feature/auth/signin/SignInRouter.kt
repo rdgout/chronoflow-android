@@ -12,6 +12,8 @@ interface SignInRouter {
 
     fun guest()
 
+    fun backToSignIn()
+
     fun twoFactor()
 
     suspend fun acceptedSession(

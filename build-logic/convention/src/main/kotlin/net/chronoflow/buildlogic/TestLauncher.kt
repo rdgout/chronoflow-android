@@ -31,6 +31,7 @@ internal class CfTestArguments(
 }
 
 internal fun Project.configureTestLauncher() {
+    configureTestTimingOutputs()
     val toolchains = extensions.getByType<JavaToolchainService>()
     val requestedTier = providers.gradleProperty("cf.tier").orElse("quick")
     val captureOnly = providers.gradleProperty("cf.captureOnly").orElse("")
@@ -55,12 +56,19 @@ internal fun Project.configureTestLauncher() {
                 capturesDir = capturesDir,
             ),
         )
-        outputs.dir(timings)
-        doFirst { timings.get().asFile.deleteRecursively() }
     }
     val bom = libs.library("junit-bom")
     addDependency("testRuntimeOnly", dependencies.platform(bom))
     addDependency("testRuntimeOnly", libs.library("junit-vintage-engine"))
     addDependency("testRuntimeOnly", libs.library("junit-platform-launcher"))
     if (path != ":core:testing-junit") addDependency("testRuntimeOnly", project(":core:testing-junit"))
+}
+
+internal fun Project.configureTestTimingOutputs() {
+    tasks.withType<Test>().configureEach {
+        val timings = layout.buildDirectory.dir("cf-timings/$name")
+        outputs.dir(timings)
+        outputs.doNotCacheIf("Test timings measure this host and must not be replayed from the build cache") { true }
+        doFirst { timings.get().asFile.deleteRecursively() }
+    }
 }

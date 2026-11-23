@@ -34,6 +34,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import net.chronoflow.app.auth.SignInViewModelFactory
+import net.chronoflow.app.auth.TwoFactorViewModelFactory
 import net.chronoflow.core.designsystem.layout.LocalSafeInsets
 import net.chronoflow.core.designsystem.theme.CfTheme
 import net.chronoflow.core.designsystem.theme.ChronoFlowTheme
@@ -41,6 +42,7 @@ import net.chronoflow.core.designsystem.theme.warmFontsAfterFirstFrame
 import net.chronoflow.core.navigation.RootState
 import net.chronoflow.core.navigation.Route
 import net.chronoflow.feature.auth.signin.SignInScreen
+import net.chronoflow.feature.auth.twofactor.TwoFactorScreen
 import net.chronoflow.feature.launch.LaunchOverlay
 import net.chronoflow.feature.launch.model.LaunchRoute
 import net.chronoflow.feature.launch.welcome.WelcomeScreen
@@ -80,7 +82,11 @@ internal fun CfRoot(
     val overlayShowing = graph.launch.overlayActive
     // Skipped overlays wait for first commit before readiness can select a route.
     val launchSky =
-        content == null && (displayedRoute == null || displayedRoute == Route.Welcome || displayedRoute == Route.SignIn)
+        content == null &&
+            (
+                displayedRoute == null || displayedRoute == Route.Welcome ||
+                    (displayedRoute == Route.SignIn || displayedRoute == Route.TwoFactor)
+            )
     SideEffect { onSystemBars(night, overlayShowing, onSky || launchSky) }
     val currentRoute = rememberUpdatedState(displayedRoute)
     // Replacing the predicate disposes its reporter and can report before the overlay exits.
@@ -129,6 +135,14 @@ internal fun CfRoot(
                                                 modifier = Modifier.testTag("route.welcome"),
                                             )
                                         }
+                                    }
+
+                                    Route.TwoFactor -> {
+                                        val extras =
+                                            remember(graph) {
+                                                MutableCreationExtras().apply { set(AppGraphKey, graph) }
+                                            }
+                                        TwoFactorScreen(viewModel(factory = TwoFactorViewModelFactory, extras = extras))
                                     }
 
                                     Route.SignIn -> {

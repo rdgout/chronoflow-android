@@ -59,6 +59,7 @@ class MainActivity : ComponentActivity() {
         val kind = launch.onActivityCreated(savedInstanceState, overrides.skipOverlay, overrides)
         val splash = installSplashScreen()
         super.onCreate(if (kind == LaunchKind.ProcessDeathRestore) null else savedInstanceState)
+        graph.passkeyAnchor.attach(this)
         reduceMotion = ReduceMotion.resolve(ValueAnimator.areAnimatorsEnabled(), overrides.reduceMotion)
         launch.captureReduceMotion(ValueAnimator.areAnimatorsEnabled(), overrides.reduceMotion)
         val claimed = launch.overlayClaimedByCurrentActivity
@@ -111,6 +112,7 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
+        (application as ChronoFlowApp).graph.passkeyAnchor.detach(this)
         if (::launch.isInitialized) launch.onActivityDestroyed(isFinishing, isChangingConfigurations)
         super.onDestroy()
     }

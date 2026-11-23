@@ -15,10 +15,10 @@ import net.chronoflow.core.model.api.SessionResult
 import net.chronoflow.core.model.api.SignInResult
 import net.chronoflow.core.model.auth.AuthenticationMethod
 import net.chronoflow.core.model.device.DeviceIdentityFailure
+import net.chronoflow.core.model.passkey.PasskeyCapability
+import net.chronoflow.core.model.passkey.PasskeyFailure
 import net.chronoflow.core.model.session.SessionFailure
 import net.chronoflow.core.model.store.StoreFailure
-import net.chronoflow.feature.auth.model.passkey.PasskeyCapability
-import net.chronoflow.feature.auth.model.passkey.PasskeyFailure
 import java.io.IOException
 import java.security.GeneralSecurityException
 
@@ -31,11 +31,14 @@ class SignInModel(
     private val passkey: suspend () -> SessionResult = { throw PasskeyFailure.Unavailable },
     private val accepted: suspend (SessionResult, AuthenticationMethod) -> Unit,
     private val onTwoFactor: () -> Unit,
+    private val onLeaveTwoFactor: () -> Unit = {},
 ) {
     private val mutableEmail = MutableStateFlow("")
     val email: StateFlow<String> = mutableEmail.asStateFlow()
     val form: AuthFormModel = AuthFormModel()
     val navigation: AuthNavigation = AuthNavigation()
+    private val mutableTwoFactor = MutableStateFlow<TwoFactorModel?>(null)
+    val twoFactor: StateFlow<TwoFactorModel?> = mutableTwoFactor.asStateFlow()
     var sessionFailure: SessionFailure? = null
         private set
 
@@ -80,7 +83,16 @@ class SignInModel(
                 }
 
                 is SignInResult.TwoFactor -> {
-                    if (navigation.twoFactor(result.challengeId)) onTwoFactor()
+                    if (navigation.twoFactor(result.challengeId)) {
+                        mutableTwoFactor.value =
+                            TwoFactorModel(
+                                source,
+                                navigation,
+                                accept = { accept(it, AuthenticationMethod.TwoFactor, {}, null) },
+                                leave = onLeaveTwoFactor,
+                            )
+                        onTwoFactor()
+                    }
                 }
             }
         }
@@ -145,6 +157,8 @@ class SignInModel(
     }
 
     fun clearSecrets() {
+        twoFactor.value?.cancel()
+        mutableTwoFactor.value = null
         navigation.reset()
         form.clear()
     }

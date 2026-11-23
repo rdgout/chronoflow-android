@@ -45,6 +45,7 @@ data class TestSeed(
     val settingsRoute: String? = null,
     val wizardAutoOpen: Boolean = false,
     val wizardBoardCapture: String? = null,
+    val passkeyCapability: Boolean? = null,
 ) {
     override fun toString(): String = "TestSeed(testId=$testId, profile=$profile, keys=${raw.keys})"
 
@@ -147,6 +148,12 @@ data class TestSeed(
                 profile = UiTestProfile.entries.firstOrNull { it.raw == accepted[PROFILE_KEY] },
                 theme = ThemeChoice.fromRaw(accepted["cf.settings.theme"]),
                 language = LanguageChoice.fromRaw(accepted["cf.settings.language"]),
+                passkeyCapability =
+                    when (accepted["cf.passkeyCapability"]) {
+                        "1", "true" -> true
+                        "0", "false" -> false
+                        else -> null
+                    },
                 reduceMotion =
                     when (accepted["cf.reduceMotion"]) {
                         "1", "true" -> true

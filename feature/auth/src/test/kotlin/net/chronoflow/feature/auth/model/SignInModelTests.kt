@@ -13,11 +13,11 @@ import net.chronoflow.core.model.api.AccountPolicies
 import net.chronoflow.core.model.api.ApiJson
 import net.chronoflow.core.model.api.SessionResult
 import net.chronoflow.core.model.auth.AuthenticationMethod
+import net.chronoflow.core.model.passkey.PasskeyCapability
+import net.chronoflow.core.model.passkey.PasskeyFailure
 import net.chronoflow.core.model.session.SessionFailure
 import net.chronoflow.core.navigation.Route
 import net.chronoflow.core.testing.Fixtures
-import net.chronoflow.feature.auth.model.passkey.PasskeyCapability
-import net.chronoflow.feature.auth.model.passkey.PasskeyFailure
 import net.chronoflow.feature.auth.testing.AUTH_DEVICE_ID
 import net.chronoflow.feature.auth.testing.AuthTestFixture
 import net.chronoflow.feature.auth.testing.FakeSecretField
@@ -127,6 +127,19 @@ class SignInModelTests {
     }
 
     class Behavior {
+        @Test fun clearSecretsCancelsTheTwoFactorModel() =
+            runTest(timeout = 60.seconds) {
+                val signIn = challenged(twoFactorSource(StandardTestDispatcher(testScheduler)))
+                val old = signIn.twoFactor.value!!
+                old.editCode("123456")
+                signIn.clearSecrets()
+                old.editCode("1")
+                assertEquals("", old.code)
+                assertNull(signIn.twoFactor.value)
+                assertNull(signIn.navigation.challengeID)
+                assertEquals("twofactor@example.com", signIn.email.value)
+            }
+
         @Test
         fun twoFactorNeverAcceptsSessionAndBackDiscardsChallenge() {
             runTest(timeout = 60.seconds) {

@@ -6,6 +6,7 @@ import assertk.assertions.messageContains
 import com.lemonappdev.konsist.api.Konsist
 import com.lemonappdev.konsist.api.container.KoScope
 import org.junit.Assert.assertTrue
+import org.junit.BeforeClass
 import org.junit.Test
 
 class KonsistRulesTest {
@@ -202,7 +203,13 @@ class KonsistRulesTest {
     }
 
     private companion object {
-        val projectScope: KoScope by lazy { projectScope() }
+        lateinit var projectScope: KoScope
+
+        @BeforeClass
+        @JvmStatic
+        fun buildProjectScope() {
+            projectScope = resolvedProjectScope()
+        }
     }
 
     @Test fun noDefaultLocaleZoneOrClockInLogic() = noDefaultLocaleZoneOrClockInLogic(projectScope)
