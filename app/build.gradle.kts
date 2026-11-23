@@ -49,6 +49,7 @@ dependencies {
 
     testImplementation(libs.junit4)
     testImplementation(libs.assertk)
+    testImplementation(libs.robolectric)
 
     androidTestImplementation(libs.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.test.ext.junit)
