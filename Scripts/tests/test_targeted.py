@@ -18,6 +18,13 @@ class TargetedTest(unittest.TestCase):
         self.assertIn("--timings 'konsist/build/cf-timings/test/*.json'", result.stdout)
         self.assertIn("run-tier.sh targeted --results", result.stdout)
 
+    def test_build_logic_uses_xml_without_an_unavailable_timing_listener(self):
+        result = targeted("build-logic:convention:VerifyReleaseManifestTest")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn(":build-logic:convention:test", result.stdout)
+        self.assertIn("build-logic/convention/build/test-results/test/*.xml", result.stdout)
+        self.assertNotIn("--timings", result.stdout)
+
     def test_emulator_test_runs_through_the_device_tier(self):
         result = targeted("app:AppLaunchSmokeTest", env={"REUSE_BUILD": ""})
         self.assertEqual(result.returncode, 0, result.stderr)

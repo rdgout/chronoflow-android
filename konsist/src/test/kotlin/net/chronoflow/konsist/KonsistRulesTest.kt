@@ -36,6 +36,18 @@ class KonsistRulesTest {
         }
     }
 
+    @Test fun launchModelImportsNoAndroid() = launchModelImportsNoAndroid(projectScope)
+
+    @Test fun launchModelImportsNoAndroidRejectsPlantedViolation() {
+        assertFailure { launchModelImportsNoAndroid(violations("launchModelImportsNoAndroid")) }
+            .messageContains("launchModelImportsNoAndroid violated")
+    }
+
+    @Test fun launchModelImportsNoAndroidAllowsControl() =
+        launchModelImportsNoAndroid(
+            allowed("launchModelImportsNoAndroid"),
+        )
+
     @Test fun onlyAppImportsFeatures() = onlyAppImportsFeatures(projectScope)
 
     @Test fun onlyAppImportsFeaturesRejectsPlantedViolation() {
@@ -107,6 +119,8 @@ class KonsistRulesTest {
     @Test fun insetsOnlyAtRootRejectsPlantedViolation() {
         assertFailure { insetsOnlyAtRoot(violations("insetsOnlyAtRoot")) }.messageContains("insetsOnlyAtRoot violated")
     }
+
+    @Test fun insetsOnlyAtRootAllowsRootContent() = insetsOnlyAtRoot(allowed("insetsOnlyAtRoot"))
 
     @Test fun testingNotInMain() = testingNotInMain(projectScope)
 
@@ -180,6 +194,18 @@ class KonsistRulesTest {
         assertFailure {
             featureDpLiteralsComeFromBoardMetrics(violations("featureDpLiteralsComeFromBoardMetrics"))
         }.messageContains("featureDpLiteralsComeFromBoardMetrics violated")
+    }
+
+    @Test fun featureNumericDpConstantsRejectPlantedViolation() {
+        val path =
+            "konsist/src/test/resources/violations/featureDpLiteralsComeFromBoardMetrics/" +
+                "feature/trip/src/main/kotlin/net/chronoflow/Constants.kt"
+        assertFailure { featureDpLiteralsComeFromBoardMetrics(Konsist.scopeFromFile(path)) }.all {
+            messageContains("SIZE.dp")
+            messageContains("COMPANION.sp")
+            messageContains("DOUBLE.toFloat().dp")
+            messageContains("INT.toInt().sp")
+        }
     }
 
     @Test fun featureDpLiteralsComeFromBoardMetricsAllowsControl() =

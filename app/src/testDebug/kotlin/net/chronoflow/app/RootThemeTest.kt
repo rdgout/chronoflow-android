@@ -1,5 +1,6 @@
 package net.chronoflow.app
 
+import android.content.Intent
 import android.os.Looper
 import androidx.compose.runtime.CompositionLocalMap
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -40,7 +41,11 @@ class RootThemeTest {
         )
         val app = RuntimeEnvironment.getApplication() as RecordingApplication
         val calls = app.preloader.calls
-        val controller = Robolectric.buildActivity(MainActivity::class.java)
+        val intent =
+            Intent(app, MainActivity::class.java)
+                .putExtra("CF_AUTH_TEST_ID", "0199a3c0-0000-7000-8000-000000000000")
+                .putExtra("CF_UI_TEST_PROFILE", "screen")
+        val controller = Robolectric.buildActivity(MainActivity::class.java, intent)
         val activity = controller.get()
         try {
             controller

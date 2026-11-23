@@ -6,3 +6,5 @@ b7f1dc110035026c97b8b8d66051178e1c55a27aa11f564d9903c441dfca8f50  -  app/src/mai
 a86464c3d31dd6fcca240f95dabbf1db6d9e6f645bf7892b70a0c44838d20ebf  -  app/src/main/res/drawable-xxxhdpi/launch_moon.png
 c17ac1f24e9de7c00efb4443ef040f8d4811e1b35a0d8f5b05c6210cd1f224e3  -  tools/assets/moon/launch-moon-dark.srgb.svg
 f25ec8ae712170ebd1531069a0d5e80f7fcb290f397afce43a86116e6743acc1  -  tools/assets/moon/launch-moon-light.srgb.svg
+e5614ccbec229d798127395a494514bc5f458c3da283d0d25e60e4326da2bb1d  -  core/designsystem/src/main/res/font/fraunces_400_opsz32.ttf
+426d92175025e2fbc91a795f66c43721d90ac93ab304a0f73ff75dec4e7f2836  -  feature/launch/src/main/kotlin/net/chronoflow/feature/launch/generated/LaunchWordmark.generated.kt

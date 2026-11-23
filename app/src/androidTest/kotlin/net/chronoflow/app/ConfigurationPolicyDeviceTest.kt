@@ -1,6 +1,7 @@
 package net.chronoflow.app
 
 import android.app.LocaleManager
+import android.content.Intent
 import android.content.res.Configuration
 import android.os.LocaleList
 import android.view.View
@@ -27,7 +28,11 @@ class ConfigurationPolicyDeviceTest {
     private val locales get() = context.getSystemService(LocaleManager::class.java)
 
     private fun withMainActivity(block: (ActivityScenario<MainActivity>) -> Unit) {
-        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+        val intent =
+            Intent(context, MainActivity::class.java)
+                .putExtra("CF_AUTH_TEST_ID", "0199a3c0-0000-7000-8000-000000000000")
+                .putExtra("CF_UI_TEST_PROFILE", "screen")
+        ActivityScenario.launch<MainActivity>(intent).use { scenario ->
             compose.waitUntilExactlyOneExists(hasTestTag("app.root"), 5_000)
             block(scenario)
         }

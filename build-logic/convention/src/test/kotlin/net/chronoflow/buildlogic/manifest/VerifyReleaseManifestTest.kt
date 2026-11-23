@@ -55,4 +55,8 @@ class VerifyReleaseManifestTest {
     @Test
     fun allowedExportedComponentPasses() =
         assertThat(check("exported-debug.xml", setOf("net.chronoflow.debug.SeedReceiverActivity"))).isEmpty()
+
+    @Test
+    fun unapprovedStartupInitializerFails() =
+        assertThat(rulesOf("startup-initializer.xml")).containsExactly(Rule.STARTUP_INITIALIZER)
 }

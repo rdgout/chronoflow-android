@@ -3,6 +3,7 @@ package net.chronoflow.app
 import android.app.Application
 import net.chronoflow.app.diagnostics.DebugStrictMode
 import net.chronoflow.app.diagnostics.LaunchPath
+import net.chronoflow.feature.launch.LaunchTrace
 
 open class ChronoFlowApp : Application() {
     val launchPath = LaunchPath()
@@ -16,5 +17,6 @@ open class ChronoFlowApp : Application() {
         if (BuildConfig.DEBUG) DebugStrictMode.install(this, launchPath)
         super.onCreate()
         graph = createGraph()
+        LaunchTrace.beginLaunch()
     }
 }
