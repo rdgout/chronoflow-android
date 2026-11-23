@@ -7,9 +7,11 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.waitUntilExactlyOneExists
 import androidx.test.core.app.ApplicationProvider
 import kotlinx.coroutines.CompletableDeferred
 import net.chronoflow.core.testing.DeviceProfiles
@@ -28,7 +30,9 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
+@OptIn(androidx.compose.ui.test.ExperimentalTestApi::class)
 @Layout
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [36], application = SessionTestApplication::class)
@@ -44,7 +48,7 @@ class WelcomeSeamTest {
             ).around(ProfileRule(DeviceProfiles.pixel8))
             .around(compose)
 
-    @Test fun welcomeActionsOpenTheSeamsAndBackReturnsToFinalWelcome() {
+    @Test fun welcomeActionsNavigateAndBackReturnsToFinalWelcome() {
         val app = ApplicationProvider.getApplicationContext<Application>()
         val clock = ManualLaunchClock().apply { advance(2300.milliseconds) }
         val launch =
@@ -66,6 +70,9 @@ class WelcomeSeamTest {
                     overrides = graphs.overrides,
                 ),
             )
+        kotlinx.coroutines.test.runTest(graphs.dispatcher, timeout = 60.seconds) {
+            graph.controller.restore()
+        }
         lateinit var back: OnBackPressedDispatcher
         compose.setContent {
             val dispatcher = requireNotNull(LocalOnBackPressedDispatcherOwner.current).onBackPressedDispatcher
@@ -84,7 +91,8 @@ class WelcomeSeamTest {
         val returned = compose.onNodeWithTag("welcome.wordmark").fetchSemanticsNode().boundsInRoot
         assertEquals(initial.top - 14 * DeviceProfiles.pixel8.density, returned.top, 0.5f)
         compose.onNodeWithTag("welcome.plan").performClick()
-        compose.onNodeWithTag("route.guestWizard").assertExists()
-        compose.runOnIdle { graph.welcomeDestinations.closeSeam() }
+        assertEquals(net.chronoflow.core.navigation.Route.GuestWizard, graph.rootNavigator.state.value.route)
+        compose.waitUntilExactlyOneExists(hasTestTag("wizard.where.continue"), 5_000)
+        compose.runOnIdle { back.onBackPressed() }
     }
 }

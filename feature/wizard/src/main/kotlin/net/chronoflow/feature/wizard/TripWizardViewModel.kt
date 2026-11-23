@@ -31,7 +31,7 @@ import net.chronoflow.core.model.contracts.TimeFormat
 import net.chronoflow.core.model.device.DeviceIdentityFailure
 import net.chronoflow.core.model.session.SessionFailure
 import net.chronoflow.core.model.store.StoreFailure
-import net.chronoflow.core.wizard.generation.TripGenerationService
+import net.chronoflow.core.wizard.generation.MemberWizardGeneration
 import net.chronoflow.core.wizard.model.AirportSearchService
 import net.chronoflow.core.wizard.model.AirportSearchSession
 import net.chronoflow.core.wizard.model.AirportSearchState
@@ -43,6 +43,7 @@ import net.chronoflow.core.wizard.model.WizardAirportSheet
 import net.chronoflow.core.wizard.model.WizardClockRounding
 import net.chronoflow.core.wizard.model.WizardDateTime
 import net.chronoflow.core.wizard.model.WizardMode
+import net.chronoflow.core.wizard.model.WizardSaveOutcome
 import net.chronoflow.core.wizard.model.allowsSleepOverride
 import net.chronoflow.core.wizard.model.answerOptional
 import net.chronoflow.core.wizard.model.answerQuestion
@@ -73,6 +74,7 @@ import net.chronoflow.core.wizard.model.resumeChecking
 import net.chronoflow.core.wizard.model.resumeCompletion
 import net.chronoflow.core.wizard.model.reviewInput
 import net.chronoflow.core.wizard.model.revisit
+import net.chronoflow.core.wizard.model.revisitGuestQuestions
 import net.chronoflow.core.wizard.model.savePlan
 import net.chronoflow.core.wizard.model.setDatePart
 import net.chronoflow.core.wizard.model.setPreference
@@ -109,6 +111,7 @@ class TripWizardViewModel(
     private val mutableFormatter = MutableStateFlow<net.chronoflow.core.plan.CopyLineFormatter?>(null)
     val copyFormatter = mutableFormatter.asStateFlow()
     private val uiOverride = deps?.uiOverride
+    private val signUpLauncher = deps?.signUpLauncher
     private val pickerNow = deps?.now ?: { Instant.EPOCH }
     private val mutableClosing = MutableStateFlow(false)
     val closing = mutableClosing.asStateFlow()
@@ -215,7 +218,8 @@ class TripWizardViewModel(
             SharingStarted.Eagerly,
             null,
         )
-    private var generation: TripGenerationService? = null
+    private var generation: MemberWizardGeneration? = null
+    private val guestEntry = deps?.guest == true
     private var discarded = false
     var wizard: MemberWizardModel? = null
         private set
@@ -413,6 +417,22 @@ class TripWizardViewModel(
                                     cue = cue,
                                 )
                             }
+                        if (snapshot.saveOutcome == WizardSaveOutcome.signUpRequested &&
+                            !snapshot.guestAuthenticationPresented && signUpLauncher != null
+                        ) {
+                            model.setGuestAuthenticationPresented(true)
+                            model.flush()
+                            if (model.closed || model.persistenceFailed) {
+                                model.setGuestAuthenticationPresented(false)
+                            } else {
+                                signUpLauncher.request {
+                                    if (viewModelScope.coroutineContext[kotlinx.coroutines.Job]?.isActive == true) {
+                                        model.setGuestAuthenticationPresented(false)
+                                        if (!model.closed) model.readyTick()
+                                    }
+                                }
+                            }
+                        }
                     }
                 } catch (_: CancellationException) {
                     currentCoroutineContext().ensureActive()
@@ -457,7 +477,14 @@ class TripWizardViewModel(
     }
 
     private fun exitOnce(tripId: String? = null) {
-        if (mutableExit.value == null) mutableExit.value = tripId?.let(WizardExit::Saved) ?: WizardExit.Trips
+        if (mutableExit.value == null) {
+            mutableExit.value =
+                when {
+                    tripId != null -> WizardExit.Saved(tripId)
+                    guestEntry || wizard?.draft?.state?.mode == WizardMode.guest -> WizardExit.Welcome
+                    else -> WizardExit.Trips
+                }
+        }
     }
 
     fun openAirport(sheet: WizardAirportSheet) {
@@ -724,6 +751,10 @@ class TripWizardViewModel(
                 val model = wizard ?: return
                 if (closing.value) return
                 val row = event.row
+                if (row == net.chronoflow.feature.wizard.ready.ReadyRow.Questions) {
+                    model.revisitGuestQuestions()
+                    return
+                }
                 val step =
                     when (row) {
                         net.chronoflow.feature.wizard.ready.ReadyRow.Route -> MemberWizardStep.whereTo

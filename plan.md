@@ -389,7 +389,7 @@ Every screen scrolls when height-constrained. The minimum width is 280 dp; below
 | Namespaces | `Api("ChronoFlow", "net.chronoflow.app.native")`, `Mock("ChronoFlowMock", "net.chronoflow.app.native.mock")` (`02 §4.1`) |
 | Account DB | `noBackupFilesDir/<ns>/Accounts/<uuid>/account-<uuid>.db` (+ `-wal`, `-shm`) |
 | Session blob | `noBackupFilesDir/<ns>/session.bin`; Keystore alias `<ns>.session` |
-| Guest secret | Keystore alias `<ns>.guest` + DataStore key (06 OQ 12) |
+| Guest secret | Keystore alias `<keychainService>.guest`; Preferences DataStore `guest_secrets_<dir>` (key `t.<token>`, 06 OQ 12) |
 | Wipe marker | `noBackupFilesDir/<ns>/pending-wipe.json` |
 | Guest wizard draft | `noBackupFilesDir/<ns>/guest-wizard.json` |
 | Mock server state | `noBackupFilesDir/ChronoFlowMock/Server/state.json` (schema 2) |
@@ -465,11 +465,12 @@ Every screen scrolls when height-constrained. The minimum width is 280 dp; below
 
 ### Android spec: seeds and test hooks (debug only)
 
-- **Seed names** are identical to iOS (`12 §2`): `CF_AUTH_TEST_ID`, `CF_UI_TEST_PROFILE=screen|launch`, `CF_AUTH_TEST_SIGNED_IN=demo|twofactor`, `CF_AUTH_TEST_WALKTHROUGH_SEEN`, `CF_AUTH_TEST_UNVERIFIED`, `CF_AUTH_TEST_TERMS_PENDING` (the three flags equal `"1"`), `CF_AUTH_TEST_AUDIT_SCREEN`/`STATE`, `CF_AUTH_TEST_LINK` (test-id gated HTTPS link, captured in memory before MainActivity and omitted from forwarded extras), `CF_PLAN_TEST_ROUTE=trips|trip:<id>[:list]`, `CF_PLAN_TEST_POSITION=summary`, `CF_PLAN_TEST_SHEET=step:<id>|legend`, `CF_SETTINGS_ROUTE`, `CF_WIZARD_AUTO_OPEN`, `CF_WIZARD_BOARD_CAPTURE`, `CF_MOCK_DELAY` (default 0).
+- **Seed names** are identical to iOS (`12 §2`): `CF_AUTH_TEST_ID`, `CF_UI_TEST_PROFILE=screen|launch`, `CF_AUTH_TEST_SIGNED_IN=demo|twofactor`, `CF_AUTH_TEST_WALKTHROUGH_SEEN`, `CF_AUTH_TEST_UNVERIFIED`, `CF_AUTH_TEST_TERMS_PENDING` (the three flags equal `"1"`), `CF_AUTH_TEST_AUDIT_SCREEN`/`STATE`, `CF_AUTH_TEST_LINK` (test-id gated HTTPS link, captured in memory before MainActivity and omitted from forwarded extras), `CF_PLAN_TEST_ROUTE=trips|trip:<id>[:list]`, `CF_PLAN_TEST_POSITION=summary`, `CF_PLAN_TEST_SHEET=step:<id>|legend`, `CF_SETTINGS_ROUTE`, `CF_WIZARD_AUTO_OPEN`, `CF_WIZARD_BOARD_CAPTURE`, `CF_GUEST_WIZARD`, `CF_GUEST_WIZARD_JOURNEY`, `CF_GUEST_RECOVERY_BOARD`, `CF_MOCK_DELAY` (default 0).
+- **Guest wizard seed roles:** `CF_GUEST_WIZARD_JOURNEY=1` + `CF_WIZARD_BOARD_CAPTURE=WizardReadyGuest` keeps Welcome and opens frozen Ready after Plan my trip (sign-up hand-off). `CF_GUEST_WIZARD=1` + `CF_WIZARD_BOARD_CAPTURE=WizardGuestJourney` opens live Sleep directly for the first-review IO smoke test; despite its legacy name, this seed no longer starts at Where. `CF_GUEST_RECOVERY_BOARD=WizardSleep` tests quiet draft recovery.
 - **Intent extras:** `cf.trip-page=S1…S6|large30|large60|<uuid>`, `cf.timeline-fixtures`, `cf.settings.theme`, `cf.settings.language`, `cf.reduceMotion`, `cf.passkeyCapability` (debug only: `1`/`true`, `0`/`false`; otherwise no override), `cf.freezeAt`, `cf.readyAt`, `cf.mainThreadStall`, `cf.holdSplash`, `cf.session`, `cf.gate`, `cf.stored`, `cf.readyDelay`, `cf.mode`.
 - **Launch diagnostics** (String extras, debug and perf only): `cf.session=in|signedIn|out|signedOut|never` (default native), `cf.gate=verify|terms|walkthrough|app` (default app), `cf.stored=yes|no|never` (default yes), `cf.readyDelay` in finite seconds `0…60` (default 0). Presence of any stub key injects `StubReadiness`; otherwise every variant uses `StoredDataReadiness` (OQ-A172). `cf.readyDelay` is an absolute time on the shared launch clock, not a second delay from collection.
 - **Fixed diagnostic endings:** `cf.mode=ready|slow|welcome` bypasses readiness. Ready/slow leave the route empty after removal; welcome publishes Welcome under the overlay, with a measured moon target and optional frozen intro. `cf.readyAt` is finite ms `0…60000`, default 4600, for slow mode. `cf.mainThreadStall` uses the same ms range and blocks from 300 ms after t0. Invalid values use the defaults. Release parsing and stalls are no-ops. `cf.freezeAt` still freezes a debug frame; `cf.holdSplash` remains debug only.
-- **Welcome destinations:** `welcome.signIn` navigates to `Route.SignIn` in every build type through `RoutedWelcomeDestinations` (debug retains only the guest seam). `welcome.plan` opens the debug-only `route.guestWizard` seam until 11a. Back from Sign in returns to final Welcome without replaying its claimed intro.
+- **Welcome destinations:** `welcome.signIn` navigates to `Route.SignIn` and `welcome.plan` to `Route.GuestWizard` in every build type through `RoutedWelcomeDestinations`. Back from Sign in returns to final Welcome without replaying its claimed intro.
 - **Welcome font gate:** while the overlay is active, compose Welcome when font warm-up completes or 1500 ms after the awaited first draw, whichever comes first. Without an overlay, compose immediately. The all-time debug StrictMode ChronoFlow disk/network counter covers the Welcome journey; the existing launch crash guard still ends at first commit.
 - **Entry point:** `net.chronoflow.debug.SeedReceiverActivity` (debug-exported, in `app/src/debug`) applies `TestSeeds.apply` (`13 §5`), then starts `MainActivity`.
 - **Two-factor audit:** `CF_AUTH_TEST_AUDIT_SCREEN=two-factor` with profile `screen` performs the mock password challenge through `SignInModel` on main before finishing launch; no challenge or proof is an intent extra.
@@ -493,6 +494,8 @@ Every screen scrolls when height-constrained. The minimum width is 280 dp; below
 | Notifications blocked step | "Tap Open phone settings and turn on notifications for ChronoFlow." | "Tik op Telefooninstellingen openen en zet meldingen voor ChronoFlow aan." | reminders "Open your phone's Settings.", "Tap Notifications, then ChronoFlow." and "Turn on Allow notifications." |
 | Recovery-codes file name | "Recovery codes.txt" | "Herstelcodes.txt" | — |
 | Ready flight with stops (`android_wizard_flight_via`, needs review, OQ-A356) | {{flight}} · via {{airports}} | {{flight}} · via {{airports}} | — |
+| `android_wizard_guest_price_paid` (needs review, OQ-11a-1) | Paid with {{cost}} of the {{balance}} credits you get when you sign up. | Betaald met {{cost}} van de {{balance}} credits die je krijgt als je een account maakt. | wizard "Paid with {{cost}} of the 3 credits you get when you sign up." |
+| `android_wizard_guest_price_paid_one` (needs review, OQ-11a-1) | Paid with {{cost}} of the {{balance}} credit you get when you sign up. | Betaald met {{cost}} van de {{balance}} credit die je krijgt als je een account maakt. | — |
 | `android_wizard_time_sheet_steps` (needs review) | Steps of 5 minutes. | Stappen van 5 minuten. | — |
 | `android_wizard_airport_field` (needs review) | Airport or city | Luchthaven of stad | wizard "Search airports" |
 | `android_wizard_search_hint` (needs review) | Type at least 2 letters to search. | Typ minstens 2 letters om te zoeken. | — |
@@ -1128,6 +1131,17 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A530 | (10d OQ-10d-12) Settings home Security subtitle with passkeys ("Password, passkeys, two-factor" exists in the catalog). | Keep "Password, two-factor" (iOS), as OQ-A513 already decided (it superseded OQ-A462's "10c switches" clause); 10d changes no subtitle. | 10d |
 | OQ-A531 | (10d OQ-10d-13) No wide boards for Passkeys, Delete or Plan. | 560 dp column (OQ-A37); delete confirmation as a 640 dp-max sheet; the prompt uses 10c's 540 dp dialog (OQ-10c-1 = OQ-A502). | 10d |
 | OQ-A532 | (10d OQ-10d-14) After the delete's sign-out, `AppGraph.onSignedOut()` (called from the teardown and again, asynchronously, from `SessionGateRouter`) navigates to Sign in unless already there, which can replace the Welcome navigation. | `onSignedOut()` also leaves `Route.Welcome` alone (a signed-out destination); the delete test asserts Welcome with the gate router running. | 10d |
+| OQ-A533 | (11a OQ-11a-1) iOS hard-codes "3" in "Paid with {{cost}} of the 3 credits…"; the server grants 1 sign-up credit (OQ-A18). | Render `price.cost` and `price.balance` through the Android-only pair `android_wizard_guest_price_paid` / `…_one` (needs review). The mock (3) matches the board and iOS. | 11a |
+| OQ-A534 | (11a OQ-11a-2) What does "Make my plan" do before 11b builds the GuestSignup sheet? | A `GuestSignUpLauncher` seam: debug presented counter, immediate dismissal, no UI (no board for anything else). 11b replaces it. | 11a |
+| OQ-A535 | (11a OQ-11a-3) The plan lists `GuestSessionContinuation.swift` as an 11a reference; nothing in 11a consumes it. | Port it in 11b with its consumers; 11a only reads it. | 11a |
+| OQ-A536 | (11a OQ-11a-4) Secret storage format for "Keystore alias `<ns>.guest` + DataStore key". | Alias `"${keychainService}.guest"`; one Preferences DataStore per namespace (`guest_secrets_<dir>`); key `t.<token>`; value Base64 of 4a's `[0x01][IV][ct+tag]`. | 11a |
+| OQ-A537 | (11a OQ-11a-5) Where the guest draft file code lives. | `:core:wizard`, pure JVM with an atomic rename; `:core:data` only if Konsist forbids file I/O there. | 11a |
+| OQ-A538 | (11a OQ-11a-6) ~~4e's `RootContent` has no ViewModel entry decorator (OQ-5a-5).~~ 5d added it (OQ-A227). *[Refresh R4]* | The guest VM and an entry-scoped `GuestWizardHolder` ViewModel come from the `RootContent` entry store (keyed `guestWizard:<revision>`), kept across recreation and cleared when the entry leaves. | 11a |
+| OQ-A539 | (11a OQ-11a-7) iOS checks guest recovery once per scene. | Once per process, on the first Welcome after the hand-off. | 11a |
+| OQ-A540 | (11a OQ-11a-8) 9b may type `newGeneration()` as `TripGenerationService`. | Widen it to `MemberWizardGeneration` in a separate refactor commit; `onCleared` cancels without suspending. | 11a |
+| OQ-A541 | (11a OQ-11a-9) The board's guest Checking/Fine-tune/Where/Outbound have no Dark/NL wrappers. | Guard them in dark and nl through the shared props; capture only the 12 named wrappers. | 11a |
+| OQ-A542 | (11a OQ-11a-10) `WizardReadyGuest` draws "Questions 3 answered" (from the retired 3-question era); guests now answer at most 2. | Render the model count ("2 answered" with the seed); record the difference in `docs/wizard.md`. | 11a |
+| OQ-A543 | (11a OQ-11a-11) `WizardFineTuneGuest` draws a fixed row list (room, wake, seat, drinks, light, blue). | Render the rows the review and preferences produce (iOS); the seed matches the board as closely as the mock allows; record differences in `docs/wizard.md`. | 11a |
 | OQ-0a-22 | Native libraries in the bundle? | Allow only `libandroidx.graphics.path.so` (Compose graphics-path; excluding it breaks Path conversion below API 34); fail on any other `.so` | 0a, 13 |
 | OQ-0b-1 | Where does `PlanMetrics` live? `08 §3.1` lists it inside `CfDimens`, but its consumer `:core:plan` is a JVM module that cannot depend on `:core:designsystem` | `core/plan/…/generated/PlanMetrics.generated.kt` (Double, dp), as iOS keeps it in `PlanCore` | 0b, 1b, 1c |
 | OQ-0b-2 | Port all iOS TokenGen outputs now (Auth, Settings, Terms, Welcome, PlanUI, Press, LaunchPaint, TypeMetrics), or only colors, sky and type? | All of them now (the iOS files are exact goldens and Phases 2, 3a, 3c, 5a, 9 and 10 need them) | 0b |
@@ -3328,14 +3342,14 @@ Acceptance evidence and the pending host checks are recorded in [`docs/settings-
 **Delivers.** Opens the wizard in guest mode from Welcome's Plan my trip, with every guest variant, the guest review endpoint, the guest secret in the Keystore and the guest draft file. Discard returns to Welcome, and guest-draft recovery happens quietly after the Welcome intro. Tests port the iOS guest-mode logic and guard every guest board.
 
 **Tasks**
-- [ ] **Guest mode** (`:core:wizard` and `feature/wizard`).
+- [x] **Guest mode** (`:core:wizard` and `feature/wizard`).
   - Entered from Welcome's Plan my trip.
   - The guest variants: `WizardWhereGuest`, `WizardOutboundGuest`, `WizardOutboundPastGuest`, `WizardCheckingGuest`, `WizardFineTuneGuest`, `WizardReadyGuest`, `WizardReadyGuestFree` and `WizardDiscardGuest`.
-  - Questions are excluded for guests, per 9e.
-- [ ] **Guest review endpoint.** `POST guest/trips/review` (90 s) in `ApiDataSource` and in the mock (iOS 18b, 18c; mock side ported in 4c, OQ-A165).
-- [ ] **GuestSecretStore:** Keystore alias `<ns>.guest` plus a DataStore key (06 OQ 12). The guest draft file is `noBackupFilesDir/<ns>/guest-wizard.json` (18f).
-- [ ] **Discard and recovery.** Discard returns to Welcome. The guest draft is recovered quietly after the Welcome intro (OQ 17, 18m).
-- [ ] **Tests.** The ported 18b–18h and 18k–18m cases, plus guards for every guest board and its DarkNL wrapper.
+  - The five retired health questions are excluded. Guests answer age and shift work when requested by the review (9e, Refresh R10).
+- [x] **Guest review endpoint.** `POST guest/trips/review` (90 s) in `ApiDataSource` and in the mock (iOS 18b, 18c; mock side ported in 4c, OQ-A165). (API in 4b, mock in 4c; verified by `GuestGenerationMockTest`.)
+- [x] **GuestSecretStore:** Keystore alias `<ns>.guest` plus a DataStore key (06 OQ 12). The guest draft file is `noBackupFilesDir/<ns>/guest-wizard.json` (18f).
+- [x] **Discard and recovery.** Discard returns to Welcome. The guest draft is recovered quietly after the Welcome intro (OQ 17, 18m).
+- [x] **Tests.** The ported 18b–18h and 18k–18m cases, plus guards for every guest board and its DarkNL wrapper. Emulator timing/re-verification and host perf follow-up are recorded in `docs/wizard.md`.
 
 **Acceptance**
 - A guest reaches guest Ready on the mock.

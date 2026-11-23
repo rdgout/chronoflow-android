@@ -252,7 +252,7 @@ class TripGenerationService(
         }
     }
 
-    fun cancelNow() {
+    override fun cancelNow() {
         cancelled = true
         job.cancel()
         savedTrips.clear()

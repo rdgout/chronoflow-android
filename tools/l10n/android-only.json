@@ -112,6 +112,27 @@
       "replaces": [],
       "review": "needs review",
       "comment": "OQ-A356: Ready flight with stops; model key absent from the pinned iOS catalog."
+    },
+    {
+      "name": "android_wizard_guest_price_paid",
+      "en": "Paid with {{cost}} of the {{balance}} credits you get when you sign up.",
+      "nl": "Betaald met {{cost}} van de {{balance}} credits die je krijgt als je een account maakt.",
+      "replaces": [
+        {
+          "table": "wizard",
+          "key": "Paid with {{cost}} of the 3 credits you get when you sign up."
+        }
+      ],
+      "review": "needs review",
+      "comment": "OQ-11a-1: render the review cost and balance."
+    },
+    {
+      "name": "android_wizard_guest_price_paid_one",
+      "en": "Paid with {{cost}} of the {{balance}} credit you get when you sign up.",
+      "nl": "Betaald met {{cost}} van de {{balance}} credit die je krijgt als je een account maakt.",
+      "replaces": [],
+      "review": "needs review",
+      "comment": "OQ-11a-1: canvas note wiz24cCopy item 4"
     }
   ]
 }

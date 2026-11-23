@@ -52,6 +52,9 @@ data class TestSeed(
     val termsChangesPending: Boolean = false,
     val settingsPending: Boolean = false,
     val settingsBoardState: String? = null,
+    val guestWizard: Boolean = false,
+    val guestWizardJourney: Boolean = false,
+    val guestRecoveryBoard: String? = null,
 ) {
     val mutationsOffline: Boolean get() = walkthroughPending || termsPending || settingsPending
 
@@ -209,6 +212,9 @@ data class TestSeed(
                 settingsBoardState = settingsBoardState,
                 wizardAutoOpen = wizardAutoOpen,
                 wizardBoardCapture = accepted["CF_WIZARD_BOARD_CAPTURE"],
+                guestWizard = flag("CF_GUEST_WIZARD"),
+                guestWizardJourney = flag("CF_GUEST_WIZARD_JOURNEY"),
+                guestRecoveryBoard = accepted["CF_GUEST_RECOVERY_BOARD"],
             )
         }
 

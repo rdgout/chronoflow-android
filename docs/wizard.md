@@ -1504,3 +1504,126 @@ All 12 `TripActionsPrepareTest` cases pass. The three new cases take 4 / 15 / 6 
 `make format` passes (17.437 s). The single `make quick` passes (64.543 s), with zero timing-budget overruns; its aggregate wall time remains above the 60 s warm target and was not retried. Its report contains 5,271 XML cases (171 skipped) and 3,452 recorded budget checks; unchanged tasks may remain up to date. The first trip Robolectric SDK case is recorded separately as a 5.572 s cold warm-up. The busy invalidation guard takes 42 ms. Results remain in `build/test-results/quick/`; the full command record is `/private/tmp/phase-9h-round2-report.md`.
 
 The orchestrator verified round 1’s host `make check` and `make perf-timeline`; the latter is recorded in `bb5a22cc`. This pass ran the requested targeted, formatting and quick checks only. No timeline rendering, copy, runtime dependency or native library changed, and no OQ row was added.
+
+## Phase 11a — guest wizard
+
+Welcome's Plan my trip and Sign in's guest action open the existing wizard in guest mode. The path is Where → Outbound → Sleep → Checking → requested Age/Shift work → Fine-tune → Ready. There is no return flight or sleep override. Age and shift work are the only screening questions; the five retired health questions never return. The member path continues to use its existing dependencies and generation service.
+
+`RootContent` owns the guest entry's ViewModel store. `GuestWizardHolder` and `TripWizardViewModel` survive recreation under the entry revision and are cleared when it leaves. A new Plan my trip creates a new revision. Header close asks to discard entered changes, except on Excluded; an empty Where closes immediately. Excluded, checking failure and No plan footer closes return directly to Welcome. Every exit discards the draft and deletes its stored token secret. Route/revision/presence guards prevent a late exit, foreground expiry or failed start from replacing another destination. Exits remain acknowledged in the ViewModel across recreation.
+
+Ready shows Route, Flight, Sleep (times plus chronotype), Questions and Extras. Questions revisits the screening branch rather than an optional prompt. The guest price uses the review's cost and balance, with the Android-only `android_wizard_guest_price_paid_one` / `android_wizard_guest_price_paid` pair selected by balance. The mock's balance is 3; a server balance of 1 selects singular copy. A free plan retains the existing sign-up-credits-unused copy. The member balance line is hidden. Make my plan raises a retained sign-up request after flushing the draft; it never calls save. Phase 11a binds the launcher to a debug counter and immediate dismissal. Phase 11b supplies the designed sign-up sheet.
+
+Guest review uses the public data source, device identity and a 30-second deadline. A token reuses its secret. An expired token gets exactly one retry without identity, retaining that secret. Rotation writes the replacement before removing the old entry. Canceled or discarded reviews delete a newly returned token's secret and drop their result. Drafts, snapshots, routes and diagnostics contain no secret.
+
+The draft lives at `noBackupFilesDir/<namespace>/guest-wizard.json`, written on the injected IO dispatcher through a synced temporary file and atomic replacement. The shared record codec strips secrets and retired fields. Recovery normalizes without refreshing `updatedAt`; persistence advances the sliding 30-minute expiry. Instance mismatches fail, older revisions do nothing, and only one-way drafts recover. The secret store uses the namespace's `<keychainService>.guest` Keystore alias and Preferences DataStore file `guest_secrets_<directory>.preferences_pb`. Keys are `t.<token>`; values are Base64 `[0x01][12-byte IV][ciphertext + GCM tag]`. `deleteAll()` clears entries while retaining the alias. Invalidated keys clear entries and replace the key once. Account wipe includes the guest store.
+
+Recovery runs once per process on signed-out Welcome after launch hand-off, waiting until the launch clock reaches `intro.start + 900 ms`. Navigation, revision, session or epoch changes invalidate the attempt. A frozen diagnostic intro never recovers. There is no message or transition between root destinations. Foreground hooks sweep expiry while composing with the existing hook; a visible expired wizard leaves through the same guarded exit.
+
+The guest capture list is independent of the member list:
+
+| Board / seed | State |
+| --- | --- |
+| `WizardWhereGuest` | AMS → NRT; guest notice, no last-trip hint |
+| `WizardOutboundGuest` | Outbound times; Continue leads to Sleep |
+| `WizardOutboundPastGuest`, `WizardOutboundPastGuestDarkNL` | Guest upcoming-arrival error |
+| `WizardCheckingGuest` | Frozen checking lines, guest answers wording |
+| `WizardFineTuneGuest` | Six review-driven extras, preparation, no sleep override |
+| `WizardReadyGuest`, `WizardReadyGuestDarkNL` | Paid Ready, guest rows and dynamic price |
+| `WizardReadyGuestFree`, `WizardReadyGuestFreeDarkNL` | Free Ready |
+| `WizardDiscardGuest`, `WizardDiscardGuestDarkNL` | Outbound with native discard alert already open |
+
+All twelve were captured once with `make captures ONLY=WizardWhereGuest,WizardOutboundGuest,WizardOutboundPastGuest,WizardCheckingGuest,WizardFineTuneGuest,WizardReadyGuest,WizardDiscardGuest`; Gradle took 22 s. The PNGs are in `build/captures/`. The 132 guest layout cases cover light/dark, en/nl and small/pixel8/foldInner/largeFont, plus the two wide-page states with side insets. They passed in 6.220 s of test time (10 s Gradle); the first SDK/class case took 2.092 s and all warm cases stayed below 1 s. Large-font Dutch Ready stacks its rows and keeps its footer fixed during scrolling.
+
+Board differences pending rendered-board review:
+
+- `WizardReadyGuest`, `WizardReadyGuestDarkNL`, `WizardReadyGuestFree`, `WizardReadyGuestFreeDarkNL`: Questions shows the model's two answered questions, replacing the board's retired three-question count (OQ-A542). Extras also uses the model count, seven for this seed.
+- `WizardReadyGuest`, `WizardReadyGuestDarkNL`, `WizardReadyGuestFree`, `WizardReadyGuestFreeDarkNL`: the summary retains **420 min** rather than the boards' **7 hours / 7 uur**. The shared pinned iOS `CopyLineFormatter.formatMinutes(duration: false)` formats the 420-minute argument this way, as the member Ready section records. The guest one-way summary end date is **Wed 14 Oct / wo 14 okt**, matching the one-way variants described above; it no longer inherits the base member capture's 18 Oct end date.
+- `WizardFineTuneGuest`: rows follow the review and preferences (OQ-A543). The current seed produces the board's six extras: room, wake, seat, drinks, light and blue glasses. No fixed guest-only row filter is applied. Values and optional rows can change with the review.
+- `WizardDiscardGuest`, `WizardDiscardGuestDarkNL`: native Material dialog geometry and actions follow the shared `CfAlertDialog` wrapper.
+- All twelve inherit the existing Android wizard typography, safe-area layout, 48 dp targets and native controls. Checking's spinner is frozen only for its capture. No Chromium board rendering was attempted; the orchestrator compares the rendered boards on the host.
+
+Debug seeds require `CF_AUTH_TEST_ID=<uuid>` and `CF_UI_TEST_PROFILE=screen`. `CF_GUEST_WIZARD=1` plus `CF_WIZARD_BOARD_CAPTURE=<board>` opens that guest state. `CF_GUEST_WIZARD_JOURNEY=1` plus `CF_WIZARD_BOARD_CAPTURE=WizardReadyGuest` stays on Welcome and then opens frozen Ready when Plan my trip is tapped; this journey checks the sign-up hand-off and performs no review. The legacy board name `WizardGuestJourney` is used by `GuestWizardReviewIoTest` with `CF_GUEST_WIZARD=1`: it opens live Sleep directly, with current-clock flight dates 30 days ahead and shift work false, then exercises the real first guest review and secret mint. Other capture seeds remain frozen. `CF_GUEST_RECOVERY_BOARD=WizardSleep` writes a recoverable draft before Welcome and runs the recovery scheduler. The screen fixture completes the hand-off skipped by its overlay-free profile. Every reseed deletes the draft, temporary file and all guest secrets. Seeds and counters remain debug-only; release-readiness tests guard their absence.
+
+Manual process-kill evidence (pixel AVD, API 36, debug mock build): opened Plan my trip, selected AMS → HND through real search, set upcoming departure/arrival dates and times, and continued to Sleep. The landed mock search has HND rather than NRT. Installed with `python3 -I Scripts/device_lock.py -- "$ANDROID_HOME/platform-tools/adb" install -r -t app/build/outputs/apk/debug/app-debug.apk`. Then:
+
+```sh
+adb shell input keyevent KEYCODE_HOME
+adb shell uiautomator dump /sdcard/guest-home.xml
+adb shell am kill net.chronoflow.app.native.debug
+adb shell pidof net.chronoflow.app.native.debug
+adb shell am start -W -a android.intent.action.MAIN -c android.intent.category.LAUNCHER -n net.chronoflow.app.native.debug/net.chronoflow.app.MainActivity
+adb exec-out screencap -p > build/captures/GuestRecoveryAfterKill.png
+```
+
+The idle dump allowed the activity to stop before killing; `pidof` returned no PID (status 1), and relaunch reported `LaunchState: COLD`, 2,553 ms. Sleep reappeared without a message. Draft form and instance were identical before/after, and the recovered step was `sleep`. Screenshot: `build/captures/GuestRecoveryAfterKill.png`. `adb logcat -d -s StrictMode` contained zero stacks mentioning the three guest storage/recovery classes. These are functional emulator observations, not device performance claims.
+
+The two new emulator classes each ran once, as requested. `GuestWizardJourneyTest.testWelcomeThroughReadyRequestsSignUp` passed its journey, single counter, IO and internal 10-second assertions, but the tier rejected its 10.360 s wall time including setup/teardown (`run-tier: over budget: emulator net.chronoflow.app.guest.GuestWizardJourneyTest#testWelcomeThroughReadyRequestsSignUp 10360 ms > 10000 ms`). Its debug timeline spent 3.013 s applying the cold seed before activity launch. No budget was relaxed and no timing retry was made.
+
+`GuestRecoveryScreenTest.testWelcomeHandsOverToRecoveredSleep` failed waiting for `wizard.sleep.continue` after 5,000 ms; its 12.189 s wall time also failed the tier. The screen profile's skipped overlay left `handOffComplete` false. The debug recovery fixture now completes that skipped hand-off after first commit. Seed/reseed and scheduler JVM checks passed after the correction; emulator re-verification remains with the orchestrator under the one-run instruction. Exact command: `make targeted ONLY="app:GuestRecoveryScreenTest#testWelcomeHandsOverToRecoveredSleep"`. The manual process-kill check above independently proved production recovery with the real hand-off.
+
+The real-Keystore smoke case passed earlier in 0.797 s. The app, wizard, datastore, UI and data lint tasks plus `:app:verifyReleaseManifest` passed together in 69 s. No runtime dependency or native library was added. Startup/Welcome and wizard paths changed; the orchestrator must run `make baseline-profile` and `make perf`, commit regenerated profiles and record startup metrics in `docs/perf-startup.md`. No timeline rendering or benchmark path changed, so `make perf-timeline` does not apply.
+
+Final verification on the implementation checkout:
+
+| Check | Result | Wall time |
+| --- | --- | --- |
+| Touched-module layout tasks | 1,251 cases passed, zero budget overruns; datastore/data have no layout cases | 28.00 s including collection |
+| Layout evidence recollection | Certified app/UI/wizard outputs accepted; no tests rerun | < 1 s |
+| Single `make quick` invocation | 5,715 executed cases, two Konsist rule failures; no hangs or budget overruns | 49.13 s |
+| Targeted rule corrections | Canonical `60.seconds` in RootContent/Welcome tests; exact-file `GuestWizardHolder` naming exception; planted same-name class elsewhere rejected | 6 s Gradle for rules, 8.03 s app tier |
+| Build-logic tests | 37 cached certified cases accepted | 2.79 s |
+| Script tests | 171 passed | 19.961 s |
+| Contract generator tests | 24 passed initially; parity case needed the Makefile's `IOS_REPO`/`WEB_REPO` environment, then passed alone | 0.020 s + 0.091 s |
+| String / icon tooling | 49 / 11 passed | 0.016 s / 0.088 s |
+| Serial timing tier | Seven passed, including both timeline budget classes | 2.82 s |
+
+The initial layout collector glob accidentally included unrun timing directories; a second attempt still included datastore/data's zero-case layout outputs. Restricting recollection to the three modules with layout cases accepted all existing certified outputs. No layout test was rerun. The quick invocation stopped before build-logic/tooling/timing, so those components ran separately after its two rule failures were corrected. `make quick` was not repeated. The required holder name is the only ViewModel-suffix exception, scoped to its exact file and class; the test-boundary allowlist is unchanged. All 13 `TimelineInvalidationTest` cases passed in the quick run (0.796 s total).
+
+OQ-A533–A543 record the eleven defaults from the brief. No further open question was needed. The two generated English/Dutch Android-only price resources remain awaiting approval in the plan. Host follow-up still includes a fresh `make quick`, the corrected recovery emulator case, the journey's wall-clock budget and the deferred startup profiles/metrics; no all-green commit gate is claimed for this sandbox run.
+
+### Review round 1 (2026-11-22)
+
+The host verified `GuestRecoveryScreenTest.testWelcomeHandsOverToRecoveredSleep` in 0.639 s. The journey now seeds guest Ready behind Welcome and checks Plan my trip → Ready → one sign-up request; JVM/ViewModel and seeded screen cases cover the intermediate steps. It omits appearance overrides and their unused reset, and uses one structural wait per action. The final pixel emulator run passed in **5.693 s**, below the unchanged 10 s budget. An earlier full-step trial passed in 9.658 s but lacked margin and was replaced; its software-cipher experiment was removed.
+
+`WizardFineTuneGuest` now has all six extras at Add. The four guest Ready captures end on 14 Oct and retain the pinned iOS formatter's 420 min wording, recorded above by board name. All five affected captures were regenerated once (21 s Gradle); Fine-tune and Dutch dark Ready were inspected directly.
+
+Guest expiry sweeps now observe the process lifecycle, once per real `ON_STOP` → `ON_START` return. The holder retains that observer across configuration changes and removes it when the entry clears. Three plain JVM cases prove active-process observer reattachment, foreground return and cleanup (3 ms total); the separate host rotation and exit cases also passed.
+
+Targeted checks passed: seed application (3 cases, 6 s Gradle), Fine-tune seed/screen (15 cases, 7 s), Ready seed plus layout guards (146 cases, 11 s), and foreground/host/exits (14 cases, 8 s). The single `make quick` passed in 67.081 s overall, with 42.43 s in its JVM/Robolectric tier and zero budget overruns. Build-logic, tooling and serial timing checks passed as part of that command. No perf or `make check` was run; pixel remains running.
+
+### Review round 2 (2026-11-22)
+
+The short `GuestWizardJourneyTest` remains the frozen Welcome → Ready → sign-up hand-off check; it was not changed or rerun this round. It performs no review and its capture identity is not a minted server draft. Phase 11b's claim tests will need a live reviewed guest draft. The legacy `WizardGuestJourney` seed is retained because the new seeded IO screen test uses it: it now opens live Sleep, with future AMS → HND times, the current clock, shift work false and no UI override. The seed roles are also corrected in the plan and 11a brief.
+
+The earlier journey's coverage is now split at the cheapest layer:
+
+| Former journey step | Current proof |
+| --- | --- |
+| Welcome → guest wizard | `GuestWizardJourneyTest` checks the Ready/sign-up hand-off; `GuestWizardHostTest.planMyTripOpensGuestWhere` checks the empty entry |
+| Where and Outbound → Sleep | `GuestWizardScreenTest.testWhereGuest`, route/times ViewModel tests, and `GuestWizardModeTests.GuestPaths.guestPathBackTargetsAndSleepAreMandatory` |
+| Sleep edits and per-step guest draft writes | `GuestWizardIoTest.sleepReviewAgeAndRecheckKeepGuestStorageOffMain` uses the real ViewModel/dependencies and file store with guarded persistence; existing Sleep ViewModel tests cover controls/validation |
+| Checking and first review/secret mint | The JVM test checks mint/dispatcher behavior; the concrete Keystore test checks get/set/rotate/delete IO hops; the emulator test now also requires a stored review secret after age appears (host rerun pending); Checking ViewModel/screen tests cover presentation |
+| Age answer → recheck | `GuestWizardIoTest` checks the second request, age profile, known-secret reuse, token rotation and subsequent Fine-tune persistence; `KeystoreGuestSecretStoreTest.runsOnTheInjectedDispatcher` checks the concrete store's IO hop |
+| Fine-tune → Ready → sign-up request | Existing Fine-tune/Ready ViewModel and guest screen tests plus the short hand-off journey |
+
+`GuestWizardIoTest` uses one scheduler with separately identifiable Main, IO and worker dispatchers. Guarded stores reject Main calls, with a negative control proving both guards fail on Main. The added `guestFileStoreHopsToIoFromMain` case invokes concrete guest-file persistence from Main and exercises the supplier's IO assertion. Its original two cases passed (0.171 s initially, 0.073 s in quick). Scopes are canceled and joined before resetting Main. The original seeded screen emulator case reached the age question after review and passed in **2.663 s**, including a zero debug IO-violation assertion. That version did not assert a stored secret; the added debug probe awaits a host emulator rerun. `adb logcat -d -s StrictMode` had zero matches for guest store/recovery classes. The unchanged short journey therefore retains its round-1 time and scope without taking on this IO coverage.
+
+The foreground unit test is renamed to `reattachingToAnActiveProcessDoesNotSweep`; disconnected activity lifecycle events were removed. `GuestWizardHostTest.leavingTheRouteClearsTheViewModel` now checks that the real process registry loses one observer when the entry clears and gains one on a new entry. Both targeted cases passed (8 s Gradle; the host case's cold SDK run was 2.692 s).
+
+Verification: the 14 seed cases passed (4 s Gradle), and the corrected concrete Keystore dispatcher target passed (3 s). An initial command used a nonexistent method name and reported no matching tests; it was corrected to `runsOnTheInjectedDispatcher`. The single `make quick` completed its JVM/Robolectric run in **42.75 s**, with zero assertion failures and no hangs, but failed one untouched onboarding class warm-up budget:
+
+```text
+run-tier: over budget: robolectric net.chronoflow.feature.onboarding.terms.TermsScreenTest#policyRowStaysEnabledWhileFailed 3266 ms > 3000 ms
+```
+
+That case was not retried or changed. The skipped quick components ran separately and passed: build-logic (37 certified cases, 2.46 s), script/contract/string/icon tooling (171/25/49/11 cases; 19.941/0.111/0.017/0.088 s), and serial timing (7 certified cases, 1.42 s). No perf or `make check` was run; pixel remains running.
+
+**Final coverage fix after review round 3 (2026-11-22).** The concrete Keystore dispatcher test now exercises `set`, `rotate` and `delete` as well as `get`. Its checked DataStore asserts the caller's injected IO dispatcher before DataStore can perform its own dispatch; separate wrong-dispatcher controls for all three mutations must fail that boundary. Mutation counts also prove the writes/deletions happened. `GuestWizardIoTest.guestFileStoreHopsToIoFromMain` now calls concrete guest persistence from Main, so removing that store's IO hop makes the file-supplier assertion fail.
+
+The debug-only `GuestWizardDebugSecrets.hasReviewSecret` probe returns only whether the persisted review token resolves to a non-empty secret, with every read on injected IO. JVM checks prove both presence after mint/recheck and absence after clearing secrets. `ReleaseReadinessTest` proves the hook is absent from release. The seeded emulator test now waits for this probe after the age question, before checking zero IO violations; this enhanced assertion has been compiled but has not been run on the emulator. Run on the host:
+
+```sh
+make targeted ONLY="app:GuestWizardReviewIoTest#firstGuestReviewFromSleepDoesNoMainThreadIo"
+```
+
+All five targeted JVM/Robolectric/release cases passed: Keystore dispatcher (1.280 s cold SDK case, 6 s Gradle), three guest VM cases (0.171 s total, 4 s Gradle), and release exclusion (0.007 s, 4 s Gradle). `:app:compileDebugAndroidTestKotlin` passed in 3 s. The single `make quick` passed in **67.756 s** overall, including a **42.92 s** JVM/Robolectric tier with zero budget overruns; the concrete dispatcher case took 39 ms and the Main-caller file-store case 6 ms warm. Build-logic, tooling and serial timing checks passed within quick. No emulator, perf or `make check` run was made for this fix.

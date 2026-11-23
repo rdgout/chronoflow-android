@@ -174,13 +174,13 @@ class StringParityTest {
                 "clipboard_label",
             )
         val ios = main.en.filterKeys { !it.startsWith("android_") && it !in formats }
-        assertThat(ios.values.count { !it.plural }).isEqualTo(921)
+        assertThat(ios.values.count { !it.plural }).isEqualTo(920)
         assertThat(ios.values.count { it.plural }).isEqualTo(31)
         assertThat(
             main.nl
                 .filterKeys { !it.startsWith("android_") }
                 .values
                 .count { !it.plural },
-        ).isEqualTo(920)
+        ).isEqualTo(919)
     }
 }

@@ -5,6 +5,8 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import net.chronoflow.core.data.repository.OutboxRepository
+import net.chronoflow.core.data.session.GuestSecrets
+import net.chronoflow.core.data.session.NoGuestSecrets
 import net.chronoflow.core.database.AccountDatabase
 import net.chronoflow.core.database.AccountDriverFactory
 import net.chronoflow.core.datamock.MockScenarioValues
@@ -24,6 +26,7 @@ internal class SeedRunner(
     private val source: DataSource,
     private val io: CoroutineDispatcher,
     private val beforeSignIn: suspend () -> Unit = {},
+    private val guestSecrets: GuestSecrets = NoGuestSecrets,
 ) {
     suspend fun reseed(
         signedIn: SeedAccount?,
@@ -31,6 +34,7 @@ internal class SeedRunner(
         termsChangesPending: Boolean = false,
         settingsPending: Boolean = false,
     ) = withContext(io) {
+        guestSecrets.deleteAll()
         MockSessionSeed.reset(storageDir, credentials, io)
         storageDir.mkdirs()
         beforeSignIn()

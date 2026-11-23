@@ -49,7 +49,9 @@ class FakeWizardGeneration : MemberWizardGeneration {
         cancellations.add(instance)
     }
 
-    override suspend fun cancel() {
+    override suspend fun cancel() = cancelNow()
+
+    override fun cancelNow() {
         cancelled = true
     }
 }

@@ -127,6 +127,10 @@ class AppGraphSignOutWiringTest(
                 val account = File(root, "ChronoFlowMock/Accounts/${old.session.accountId}")
                 withContext(Dispatchers.IO) { assertTrue(account.isDirectory) }
 
+                val guestFile = File(root, "ChronoFlowMock/guest-wizard.json")
+                graph.guestSecrets.set("guest-before-sign-out", "guest-draft")
+                withContext(Dispatchers.IO) { guestFile.writeText("{}") }
+
                 fun freshSource() = source { old.session.token }
                 assertEquals(old.session.accountId, freshSource().fetchIdentity().id)
                 if (unauthorized) {
@@ -139,7 +143,11 @@ class AppGraphSignOutWiringTest(
                 runCurrent()
                 assertEquals(SessionPresence.SignedOut, graph.controller.presence)
                 assertEquals(Route.SignIn, graph.rootNavigator.state.value.route)
-                withContext(Dispatchers.IO) { assertFalse(account.exists()) }
+                withContext(Dispatchers.IO) {
+                    assertFalse(account.exists())
+                    assertFalse(guestFile.exists())
+                }
+                assertEquals(null, graph.guestSecrets.get("guest-draft"))
                 val status =
                     try {
                         freshSource().fetchIdentity()

@@ -26,6 +26,7 @@ import net.chronoflow.core.data.repository.AccountModel
 import net.chronoflow.core.data.repository.OutboxRepository
 import net.chronoflow.core.data.session.AccountReadinessRepository
 import net.chronoflow.core.data.session.AccountWiper
+import net.chronoflow.core.data.session.GuestSecrets
 import net.chronoflow.core.data.session.NoopSessionHooks
 import net.chronoflow.core.data.session.SessionAccountDatabase
 import net.chronoflow.core.data.session.SessionHooks
@@ -35,8 +36,10 @@ import net.chronoflow.core.database.AndroidAccountDriverFactory
 import net.chronoflow.core.datastore.AndroidKeystoreSessionCipher
 import net.chronoflow.core.datastore.DeviceIdentityStore
 import net.chronoflow.core.datastore.DevicePreferences
+import net.chronoflow.core.datastore.KeystoreGuestSecretStore
 import net.chronoflow.core.datastore.KeystoreSessionStore
 import net.chronoflow.core.datastore.androidDeviceName
+import net.chronoflow.core.model.guest.GuestSecretStore
 import net.chronoflow.core.model.passkey.CredentialClient
 import net.chronoflow.core.model.passkey.PasskeyCapability
 import net.chronoflow.core.model.passkey.PasskeyFailure
@@ -165,7 +168,36 @@ class AppGraph(
             .AppLanguageApplier(app, devicePreferences, dispatchers.io, languageFeedback)
     }
     val deviceIdentity by lazy { DeviceIdentityStore(devicePreferences) }
-    val wiper by lazy { AccountWiper(storageRoot, namespace, sessionStore, io = dispatchers.io) }
+    val guestSecrets: GuestSecretStore by lazy {
+        KeystoreGuestSecretStore.forNamespace(
+            app,
+            namespace,
+            overrides.sessionCipher ?: AndroidKeystoreSessionCipher(),
+            dispatchers.io,
+        )
+    }
+    val guestWizardStore by lazy {
+        net.chronoflow.core.wizard.model.GuestWizardStore(
+            file = {
+                net.chronoflow.core.model.guest.GuestRecoveryLocation
+                    .file(storageRoot(), namespace)
+            },
+            io = dispatchers.io,
+            now = { planClock.now },
+        )
+    }
+    val wiper by lazy {
+        AccountWiper(
+            storageRoot,
+            namespace,
+            sessionStore,
+            guestSecrets =
+                object : GuestSecrets {
+                    override suspend fun deleteAll() = guestSecrets.deleteAll()
+                },
+            io = dispatchers.io,
+        )
+    }
     private val accountsLazy: Lazy<SessionAccountDatabase> =
         lazy {
             SessionAccountDatabase(
@@ -184,8 +216,21 @@ class AppGraph(
         }, dispatchers.io)
     }
     val accountModel by lazy { AccountModel(appScope) }
-    val hooks: SessionHooks by lazy { NoopSessionHooks }
+    val hooks: SessionHooks by lazy {
+        net.chronoflow.app.guest
+            .GuestSessionHooks(guestWizardStore, NoopSessionHooks)
+    }
     val rootNavigator by lazy { RootNavigator() }
+    internal val guestRecoveryScheduler by lazy {
+        net.chronoflow.app.guest.GuestRecoveryScheduler(
+            dispatchers,
+            guestWizardStore,
+            rootNavigator,
+            { controller.presence },
+            { controller.updates.value?.epoch },
+            { LaunchPlatform.guestRecoveryAllowed },
+        )
+    }
     val welcomeDestinations: WelcomeDestinations by lazy { LaunchPlatform.welcomeDestinations(rootNavigator) }
     val passkeyAnchor: PasskeyAnchor by lazy { PasskeyAnchor() }
     val credentialClient: CredentialClient by lazy { CredentialManagerClient(app, passkeyAnchor) }
