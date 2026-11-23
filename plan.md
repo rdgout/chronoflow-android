@@ -524,6 +524,7 @@ Every screen scrolls when height-constrained. The minimum width is 280 dp; below
 | Welcome interactive | 2550 ms ± 1 frame | same | functional | `intro` trace | 3c |
 | Last intro item | 3200 ms ± 1 frame | same | functional | `intro` trace | 3c |
 | TTFD | Hand-off end + ≤ 2 frames | same | report | `StartupTimingMetric.timeToFullDisplayMs` via `reportFullyDrawn()` | 3b, 7 |
+| Today view, JVM | large60 ≤ 20 ms per sample, 1 warm-up then 10 samples | — | — | `TodayViewBudgetTest` (`@TimingGate`, serial `make timing`), `System.nanoTime` | 7 |
 | Plan preparation (decode + layout + prepare), JVM | S3 ≤ 40 ms, large30 ≤ 100, large60 ≤ 200, every one of 10 samples after 3 warm-ups | — | — | `TimelinePreparationBudgetTest` (`@TimingGate`, the serial `make timing` tier), `System.nanoTime`, same limits for every build type | 1b |
 | `DayDrawing` build | median of 5 passes ≤ 1 ms per day and ≤ 5 ms per width for large60, ≤ 512 KiB per drawing at 360/411/841 dp | — | — | JVM `@TimingGate` test with the fake `TextMetrics` (serial `make timing`, 3 warm-up passes; the max is reported, never gated); Robolectric test with real `TextPaint` | 1c |
 | Drawing cache | ≤ 4 MiB, ≤ 8 entries | — | — | Unit test | 1c |
@@ -906,6 +907,19 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A321 | Negative restore offsets (a header item just below the top) need `requestScrollToItem` with a negative offset. (6e OQ-17) | Use it if supported [verify]; else clamp at 0 as iOS does (`max(0, −minY)`), a shift of at most 36 sp. | 6e |
 | OQ-A322 | Wide skeleton day bar radius: board 18 (`PlanRemoteWide.dc.html:55`), iOS `rowRadius` 22 (`WidePlanSkeleton.swift:23`). (6e OQ-18) | **22** (iOS). | 6e |
 | OQ-A323 | Phone list mode outline: the original brief expected one in 6d, but landed 6d deferred it to 6e; iOS passes no `selectedBlockID` to the phone `DayListView` (`TripDayRow.swift:135`). (6e OQ-19) | **Keep 6d's phone behaviour (no outline)**; add the selected outline only to the wide column (iOS). | 6e |
+| OQ-A324 | The shared card's pure formatter returns Compose-annotated `TripCardUi`/`NextStepUi`; placing it in JVM `:core:plan` would invert the module graph. | Keep models and formatter together in `:core:ui` `ui.trip`, accepting core `PlanPreferences`. My trips keeps its existing preference decoder. | 7 |
+| OQ-A325 | The Today view budget is Android-only (7 OQ-7-9). | Gate every large60 sample at ≤ 20 ms after one warm-up; run it in the existing serial `@TimingGate` tier. | 7 |
+| OQ-A326 | Today board/iOS visual and copy differences (7 OQ-7-2). | Board appearance with pinned iOS copy and running end-time subtitle; use 28 dp swatches from TodayRowStates. Record every comparison in `docs/board-deltas.md`. | 7 |
+| OQ-A327 | Shared pieces for Today (7 OQ-7-3). | Reuse core swatches, meta chips, capsule and sheet content. Move the card to `:core:ui`, the writer to `:core:data`, and add `MinuteClock` in `:core:ui`. Card formatting follows OQ-A324. | 7 |
+| OQ-A328 | The Today board has a 44 dp glass icon without a defined action (7 OQ-7-4). | Omit it, as pinned iOS does. | 7 |
+| OQ-A329 | Today's hidden-steps link mentions Preferences, which lands later (7 OQ-7-5). | Select the Settings tab, as pinned iOS does; revisit only if iOS changes. | 7 |
+| OQ-A330 | Today has no pull-to-refresh board (7 OQ-7-6). | Port iOS refresh in every state and reuse the existing indicator/result capsule. | 7 |
+| OQ-A331 | Today sheet selection survival (7 OQ-7-7). | Keep `(tripId, blockId)` in its entry-scoped ViewModel through configuration changes. Process death cold-launches to Today. No route parameter is added. | 7 |
+| OQ-A332 | The perf readiness stub has no stored Today data (7 OQ-7-8). | Supply a perf-only `FixtureTodaySource` from MockAppSeed only for the perf stub; measure real content and record the source. | 7 |
+| OQ-A333 | Does the hero plan need a retention lease? (7 OQ-7-10) | No: pinned PlanHomeModel has none, and retention already keeps active/near trips offline. | 7 |
+| OQ-A334 | Today progress control (7 OQ-7-11). | Use the native `CfLinearProgress`, 80 × 6 dp, with one spoken progress summary and decorative track/icon. | 7 |
+| OQ-A335 | Plan a trip before the wizard lands (7 OQ-7-12). | Show the action and open the existing wizard-create seam, matching pinned iOS. | 7 |
+| OQ-A336 | Empty, Future and Completed JVM captures omit native app-bar title ink; an idle/frame/idle capture wait did not resolve it. | Keep the required `CfLargeTopAppBar`, which is unconditionally composed and structurally tagged. Record the unresolved capture difference; verify these short states on a device before accepting title fidelity. Do not imitate a native app bar. | 7 |
 | OQ-0a-22 | Native libraries in the bundle? | Allow only `libandroidx.graphics.path.so` (Compose graphics-path; excluding it breaks Path conversion below API 34); fail on any other `.so` | 0a, 13 |
 | OQ-0b-1 | Where does `PlanMetrics` live? `08 §3.1` lists it inside `CfDimens`, but its consumer `:core:plan` is a JVM module that cannot depend on `:core:designsystem` | `core/plan/…/generated/PlanMetrics.generated.kt` (Double, dp), as iOS keeps it in `PlanCore` | 0b, 1b, 1c |
 | OQ-0b-2 | Port all iOS TokenGen outputs now (Auth, Settings, Terms, Welcome, PlanUI, Press, LaunchPaint, TypeMetrics), or only colors, sky and type? | All of them now (the iOS files are exact goldens and Phases 2, 3a, 3c, 5a, 9 and 10 need them) | 0b |
@@ -2511,15 +2525,15 @@ Implementation commits (brief §7):
 **Delivers.** Ports the Today logic (trip selection, display status, current step, the next four steps, the next step and minutes-until rules). It builds the Today tab in its five states with the hero card, the Right now and Up next panels, and row states that keep done and skipped steps in place. Tapping a row opens the step sheet over Today, where check-offs go through the outbox; the hero card opens the trip page (OQ-A44). The minute clock is read only in leaf composables, and wide windows center the cards at 640 dp.
 
 **Tasks**
-- [ ] **Today.kt** (`:core:plan`): trip selection, display status, the current step, the next four steps, the next step and minutes-until. Port the iOS Today cases.
-- [ ] **Today tab** (`feature/today/…`).
+- [x] **Today.kt** (`:core:plan`): trip selection, display status, the current step, the next four steps, the next step and minutes-until. Port the iOS Today cases.
+- [x] **Today tab** (`feature/today/…`).
   - States: active, empty, future, loading and completed.
   - The hero card, Right now and Up next.
   - Row states keep done and skipped steps in place (`TodayRowStates`). Tapping a row opens 6d's step sheet over Today (Mark as done, Skip, Undo, through the outbox); tapping the hero card opens `TripPage(tripId)` without a block (OQ-A44).
   - The minute clock is read only in leaf composables.
   - From 600 dp, cards are at most 640 dp wide.
-- [ ] **TTFD.** `reportFullyDrawn()` fires after the first Today content frame on a signed-in launch.
-- [ ] **Tests.**
+- [x] **TTFD.** `reportFullyDrawn()` fires after the first Today content frame on a signed-in launch.
+- [x] **Tests.**
   - Guards for each state.
   - An invalidation probe: a minute tick recomposes only the leaf.
   - One emulator journey: Today → trip page → back (system and predictive back).

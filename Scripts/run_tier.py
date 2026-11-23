@@ -119,6 +119,23 @@ def collect_timings(root, patterns, started_ns):
     return files, entries, measured_dirs, failed_dirs
 
 
+def collect_hangs(root, out_dir, patterns, started_ns):
+    files = set()
+    for pattern in patterns:
+        for match in glob.glob(str(root / Path(pattern).parent / "hang-*.txt"), recursive=True):
+            path = Path(match)
+            if path.is_file() and path.stat().st_mtime_ns >= started_ns:
+                files.add(path)
+    if files:
+        destination = out_dir / "hangs"
+        destination.mkdir(parents=True, exist_ok=True)
+        for path in sorted(files):
+            relative = str(path.relative_to(root))
+            shutil.copyfile(path, destination / relative.replace(os.sep, "__"))
+            print("run-tier: test hang evidence: " + relative, file=sys.stderr)
+    return [str(path.relative_to(root)) for path in sorted(files)]
+
+
 def missing_execution_evidence(root, patterns, started_ns, result_files, timing_files, measured_dirs):
     missing, failed_dirs = [], set()
     for pattern in patterns:
@@ -351,6 +368,7 @@ def execute_tier(root, out_dir, tier, patterns, timing_patterns, command, env, e
     reference.touch()
     started_ns = reference.stat().st_mtime_ns
     process_exit = run_command(root, out_dir / "run.log", tier, command, env)
+    report["hangs"] = collect_hangs(root, out_dir, timing_patterns, started_ns)
     files, tests = collect(root, out_dir, patterns)
     current_files = [path for path in files if path.stat().st_mtime_ns >= started_ns]
     current_tests = read_tests(current_files)
@@ -423,6 +441,8 @@ def execute_tier(root, out_dir, tier, patterns, timing_patterns, command, env, e
         return 2
     if process_exit != 0:
         return process_exit
+    if report["hangs"]:
+        return 2
     if not files:
         print("run-tier: %s produced no result files" % tier, file=sys.stderr)
         return 2

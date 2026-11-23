@@ -145,6 +145,16 @@
       "source": "board",
       "board": "PlanLegend",
       "first": "M18 6 6 18"
+    },
+    "circle-check-big": {
+      "source": "board",
+      "board": "Today",
+      "first": "M21.801 10A10 10 0 1 1 17 3.335"
+    },
+    "eye-off": {
+      "source": "board",
+      "board": "Today",
+      "first": "M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"
     }
   }
 }

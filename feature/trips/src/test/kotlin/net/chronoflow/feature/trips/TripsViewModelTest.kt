@@ -208,25 +208,24 @@ class TripsViewModelTest {
                 collect(fixture.model)
                 runCurrent()
                 assertEquals(
-                    NextLabel.Now,
+                    now,
                     fixture.model
                         .cards()
                         .single()
                         .next
-                        ?.label,
+                        ?.startUtc,
                 )
                 val futureBlock = currentBlock.copy(startUtc = now.plusSeconds(1750).toString())
                 val future = current.copy(plan = current.plan.copy(blocks = listOf(futureBlock)))
                 deps.snapshots.getValue("t1").value = snapshot("t1", future)
                 runCurrent()
-                val expected = deps.formatter().formatMinutes(30.0, Language.En, duration = true)
                 assertEquals(
-                    NextLabel.In(expected),
+                    now.plusSeconds(1750),
                     fixture.model
                         .cards()
                         .single()
                         .next
-                        ?.label,
+                        ?.startUtc,
                 )
             } finally {
                 fixture.close()

@@ -108,6 +108,9 @@ class TripPageViewModel(
     private val enqueueCheck: suspend (CheckOffChange) -> Unit = {},
     private val reportCheckFailure: (Throwable) -> Unit = {},
 ) : ViewModel() {
+    private val checkOffWriter =
+        net.chronoflow.core.data.plan
+            .CheckOffWriter(enqueueCheck)
     private val lease: PlanLease
 
     init {
@@ -460,15 +463,13 @@ class TripPageViewModel(
         if (_checkBusy.value || !isCurrent()) return
         val detail = planFlow.value?.detail ?: return
         val block = detail.plan.blocks.firstOrNull { it.id == blockId && it.actionable } ?: return
-        val key = block.checkKey ?: return
-        val change =
-            CheckOffChange(args.tripId, detail.plan.meta.inputHash, key.type, key.localDate, key.ordinal, status)
+        if (block.checkKey == null) return
         _checkBusy.value = true
         if (announce) pendingAnnouncement = CheckExpectation(blockId, status)
         viewModelScope.launch {
             var saved = false
             try {
-                enqueueCheck(change)
+                checkOffWriter.setCheck(args.tripId, detail, blockId, status)
                 saved = true
             } catch (cancelled: CancellationException) {
                 if (!currentCoroutineContext().isActive) throw cancelled

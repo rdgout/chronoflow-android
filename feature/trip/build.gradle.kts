@@ -7,6 +7,7 @@ android {
 }
 
 dependencies {
+    implementation(project(":core:data"))
     implementation(project(":core:plan"))
     implementation(project(":core:sync"))
     implementation(libs.androidx.core.ktx)

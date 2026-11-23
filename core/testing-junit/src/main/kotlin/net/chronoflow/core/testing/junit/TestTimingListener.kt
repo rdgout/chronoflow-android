@@ -31,14 +31,42 @@ internal fun classify(
 private val sdkSuffix = Regex("""\[(\d+)]$""")
 
 class TestTimingListener : TestExecutionListener {
+    private data class TestStart(
+        val nanos: Long,
+        val source: MethodSource?,
+        val testClass: Class<*>?,
+        val sdk: String,
+        val firstForSdk: Boolean,
+    )
+
     private val tier = System.getProperty("cf.tier") ?: "quick"
     private val outDir = System.getProperty("cf.timingsDir")
-    private val starts = ConcurrentHashMap<String, Long>()
+    private val watchdog =
+        hangCapMillis(tier, System.getProperty("cf.testHangCapSeconds"))?.let {
+            TestHangWatchdog(it, File(outDir ?: "build/cf-timings/test"))
+        }
+    private val starts = ConcurrentHashMap<String, TestStart>()
     private val seenSdks = ConcurrentHashMap.newKeySet<String>()
     private val entries = java.util.Collections.synchronizedList(mutableListOf<String>())
 
     override fun executionStarted(identifier: TestIdentifier) {
-        if (identifier.isTest) starts[identifier.uniqueId] = System.nanoTime()
+        if (identifier.isTest) {
+            val source = identifier.source.orElse(null) as? MethodSource
+            val clazz =
+                source?.let {
+                    try {
+                        Class.forName(it.className, false, Thread.currentThread().contextClassLoader)
+                    } catch (_: ClassNotFoundException) {
+                        null
+                    } catch (_: LinkageError) {
+                        null
+                    }
+                }
+            val sdk = sdkSuffix.find(identifier.displayName)?.groupValues?.get(1) ?: "default"
+            val first = clazz?.isRobolectric() == true && seenSdks.add(sdk)
+            starts[identifier.uniqueId] = TestStart(System.nanoTime(), source, clazz, sdk, first)
+            watchdog?.started(identifier.uniqueId, first)
+        }
     }
 
     override fun executionFinished(
@@ -46,30 +74,24 @@ class TestTimingListener : TestExecutionListener {
         result: org.junit.platform.engine.TestExecutionResult,
     ) {
         if (!identifier.isTest) return
+        watchdog?.finished(identifier.uniqueId)
         val start = starts.remove(identifier.uniqueId) ?: return
-        val ms = (System.nanoTime() - start) / 1_000_000
-        val source = identifier.source.orElse(null) as? MethodSource ?: return
-        val clazz =
-            try {
-                Class.forName(source.className, false, Thread.currentThread().contextClassLoader)
-            } catch (_: ClassNotFoundException) {
-                return
-            } catch (_: LinkageError) {
-                return
-            }
+        val ms = (System.nanoTime() - start.nanos) / 1_000_000
+        val source = start.source ?: return
+        val clazz = start.testClass ?: return
         val kind = if (clazz.isRobolectric()) "robolectric" else "jvm"
-        val sdk = sdkSuffix.find(identifier.displayName)?.groupValues?.get(1) ?: "default"
+        val sdk = start.sdk
         val exempt =
             clazz.hasPerfBudget() || clazz.tierName() == "TimingGate" ||
                 clazz.methods.any { it.name == source.methodName.substringBefore('[') && it.hasPerfBudget() }
-        val first = kind == "robolectric" && seenSdks.add(sdk)
-        val (budget, status) = classify(kind, sdk, ms, exempt, first)
+        val (budget, status) = classify(kind, sdk, ms, exempt, start.firstForSdk)
         entries +=
             "{\"class\":${quote(source.className)},\"method\":${quote(source.methodName)},\"kind\":\"$kind\"," +
             "\"sdk\":\"$sdk\",\"ms\":$ms,\"budgetMs\":${budget ?: "null"},\"status\":\"$status\"}"
     }
 
     override fun testPlanExecutionFinished(testPlan: TestPlan) {
+        watchdog?.close()
         val dir = outDir ?: return
         try {
             val folder = File(dir)

@@ -73,7 +73,7 @@ object LaunchDiagnosticsParser {
             readyAt = diagnostics.readyAt,
             mainThreadStall = diagnostics.mainThreadStall,
             reduceMotion = diagnostics.reduceMotion,
-            readiness = diagnostics.stub?.let { config -> { clock -> StubReadiness(config, clock, nativeReadiness) } },
+            readiness = diagnostics.stub?.let { config -> StubReadinessFactory(config, nativeReadiness) },
         )
     }
 }

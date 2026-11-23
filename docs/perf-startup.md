@@ -34,6 +34,7 @@ The reference and low-end gates stay open until a device exists (OQ-A22).
 | 2026-11-18 | 88cad27-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | benchmarkRelease, Partial(Require) | 107.3/98.9/114.5 | PASS |
 | 2026-11-19 | c3192ed-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | benchmarkRelease, Partial(Require) | 125.0/112.3/145.4 | PASS |
 | 2026-11-19 | c3192ed-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | benchmarkRelease, Partial(Require) | 131.0/116.0/143.7 | PASS |
+| 2026-11-19 | 8edb8455-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | benchmarkRelease, Partial(Require) | 129.4/119.2/146.3 | PASS |
 
 Device rows: open: device only (OQ-A22).
 
@@ -99,6 +100,7 @@ Every mandated validation command was executed; there is no unrun tier to substi
 | 2026-11-18 | 88cad27-dirty | emulator | sdk_gphone64_arm64 | 60 | benchmarkRelease, Partial(Require) | 40.3 | 12.3 | 191.0 | 99.8/100.0 | PASS |
 | 2026-11-19 | c3192ed-dirty | emulator | sdk_gphone64_arm64 | 60 | benchmarkRelease, Partial(Require) | 47.5 | 10.8 | 191.0 | 98.2/100.0 | PASS |
 | 2026-11-19 | c3192ed-dirty | emulator | sdk_gphone64_arm64 | 60 | benchmarkRelease, Partial(Require) | 51.4 | 16.1 | 190.0 | 98.4/100.0 | PASS |
+| 2026-11-19 | 8edb8455-dirty | emulator | sdk_gphone64_arm64 | 60 | benchmarkRelease, Partial(Require) | 51.1 | 36.5 | 173.0 | 99.1/100.0 | PASS |
 
 ## Phase 3a: startup measurements
 
@@ -266,3 +268,17 @@ Phase 5b Task 3, 2026-11-18; `make size`, release AAB, bundletool arm64-v8a / xx
 | After dependencies | Task 3 working tree committed as `4e9dda3` | `Bundle size: 2445635 bytes (2.45 MB), arm64-v8a/xxhdpi/en: OK` | 37 s |
 
 Delta: 136,619 bytes. Both runs stay below the 8 MB warning and pass the native-library gate. Neither Credential Manager AAR contains a `.so`; no native-library exclusion or allow-list change was added. The Play-services consumer keep rule and the app's broader guard appear in the merged release R8 configuration. Original logs are retained in `build/phase5b-validation/size-before.log` and `size-after.log`. No startup/perf/profile run was performed in Phase 5b.
+
+## Phase 7 — Today (2026-11-19)
+
+`TodayRoute` adds a stable `ReportDrawnWhen` predicate: first non-Loading content **and** 3b's unchanged root hand-off predicate must both finish. `CfRoot` composes `RootContent` below the overlay, and `LaunchController` publishes its route at exit commit, before overlay teardown. The two ordering cases pass with a real FullyDrawnReporter.
+
+`StartupBenchmark.startupColdSignedIn` uses ten cold iterations, `CompilationMode.Partial(BaselineProfileMode.Require)` and `StartupTimingMetric`. It launches with `cf.session=in cf.stored=yes cf.gate=app` and waits on structural Today tags. With no real session, only the explicitly signed-in **perf** app stub selects `FixtureTodaySource`; it prepares MockAppSeed at device time on the injected worker. Debug native sessions and release builds cannot select it. The startup profile journey now reaches the first Today content.
+
+Results on `pixel` AVD, API 36, `benchmarkRelease`, host on AC power (`make baseline-profile` → 96736893, then `make perf`): signed-in cold TTID median **128.1 ms**, TTFD median **2062.9 ms** (FixtureTodaySource). Signed-out cold TTID **129.4 ms**, TTFD **2711.3 ms**, warm TTID **39.5 ms**; every welcome/intro hard bound passes. A run in Low Power Mode on battery missed `welcomeInteractiveMs` once by 0.7 ms and was discarded. Emulator numbers are reports, never device claims.
+
+## Signed-in Today startup
+
+| Date | Commit | Class | Device | API | Hz | Font | Theme | Build | TTID median ms | TTFD median ms | Today source | Result |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 2026-11-19 | 8edb8455-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | 1.0 | light | benchmarkRelease, Partial(Require) | 128.1 | 2062.9 | FixtureTodaySource | REPORT |

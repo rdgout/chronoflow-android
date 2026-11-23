@@ -88,6 +88,22 @@ class RunTierTest(unittest.TestCase):
         self.assertEqual(result.returncode, 2)
         self.assertIn("produced no result files", result.stderr)
 
+    def test_worker_hang_evidence_is_surfaced_and_preserved(self):
+        directory = self.root / "module/build/cf-timings/test"
+        directory.mkdir(parents=True)
+        evidence = "cf test hang: [test:blocked] exceeded 100ms\n    at Example.blocked(Example.kt:4)\n"
+        result = self.tier(
+            "t", "--results", "none", "--timings", "module/build/cf-timings/test/*.json", "--",
+            sys.executable, "-c",
+            "from pathlib import Path; Path('module/build/cf-timings/test/hang-blocked.txt').write_text(%r); raise SystemExit(86)" % evidence,
+        )
+        self.assertEqual(result.returncode, 86, result.stderr)
+        self.assertIn("test hang evidence: module/build/cf-timings/test/hang-blocked.txt", result.stderr)
+        report_dir = self.root / "build/test-results/t"
+        self.assertEqual(next((report_dir / "hangs").glob("*.txt")).read_text(), evidence)
+        self.assertEqual(json.loads((report_dir / "timings.json").read_text())["hangs"],
+                         ["module/build/cf-timings/test/hang-blocked.txt"])
+
     def test_collects_results_and_timings(self):
         (self.root / "out").mkdir()
         script = "cat > out/TEST-a.xml <<'EOF'\n%s\nEOF\n" % JUNIT
