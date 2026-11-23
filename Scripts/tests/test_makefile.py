@@ -1,7 +1,8 @@
 import re
+import shutil
 import unittest
 
-from helpers import ROOT, run
+from helpers import ROOT, run, temp_dir
 
 DEVICE_MARKERS = re.compile(r"connected\w*AndroidTest|androidTest-results/connected|am instrument")
 
@@ -71,6 +72,31 @@ class MakefileTest(unittest.TestCase):
         stop = 'Scripts/emulator.sh down "$avd"'
         failed = 'if [ "$status" != 0 ]; then exit "$status"; fi;'
         self.assertLess(result.stdout.index(stop), result.stdout.index(failed))
+
+    def test_matrix_boot_failure_skips_tests_and_still_stops_the_avd(self):
+        root = temp_dir(self)
+        shutil.copyfile(ROOT / 'Makefile', root / 'Makefile')
+        trace = root / 'calls.txt'
+        stubs = {
+            'Scripts/device_lock.py': 'import subprocess, sys\nraise SystemExit(subprocess.call(sys.argv[2:]))\n',
+            'Scripts/emulator.sh': '#!/bin/sh\nprintf "%s\\n" "$*" >> "$CF_MATRIX_TEST_TRACE"\n'
+                                   'if [ "$1" = ensure ]; then exit 7; fi\n',
+            'Scripts/run-tier.sh': '#!/bin/sh\necho smoke >> "$CF_MATRIX_TEST_TRACE"\n',
+            'Scripts/matrix-result.py': 'import os\nfrom pathlib import Path\n'
+                                       'with Path(os.environ["CF_MATRIX_TEST_TRACE"]).open("a") as f: f.write("result\\n")\n',
+            'sdk/cmdline-tools/latest/bin/avdmanager': '#!/bin/sh\necho small\n',
+        }
+        for name, body in stubs.items():
+            path = root / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(body)
+            path.chmod(0o755)
+        result = run(['make', 'matrix', 'ONLY=small', 'ANDROID_HOME=' + str(root / 'sdk'),
+                      'JAVA_HOME=/unused-matrix-fixture'], cwd=root,
+                     env={'CF_MATRIX_TEST_TRACE': str(trace)})
+        self.assertEqual(2, result.returncode, result.stdout + result.stderr)
+        self.assertIn('Error 7', result.stderr)
+        self.assertEqual(['ensure small', 'down small'], trace.read_text().splitlines())
 
     def test_matrix_rejects_pixel_before_any_device_command(self):
         result = run(["make", "-n", "matrix", "ONLY=pixel"], cwd=ROOT)

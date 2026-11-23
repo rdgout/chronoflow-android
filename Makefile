@@ -113,10 +113,12 @@ matrix:
 	  done; \
 	  for avd in $(MATRIX_AVDS); do \
 	    case $$avd in fold) port=5556;; small) port=5558;; api29) port=5560;; esac; \
-	    Scripts/emulator.sh ensure "$$avd"; \
 	    status=0; \
-	    ANDROID_SERIAL=emulator-$$port $(RUN_TIER) smoke-$$avd --device --emulator --results "app/build/outputs/androidTest-results/connected/**/*.xml" -- $(GRADLE) $(SMOKE_TASK) || status=$$?; \
-	    python3 -I Scripts/matrix-result.py --avd "$$avd" --input "build/test-results/smoke-$$avd/timings.json" --output "build/audit/matrix/$$avd.json" || status=$$?; \
+	    Scripts/emulator.sh ensure "$$avd" || status=$$?; \
+	    if [ "$$status" = 0 ]; then \
+	      ANDROID_SERIAL=emulator-$$port $(RUN_TIER) smoke-$$avd --device --emulator --results "app/build/outputs/androidTest-results/connected/**/*.xml" -- $(GRADLE) $(SMOKE_TASK) || status=$$?; \
+	      python3 -I Scripts/matrix-result.py --avd "$$avd" --input "build/test-results/smoke-$$avd/timings.json" --output "build/audit/matrix/$$avd.json" || status=$$?; \
+	    fi; \
 	    Scripts/emulator.sh down "$$avd" || status=$$?; \
 	    if [ "$$status" != 0 ]; then exit "$$status"; fi; \
 	  done'
