@@ -6,7 +6,7 @@ import assertk.assertions.messageContains
 import org.junit.Test
 import java.io.File
 
-class ModuleGraphTest {
+class ModuleGraphTest : KonsistTest() {
     private fun designSystemDependsOnNoProjectModule(root: File) {
         val file = File(root, "core/designsystem/build.gradle.kts")
         val bad =

@@ -5,7 +5,7 @@ import assertk.assertions.messageContains
 import com.lemonappdev.konsist.api.Konsist
 import org.junit.Test
 
-class HapticsRulesTest {
+class HapticsRulesTest : KonsistTest() {
     @Test fun noHapticsInLaunch() = noHapticsInLaunch(projectScope())
 
     @Test fun noHapticsInLaunchRejectsPlantedViolation() {

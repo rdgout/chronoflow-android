@@ -29,6 +29,7 @@ import net.chronoflow.core.model.session.SignOutResult
 import net.chronoflow.feature.onboarding.OnboardingSession
 import net.chronoflow.feature.onboarding.OnboardingSessions
 import net.chronoflow.feature.onboarding.support.FakeOnboardingSessions
+import net.chronoflow.feature.onboarding.support.OnboardingFixtureTest
 import net.chronoflow.feature.onboarding.support.withOnboardingFixture
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -38,7 +39,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import kotlin.time.Duration.Companion.seconds
 
-class TermsViewModelTests {
+class TermsViewModelTests : OnboardingFixtureTest() {
     @Test fun malformedPoliciesRetryAfter100MillisecondsAndKeepLastGoodState() =
         runTest(timeout = 60.seconds) {
             val initial = AccountPolicies("1", "1")

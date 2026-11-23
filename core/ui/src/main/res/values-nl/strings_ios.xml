@@ -1744,8 +1744,6 @@
     <string name="wizard_same_as_work_days">Zoals op werkdagen</string>
     <!-- wizard: Saving needs a connection -->
     <string name="wizard_saving_needs_a_connection">Voor opslaan is een verbinding nodig</string>
-    <!-- wizard: Search airports -->
-    <string name="wizard_search_airports">Luchthavens zoeken</string>
     <!-- wizard: Search needs a connection -->
     <string name="wizard_search_needs_a_connection">Voor zoeken is een verbinding nodig</string>
     <!-- wizard: Set on the website. Keep it, or add your flight home. -->

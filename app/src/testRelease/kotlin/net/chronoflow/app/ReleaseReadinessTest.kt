@@ -22,6 +22,20 @@ import org.junit.Test
 import kotlin.time.Duration.Companion.seconds
 
 class ReleaseReadinessTest {
+    @Test fun wizardCaptureCodeAndStartOverrideAreAbsent() {
+        missing("net.chronoflow.feature.wizard.debug.WizardBoardCaptureSeed")
+        missing("net.chronoflow.feature.wizard.debug.FixedAirportSearch")
+        missing("net.chronoflow.feature.wizard.debug.WizardStepSeam")
+        missing("net.chronoflow.feature.wizard.debug.WizardMemoryDraftStore")
+        missing("net.chronoflow.debug.WizardDebugSeeds")
+        org.junit.Assert.assertNull(
+            net.chronoflow.app.wizard
+                .WizardStartOverrides()
+                .wizardStartOverride,
+        )
+        org.junit.Assert.assertNull(LaunchPlatform.wizardBoardCapture)
+    }
+
     @Test fun shellSeedsAndRefreshProbeAreAbsent() {
         org.junit.Assert.assertNull(LaunchPlatform.shellStart())
         org.junit.Assert.assertSame(

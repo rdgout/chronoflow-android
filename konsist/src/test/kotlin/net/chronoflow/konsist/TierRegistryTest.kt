@@ -7,7 +7,7 @@ import com.lemonappdev.konsist.api.container.KoScope
 import org.junit.BeforeClass
 import org.junit.Test
 
-class TierRegistryTest {
+class TierRegistryTest : KonsistTest() {
     private fun allowed(path: String): KoScope = Konsist.scopeFromFile("konsist/src/test/resources/allowed/tier/$path")
 
     private fun planted(path: String): KoScope =

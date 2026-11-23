@@ -9,4 +9,18 @@
     <string name="android_notifications_blocked_step">Tap Open phone settings and turn on notifications for ChronoFlow.</string>
     <!-- android: Recovery codes.txt (review: needs review) -->
     <string name="android_recovery_codes_file_name">Recovery codes.txt</string>
+    <!-- android: Airport or city (review: needs review) -->
+    <string name="android_wizard_airport_field">Airport or city</string>
+    <!-- android: Type at least 2 letters to search. (review: needs review) -->
+    <string name="android_wizard_search_hint">Type at least 2 letters to search.</string>
+    <!-- android: Searching airports… (review: needs review) -->
+    <string name="android_wizard_search_searching">Searching airports…</string>
+    <!-- android: No airports found (review: needs review) -->
+    <string name="android_wizard_search_empty_title">No airports found</string>
+    <!-- android: Try the city name, like “Tokyo”, or the 3-letter code on your ticket, like “NRT”. (review: needs review) -->
+    <string name="android_wizard_search_empty_body">Try the city name, like “Tokyo”, or the 3-letter code on your ticket, like “NRT”.</string>
+    <!-- android: We couldn't search airports. (review: needs review) -->
+    <string name="android_wizard_search_error_title">We couldn\'t search airports.</string>
+    <!-- android: Check your connection and try again. (review: needs review) -->
+    <string name="android_wizard_search_error_body">Check your connection and try again.</string>
 </resources>
