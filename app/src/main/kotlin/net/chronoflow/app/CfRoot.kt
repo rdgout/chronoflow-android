@@ -1,5 +1,6 @@
 package net.chronoflow.app
 
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.ReportDrawnWhen
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -32,6 +33,7 @@ import net.chronoflow.core.designsystem.theme.ChronoFlowTheme
 import net.chronoflow.core.designsystem.theme.warmFontsAfterFirstFrame
 import net.chronoflow.feature.launch.LaunchOverlay
 import net.chronoflow.feature.launch.model.LaunchRoute
+import net.chronoflow.feature.launch.welcome.WelcomeScreen
 import net.chronoflow.feature.trip.timeline.LocalTimelineJankTagger
 import net.chronoflow.feature.trip.timeline.TimelineJankTagger
 
@@ -42,14 +44,21 @@ internal fun CfRoot(
     reduceMotion: Boolean,
     firstCommit: Deferred<Unit>,
     jankTagger: TimelineJankTagger?,
+    destinations: WelcomeDestinations = LaunchPlatform.welcomeDestinations,
     onSky: Boolean = false,
     onSystemBars: (Boolean, Boolean, Boolean) -> Unit = { _, _, _ -> },
     content: (@Composable () -> Unit)? = null,
 ) {
+    val seam = destinations.seam
+    BackHandler(enabled = seam != null) { destinations.closeSeam() }
     val resolver = LocalFontFamilyResolver.current
     LaunchedEffect(resolver) {
         withFrameNanos { }
-        warmFontsAfterFirstFrame(firstCommit, { graph.fontPreloader.preload(resolver, it) }, Dispatchers.IO)
+        try {
+            warmFontsAfterFirstFrame(firstCommit, { graph.fontPreloader.preload(resolver, it) }, Dispatchers.IO)
+        } finally {
+            graph.launch.markFontsReady()
+        }
     }
     val night = isSystemInDarkTheme()
     val overlayShowing = graph.launch.overlayActive
@@ -83,7 +92,26 @@ internal fun CfRoot(
                         ) {
                             content()
                         } else {
-                            graph.launch.route?.let { RoutePlaceholder(it, LaunchPlatform.routeLabel) }
+                            when (val route = graph.launch.route) {
+                                LaunchRoute.Welcome -> {
+                                    if (seam != null) {
+                                        RoutePlaceholder(seam, LaunchPlatform.routeLabel)
+                                    } else if (!overlayShowing || graph.launch.fontsReady) {
+                                        WelcomeScreen(
+                                            graph.launch.launchIntro,
+                                            graph.launch.moonAnchorStore,
+                                            destinations::planMyTrip,
+                                            destinations::signIn,
+                                        )
+                                    }
+                                }
+
+                                null -> {}
+
+                                else -> {
+                                    RoutePlaceholder(route, LaunchPlatform.routeLabel)
+                                }
+                            }
                         }
                     }
                 }

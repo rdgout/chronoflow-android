@@ -5,6 +5,7 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
 import net.chronoflow.app.testing.ScreenTest
 import net.chronoflow.feature.launch.LaunchController
+import net.chronoflow.feature.launch.model.LaunchState
 import org.junit.Assert.assertTrue
 
 abstract class LaunchScreenTest : ScreenTest() {
@@ -25,16 +26,33 @@ abstract class LaunchScreenTest : ScreenTest() {
         return frame
     }
 
+    protected fun exitStartMillis(): Double =
+        read { controller ->
+            // Inspect private state in the test rather than adding a production accessor.
+            val field = LaunchController::class.java.getDeclaredField("launchState").apply { isAccessible = true }
+            val state = field.get(controller) as LaunchState
+            requireNotNull(state.exitStart).inWholeNanoseconds / 1e6
+        }
+
     protected fun assertEnd(
         label: String,
         expectedMs: Double,
         frameMs: Double,
     ) {
         val end = read { requireNotNull(it.handOffEndElapsedNanos) / 1e6 }
-        Log.i("CfLaunchProof", "$label handOffEndMs=$end frameMs=$frameMs")
+        assertInFrameWindow("$label handOffEnd", end, expectedMs, frameMs)
+    }
+
+    protected fun assertInFrameWindow(
+        label: String,
+        actualMs: Double,
+        expectedMs: Double,
+        frameMs: Double,
+    ) {
+        Log.i("CfLaunchProof", "$label actualMs=$actualMs expectedMs=$expectedMs frameMs=$frameMs")
         assertTrue(
-            "$label ended at $end ms; expected $expectedMs..${expectedMs + frameMs + 2}",
-            end >= expectedMs && end <= expectedMs + frameMs + 2,
+            "$label was $actualMs ms; expected $expectedMs..${expectedMs + frameMs + 2}",
+            actualMs >= expectedMs && actualMs <= expectedMs + frameMs + 2,
         )
     }
 

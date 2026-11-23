@@ -1,6 +1,5 @@
 package net.chronoflow.app.perf
 
-import android.util.Log
 import net.chronoflow.app.LaunchDiagnostics
 import net.chronoflow.app.StubConfig
 import net.chronoflow.app.StubSession
@@ -20,7 +19,7 @@ object LaunchDiagnosticsParser {
             when (extras["cf.mode"]) {
                 "ready" -> LaunchMode.Ready
                 "slow" -> LaunchMode.Slow
-                "welcome" -> null
+                "welcome" -> LaunchMode.Welcome
                 else -> null
             }
         val stub =
@@ -63,7 +62,6 @@ object LaunchDiagnosticsParser {
     }
 
     fun overrides(extras: Map<String, String>): LaunchOverrides {
-        if (extras["cf.mode"] == "welcome") Log.w("CfLaunch", "cf.mode=welcome is deferred to phase 3c")
         val diagnostics = parse(extras)
         return LaunchOverrides(
             mode = diagnostics.mode,

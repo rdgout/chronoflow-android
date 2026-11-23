@@ -33,7 +33,7 @@ class LaunchCaptureTest(
 
     @Test fun capturesTheFrozenOpening() {
         val controller = launchController(compose, ms, reduced)
-        compose.setContent { LaunchOverlay(controller) }
+        compose.setContent { ProfiledLaunchOverlay(controller, p) }
         firstDraw(compose, controller)
         val state = if (reduced) "reduceMotion" else "ready"
         val time = ms.toString().padStart(4, '0')

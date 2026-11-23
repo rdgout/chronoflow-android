@@ -13,7 +13,12 @@ class LaunchHandOffTimelineTests {
     private fun committed(
         ms: Int,
         ending: LaunchEnding = LaunchEnding.App,
-    ) = LaunchState(ending = ending, didCommitExit = true, exitStart = ms.milliseconds)
+    ) = LaunchState(
+        ending = ending,
+        didCommitExit = true,
+        exitStart = ms.milliseconds,
+        fallbackTarget = LaunchRect(24.0, 64.0, 28.0, 28.0),
+    )
 
     private fun end(
         ms: Int,
@@ -38,16 +43,16 @@ class LaunchHandOffTimelineTests {
 
     @Test fun exitEndWithReduceMotion() = assertEquals(0.35, end(50, true)!!, 0.0)
 
-    @Test fun interimWelcomeEndsAtW950() {
+    @Test fun welcomeEndsAtW950() {
         assertEquals(2.55, end(1600, ending = LaunchEnding.Welcome)!!, 1e-9)
         assertEquals(8.95, end(8000, ending = LaunchEnding.Welcome)!!, 1e-9)
         assertEquals(8.3, end(8000, true, LaunchEnding.Welcome)!!, 1e-9)
     }
 
-    @Test fun interimWelcomeKeepsTheOpeningUntilW700() {
+    @Test fun welcomeKeepsTheOpeningUntilW() {
         val o = opening()
         val t = LaunchHandOffTimeline.build(o, committed(1600, LaunchEnding.Welcome))
-        for (ms in 0..2300 step 10) assertEquals(o.sample(ms.milliseconds), t.sample(ms.milliseconds))
+        for (ms in 0..1600 step 10) assertEquals(o.sample(ms.milliseconds), t.sample(ms.milliseconds))
     }
 
     @Test fun noExitWhileNotCommitted() =

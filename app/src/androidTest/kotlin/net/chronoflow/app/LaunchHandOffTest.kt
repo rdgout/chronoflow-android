@@ -12,6 +12,7 @@ class LaunchHandOffTest : LaunchScreenTest() {
         val scenario = launch(seed("cf.session" to "in", "cf.stored" to "yes", "cf.gate" to "app"))
         val frame = frameMillis(scenario)
         waitFor(5000) { read { it.handOffComplete } }
+        assertEquals(1500.0, exitStartMillis(), 0.0)
         assertEnd("ready", 1900.0, frame)
         compose.onNodeWithTag("route.today").assertExists()
         compose.onNodeWithTag("launch.opening").assertDoesNotExist()
@@ -23,7 +24,9 @@ class LaunchHandOffTest : LaunchScreenTest() {
         val frame = frameMillis(scenario)
         waitFor(5000) { read { it.handOffComplete } }
         assertEquals(1, read { it.statusAnnouncementCount })
-        assertEnd("slow", 3900.0, frame)
+        val exitStart = exitStartMillis()
+        assertInFrameWindow("slow exitStart", exitStart, 3500.0, frame)
+        assertEnd("slow", exitStart + 400.0, frame)
         compose.onNodeWithTag("route.today").assertExists()
         compose.onNodeWithTag("launch.opening").assertDoesNotExist()
     }

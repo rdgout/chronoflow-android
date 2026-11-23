@@ -3,6 +3,7 @@ package net.chronoflow.feature.launch
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.test.captureToImage
@@ -11,6 +12,9 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.test.core.app.ApplicationProvider
 import net.chronoflow.core.model.launch.LaunchReadiness
 import net.chronoflow.core.model.launch.SignedOutReadiness
+import net.chronoflow.core.testing.DeviceProfile
+import net.chronoflow.core.testing.DeviceProfiles
+import net.chronoflow.core.testing.compose.ProfileHost
 import net.chronoflow.feature.launch.model.LaunchClock
 import net.chronoflow.feature.launch.model.MediaLaunchClock
 import java.io.File
@@ -109,4 +113,12 @@ internal fun assertFrameZero(
             }
         }
     }
+}
+
+@Composable
+internal fun ProfiledLaunchOverlay(
+    controller: LaunchController,
+    profile: DeviceProfile = DeviceProfiles.pixel8,
+) {
+    ProfileHost(profile) { LaunchOverlay(controller) }
 }

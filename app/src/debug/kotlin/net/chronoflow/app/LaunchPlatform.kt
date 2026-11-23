@@ -7,6 +7,9 @@ import net.chronoflow.debug.DebugRouteLabel
 import net.chronoflow.feature.launch.LaunchController
 
 internal object LaunchPlatform {
+    var welcomeDestinations: WelcomeDestinations = net.chronoflow.debug.DebugWelcomeDestinations()
+        private set
+    val ioViolationSink: (Boolean, List<String>) -> Unit = net.chronoflow.debug.StrictModeViolationCounter::record
     val routeLabel: (@Composable (String) -> Unit)? = { DebugRouteLabel(it) }
     private var current: LaunchController? = null
 
@@ -18,6 +21,7 @@ internal object LaunchPlatform {
         check(BuildConfig.DEBUG)
         current?.onActivityDestroyed()
         current = newLaunchController(graph)
+        welcomeDestinations = net.chronoflow.debug.DebugWelcomeDestinations()
     }
 }
 
@@ -25,3 +29,9 @@ internal fun AppGraph.resetLaunchForTest() {
     check(BuildConfig.DEBUG)
     LaunchPlatform.reset(this)
 }
+
+internal fun AppGraph.resetIoViolationsForTest() =
+    net.chronoflow.debug.StrictModeViolationCounter
+        .reset()
+
+internal val AppGraph.ioViolationsForTest: Int get() = net.chronoflow.debug.StrictModeViolationCounter.count

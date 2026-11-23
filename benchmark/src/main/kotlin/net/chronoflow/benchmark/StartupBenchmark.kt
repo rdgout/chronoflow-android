@@ -32,6 +32,7 @@ class StartupBenchmark {
             metrics =
                 listOf(
                     StartupTimingMetric(),
+                    WelcomeMomentMetric(),
                     TraceSectionMetric("first-commit", TraceSectionMetric.Mode.First),
                     TraceSectionMetric("ready", TraceSectionMetric.Mode.First),
                     TraceSectionMetric("exit", TraceSectionMetric.Mode.First),
@@ -43,8 +44,10 @@ class StartupBenchmark {
         ) {
             startActivityAndWait()
             check(device.wait(Until.gone(By.res("launch.opening")), 5000))
-            check(device.wait(Until.hasObject(By.res("route.welcome")), 2000))
-            device.waitForIdle(1000)
+            check(device.wait(Until.hasObject(By.res("welcome.wordmark")), 2000))
+            check(device.wait(Until.hasObject(By.res("welcome.signIn")), 1000))
+            // Sign in persists; this bounded wait includes the last intro item before trace collection ends.
+            device.wait(Until.gone(By.res("welcome.signIn")), 900)
         }
 
     @Test fun startupWarm() =
@@ -60,6 +63,6 @@ class StartupBenchmark {
             // Macrobenchmark invokes this block cold with iteration=null before the first WARM iteration.
             if (iteration == null) check(device.wait(Until.gone(By.res("launch.opening")), 5000))
             check(!device.hasObject(By.res("launch.opening")))
-            check(device.wait(Until.hasObject(By.res("route.welcome")), 2000))
+            check(device.wait(Until.hasObject(By.res("welcome.wordmark")), 2000))
         }
 }

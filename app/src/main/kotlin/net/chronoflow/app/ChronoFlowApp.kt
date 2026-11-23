@@ -14,7 +14,7 @@ open class ChronoFlowApp : Application() {
     protected open fun createGraph(): AppGraph = AppGraph(this)
 
     override fun onCreate() {
-        if (BuildConfig.DEBUG) DebugStrictMode.install(this, launchPath)
+        if (BuildConfig.DEBUG) DebugStrictMode.install(this, launchPath, LaunchPlatform.ioViolationSink)
         super.onCreate()
         graph = createGraph()
         LaunchTrace.beginLaunch()

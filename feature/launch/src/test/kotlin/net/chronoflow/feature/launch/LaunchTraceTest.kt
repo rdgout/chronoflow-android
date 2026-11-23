@@ -52,6 +52,13 @@ class LaunchTraceTest {
             trace.beginLaunch()
             controller.captureReduceMotion(true, false)
             controller.onActivityCreated(null, false)
+            controller.onOverlayGeometry(
+                net.chronoflow.feature.launch.model
+                    .LaunchSize(390.0, 844.0),
+                net.chronoflow.feature.launch.model.MoonTarget
+                    .Insets(0.0, 0.0, 0.0, 0.0),
+                28.0,
+            )
             controller.onFirstDraw(Rect())
             runCurrent()
             clock.advance(1499.milliseconds)
@@ -94,6 +101,13 @@ class LaunchTraceTest {
             controller.captureReduceMotion(true, false)
             controller.onActivityCreated(null, false, LaunchOverrides(mode = LaunchMode.Ready))
             controller.setOpening(LaunchSize(390.0, 844.0))
+            controller.onOverlayGeometry(
+                net.chronoflow.feature.launch.model
+                    .LaunchSize(390.0, 844.0),
+                net.chronoflow.feature.launch.model.MoonTarget
+                    .Insets(0.0, 0.0, 0.0, 0.0),
+                28.0,
+            )
             controller.onFirstDraw(Rect())
             runCurrent()
             assertNull(controller.coordinator)

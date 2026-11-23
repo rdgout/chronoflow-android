@@ -49,7 +49,7 @@ class LaunchEndingCaptureTest(
         try {
             compose.setContent {
                 Box(Modifier.fillMaxSize().background(controller.appearance.colors.background)) {
-                    LaunchOverlay(controller)
+                    ProfiledLaunchOverlay(controller, profile)
                 }
             }
             firstDraw(compose, controller)

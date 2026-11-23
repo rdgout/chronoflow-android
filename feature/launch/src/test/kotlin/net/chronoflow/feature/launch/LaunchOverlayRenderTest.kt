@@ -38,7 +38,7 @@ class LaunchOverlayRenderTest(
 
     @Test fun openingRendersTheSpecifiedFrameWithoutInvalidGeometry() {
         val controller = launchController(compose, ms, reduced)
-        compose.setContent { LaunchOverlay(controller) }
+        compose.setContent { ProfiledLaunchOverlay(controller) }
         firstDraw(compose, controller)
         val bitmap = compose.onNodeWithTag("launch.opening").captureToImage().asAndroidBitmap()
         val output = java.io.File(projectRoot(), "build/phase3a-validation/render-$dark-$ms-$reduced.png")

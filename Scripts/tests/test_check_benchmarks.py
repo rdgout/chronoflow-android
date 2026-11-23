@@ -40,7 +40,7 @@ class CheckBenchmarksTest(unittest.TestCase):
         self.assertIn("startupWarm timeToInitialDisplayMs median=201.0 ms hard=200 FAIL", result.stdout)
 
     def test_missing_hand_off_metrics_fail_even_when_report_only(self):
-        for metric in ["timeToFullDisplayMs", "readyFirstMs", "exitFirstMs"]:
+        for metric in ["timeToFullDisplayMs", "readyFirstMs", "exitFirstMs", "welcomeInteractiveMs", "introLastItemMs"]:
             with self.subTest(metric=metric):
                 root = temp_dir(self)
                 fixture = next((FIXTURES / "startup/pass").glob("*.json"))
@@ -50,6 +50,30 @@ class CheckBenchmarksTest(unittest.TestCase):
                 result = check("--suite", "startup", "--device-class", "emulator", "--results-dir", str(root))
                 self.assertEqual(result.returncode, 1, result.stderr)
                 self.assertIn(metric + " is missing", result.stderr)
+
+    def test_welcome_moments_gate_every_iteration_at_both_edges(self):
+        for metric, target in [("welcomeInteractiveMs", 2550), ("introLastItemMs", 3200)]:
+            for value in [target - 1.1, target + 1000 / 60.000004 + 1.1]:
+                with self.subTest(metric=metric, value=value):
+                    root = temp_dir(self)
+                    fixture = next((FIXTURES / "startup/pass").glob("*.json"))
+                    data = json.loads(fixture.read_text())
+                    data["benchmarks"][0]["metrics"][metric]["runs"][3] = value
+                    (root / fixture.name).write_text(json.dumps(data))
+                    result = check("--suite", "startup", "--device-class", "emulator", "--results-dir", str(root))
+                    self.assertEqual(result.returncode, 1, result.stderr)
+                    self.assertIn(metric, result.stdout)
+                    self.assertIn("FAIL", result.stdout)
+
+    def test_nonfinite_welcome_moment_fails(self):
+        root = temp_dir(self)
+        fixture = next((FIXTURES / "startup/pass").glob("*.json"))
+        data = json.loads(fixture.read_text())
+        data["benchmarks"][0]["metrics"]["introLastItemMs"]["runs"][0] = float("nan")
+        (root / fixture.name).write_text(json.dumps(data))
+        result = check("--suite", "startup", "--device-class", "emulator", "--results-dir", str(root))
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("introLastItemMs has invalid runs", result.stderr)
 
     def test_missing_ttid_fails_naming_the_metric(self):
         result = check(
