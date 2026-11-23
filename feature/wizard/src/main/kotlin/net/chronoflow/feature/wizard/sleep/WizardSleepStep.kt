@@ -25,19 +25,21 @@ import net.chronoflow.core.designsystem.generated.PlanUITokens
 import net.chronoflow.core.designsystem.haptics.HapticEvent
 import net.chronoflow.core.designsystem.haptics.LocalHaptics
 import net.chronoflow.core.designsystem.theme.CfTheme
+import net.chronoflow.core.plan.CopyLineFormatter
 import net.chronoflow.feature.wizard.components.WizardChoiceCard
 import net.chronoflow.feature.wizard.components.WizardChoiceStyle
 import net.chronoflow.feature.wizard.components.WizardErrorLine
 import net.chronoflow.feature.wizard.components.WizardTimeRow
+import net.chronoflow.feature.wizard.components.fieldCopy
 import net.chronoflow.feature.wizard.shell.WizardEvent
 import net.chronoflow.feature.wizard.ui.WizardCopy
 import net.chronoflow.feature.wizard.ui.resolve
-import net.chronoflow.feature.wizard.ui.wizardCopy
 
 @Composable
 internal fun WizardSleepStep(
     ui: WizardSleepUi,
     onEvent: (WizardEvent) -> Unit,
+    copyFormatter: CopyLineFormatter? = null,
 ) {
     val haptics = LocalHaptics.current
     var handled by rememberSaveable { mutableIntStateOf(ui.continueFailures) }
@@ -103,7 +105,7 @@ internal fun WizardSleepStep(
             }
         }
         ui.errors.forEach { (key, message) ->
-            WizardErrorLine(message.wizardCopy().resolve(), "wizard.sleep.error.$key")
+            WizardErrorLine(fieldCopy(message, copyFormatter), "wizard.sleep.error.$key")
         }
     }
 }

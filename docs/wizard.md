@@ -821,3 +821,322 @@ It returned `No tests found for given includes: [*.WizardBoardCaptureTest.captur
 Step 0 found no additional upstream-name mismatch and needed no standalone brief-refresh commit. Later brief notes landed with their tasks: normal state hoisting instead of a main-source test callback; copy-render helpers needed by Task 5; non-null prompt answers, normalized error paths and a real stale-leg ReviewExpired fixture; narrowly scoped native AM/PM hit-area checks; and runtime submit-failure mapping. The final malformed-answer fix is its own signed commit because it was discovered after the task commits; no history was rewritten.
 
 Tracked changes in all three read-only source repositories remain absent. Existing untracked future-phase briefs in this checkout were left untouched. No new external dependency, initializer, manifest entry, native library, secret-storage path or startup/timeline implementation was added.
+
+## Phase 9f: checking and fine-tune
+
+2026-11-20. [Brief](phases/phase-9f-wizard-checking-finetune.md). The shell now renders checking, its three failure cards, fine-tune and every optional-answer sheet. Screen state is mapped from the landed model; the model owns checking and retry time. Answer drafts stay in the entry-scoped ViewModel. Only Done applies them; closing a sheet discards edits. Password and verification-link storage paths are unchanged.
+
+### Checking
+
+| Checking clock | Lines (Done / Busy / Open) | Behaviour |
+|---|---|---|
+| 0–399 ms | Busy, Open, Open | Request running |
+| 400–799 ms | Done, Busy, Open | First tick |
+| 800–1,199 ms | Done, Done, Busy | Second tick |
+| From 1,200 ms | Done, Done, Done | Completed request waits until the 1,500 ms presentation minimum |
+| From 10,000 ms | Model progress retained | Polite slow line |
+| 30,000 ms without a response | Failure | Server card and Error cue |
+
+The tick table describes a request completed before the minimum display interval; a pending request keeps the final line busy. The normal member order is flights/time zones, saved answers, tailoring. Guests replace saved answers with their answers. Checking Again orders answers, flights/time zones, tailoring. Back cancels checking and returns to the last input step without a late cue. The visible back button is absent while checking; a failure restores it outside editing.
+
+| Failure | Card | Retry |
+|---|---|---|
+| `Offline` | Cloud-off | Enabled |
+| `Throttled` | Clock | Disabled until the model countdown reaches zero; rounded-up seconds and `LockoutWait` body |
+| Other checking failures | Circle-alert | Enabled |
+| Validation routed to an input step | That input step's catalog-first field error | No checking failure card or outcome cue |
+
+A 41.2-second throttle shows 42, then 41 after one checking-clock second. Retry before zero makes no request. The failure-card secondary Close requests discard for a member with changes; a guest closes directly. Toolbar × asks to discard whenever there are changes, except for a guest on Excluded. Success, no-plan and failure cues map to Success, Warning and Error respectively. A saveable handled sequence prevents replay after recreation.
+
+The arc uses the board's cubic SVG with uniform centred scaling. Its cached path, dash and stroke are built by `drawWithCache`; only draw reads the animation state. Animation is 3.6 seconds. Reduce Motion creates no transition, fixes the arc dot at t = 0.65 and replaces the line spinner with a static dot. Each line announces its status politely; decorative arc and icon semantics are cleared.
+
+### Fine-tune and sheets
+
+Card order is optional answers, preparation, preferences. Preferences stay after the two designed cards and below their first viewport on the standard board size. Prompt order comes from `optionalPrompts`; multi-leg rows retain the iOS route/city suffixes. Required rows carry the filled star and “Helps a lot”. Preparation clamps to 0–4. Sleep override prefill keeps an existing value, then uses profile, then saved profile. Guests have no override switch. Reviewing disables edits and shows the footer spinner; no-prompt Fine-tune uses Done.
+
+| Sheet | Controls and commit rule |
+|---|---|
+| Seat side | Nullable radio selection; aisle/not sure commits JSON null |
+| Room | Mode radios; declared time uses landing date and minute precision |
+| Late check-out | Nullable radio selection |
+| Latest wake | Native inline time picker; phone hour cycle, app language; compact input below 640 dp height |
+| Busy hours | Editable/removable ranges; From date → From time → To date → To time; final confirm disabled for To ≤ From |
+| Drinks | Habit radios and four 0–max steppers; None resets every drink; a step selects cups; empty cups rejected |
+| Free-day sleep | Existing 9e options and rounded time sheets, now over Fine-tune |
+| Light device | Radios and the iOS safety notice below the question |
+| Blue blockers | Radios and decimal rating; numeric loads use the language separator; edited text is preserved; submission normalizes comma to dot |
+
+Override and room use `CfTimePickerSheet` at minute precision, with no five-minute footnote. The free-day sheet keeps 9e rounding. Busy ranges keep the date/time dialogs. The answer header remains fixed while the body scrolls, including above the keyboard. Steppers expose a single adjustable accessibility node and separate 48 dp touch targets. All new remove targets and the rating field measure at least 48 dp.
+
+### Seeds and captures
+
+| Base seed | State |
+|---|---|
+| `WizardChecking` | Checking, tick 1, progress 0.60 |
+| `WizardCheckingAgain` | Answers-first checking, tick 1, progress 0.70 |
+| `WizardCheckingSlow` | Tick 2 plus slow line |
+| `WizardCheckOffline`, `WizardCheckServer`, `WizardCheckThrottle` | Frozen failure; throttle 42 seconds |
+| `WizardFineTune`, `WizardFineTuneMulti` | Single/multi-leg prompt order, progress 0.80 |
+| `WizardFineTuneSleep` | Override enabled |
+| `WizardFineTuneBusy` | Review in place; edits disabled |
+| `WizardFineTuneNone` | No prompts; seed floor 0.95 |
+| `WizardFineTuneSheet`, `WizardSheet` | Seat sheet over Fine-tune (same render state) |
+| `WizardSheetRoom`, `WizardSheetCheckout`, `WizardSheetWake`, `WizardSheetBusy` | Corresponding open sheet |
+| `WizardSheetDrinks`, `WizardSheetDrinksError` | Drinks and validation ring |
+| `WizardSheetLight`, `WizardSheetBlue`, `WizardSheetBlueError` | Light and rating, including validation ring |
+| `WizardSheetFreeSleep*` | 9e seed handed forward over real Fine-tune, OQ-A412 |
+
+`WizardCompletionBoardSeed` and its hand-built prompts live in debug; a test compares them with `MockWizardPrompts.make`. The frozen checking clock and neutral UI override prevent requests during captures. Release readiness rejects the seed/prompt/clock classes and verifies the shipped override is null. `:feature:wizard` has no main/debug dependency on data-mock.
+
+Capture inventory (48 PNGs, board names, in `build/captures/`):
+
+- `WizardChecking`, `WizardCheckingDark`, `WizardCheckingNL`.
+- `WizardCheckingAgain`, `WizardCheckingSlow`, `WizardCheckOffline`, `WizardCheckServer`, `WizardCheckThrottle`: base and `DarkNL` each.
+- `WizardFineTune`: base, `Dark`, `NL`, `DarkNL`.
+- `WizardFineTuneMulti`, `WizardFineTuneSleep`, `WizardFineTuneBusy`, `WizardFineTuneNone`, `WizardFineTuneSheet`: base and `DarkNL` each.
+- `WizardSheet`.
+- `WizardSheetRoom`, `WizardSheetCheckout`, `WizardSheetWake`, `WizardSheetBusy`, `WizardSheetDrinks`, `WizardSheetDrinksError`, `WizardSheetLight`, `WizardSheetBlue`, `WizardSheetBlueError`: base and `DarkNL` each.
+- `WizardSheetFreeSleep`, `WizardSheetFreeSleepDarkNL`.
+
+All use Reduce Motion and account time format Value24. The wake picker also sets/restores the phone's 24-hour setting. No stored Roborazzi references were added. `make captures ONLY=WizardChecking,WizardCheck,WizardFineTune,WizardSheet` ran once (19 seconds): 46 images succeeded; both wake cases failed on a fixture that queried the time-sheet tag. The corrected fixture reran only those two via:
+
+```sh
+env 'ORG_GRADLE_PROJECT_cf.captureOnly=WizardSheetWake' make targeted ONLY='feature:wizard:WizardBoardCaptureTest#capturesTheBoardState'
+```
+
+That passed in 10.06 seconds including skipped parameters and produced the remaining two images. The full capture command was not repeated.
+
+### Guards and board comparison hand-off
+
+`WizardCheckingFineTuneGuardsTest` has exactly 107 uniquely named light-only cases: 21 states × Dutch × small/pixel8/foldInner/largeFont (84); those states × English × small (21); Fine-tune/seat × Dutch × landscapeSideNav (2). All pass. The class took 7.23 seconds (10.78-second command); first case 2.502 seconds, warm maximum 0.186 seconds. Guards cover text, measured targets, safe area, overlap and headings. Native AM/PM buttons use framework touch bounds, as existing picker guards do. Small/large-font Dutch cases also check body scrolling and fixed visible actions. There are 22 base boards and 46 wrappers; the plan's former “26 boards” count was corrected. Seat's two board names share one guard state.
+
+The orchestrator compares the 48 captures with the board renders at 390 × 844. This sandbox did not launch Chromium. Record visual differences from that comparison against these expected adaptations:
+
+- Native M3 sheet handle/header actions, switches and inline time picker; time sheets for override/room and date/time dialogs for busy ranges.
+- Static busy dot under Reduce Motion, preferences after the designed cards, and the existing 16 dp button spinner (board 18 dp).
+- iOS model answers take precedence over board placeholders: default room is “When I land”, false checkout is “No”, and unanswered busy hours show zero ranges. No model behaviour was changed to force “Add”.
+- Prompt questions use server catalog copy; free-day question therefore follows the catalog, as recorded in 9e. Requested Fraunces weights above 500 resolve to the shipped 500 face with synthesis off (OQ-A419).
+
+### Swift → Kotlin coverage
+
+| Swift helper/test | Kotlin coverage |
+|---|---|
+| `assertFineTune` | `WizardFineTuneStepTest` |
+| `assertAnswerSheet` | `WizardAnswerSheetTest` |
+| `testCheckOfflineScreenKeepsEditingAndGoesBack` | `closeOnFailureAsksOnlyWithChanges`, `backCancelsCheckingAndReturnsToTheLastInputStep` |
+| `testDuoResizeKeepsFineTuneAndOpenAnswer` | `ratingSurvivesRestoration` |
+
+The new model/ViewModel cases use `CheckingTestClock`, fake repositories, 60-second `runTest` caps and owned scopes. No screen-copy assertions, app-root logic tests, main-source test callbacks or clock-reading Compose mappers were added. Outcome counters and restoration tests cover transient feedback without racing animations. Catalog-first Times/Sleep field errors close OQ-A399.
+
+### Validation record
+
+Device: `pixel` AVD, Android 16/API 36, debug, functional animator settings. `make targeted ONLY="app:WizardAnswerSheetDeviceTest"` ran once: wake passed in 2.346 seconds; rating's geometry passed but activity-window keyboard teardown timed out (6.476-second case, 16-second Gradle command). The test now settles the focused sheet's IME, closes the sheet, then lets the base fixture close the activity. Only that method reran:
+
+```sh
+make targeted ONLY="app:WizardAnswerSheetDeviceTest#ratingFieldAndDoneStayAboveTheKeyboard"
+```
+
+It passed in 2.456 seconds (7-second Gradle command). Neither run logged a StrictMode disk/network violation. The two tests check native controls/IME only; they do not repeat model validation or add a journey.
+
+The brief refresh corrected iOS/landed answer-default expectations and replaced private `ApiReviewPrompt.copy` use with its public constructor. Task 3 also recorded the additive `CfTimePickerDialog.confirmEnabled` parameter because only the date dialog previously had it. No landed model behaviour changed. OQ-A420–OQ-A438 carry the nineteen 9f defaults; no Android-only copy was added. No new runtime dependency, manifest initializer or native library was introduced. Wizard perf/profile tiers belong to Phase 13; none were run or requested for this phase.
+
+Final checks (macOS host; JVM/Robolectric values are host results, not device performance):
+
+| Command / scope | Result | Wall time |
+|---|---|---|
+| Task 0 `make targeted ONLY="feature:wizard:WizardServerCopyTest"` | 4 passed; disabling catalog lookup made the new case fail, restored case passed | 2.55 s |
+| Task 1 checking mapper + checking/fine-tune ViewModels | 40 passed | 3.06 s |
+| Task 2 answer-state + answer ViewModel suites | 51 passed; drinks-reset mutation failed, restored case passed | 3.21 s |
+| Task 3 `CfTimePickerGuardsTest` | 4 passed; first 2.445 s, warm 0.049–0.184 s | 6.43 s |
+| Task 4 seed suites / registry / release readiness | 82 / 75 / 13 passed | 4.28 / 3.45 / 5.00 s |
+| Task 4 app debug seed wiring | 6 passed | 3 s Gradle |
+| Task 5 checking structure and recomposition | All 9 pass in final quick; cleared-semantics mutation failed as intended, restored case passed | 0.212 s test sum in final quick |
+| Task 6 failure cards / icon-generator tests | 4 / 11 passed | 5.95 s / 0.080 s Python |
+| Task 7 fine-tune structure / layouts | 13 / 2 passed (final quick / final layout) | 0.306 s structure test sum; layouts included in final layout tier |
+| Task 8 answer UI + ViewModel expansion | Initial 49-case run found duplicate wake tag and 44 dp busy target; both corrected cases passed | 7 s initial Gradle; 5 s correction Gradle |
+| Task 8 final edited controls + Task 9 haptics | 5 passed | 6.71 s |
+| Task 10 new guards | 107 passed, no overruns | 10.78 s |
+| Task 11 device checks | Both passed as detailed above | Wake 2.346 s; rating 2.456 s |
+| App, wizard, design-system, UI `lintDebug` | Passed after replacing configuration height with root `LocalWindowSize` (backed by `LocalWindowInfo`) | 9 s Gradle |
+| Touched modules' layout tier | 700 passed, zero overruns/hangs | 19.96 s |
+| `make quick` (once only) | First Gradle stage failed on the stale glyph count and two untouched timing cases; all new wizard cases passed | 37.19 s |
+| `LucideGlyphsTest#everyBoardPathParsesAndVectorsAreCached` after correction | Passed (50 glyphs; filled star and clock hands also checked) | 1.39 s |
+| Remaining quick build-logic stage | 37 certified passing results (up to date) | 1.61 s |
+| Remaining quick script/tooling stage | Scripts 168 passed; contracts 24 passed, parity corrected environment then passed; l10n 49 passed; icons 11 passed | 19.959 / 0.020 + 0.100 / 0.018 / 0.080 s Python |
+| Remaining quick `make timing` | 7 certified passing results (up to date), zero overruns | 1.62 s |
+
+The full quick command was not repeated. Its untouched timing overruns were `RootThemeTest#rootProvidesReduceMotionAndUsesTheSuppliedFontBarrier` at **1.290 s** (1 s budget) and `TermsScreenTest#policyRowStaysEnabledWhileFailed` at **3.544 s** (first-class 3 s budget). Neither test was retried or modified. The first stage collected 5,035 passing results and the one stale-glyph failure, with 3,220 newly measured cases; no hangs. Final quick passed all 23 `WizardAnswerSheetTest` cases (1.772-second sum) and both haptic cases (0.081-second sum), including the earlier corrections.
+
+The manual tooling continuation initially omitted the `IOS_REPO`/`WEB_REPO` environment that Make exports, so only the parity test failed with `set IOS_REPO and WEB_REPO to run the iOS parity test (make exports them)`. The corrected command was:
+
+```sh
+IOS_REPO=/Users/rickgout/Sites/chronoflow-ios WEB_REPO=/Users/rickgout/Sites/chronoflow-new python3 -I -m unittest discover -s tools/contracts-gen -t tools/contracts-gen -p 'test_*.py' -k test_matches_ios_generated_swift
+```
+
+It passed; the script suite was not repeated. Layout and lint ran with:
+
+```sh
+export ANDROID_HOME=/opt/homebrew/share/android-commandlinetools
+export JAVA_HOME=$(/usr/libexec/java_home -v 17)
+./gradlew :app:lintDebug :feature:wizard:lintDebug :core:designsystem:lintDebug :core:ui:lintDebug
+Scripts/run-tier.sh layout --results 'feature/wizard/build/test-results/testDebugUnitTest/*.xml' --results 'core/ui/build/test-results/testDebugUnitTest/*.xml' --results 'core/designsystem/build/test-results/testDebugUnitTest/*.xml' --results 'app/build/test-results/testDebugUnitTest/*.xml' --timings 'feature/wizard/build/cf-timings/testDebugUnitTest/*.json' --timings 'core/ui/build/cf-timings/testDebugUnitTest/*.json' --timings 'core/designsystem/build/cf-timings/testDebugUnitTest/*.json' --timings 'app/build/cf-timings/testDebugUnitTest/*.json' -- ./gradlew :feature:wizard:testDebugUnitTest :core:ui:testDebugUnitTest :core:designsystem:testDebugUnitTest :app:testDebugUnitTest -Pcf.tier=layout
+```
+
+The final lint correction and glyph-test update are separate signed acceptance-fix commits; no task commit was rewritten. Source scans found no new screen-copy assertions, size callbacks, checking/sheet timers, locale formatters or accessibility announcement calls. The sole checking `Path()` is inside `drawWithCache`. There was no sandbox-blocked command. `make check`, perf, perf-timeline, baseline-profile and other emulator tiers were intentionally not run. The host board comparison and an interactive checking → fine-tune → sheet StrictMode observation remain for the orchestrator; the seeded device checks reported no disk/network violation. The `pixel` emulator remains running.
+
+## Phase 9f review round 1
+
+2026-11-20. All eight findings are addressed in separate signed commits, with two further test-fixture commits after the one permitted quick run exposed remaining activity overhead. No history was rewritten, no budgets were changed, and no test-boundary allowlist entry was added.
+
+### Behaviour, geometry and mapping
+
+- Toolbar `RequestClose` follows pinned iOS `MemberWizardSteps.swift` l.141–148: guest + Excluded closes; otherwise changes require discard confirmation. The checking failure card emits `CloseFromFooter` and follows l.69–75: Excluded, guest or unchanged closes; a changed member draft asks to discard. The guest dialog resolves the existing welcome-screen message. The guest-checking toolbar regression failed before the fix; all four requested guest/member cases pass afterward. Failure-card screen tests assert the distinct footer intent.
+- Busy ranges now place their natural-height text inside a vertically centred 52 dp control. The geometry test measures the actual paragraph centre against the remove target, rather than accepting the old text node's padded bounds; it failed before the fix and passes within 1 dp afterward.
+- The inline wake picker sits in a full-width centred container inside its card. Before the fix, pixel8's card/picker centres were 205.333 / 160.381 dp (44.952 dp apart), and foldInner's were 420.571 / 374.857 dp (45.714 dp apart). Both geometry cases now pass the ±1 dp requirement.
+- OQ-A420–OQ-A438 retain their questions/defaults and now have four table cells. No new OQ or copy was added.
+- Fine-tune uses one custom layout for the heading/designed cards and preferences. It measures both children against the current constraints and places preferences after the greater of the natural card height and viewport minimum. `WizardFineTuneViewport` and its plain mutable measurements were deleted. The unchanged-width resize test initially left preferences at 770 / 518 dp after an 80 dp height reduction, instead of 690 / 438 dp. Both cases now move by 80 ±1 dp. Existing card-fit, interaction and checking-recomposition tests remain green.
+- `WizardUiState.from` builds Checking/Fine-tune once and passes both projections to chrome. Chrome no longer invokes either mapper. JVM tests verify supplied projections (including values different from the source snapshot) and matching screen/footer fields.
+- The glyph test was formatted with `make format`, including its filled-star assertion.
+
+### Test infrastructure measurements
+
+All figures below are macOS-host JVM/Robolectric measurements. They are not device performance claims. The review supplied host failures of 1.112 s for RootTheme and 3.190 s for the Terms class-first case; the measurements here retain their own run context.
+
+| Case | Initial targeted class run | Single parallel quick run, after first fixture changes | Final targeted verification |
+|---|---:|---:|---:|
+| `RootThemeTest#rootProvidesReduceMotionAndUsesTheSuppliedFontBarrier` | 393 ms warm | 1,037 ms, over 1,000 | **63 ms warm** in the restored three-case class |
+| `TermsScreenTest#policyRowStaysEnabledWhileFailed` | 1,989 ms first case | 3,330 ms, over the 3,000 class allowance | **1,734 ms first case** in the four-case class; restored mutation case 1,465 ms in its own fork |
+
+RootTheme's initial steps were application/graph 0.343 ms, activity setup 116.477, set-content 220.719, frames 4.357, blocked/commit assertions 22.228, font/ready assertions 2.511 and teardown 11.502. Extracting the production `RootThemeContent` boundary and removing AppGraph/CfRoot reduced the comparable warm case to 283 ms, but the parallel quick run still spent 398.587 ms in activity setup and 476.178 in set-content. The final fixture therefore uses runtime composition with a manual `BroadcastFrameClock` and test scheduler, with no activity host. It still runs the production boundary and checks reduce motion, awaiting the supplied commit, four preloads on the injected dispatcher, and the actual `LaunchController.fontsReady` flag. Its final warm steps were fixture/resolver 15.784 ms, composition 29.092, first frame 2.399, commit/font assertions 0.518 and teardown 1.803. Composition/recomposer teardown completes under `NonCancellable`.
+
+Both versions of the narrowed font fixture rejected the commit-barrier mutation (`if (firstFrame.isCompleted) firstFrame.await()`): expected zero preloads, observed four. The original unconditional await was restored each time; the final three-case RootTheme class passes unchanged activity-frame-commit and system-motion checks too. No mutation remains in production.
+
+Terms' detailed baseline measured 313.878 ms in the body, 770.655 ms in its enclosing Compose rule, and 776.127 ms including profile setup; that isolated case totalled 2.029 s including Robolectric startup. Native font-runtime initialization is warmed once per JVM in `BeforeClass` and logged separately (626.336 ms in the first successful warm-up run). Attempting to warm an entire Compose activity there was rejected immediately by Robolectric (`no display 0`), so that approach was removed. In quick the native runtime was already warm (0.018 ms), while the Compose rule still took 2,981.431 ms, including 1,152.342 ms in the body. Warming native fonts alone therefore did not solve the parallel case.
+
+The final Terms fixture directly hosts the unchanged screen in `ComponentActivity` under an empty Compose rule, removing ActivityScenario orchestration. It retains real fonts, profile/theme providers, the policy custom-tab intent assertion, failure nodes, disabled action checks and confirmation-slot assertion. In its isolated four-case run, font-runtime warm-up took 816.001 ms separately; the first case measured activity setup 418.725 ms, set-content 410.156, failure query 5.721 and scroll/enabled check 4.152. Subsequent cases were 85 / 42 / 36 ms. A production mutation disabling the policy row made the existing enabled assertion fail; restoration passed. Assertions and timing limits were not weakened.
+
+The full quick command was not repeated after these last two fixture changes. Their final targeted results establish the serial case costs above; a second parallel quick/check run remains for the host gate.
+
+### Review validation
+
+| Scope / command | Result | Wall time |
+|---|---|---:|
+| Checking VM + failure-card tests | 17 passed; guest toolbar negative test failed before correction | 9.53 s |
+| Busy paragraph/remove-centre guard | 1 passed after failing before correction | 5.24 s |
+| Wake picker/card-centre guards | pixel8 + foldInner passed after both failed before correction | 4.65 s |
+| Fine-tune layout/interaction + checking recomposition | 18 passed; both resize cases failed before correction | 6.43 s |
+| Chrome mapper + checking/fine-tune/return/where JVM tests | 68 passed | 3.92 s |
+| Formatted `LucideGlyphsTest` | Passed | 1 s Gradle |
+| Final RootTheme class | 3 passed, 63 ms warm target case | 4.40 s |
+| Final Terms direct-host class | 4 passed | 5 s Gradle |
+| Restored Terms policy case | Passed | 3.95 s |
+| Captures (once) | All 18 requested PNGs written, zero timing overruns | 17.98 s |
+| Layout tier (once) | 463 passed across wizard/app/onboarding/design-system, zero overruns | 16.68 s |
+| Touched modules' lint (once) | Passed | 10 s Gradle |
+| `make quick` (once) | Assertions passed; the two touched timing overruns above failed its first-stage gate | 36 s Gradle |
+
+Commands for the final capture, layout and lint runs:
+
+```sh
+make captures ONLY=WizardSheetBusy,WizardSheetWake,WizardFineTune
+export ANDROID_HOME=/opt/homebrew/share/android-commandlinetools
+export JAVA_HOME=$(/usr/libexec/java_home -v 17)
+Scripts/run-tier.sh layout --results 'feature/wizard/build/test-results/testDebugUnitTest/*.xml' --results 'app/build/test-results/testDebugUnitTest/*.xml' --results 'feature/onboarding/build/test-results/testDebugUnitTest/*.xml' --results 'core/designsystem/build/test-results/testDebugUnitTest/*.xml' --timings 'feature/wizard/build/cf-timings/testDebugUnitTest/*.json' --timings 'app/build/cf-timings/testDebugUnitTest/*.json' --timings 'feature/onboarding/build/cf-timings/testDebugUnitTest/*.json' --timings 'core/designsystem/build/cf-timings/testDebugUnitTest/*.json' -- ./gradlew :feature:wizard:testDebugUnitTest :app:testDebugUnitTest :feature:onboarding:testDebugUnitTest :core:designsystem:testDebugUnitTest -Pcf.tier=layout
+./gradlew :app:lintDebug :feature:wizard:lintDebug :feature:onboarding:lintDebug :core:designsystem:lintDebug
+```
+
+The 107-case checking/fine-tune matrix is unchanged; the new geometry and resize cases are separate focused tests. Busy/wake captures were inspected alongside the supplied board pair. No Chromium render, emulator tier, perf/profile command or `make check` was run. The last two fixes affect test fixtures only, so captures, layout and production lint were not repeated. `make format` preceded quick and formatted the later fixture changes as well.
+
+Quick collected 5,042 passing assertion results (3,226 newly measured cases), zero assertion failures and the two timing overruns; its first-stage wall time was 36.82 s. After the final fixture changes, `TodayTestBoundaryTest` passed all 12 cases in 2.58 s. The skipped quick stages were completed separately: `spotlessCheck` plus build-logic passed (37 certified results, 9.70 s), tooling passed (168 script tests in 19.747 s, 25 contract tests in 0.110 s, 49 l10n tests in 0.017 s, 11 icon tests in 0.073 s), and the final serial timing stage passed with seven certified up-to-date results (0.88 s). No stage was retried for host timing noise. The separate tooling invocation exported the same source-pin environment as Make.
+
+```sh
+make targeted ONLY='app:RootThemeTest'
+make targeted ONLY='feature:onboarding:TermsScreenTest'
+make targeted ONLY='feature:onboarding:TermsScreenTest#policyRowStaysEnabledWhileFailed'
+make targeted ONLY='konsist:TodayTestBoundaryTest'
+Scripts/run-tier.sh build-logic --results 'build-logic/convention/build/test-results/test/*.xml' -- ./gradlew spotlessCheck :build-logic:convention:test
+IOS_REPO=/Users/rickgout/Sites/chronoflow-ios WEB_REPO=/Users/rickgout/Sites/chronoflow-new Scripts/test_scripts.sh
+make timing
+```
+
+No required command was blocked by the sandbox. An optional image-pair assembly helper lacked Pillow (`ModuleNotFoundError: No module named 'PIL'`); existing pair/capture images were inspected directly, without installing a dependency. No production mutation, temporary configuration or new dependency remains. The `pixel` emulator was left running.
+
+## Phase 9f review round 2
+
+2026-11-20. The host confirmed round 1's `make check` passed. This round restores graph-wiring coverage, records explicit fixture warm-ups, removes profiling stdout, and completes the edit-mode discard labels.
+
+`CfRoot` now delegates all font/motion bindings to `RootThemeGraph.rootThemeInputs`. `AppGraph` implements that narrow source interface using its existing getters; the factory selects `dispatchers.io`, preserves the preloader/commit/motion flag and binds the actual launch controller's ready callback. `RootThemeInputsTest` runs three plain JVM cases against a fake source, without constructing AppGraph. Mutating the factory to select `dispatchers.main` failed the identity assertion; mutating motion to constant false failed the enabled-motion assertion. Both mutations were restored and the affected cases passed. The runtime-composition case is now named `themeContentProvidesReduceMotionAndUsesTheSuppliedFontBarrier`, distinguishing its rendering responsibility from the graph factory's tests.
+
+Baseline root rendering was 88 ms warm; the first factory-backed run was 87 ms, and the final isolated run after removing profiling was 92 ms. In the parallel quick run it was 133 ms, below the 1 s limit. The three factory cases were 13 / 1 / 1 ms in quick.
+
+`:core:testing-junit` had no explicit BeforeClass measurement API; its existing allowances apply to test windows. `measureClassWarmup` now writes separate class/SDK/name/ms evidence beside the listener's output, crossing Robolectric's sandbox class-loader boundary through files. `run-tier` exposes it in `timings.json` under `warmups`, separate from `tests`, `measuredTests` and `budgetChecks`. It does not spend, extend or replace an existing test allowance. The writer tests cover returned values, escaping and failed setup; collector tests prove that warm-up evidence cannot stand in for missing test metrics. See [test-diet.md](test-diet.md) for the API.
+
+Terms' baseline native warm-up was 525 ms, printed only to stdout. Its structured isolated records were 740 ms initially and 529 ms after profiling removal. The four-case class still produces exactly one warm-up record. The final quick record was:
+
+```json
+{"class":"net.chronoflow.feature.onboarding.terms.TermsScreenTest","sdk":"36","name":"native-font-runtime","ms":0}
+```
+
+Zero means the runtime had already been initialized in that worker. Both RootTheme and Terms XML outputs contain no per-case stdout. Terms' first isolated case changed from 1.492 s before this round to 1.462 s after cleanup; its final quick class-first case was 1.835 s, below 3 s, with the remaining cases at 156 / 113 / 86 ms. These are macOS JVM/Robolectric figures, not device performance claims.
+
+The public alternative was tested with `@GraphicsMode(NATIVE)` and `Typeface.create` alone:
+
+```sh
+make targeted ONLY='core:testing-junit:ClassWarmupTest feature:onboarding:TermsScreenTest'
+```
+
+The writer tests passed, but Terms failed immediately in BeforeClass:
+
+```text
+java.lang.NullPointerException: Cannot enter synchronized block because "android.graphics.Typeface.SYSTEM_FONT_MAP_LOCK" is null
+```
+
+Robolectric 4.18 defers Typeface's static initialization, so NATIVE alone cannot perform this pre-class warm-up. The internal loader remains, with that reason in one comment. Restoring it passed all four Terms cases; no unsupported public warm-up or mutation remains.
+
+Discard title and confirm copy now come from UI state alongside the existing message, matching pinned `MemberWizardView.swift` l.125–136. Editing uses `Discard your changes?` / `Discard changes`; a new trip uses `Discard this trip?` / `Discard`. Guest welcome-screen and edit-preservation messages remain intact. Before implementation, all four generated IDs were verified in both `values/strings_ios.xml` and `values-nl/strings_ios.xml`. `WizardDiscardUiTest` checks editing/new member/new guest state on the JVM. No screen-copy assertion, new string, Android-only copy or OQ was added.
+
+Validation:
+
+| Scope | Result | Timing |
+|---|---|---:|
+| Root input factory and RootTheme class | All six passed; both binding mutations failed as required and restored cases passed | 8 s Gradle initial run |
+| Warm-up writer/listener/classification | 15 passed | 2 s Gradle |
+| New collector tests | 2 passed | 0.312 s |
+| Clean RootTheme/factory and Terms classes | Passed; stdout empty in both Robolectric classes | Root warm 92 ms; Terms first 1.462 s |
+| Discard UI + checking VM | 16 passed | 4 s Gradle |
+| Touched app/wizard/onboarding lint | Passed | 12 s Gradle |
+| Touched Android modules' layout tier | 455 passed; zero overruns | 16.98 s |
+| `make format` | Passed before quick | 10 s Gradle |
+| `make quick`, once | 5,050 measured cases passed; zero overruns/hangs; class warm-up recorded separately | 44.77 s first stage |
+| Quick build-logic | 37 certified passing results | 1.82 s |
+| Quick tooling | 170 scripts / 25 contracts / 49 l10n / 11 icons passed | 20.423 / 0.114 / 0.017 / 0.077 s |
+| Quick serial timing | 7 measured budget cases passed | 2.83 s |
+
+The changed test-runtime library caused quick to measure every selected case afresh. The stage times above include that validation and the separate tooling stage; the full quick command was not repeated. No required command was sandbox-blocked. Lint/layout ran once for touched Android modules; no emulator, capture, perf/profile tier or `make check` was run. The `pixel` emulator remains running.
+
+## Phase 9f review round 3
+
+2026-11-20. Test-only fixes; production files are unchanged.
+
+`RootThemeTest#cfRootForwardsMotionAndFirstCommit` invokes the real `CfRoot` with a minimal actual AppGraph, distinct main/IO test dispatchers, a non-started launch controller and explicit routed destinations. Two fresh compositions in the one case check initial motion true and false. Each asserts zero preloads before completing its supplied commit, then four preloads on the graph's IO dispatcher and the launch fonts-ready flag. Graph and launch scopes are cancelled/joined during teardown. This avoids unrelated session/navigation initialization without bypassing the CfRoot call site. The first paused-clock draft used an in-place motion toggle; it was replaced with fresh compositions so the test checks both initial values directly.
+
+Both requested mutations were applied to the actual call in `CfRoot.kt`, not the factory:
+
+- `rootThemeInputs(false, firstCommit)` failed: `expected:<true> but was:<false>`.
+- `rootThemeInputs(reduceMotion, CompletableDeferred(Unit))` failed: `expected:<0> but was:<4>`.
+
+Both were restored byte-for-byte before validation. The restored RootTheme class passed all four cases; the new case took **119 ms warm** (4.29-second targeted command) and **312 ms under parallel quick load**, below the 1 s budget. Its isolated first-SDK run was 2.229 s and is a cold-start cost, not a warm-case claim. No budget or production seam was changed.
+
+`ClassWarmupTest` now owns its directories through `TemporaryFolder` with deletion assurance, retaining the existing property-restoration finally block. All six old `core/testing-junit/build/class-warmup-proof-*` directories were removed. Both targeted cases passed (1.49-second command), and zero proof directories remained after targeted and quick runs.
+
+`make format` passed (10 seconds). `make quick` ran once: 5,051 collected assertion results passed, 3,259 cases were newly measured, and no test hung. The first-stage timing gate failed only on untouched `TermsScreenTest#policyRowStaysEnabledWhileFailed`: **3,264 ms > 3,000 ms**. That case was not retried or modified. First-stage wall time was 39.58 seconds. The skipped quick stages passed separately: build-logic 37 certified results (1.38 s); tooling 170 scripts / 25 contracts / 49 l10n / 11 icons (20.158 / 0.112 / 0.017 / 0.074 s); seven certified up-to-date serial timing results (0.87 s). These are macOS-host JVM/Robolectric measurements, not device claims.
+
+```sh
+make targeted ONLY='app:RootThemeTest'
+make targeted ONLY='app:RootThemeTest#cfRootForwardsMotionAndFirstCommit'
+make targeted ONLY='core:testing-junit:ClassWarmupTest'
+make format
+make quick
+```
+
+No required command was sandbox-blocked. No second quick run, emulator tier, perf/profile tier or `make check` was run. The `pixel` emulator remains running.

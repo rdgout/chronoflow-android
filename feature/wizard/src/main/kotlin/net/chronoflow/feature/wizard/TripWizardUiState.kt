@@ -14,6 +14,10 @@ sealed interface TripWizardUiState {
         val sleepComplete: Boolean = false,
         val exclusionWasSaved: Boolean = false,
         val isEditing: Boolean = false,
+        val checkingTitle: String? = null,
+        val allowsSleepOverride: Boolean? = null,
+        val preferences: Map<String, Boolean> = emptyMap(),
+        val cue: net.chronoflow.feature.wizard.checking.WizardHapticCue? = null,
         val optionalPrompts: List<net.chronoflow.core.model.contracts.ApiReviewPrompt> = emptyList(),
     ) : TripWizardUiState
 

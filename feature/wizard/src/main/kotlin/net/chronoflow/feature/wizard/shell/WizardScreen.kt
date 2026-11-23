@@ -34,8 +34,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -59,6 +62,8 @@ import net.chronoflow.core.designsystem.component.CfButtonStyle
 import net.chronoflow.core.designsystem.component.CfIconButton
 import net.chronoflow.core.designsystem.generated.CfTypeScale
 import net.chronoflow.core.designsystem.generated.PlanUITokens
+import net.chronoflow.core.designsystem.haptics.HapticEvent
+import net.chronoflow.core.designsystem.haptics.LocalHaptics
 import net.chronoflow.core.designsystem.icon.LucideGlyphs
 import net.chronoflow.core.designsystem.icon.imageVector
 import net.chronoflow.core.designsystem.layout.LocalSafeInsets
@@ -70,8 +75,11 @@ import net.chronoflow.core.ui.R
 import net.chronoflow.core.wizard.model.MemberWizardStep
 import net.chronoflow.feature.wizard.TripWizardViewModel
 import net.chronoflow.feature.wizard.answers.WizardAnswerSheetHost
+import net.chronoflow.feature.wizard.checking.CheckingOutcome
+import net.chronoflow.feature.wizard.checking.WizardCheckingStep
 import net.chronoflow.feature.wizard.components.rememberServerCopy
 import net.chronoflow.feature.wizard.excluded.WizardExcludedStep
+import net.chronoflow.feature.wizard.finetune.WizardFineTuneStep
 import net.chronoflow.feature.wizard.questions.WizardQuestionStep
 import net.chronoflow.feature.wizard.returnchoice.WizardReturnStep
 import net.chronoflow.feature.wizard.search.AirportSearchSheet
@@ -90,6 +98,10 @@ fun WizardRoot(
     viewModel: TripWizardViewModel,
     onExit: (WizardExit) -> Unit,
 ) {
+    val language =
+        net.chronoflow.core.model.contracts.Language
+            .of(LocalConfiguration.current.locales[0].language)
+    LaunchedEffect(viewModel, language) { viewModel.onEvent(WizardEvent.LanguageChanged(language)) }
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val formatter by viewModel.copyFormatter.collectAsStateWithLifecycle()
     val search by viewModel.searchState.collectAsStateWithLifecycle()
@@ -117,10 +129,27 @@ fun WizardScreen(
     copyFormatter: CopyLineFormatter?,
     onEvent: (WizardEvent) -> Unit,
 ) {
+    val haptics = LocalHaptics.current
+    var handledCue by rememberSaveable { mutableIntStateOf(0) }
+    LaunchedEffect(state.cue) {
+        state.cue?.let { cue ->
+            if (cue.sequence > handledCue) {
+                handledCue = cue.sequence
+                haptics.perform(
+                    when (cue.outcome) {
+                        CheckingOutcome.Success -> HapticEvent.Success
+                        CheckingOutcome.Warning -> HapticEvent.Warning
+                        CheckingOutcome.Error -> HapticEvent.Error
+                    },
+                )
+            }
+        }
+    }
     WizardScaffold(state, onEvent, copyFormatter)
     WizardBackHandling(state, onEvent)
     state.sheet?.let { AirportSearchSheet(it, state.search, state.retryEnabled, onEvent) }
     state.sleep?.openTime?.let { WizardSleepTimeSheet(it, onEvent) }
+    state.fineTune?.openTime?.let { WizardSleepTimeSheet(it, onEvent) }
     WizardAnswerSheetHost(state.answerSheet, onEvent, copyFormatter)
 }
 
@@ -295,7 +324,7 @@ internal fun WizardFooter(
         if (chrome.secondaryClose) {
             CfButton(
                 WizardCopy("Close").resolve(),
-                { onEvent(WizardEvent.CloseNow) },
+                { onEvent(if (chrome.secondaryRequestsClose) WizardEvent.CloseFromFooter else WizardEvent.CloseNow) },
                 Modifier.testTag("wizard.$id.secondary-close"),
                 style = CfButtonStyle.Ghost,
                 fillWidth = true,
@@ -305,7 +334,7 @@ internal fun WizardFooter(
             )
         }
         CfButton(
-            if (chrome.primaryPlain) {
+            chrome.primaryLabel?.resolve() ?: if (chrome.primaryPlain) {
                 WizardCopy(
                     "Change my answers",
                 ).resolve()
@@ -315,12 +344,26 @@ internal fun WizardFooter(
             {
                 onEvent(WizardEvent.Continue(step))
             },
-            Modifier.testTag("wizard.$id.continue"),
+            Modifier.testTag("wizard.$id.continue").semantics {
+                if (chrome.primaryBusy) {
+                    progressBarRangeInfo =
+                        androidx.compose.ui.semantics.ProgressBarRangeInfo.Indeterminate
+                }
+            },
             fillWidth = true,
             minHeight = PlanUITokens.wizardButtonHeight.dp,
             textStyle = CfTheme.type.style(CfTypeScale.wizardButton),
             enabled = chrome.continueEnabled,
-            disabledAlpha = if (chrome.routeComplete) 1f else PlanUITokens.wizardDisabledOpacity,
+            loading = chrome.primaryBusy,
+            loadingDescription = chrome.primaryLabel?.resolve().orEmpty(),
+            disabledAlpha =
+                if (chrome.primaryBusy) {
+                    WizardMetrics.ctaBusyAlpha
+                } else if (chrome.routeComplete) {
+                    1f
+                } else {
+                    PlanUITokens.wizardDisabledOpacity
+                },
             containerColor = if (chrome.primaryPlain) CfTheme.colors.surface2 else CfTheme.colors.primary,
             contentColor = if (chrome.primaryPlain) CfTheme.colors.foreground else CfTheme.colors.primaryForeground,
         )
@@ -396,81 +439,100 @@ private fun WizardStepContent(
     onEvent: (WizardEvent) -> Unit,
     copyFormatter: CopyLineFormatter?,
 ) {
+    val where = state.where
+    val times = state.times
+    val titleCopy =
+        where?.title ?: times?.title ?: state.returnChoice?.title ?: state.sleep?.title ?: state.excluded?.title
+            ?: state.checking?.title ?: state.fineTune?.title
+    val subtitleCopy =
+        where?.subtitle ?: times?.subtitle ?: state.sleep?.subtitle ?: state.checking?.subtitle
+            ?: state.fineTune?.subtitle
+    val serverCopy = rememberServerCopy(copyFormatter)
+    val title = titleCopy?.resolve() ?: state.question?.let { serverCopy(it.title) }
+    val heading: @Composable () -> Unit = {
+        if (title != null) WizardStepHeading(state, key, title, subtitleCopy)
+    }
     Column(Modifier.fillMaxSize().wizardBuiltStepBoundary(key)) {
-        Column(
+        val scroll =
             Modifier
-                .weight(
-                    1f,
-                ).fillMaxWidth()
+                .weight(1f)
+                .fillMaxWidth()
                 .testTag("wizard.scroll")
-                .verticalScroll(
-                    rememberScrollState(),
-                ).padding(horizontal = WizardMetrics.gutter.dp, vertical = WizardMetrics.contentTop.dp),
-            verticalArrangement = Arrangement.spacedBy(PlanUITokens.wizardContentGap.dp),
-        ) {
-            val where = state.where
-            val times = state.times
-            val titleCopy =
-                where?.title ?: times?.title ?: state.returnChoice?.title ?: state.sleep?.title ?: state.excluded?.title
-            val subtitleCopy = where?.subtitle ?: times?.subtitle ?: state.sleep?.subtitle
-            val serverCopy = rememberServerCopy(copyFormatter)
-            val title = titleCopy?.resolve() ?: state.question?.let { serverCopy(it.title) }
-            val locale = LocalConfiguration.current.locales[0]
-            if (title != null) {
-                val titleFocus = remember { FocusRequester() }
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(WizardMetrics.titleGap.dp),
-                    modifier = Modifier.padding(bottom = WizardMetrics.titleExtra.dp),
-                ) {
-                    state.question?.eyebrow?.let {
-                        Text(
-                            it.resolve().uppercase(locale),
-                            Modifier.testTag("wizard.eyebrow"),
-                            color = CfTheme.colors.dawnText,
-                            style = CfTheme.type.style(CfTypeScale.screenEyebrow),
-                        )
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = WizardMetrics.gutter.dp, vertical = WizardMetrics.contentTop.dp)
+        val fineTune = state.fineTune
+        if (fineTune != null) {
+            WizardFineTuneStep(fineTune, copyFormatter, onEvent, scroll, heading)
+        } else {
+            Column(scroll, verticalArrangement = Arrangement.spacedBy(PlanUITokens.wizardContentGap.dp)) {
+                if (title != null) {
+                    heading()
+                    when {
+                        state.checking != null -> WizardCheckingStep(state.checking)
+                        state.sleep != null -> WizardSleepStep(state.sleep, onEvent, copyFormatter)
+                        state.question != null -> WizardQuestionStep(state.question, onEvent)
+                        state.excluded != null -> WizardExcludedStep(state.excluded, copyFormatter)
+                        where != null -> WhereStep(where, copyFormatter, onEvent)
+                        times != null -> WizardTimesStep(times, onEvent, copyFormatter)
+                        state.returnChoice != null -> WizardReturnStep(state.returnChoice, onEvent)
                     }
-                    Text(
-                        title,
-                        Modifier
-                            .testTag("wizard.title")
-                            .focusRequester(titleFocus)
-                            .focusable()
-                            .semantics { heading() },
-                        color = CfTheme.colors.foreground,
-                        style =
-                            CfTheme.type.style(
-                                if (title.length >
-                                    80
-                                ) {
-                                    CfTypeScale.wizardLongTitle
-                                } else {
-                                    CfTypeScale.screenPageTitle
-                                },
-                            ),
-                    )
-                    if (subtitleCopy != null) {
-                        Text(
-                            subtitleCopy.resolve(),
-                            Modifier.testTag("wizard.subtitle"),
-                            color = CfTheme.colors.mutedForeground,
-                            style = CfTheme.type.style(CfTypeScale.wizardSubtitle),
-                        )
-                    }
+                } else if (key.step != MemberWizardStep.question) {
+                    WizardStepSeam(key)
                 }
-                LaunchedEffect(key) { titleFocus.requestFocus() }
-                when {
-                    state.sleep != null -> WizardSleepStep(state.sleep, onEvent)
-                    state.question != null -> WizardQuestionStep(state.question, onEvent)
-                    state.excluded != null -> WizardExcludedStep(state.excluded, copyFormatter)
-                    where != null -> WhereStep(where, copyFormatter, onEvent)
-                    times != null -> WizardTimesStep(times, onEvent)
-                    state.returnChoice != null -> WizardReturnStep(state.returnChoice, onEvent)
-                }
-            } else if (key.step != MemberWizardStep.question) {
-                WizardStepSeam(key)
             }
         }
         if (key == state.step) WizardFooter(state.chrome, key, onEvent)
     }
+}
+
+@Composable
+private fun WizardStepHeading(
+    state: WizardUiState,
+    key: WizardStepKey,
+    title: String,
+    subtitleCopy: WizardCopy?,
+) {
+    val titleFocus = remember { FocusRequester() }
+    val locale = LocalConfiguration.current.locales[0]
+    Column(
+        verticalArrangement = Arrangement.spacedBy(WizardMetrics.titleGap.dp),
+        modifier = Modifier.padding(bottom = WizardMetrics.titleExtra.dp),
+    ) {
+        state.question?.eyebrow?.let {
+            Text(
+                it.resolve().uppercase(locale),
+                Modifier.testTag("wizard.eyebrow"),
+                color = CfTheme.colors.dawnText,
+                style = CfTheme.type.style(CfTypeScale.screenEyebrow),
+            )
+        }
+        Text(
+            title,
+            Modifier
+                .testTag("wizard.title")
+                .focusRequester(titleFocus)
+                .focusable()
+                .semantics { heading() },
+            color = CfTheme.colors.foreground,
+            style =
+                CfTheme.type.style(
+                    if (title.length >
+                        80
+                    ) {
+                        CfTypeScale.wizardLongTitle
+                    } else {
+                        CfTypeScale.screenPageTitle
+                    },
+                ),
+        )
+        if (subtitleCopy != null) {
+            Text(
+                subtitleCopy.resolve(),
+                Modifier.testTag("wizard.subtitle"),
+                color = CfTheme.colors.mutedForeground,
+                style = CfTheme.type.style(CfTypeScale.wizardSubtitle),
+            )
+        }
+    }
+    LaunchedEffect(key) { titleFocus.requestFocus() }
 }

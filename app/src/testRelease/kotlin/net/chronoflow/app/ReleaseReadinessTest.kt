@@ -2,9 +2,11 @@ package net.chronoflow.app
 
 import assertk.assertThat
 import assertk.assertions.isFalse
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
+import net.chronoflow.core.model.DataSource
 import net.chronoflow.core.model.launch.SignedOutReadiness
 import net.chronoflow.core.model.session.SessionPresence
 import net.chronoflow.core.model.session.StoredSession
@@ -15,6 +17,12 @@ import net.chronoflow.core.sync.session.SessionController
 import net.chronoflow.core.sync.session.SessionTeardown
 import net.chronoflow.core.sync.session.StoredDataReadiness
 import net.chronoflow.core.testing.sync.syncAccount
+import net.chronoflow.core.wizard.generation.TripGenerationService
+import net.chronoflow.core.wizard.model.AirportSearchService
+import net.chronoflow.core.wizard.model.MemberWizardDraft
+import net.chronoflow.core.wizard.model.TripWizardAction
+import net.chronoflow.core.wizard.model.WizardDraftStore
+import net.chronoflow.feature.wizard.TripWizardDependencies
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.fail
@@ -25,6 +33,27 @@ class ReleaseReadinessTest {
     @Test fun wizardCaptureCodeAndStartOverrideAreAbsent() {
         missing("net.chronoflow.feature.wizard.debug.WizardBoardCaptureSeed")
         missing("net.chronoflow.feature.wizard.debug.FixedAirportSearch")
+        missing("net.chronoflow.feature.wizard.debug.WizardCompletionBoardSeed")
+        missing("net.chronoflow.feature.wizard.debug.WizardCompletionPrompts")
+        missing("net.chronoflow.feature.wizard.debug.FrozenCheckingClock")
+        val deps =
+            object : TripWizardDependencies {
+                override val store: WizardDraftStore get() = error("unused")
+                override val airportSearch: AirportSearchService get() = error("unused")
+                override val source: DataSource get() = error("unused")
+                override val now = { java.time.Instant.EPOCH }
+                override val writerScope: CoroutineScope get() = error("unused")
+
+                override suspend fun start(): MemberWizardDraft = error("unused")
+
+                override suspend fun startTrip(
+                    id: String,
+                    action: TripWizardAction,
+                ): MemberWizardDraft = error("unused")
+
+                override fun newGeneration(): TripGenerationService = error("unused")
+            }
+        org.junit.Assert.assertNull(deps.uiOverride)
         missing("net.chronoflow.feature.wizard.debug.WizardStepSeam")
         missing("net.chronoflow.feature.wizard.debug.WizardMemoryDraftStore")
         missing("net.chronoflow.debug.WizardDebugSeeds")

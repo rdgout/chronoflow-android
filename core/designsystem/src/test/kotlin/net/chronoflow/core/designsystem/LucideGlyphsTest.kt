@@ -16,7 +16,7 @@ class LucideGlyphsTest {
                 .filter {
                     it.returnType == LucideGlyph::class.java
                 }.map { it.invoke(LucideGlyphs) as LucideGlyph }
-        assertEquals(47, glyphs.size)
+        assertEquals(50, glyphs.size)
         glyphs.forEach { glyph -> glyph.paths.forEach { PathParser().parsePathString(it.d) } }
         assertEquals(
             "M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z",
@@ -33,6 +33,13 @@ class LucideGlyphsTest {
         assertEquals(5, LucideGlyphs.FileText.paths.size)
         assertEquals(2, LucideGlyphs.KeyRound.paths.size)
         assertTrue(LucideGlyphs.KeyRound.paths[1].filled)
+        assertTrue(
+            LucideGlyphs.Star.paths
+                .single()
+                .filled,
+        )
+        assertEquals(2, LucideGlyphs.Clock.paths.size)
+        assertEquals("M12 6v6l4 2", LucideGlyphs.Clock.paths[1].d)
         assertSame(LucideGlyphs.Moon.imageVector(), LucideGlyphs.Moon.imageVector())
     }
 }

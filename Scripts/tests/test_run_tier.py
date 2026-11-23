@@ -347,6 +347,33 @@ sys.exit(module.main(sys.argv[2:]))
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(self._report()["measuredTests"], 0)
 
+    def test_class_warmups_are_reported_separately_from_cases(self):
+        self._xml()
+        self._timings([self._entry()])
+        path = self.root / "tm/1.json"
+        data = json.loads(path.read_text())
+        warmup = {"class": "a.B", "sdk": "36", "name": "fonts", "ms": 750}
+        data["warmups"] = [warmup]
+        path.write_text(json.dumps(data))
+        result = self.tier("t", "--results", "out/*.xml", "--timings", "tm/*.json", "--",
+                           *self._write_during_run("out/TEST-a.xml", "tm/1.json"))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self._report()["warmups"], [warmup])
+        self.assertEqual(self._report()["measuredTests"], 1)
+        self.assertEqual(len(self._report()["budgetChecks"]), 1)
+
+    def test_class_warmup_cannot_replace_test_timing_evidence(self):
+        self._xml()
+        self._timings([])
+        path = self.root / "tm/1.json"
+        data = json.loads(path.read_text())
+        data["warmups"] = [{"class": "a.B", "sdk": "36", "name": "fonts", "ms": 750}]
+        path.write_text(json.dumps(data))
+        result = self.tier("t", "--results", "out/*.xml", "--timings", "tm/*.json", "--",
+                           *self._write_during_run("out/TEST-a.xml", "tm/1.json"))
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertIn("without a timing entry", result.stderr)
+
     def test_exempt_and_warmup_pass(self):
         self._xml(cases=(("a.B", "t1", "0.1"), ("a.B", "t2", "0.1"), ("a.B", "t3", "2.5")))
         self._timings(

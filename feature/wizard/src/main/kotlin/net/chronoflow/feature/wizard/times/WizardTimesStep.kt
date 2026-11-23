@@ -29,11 +29,12 @@ import net.chronoflow.core.designsystem.haptics.HapticEvent
 import net.chronoflow.core.designsystem.haptics.LocalHaptics
 import net.chronoflow.core.designsystem.theme.CfTheme
 import net.chronoflow.core.designsystem.theme.LocalReduceMotion
+import net.chronoflow.core.plan.CopyLineFormatter
 import net.chronoflow.feature.wizard.components.WizardBanner
+import net.chronoflow.feature.wizard.components.fieldCopy
 import net.chronoflow.feature.wizard.shell.WizardEvent
 import net.chronoflow.feature.wizard.ui.WizardCopy
 import net.chronoflow.feature.wizard.ui.resolve
-import net.chronoflow.feature.wizard.ui.wizardCopy
 import kotlin.coroutines.EmptyCoroutineContext
 
 private object InstantWizardScroll : MotionDurationScale {
@@ -44,6 +45,7 @@ private object InstantWizardScroll : MotionDurationScale {
 internal fun WizardTimesStep(
     ui: WizardTimesUi,
     onEvent: (WizardEvent) -> Unit,
+    copyFormatter: CopyLineFormatter? = null,
 ) {
     val pick =
         remember(onEvent) {
@@ -86,11 +88,11 @@ internal fun WizardTimesStep(
         }
     }
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(PlanUITokens.wizardContentGap.dp)) {
-        ui.banner?.let { WizardBanner(it.wizardCopy().resolve(), "wizard.${ui.id}.past") }
+        ui.banner?.let { WizardBanner(fieldCopy(it, copyFormatter), "wizard.${ui.id}.past") }
         ui.cards.forEachIndexed { position, card ->
             key(card.id) {
                 if (position > 0) WizardConnectionChip(card.connection, card.index)
-                WizardFlightCard(card, ui.timeFormat, requesters.getValue(card.index), pick)
+                WizardFlightCard(card, ui.timeFormat, requesters.getValue(card.index), pick, copyFormatter)
             }
         }
         ui.flightMinutes?.let { minutes ->

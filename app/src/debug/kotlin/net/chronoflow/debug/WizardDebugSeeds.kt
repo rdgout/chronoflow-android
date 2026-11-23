@@ -51,6 +51,13 @@ internal class WizardDebugSeeds {
                     val searchClock = AtomicReference(WizardBoardCaptureSeed.now)
                     return object : TripWizardDependencies by session {
                         override val store = memory
+                        override val uiOverride = WizardBoardCaptureSeed.uiOverride(board)
+                        override val checkingClock =
+                            if (uiOverride != null) {
+                                net.chronoflow.feature.wizard.debug.FrozenCheckingClock.clock
+                            } else {
+                                session.checkingClock
+                            }
                         override val now: () -> Instant = { WizardBoardCaptureSeed.now }
                         override val airportSearch =
                             AirportSearchService(

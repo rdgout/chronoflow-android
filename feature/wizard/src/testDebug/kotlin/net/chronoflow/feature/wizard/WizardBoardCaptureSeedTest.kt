@@ -71,7 +71,21 @@ class WizardBoardCaptureSeedTest(
                     "WizardStopSearchSecond" to listOf(3, false, "AMS", "NRT", true, 1, stop, "Ban", false),
                     "WizardStopSearchHome" to listOf(2, true, "NRT", "AMS", false, 1, stop, "Du", false),
                     "WizardDiscard" to listOf(2, false, "AMS", "NRT", false, null, null, null, true),
-                )
+                ) +
+                    (net.chronoflow.feature.wizard.debug.WizardCompletionBoardSeed.baseNames + "WizardSheetFreeSleep")
+                        .associateWith { name ->
+                            listOf(
+                                if (name == "WizardFineTuneMulti") 3 else 2,
+                                false,
+                                "AMS",
+                                "NRT",
+                                false,
+                                null,
+                                null,
+                                null,
+                                false,
+                            )
+                        }
             return WizardBoardCaptureSeed.names.filter { WizardBoardCaptureSeed.baseName(it) in expected }.map {
                 arrayOf<Any>(
                     it,

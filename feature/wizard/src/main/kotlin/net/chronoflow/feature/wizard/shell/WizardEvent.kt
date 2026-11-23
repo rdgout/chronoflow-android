@@ -4,6 +4,29 @@ import net.chronoflow.core.model.contracts.ApiAirportSuggestion
 import net.chronoflow.core.wizard.model.WizardAirportSheet
 
 sealed interface WizardEvent {
+    data class LanguageChanged(
+        val language: net.chronoflow.core.model.contracts.Language,
+    ) : WizardEvent
+
+    data class OpenPrompt(
+        val id: String?,
+    ) : WizardEvent
+
+    data class SetPreparationDays(
+        val days: Int,
+    ) : WizardEvent
+
+    data class SetSleepOverride(
+        val enabled: Boolean,
+    ) : WizardEvent
+
+    data class SetPreference(
+        val field: String,
+        val value: Boolean,
+    ) : WizardEvent
+
+    data object CloseFromFooter : WizardEvent
+
     data object CloseNow : WizardEvent
 
     data class AnswerQuestion(

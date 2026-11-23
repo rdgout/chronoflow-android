@@ -99,7 +99,7 @@ def read_tests(files):
 
 
 def collect_timings(root, patterns, started_ns):
-    files, entries, measured_dirs, failed_dirs = [], [], set(), set()
+    files, entries, warmups, measured_dirs, failed_dirs = [], [], [], set(), set()
     for pattern in patterns:
         for match in sorted(glob.glob(str(root / pattern), recursive=True)):
             path = Path(match)
@@ -113,11 +113,12 @@ def collect_timings(root, patterns, started_ns):
                 continue
             files.append(path)
             entries.extend(data["tests"])
+            warmups.extend(data.get("warmups", []))
             if data["tests"]:
                 measured_dirs.add(path.parent)
             if any(entry["status"] == "over" for entry in data["tests"]):
                 failed_dirs.add(path.parent)
-    return files, entries, measured_dirs, failed_dirs
+    return files, entries, warmups, measured_dirs, failed_dirs
 
 
 def collect_hangs(root, out_dir, patterns, started_ns):
@@ -373,7 +374,7 @@ def execute_tier(root, out_dir, tier, patterns, timing_patterns, command, env, e
     files, tests = collect(root, out_dir, patterns)
     current_files = [path for path in files if path.stat().st_mtime_ns >= started_ns]
     current_tests = read_tests(current_files)
-    timing_files, listener_entries, measured_dirs, failed_dirs = collect_timings(root, timing_patterns, started_ns)
+    timing_files, listener_entries, warmups, measured_dirs, failed_dirs = collect_timings(root, timing_patterns, started_ns)
     missing_evidence, missing_dirs = missing_execution_evidence(
         root, timing_patterns, started_ns, current_files, timing_files, measured_dirs
     )
@@ -421,7 +422,7 @@ def execute_tier(root, out_dir, tier, patterns, timing_patterns, command, env, e
         failed_dirs.update(fresh_dirs)
     errors.extend(invalidate_task_outputs(root, failed_dirs))
     report.update({
-        "tests": tests, "measuredTests": len(current_tests), "budgetChecks": checks,
+        "tests": tests, "measuredTests": len(current_tests), "budgetChecks": checks, "warmups": warmups,
         "overBudget": len(over), "slowest": sorted(checks, key=lambda c: c["ms"], reverse=True)[:10],
         "reuseScope": "all timing directories matched by the tier globs",
         "uncertifiedOutputs": [str(path.relative_to(root)) for path in sorted(fresh_dirs - eligible)],
@@ -467,7 +468,7 @@ def main(argv):
     report = {
         "tier": tier, "command": command,
         "started": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "tests": [], "budgets": BUDGETS, "budgetChecks": [], "overBudget": 0, "slowest": [], "errors": [],
+        "tests": [], "budgets": BUDGETS, "warmups": [], "budgetChecks": [], "overBudget": 0, "slowest": [], "errors": [],
     }
     start = time.monotonic()
     exit_code = 2

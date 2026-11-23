@@ -25,6 +25,8 @@ import kotlinx.serialization.json.JsonPrimitive
 import net.chronoflow.core.model.DataFailure
 import net.chronoflow.core.model.FieldMessage
 import net.chronoflow.core.model.contracts.ApiAirportSuggestion
+import net.chronoflow.core.model.contracts.Language
+import net.chronoflow.core.model.contracts.PromptKind
 import net.chronoflow.core.model.contracts.TimeFormat
 import net.chronoflow.core.model.device.DeviceIdentityFailure
 import net.chronoflow.core.model.session.SessionFailure
@@ -39,12 +41,18 @@ import net.chronoflow.core.wizard.model.RecoveryRejected
 import net.chronoflow.core.wizard.model.TripWizardAction
 import net.chronoflow.core.wizard.model.WizardAirportSheet
 import net.chronoflow.core.wizard.model.WizardClockRounding
+import net.chronoflow.core.wizard.model.WizardDateTime
 import net.chronoflow.core.wizard.model.WizardMode
+import net.chronoflow.core.wizard.model.allowsSleepOverride
 import net.chronoflow.core.wizard.model.answerOptional
 import net.chronoflow.core.wizard.model.answerQuestion
+import net.chronoflow.core.wizard.model.beginChecking
 import net.chronoflow.core.wizard.model.changeExcludedAnswers
+import net.chronoflow.core.wizard.model.checkingTitle
 import net.chronoflow.core.wizard.model.chooseReturn
+import net.chronoflow.core.wizard.model.editForm
 import net.chronoflow.core.wizard.model.exclusionWasSaved
+import net.chronoflow.core.wizard.model.finishFineTune
 import net.chronoflow.core.wizard.model.finishFlightInput
 import net.chronoflow.core.wizard.model.finishOutboundStep
 import net.chronoflow.core.wizard.model.finishReturn
@@ -56,17 +64,22 @@ import net.chronoflow.core.wizard.model.navigationPath
 import net.chronoflow.core.wizard.model.openPrompt
 import net.chronoflow.core.wizard.model.optionalPrompts
 import net.chronoflow.core.wizard.model.popNavigation
+import net.chronoflow.core.wizard.model.preference
 import net.chronoflow.core.wizard.model.progress
 import net.chronoflow.core.wizard.model.resumeChecking
 import net.chronoflow.core.wizard.model.resumeCompletion
 import net.chronoflow.core.wizard.model.reviewInput
 import net.chronoflow.core.wizard.model.setDatePart
+import net.chronoflow.core.wizard.model.setPreference
 import net.chronoflow.core.wizard.model.setSleep
 import net.chronoflow.core.wizard.model.setTimePart
 import net.chronoflow.core.wizard.model.showsBack
 import net.chronoflow.core.wizard.model.sleepComplete
 import net.chronoflow.feature.wizard.answers.SUPPORTED_SHEET_KINDS
 import net.chronoflow.feature.wizard.answers.WizardAnswerSheetState
+import net.chronoflow.feature.wizard.checking.CheckingOutcome
+import net.chronoflow.feature.wizard.checking.WizardHapticCue
+import net.chronoflow.feature.wizard.finetune.promptLegIndex
 import net.chronoflow.feature.wizard.shell.WizardEvent
 import net.chronoflow.feature.wizard.shell.WizardExit
 import net.chronoflow.feature.wizard.shell.WizardStepKey
@@ -90,6 +103,7 @@ class TripWizardViewModel(
 ) : ViewModel() {
     private val mutableFormatter = MutableStateFlow<net.chronoflow.core.plan.CopyLineFormatter?>(null)
     val copyFormatter = mutableFormatter.asStateFlow()
+    private val uiOverride = deps?.uiOverride
     private val pickerNow = deps?.now ?: { Instant.EPOCH }
     private val mutableClosing = MutableStateFlow(false)
     val closing = mutableClosing.asStateFlow()
@@ -114,8 +128,19 @@ class TripWizardViewModel(
         combine(continueFailures, mutablePicker, mutableOpenTime) { failures, picker, time ->
             Triple(failures, picker, time)
         }
+    private var answerOpenedAt = Instant.EPOCH
+    private var answerLanguage: Language = Language.En
     private val mutableAnswer = MutableStateFlow<WizardAnswerSheetState?>(null)
-    private val stepPresentation = combine(timesPresentation, mutableAnswer) { times, answer -> times to answer }
+    private val stepPresentation =
+        combine(
+            timesPresentation,
+            mutableAnswer,
+        ) {
+            times,
+            answer,
+            ->
+            times to answer
+        }
     val uiState =
         combine(
             state,
@@ -133,26 +158,46 @@ class TripWizardViewModel(
                         closing,
                         dialog,
                         timeFormat,
-                        times.second?.openedAt ?: Instant.EPOCH,
+                        times.second?.openedAt ?: answerOpenedAt,
                         times.first[step] ?: 0,
                         times.second?.picker,
                         openTime = times.third,
                         answerSheet = answer,
+                        uiOverride = uiOverride,
                     ).let { ui ->
                         ui.copy(
                             sheet = ui.sheet?.copy(seedQuery = presentation.query),
                             chrome =
                                 ui.chrome.copy(
                                     showBack =
-                                        wizard?.showsBack == true,
+                                        if (uiOverride != null && step == WizardStepKey.Checking) {
+                                            ui.chrome.showBack
+                                        } else {
+                                            wizard?.showsBack == true
+                                        },
                                 ),
                         )
                     }
             }
         }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
-    val chrome = uiState.map { it?.chrome }.distinctUntilChanged().stateIn(viewModelScope, SharingStarted.Eagerly, null)
-    val where = uiState.map { it?.where }.distinctUntilChanged().stateIn(viewModelScope, SharingStarted.Eagerly, null)
-    val sheet = uiState.map { it?.sheet }.distinctUntilChanged().stateIn(viewModelScope, SharingStarted.Eagerly, null)
+    val chrome =
+        uiState.map { it?.chrome }.distinctUntilChanged().stateIn(
+            viewModelScope,
+            SharingStarted.Eagerly,
+            null,
+        )
+    val where =
+        uiState.map { it?.where }.distinctUntilChanged().stateIn(
+            viewModelScope,
+            SharingStarted.Eagerly,
+            null,
+        )
+    val sheet =
+        uiState.map { it?.sheet }.distinctUntilChanged().stateIn(
+            viewModelScope,
+            SharingStarted.Eagerly,
+            null,
+        )
     private var generation: TripGenerationService? = null
     private var discarded = false
     var wizard: MemberWizardModel? = null
@@ -255,9 +300,20 @@ class TripWizardViewModel(
                 try {
                     val draft =
                         when (entry) {
-                            WizardEntry.Create -> deps.start()
-                            is WizardEntry.Edit -> deps.startTrip(entry.tripId, TripWizardAction.edit)
-                            is WizardEntry.Duplicate -> deps.startTrip(entry.tripId, TripWizardAction.duplicate)
+                            WizardEntry.Create -> {
+                                deps.start()
+                            }
+
+                            is WizardEntry.Edit -> {
+                                deps.startTrip(entry.tripId, TripWizardAction.edit)
+                            }
+
+                            is WizardEntry.Duplicate -> {
+                                deps.startTrip(
+                                    entry.tripId,
+                                    TripWizardAction.duplicate,
+                                )
+                            }
                         }
                     currentCoroutineContext().ensureActive()
                     val service = deps.newGeneration().also { generation = it }
@@ -272,11 +328,25 @@ class TripWizardViewModel(
                             writerScope = deps.writerScope,
                         )
                     wizard = model
-                    model.resumeChecking()
-                    model.resumeCompletion()
+                    if (uiOverride == null) {
+                        model.resumeChecking()
+                        model.resumeCompletion()
+                    }
+                    var previousSnapshot: net.chronoflow.core.wizard.model.MemberWizardSnapshot? = null
+                    var cue: WizardHapticCue? = null
                     var previousStep: WizardStepKey? = null
                     model.snapshots.collect { snapshot ->
-                        val nextStep = WizardStepKey(snapshot.draft.state.step, snapshot.draft.state.questionIndex)
+                        val previous = previousSnapshot
+                        val outcome =
+                            net.chronoflow.feature.wizard.checking
+                                .checkingOutcome(previous, snapshot)
+                        if (outcome != null) cue = WizardHapticCue(outcome, (cue?.sequence ?: 0) + 1)
+                        previousSnapshot = snapshot
+                        val nextStep =
+                            WizardStepKey(
+                                snapshot.draft.state.step,
+                                snapshot.draft.state.questionIndex,
+                            )
                         if (previousStep != null && previousStep != nextStep) mutableOpenTime.value = null
                         previousStep = nextStep
                         val prompt =
@@ -289,6 +359,7 @@ class TripWizardViewModel(
                                 mutableOpenTime.value = null
                             }
                         } else if (mutableAnswer.value?.prompt?.id != prompt.id) {
+                            answerOpenedAt = pickerNow()
                             mutableAnswer.value =
                                 WizardAnswerSheetState.load(
                                     prompt,
@@ -296,6 +367,8 @@ class TripWizardViewModel(
                                     snapshot.draft.state.savedProfile,
                                     snapshot.draft.fieldErrors,
                                     snapshot.draft.form,
+                                    initialError = uiOverride?.answerError,
+                                    language = answerLanguage,
                                 )
                         }
                         val finished = snapshot.closed && snapshot.createdTripID != null
@@ -311,6 +384,12 @@ class TripWizardViewModel(
                                     exclusionWasSaved = model.exclusionWasSaved,
                                     isEditing = model.isEditing,
                                     optionalPrompts = model.optionalPrompts,
+                                    checkingTitle = model.checkingTitle,
+                                    allowsSleepOverride = model.allowsSleepOverride,
+                                    preferences =
+                                        listOf("exclude_caffeine", "flight_movement_breaks")
+                                            .associateWith(model::preference),
+                                    cue = cue,
                                 )
                             }
                     }
@@ -413,6 +492,14 @@ class TripWizardViewModel(
         mutableOpenTime.value = null
         try {
             when (step) {
+                WizardStepKey.Checking -> {
+                    if (model.checking.failure != null) model.beginChecking()
+                }
+
+                WizardStepKey.FineTune -> {
+                    model.finishFineTune()
+                }
+
                 WizardStepKey.Excluded -> {
                     model.changeExcludedAnswers()
                 }
@@ -485,6 +572,18 @@ class TripWizardViewModel(
         }
     }
 
+    private fun closeFromFooter() {
+        if (closing.value) return
+        val model = wizard
+        if (model?.draft?.state?.step == MemberWizardStep.excluded ||
+            model?.draft?.state?.mode == WizardMode.guest || model?.hasChanges != true
+        ) {
+            close()
+        } else {
+            mutableDialog.value = true
+        }
+    }
+
     fun dismissDiscard() {
         if (!closing.value) mutableDialog.value = false
     }
@@ -554,8 +653,78 @@ class TripWizardViewModel(
         if (picker.index in range) mutablePicker.value = OpenPicker(picker, pickerNow())
     }
 
+    private fun setPreparationDays(requested: Int) {
+        if (closing.value) return
+        val model = wizard ?: return
+        val days = requested.coerceIn(0, net.chronoflow.core.wizard.model.WizardForm.maxPreparationDays)
+        if (days != model.draft.form.preparation.days) {
+            model.editForm { it.copy(preparation = it.preparation.copy(days = days)) }
+        }
+    }
+
+    private fun setSleepOverride(enabled: Boolean) {
+        if (closing.value) return
+        val model = wizard ?: return
+        if (!model.allowsSleepOverride || model.draft.form.override.enabled == enabled) return
+        val profile = model.draft.state.profile
+        val saved = model.draft.state.savedProfile
+        model.editForm { form ->
+            val old = form.override
+            form.copy(
+                override =
+                    old.copy(
+                        enabled = enabled,
+                        habitualBed =
+                            if (enabled) {
+                                old.habitualBed ?: profile["habitual_bed"].clockString()
+                                    ?: saved?.get("habitualBed").clockString()
+                            } else {
+                                old.habitualBed
+                            },
+                        habitualWake =
+                            if (enabled) {
+                                old.habitualWake ?: profile["habitual_wake"].clockString()
+                                    ?: saved?.get("habitualWake").clockString()
+                            } else {
+                                old.habitualWake
+                            },
+                    ),
+            )
+        }
+    }
+
     fun onEvent(event: WizardEvent) {
         when (event) {
+            is WizardEvent.LanguageChanged -> {
+                answerLanguage = event.language
+                mutableAnswer.value = mutableAnswer.value?.withLanguage(event.language)
+            }
+
+            is WizardEvent.OpenPrompt -> {
+                if (!closing.value) wizard?.openPrompt(event.id)
+            }
+
+            is WizardEvent.SetPreparationDays -> {
+                setPreparationDays(event.days)
+            }
+
+            is WizardEvent.SetSleepOverride -> {
+                setSleepOverride(event.enabled)
+            }
+
+            is WizardEvent.SetPreference -> {
+                if (!closing.value) {
+                    wizard?.setPreference(
+                        event.field,
+                        event.value,
+                    )
+                }
+            }
+
+            WizardEvent.CloseFromFooter -> {
+                closeFromFooter()
+            }
+
             WizardEvent.CloseNow -> {
                 close()
             }
@@ -599,11 +768,25 @@ class TripWizardViewModel(
                             event.field in setOf("habitual_bed", "habitual_wake")
                     val free =
                         mutableAnswer.value?.let {
-                            it.prompt.kind == net.chronoflow.core.model.contracts.PromptKind.FreeDayTimes &&
+                            it.prompt.kind == PromptKind.FreeDayTimes &&
                                 it.values["free_day_status"] == JsonPrimitive("declared") &&
                                 event.field in setOf("free_day_bed", "free_day_wake")
                         } == true
-                    if (usual || free) mutableOpenTime.value = event.field
+                    val override =
+                        model.draft.state.step == MemberWizardStep.fineTune && model.allowsSleepOverride &&
+                            model.draft.form.override.enabled && !model.reviewing &&
+                            event.field in setOf("override.habitual_bed", "override.habitual_wake")
+                    val room =
+                        mutableAnswer.value?.let { answer ->
+                            val index = promptLegIndex(answer.prompt, model.draft.form)
+                            answer.prompt.kind == PromptKind.Room &&
+                                answer.values["stay.bed_available_mode"] == JsonPrimitive("declared") &&
+                                event.field == "stay.bed_available_from_local" &&
+                                model.draft.form.legs.getOrNull(index)?.arriveLocal?.let {
+                                    WizardDateTime.date(it)
+                                } != null
+                        } == true
+                    if (usual || free || override || room) mutableOpenTime.value = event.field
                 }
             }
 
@@ -618,6 +801,44 @@ class TripWizardViewModel(
                         event.field in setOf("habitual_bed", "habitual_wake") &&
                             model.draft.state.step == MemberWizardStep.sleep
                     val answer = mutableAnswer.value
+                    val override =
+                        event.field in setOf("override.habitual_bed", "override.habitual_wake") &&
+                            model.draft.state.step == MemberWizardStep.fineTune && model.allowsSleepOverride
+                    if (override) {
+                        mutableOpenTime.value = null
+                        val value =
+                            net.chronoflow.feature.wizard.sleep
+                                .clockString(event.hour, event.minute)
+                        val old = model.draft.form.override
+                        val stored = if (event.field.endsWith("habitual_bed")) old.habitualBed else old.habitualWake
+                        if (event.touched && value != stored) {
+                            model.editForm {
+                                it.copy(
+                                    override =
+                                        if (event.field.endsWith("habitual_bed")) {
+                                            old.copy(habitualBed = value)
+                                        } else {
+                                            old.copy(habitualWake = value)
+                                        },
+                                )
+                            }
+                        }
+                        return
+                    }
+                    if (event.field == "stay.bed_available_from_local" && answer != null) {
+                        mutableOpenTime.value = null
+                        if (event.touched) {
+                            val index = promptLegIndex(answer.prompt, model.draft.form)
+                            mutableAnswer.value =
+                                answer.setRoomTime(
+                                    clockString(event.hour, event.minute),
+                                    model.draft.form.legs
+                                        .getOrNull(index)
+                                        ?.arriveLocal,
+                                )
+                        }
+                        return
+                    }
                     val stored = if (usual) model.draft.state.profile[event.field] else answer?.values?.get(event.field)
                     val changed =
                         WizardClockRounding.change(
@@ -744,9 +965,13 @@ class TripWizardViewModel(
                 if (closing.value || model.draft.state.promptSheetID != answer.prompt.id) return@launch
                 val error = answer.validate()
                 if (error != null) {
-                    mutableAnswer.value = answer.copy(error = FieldMessage(error), failures = answer.failures + 1)
+                    mutableAnswer.value =
+                        answer.copy(
+                            error = FieldMessage(error),
+                            failures = answer.failures + 1,
+                        )
                 } else {
-                    model.answerOptional(answer.prompt, answer.values)
+                    model.answerOptional(answer.prompt, answer.submittedValues())
                 }
             } catch (_: CancellationException) {
                 currentCoroutineContext().ensureActive()
