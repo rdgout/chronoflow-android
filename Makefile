@@ -10,7 +10,7 @@ export IOS_REPO WEB_REPO
 GRADLE := ./gradlew --console=plain
 RUN_TIER := Scripts/run-tier.sh
 JVM_MODULES := core:model core:plan core:sync core:reminders core:wizard core:network core:data-mock core:testing core:testing-junit konsist tools:tokengen
-TIMING_MODULES :=
+TIMING_MODULES := core:plan
 RESULTS_DEBUG := --results '*/build/test-results/testDebugUnitTest/*.xml' --results '*/*/build/test-results/testDebugUnitTest/*.xml'
 TIMINGS_DEBUG := --timings '*/build/cf-timings/testDebugUnitTest/*.json' --timings '*/*/build/cf-timings/testDebugUnitTest/*.json'
 RESULTS_JVM := --results 'konsist/build/test-results/test/*.xml' --results 'core/*/build/test-results/test/*.xml' --results 'tools/*/build/test-results/test/*.xml'
@@ -24,15 +24,17 @@ GENERATORS += icons
 GENERATORS += strings
 GENERATORS += plan-copy
 GENERATORS += contracts
+GENERATORS += mock-seed
 GENERATOR_CHECKS += tokens-check
 GENERATOR_CHECKS += fonts-check
 GENERATOR_CHECKS += assets-check
 GENERATOR_CHECKS += strings-check
 GENERATOR_CHECKS += plan-copy-check
 GENERATOR_CHECKS += contracts-check
+GENERATOR_CHECKS += mock-seed-check
 
 .PHONY: quick check test timing format lint targeted generate generators-check size emu emu-down emu-clean avd-create matrix du
-.PHONY: plan-copy-check strings-check tokens tokens-check fonts fonts-check icons assets assets-check strings plan-copy contracts contracts-check snapshots captures perf perf-timeline baseline-profile
+.PHONY: plan-copy-check strings-check tokens tokens-check fonts fonts-check icons assets assets-check strings plan-copy contracts contracts-check snapshots captures perf perf-timeline baseline-profile mock-seed mock-seed-check
 
 quick:
 	$(RUN_TIER) quick $(RESULTS_JVM) $(RESULTS_DEBUG) $(TIMINGS_JVM) $(TIMINGS_DEBUG) -- $(GRADLE) spotlessCheck $(JVM_MODULES:%=:%:test) testDebugUnitTest -Pcf.tier=quick
@@ -145,6 +147,12 @@ contracts:
 contracts-check:
 	python3 -I tools/contracts-gen/copy_fixtures.py --ios-repo "$(IOS_REPO)" --check
 	python3 -I tools/contracts-gen/generate_kotlin.py --web-repo "$(WEB_REPO)" --check
+
+mock-seed:
+	python3 -I tools/fixtures/extract_mock_seed.py --ios-repo "$(IOS_REPO)"
+
+mock-seed-check:
+	python3 -I tools/fixtures/extract_mock_seed.py --ios-repo "$(IOS_REPO)" --check
 
 perf:
 	$(RUN_TIER) perf --device --results 'benchmark/build/outputs/androidTest-results/connected/**/*.xml' -- Scripts/perf-startup.sh

@@ -29,6 +29,7 @@ tasks.register<JavaExec>("generateTokens") {
     args("--root", repoRoot.asFile.absolutePath)
     inputs.files(designInputs)
     inputs.dir(iosInputs)
+    inputs.file(repoRoot.file("tools/tokengen/android-overlay.json"))
     outputs.upToDateWhen { false }
 }
 
@@ -41,6 +42,7 @@ tasks.register<JavaExec>("verifyTokens") {
     args("--root", repoRoot.asFile.absolutePath, "--check", "--stamp", stamp.get().asFile.absolutePath)
     inputs.files(designInputs)
     inputs.dir(iosInputs)
+    inputs.file(repoRoot.file("tools/tokengen/android-overlay.json"))
     committedOutputs.forEach { inputs.files(it) }
     outputs.file(stamp)
 }
@@ -49,4 +51,5 @@ tasks.withType<Test>().configureEach {
     systemProperty("cf.repoRoot", repoRoot.asFile.absolutePath)
     inputs.files(designInputs)
     inputs.dir(iosInputs)
+    inputs.file(repoRoot.file("tools/tokengen/android-overlay.json"))
 }

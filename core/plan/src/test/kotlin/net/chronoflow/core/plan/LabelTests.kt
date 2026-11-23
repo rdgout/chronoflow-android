@@ -14,6 +14,7 @@ import net.chronoflow.core.model.contracts.DayNoticesView
 import net.chronoflow.core.model.contracts.DayStatus
 import net.chronoflow.core.model.contracts.DayZoneView
 import net.chronoflow.core.model.contracts.LabelPhase
+import net.chronoflow.core.model.contracts.Lane
 import net.chronoflow.core.model.contracts.Language
 import net.chronoflow.core.model.contracts.NoteRole
 import net.chronoflow.core.model.contracts.NoteView
@@ -139,6 +140,12 @@ class LabelTests {
         assertThat(
             isOptionalStep(block("unknown", 0.0, 60.0).copy(type = BlockType.Unknown("future"))),
         ).isEqualTo(false)
+        val unknownType = block("unknown", 0.0, 60.0).copy(type = BlockType.Unknown("future"))
+        assertThat(layoutDay(sampleDay(), listOf(unknownType), emptyIndex()).placed.values.all { it.isEmpty() })
+            .isEqualTo(true)
+        val unknownLane = unknownType.copy(type = BlockType.Sleep, lane = Lane.Unknown("future"))
+        assertThat(layoutDay(sampleDay(), listOf(unknownLane), emptyIndex()).placed.values.all { it.isEmpty() })
+            .isEqualTo(true)
     }
 
     private fun sleep(
@@ -194,6 +201,10 @@ class LabelTests {
             ),
         ).isEmpty()
         assertThat(dayZoneLabel(day)).isEqualTo("Amsterdam \u2192 Tokyo")
+        val layout = layoutDay(day, emptyList(), emptyIndex())
+        assertThat(
+            CopyLineFormatter(testCatalog).nowLabel(layout, planDate("2026-10-15T01:00Z")!!, CopyFormat(Language.En)),
+        ).isEqualTo("10:00")
     }
 
     @Test fun noticesStatusAndLabelCatalog() {

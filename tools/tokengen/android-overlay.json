@@ -1,0 +1,8 @@
+{
+  "planMetrics": {
+    "minTouchTarget": {
+      "value": 48,
+      "replaces": "PlanMetrics.touch (44 pt) as the minimum hit target, 04 OQ-T5, plan A10"
+    }
+  }
+}

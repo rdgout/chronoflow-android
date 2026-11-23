@@ -43,6 +43,8 @@ DEBUG_ONLY = {("app", "Debug route: %@")}
 MAXLEN = 48
 LOCK_PATH = "tools/l10n/names.lock.json"
 OVERLAY_PATH = "tools/l10n/android-only.json"
+PAGE_COPY_SOURCE = KIT + "/PlanUI/Resources/Localizable.xcstrings"
+PAGE_COPY_PATH = "core/plan/src/main/resources/page_copy.json"
 INDEX_PATH = "core/ui/src/main/kotlin/net/chronoflow/core/ui/l10n/generated/CopyIndex.generated.kt"
 LINT_IGNORES_PATH = "tools/l10n/lint-ignores.json"
 UNTRANSLATABLE_PATH = "core/ui/src/main/res/values/strings_untranslatable.xml"
@@ -426,9 +428,31 @@ def build(catalogs, lock, overlay=None, reserved=frozenset(), pin="0" * 40, lint
                 header(pin, OVERLAY_PATH) + body + "</resources>\n"
             ).encode("utf-8")
     files[INDEX_PATH] = copy_index(pin, items, android, replaced)
+    if PAGE_COPY_SOURCE in catalogs:
+        files[PAGE_COPY_PATH] = page_copy(catalogs, pin)
     lock_text = json.dumps(dict(sorted(lock.items())), ensure_ascii=False, indent=1) + "\n"
     files[LOCK_PATH] = lock_text.encode("utf-8")
     return Result(files, lock)
+
+
+def page_copy(catalogs, pin):
+    """The PlanUI catalog as a JVM runtime table for `:core:plan`; a missing en means en = key, a missing nl fails."""
+    strings = catalogs[PAGE_COPY_SOURCE]["strings"]
+    entries = {}
+    for key in sorted(strings):
+        loc = strings[key].get("localizations", {})
+        if "nl" not in loc:
+            raise GenError(f"{PAGE_COPY_SOURCE}: {key!r}: missing nl")
+        entry = {}
+        for lang in ("en", "nl"):
+            if lang not in loc:
+                entry[lang] = key
+                continue
+            kind, value = units(f"{PAGE_COPY_SOURCE}: {key!r} [{lang}]", loc[lang])
+            entry[lang] = value
+        entries[key] = entry
+    doc = {"source": PAGE_COPY_SOURCE, "pin": pin[:8], "entries": entries}
+    return (json.dumps(doc, ensure_ascii=False, indent=1, sort_keys=True) + "\n").encode("utf-8")
 
 
 def kotlin_literal(text):
