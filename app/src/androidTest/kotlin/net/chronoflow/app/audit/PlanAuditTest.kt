@@ -1,6 +1,8 @@
 package net.chronoflow.app.audit
 
+import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertHasClickAction
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.onNodeWithTag
 import net.chronoflow.core.testing.tiers.Smoke
 import org.junit.Test
@@ -8,6 +10,7 @@ import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
 @Smoke
+@OptIn(ExperimentalTestApi::class)
 @RunWith(Parameterized::class)
 class PlanAuditTest(
     variant: AuditVariant,
@@ -22,11 +25,13 @@ class PlanAuditTest(
 
     @Test fun testTodayPrimaryState() =
         audit("today.screen", account) {
+            compose.waitUntilExactlyOneExists(hasTestTag("today.progress"), 5_000)
             compose.onNodeWithTag("today.progress").assertExists()
         }
 
     @Test fun testTripsPrimaryState() =
         audit("trips.screen", account + ("CF_PLAN_TEST_ROUTE" to "trips")) {
+            compose.waitUntilExactlyOneExists(hasTestTag("trip.0199a3c0-0000-7000-8000-000000000001"), 5_000)
             compose.onNodeWithTag("trip.0199a3c0-0000-7000-8000-000000000001").assertExists()
         }
 
