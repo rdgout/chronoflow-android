@@ -249,7 +249,7 @@ release-smoke:
 
 .PHONY: perf-rn
 perf-rn:
-	$(RUN_TIER) perf-rn --device --results 'benchmark/build/outputs/androidTest-results/connected/**/*.xml' -- Scripts/perf-compare-rn.sh
+	$(RUN_TIER) perf-rn --device --results 'build/perf-rn/*.xml' -- Scripts/perf-compare-rn.sh
 
 .PHONY: font-scale-check
 font-scale-check:

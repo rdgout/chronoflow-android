@@ -1,5 +1,6 @@
 import hashlib
 import unittest
+import xml.etree.ElementTree as ET
 
 from helpers import SCRIPTS, run, temp_dir
 
@@ -12,6 +13,28 @@ case "$*" in
  *animator_duration_scale*) echo 1.0 ;;
  *font_scale*) echo 1.0 ;;
  *am\ start*) printf 'Status: ok\nTotalTime: 111\n' ;;
+ *pm\ path*)
+   if [ -f "$FAKE_INSTALLED" ]; then echo package:/data/app/base.apk; fi ;;
+ *uninstall*) rm -f "$FAKE_INSTALLED" ;;
+ *install*)
+   case "$*" in
+     *benchmark.apk*) exit 0 ;;
+     *rn.apk*) identity=Rn ;;
+     *) identity=Native ;;
+   esac
+   if [ -f "$FAKE_INSTALLED" ] && [ "$(cat "$FAKE_INSTALLED")" != "$identity" ]; then exit 9; fi
+   echo "$identity" > "$FAKE_INSTALLED" ;;
+ *am\ instrument*)
+   target="$(cat "$FAKE_INSTALLED")"
+   [[ "$*" == *"cf.compareTarget $target"* ]] || exit 8
+   if [ "${FAKE_FAIL_TARGET:-}" = "$target" ]; then echo 'FAILURES!!!'; exit 0; fi
+   printf 'Time: 0.1\n\nOK (1 test)\n' ;;
+ *pull*)
+   target="$(cat "$FAKE_INSTALLED")"
+   mkdir -p "${@: -1}"
+   if [ "${FAKE_EMPTY_TARGET:-}" != "$target" ]; then
+     echo '{}' > "${@: -1}/$target-benchmarkData.json"
+   fi ;;
 esac
 '''
 
@@ -40,7 +63,7 @@ class PerfCompareRnTest(unittest.TestCase):
             file.chmod(0o755)
 
     def perf(self, **extra):
-        env = {"ADB": str(self.root / "adb"), "GRADLEW": str(self.root / "gradlew"), "EMULATOR_SH": str(self.root / "emulator.sh"), "CHECK_BENCHMARKS": str(self.root / "checker"), "FAKE_LOG": str(self.log), "ANDROID_SERIAL": "", "PERF_CLEAR": "0", "RN_APK": str(self.apk), "RN_APK_SHA": self.sha, "CF_EMULATOR_STATE_DIR": str(self.state), "PERF_OUTPUT_DIR": str(self.root / "output"), "PERF_ARCHIVE_ROOT": str(self.root / "archives"), "PERF_COMPARE_HISTORY": str(self.history), "RN_NOT_PROFILEABLE": "0", "RN_AM_START_FALLBACK": "0"}
+        env = {"ADB": str(self.root / "adb"), "GRADLEW": str(self.root / "gradlew"), "EMULATOR_SH": str(self.root / "emulator.sh"), "CHECK_BENCHMARKS": str(self.root / "checker"), "FAKE_LOG": str(self.log), "FAKE_INSTALLED": str(self.root / "installed"), "NATIVE_APK": str(self.root / "native.apk"), "BENCHMARK_APK": str(self.root / "benchmark.apk"), "ANDROID_SERIAL": "", "PERF_CLEAR": "0", "RN_APK": str(self.apk), "RN_APK_SHA": self.sha, "CF_EMULATOR_STATE_DIR": str(self.state), "PERF_OUTPUT_DIR": str(self.root / "output"), "PERF_ARCHIVE_ROOT": str(self.root / "archives"), "PERF_COMPARE_HISTORY": str(self.history), "RN_NOT_PROFILEABLE": "0", "RN_AM_START_FALLBACK": "0"}
         return run([str(SCRIPTS / "perf-compare-rn.sh")], env | extra)
 
     def test_missing_apk_refuses_before_install_or_gradle(self):
@@ -59,7 +82,7 @@ class PerfCompareRnTest(unittest.TestCase):
         result = self.perf(PERF_COMPARE_RN_DRY_RUN="1")
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn(self.sha, result.stdout)
-        self.assertIn("suppressErrors=EMULATOR", result.stdout)
+        self.assertIn("suppressErrors EMULATOR", result.stdout)
         self.assertIn("LaunchComparisonBenchmark", result.stdout)
         self.assertIn("--rn-apk-sha " + self.sha, result.stdout)
         self.assertNotIn("gradlew", self.log.read_text())
@@ -68,24 +91,61 @@ class PerfCompareRnTest(unittest.TestCase):
         result = self.perf(PERF_COMPARE_RN_DRY_RUN="1", FAKE_QEMU="", PERF_CLEAR="1")
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertNotIn("suppressErrors", result.stdout)
-        self.assertIn("cf.perfClear=1", result.stdout)
+        self.assertIn("cf.perfClear 1", result.stdout)
 
     def test_physical_clear_requires_opt_in(self):
         result = self.perf(FAKE_QEMU="")
         self.assertEqual(result.returncode, 2)
         self.assertNotIn("install -r", self.log.read_text())
 
-    def test_checker_still_runs_after_gradle_failure_and_trap_restores(self):
+    def test_build_failure_restores_scales_without_replacing_the_installed_app(self):
         result = self.perf(FAKE_GRADLE_EXIT="7")
         self.assertEqual(result.returncode, 7, result.stderr)
         calls = self.log.read_text().splitlines()
-        self.assertLess(next(i for i, c in enumerate(calls) if c.startswith("gradlew")), next(i for i, c in enumerate(calls) if c.startswith("checker")))
+        self.assertFalse(any("uninstall" in c or " install " in c or c.startswith("checker") for c in calls))
         self.assertTrue(calls[-1].startswith("emulator.sh prep-functional"))
+
+    def test_each_pass_replaces_the_shared_package_and_native_is_restored(self):
+        (self.root / "installed").write_text("Rn")
+        result = self.perf()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        calls = self.log.read_text().splitlines()
+        self.assertNotIn("connectedBenchmarkReleaseAndroidTest", "\n".join(calls))
+        actions = [c for c in calls if "uninstall" in c or " install " in c or "am instrument" in c]
+        self.assertEqual(len(actions), 9)
+        self.assertIn("benchmark.apk", actions[0])
+        for index, target, apk in ((1, "Native", "native.apk"), (4, "Rn", "rn.apk")):
+            self.assertTrue(actions[index].endswith("uninstall net.chronoflow.app"))
+            self.assertTrue(actions[index + 1].endswith(apk))
+            self.assertIn("cf.compareTarget " + target, actions[index + 2])
+        self.assertTrue(actions[7].endswith("uninstall net.chronoflow.app"))
+        self.assertTrue(actions[8].endswith("native.apk"))
+        self.assertEqual((self.root / "installed").read_text().strip(), "Native")
+        for target in ("Native", "Rn"):
+            report = next((self.root / "archives").glob("*/androidTest-results/" + target + ".xml"))
+            case = ET.parse(report).find("testcase")
+            self.assertEqual(case.get("name"), "coldSignedOut[" + target + "]")
+            self.assertIsNone(case.find("failure"))
+            self.assertEqual(len(list((self.root / "archives").glob("*/connected_android_test_additional_output/benchmarkRelease/" + target + "/*-benchmarkData.json"))), 1)
+
+    def test_checker_runs_after_a_failed_pass_and_native_is_restored(self):
+        result = self.perf(FAKE_FAIL_TARGET="Rn")
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertIn("checker", self.log.read_text())
+        self.assertEqual((self.root / "installed").read_text().strip(), "Native")
+        report = next((self.root / "archives").glob("*/androidTest-results/Rn.xml"))
+        self.assertIsNotNone(ET.parse(report).find("testcase/failure"))
+
+    def test_successful_instrumentation_without_metrics_fails(self):
+        result = self.perf(FAKE_EMPTY_TARGET="Rn")
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertIn("no benchmark metrics", result.stderr)
+        self.assertEqual((self.root / "installed").read_text().strip(), "Native")
 
     def test_non_profileable_override_is_explicit(self):
         result = self.perf(PERF_COMPARE_RN_DRY_RUN="1", RN_NOT_PROFILEABLE="1")
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("suppressErrors=EMULATOR,NOT-PROFILEABLE", result.stdout)
+        self.assertIn("suppressErrors EMULATOR,NOT-PROFILEABLE", result.stdout)
 
     def test_am_start_fallback_is_report_only_and_keeps_comparison_open(self):
         result = self.perf(RN_AM_START_FALLBACK="1", RN_NOT_PROFILEABLE="1")
