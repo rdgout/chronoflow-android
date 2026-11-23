@@ -117,8 +117,8 @@ matrix:
 	    status=0; \
 	    ANDROID_SERIAL=emulator-$$port $(RUN_TIER) smoke-$$avd --device --emulator --results "app/build/outputs/androidTest-results/connected/**/*.xml" -- $(GRADLE) $(SMOKE_TASK) || status=$$?; \
 	    python3 -I Scripts/matrix-result.py --avd "$$avd" --input "build/test-results/smoke-$$avd/timings.json" --output "build/audit/matrix/$$avd.json" || status=$$?; \
+	    Scripts/emulator.sh down "$$avd" || status=$$?; \
 	    if [ "$$status" != 0 ]; then exit "$$status"; fi; \
-	    Scripts/emulator.sh down "$$avd"; \
 	  done'
 
 du:

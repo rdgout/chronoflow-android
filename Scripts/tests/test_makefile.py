@@ -65,6 +65,13 @@ class MakefileTest(unittest.TestCase):
         syntax = run(["bash", "-n", "-c", result.stdout])
         self.assertEqual(0, syntax.returncode, syntax.stderr)
 
+    def test_matrix_stops_the_selected_avd_before_returning_a_failure(self):
+        result = run(['make', '-n', 'matrix', 'ONLY=small'], cwd=ROOT)
+        self.assertEqual(0, result.returncode, result.stderr)
+        stop = 'Scripts/emulator.sh down "$avd"'
+        failed = 'if [ "$status" != 0 ]; then exit "$status"; fi;'
+        self.assertLess(result.stdout.index(stop), result.stdout.index(failed))
+
     def test_matrix_rejects_pixel_before_any_device_command(self):
         result = run(["make", "-n", "matrix", "ONLY=pixel"], cwd=ROOT)
         self.assertNotEqual(0, result.returncode)
