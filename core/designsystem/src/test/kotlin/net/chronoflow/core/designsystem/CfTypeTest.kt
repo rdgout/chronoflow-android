@@ -1,6 +1,7 @@
 package net.chronoflow.core.designsystem
 
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.em
@@ -21,6 +22,15 @@ import org.junit.Assert.assertSame
 import org.junit.Test
 
 class CfTypeTest {
+    @Test fun wizardPickerUsesThePlatformFaceAndBoardMetrics() {
+        val picker = CfTypeScale.wizardPicker.toTextStyle()
+        assertSame(FontFamily.Default, picker.fontFamily)
+        assertEquals(FontWeight.W400, picker.fontWeight)
+        assertEquals(17.sp, picker.fontSize)
+        assertEquals(22.sp, picker.lineHeight)
+        assertEquals((-0.01).em, picker.letterSpacing)
+    }
+
     @Test fun facesAndStylesKeepTheIosMetrics() {
         assertSame(Fraunces48, CfFace.Fraunces400Opsz48.fontFamily())
         assertEquals(FontWeight.W500, CfFace.Fraunces500Opsz20.fontWeight())

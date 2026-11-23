@@ -65,10 +65,12 @@ data class CfDialogAction(
 internal fun DialogAction(
     action: CfDialogAction,
     tag: String,
+    enabled: Boolean = true,
 ) {
     TextButton(
         action.onClick,
         Modifier.testTag(tag),
+        enabled = enabled,
         colors =
             ButtonDefaults.textButtonColors(
                 contentColor = if (action.destructive) CfTheme.colors.destructive else CfTheme.colors.dawnText,

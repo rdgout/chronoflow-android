@@ -33,6 +33,15 @@ class TypeScaleGoldenTest {
     }
 
     @Test
+    fun wizardPickerUsesTheBoardsPlatformFaceAndTracking() {
+        val picker = ui.style("wizardPicker")
+        assertEquals("System400", picker.face)
+        assertEquals(17.0, picker.size, 0.0)
+        assertEquals(22.0, picker.lineHeight!!, 0.0)
+        assertEquals(-0.17, picker.trackingPt, 1e-9)
+    }
+
+    @Test
     fun compositeStylesMatchTheResolvedTable() {
         val table =
             listOf(

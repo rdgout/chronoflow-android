@@ -1,4 +1,4 @@
-# Wizard shell and Where acceptance
+# Wizard shell, Where and flight times acceptance
 
 Phase 9c, 2026-11-20. Implementation and device checks are complete; the rendered-board comparison and profile/performance measurements remain for the orchestrator. [Brief](phases/phase-9c-wizard-shell-where.md).
 
@@ -39,8 +39,8 @@ Measured native Robolectric sheet top: **106.286 dp** on `pixel8` and `foldInner
 | Sheet grabber 36 × 5 | M3 `BottomSheetDefaults.DragHandle()` | Phase 2 OQ-2-3 [F] |
 | Search placeholder: iOS "Search airports" | "Airport or city" / "Luchthaven of stad" (WizardCopy) as Android-only copy | WizardCopy is the binding copy deck [R]; OQ-9c-2 |
 | `TripAirportSearch` rows (Fraunces code 20/28, 64 high, radius 22, count line) | `WizardSheet` rows (code 15/700, 60 high, radius 16, no count line) | `WizardSheet` is newer and iOS built it [R]; OQ-9c-4 |
-| Board progress on the same-airport state and sheet/alert backdrops (`WizardWhereSame` 15 despite an incomplete route, `WizardAirportFrom` 15 over the empty Where, `WizardAirportHome` and `WizardStopSearchHome` 55, `WizardDiscard` 30) | The model's value for the state shown: 8 on Same and AirportFrom, 50 on AirportHome and StopSearchHome, and 15 on Discard | progress comes from 9a, never per board [R]; OQ-9c-6 |
-| `WizardDiscard` backdrop = Outbound | In 9c the alert is captured over Where with something entered; 9d re-captures it over Outbound | Outbound is 9d [R]; OQ-9c-5 |
+| Board progress on the same-airport state and sheet/alert backdrops (`WizardWhereSame` 15 despite an incomplete route, `WizardAirportFrom` 15 over the empty Where, `WizardAirportHome` and `WizardStopSearchHome` 55, `WizardDiscard` 30) | The model's value for the state shown: 8 on Same and AirportFrom, 50 on AirportHome and StopSearchHome, and 30 on Discard (Outbound, from 9d) | progress comes from 9a, never per board [R]; OQ-9c-6 |
+| `WizardDiscard` backdrop = Outbound | Captured over the base Outbound draft from 9d; `fromLastTrip = false` (9c used Where temporarily) | Outbound is 9d [R]; OQ-9c-5 |
 | `WizardAirportHome` backdrop = flight-home **times** | Captured over the flight-home route (`WizardHomeRoute`), which is where the To row opens it | iOS opens it from the route [F]; times are 9d |
 | No audience notice on the Where boards | Built per iOS NH5, below the route card on Where (not on the home route) | iOS user decision, no-health-data [F `MemberWizardRouteView.swift` l.23–33]; OQ-9c-1 |
 | Board CTA bottom 34 (iPhone home indicator) | Footer bottom padding is 12 dp above the larger of the safe bottom inset and the IME | iOS `wizardShell` footer `padding(.vertical, space3)` [F] |
@@ -100,7 +100,7 @@ Base draft: AMS → NRT, entered, habitual sleep 23:30–07:15, intermediate chr
 | `WizardStopSearch*` | base with step `whereTo` (`fromLastTrip = false`, as iOS l.66), plus [R] `sheet = (0, Stop)`, query "Du" |
 | `WizardStopSearchSecond*` | `WizardWhereStop`, plus [R] `sheet = (1, Stop)`, query "Ban" |
 | `WizardStopSearchHome*` | `WizardHomeRoute`, plus [R] `sheet = (legs.size − 1, Stop)`, query "Du" |
-| `WizardDiscard*` | `WizardWhere`, plus [R] `discardDialogVisible = true` (OQ-9c-5) |
+| `WizardDiscard*` | `WizardOutbound`, `fromLastTrip = false`, plus [R] `discardDialogVisible = true` (OQ-A374; changed in 9d) |
 
 Fixed result groups: Am → AMS, AMM, AMA, AMD; Du → DXB, DWC, DUS, DUB; Ban → BKK, DMK. All seed and fixed-search types live in debug sources and are absent from release, as checked by `ReleaseReadinessTest`.
 
@@ -323,3 +323,288 @@ With policies first, its fixture setup paid the cold cost instead: 354.890 ms, i
 | `policiesFlowDecodesTheStoredSection` | 48 ms | 44 ms |
 
 The reversed-order diagnostic measured policies first at 398 ms and the stale-session case second at 50 ms. `make targeted ONLY="feature:onboarding:OnboardingSessionTests"` after the fix passed both cases in 2.81 s tier wall time. The one final `make quick` invocation passed all stages in **35.890 s** with zero timing overruns. The regenerated profiles, benchmark gate, plan and perf docs at `553398ee` were preserved byte-for-byte. Detailed step logs, temporary instrumentation, XML and timing results are retained locally in `build/onboarding-fixture-evidence/`.
+
+## Phase 9d: flight times and return
+
+2026-11-20. [Brief](phases/phase-9d-wizard-flights.md). Outbound and flight-home Times, the native dialogs and Coming back? are implemented. The external rendered-board comparison remains pending; the local browser could not start. There is no wizard performance-budget row, and this phase runs no startup, timeline or profile tier. The wizard profile journey remains Phase 13's.
+
+### Half-values and recovery
+
+`MemberWizardState.pendingDateTimes` stores `WizardPendingDateTime(date, time)` under `<leg.id>.departLocal` or `<leg.id>.arriveLocal`. A complete value takes precedence when reading a half. Setting the second half composes `YYYY-MM-DDTHH:mm`, removes the pending entry and uses `setDateTime`; editing a complete value preserves its other half. Both paths call `changed()`, mark the draft entered, clear every field error (including the review banner) and enqueue recovery. Missing pending maps decode as empty for old recovery rows.
+
+Airport selection, swap, stop removal, making the route direct and choosing the trip end drop the pending map. Complete wall values retain the landed model's route-edit rules. Pending values never enter the review request or its fingerprint. Completion still requires complete wall values, so a half pair keeps Continue disabled without producing a required-field error.
+
+The screen is stateless. The ViewModel owns date/time events, account time-format updates, Continue validation and its failure counter. Each equal-by-value flight card can skip composition independently. A failed Continue leaves the step in place; the composable handles each counter increment once, plays Warning, waits one frame and brings the first error group above the fixed footer. Reduce Motion sets the scroll coroutine's motion scale to zero. The handled counter survives recreation without replaying feedback.
+
+### Picker contract
+
+- UTC-midnight millis represent an airport wall date. `WizardPickerDates` delegates to 9a's `pickerMillis` / `fromPickerMillis`; there is no phone-zone conversion.
+- Only the immediately preceding field can establish the date lower bound, converted through its instant into this field's airport zone. Equal dates and every later date/year remain selectable. There is no upper bound or time-of-day bound. Stored values below a changed bound remain intact for validation.
+- Initial values prefer the stored half, then 9a's nearest earlier airport-local instant, then the injected airport-local clock.
+- The native time dialog reads `DateFormat.is24HourFormat`. Pills and their accessibility values use account `TimeFormat`, defaulting to 24 hours. The session reads and parses settings on injected IO. The dialogs use the app locale; their semantics node reads `LocalConfiguration` inside its own window.
+- Only Done sends a part event and one Selection haptic. Cancel, outside dismissal and Back close the local picker without a write or haptic. M3 saves the in-progress picker state for configuration recreation; an open dialog is absent from the recovery record.
+- Date pills use the shared short-month tables. Spoken dates use fixed long tables. Twelve-hour text shares 9a's wizard clock formatter: English `2:40 PM`, Dutch `02:40 p.m.`; account unknown values use 24 hours. Durations use the catalog's `{{hours}} h {{minutes}} min` for every value. Field messages resolve through the generated wizard index, including its singular plural resource; unknown keys use the generated generic error, never the raw key. The later plan-catalog lookup is 9f's (OQ-A399).
+
+The existing `CfDatePickerDialog` / `CfTimePickerDialog` gained supporting text, custom action tags and resource-id export on their windows; the date wrapper also gained confirm-enabled state. New parameters are appended to preserve positional callers. The two local `ModifierParameter` suppressions and the Compose parameter-order suppression record this compatibility exception. Defaults preserve earlier callers.
+
+`WizardBanner` uses the wizard's info glyph, 18 dp radius, 14/12 padding and 10 dp gap. `CfBanner` has a different glyph and auth geometry, so it is not used. Designed pill targets are 48 dp with an 8 dp visual radius; only a date pill carries its field's error ring. Labels and visible values retain their semantics, routes are headings, and error lines/banners are polite live regions. Connection rules are cached in `drawWithCache` with no per-frame allocation.
+
+### Coming back?
+
+One way reflects the default model end. Add return is selected only while its choice is pending. Both cards retain their visual style while disabled; only `selected` determines the border. The model's injected clock owns the 250 ms pause. A second tap is ignored, Back cancels the job, One way goes to Sleep or Checking, and Add return starts the home route at the final outbound arrival with To following the origin. There is no Continue button; the answer hint is fixed above the safe bottom inset.
+
+At sixteen flights, the ViewModel rejects the disabled Add return event before calling the landed model. Inspection found that the model checks a failed add after candidate route mutations; the new event guard matches iOS's disabled control without changing that earlier core behavior.
+
+### Flight board drafts and captures
+
+All times below are airport-local in 2026. These extend the earlier seed table; every row is entered, `fromLastTrip = false`, `sleepNeeded = false`, with the pinned 23:30 / 07:15 / intermediate profile and the fixed 1 October clock. Dutch seeds use Tokio; real airport data retains the server city.
+
+| Base board | Draft |
+|---|---|
+| `WizardOutbound` | Outbound; AMS → NRT, 12 Oct 14:40 → 13 Oct 09:15; flight 695 min |
+| `WizardOutboundEmpty` | Outbound; both complete wall values empty |
+| `WizardOutboundErrors` | Outbound; arrival 11 Oct 09:15; `legs.0.arriveLocal` error |
+| `WizardOutboundTwoErrors` | Two outbound flights via DXB; second arrival 12 Oct 16:35; `legs.1.arriveLocal` error |
+| `WizardOutboundStop` | AMS → DXB, 12 Oct 14:40 → 23:25; DXB → NRT, 13 Oct 02:05 → 16:35; connection 160 min |
+| `WizardOutboundStopEmpty` | Same two-flight route; all four complete wall values empty; Stop in Dubai |
+| `WizardOutboundOvernight` | First arrival 12 Oct **22:25**; second 14 Oct 02:05 → 16:35; one complete night |
+| `WizardOutboundThree` | AMS → DXB → BKK → NRT; second arrival 13 Oct 11:20; third flight empty; second chip Stop in Bangkok |
+| `WizardOutboundPast` | 2 Sep 14:40 → 3 Sep 09:15; member review banner |
+| `WizardOutboundScrollErrors` | Five flights via DXB/BKK/DXB/BKK; errors on first arrival and last departure; no board |
+| `WizardReturn` | `returnChoice`, default one-way end |
+| `WizardReturnFlight` | `returnFlight`, return boundary 1, confirmed route; NRT → AMS with empty times |
+| `WizardReturnFlightPast` | Home 22 Oct 10:25 → 15:30, 725 min; home review banner |
+| `WizardDiscard*` | Base Outbound with discard presentation; progress **30**, completing OQ-A374/OQ-A375's handoff |
+
+`make captures ONLY=WizardOutbound,WizardReturn,WizardDiscard` ran once and wrote **29 PNGs** at 390 × 844 dp, density 3, zero insets. The existing capture class handles all new names; no stored references or second capture class were added. Files are in `build/captures/`:
+
+- `WizardOutbound`, `WizardOutboundDark`, `WizardOutboundNL`;
+- `WizardOutboundEmpty`, `WizardOutboundEmptyDarkNL`;
+- `WizardOutboundErrors`, `WizardOutboundErrorsDarkNL`;
+- `WizardOutboundTwoErrors`, `WizardOutboundTwoErrorsDarkNL`;
+- `WizardOutboundStop`, `WizardOutboundStopDarkNL`;
+- `WizardOutboundStopEmpty`, `WizardOutboundStopEmptyDarkNL`;
+- `WizardOutboundOvernight`, `WizardOutboundOvernightDarkNL`;
+- `WizardOutboundThree`, `WizardOutboundThreeDarkNL`;
+- `WizardOutboundPast`, `WizardOutboundPastDarkNL`;
+- `WizardReturn`, `WizardReturnDark`, `WizardReturnNL`;
+- `WizardReturnFlight`, `WizardReturnFlightDarkNL`;
+- `WizardReturnFlightPast`, `WizardReturnFlightPastDarkNL`;
+- `WizardOutboundScrollErrors_noBoard`;
+- `WizardDiscard`, `WizardDiscardDarkNL`.
+
+`make captures DEVICE=1 ONLY=PickerDateTime` ran once on pixel and wrote four PNGs to `build/captures/device/`: `PickerDateTime_date_en_light`, `PickerDateTime_time24_en_light`, `PickerDateTime_date_nl_dark`, `PickerDateTime_time12_nl_dark`. Each case restores the phone's original hour-cycle setting in `finally`, including deletion when the setting was absent. The script routes this selector to the app capture class. The native cases took 3.081 / 1.211 / 1.203 / 1.093 s respectively.
+
+The 29-image contact sheet and four-image native contact sheet were inspected for missing content, clipping, themes, native windows, errors, chips and selection. The following are recorded differences, not a rendered-board sign-off:
+
+| Board(s) | Difference / disposition |
+|---|---|
+| Every wizard wrapper | Native header/system progress and Android safe insets follow 9c's settled mapping; native targets are at least 48 dp |
+| `WizardOutboundOvernight*` | 22:25 first arrival, matching the pinned seed and a real complete night (OQ-A391) |
+| `WizardOutboundStopEmpty*`, `WizardOutboundThree*` | Model progress 22 while incomplete, instead of the illustrated 30 (OQ-A393) |
+| `WizardReturn*` | One way selected by default, following iOS (OQ-A388) |
+| `WizardOutbound`, `WizardOutboundDark`, `WizardOutboundErrors`, `WizardOutboundPast`, `WizardOutboundStop`, `WizardOutboundOvernight`, `WizardOutboundThree`, `WizardOutboundTwoErrors`, `WizardReturnFlightPast` | Review round 2 corrects the pill font mapping: the board uses `.ios` system text with −0.01 em tracking, rather than the labels’ Figtree. Filled English Amsterdam rows remain inline at 390 dp with the generated platform picker style. OQ-A398 still stacks rows whose visual content cannot fit, including 280 dp / 1.3; 48 dp targets do not enlarge the drawn pill |
+| Connection/overnight rows | Catalog duration always includes hours and minutes; longer chips can wrap only when space requires it (OQ-A386) |
+| `PickerDateTime` | Separate Material date/time dialogs replace the combined iOS-shaped sheet; custom title/context, native calendar/dial, Cancel/Done, no summary chip. M3 marks the phone's today (OQ-A394, OQ-A396, OQ-A397) |
+| `WizardDiscard*` | Now Outbound at 30, replacing the 9c temporary Where backdrop |
+
+The board render was attempted once with `node /private/tmp/chronoflow-9d-render.cjs`. It failed before writing a board PNG:
+
+```text
+browserType.launch: Target page, context or browser has been closed
+[pid=47643][err] [1120/143007.406861:FATAL:base/apple/mach_port_rendezvous_mac.cc:159] Check failed: kr == KERN_SUCCESS. bootstrap_check_in org.chromium.Chromium.MachPortRendezvousServer.47643: Permission denied (1100)
+```
+
+Exact full output: `build/phase9d-evidence/board-render.log`. The reviewer must still render the matching boards at 390 × 844 and complete the side-by-side comparison. No Opus review or rendered-board approval is claimed.
+
+### Test map and brief refresh
+
+| Pinned Swift test / behavior | Kotlin evidence |
+|---|---|
+| `testNativePickerReceivesOnlyTheAirportLocalLowerBound` | `WizardPickerDatesTest.Inputs#nativePickerReceivesOnlyTheAirportLocalLowerBound`, `WizardSelectableDatesTest#nativePickerReceivesOnlyTheAirportLocalLowerBound`, and the Dutch native case |
+| `testNativePickerKeepsTheAppLanguageAndPhoneHourCycle` | `WizardFlightPickerDeviceTest#nativePickerKeepsTheAppLanguageAndPhoneHourCycle_nl12` / `_en24` |
+| `testErrorsScrollAboveContinue<Profile>` | `WizardErrorScrollTest#errorsScrollAboveContinue`, twelve separately named profile/language/direction cases; includes offscreen/visible preconditions and whole-last-card containment |
+| Existing 9a `WizardFlightTimingTests`, `WizardPresentationTests`, `WizardValidationTests`, `WizardDateTimeFormatTest` | Unchanged; targeted with Task 2 and included in final quick |
+| Android separate halves / formats / connection facts | `WizardDateTimePartsTest`, `WizardDateFormatTest`, `WizardConnectionFactTest` |
+| Android UI derivation / events | `WizardTimesUiTest`, `TripWizardViewModelTimesTest`, `WizardReturnUiTest`, `TripWizardViewModelReturnChoiceTest` |
+| Board seed fidelity | `WizardFlightBoardSeedTest`, existing filtered `WizardBoardCaptureSeedTest` |
+| Structure / geometry / composition | `WizardTimesStepTest`, `WizardDateTimeRowLayoutTest`, `WizardTimesRecompositionTest`, `WizardReturnStepTest`, `WizardFlightsGuardsTest` |
+| Native captures | `PickerDateTimeDeviceCaptureTest` |
+
+The additional mechanical refresh is in `30316f03`: `DeviceProfiles.small` is 360 dp at scale 1.0, so the narrow row-layout case uses a local 280 dp / 1.3 copy. Shared profiles and the 62-case matrix are unchanged. Task 7 records two later integration notes in its own commit: preserve the old outbound structural tag in debug for the unchanged header/journey checks, and guard the disabled sixteen-flight event in the ViewModel. There is no debug seam text on Times, and release adds no boundary tag. No prior test assertion was changed except the explicitly authorized Discard seed expectation and the seed-registry filter.
+
+A real geometry failure was observed before correcting the pill target: the inline label started at 8 dp while the pill tag covered the inner visual at 14.857142 dp. The target/tag now covers the full 48 dp clickable box, and both row-layout cases pass. The first ScrollErrors derivation expectation incorrectly treated its complete values as incomplete; the pinned seed has all values and its expectation was corrected. Native dialogs were never opened by the new Robolectric tests.
+
+OQ-9d-1…17 are recorded as **OQ-A383…OQ-A399**, using the brief defaults. No Android-only copy or dependency was added. No secret storage, route key, initialization, timeline or credential-capability code changed.
+
+### 9d verification results
+
+Full outputs, the attempted renderer and contact sheets are retained locally under `build/phase9d-evidence/`; tier JSON files retain wall times and per-case measurements. No hang or missing-result failure occurred. Gradle seconds below are the reported build wall time where a command has no tier wrapper.
+
+| Command / selection | Result | Wall time |
+|---|---|---:|
+| `make targeted ONLY="core:wizard:WizardDateTimePartsTest"` | 14 pass | Gradle 5 s |
+| `make targeted ONLY="core:wizard:WizardPickerDatesTest core:wizard:WizardDateFormatTest core:wizard:WizardConnectionFactTest core:wizard:WizardFlightTimingTests core:wizard:WizardPresentationTests core:wizard:WizardValidationTests core:wizard:WizardDateTimeFormatTest"` | 125 pass; old 9a assertions unchanged | 3.65 s |
+| `make targeted ONLY="core:ui:CfDatePickerDialogGuardsTest core:ui:CfTimePickerDialogGuardsTest"` | 12 pass | 8.91 s |
+| `make targeted ONLY="feature:wizard:WizardFlightBoardSeedTest feature:wizard:WizardBoardCaptureSeedTest"` | 56 pass | 4.18 s |
+| Times UI + ViewModel, first run | 30 pass; one incorrect ScrollErrors completeness expectation corrected | Gradle 2 s |
+| Corrected Times derivation + four screen/layout/composition classes | 34 pass; one real pill-target geometry failure corrected | 6.95 s |
+| `make targeted ONLY="feature:wizard:WizardDateTimeRowLayoutTest#pillsReflowWithoutChangingTheirIdentity"` | Both corrected cases pass | 5.55 s |
+| `make targeted ONLY="feature:wizard:WizardSelectableDatesTest"` | Both pass after removing an unused `Unit` expression exposed by formatting | 3.30 s |
+| Return UI, ViewModel and screen, first run | 13 pass; disabled sixteen-flight event exposed the core candidate mutation | Gradle 7 s |
+| `make targeted ONLY="feature:wizard:TripWizardViewModelReturnChoiceTest#addReturnIsInertAtSixteenFlights feature:wizard:WizardHeaderTest"` | Corrected boundary + four unchanged header cases pass | 5.54 s |
+| `make targeted ONLY="feature:wizard:WizardFlightsGuardsTest"` | All 62 pass; class 4.459 s, first SDK case 2.334 s | 8.12 s |
+| `make captures ONLY=WizardOutbound,WizardReturn,WizardDiscard`, once | 29 PNGs, no stored references | Gradle 16 s |
+| `make targeted ONLY="app:WizardFlightPickerDeviceTest"`, once | Both pass: en24 2.662 s, nl12 1.630 s; checked StrictMode IO counter 0 | 11.19 s |
+| `make captures DEVICE=1 ONLY=PickerDateTime`, once | Four cases pass and four PNGs written | Gradle 11 s |
+| `./gradlew :app:lintDebug :feature:wizard:lintDebug :core:designsystem:lintDebug :core:ui:lintDebug :app:verifyReleaseManifest` | Pass after the two compatibility-related ModifierParameter suppressions; warnings remain fatal | Gradle 21 s |
+| Affected layout tier (`app`, `feature:wizard`, `core:designsystem`, `core:ui`, `-Pcf.tier=layout`) through `Scripts/run-tier.sh layout-9d` | 535 pass, zero over-budget cases; unchanged 97 Where guards, 62 new guards, 12 error-scroll cases | 18.97 s |
+| `make targeted ONLY="app:ReleaseReadinessTest"` | 13 pass; debug seed/mock absence proved in release | 4.30 s |
+| `make quick`, exactly once | Exit 2: 4,178 freshly measured cases, 4,544 collected/reused results; one literal-copy rule failure; zero timing overruns or hangs | 42.08 s |
+| `make targeted ONLY="konsist:KonsistRulesTest#noLiteralTextInText"` | Pass after deriving the same airport-code route before passing it to `Text`; the rule is unchanged | Gradle 4 s |
+| Missed wizard/trips quick tasks through `Scripts/run-tier.sh quick-9d-remainder` | 321 pass, zero timing overruns | 9.56 s |
+| `spotlessCheck :build-logic:convention:test` through `Scripts/run-tier.sh build-logic-9d` | 37 pass, formatting clean | 9.94 s |
+| `Scripts/test_scripts.sh`, with `IOS_REPO` / `WEB_REPO` exported as make does | All groups pass: 168 scripts, 25 contracts, 49 localization, 9 icons | Reported groups 20.047 / 0.117 / 0.018 / 0.065 s |
+| `make timing` | Seven freshly measured cases pass, zero overruns; no device performance claim | 2.00 s |
+
+The failing quick invocation prevented wizard and trips tasks from starting and prevented the later Make recipe stages. Only those missed modules, the failed rule, and the remaining build-logic/tooling/timing stages were run separately; quick itself was never repeated. All corrected assertions and all remaining stages pass. The original command's failed exit is retained rather than described as a successful full quick run. The final route-label fix is a separate signed commit; no earlier commit was amended or rewritten.
+
+Final wizard class measurements (XML totals; warm maxima from the listener):
+
+| Class | Cases | Class total | Warm case maximum | Separate class warm-up |
+|---|---:|---:|---:|---:|
+| `WizardFlightsGuardsTest` | 62 | 1.944 s | 72 ms | 47 ms |
+| `WizardGuardsTest` (unchanged) | 97 | 3.161 s | 63 ms | 28 ms |
+| `WizardErrorScrollTest` | 12 | 0.611 s | 56 ms | 83 ms |
+| `WizardDateTimeRowLayoutTest` | 2 | 0.061 s | ≤ 36 ms | Within class allowance |
+| `TripWizardViewModelTimesTest` | 7 | 0.019 s | 3 ms | JVM, none |
+| `TripWizardViewModelReturnChoiceTest` | 6 | 0.058 s | 38 ms | JVM, none |
+| `WizardTimesUiTest` | 24 | 0.006 s | < 1 ms | JVM, none |
+| `WizardReturnUiTest` | 5 | 0.001 s | < 1 ms | JVM, none |
+| `WizardTimesStepTest` | 8 | 0.199 s | 30 ms | 26 ms |
+| `WizardReturnStepTest` | 3 | 0.080 s | 25 ms | 32 ms |
+| `WizardTimesRecompositionTest` | 1 | 0.032 s | — | 31 ms (single case) |
+
+The initial new-guards run paid its SDK warm-up once at 2.334 s (warm maximum 108 ms); the final layout/logic measurements above were warm. TestTimingListener budgets, fixture profiles and test-boundary allowlists were not widened. The new raw-size-state and phone-zone/process-locale scans find no matches in `core/wizard/src/main` or `feature/wizard/src/main`. No dependency changed, so no new native library is introduced.
+
+Remaining external acceptance: the rendered-board comparison described above and the orchestrator's full `make check`. Performance/profile commands were deliberately not run; 9d adds no applicable metric. Pixel remains running. The final signature audit checks each commit object's PGP signature header and Conventional Commit subject; no push, amend, rebase or history rewrite was performed.
+
+## Phase 9d review round 1
+
+1. Failure feedback now silently resynchronizes the saved handled count when the ViewModel counter resets. A restoration with the same count still does not replay feedback. `WizardTimesStepTest#firstFailureAfterRestorationWarnsOnceAndRevealsTheFirstError` consumes one failure, restores with a fresh zero counter, proves no restoration haptic, starts with the first error offscreen, then requires exactly one new Warning and the entire first error group above the footer. Before the fix it failed with `[Warning]` instead of `[Warning, Warning]`; after the fix it passes. The isolated runs pay their SDK cold cost; final warm measurements are recorded below. Logs and timing JSON are in `build/phase9d-review1/`.
+
+2. Picker defaults are now separate from the equal-by-value flight cards. `OpenFlightPicker` samples the injected clock once; the entry-scoped ViewModel keeps that request and opening instant in memory, and `DismissFlightPicker`/Back close it. Configuration recreation retains the ViewModel and M3 picker state; durable recovery contains no open dialog. UI emissions use the fixed opening instant rather than reading the clock. `WizardTimesClockTest` failed before the fix because an empty card's minute changed; both cards now remain equal at clocks one minute apart, while an explicitly opened picker receives the current airport-local minute. The JVM ViewModel test also proves no clock reads on unrelated format/pill changes, one read per opening, unchanged empty-card equality, and Back dismissing before navigation. Existing Times derivation and recomposition tests pass.
+
+3. Removed the max-line-length suppression from all 32 phase-touched files that carried it, wrapping the one 127-character subtitle expression in `WizardUiState.kt`. Every affected line now fits 120 characters. `CfPickers.kt`'s justified parameter-order/modifier suppressions are unchanged. The change is formatting only; `make format` passes, and the final quick/layout runs cover the affected source and test classes.
+
+4. `RootFontWarmup` accepts the injected worker; `CfRoot` supplies `graph.dispatchers.io` (production still uses IO). The root-theme test drives that worker's test scheduler and asserts the awaited barrier and exactly four calls directly, replacing both polling waits. Its motion/barrier/count/fonts-ready assertions remain. The fake checks the injected dispatcher in the controlled case; the companion real-IO frame-commit test retains its physical off-main-looper assertion. Quiet baseline: 439 ms, including activity setup 124 ms, `setContent` 240 ms, and the final preloader wait 17 ms. After: 378 ms in the same three-case class run. The host's reported 1.20–1.74 s overruns did not reproduce here. Both class runs pass; no real font-loading work is added to the fixture.
+
+5. The seed-refresh fixture now warms a complete build/save/load/refresh/trip-read path once per JVM in `@BeforeClass`, rather than only decoding the seed inputs. It creates and deletes a disposable file store on IO and retains only `Unit`; every real case still gets a fresh file store, and all existing assertion bodies are unchanged. Temporary per-step timers were removed. CurrentAnchor fell from 428 ms to 253 ms; LegacyAnchor from 257 ms to 174 ms. The host's 1.07 s overrun did not reproduce here. An intermediate JSON-only warm-up left first-use data-source/file-path costs and measured 311/180 ms, which is why the final warm-up exercises the actual fixture path.
+
+| Seed step | Baseline CurrentAnchor | Baseline LegacyAnchor | After JSON-only warm-up, CurrentAnchor |
+|---|---:|---:|---:|
+| Build old seed | 62.406 ms | 18.461 ms | 29.366 ms |
+| Edit fixture state | 3.006 ms | 0.130 ms | 3.826 ms |
+| Save old seed (legacy includes removing the anchor key) | 37.605 ms | 36.977 ms | 33.833 ms |
+| First identity read / restore / refresh | 162.779 ms | 102.445 ms | 118.599 ms |
+| Read trips | 23.563 ms | 19.883 ms | 12.482 ms |
+| Read persisted state | 18.395 ms | 9.152 ms | 14.651 ms |
+| Build expected seed | 20.966 ms | 14.246 ms | 21.654 ms |
+| Compare refreshed accounts | 2.460 ms | 1.282 ms | 2.088 ms |
+| Reopen source / read trips | 55.790 ms | 44.464 ms | 29.234 ms |
+| Reload / compare state | 13.094 ms | 9.198 ms | 12.525 ms |
+
+6. The endpoint transport flake remains unresolved. The saved host XML identifies only `DataFailure.Offline`; it contains no underlying IOException or transport events. Reading `MockApi` and `ApiClient` establishes a new JUnit rule/server per parameter, an ephemeral listening port from `server.start()`, a fresh default client/connection pool per API client, and no connection reuse between parameterized cases. `reply` registers a route rather than enqueuing responses. Dispatch matches `(method, encodedPath)`, so the airports query is checked by the contract assertion but cannot change route selection; unmatched routes return 599 and map to a server failure. `RecordingDeadline.await` suspends forever. These paths do not explain the observed Offline failure.
+
+   A temporary, failure-only OkHttp EventListener recorded connection addresses, transport phases and sanitized IOException classifications/stack frames without headers, bodies or credentials. Five rounds (210 cases) passed in 2.38 s tier wall / 0.666 s XML class total. A final bounded twenty-round run (840 cases) with sixteen CPU workers also passed, in 7.20 s tier wall / 4.064 s XML total. Every temporary diagnostic and repetition was removed, and the original 42-case class passed again (0.321 s XML total). There is no evidence identifying whether the original IOException came from connect, response headers, body read, OS resource pressure or another external cause. Per the review stopping rule, no speculative support change, retry or swallowed failure was added. Item 6 needs a future reproduction retaining the underlying transport failure.
+
+### Review round 1 validation
+
+Commands ran from `feat/phase-9d-wizard-flights`. All five fixes have separate signed commits; the sixth review item has this investigation record because its cause was not identified. There is no new OQ, brief refresh, copy, dependency or test-boundary allowlist entry. No emulator, performance or profile tier ran, and Pixel was left running. Full command output and copied timing files are under `build/phase9d-review1/`.
+
+| Command / selection | Result | Wall time |
+|---|---|---:|
+| `make targeted ONLY="feature:wizard:WizardTimesStepTest#firstFailureAfterRestorationWarnsOnceAndRevealsTheFirstError"` before / after | Required haptic regression fails before; passes after | 7.04 / 4.78 s, separate SDK cold costs 3.089 / 2.394 s |
+| `make targeted ONLY="feature:wizard:WizardTimesClockTest#emptyCardsStayEqualWhenTheClockMovesByOneMinute"` before | Required card-equality regression fails before | 3.00 s |
+| `make targeted ONLY="feature:wizard:WizardTimesClockTest feature:wizard:WizardTimesUiTest feature:wizard:TripWizardViewModelTimesTest feature:wizard:WizardTimesRecompositionTest"` | All 35 pass | 7.89 s |
+| `make targeted ONLY="feature:wizard:TripWizardViewModelTimesTest#clockIsSampledOnlyWhenAPickerOpens"` after adding Back assertions | Pass | Gradle 2 s |
+| `make targeted ONLY="app:RootThemeTest"` before / after | All three pass; final targeted root case 378 ms | 7.76 / 4.60 s |
+| `make targeted ONLY="app:RootThemeTest#rootProvidesReduceMotionAndUsesTheSuppliedFontBarrier"` | Pass with controlled IO scheduler | Gradle 6 s |
+| `make targeted ONLY="core:data-mock:MockSeedRefreshTests"` before / final | All four pass; CurrentAnchor 428 / 253 ms | 3.32 / 2.70 s |
+| Same seed class, intermediate JSON-only warm-up | All four pass; CurrentAnchor 311 ms | 2.70 s |
+| `make targeted ONLY="core:network:EndpointContractTest"`, temporary five-round diagnostic | 210 pass; no IOException | 2.38 s |
+| Same endpoint command, temporary twenty-round CPU-load diagnostic | 840 pass; no IOException | 7.20 s |
+| `make targeted ONLY="core:network:EndpointContractTest core:wizard:WizardPickerDatesTest feature:wizard:WizardTimesStepTest feature:wizard:WizardReturnStepTest feature:wizard:TripWizardViewModelReturnChoiceTest feature:wizard:WizardBoardCaptureSeedTest feature:wizard:WizardFlightBoardSeedTest"` | Original endpoint 42, picker dates six, feature 74 pass; restoration case 140 ms warm | JVM Gradle 1 + 2 s; feature tier 6.86 s |
+| `Scripts/run-tier.sh layout-9d-review1 --results 'feature/wizard/build/test-results/testDebugUnitTest/*.xml' --results 'app/build/test-results/testDebugUnitTest/*.xml' --timings 'feature/wizard/build/cf-timings/testDebugUnitTest/*.json' --timings 'app/build/cf-timings/testDebugUnitTest/*.json' -- ./gradlew --console=plain :feature:wizard:testDebugUnitTest :app:testDebugUnitTest -Pcf.tier=layout` | Once; all 264 pass, zero overruns or hangs | 12.02 s |
+| `./gradlew :app:lintDebug :feature:wizard:lintDebug` | Once; pass | 10.39 s |
+| `make quick` | Once; pass, zero overruns or hangs; 1,634 freshly measured cases / 4,669 collected or reused results; all four tooling groups pass (168 / 25 / 49 / 9); build-logic 37 and timing seven collected from up-to-date outputs | 45.15 s total; main tier 22.32 s |
+
+Final quick measurements: root-theme barrier case **352 ms**, seed CurrentAnchor **242 ms**, seed LegacyAnchor **214 ms**, restoration feedback **77 ms**. The clock/ViewModel case is **4 ms**, and the existing card recomposition guard is **31 ms** including its class warm-up. RootThemeTest's class warm-up is 89 ms, WizardTimesStepTest's 26 ms; the first isolated SDK costs are kept separate above. No test budget was widened, no required command was blocked by the sandbox, and no test was retried after a final-quick failure.
+
+## Phase 9d review round 2
+
+1. Failed Continue counts are held in a ViewModel map keyed by `WizardStepKey`; each active Times UI receives only its step's count. The saved handled value and round 1's silent reset handling are unchanged. The JVM regression runs a successful outbound Continue, chooses the existing home route, fails home validation, returns to Outbound, and requires its counter to remain zero; it failed before the fix (actual one). This stack includes the existing ReturnRoute entry, so two individual Back events reach ReturnChoice and the third reaches Outbound; no navigation behavior changed. The redundant screen-level Back regression was removed during final cleanup: its custom host supplied Outbound's count as zero and could not detect the ViewModel bug (AGENTS Tests §6). `homeFailureDoesNotFollowBackToOutbound` covers the actual counter regression. The restoration regression remains required.
+
+2. The width discrepancy came from using `wizardRow` (Figtree, zero tracking) for the board's `.ios` pills (platform font, −0.01 em). Size 17/22, regular weight, `tnum` and 6/12 padding already matched. `wizardPicker` is now generated from `Wizard.dc.html` and `theme.css` and maps the platform face to Android's default system family; all other styles are unchanged. Pill row-fit uses the visual intrinsic width without a 48 dp width floor; the target keeps a 48 dp height and Compose's minimum touch area, while the fill remains 34 dp tall at font scale 1. The geometry regression uses the exact 390 × 844 / density-3 capture fixture and actual card/shell gutters. Before the fix, Departs' label started at 207.33 dp and the pills at 255.33 dp (stacked); after it they share the row. It also checks 48 dp targets and the 34 dp drawn pill. The existing 280 dp / 1.3 stacked case remains. The previous documented 390 dp stacking exception above is corrected; OQ-A398's fit default itself is unchanged. Pixel-identical SF Pro and Android system glyphs are not assumed; the final capture measurements are recorded below.
+
+3. Inline rows now center the label and both target boxes within their measured row height. The visual fill is centered in each target, so its center coincides with the label's center rather than aligning the label's top to the 48 dp target. The geometry assertions compare the label directly with both `.visual` bounds (±0.5 dp), on the English board fixture and Dutch pixel profile. Stacked placement is unchanged. At font scale 1 the previous 40 dp label started at the top of the 48 dp target, putting its center 4 dp above the 34 dp pill's center; that offset is removed.
+
+4. No matching chevron/iOS tertiary-label color exists in `ds/chronoflow/tokens.json`, `theme.css`, the Android overlay, or generated `CfLightColors` / `CfDarkColors`. The board's `rgba(120,120,128,0.7)` is a literal on the choice/row chevrons, not a named color token. Material's generated mapping uses dawn for tertiary and does not supply this label color. Added **OQ-A400**, default **keep `mutedForeground` until a token exists**, as requested. `WizardChoiceCard` remains unchanged, and `WizardReturn`, `WizardReturnDark`, `WizardReturnNL` retain this recorded color difference. No literal, alpha adjustment or new color token was invented.
+
+5. The root-theme test now drains `ioDispatcher.scheduler.runCurrent()` before asserting zero preload calls, while the commit Deferred is still incomplete. All existing barrier/motion/count/fonts-ready assertions remain. A temporary mutation moved `warmFonts` before `firstFrame.await()`; the strengthened test failed at the intended assertion, **expected 0, actual 4** (isolated SDK-cold case 2.052 s). The mutation was restored byte-for-byte. The complete three-case class then passes; final warm measurements are recorded below. No production font-ordering code is committed for this item.
+
+6. The connection rule was a real mismatch: the board declares `border-top: 2px dotted var(--border)`, while the Kotlin rule used a 2/4 dp dash effect with round caps. At @3x the host board's interior marks are 6 × 6 px on a 12 px pitch; the old capture has elongated marks on an 18 px pitch (10 fully opaque horizontal pixels plus antialiased ends). The rule now uses the generated 2 dp dot width for stroke/height, equal 2 dp marks and spaces, and butt caps, matching the rendered board's square dots. The existing `border` token is already correct in both appearances. The effect and geometry stay inside `drawWithCache`, with no per-frame allocation. No new literal or geometry token was needed.
+
+### Review round 2 captures and validation
+
+`make captures ONLY=WizardOutbound,WizardReturn` ran **once**, writing 27 PNGs (26 board counterparts plus `WizardOutboundScrollErrors_noBoard`), tier wall 16.05 s / command wall 16.12 s. The host renders and Android captures were read directly for `WizardOutbound`, `WizardOutboundErrors`, `WizardOutboundStop` and `WizardReturnFlightPastDarkNL`; all 26 matched-name pairs were then read in seven comparison sheets (`build/phase9d-review2/comparison-*.png`, board left / Android right, names in `comparison-index.json`). There is no new missing content or clipping in these boards. Settled 9c native header/progress/footer mapping, the existing iOS-selected One way state, model progress on incomplete multi-flight drafts, and the pinned Overnight values remain the recorded exceptions. The chevron remains OQ-A400's explicit token exception.
+
+Full-resolution pixel scans of `WizardOutbound`'s filled Arrives pills (all images 1170 × 2532; measurements below in pixels, divide by three for dp):
+
+| Measurement | Host board | Before round 2 | After round 2 |
+|---|---:|---:|---:|
+| Date pill width | 360 | 377 | 347 |
+| Time pill width | 207 | 213 | 199 |
+| Solid date glyph run | 279 | 293 | 266 |
+| Solid time glyph run | 129 | 133 | 120 |
+| Pill fill RGB | 234,237,240 | 234,237,240 | 234,237,240 |
+| Departs row at 390 dp | Inline | Stacked | Inline |
+| Connection rule interior pitch | 12 | 18 | 12 |
+| Connection rule fully opaque mark width | 6 | 10 plus antialiased ends | 6 |
+
+The Android system face is slightly narrower than the host's SF Pro (date −4.33 dp / time −2.67 dp); both use the board's system-face mapping, regular 17/22, −0.01 em, tabular digits and 6/12 padding. No width clamp, font shrinking, date abbreviation or font literal compensates for platform glyph metrics. The draw/touch geometry is separately guarded (34 dp fill, ≥48 dp target), and both label centers match the fills within 0.5 dp. The final connection dots are 6 × 6 px on a 12 px pitch in the same border RGB as the board. Raw spans are retained in `pixel-measurements.json`.
+
+| Command / selection | Result | Wall time |
+|---|---|---:|
+| `make targeted ONLY="feature:wizard:TripWizardViewModelTimesTest#homeFailureDoesNotFollowBackToOutbound"` before the fix | Required regression fails, expected zero / actual one | Gradle 2 s |
+| `make targeted ONLY="feature:wizard:TripWizardViewModelTimesTest feature:wizard:WizardTimesStepTest feature:wizard:WizardTimesRecompositionTest"` final | 19 retained cases covering process restoration, the ViewModel counter regression and card invalidation; the historical run included one now-removed screen test | 6.62 s before cleanup |
+| `make targeted ONLY="feature:wizard:WizardDateTimeRowLayoutTest#pillsReflowWithoutChangingTheirIdentity"` at the actual board density, before the fix | New English board case fails (pills 48 dp below label); existing Dutch cases pass | Gradle 5 s |
+| `make targeted ONLY="tools:tokengen:TypeScaleGoldenTest core:designsystem:CfTypeTest feature:wizard:WizardDateTimeRowLayoutTest"` | Generator/style checks and corrected inline cases pass | Gradle 2 + 2 + 5 s |
+| `make targeted ONLY="feature:wizard:WizardDateTimeRowLayoutTest"` final | Three cases pass: centered English/Dutch inline, narrow stacked; target/fill geometry | 5.00 s |
+| `make targeted ONLY="app:RootThemeTest#rootProvidesReduceMotionAndUsesTheSuppliedFontBarrier"`, temporary mutation | Intended failure: zero calls expected, four actual; source restored | Gradle 5 s; 2.052 s SDK-cold case |
+| `make targeted ONLY="app:RootThemeTest"` after restoring ordering | Three pass; strengthened case 307 ms warm, separate SDK cold 1.515 s | 3.95 s |
+| Layout tier (`:feature:wizard`, `:core:designsystem`, `:app`, `-Pcf.tier=layout`, through `Scripts/run-tier.sh layout-9d-review2`) | Once; all 273 pass, zero timing overruns/hangs. Existing 62 flight guards and 97 Where guards unchanged | 11.91 s |
+| `./gradlew :feature:wizard:lintDebug :app:lintDebug :core:designsystem:lintDebug :tools:tokengen:verifyTokens` | Once; all pass | 15.95 s |
+| `make quick` | Once; assertions all pass, one touched timing overrun: root-theme barrier **1,242 ms > 1,000 ms**; 3,018 fresh measurements; no hangs. Later recipe stages did not start | 36.91 s command / 36.85 s main tier |
+
+The quick timing failure is retained. Quick, captures, layout and Lint are not rerun. A narrowly scoped fixture correction and only the missed quick stages are recorded in the follow-up below. No emulator, performance or profile tier ran; no dependency or native library was added. The only new OQ is OQ-A400, and there is no Android-only copy or brief refresh.
+
+### Root-fixture follow-up after quick
+
+The only quick failure was the touched root-theme case's 1,242 ms budget overrun; its assertions passed. Draining the shared test scheduler can also run the process lifecycle's session-activation work, and the default `LaunchPlatform.controller` is cached outside the recording application. The root fixture now detaches its unrelated session-activation observer before starting the host and supplies its own lazy controller through the existing `AppGraph.launchProvider`. It asserts that the overlay is inactive, retaining the real `CfRoot`, first-commit Deferred, motion local, dispatcher checks, zero/four preload assertions and fonts-ready assertion. The allowlist and production code are unchanged.
+
+Removing only the session observer measured 321 ms warm; adding the independent controller measured **298 ms warm** (307 ms before these fixture changes). These quiet runs do **not** establish the cause of, or prove removal of, the 1,242 ms parallel-load overrun. No budget is widened and the failed quick run is not described as passing. All three cases pass after isolation (SDK cold 1.576 s; other warm case 47 ms), through `make targeted ONLY="app:RootThemeTest"` in **4.36 s**. The intermediate observer-only run took 4.71 s. No further timing trials were run. The fixture change is a separate signed follow-up commit because Task 6 had already started; no completed commit was rewritten.
+
+Only the quick recipe stages that had not started were run afterward:
+
+| Command | Result | Wall time |
+|---|---|---:|
+| `Scripts/run-tier.sh build-logic-9d-review2 --results 'build-logic/convention/build/test-results/test/*.xml' -- ./gradlew --console=plain :build-logic:convention:test` | Pass; 37 collected from up-to-date outputs | 1.18 s |
+| `Scripts/test_scripts.sh` with the same exported source paths as make | 168 scripts, 25 contracts, 49 localization and nine icons pass | 20.24 s total (groups 19.768 / 0.116 / 0.017 / 0.062 s) |
+| `make timing` | Pass; seven collected metrics from up-to-date outputs | 0.76 s |
+
+Final status: all functional assertions, captures, layout guards, Lint and token verification pass; the single full quick result retains its touched root-theme timing failure. A full run under parallel load remains unverified after the test-only fixture isolation. Commands were not blocked by the sandbox. Pixel was left running; no push or history rewrite occurred.
+
+### Final cleanup
+
+The host's `make check` passed on `eb0edba7`. Removed `returningToOutboundDoesNotReplayHomeFailureFeedback` and its test-only saveable host/imports because they supplied a pre-corrected count and could not fail for the production ViewModel bug. The remaining `WizardTimesStepTest` has nine cases; together with nine `TripWizardViewModelTimesTest` cases and the recomposition case, the retained group has 19. Historical execution totals above remain measurements of their original runs. `make targeted ONLY="feature:wizard:WizardTimesStepTest"` ran once: all nine cases pass in 6.53 s tier wall, with zero budget overruns. No other test or build command ran for this cleanup.

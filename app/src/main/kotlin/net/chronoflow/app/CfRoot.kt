@@ -86,7 +86,7 @@ internal fun CfRoot(
         if (!graph.launch.overlayActive && displayedRoute != null) graph.finishLaunch()
     }
     BackHandler(enabled = seam != null) { destinations.closeSeam() }
-    RootFontWarmup(firstCommit, graph.fontPreloader, graph.launch::markFontsReady)
+    RootFontWarmup(firstCommit, graph.fontPreloader, graph.dispatchers.io, graph.launch::markFontsReady)
     val night = isSystemInDarkTheme()
     val overlayShowing = graph.launch.overlayActive
     // Skipped overlays wait for first commit before readiness can select a route.

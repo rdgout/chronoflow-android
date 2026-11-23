@@ -1,5 +1,3 @@
-@file:Suppress("ktlint:standard:max-line-length")
-
 package net.chronoflow.feature.wizard
 
 import androidx.lifecycle.ViewModel
@@ -17,12 +15,15 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.transformLatest
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import net.chronoflow.core.model.DataFailure
 import net.chronoflow.core.model.contracts.ApiAirportSuggestion
+import net.chronoflow.core.model.contracts.TimeFormat
 import net.chronoflow.core.model.device.DeviceIdentityFailure
 import net.chronoflow.core.model.session.SessionFailure
 import net.chronoflow.core.model.store.StoreFailure
@@ -35,6 +36,10 @@ import net.chronoflow.core.wizard.model.MemberWizardStep
 import net.chronoflow.core.wizard.model.RecoveryRejected
 import net.chronoflow.core.wizard.model.TripWizardAction
 import net.chronoflow.core.wizard.model.WizardAirportSheet
+import net.chronoflow.core.wizard.model.chooseReturn
+import net.chronoflow.core.wizard.model.finishFlightInput
+import net.chronoflow.core.wizard.model.finishOutboundStep
+import net.chronoflow.core.wizard.model.finishReturn
 import net.chronoflow.core.wizard.model.finishRoute
 import net.chronoflow.core.wizard.model.hasChanges
 import net.chronoflow.core.wizard.model.navigationPath
@@ -42,10 +47,13 @@ import net.chronoflow.core.wizard.model.popNavigation
 import net.chronoflow.core.wizard.model.progress
 import net.chronoflow.core.wizard.model.resumeChecking
 import net.chronoflow.core.wizard.model.resumeCompletion
+import net.chronoflow.core.wizard.model.setDatePart
+import net.chronoflow.core.wizard.model.setTimePart
 import net.chronoflow.core.wizard.model.showsBack
 import net.chronoflow.feature.wizard.shell.WizardEvent
 import net.chronoflow.feature.wizard.shell.WizardExit
 import net.chronoflow.feature.wizard.shell.WizardStepKey
+import net.chronoflow.feature.wizard.times.WizardPicker
 import net.chronoflow.feature.wizard.ui.AirportRowUi
 import net.chronoflow.feature.wizard.ui.AirportSearchUi
 import net.chronoflow.feature.wizard.ui.WizardInitialPresentation
@@ -62,6 +70,7 @@ class TripWizardViewModel(
     deps: TripWizardDependencies?,
     presentation: WizardInitialPresentation = WizardInitialPresentation(),
 ) : ViewModel() {
+    private val pickerNow = deps?.now ?: { Instant.EPOCH }
     private val mutableClosing = MutableStateFlow(false)
     val closing = mutableClosing.asStateFlow()
     private val mutableDialog = MutableStateFlow(presentation.discardDialogVisible)
@@ -72,19 +81,44 @@ class TripWizardViewModel(
     private var continuing = false
     private val mutableState = MutableStateFlow<TripWizardUiState>(TripWizardUiState.Loading)
     val state: StateFlow<TripWizardUiState> = mutableState.asStateFlow()
+    private val continueFailures = MutableStateFlow<Map<WizardStepKey, Int>>(emptyMap())
+
+    private data class OpenPicker(
+        val picker: WizardPicker,
+        val openedAt: Instant,
+    )
+
+    private val mutablePicker = MutableStateFlow<OpenPicker?>(null)
+    private val timesPresentation = combine(continueFailures, mutablePicker) { failures, picker -> failures to picker }
     val uiState =
-        combine(state, closing, discardDialogVisible) { value, closing, dialog ->
+        combine(
+            state,
+            closing,
+            discardDialogVisible,
+            deps?.timeFormat ?: flowOf(TimeFormat.Value24),
+            timesPresentation,
+        ) { value, closing, dialog, timeFormat, times ->
             (value as? TripWizardUiState.Active)?.let {
-                WizardUiState.from(it, closing, dialog).let { ui ->
-                    ui.copy(
-                        sheet = ui.sheet?.copy(seedQuery = presentation.query),
-                        chrome =
-                            ui.chrome.copy(
-                                showBack =
-                                    wizard?.showsBack == true,
-                            ),
-                    )
-                }
+                val step = WizardStepKey(it.wizard.draft.state.step)
+                WizardUiState
+                    .from(
+                        it,
+                        closing,
+                        dialog,
+                        timeFormat,
+                        times.second?.openedAt ?: Instant.EPOCH,
+                        times.first[step] ?: 0,
+                        times.second?.picker,
+                    ).let { ui ->
+                        ui.copy(
+                            sheet = ui.sheet?.copy(seedQuery = presentation.query),
+                            chrome =
+                                ui.chrome.copy(
+                                    showBack =
+                                        wizard?.showsBack == true,
+                                ),
+                        )
+                    }
             }
         }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
     val chrome = uiState.map { it?.chrome }.distinctUntilChanged().stateIn(viewModelScope, SharingStarted.Eagerly, null)
@@ -304,11 +338,34 @@ class TripWizardViewModel(
             return
         }
         continuing = true
+        mutablePicker.value = null
         try {
             when (step) {
-                WizardStepKey.Where -> model.finishRoute()
-                WizardStepKey.ReturnRoute -> model.finishRoute(home = true)
-                else -> Unit
+                WizardStepKey.Where -> {
+                    model.finishRoute()
+                }
+
+                WizardStepKey.ReturnRoute -> {
+                    model.finishRoute(home = true)
+                }
+
+                WizardStepKey.Outbound -> {
+                    if (model.finishOutbound()) {
+                        if (model.draft.state.revisit != null) model.finishFlightInput() else model.finishOutboundStep()
+                    } else {
+                        continueFailures.update { it + (step to ((it[step] ?: 0) + 1)) }
+                    }
+                }
+
+                WizardStepKey.ReturnFlight -> {
+                    if (model.finishReturn()) {
+                        model.finishFlightInput()
+                    } else {
+                        continueFailures.update { it + (step to ((it[step] ?: 0) + 1)) }
+                    }
+                }
+
+                else -> {}
             }
         } finally {
             continuing = false
@@ -317,6 +374,10 @@ class TripWizardViewModel(
 
     fun back() {
         if (closing.value) return
+        if (mutablePicker.value != null) {
+            mutablePicker.value = null
+            return
+        }
         val model = wizard ?: return
         val path = model.navigationPath
         model.popNavigation(path.dropLast(1), path)
@@ -340,6 +401,7 @@ class TripWizardViewModel(
     private fun close() {
         if (closing.value) return
         mutableClosing.value = true
+        mutablePicker.value = null
         viewModelScope.launch {
             try {
                 discard()
@@ -380,21 +442,113 @@ class TripWizardViewModel(
         if (!closing.value) search.retry()
     }
 
+    private fun openFlightPicker(picker: WizardPicker) {
+        val model = wizard ?: return
+        if (closing.value || model.closed) return
+        val form = model.draft.form
+        val range =
+            when (model.draft.state.step) {
+                MemberWizardStep.outbound -> 0 until form.returnBoundary
+                MemberWizardStep.returnFlight -> form.returnBoundary until form.legs.size
+                else -> return
+            }
+        if (picker.index in range) mutablePicker.value = OpenPicker(picker, pickerNow())
+    }
+
     fun onEvent(event: WizardEvent) {
         when (event) {
-            is WizardEvent.OpenAirport -> openAirport(event.sheet)
-            WizardEvent.CancelAirport -> cancelAirport()
-            is WizardEvent.ChooseAirport -> chooseAirport(event.airport, event.sheet)
-            WizardEvent.SwapAirports -> swapAirports()
-            is WizardEvent.RemoveStop -> removeStop(event.routeIndex)
-            is WizardEvent.MakeDirect -> makeDirect(event.home)
-            is WizardEvent.Continue -> continueFrom(event.step)
-            WizardEvent.Back -> back()
-            WizardEvent.RequestClose -> requestClose()
-            WizardEvent.ConfirmDiscard -> confirmDiscard()
-            WizardEvent.DismissDiscard -> dismissDiscard()
-            is WizardEvent.Query -> onQuery(event.text)
-            WizardEvent.RetrySearch -> retrySearch()
+            is WizardEvent.OpenFlightPicker -> {
+                openFlightPicker(event.picker)
+            }
+
+            WizardEvent.DismissFlightPicker -> {
+                mutablePicker.value = null
+            }
+
+            is WizardEvent.ChooseReturn -> {
+                val model = wizard
+                if (!closing.value && model != null &&
+                    (
+                        event.kind != "return_legs" || model.draft.form.end.kind == "return_legs" ||
+                            model.draft.form.legs.size < net.chronoflow.core.wizard.model.WizardForm.maxFlights
+                    )
+                ) {
+                    model.chooseReturn(event.kind)
+                }
+            }
+
+            is WizardEvent.SetDatePart -> {
+                if (!closing.value) {
+                    wizard?.setDatePart(
+                        event.index,
+                        event.arrival,
+                        event.date,
+                    )
+                }
+            }
+
+            is WizardEvent.SetTimePart -> {
+                if (!closing.value) {
+                    wizard?.setTimePart(
+                        event.index,
+                        event.arrival,
+                        event.hour,
+                        event.minute,
+                    )
+                }
+            }
+
+            is WizardEvent.OpenAirport -> {
+                openAirport(event.sheet)
+            }
+
+            WizardEvent.CancelAirport -> {
+                cancelAirport()
+            }
+
+            is WizardEvent.ChooseAirport -> {
+                chooseAirport(event.airport, event.sheet)
+            }
+
+            WizardEvent.SwapAirports -> {
+                swapAirports()
+            }
+
+            is WizardEvent.RemoveStop -> {
+                removeStop(event.routeIndex)
+            }
+
+            is WizardEvent.MakeDirect -> {
+                makeDirect(event.home)
+            }
+
+            is WizardEvent.Continue -> {
+                continueFrom(event.step)
+            }
+
+            WizardEvent.Back -> {
+                back()
+            }
+
+            WizardEvent.RequestClose -> {
+                requestClose()
+            }
+
+            WizardEvent.ConfirmDiscard -> {
+                confirmDiscard()
+            }
+
+            WizardEvent.DismissDiscard -> {
+                dismissDiscard()
+            }
+
+            is WizardEvent.Query -> {
+                onQuery(event.text)
+            }
+
+            WizardEvent.RetrySearch -> {
+                retrySearch()
+            }
         }
     }
 

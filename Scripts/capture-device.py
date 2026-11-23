@@ -19,12 +19,15 @@ def main(only):
     target = ROOT / 'build/captures/device'
     shutil.rmtree(target, ignore_errors=True)
     trip_sheets = only.startswith(('ItemDetail', 'PlanLegend', 'SheetStates', 'TripActions'))
-    module = 'app' if only.startswith('SplashScreen') or trip_sheets else 'core/ui'
+    wizard_pickers = only.startswith('PickerDateTime')
+    module = 'app' if only.startswith('SplashScreen') or trip_sheets or wizard_pickers else 'core/ui'
     output = ROOT / module / 'build/outputs/connected_android_test_additional_output'
     shutil.rmtree(output, ignore_errors=True)
     command = ['./gradlew', '--console=plain', ':' + module.replace('/', ':') + ':connectedDebugAndroidTest',
                '-Pandroid.testInstrumentationRunnerArguments.annotation=net.chronoflow.core.testing.tiers.Capture',
                '-Pandroid.testInstrumentationRunnerArguments.timeout_msec=60000']
+    if wizard_pickers:
+        command.append('-Pandroid.testInstrumentationRunnerArguments.class=net.chronoflow.app.wizard.PickerDateTimeDeviceCaptureTest')
     if trip_sheets:
         command.append('-Pandroid.testInstrumentationRunnerArguments.class=net.chronoflow.app.trip.TripSheetsCaptureTest')
     if only:

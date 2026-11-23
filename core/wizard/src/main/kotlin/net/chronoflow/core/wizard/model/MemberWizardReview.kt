@@ -77,6 +77,7 @@ fun MemberWizardModel.chooseReturn(kind: String) {
     } else if (kind != form.end.kind || kind !in listOf("nights", "check_out")) {
         return
     }
+    state = state.copy(pendingDateTimes = emptyMap())
     changed()
     advanceChoice { if (kind == "return_legs") it.go(MemberWizardStep.returnRoute) else it.finishFlightInput() }
 }

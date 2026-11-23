@@ -61,10 +61,8 @@ class WizardBoardCaptureTest(
         compose.waitForIdle()
         captureWizard(
             compose,
-            if (board ==
-                "WizardWhereLimit"
-            ) {
-                "WizardWhereLimit_noBoard"
+            if (board in setOf("WizardWhereLimit", "WizardOutboundScrollErrors")) {
+                "${board}_noBoard"
             } else {
                 board
             },

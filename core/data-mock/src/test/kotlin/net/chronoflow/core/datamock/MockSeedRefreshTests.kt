@@ -19,9 +19,47 @@ import kotlin.time.Duration.Companion.seconds
 
 class MockSeedRefreshTests {
     companion object {
+        private val refreshFixtures: Unit by lazy {
+            warmMockFixtures()
+            runTest(timeout = 60.seconds) {
+                withContext(Dispatchers.IO) {
+                    val root =
+                        java.nio.file.Files
+                            .createTempDirectory("mock-seed-refresh-warmup")
+                            .toFile()
+                    try {
+                        val now = instant("2026-11-07T12:00:00Z")
+                        val old = MockAppSeed.make(now.minusSeconds(10 * 86400L), zone = mockZone)
+                        val token = "fixture-warmup-session"
+                        val store = FileMockStateStore(root)
+                        store.save(
+                            old.copy(
+                                sessions =
+                                    mapOf(
+                                        token to
+                                            MockSession(
+                                                demoID,
+                                                mockDeviceID,
+                                                seconds(now) + 86400,
+                                            ),
+                                    ),
+                            ),
+                        )
+                        val source =
+                            MockDataSource(store, now = { now }, sleep = {}, bearer = { token }, zone = mockZone)
+                        source.fetchIdentity()
+                        source.fetchTrips()
+                        store.load()
+                    } finally {
+                        check(root.deleteRecursively())
+                    }
+                }
+            }
+        }
+
         @JvmStatic @BeforeClass
         fun warmFixtures() {
-            warmMockFixtures()
+            refreshFixtures
         }
     }
 

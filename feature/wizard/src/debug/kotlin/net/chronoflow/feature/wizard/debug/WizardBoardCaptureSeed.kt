@@ -1,9 +1,8 @@
-@file:Suppress("ktlint:standard:max-line-length")
-
 package net.chronoflow.feature.wizard.debug
 
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import net.chronoflow.core.model.FieldMessage
 import net.chronoflow.core.model.contracts.ApiAirportSuggestion
 import net.chronoflow.core.wizard.model.MemberWizardDraft
 import net.chronoflow.core.wizard.model.MemberWizardState
@@ -47,6 +46,33 @@ object WizardBoardCaptureSeed {
             "WizardDiscard",
             "WizardDiscardDarkNL",
             "WizardWhereLimit",
+            "WizardOutbound",
+            "WizardOutboundDark",
+            "WizardOutboundNL",
+            "WizardOutboundEmpty",
+            "WizardOutboundEmptyDarkNL",
+            "WizardOutboundErrors",
+            "WizardOutboundErrorsDarkNL",
+            "WizardOutboundTwoErrors",
+            "WizardOutboundTwoErrorsDarkNL",
+            "WizardOutboundStop",
+            "WizardOutboundStopDarkNL",
+            "WizardOutboundStopEmpty",
+            "WizardOutboundStopEmptyDarkNL",
+            "WizardOutboundOvernight",
+            "WizardOutboundOvernightDarkNL",
+            "WizardOutboundThree",
+            "WizardOutboundThreeDarkNL",
+            "WizardOutboundPast",
+            "WizardOutboundPastDarkNL",
+            "WizardOutboundScrollErrors",
+            "WizardReturn",
+            "WizardReturnDark",
+            "WizardReturnNL",
+            "WizardReturnFlight",
+            "WizardReturnFlightDarkNL",
+            "WizardReturnFlightPast",
+            "WizardReturnFlightPastDarkNL",
         )
 
     fun baseName(board: String): String =
@@ -116,7 +142,7 @@ object WizardBoardCaptureSeed {
                         ),
                     ),
             )
-        if (board == "WizardWhere" || board == "WizardDiscard" ||
+        if (board == "WizardWhere" ||
             board == "WizardWhereSame"
         ) {
             state = state.copy(fromLastTrip = true)
@@ -143,6 +169,79 @@ object WizardBoardCaptureSeed {
             state = state.copy(step = MemberWizardStep.returnRoute, returnRouteConfirmed = false)
             if (board == "WizardHomeRouteStop") form = form.insertStop(airports[2], 1)
         }
+        val errors = mutableMapOf<String, FieldMessage>()
+        if (board.startsWith("WizardOutbound") || board == "WizardDiscard" || board == "WizardReturn") {
+            state = state.copy(step = MemberWizardStep.outbound)
+        }
+        if (board == "WizardOutboundEmpty") {
+            form = form.updateLeg(0) { it.copy(departLocal = "", arriveLocal = "") }
+        }
+        if (board == "WizardOutboundErrors") {
+            form = form.updateLeg(0) { it.copy(arriveLocal = "2026-10-11T09:15") }
+            errors["legs.0.arriveLocal"] = FieldMessage("Check the departure and arrival times.")
+        }
+        if (board in
+            listOf(
+                "WizardOutboundStop",
+                "WizardOutboundStopEmpty",
+                "WizardOutboundOvernight",
+                "WizardOutboundThree",
+                "WizardOutboundTwoErrors",
+                "WizardOutboundScrollErrors",
+            )
+        ) {
+            form = form.insertStop(airports[2], 0)
+            if (board != "WizardOutboundStopEmpty") {
+                val overnight = board == "WizardOutboundOvernight"
+                form =
+                    form
+                        .updateLeg(
+                            0,
+                        ) { it.copy(arriveLocal = if (overnight) "2026-10-12T22:25" else "2026-10-12T23:25") }
+                        .updateLeg(1) {
+                            it.copy(
+                                departLocal = if (overnight) "2026-10-14T02:05" else "2026-10-13T02:05",
+                                arriveLocal = if (overnight) "2026-10-14T16:35" else "2026-10-13T16:35",
+                            )
+                        }
+            }
+        }
+        if (board == "WizardOutboundStopEmpty") form = form.updateLeg(0) { it.copy(departLocal = "") }
+        if (board == "WizardOutboundThree") {
+            form = form.insertStop(airports[3], 1).updateLeg(1) { it.copy(arriveLocal = "2026-10-13T11:20") }
+        }
+        if (board == "WizardOutboundTwoErrors") {
+            form = form.updateLeg(1) { it.copy(arriveLocal = "2026-10-12T16:35") }
+            errors["legs.1.arriveLocal"] = FieldMessage("Check the departure and arrival times.")
+        }
+        if (board == "WizardOutboundScrollErrors") {
+            form =
+                form
+                    .insertStop(airports[3], 1)
+                    .insertStop(airports[2], 2)
+                    .insertStop(airports[3], 3)
+                    .updateLeg(0) { it.copy(arriveLocal = "2026-10-11T23:25") }
+                    .updateLeg(1) { it.copy(arriveLocal = "2026-10-13T11:20") }
+                    .updateLeg(2) { it.copy(departLocal = "2026-10-13T13:00", arriveLocal = "2026-10-13T17:00") }
+                    .updateLeg(3) { it.copy(departLocal = "2026-10-13T19:00", arriveLocal = "2026-10-14T04:00") }
+                    .updateLeg(4) { it.copy(departLocal = "2026-10-14T03:00", arriveLocal = "2026-10-14T14:30") }
+            errors["legs.0.arriveLocal"] = FieldMessage("Check the departure and arrival times.")
+            errors["legs.4.departLocal"] = FieldMessage("This flight leaves before the previous one lands.")
+        }
+        if (board == "WizardReturn") state = state.copy(step = MemberWizardStep.returnChoice)
+        if (board.startsWith("WizardReturnFlight")) {
+            form = form.addReturn().setRouteAirport(airports[0], 1, home = true)
+            state = state.copy(step = MemberWizardStep.returnFlight, returnRouteConfirmed = true)
+            if (board == "WizardReturnFlightPast") {
+                form = form.updateLeg(1) { it.copy(departLocal = "2026-10-22T10:25", arriveLocal = "2026-10-22T15:30") }
+                errors["review"] = FieldMessage("A new plan needs an upcoming arrival. Check your flight dates.")
+            }
+        }
+        if (board == "WizardOutboundPast") {
+            form = form.updateLeg(0) { it.copy(departLocal = "2026-09-02T14:40", arriveLocal = "2026-09-03T09:15") }
+            errors["review"] =
+                FieldMessage("A new plan needs an upcoming arrival. Check your flight dates or add your return flight.")
+        }
         state =
             state.copy(
                 sheet =
@@ -155,7 +254,7 @@ object WizardBoardCaptureSeed {
                         else -> null
                     },
             )
-        return MemberWizardDraft(form, state)
+        return MemberWizardDraft(form, state, errors)
     }
 }
 

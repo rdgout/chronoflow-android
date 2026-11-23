@@ -1,8 +1,11 @@
-@file:Suppress("ktlint:compose:modifier-missing-check")
+// Append slots so existing positional title arguments keep their meaning.
+@file:Suppress("ktlint:compose:modifier-missing-check", "ktlint:compose:param-order-check")
 @file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 
 package net.chronoflow.core.designsystem.system
 
+import android.annotation.SuppressLint
+import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DatePickerDialog
@@ -17,8 +20,13 @@ import androidx.compose.material3.TimePickerDisplayMode
 import androidx.compose.material3.TimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import net.chronoflow.core.designsystem.theme.CfTheme
 
+@SuppressLint("ModifierParameter")
 @Composable
 fun CfDatePickerDialog(
     state: DatePickerState,
@@ -27,6 +35,11 @@ fun CfDatePickerDialog(
     confirmLabel: String,
     dismissLabel: String,
     title: String? = null,
+    supporting: String? = null,
+    confirmEnabled: Boolean = true,
+    confirmTestTag: String = "cf.date.confirm",
+    dismissTestTag: String = "cf.date.dismiss",
+    modifier: Modifier = Modifier,
 ) {
     val c = CfTheme.colors
     val colors =
@@ -42,18 +55,25 @@ fun CfDatePickerDialog(
         )
     DatePickerDialog(
         onDismiss,
-        confirmButton = { DialogAction(CfDialogAction(confirmLabel, onConfirm), "cf.date.confirm") },
-        dismissButton = { DialogAction(CfDialogAction(dismissLabel, onDismiss), "cf.date.dismiss") },
+        modifier = modifier.semantics { testTagsAsResourceId = true },
+        confirmButton = { DialogAction(CfDialogAction(confirmLabel, onConfirm), confirmTestTag, confirmEnabled) },
+        dismissButton = { DialogAction(CfDialogAction(dismissLabel, onDismiss), dismissTestTag) },
         colors = colors,
     ) {
-        if (title == null) {
+        if (title == null && supporting == null) {
             DatePicker(state, colors = colors)
         } else {
-            DatePicker(state, title = { Text(title) }, colors = colors)
+            DatePicker(state, title = {
+                Column {
+                    title?.let { Text(it) }
+                    supporting?.let { Text(it, Modifier.testTag("cf.date.supporting"), color = c.mutedForeground) }
+                }
+            }, colors = colors)
         }
     }
 }
 
+@SuppressLint("ModifierParameter")
 @Composable
 fun CfTimePickerDialog(
     state: TimePickerState,
@@ -62,6 +82,10 @@ fun CfTimePickerDialog(
     confirmLabel: String,
     dismissLabel: String,
     title: String? = null,
+    supporting: String? = null,
+    confirmTestTag: String = "cf.time.confirm",
+    dismissTestTag: String = "cf.time.dismiss",
+    modifier: Modifier = Modifier,
 ) {
     val c = CfTheme.colors
     val parentScheme = MaterialTheme.colorScheme
@@ -70,13 +94,17 @@ fun CfTimePickerDialog(
     MaterialTheme(colorScheme = pickerScheme) {
         TimePickerDialog(
             onDismissRequest = onDismiss,
-            confirmButton = { DialogAction(CfDialogAction(confirmLabel, onConfirm), "cf.time.confirm") },
-            dismissButton = { DialogAction(CfDialogAction(dismissLabel, onDismiss), "cf.time.dismiss") },
+            modifier = modifier.semantics { testTagsAsResourceId = true },
+            confirmButton = { DialogAction(CfDialogAction(confirmLabel, onConfirm), confirmTestTag) },
+            dismissButton = { DialogAction(CfDialogAction(dismissLabel, onDismiss), dismissTestTag) },
             title = {
-                if (title == null) {
-                    TimePickerDialogDefaults.Title(displayMode = TimePickerDisplayMode.Picker)
-                } else {
-                    Text(title)
+                Column {
+                    if (title == null) {
+                        TimePickerDialogDefaults.Title(displayMode = TimePickerDisplayMode.Picker)
+                    } else {
+                        Text(title)
+                    }
+                    supporting?.let { Text(it, Modifier.testTag("cf.time.supporting"), color = c.mutedForeground) }
                 }
             },
             containerColor = c.popover,
