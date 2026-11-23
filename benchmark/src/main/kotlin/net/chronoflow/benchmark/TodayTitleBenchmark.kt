@@ -26,7 +26,7 @@ class TodayTitleBenchmark {
     @get:Rule val rule = MacrobenchmarkRule()
 
     private val packageName =
-        InstrumentationRegistry.getArguments().getString("targetAppId") ?: "net.chronoflow.app.native"
+        InstrumentationRegistry.getArguments().getString("targetAppId") ?: "net.chronoflow.app"
 
     @Test fun todayTitleCollapse() =
         rule.measureRepeated(

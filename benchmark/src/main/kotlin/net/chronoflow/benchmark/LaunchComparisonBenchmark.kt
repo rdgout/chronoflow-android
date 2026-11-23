@@ -24,7 +24,7 @@ class LaunchComparisonBenchmark(
     enum class Target(
         val packageName: String,
     ) {
-        Native("net.chronoflow.app.native"),
+        Native("net.chronoflow.app"),
         Rn("net.chronoflow.app"),
     }
 

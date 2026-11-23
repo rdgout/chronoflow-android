@@ -9,7 +9,7 @@ import uuid
 import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
-PACKAGE = "net.chronoflow.app.native.debug"
+PACKAGE = "net.chronoflow.app.debug"
 RECEIVER = PACKAGE + "/net.chronoflow.debug.SeedReceiverActivity"
 ACTIVITY = PACKAGE + "/net.chronoflow.app.MainActivity"
 TRIP = "0199a3c0-0000-7000-8000-000000000001"

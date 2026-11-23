@@ -19,7 +19,7 @@ import org.junit.runner.RunWith
 class LaunchJankBenchmark {
     @get:Rule val rule = MacrobenchmarkRule()
     private val packageName =
-        InstrumentationRegistry.getArguments().getString("targetAppId") ?: "net.chronoflow.app.native"
+        InstrumentationRegistry.getArguments().getString("targetAppId") ?: "net.chronoflow.app"
 
     @Test fun launchCold() =
         rule.measureRepeated(

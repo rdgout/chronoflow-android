@@ -34,7 +34,7 @@ class TimelineBenchmark {
     @get:Rule val rule = MacrobenchmarkRule()
 
     private val packageName: String =
-        InstrumentationRegistry.getArguments().getString("targetAppId") ?: "net.chronoflow.app.native"
+        InstrumentationRegistry.getArguments().getString("targetAppId") ?: "net.chronoflow.app"
 
     private val compilation = CompilationMode.Partial(BaselineProfileMode.Require)
 

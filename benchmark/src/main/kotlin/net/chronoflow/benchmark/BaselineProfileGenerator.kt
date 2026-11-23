@@ -24,7 +24,7 @@ class BaselineProfileGenerator {
     @get:Rule val rule = BaselineProfileRule()
 
     private val packageName: String =
-        InstrumentationRegistry.getArguments().getString("targetAppId") ?: "net.chronoflow.app.native"
+        InstrumentationRegistry.getArguments().getString("targetAppId") ?: "net.chronoflow.app"
     private val budget = ProfileCollectionBudget()
 
     private fun collectProfile(
