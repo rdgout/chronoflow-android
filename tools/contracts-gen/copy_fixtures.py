@@ -19,6 +19,7 @@ IOS = "Packages/ChronoFlowKit/Tests/DataAccessTests/Fixtures"
 SOURCES = [
     (IOS, ["account", "auth", "errors", "plans", "trips", "wizard"]),
     ("Packages/ChronoFlowKit/Tests/PlanCoreTests/Fixtures", ["intl-cases.json"]),
+    ("Packages/ChronoFlowKit/Tests/RemindersTests/Fixtures", ["selection.json"], "reminders"),
 ]
 
 
@@ -34,11 +35,16 @@ def read(repo, pin, args):
 def collect(repo, pin, reader):
     """Returns {resource: (bytes, ios_source)} and the owned sub-directories."""
     files, owned_dirs = {}, []
-    for base, entries in SOURCES:
+    for row in SOURCES:
+        base, entries = row[:2]
+        destination = row[2] if len(row) > 2 else None
+        if destination is not None:
+            owned_dirs.append(destination)
         for entry in entries:
             if entry.endswith(".json"):
                 source = f"{base}/{entry}"
-                files[entry] = (reader(repo, pin, ("show", source)), source)
+                resource = f"{destination}/{entry}" if destination is not None else entry
+                files[resource] = (reader(repo, pin, ("show", source)), source)
                 continue
             owned_dirs.append(entry)
             listing = reader(repo, pin, ("ls-tree", f"{base}/{entry}")).decode().splitlines()

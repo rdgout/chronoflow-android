@@ -109,6 +109,22 @@ class CopyFixturesTest(unittest.TestCase):
         self.assertEqual((self.out / "intl-cases.json").read_bytes(), b"[1]")
         self.assertIn("  intl-cases.json  Other/Fixtures/intl-cases.json\n", (self.out / cf.MANIFEST).read_text())
 
+    def test_row_with_destination_subdirectory(self):
+        cf.SOURCES = [("X/Fixtures", ["selection.json"], "reminders")]
+        data = b'{"k":"\xc3\xa9"}\r\n'
+        tree = {"X/Fixtures/selection.json": data}
+        self.assertEqual(run(self.root, tree=tree)[0], 0)
+        path = self.out / "reminders/selection.json"
+        self.assertEqual(path.read_bytes(), data)
+        line = cf.manifest_line(data, "reminders/selection.json", "X/Fixtures/selection.json")
+        self.assertEqual(cf.parse_manifest((self.out / cf.MANIFEST).read_text()), {"reminders/selection.json": line})
+        self.assertEqual(run(self.root, "--check", tree=tree)[0], 0)
+        path.write_bytes(data + b" ")
+        self.assertEqual(run(self.root, "--check", tree=tree)[0], 1)
+        path.write_bytes(data)
+        (path.parent / "orphan.json").write_bytes(b"{}")
+        self.assertEqual(run(self.root, "--check", tree=tree)[0], 1)
+
     def test_missing_repo_exits_two(self):
         with contextlib.redirect_stderr(io.StringIO()):
             saved = cf.os.environ.pop("IOS_REPO", None)

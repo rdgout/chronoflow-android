@@ -1155,6 +1155,16 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-A554 | (11b OQ-11b-11) The M3 drag handle slot (48 dp) differs from the board's 5 px grabber + 12 px top padding and from iOS, whose system grabber overlays the content and whose column starts 20 pt (`space5`) below the sheet top. | Phase 2's M3 handle, content top padding 0 below it (title at 48 dp vs 20 pt on iOS); record in `docs/wizard.md`. | 11b |
 | OQ-A555 | (11b OQ-11b-12) iOS 18n's "Valet claim gate" (register → verify → claimed trip in en/nl; password → member seed; two-factor → My trips) needs the user's local backend. | Not run; recorded as open for the user. Mock coverage stands in. | 11b |
 | OQ-A556 | (11b OQ-11b-13) A rotation while the sheet is open loses typed passwords. | Accepted (secrets never saveable); name and email survive. | 11b |
+| OQ-A557 | (12a OQ-12a-1) plan.md names the parity test `ReminderParityTest`; AGENTS.md says ported tests keep Swift names (`ReminderSelectionTests.allRNSelectionVectors`). | Use the Swift names. The plan task is met by that test. | 12a |
+| OQ-A558 | (12a OQ-12a-2) `:core:reminders` is JVM; the reminder copy lives in Android resources (0c). | `fun interface ReminderStrings` seam; 12b implements it with `CopyIndex` and a localized context; `FakeReminderStrings` in `:core:testing`, pinned to the generated XML by Task 6. No JVM copy table in main code. | 12a |
+| OQ-A559 | (12a OQ-12a-3) iOS `ReminderRequest` has no expiry; Android wants `setTimeoutAfter(expiresAt − now)` (research `07` OQ-14, A13 "20 min setTimeoutAfter"). | Add `expiresAt` (the group's) to `ReminderRequest`; it is not in the identifier. 12b chooses how to use it. | 12a, 12b |
+| OQ-A560 | (12a OQ-12a-4) Unparseable plan instants are NaN on iOS (undefined results). | Skip such blocks and sleeps; they take no fallback ordinal. | 12a |
+| OQ-A561 | (12a OQ-12a-5) iOS ledger `sendAtMs` is a `Double`; 4a's `reminder_ledger.send_at_ms` is `INTEGER`. | Keep `Double` in the engine for parity; 12b stores `floor(sendAtMs)` and reads it back as `Double`. | 12a, 12b |
+| OQ-A562 | (12a OQ-12a-6) iOS appends a ledger entry for every request at **schedule** time (`ReminderService.swift:134–140`); plan A13/12b append on **delivery**. | Not decided here (12b). Recommended for 12b: follow iOS (persist `elapsed(previous) + from(request)` for each request added or already pending) and keep the delivery append; duplicate entries are harmless because member keys are unioned. | 12a, 12b |
+| OQ-A563 | (12a OQ-12a-7) plan 12b names `ReminderPermissionState (granted, ask, blocked, unsupported)`; iOS has `ReminderPermission (undetermined, granted, blocked, unsupported)`. | One enum, `ReminderPermission`, from this phase; 12b maps "ask" to `Undetermined` and does not add a second enum. | 12a, 12b |
+| OQ-A564 | (12a OQ-12a-8) Destination of the fixture: 0d's copier writes files only to the fixtures root or a same-named sub-directory. | Add the optional destination element (Task 1); the file lands at `fixtures/reminders/selection.json` as plan.md asks. | 12a |
+| OQ-A565 | (12a OQ-12a-9) `ZoneId.of` and Foundation `TimeZone(identifier:)` differ on non-IANA ids (abbreviations, `GMT+2`). | Plan data uses IANA ids only; invalid → UTC. No test beyond `Not/AZone`. | 12a |
+| OQ-A566 | (12a OQ-12a-10) A stored `leadMin` outside 15/30/60 (server forbids it). | Accept it as iOS does; only `leadPatch` validates. | 12a |
 | OQ-0a-22 | Native libraries in the bundle? | Allow only `libandroidx.graphics.path.so` (Compose graphics-path; excluding it breaks Path conversion below API 34); fail on any other `.so` | 0a, 13 |
 | OQ-0b-1 | Where does `PlanMetrics` live? `08 §3.1` lists it inside `CfDimens`, but its consumer `:core:plan` is a JVM module that cannot depend on `:core:designsystem` | `core/plan/…/generated/PlanMetrics.generated.kt` (Double, dp), as iOS keeps it in `PlanCore` | 0b, 1b, 1c |
 | OQ-0b-2 | Port all iOS TokenGen outputs now (Auth, Settings, Terms, Welcome, PlanUI, Press, LaunchPaint, TypeMetrics), or only colors, sky and type? | All of them now (the iOS files are exact goldens and Phases 2, 3a, 3c, 5a, 9 and 10 need them) | 0b |
@@ -3445,13 +3455,13 @@ Acceptance evidence and the pending host checks are recorded in [`docs/settings-
 **Delivers.** Ports the reminder engine into :core:reminders. It covers selection over the 36 h lookback and the 48 h window, kinds and copy keys, 15 min coalescing, at most 6 a day and 60 in total, identifiers, the ledger and the account-level switches. The 110 iOS parity vectors pass unchanged on the JVM.
 
 **Tasks**
-- [ ] **Engine** (`core/reminders/…`).
+- [x] **Engine** (`core/reminders/…`).
   - `ReminderSelection`: a 36 h lookback and a 48 h window; kinds and copy keys; 15 min coalescing; at most 6 a day and 60 in total; a 5 s margin; expiry after 20 min.
   - `ReminderSchedule`.
   - `ReminderLedger`: identifiers and replay protection.
   - The account-level switches and the lead time (15, 30 or 60 min).
-- [ ] **Parity.** Copy `selection.json` (110 vectors, 1.0 MB) into `core/testing/…/fixtures/reminders/` with its hash. `ReminderParityTest` runs every vector unchanged. Record the exporter command (`Tools/ReminderParity/export-selection.cjs`) for a re-pin.
-- [ ] **Copy.** Notification copy in en and nl, through the 0c strings and the account time format.
+- [x] **Parity.** Copy `selection.json` (110 vectors, 1.0 MB) into `core/testing/…/fixtures/reminders/` with its hash. `ReminderParityTest` runs every vector unchanged. Record the exporter command (`Tools/ReminderParity/export-selection.cjs`) for a re-pin.
+- [x] **Copy.** Notification copy in en and nl, through the 0c strings and the account time format.
 
 **Acceptance**
 - 110 of 110 parity vectors pass on the JVM.
