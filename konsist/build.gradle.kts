@@ -4,6 +4,7 @@ plugins {
 
 dependencies {
     testImplementation(libs.konsist)
+    testImplementation(project(":core:testing"))
 }
 
 tasks.test {

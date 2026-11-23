@@ -3,11 +3,13 @@ package net.chronoflow.core.ui.l10n
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import net.chronoflow.core.testing.tiers.Logic
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 
+@Logic
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [36])
 class DebugRouteResolutionTest {

@@ -125,3 +125,62 @@ After `git checkout` of the file, `make generators-check` exits 0. The check nee
 
 - Cold-boot path of `Scripts/emulator.sh ensure`, `down` and `wipe` against a real emulator (not exercised; `pixel` was already booted).
 - `make du` output at the end of the session is in the hand-back.
+
+## Phase 0e: test harness, device profiles and perf wiring
+
+Worker, 2026-11-17, same host as section 4 (Apple M4 Max). Every command ran in the worker sandbox; the orchestrator ran none for this phase.
+
+### Tiers (OQ-0e-2, OQ-0e-17)
+
+- JUnit Platform 5.14.4 with the Vintage engine (`junit-bom` 5.14.4; never 6.x). The `PostDiscoveryFilter` and the timing listener in `:core:testing-junit` register through `META-INF/services` and work under the AGP unit-test tasks, so the fallback (`@Category`) was not needed.
+- Proof: `./gradlew :core:ui:testDebugUnitTest -Pcf.tier=layout` runs no class (`core/ui/build/test-results/testDebugUnitTest/` has no XML, `core/ui/build/cf-timings/testDebugUnitTest/<pid>.json` has an empty `tests` list). `./gradlew :core:testing-compose:testDebugUnitTest -Pcf.tier=quick` runs the `@Logic` classes and no `@Layout` class, and writes `core/testing-compose/build/cf-timings/testDebugUnitTest/<pid>.json`.
+- `Test.failOnNoDiscoveredTests` exists in Gradle 9.9.1 and is set to `false` in `TestLauncher.kt`; a tier with no classes in a module passes, and run-tier still fails on missing XML or timing files (exit 2).
+- `core:ui` tests (`CopyIndexResolutionTest`, `DebugRouteResolutionTest`) are `@Logic`, so `make quick` and `make test` run them through the unqualified `testDebugUnitTest`.
+- `make quick` runs `:build-logic:convention:test` as its own tier call (`build-logic`), because that included build runs outside the conventions and writes no timing file (OQ-0e-23).
+- `make test` runs `$(JVM_MODULES:%=:%:test) testDebugUnitTest :app:testReleaseUnitTest -Pcf.tier=test` and passes (499 budgeted tests, 0 over budget). `ConfigurationPolicyTest` also runs in the release unit-test task there without a problem; a bare `./gradlew test` was not tried (it would add the perf variants' unit tests).
+- Budget gate: `make quick` first full run had `overBudget: 0` with no `@PerfBudget` anywhere, so no Konsist class needed an exemption (OQ-0e-21). Slowest quick tests: `HarnessProbeSnapshotTest`-class sandbox start 2.0 s (first Robolectric test on SDK 36, `warmup`), `LauncherIconInflationTest` 1.5 s, then `KonsistRulesTest#routesAreSerializable` 0.40 s.
+- Robolectric warm-up (first test per SDK in one JVM, `ConfigurationPolicyTest`): SDK 29 0.59 s, 32 0.41 s, 33 0.39 s, 36 1.05 s. The 20 s warm-up cap is far above what this host needs.
+- Layout guards run light only (user decision 2026-11-16): `LayoutMatrix.phone` is `small`-nl, `largeFont`-nl, `pixel8`-en; `LayoutMatrix.wide` adds `foldInner`-en and `landscapeSideNav`-en (OQ-0e-28).
+
+### Timings (single runs; the three-run `Scripts/measure-tiers.sh` was not run)
+
+| Command | Result |
+|---|---|
+| `make quick` | 42.5 s wall (Gradle 26.6 s, scripts 12 s), `overBudget: 0`, 471 budget checks, 0 unbudgeted, after one source change |
+| `make check` | 29.1 s wall, warm, `pixel` booted; smoke: 9 emulator tests, slowest `ConfigurationPolicyDeviceTest#nightModeChangeKeepsCapAndLocale` 0.60 s |
+| `make test` | 10.4 s wall, warm |
+
+### ConfigurationPolicy (OQ-A24)
+
+`applyOverrideConfiguration` in `MainActivity.attachBaseContext` held on API 36: all four `ConfigurationPolicyDeviceTest` cases passed (app locale `ar-EG` gives `en`, LTR and Latin digits; `nl` gives `nl`; system font scale 2.0 gives 1.3; an in-place `cmd uimode night yes` kept font scale 1.3, locale `en` and LTR). The API < 33 path is proven on Robolectric at SDK 29 and 32 (`ConfigurationPolicyTest`) and through the injected `sdkInt` in `DeviceConfigStrictModeTest`; the `api29` AVD was not run. No AppCompat fallback was needed.
+
+### Perf variants (OQ-A28)
+
+- `androidx.baselineprofile` 1.5.0 adds `benchmarkRelease` and `nonMinifiedRelease` to `:app` itself; `onVariants(selector().withBuildType(...))` adds `src/perf/kotlin` and `BuildConfig.PERF_ENTRY = true` to both. No hand-written `benchmark` build type was needed.
+- `./gradlew :app:compileNonMinifiedReleaseKotlin :app:compileBenchmarkReleaseKotlin :app:compileReleaseKotlin`, then `find app/build -name 'PerfEntry*.class'` lists only `.../nonMinifiedRelease/...` and `.../benchmarkRelease/...`.
+- Both perf merged manifests have `<profileable android:shell="true">` (added by the plugin, so no `src/<variant>/AndroidManifest.xml`); the `release` merged manifest has none.
+- `./gradlew :app:dependencies --configuration <c> | grep -c data-mock`: `releaseRuntimeClasspath` 0, `benchmarkReleaseRuntimeClasspath` 1, `nonMinifiedReleaseRuntimeClasspath` 1.
+- `"benchmarkReleaseImplementation"(project(":core:data-mock"))` fails (`Configuration with name 'benchmarkReleaseImplementation' not found`), so `app/build.gradle.kts` uses the `configurations.matching { … }.configureEach { project.dependencies.add(name, project(":core:data-mock")) }` fallback (OQ-0e-26). `ModuleGraphTest.dataMockOnlyInDebugAndPerf` accepts it and rejects a planted `implementation(...)`.
+- `:app:testReleaseUnitTest :app:verifyReleaseManifest` pass; `ReleaseReadinessTest` proves no seed or perf class and `PERF_ENTRY == false` in release.
+- `android.experimental.self-instrumenting` was not set and `StartupBenchmark` ran, so the baseline profile plugin covers it. The benchmark reads `targetAppId` from the instrumentation arguments and falls back to `net.chronoflow.app.native`, the perf variants' id.
+
+### Timeouts (OQ-A29)
+
+A temporary `HangCapProbeTest` (`@Smoke`, `CountDownLatch(1).await(70, SECONDS)`, deleted afterwards) run with `make targeted ONLY="app:HangCapProbeTest"` failed after 60.013 s with `org.junit.runners.model.TestTimedOutException: test timed out after 60000 milliseconds`, so the instrumentation runner honours `timeout_msec=60000` and `ScreenTest` needs no `Timeout` rule. Other caps: Gradle `Test.timeout` 10 min (`TestLauncher.kt`), `runTest(timeout = 60.seconds)` (Konsist `runTestHasTimeout`), run-tier 600 s idle and 3,600 s total, and 300 s only in `Scripts/perf-startup.sh`.
+
+### Seeds
+
+- Manual use:
+  ```sh
+  adb shell am start -n net.chronoflow.app.native.debug/net.chronoflow.debug.SeedReceiverActivity \
+    --es CF_AUTH_TEST_ID "$(uuidgen | tr A-Z a-z)" --es CF_UI_TEST_PROFILE screen --es cf.settings.language nl
+  adb logcat -d -s UITestTimeline   # CF_UI_TIMELINE ... event=seed-begin / seed-applied
+  ```
+  App locales persist across runs: reset with `--es cf.settings.language system` (when the receiver is not already on top) or by running `ScreenTestHarnessTest`, whose `@After` resets them.
+- `seed-begin` to `seeded-screen-visible` (`ScreenTestHarnessTest`, `am instrument`, 5 runs): 0.258, 0.229, 0.234, 0.230, 0.215 s, median 0.23 s (iOS target 1 s, not asserted).
+- The receiver declares `configChanges="locale|layoutDirection|uiMode|fontScale"`: without it the system recreated the activity when the app locale changed and the seed was applied twice (OQ-0e-29).
+
+### Insets, benchmark and device matrix
+
+- `docs/device-matrix.md` has the measured `pixel` insets (top 132 px, bottom 63 px, gesture navigation) and `PixelProfileInsetsTest` passes on `pixel`.
+- `make perf` on `pixel` (emulator, `benchmarkRelease`, `Partial(UseIfAvailable)`, `-gpu host`): `Startup metric: startupCold timeToInitialDisplayMs median=88.7 ms REPORT` (min 79.9, max 97.1); the row is in `docs/perf-startup.md`. Emulator numbers are regression signals, not device claims. `build/emulator/gpu-mode` did not exist because the emulator was booted before this phase; it was written by hand after `ps` showed `-gpu host` (a later cold boot through `Scripts/emulator.sh ensure` writes it).

@@ -10,7 +10,7 @@ from pathlib import Path
 ROOT = Path(os.environ.get("TARGETED_ROOT") or Path(__file__).resolve().parent.parent)
 JVM_MODULES = {
     "core:model", "core:plan", "core:sync", "core:reminders", "core:wizard", "core:network",
-    "core:data-mock", "core:testing", "konsist", "tools:tokengen", "build-logic:convention",
+    "core:data-mock", "core:testing", "core:testing-junit", "konsist", "tools:tokengen", "build-logic:convention",
 }
 GRADLE = ["./gradlew", "--console=plain"]
 APP_TEST_RUNNER = "net.chronoflow.app.native.debug.test/androidx.test.runner.AndroidJUnitRunner"
@@ -79,19 +79,24 @@ def plan(selectors):
             else:
                 results = "%s/build/outputs/androidTest-results/connected/**/*.xml" % module.replace(":", "/")
                 commands.append(
-                    ["Scripts/run-tier.sh", "targeted-emu", "--device", "--results", results, "--"]
+                    ["Scripts/run-tier.sh", "targeted-emu", "--device", "--emulator", "--results", results, "--"]
                     + GRADLE
                     + [gradle_path + ":connectedDebugAndroidTest",
                        "-Pandroid.testInstrumentationRunnerArguments.class=" + ",".join(items)]
                 )
         else:
-            task = {"jvm": ":test", "android-release": ":testReleaseUnitTest"}.get(kind, ":testDebugUnitTest")
-            results = "%s/build/test-results/**/*.xml" % module.replace(":", "/")
+            task_name = {"jvm": "test", "android-release": "testReleaseUnitTest"}.get(kind, "testDebugUnitTest")
+            task = ":" + task_name
+            results = "%s/build/test-results/%s/*.xml" % (module.replace(":", "/"), task_name)
+            timings = "%s/build/cf-timings/%s/*.json" % (module.replace(":", "/"), task_name)
             tests = []
             for item in items:
                 tests += ["--tests", item]
             commands.append(
-                ["Scripts/run-tier.sh", "targeted", "--results", results, "--"] + GRADLE + [gradle_path + task] + tests
+                ["Scripts/run-tier.sh", "targeted", "--results", results, "--timings", timings, "--"]
+                + GRADLE
+                + [gradle_path + task, "-Pcf.tier=targeted"]
+                + tests
             )
     return commands
 

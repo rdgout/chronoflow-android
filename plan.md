@@ -654,6 +654,35 @@ Each has a default; the plan proceeds on the default and records the answer here
 | OQ-0d-10 | The brief names `api/GuestTripReviewInput.kt`, but ktlint `filename` requires a file with one class to carry its name | `api/ApiGuestTripReviewInput.kt`. The test-only `contracts/PlanParts.kt` keeps its brief name with a file-level suppression of that rule. | 0d |
 | OQ-0d-11 | A TypeScript reference to a type outside the graph (`Array<string>`) raises `KeyError` in the iOS generator | `ValueError("unsupported type: ...")`, as the brief asks for every unsupported syntax. | 0d |
 | OQ-0d-12 | Is the guest draft token a secret? | Yes: it can claim a guest trip, so it is redacted from `toString` and logs and kept out of saved state like other secrets. | 0d |
+| OQ-0e-1 | A3 makes `:core:testing` JVM (Konsist rule 2 forbids Android imports there), but guards need Compose UI test and Robolectric, and the tier filter needs the JUnit Platform API. Phase 2's brief says `core/testing/…/Guards.kt` | Add `:core:testing-compose` (Android test helpers: `ProfileRule`, `ProfileHost`, `Guards`, `BoardCapture`) and `:core:testing-junit` (JVM: filter and listener). `:core:testing` keeps annotations, profiles and fixtures. Later briefs read "Guards.kt" as `:core:testing-compose` | 0e |
+| OQ-0e-2 | Plan: "annotations … and a Gradle test listener". JUnit 4 categories cannot read custom annotations, and a Gradle listener cannot see annotations | JUnit Platform + Vintage with a `PostDiscoveryFilter` and a `TestExecutionListener` registered by `ServiceLoader`; `run_tier.py` merges the listener files. Fallback: `@Category` mapped to tags. Adds `@Logic` for Robolectric tests in quick (1d OQ-1d-4) | 0e |
+| OQ-0e-3 | The first Robolectric test on each SDK in a JVM pays the sandbox start | 20 s `warmup` cap for that test; 5 s for all others. Record the measured warm-up | 0e |
+| OQ-0e-4 | Region after coercion: iOS drops it, the plan keeps it | Keep the phone's region only when its language is the resolved one (`nl-BE` → `nl-BE`, `de-DE` → `en`), so picker week starts follow the phone | 0e |
+| OQ-0e-5 | `device-config` format is unspecified | UTF-8 `language=<system\|en\|nl>\ntheme=<system\|light\|dark>\n`, ≤ 64 B, defaults on anything invalid | 0e |
+| OQ-0e-6 | Do `cf.*` extras need `CF_AUTH_TEST_ID`? | No. Only `CF_*` keys are gated, as iOS gates the environment but not launch arguments. Release reads none | 0e |
+| OQ-0e-7 | Plan: `ScreenTest` "launches through the receiver" | `ScreenTest` calls the same `TestSeeds.apply` in-process, then `ActivityScenario<MainActivity>` (`13 §5.2.3`), which gives `scenario.close()`. `SeedReceiverActivityTest` covers the receiver | 0e |
+| OQ-0e-8 | Plan says `ConfigurationPolicy.wrap(base)`; an override survives in-place `uiMode`/size changes more reliably | `applyOverrideConfiguration` in `MainActivity`; `wrap` kept for non-activity contexts. T10's device test decides | 0e |
+| OQ-0e-9 | Committing a stored reference before approval | Only the harness probe `HarnessProbe_default_pixel8_en_light.png`; no screen reference until a person approves it | 0e |
+| OQ-0e-10 | 0d generates a wire enum `Language` in `:core:model`; the plan names the UI language `Language` too | The resolved UI language is `AppLanguage { En, Nl }` in `…model.config`; a mapping to the wire enum is added when a phase needs it | 0e |
+| OQ-0e-11 | `CompilationMode.Partial()` defaults to `BaselineProfileMode.Require`, but no profile exists until 1e | `UseIfAvailable` in 0e; 1e switches `StartupBenchmark` to `Require` when it commits the profiles | 0e |
+| OQ-0e-12 | `cf.freezeAt` means splash ms on iOS; 1d (OQ-1d-2) also reads an ISO instant from it for the plan clock | `TestSeed` parses ms (0…60000) into `freezeAtMs` and keeps `freezeAtRaw`; 1d parses the instant itself | 0e |
+| OQ-0e-13 | No profile covers 280 dp or split screen (`14 §14`: `split-narrow` 320 × 700, `landscape-short` 800 × 360) | Keep the plan's five; add them when a screen phase needs them | 0e |
+| OQ-0e-14 | AGENTS says `make perf` runs "cold and warm" | Cold only in 0e, per the phase entry; warm arrives with 3b | 0e |
+| OQ-0e-15 | Low-end device models for `budgets.json` | The script passes the class (`DEVICE_CLASS`); no model list | 0e |
+| OQ-0e-16 | 1e's brief names `Scripts/test_check_benchmarks.py`, but 0a discovers only `Scripts/tests/test_*.py` | The test lives at `Scripts/tests/test_check_benchmarks.py`; fixtures at `Scripts/fixtures/benchmarks/` as 1e says. The 1e brief already uses this path (its revision of 2026-11-16); plan.md's Phase 0e "Results checker" bullet still says `Scripts/test_check_benchmarks.py`, so T17 corrects that path in plan.md | 0e |
+| OQ-0e-17 | Gradle 9 fails a test task that has test sources but discovers no tests, which tier filtering causes | `failOnNoDiscoveredTests = false` in the convention; missing evidence is still caught by run-tier (no XML or no timing file → exit 2) | 0e |
+| OQ-0e-18 | Who builds `make captures DEVICE=1`? | Phase 2 Task 18 (its brief, OQ-2-21, cites this question). 0e ships the Robolectric path and a stub that exits 1 naming Phase 2 | 0e |
+| OQ-0e-19 | 1d also compiles `src/perf` into `debug`; the plan says perf variants only | 0e wires the two perf variants only; 1d adds `debug` if it still needs to | 0e |
+| OQ-0e-20 | Earlier versions of later briefs drifted from 0e's names: 1d (P8, item 10) and Phase 2 (§5 item 5, Task 18) said package `net.chronoflow.core.testing.tier` / one `Tiers.kt`; Phase 2 passed `Language.En` to `ProfileRule` | 0a fixed `net.chronoflow.core.testing.tiers` (`Smoke.kt`, Makefile `SMOKE`), so 0e keeps `tiers` with one file per annotation, and `ProfileRule` takes `AppLanguage` (OQ-0e-10). Both briefs are already corrected (1d P8 and item 10 name `…testing.tiers`; Phase 2's revision of 2026-11-16 uses `tiers` and `AppLanguage`); do not add aliases | 0e |
+| OQ-0e-21 | The 1 s JVM budget now fails `make quick` (T3), but 0a's Konsist classes parse the whole project in their first test, which may take more than 1 s | Exempt only a measured over-budget `:konsist` class with class-level `@PerfBudget` (a structure check over the tree, not a unit test), and record the ms. Every other JVM test keeps 1 s | 0e |
+| OQ-0e-22 | Wall-clock budget tests (1b, 1c) flake under the parallel test JVMs of `make quick` (review 2026-11-16) | `@TimingGate` plus a serial `timingTest` task, run by `make timing` as the last step of `make quick` and `make test`; `@PerfBudget` stays a duration-budget exemption only | 0e |
+| OQ-0e-23 | `make quick` ran `:build-logic:convention:test` in the same tier call as the other modules, so its XML had no listener file | It runs as its own `build-logic` tier call (no budget); the quick globs name `konsist`, `core/*` and `tools/*` | 0e |
+| OQ-0e-24 | The brief says `assertTouchTargets` reads `node.size`, but Material's `minimumInteractiveComponentSize()` is a layout modifier outside the semantics node, so a 48 dp button reports its content size there | The guard reads `node.layoutInfo` (the whole modifier chain, still layout size, never `touchBoundsInRoot`) | 0e |
+| OQ-0e-25 | Lint `AppBundleLocaleChanges` fires on `Configuration.setLocales` although the app convention sets `bundle.language.enableSplit = false` | Ignored in `lint.xml` with that reason | 0e |
+| OQ-0e-26 | The baseline profile plugin adds the perf build types after `app/build.gradle.kts` runs, so `"benchmarkReleaseImplementation"(…)` fails with `Configuration … not found` | The `configurations.matching { … }.configureEach` fallback from the brief, guarded by `ModuleGraphTest.dataMockOnlyInDebugAndPerf` | 0e |
+| OQ-0e-27 | `:core:testing-compose` needs Material 3 for `Text` and `minimumInteractiveComponentSize` in its probes and self-tests | `api(libs.compose.material3)`; it is a test-helper module and is never a main dependency | 0e |
+| OQ-0e-28 | The brief's tests loop profiles × languages × themes | `LayoutMatrix` in `:core:testing-compose` is the default (user, 2026-11-16): light only; `small` and `largeFont` in nl, `pixel8` once in en; `LayoutMatrix.wide` adds `foldInner` and `landscapeSideNav` in en | 0e |
+| OQ-0e-29 | Applying a seeded app locale recreates the running `SeedReceiverActivity`, which applied the seed twice | The receiver declares `configChanges="locale|layoutDirection|uiMode|fontScale"` in the debug manifest | 0e |
 
 ## Tasks
 
@@ -983,44 +1012,44 @@ The longest dependency chain has 17 waves: 0a → 0d → 1a → 4b → 4c → 4d
 **Delivers.** Sets up every test tier before product code. It commits profiles.json with the measured pixel AVD insets, Robolectric and Roborazzi with reference-free guards, a tier registry with per-test budgets, and the debug seed harness (SeedReceiverActivity, TestSeeds, the ScreenTest base) with a release-readiness test. It adds the :benchmark module with the perf variants, a cold-start benchmark on the empty app, and check-benchmarks.py with its failing fixture. It runs the ConfigurationPolicy spike (font cap 1.3, en/nl locale coercion, LTR, the device-config read below API 33) and verifies instrumentation timeouts, recording both outcomes. make quick stays under 60 s.
 
 **Tasks**
-- [ ] **Profiles.**
+- [x] **Profiles.**
   - `core/testing/src/main/resources/profiles.json` holds `small`, `pixel8`, `foldInner`, `landscapeSideNav` and `largeFont` (`13 §4.4`).
   - Measure the `pixel` AVD's status-bar and gesture insets once with `adb shell dumpsys window | grep -i inset`, cross-check them against a debug log of `WindowInsets.safeDrawing`, and commit them.
   - Add a `DeviceProfiles.kt` loader.
   - `LocalSafeInsets` in `:core:ui` is fed from `WindowInsets.safeDrawing` at the root in production and from the profile in tests.
-- [ ] **Robolectric and Roborazzi** through `chronoflow.roborazzi`.
+- [x] **Robolectric and Roborazzi** through `chronoflow.roborazzi`.
   - A JDK 21 test launcher through foojay (fallback: OQ-A27), with `@GraphicsMode(NATIVE)` and `@Config(sdk = [36])`.
   - `ProfileRule` applies size, density, font scale, locale and night mode.
   - Stored references are off by default; `SNAPSHOT_RECORD=1 make snapshots` records them.
-- [ ] **Reference-free guards** (`core/testing/…/Guards.kt`), each with a self-test on a planted bad layout:
+- [x] **Reference-free guards** (`core/testing/…/Guards.kt`), each with a self-test on a planted bad layout:
   - every text node lies inside the window and is not truncated unless marked as ellipsizable;
   - touch targets are at least 48 dp;
   - interactive nodes lie inside `safeDrawing` and do not overlap;
   - headings are marked.
-- [ ] **Tier registry.**
+- [x] **Tier registry.**
   - Annotations `@Smoke`, `@Layout`, `@Snapshot`, `@Capture` and `@Perf`. `TierRegistryTest` checks that every Robolectric and emulator test class has exactly one.
   - A Gradle test listener writes per-test durations to `build/test-results/<tier>/timings.json`. It fails a JVM test over 1 s or a Robolectric test over 5 s, unless the test is annotated `@PerfBudget`. Wall-clock budget tests are annotated `@TimingGate` instead: they run only in the serial `timingTest` task (`make timing`, the last step of `make quick` and `make test`), in one test JVM on one Gradle worker, after every other test task.
-- [ ] **Seed harness**, debug only, in `app/src/debug/kotlin/net/chronoflow/debug/`.
+- [x] **Seed harness**, debug only, in `app/src/debug/kotlin/net/chronoflow/debug/`.
   - An exported `SeedReceiverActivity`.
   - `TestSeeds.apply` handles `CF_AUTH_TEST_ID`, `CF_UI_TEST_PROFILE`, `cf.settings.theme`, `cf.settings.language`, `cf.reduceMotion` and `cf.freezeAt`. Account and route seeds arrive in 4e.
   - A `ScreenTest` base class in `app/src/androidTest` launches through the receiver.
   - The root sets `testTagsAsResourceId = true`.
   - `ReleaseReadinessTest` in `app/src/testRelease` asserts that `Class.forName("net.chronoflow.debug.SeedReceiverActivity")` throws.
-- [ ] **ConfigurationPolicy spike** (`app/…/ConfigurationPolicy.kt`).
+- [x] **ConfigurationPolicy spike** (`app/…/ConfigurationPolicy.kt`).
   - Font scale becomes `min(system, 1.3f)`, the locale is coerced to en or nl keeping the region, and the layout direction is LTR.
   - Below API 33 it reads `device-config` under a scoped StrictMode allowance.
   - Robolectric tests at API 29, 32, 33 and 36: `ar-EG` → en and LTR; `de-DE` → en; `nl-BE` → nl; font scale 2.0 → 1.3, so `largeFont` equals the cap.
   - Record whether `LocaleManager` plus this wrapper holds; if it does not, apply the OQ-A24 fallback and record that.
-- [ ] **Benchmark module** `:benchmark` (`com.android.test` with `androidx.baselineprofile` 1.5.0).
+- [x] **Benchmark module** `:benchmark` (`com.android.test` with `androidx.baselineprofile` 1.5.0).
   - Perf variants `benchmarkRelease` and `nonMinifiedRelease` take extra sources from `app/src/perf/`. Verify this works; otherwise use the OQ-A28 fallback and record it.
   - `StartupBenchmark`: cold start, 10 iterations, `CompilationMode.Partial`, `StartupTimingMetric`.
   - `make perf` appends rows to `docs/perf-startup.md`.
-- [ ] **Results checker** `Scripts/check-benchmarks.py`, with `benchmark/budgets.json` (metric → device class → hard and aim values).
+- [x] **Results checker** `Scripts/check-benchmarks.py`, with `benchmark/budgets.json` (metric → device class → hard and aim values).
   - It reads every `*-benchmarkData.json` under `build/outputs/connected_android_test_additional_output/`.
   - It fails on a missing, non-finite or over-budget value.
   - It computes jank % and the hitch ratio from the per-frame runs, and prints `Startup metric: …` and `Timeline metric: …` lines.
-  - Its test, `Scripts/test_check_benchmarks.py`, runs in quick: the 0.81 s first-frame fixture must fail, and so must a missing metric.
-- [ ] **Hang caps.**
+  - Its test, `Scripts/tests/test_check_benchmarks.py`, runs in quick: the 0.81 s first-frame fixture must fail, and so must a missing metric.
+- [x] **Hang caps.**
   - Verify that the runner honors `timeout_msec=60000` (OQ-A29): a temporary 70 s test must fail at about 60 s; then delete it.
   - Gradle `Test` tasks time out after 10 min.
   - The convention is `runTest(timeout = 60.seconds)`.

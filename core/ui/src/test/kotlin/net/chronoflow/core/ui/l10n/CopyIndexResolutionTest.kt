@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import net.chronoflow.core.testing.tiers.Logic
 import net.chronoflow.core.ui.R
 import net.chronoflow.core.ui.l10n.generated.CopyIndex
 import net.chronoflow.core.ui.l10n.generated.CopyTable
@@ -12,6 +13,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 
+@Logic
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [36])
 class CopyIndexResolutionTest {

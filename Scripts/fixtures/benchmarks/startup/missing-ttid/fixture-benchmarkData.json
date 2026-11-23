@@ -1,0 +1,28 @@
+{
+  "context": {
+    "build": {
+      "model": "sdk_gphone64_arm64",
+      "version": {
+        "sdk": 36
+      }
+    }
+  },
+  "benchmarks": [
+    {
+      "name": "startupCold",
+      "className": "net.chronoflow.benchmark.StartupBenchmark",
+      "metrics": {
+        "frameCount": {
+          "minimum": 10.0,
+          "maximum": 11.0,
+          "median": 10.5,
+          "runs": [
+            10.0,
+            11.0
+          ]
+        }
+      },
+      "sampledMetrics": {}
+    }
+  ]
+}
