@@ -454,7 +454,7 @@ Checks: Summary/header/day order, lane or row mode, category/priority/status tre
 - **Recorded decision:** Native system large title, no decorative glass logo; the Material bar/rail stays visible while scrolling. Cards retain the explicit board badge/check/shadow/meta-chip/connector choices and pinned iOS Next title weight. (source: `plan.md` OQ-A236 / OQ-A237 / OQ-A240, `docs/board-deltas.md`.)
 - **Recorded decision:** App bar and tabs; iOS system chrome; Native M3 app bar and navigation; A9; board surfaces retain their tokens. (source: `docs/board-deltas.md:7`.)
 - **Recorded decision:** Card padding; 32 dp vertical, 20 dp horizontal; Same; Board appearance; no shadow. (source: `docs/board-deltas.md:18`.)
-- **Recorded decision:** Native title ink in JVM captures; Title visible; Missing in these captures; Unresolved after idle/frame/idle; OQ-A336 retains CfLargeTopAppBar and requires device verification. Its structural tag is present in every state. (source: `docs/board-deltas.md:27`.) Historical JVM limitation; this phase's refreshed Today empty/future/completed captures show the title. Device chrome review remains separate.
+- **Recorded decision:** Native title ink in JVM captures; Title visible; Missing in these captures; Unresolved after idle/frame/idle; OQ-A336 retains the native wrapper (now CfMediumTopAppBar by the 2026-11-22 user decision) and requires device verification. Its structural tag is present in every state. (source: `docs/board-deltas.md:27`.) Historical JVM limitation; this phase's refreshed Today empty/future/completed captures show the title. Device chrome review remains separate.
 
 ### TodayEmpty (TodayEmpty.dc.html)
 
@@ -465,7 +465,7 @@ Checks: Summary/header/day order, lane or row mode, category/priority/status tre
 - **Recorded decision:** Native system large title, no decorative glass logo; the Material bar/rail stays visible while scrolling. Cards retain the explicit board badge/check/shadow/meta-chip/connector choices and pinned iOS Next title weight. (source: `plan.md` OQ-A236 / OQ-A237 / OQ-A240, `docs/board-deltas.md`.)
 - **Recorded decision:** App bar and tabs; iOS system chrome; Native M3 app bar and navigation; A9; board surfaces retain their tokens. (source: `docs/board-deltas.md:7`.)
 - **Recorded decision:** Primary action; 40 dp visual height; 40 dp visual / ≥48 dp touch target; Native CfButton Lg and minimum target. (source: `docs/board-deltas.md:17`.)
-- **Recorded decision:** Native title ink in JVM captures; Title visible; Missing in these captures; Unresolved after idle/frame/idle; OQ-A336 retains CfLargeTopAppBar and requires device verification. Its structural tag is present in every state. (source: `docs/board-deltas.md:27`.) Historical JVM limitation; this phase's refreshed Today empty/future/completed captures show the title. Device chrome review remains separate.
+- **Recorded decision:** Native title ink in JVM captures; Title visible; Missing in these captures; Unresolved after idle/frame/idle; OQ-A336 retains the native wrapper (now CfMediumTopAppBar by the 2026-11-22 user decision) and requires device verification. Its structural tag is present in every state. (source: `docs/board-deltas.md:27`.) Historical JVM limitation; this phase's refreshed Today empty/future/completed captures show the title. Device chrome review remains separate.
 
 ### TodayFuture (TodayFuture.dc.html)
 
@@ -478,7 +478,7 @@ Checks: Summary/header/day order, lane or row mode, category/priority/status tre
 - **Recorded decision:** Reminder sentence; Promises an evening reminder; Omitted; Pinned iOS drops this promise. The rest stays one board-style paragraph. (source: `docs/board-deltas.md:12`.)
 - **Recorded decision:** Upcoming badge; Outline; Outline; Board appearance; iOS uses secondary. (source: `docs/board-deltas.md:13`.)
 - **Recorded decision:** Optional Next row in capture; Present in sample; Absent with the Swift snapshot fixture; The fixture supplies the active trip detail while filtering trips to upcoming; the required stale-detail guard rejects it. The screen test separately renders the non-null Next branch; the live source observes the selected hero detail. (source: `docs/board-deltas.md:26`.)
-- **Recorded decision:** Native title ink in JVM captures; Title visible; Missing in these captures; Unresolved after idle/frame/idle; OQ-A336 retains CfLargeTopAppBar and requires device verification. Its structural tag is present in every state. (source: `docs/board-deltas.md:27`.) Historical JVM limitation; this phase's refreshed Today empty/future/completed captures show the title. Device chrome review remains separate.
+- **Recorded decision:** Native title ink in JVM captures; Title visible; Missing in these captures; Unresolved after idle/frame/idle; OQ-A336 retains the native wrapper (now CfMediumTopAppBar by the 2026-11-22 user decision) and requires device verification. Its structural tag is present in every state. (source: `docs/board-deltas.md:27`.) Historical JVM limitation; this phase's refreshed Today empty/future/completed captures show the title. Device chrome review remains separate.
 
 ### TodayLoading (TodayLoading.dc.html)
 
@@ -1871,7 +1871,7 @@ The 68 full-screen pixel captures cover every Material row in en/nl × light/dar
 
 The audit helper uses Compose 1.12.1 `ui-test-junit4-accessibility` with its ATF 4.1.1 dependency (ATF's Checker Framework qualifier API is exposed via a test-only compile dependency). Compiled API inspection confirms that the v2 `createEmptyComposeRule` is an AndroidComposeTestRule at runtime, so the preferred `enableAccessibilityChecks`/`tryPerformAccessibilityChecks` path is supported. Each caller supplies the exact content tag of its current window (including sheets/dialogs); the validator checks that node's window root, throws on ERROR and applies brief §5.5's five rules plus the native scrim exception recorded below (OQ-A617). Every ignored check logs its rule/tag/bounds once. Framework descriptions are redacted to structural identifiers and framework image saving is disabled, keeping field contents out of logs, exceptions and saved screenshots. Hardware frame commits precede the audit. API reference: [Android accessibility testing](https://developer.android.com/develop/ui/compose/accessibility/testing).
 
-Pending automated audit runs, keyboard, contrast and device font-scale evidence. Manual TalkBack, Switch Access and hardware-keyboard rows remain **pending (orchestrator/user)** until observed; no pass is inferred from captures. Accepted Welcome/sign-in-guest contrast and native disabled controls follow the exact policy in brief §5.5.
+Keyboard, computed contrast and the nine-screen pixel font cap are recorded below. Full-variant accessibility remains open with the native AM/PM finding (OQ-A618). Manual TalkBack, Switch Access and hardware-keyboard rows remain **pending (orchestrator/user)** until observed; no pass is inferred from captures. Accepted Welcome/sign-in-guest contrast and native disabled controls follow the exact policy in brief §5.5.
 
 ### Plan and auth audit coverage
 
@@ -2064,3 +2064,115 @@ Task 13 final aggregate (2026-11-22, pixel/API 36, debug): **9 passed, 0 failed*
 `strictmode-scan.py` groups threadtime StrictMode violations by PID and TID, then classifies a block as **ours** if any stack frame begins `net.chronoflow.`. The first app frame, violation type and repeat count are retained; a framework-leading stack with an app caller is still ours. Blocks with no app frame are third-party. Five fixture tests pass (0.051 s command wall): app disk read, framework-only stack, interleaved PID/threads, clean-log exit 0, and repeat aggregation / ours exit 1.
 
 `make strictmode-run` holds one device lock around functional prep, a 16 MB logcat buffer, clear, every module with androidTest (`app`, `core:ui`) without annotation filters, iOS parity, logcat dump and scan. Native modules run serially (`--max-workers=1 --continue`) and retain APKs for parity. The final dump and scanner still run if a test fails, while the target preserves the nonzero verdict. The target invokes the parity script directly under the held lock: embedding a recursive `$(MAKE)` would cause GNU Make to execute the entire recipe during `make -n`. The Makefile guard covers locking, ordering, serialization and absence of that recursion trap. No StrictMode permit or app policy is widened. Device results follow in Task 16.
+
+### Final audit runs and device ownership (Task 16)
+
+T2 creation, matrix, fold/resize and every performance/profile tier remain **pending (orchestrator/user)** by the user’s execution boundary. No AVD was created or stopped. `make du` (2026-11-22) passed in 32.397 s: Gradle caches 35 GB, AVD storage 18 GB, root build 13 GB, checkout 18 GB. No download was performed, so there is no post-download measurement.
+
+The historical pre-pause native full-module StrictMode sequence ran under one device lock with the scanner and parity procedure of Task 15. Its initial inspection invocation was `make -n strictmode-run`: GNU Make executed the recursive recipe despite `-n`. The authorized run was retained; a temporary uncommitted force-execute prefix on the nested parity target lets that child finish its real work under the same lock despite inherited dry-run flags. That temporary prefix is removed after the run. The committed target calls the parity script directly, and a guard prevents the recursion trap. Raw native evidence is in `build/test-results/strictmode/`; no second full native run is inferred or silently claimed.
+
+| Manual/device review | Closing procedure | Status |
+| --- | --- | --- |
+| TalkBack: Welcome | Enable the installed TalkBack service in Accessibility settings; cold launch, wait for the overlay, verify wordmark-first focus and Welcome reading order. | pending (orchestrator/user) |
+| TalkBack: Sign in | Trigger a seeded designed error banner; verify a single polite announcement and keyboard focus retention. | pending (orchestrator/user) |
+| TalkBack: timeline/list | Open a trip; traverse blocks in day/time order, activate Done/Skip custom actions, switch list mode, open and close a step. | pending (orchestrator/user) |
+| TalkBack: wizard | Open Checking with its existing seed; verify live-region changes and focus at the resulting prompt. | pending (orchestrator/user) |
+| Switch Access and hardware keyboard | Follow Task 9’s explicit procedures above; if a service is absent on pixel, perform the same procedure on an attached physical device. | pending (orchestrator/user) |
+| Real split / fold / T2 | Follow docs/device-matrix.md, retain screenshots and per-AVD timings; a JVM profile or wm override is not a real split pass. | pending (orchestrator/user) |
+| Reference / low-end / 120 Hz | Follow docs/perf-startup.md and docs/perf-timeline.md with the actual device, build and refresh rate recorded; no emulator result closes these rows. | pending (orchestrator/user) |
+
+The Accessibility box remains open while the native finding and manual passes remain open. The Task 16 Robustness implementation/handoff is recorded separately from the pending matrix/fold/physical acceptance gates; it does not claim that those runs passed.
+
+The first full app component of the StrictMode run reports 380 cases: 366 passed, 11 skipped and 3 failures. Two are the unchanged OQ-A618 AM/PM target findings. The third is `RemindersPermissionDeviceTest`’s explicit precondition (`run pm revoke before this class`, permission granted). Like the existing commit gate, audit targets now run that class alone after the existing permission-prep script revokes/clears flags; every app class still runs and no annotation filter is introduced. The audit-default flags are forwarded to the isolated invocation. See brief R15. Nine permission-script tests pass (0.147 s command); the lone failed native class was retried under that lock before parity and the StrictMode dump.
+
+Historical pre-pause raw result (unscoped collector; use the resumed scoped counts below for final evidence): **442 cases — 428 passed, 11 skipped, 3 failed**, 443.660 s tier wall, no timing overruns. Core UI’s 62 cases all pass; the app’s two open AM/PM findings and the permission precondition account for the failures. The isolated permission rerun passes (3.100 s instrumentation, 3.820 s tier wall). Its fix is established without repeating the other passing native cases. The combined native functional result retains only OQ-A618 as an unresolved app audit finding; the original full-tier exit remains nonzero and is preserved, not relabelled green.
+
+The completed StrictMode scan reports **ours 0, third-party 4**: `DiskReadViolation`, first external frame `com.google.android.apps.common.testing.accessibility.framework.strings.AndroidXMLResourceBundle.getDocument(AndroidXMLResourceBundle.java:69)`. This is ATF’s test-only XML resource loader; none of those blocks has a ChronoFlow frame. App thread/VM policies are unchanged. All 57 iOS parity entries were freshly captured (56 reference pairs plus launcher), zero failures; measured per-entry wall times sum to 182.727 s. Whole outer-command wall time was not retained, so only measured component times are reported. The temporary Makefile prefix was removed after the locked sequence completed.
+
+Read-only device probes list only `emulator-5554`, AVD `pixel`, API 36, density 420 dpi, font scale 1.0; no physical device is attached. TalkBack and Switch Access are installed, with components `com.google.android.marvin.talkback/.TalkBackService` and `com.google.android.accessibility.switchaccess/com.android.switchaccess.SwitchAccessService`. Their presence is not a manual pass. Under the device lock, open `adb -s emulator-5554 shell am start -a android.settings.ACCESSIBILITY_SETTINGS`, enable the desired service through Settings, follow the manual procedures above, then restore the previous service selection. Both remain **pending (orchestrator/user)**.
+
+Read-only App Links state is `app.chronoflow.net: 1024` for the debug package. No verification reset, forced verification or user-selection mutation was run. This does not prove real-domain association; manifest and explicit-package delivery evidence remain separate from the open S1/server gate.
+
+
+### Resumed final evidence (2026-11-23)
+
+Branch preflight: `feat/phase-14-audit-verification`, `b30594b9`. The interrupted
+Dutch/dark/reduced-motion run was rerun once. It reports 379 app cases:
+365 passed, 11 skipped, three failed, 425.380 s native-tier wall (430.859 s outer
+command including permission preparation). The isolated permission case passes,
+3.266 s instrumentation / 3.920 s tier wall. Two failures are OQ-A618. The third
+selected Dutch while Dutch audit defaults already selected it: the model correctly
+ignores an unchanged choice. `2d980d75` pins the locale-change test's initial
+language to English. Its single-method rerun requested nl/dark/reduced-motion
+through Gradle project properties and passes (12.909 s command). The original
+whole-suite exit stays nonzero; no second full-suite run is claimed.
+
+The fresh `make strictmode-run` takes 633.107 s. Its app cases are 366 passed,
+11 skipped, two OQ-A618 failures; all 52 core UI cases pass. The isolated permission
+case also passes (3.830 s tier). The first collector glob included eight stale
+benchmark XML cases even though no benchmark ran. Counts here are recomputed from
+the archived app/core-UI debug XML only, retaining the original 442.470 s native
+wall and nonzero exit. The target now selects only the debug results of the
+modules it actually runs, with a Makefile guard. Evidence:
+`build/phase14/final/strictmode/native-scoped-summary.json`.
+
+The scanner again reports **ours 0, third-party 4**, the same test-only ATF XML
+loader frame described above. All 57 parity entries were freshly captured,
+including all 56 reference pairs and launcher. Their timing alignment fallback
+(recording start where no initial black interval exists) remains explicit in
+`build/audit/ios-parity/results.json`. None is a pixel-equality or performance claim.
+
+The matrix target now locks the entire validation/boot/smoke/shutdown sequence,
+supports a single failed AVD via `ONLY=fold|small|api29`, and writes validated
+per-AVD count/date/wall summaries. Fake inputs prove that a missing result replaces
+a stale success and that empty/all-skipped, failed, over-budget or hang evidence
+cannot pass. No T2 AVD, fold, split, performance or profile command ran. Exact
+orchestrator commands and pending per-AVD rows are in `docs/device-matrix.md`.
+
+The full accessibility run requested all four language/theme variants and reports
+954 cases: 901 passed, 44 skipped, nine failed, no timing overruns/hangs
+(784.340 s native tier, 785.543 s command). Eight failures are the two OQ-A618 wake
+aliases in four variants each. The ninth is a premature Today progress assertion:
+`today.screen` is also present while loading. The primary Today and Trips audits
+now wait for their actual loaded content before checking it. Their eight exact
+parameterized cases pass (16.690 s command). The first base-method selector
+selected no cases and was correctly rejected; the rerun names the full variant
+suffixes. The original full run remains failed and no full rerun is claimed.
+
+Fresh Robolectric captures pass (2,116 cases, 113.917 s outer command); the full
+locked device capture run also passes (149 PNGs, 142.177 s). These replace the
+pre-pause screenshots rather than supplying stored image references. No PNG is
+committed. The latest metadata probe again lists only pixel/API 36 at 1080 × 2400,
+420 dpi and font scale 1.0, with both accessibility services installed. Its
+read-only App Links probe reports `Error: package net.chronoflow.app.native.debug
+unavailable` (exit 1), because connected tests had uninstalled that package. The
+earlier 1024 state above is historical, not a fresh association verdict; no
+verifier reset or forced verification was run.
+
+The fresh font-scale sweep passes all nine screens again (246.285 s command).
+All app-tagged bounds at system 2.0 match 1.3; each screen differs at 1.0. System
+scale 1.0 is restored. The full layout tier passes 3,318 cases with one existing
+API-36 locale skip, zero overruns/hangs (88.174 s); app plus all Phase 14 touched
+Android modules' `lintDebug` tasks pass (45.071 s). Fresh `make du` passes in
+31.780 s: Gradle caches 36 GB, AVD storage 18 GB, root build 14 GB, checkout 18 GB.
+No AVD download was performed; this is not a before/after-download claim.
+
+Final `make audit-coverage` passes (0.072 s): 334 canvas entries, 42 exclusions,
+292 in-scope boards, 194 groups, 188 required screen groups and 1,450 required
+cells; zero missing cells or exemptions. The report names 1,940 matching PNG
+paths. Board verdict counts are unchanged: Fixed 9 groups, Open 0 board groups,
+Recorded decision 194 groups, Needs a device 10 groups. These overlapping board
+counts do not close the global native target/contrast or manual/device rows.
+
+The fresh, unfiltered `make process-death` sweep passes **all nine cases in one
+run** (397.752 s command), replacing the earlier focused aggregate as final
+evidence. Welcome, typed Sign in, Today, My trips, trip sheet, Preferences, typed
+password prompt, member wizard and guest Sleep all observe the cold overlay and
+the expected durable route. The two wizard recoveries confirm AMS/HND. This is
+unseeded mock recovery, not a production/demo-account or physical-device claim;
+Calculating save-resume remains the existing JVM proof, not swept on device.
+
+Task 16 tooling, observed runs and the explicit execution handoff are complete.
+The Robustness plan tick covers that delivery; acceptance still requires the
+pending T2 matrix, fold/real split and physical gates. Full native-suite verdicts
+and the OQ-A618 failures remain nonzero as recorded above.

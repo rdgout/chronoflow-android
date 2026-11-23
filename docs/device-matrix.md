@@ -87,3 +87,44 @@ At 420 dpi the requested sizes are 840×1838 and 2100×945 px; at 390 dpi they a
 Real split screen: **pending (orchestrator/user)**. Under the device lock, try `adb -s emulator-5556 shell am start --windowingMode 3 -n net.chronoflow.app.native.debug/net.chronoflow.app.MainActivity` after opening a trip sheet. If the shell cannot enter split screen, use Overview’s Split screen action and select a second app. Resize the divider to a width ≥280 dp; confirm the day anchor and open step sheet survive. Record the successful method and one screenshot in `build/captures/resize/real-split.png`. A `wm size` override alone is not evidence of real split screen.
 
 T2 creation/matrix commands remain with the orchestrator: `make avd-create AVD=fold`, `make avd-create AVD=small`, `make avd-create AVD=api29`, `make matrix`. Record per-AVD results and `make du` before/after the downloads; none is inferred from JVM profiles.
+
+## Phase 14 final T2 handoff (2026-11-23)
+
+No T2 creation, matrix, fold or real split run was performed by the worker. These
+remain **pending (orchestrator/user)**. Pixel/API 36 is the only observed device;
+no physical device is attached. JVM profiles are not T2 measurements.
+
+Run in this order, retaining the before/after disk measurements. Create only
+missing AVDs; the create command deliberately rejects an existing name:
+
+```sh
+make du
+make avd-create AVD=fold
+make avd-create AVD=small
+make avd-create AVD=api29
+make du
+make matrix
+Scripts/emulator.sh ensure fold
+Scripts/fold-check.sh
+python3 -I Scripts/device_lock.py -- python3 -I Scripts/resize-check.py
+```
+
+The matrix now holds the device lock across validation, boot, smoke and shutdown,
+not only during instrumentation. Each AVD keeps its own
+`build/test-results/smoke-<avd>/timings.json` and copied native results.
+`Scripts/matrix-result.py` writes the checked counts/date/wall-time summary to
+`build/audit/matrix/<avd>.json`. Missing
+results, all-skipped runs and timing overruns are failures. The default is all
+three T2 AVDs. To rerun only a failed AVD after a fix, use `make matrix ONLY=fold`,
+`make matrix ONLY=small` or `make matrix ONLY=api29`. Other names (including
+`pixel`) fail before a device command. The matrix never shuts down pixel.
+
+| AVD | Image / port | Tests / pass / wall time | Status |
+|---|---|---|---|
+| fold | google_apis arm64 API 36 / 5556 | not measured | pending (orchestrator/user) |
+| small | google_apis arm64 API 36 / 5558 | not measured | pending (orchestrator/user) |
+| api29 | google_apis arm64 API 29 / 5560 | not measured | pending (orchestrator/user) |
+
+The API 29 image may download on first creation. Keep the AVDs afterwards. The
+fold/resize/split procedure and required screenshots above remain unchanged;
+entering a `wm size` override does not close the real split-screen gate.
