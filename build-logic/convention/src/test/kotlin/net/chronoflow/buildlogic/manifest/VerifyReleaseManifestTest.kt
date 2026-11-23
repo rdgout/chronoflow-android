@@ -59,4 +59,27 @@ class VerifyReleaseManifestTest {
     @Test
     fun unapprovedStartupInitializerFails() =
         assertThat(rulesOf("startup-initializer.xml")).containsExactly(Rule.STARTUP_INITIALIZER)
+
+    @Test fun missingRequiredPermissionFails() =
+        assertThat(rulesOf("missing-post-notifications.xml")).containsExactly(Rule.REQUIRED_PERMISSION_MISSING)
+
+    @Test fun missingSdkFails() = assertThat(rulesOf("missing-sdk.xml")).containsExactly(Rule.SDK_LEVELS)
+
+    @Test fun minSdk28Fails() = assertThat(rulesOf("min-sdk-28.xml")).containsExactly(Rule.SDK_LEVELS)
+
+    @Test fun targetSdk37Fails() = assertThat(rulesOf("target-sdk-37.xml")).containsExactly(Rule.SDK_LEVELS)
+
+    @Test fun versionMismatchFails() =
+        assertThat(
+            rulesOf("version-mismatch.xml"),
+        ).containsExactly(Rule.VERSION_MISMATCH)
+
+    @Test fun versionNameMismatchFails() =
+        assertThat(rulesOf("version-name-mismatch.xml")).containsExactly(Rule.VERSION_MISMATCH)
+
+    @Test fun unknownExportedReceiverFails() =
+        assertThat(rulesOf("exported-unknown-receiver.xml")).containsExactly(Rule.EXPORTED_COMPONENT)
+
+    @Test fun exportedSystemJobServiceFails() =
+        assertThat(rulesOf("job-service-exported.xml")).containsExactly(Rule.EXPORTED_COMPONENT)
 }

@@ -1,0 +1,114 @@
+{
+  "context": {
+    "build": {
+      "model": "fixture-device",
+      "version": {
+        "sdk": 36
+      }
+    }
+  },
+  "benchmarks": [
+    {
+      "name": "coldSignedOut[Native]",
+      "className": "net.chronoflow.benchmark.LaunchComparisonBenchmark",
+      "metrics": {
+        "timeToInitialDisplayMs": {
+          "minimum": 591,
+          "maximum": 609,
+          "median": 600.0,
+          "runs": [
+            591,
+            593,
+            595,
+            597,
+            599,
+            601,
+            603,
+            605,
+            607,
+            609
+          ]
+        },
+        "memoryRssAnonMaxKb": {
+          "minimum": 300000,
+          "maximum": 300000,
+          "median": 300000,
+          "runs": [
+            300000,
+            300000,
+            300000,
+            300000,
+            300000,
+            300000,
+            300000,
+            300000,
+            300000,
+            300000
+          ]
+        }
+      },
+      "sampledMetrics": {
+        "frameOverrunMs": {
+          "P99": -0.5,
+          "runs": [
+            [
+              -1.0,
+              -0.5
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "name": "coldSignedOut[Rn]",
+      "className": "net.chronoflow.benchmark.LaunchComparisonBenchmark",
+      "metrics": {
+        "timeToInitialDisplayMs": {
+          "minimum": 491,
+          "maximum": 509,
+          "median": 500.0,
+          "runs": [
+            491,
+            493,
+            495,
+            497,
+            499,
+            501,
+            503,
+            505,
+            507,
+            509
+          ]
+        },
+        "memoryRssAnonMaxKb": {
+          "minimum": 200000,
+          "maximum": 200000,
+          "median": 200000,
+          "runs": [
+            200000,
+            200000,
+            200000,
+            200000,
+            200000,
+            200000,
+            200000,
+            200000,
+            200000,
+            200000
+          ]
+        }
+      },
+      "sampledMetrics": {
+        "frameOverrunMs": {
+          "P99": 2.0,
+          "runs": [
+            [
+              1.0,
+              2.0
+            ]
+          ]
+        }
+      }
+    }
+  ]
+}

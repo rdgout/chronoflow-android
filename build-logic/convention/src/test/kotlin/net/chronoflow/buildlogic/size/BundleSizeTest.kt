@@ -48,4 +48,24 @@ class BundleSizeTest {
             ),
         ).isEmpty()
     }
+
+    @Test fun densityAndMasterAreNotLanguageSplits() =
+        assertThat(
+            BundleSize.languageSplits(listOf("toc.pb", "splits/base-master.apk", "splits/base-xxhdpi.apk")),
+        ).isEmpty()
+
+    @Test fun englishSplitIsRejected() =
+        assertThat(
+            BundleSize.languageSplits(listOf("splits/base-master.apk", "splits/base-en.apk")),
+        ).containsExactly("splits/base-en.apk")
+
+    @Test fun dutchAndRegionalSplitsAreRejected() =
+        assertThat(
+            BundleSize.languageSplits(listOf("splits/base-nl.apk", "splits/base-pt_BR.apk")),
+        ).containsExactly("splits/base-nl.apk", "splits/base-pt_BR.apk")
+
+    @Test fun abiIsNotALanguageSplit() =
+        assertThat(
+            BundleSize.languageSplits(listOf("splits/base-arm64_v8a.apk")),
+        ).isEmpty()
 }

@@ -15,6 +15,12 @@ class BaselineProfileFilesTest {
         val lines = File(dir, "baseline-prof.txt").readLines()
         listOf(
             "Lnet/chronoflow/app/MainActivity;",
+            "Lnet/chronoflow/feature/today/ui/TodayScreenKt;",
+            "Lnet/chronoflow/feature/trips/TripsScreenKt;",
+            "Lnet/chronoflow/core/ui/plan/StepSheetContentKt;",
+            "Lnet/chronoflow/feature/wizard/ready/WizardReadyStepKt;",
+            "Lnet/chronoflow/feature/launch/welcome/WelcomeScreenKt;",
+            "Lnet/chronoflow/feature/auth/model/SignInModel;",
             "Lnet/chronoflow/feature/trip/page/TripPageKt;",
             "Lnet/chronoflow/feature/trip/page/TripPageScreenKt;",
             "Lnet/chronoflow/feature/trip/page/DayHeaderKt;",
@@ -37,6 +43,11 @@ class BaselineProfileFilesTest {
     fun startupProfileHoldsTheMainActivity() {
         val file = File(dir, "startup-prof.txt")
         assertThat(file.length()).isGreaterThan(0L)
-        assertTrue(file.readLines().any { it.contains("Lnet/chronoflow/app/MainActivity;") })
+        val profile = file.readText()
+        listOf(
+            "Lnet/chronoflow/app/MainActivity;",
+            "Lnet/chronoflow/feature/today/ui/TodayScreenKt;",
+            "Lnet/chronoflow/feature/launch/welcome/WelcomeScreenKt;",
+        ).forEach { name -> assertTrue("$name is missing from startup-prof.txt", profile.contains(name)) }
     }
 }

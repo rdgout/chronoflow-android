@@ -1,0 +1,6 @@
+Class #0 header:
+  Class descriptor  : 'La/b;'
+  Direct methods -
+    name : 'open'
+000000: const-string v0, "safe" // string@0001
+000002: invoke-static {v0}, Landroid/util/Log;.w:(Ljava/lang/String;)I

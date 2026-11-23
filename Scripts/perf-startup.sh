@@ -53,6 +53,11 @@ if [ "$prep_status" != 0 ]; then
   echo "perf-startup: prep-perf failed with status $prep_status" >&2
   exit "$prep_status"
 fi
+if [ "$IS_EMU" = 1 ] || [ "${PERF_CLEAR:-0}" = 1 ]; then
+  step "$ADB" -s "$SERIAL" shell pm clear net.chronoflow.app.native || true
+else
+  echo "state: as found (set PERF_CLEAR=1 to clear app data)"
+fi
 scale="$(dev shell settings get global animator_duration_scale | tr -d '\r')"
 if [ "$scale" != 1 ] && [ "$scale" != 1.0 ]; then
   echo "perf-startup: animator_duration_scale is '$scale', not 1; a perf run with the scales off measures nothing" >&2

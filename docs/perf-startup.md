@@ -42,6 +42,7 @@ The reference and low-end gates stay open until a device exists (OQ-A22).
 | 2026-11-22 | 069adafd-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | benchmarkRelease, Partial(Require) | 122.6/112.2/141.0 | PASS |
 | 2026-11-22 | fe9268ac-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | benchmarkRelease, Partial(Require) | 128.3/117.1/144.9 | PASS |
 | 2026-11-22 | d9f8a8e9-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | benchmarkRelease, Partial(Require) | 131.8/124.5/147.5 | PASS |
+| 2026-11-22 | c8e7cfb3-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | host | 1.0 | light | benchmarkRelease, Partial(Require) | 133.9/120.7/146.0 | PASS |
 
 Device rows: open: device only (OQ-A22).
 
@@ -115,6 +116,7 @@ Every mandated validation command was executed; there is no unrun tier to substi
 | 2026-11-22 | 069adafd-dirty | emulator | sdk_gphone64_arm64 | 60 | benchmarkRelease, Partial(Require) | 48.0 | 12.9 | 190.0 | 98.1/100.0 | PASS |
 | 2026-11-22 | fe9268ac-dirty | emulator | sdk_gphone64_arm64 | 60 | benchmarkRelease, Partial(Require) | 48.1 | 12.6 | 188.0 | 99.9/100.0 | PASS |
 | 2026-11-22 | d9f8a8e9-dirty | emulator | sdk_gphone64_arm64 | 60 | benchmarkRelease, Partial(Require) | 49.6 | 8.5 | 188.0 | 99.8/100.0 | PASS |
+| 2026-11-22 | c8e7cfb3-dirty | emulator | sdk_gphone64_arm64 | 60 | benchmarkRelease, Partial(Require) | 51.6 | 8.5 | 189.0 | 88.5/100.0 | PASS |
 
 ## Phase 3a: startup measurements
 
@@ -309,6 +311,7 @@ Near-miss to watch: `welcomeInteractiveMs` (hard 2567.7 ms, min 2549, both from 
 | 2026-11-22 | 069adafd-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | 1.0 | light | benchmarkRelease, Partial(Require) | 119.1 | 2050.0 | FixtureTodaySource | REPORT |
 | 2026-11-22 | fe9268ac-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | 1.0 | light | benchmarkRelease, Partial(Require) | 121.8 | 2048.8 | FixtureTodaySource | REPORT |
 | 2026-11-22 | d9f8a8e9-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | 1.0 | light | benchmarkRelease, Partial(Require) | 131.9 | 2062.8 | FixtureTodaySource | REPORT |
+| 2026-11-22 | c8e7cfb3-dirty | emulator | sdk_gphone64_arm64 | 36 | 60 | 1.0 | light | benchmarkRelease, Partial(Require) | 130.9 | 2060.2 | FixtureTodaySource | REPORT |
 
 ## Phase 9c — wizard shell and Where (2026-11-20)
 
@@ -339,3 +342,136 @@ make perf
 Record cold/warm TTID, TTFD, frame CPU/jank and RSS from the normal benchmark output here, including build/device and command, and commit the regenerated baseline/startup profiles. No new startup performance numbers are claimed for 10b. No benchmark journey or timeline/plan/trip-page source changed; `make perf-timeline` is not required by the phase's R10.
 
 Review round 1 moves overlay observation and the launch-finish effect into the root theme content lambda. `make targeted ONLY="app:RootThemeTest app:CfRootTest app:CfRootHandOffTest app:RootThemeChoiceTest"` passes 21 cases in 8.56 s tier wall time on the macOS host, JDK 21, debug Robolectric tests. `endingTheOverlayDoesNotRecomposeCfRoot` observes the actual overlay disappearing and **0** root compositions; restoring the original reads produces **1** and fails the guard. Explicit snapshot notification keeps the paused-frame fixture from reporting a false zero. API 29/30 tests also prove the stored choice reaches `CfRoot` and is reapplied to system bars after the real activity configuration callback, even when the resolved Dark choice stays unchanged. These are JVM wiring/scope checks, not startup performance measurements. The host will run the two commands above after this round; no performance/profile tier was run by the worker.
+
+## Phase 13 release size
+
+2026-11-22, worker, local macOS host, release bundle, bundletool arm64-v8a/xxhdpi/en/API 36 device spec; no device used. `make size GRADLE='./gradlew --no-daemon --console=plain -Pkotlin.compiler.execution.strategy=in-process'`: **4,147,965 B (4.15 MB), OK**, 40.72 s wall. Previous 5b result: 2,445,635 B. Native-library and language-split checks pass. The later host split-enabled proof fails as expected, and the restored normal size is 4,156,988 B (4.16 MB); see release evidence. See [release evidence](release.md#size).
+
+## Phase 13 profile preparation
+
+The generator retains the original stubbed Today startup and wide journey, and adds signed-out Welcome, a real signed-in Today, the active-trip journey and wizard-to-Ready recovery. Large60 appends the shared day-59 jump. Collection remains three max/two stable iterations, 120 s per journey; the runner remains timeout_msec=900000 and TIER_IDLE_TIMEOUT=1200.
+
+The first host run failed the wizard journey; its repair and JVM evidence are retained below. The second host `make baseline-profile` passed on pixel, AC power, in **10 min 34 s** reported command wall (**10 min 31 s** Gradle wall), source log `build/phase13-host-evidence/bp-13b.log`. Commit **c8e7cfb3** contains the genuinely regenerated files and strict BaselineProfileFilesTest guard: **45,338 baseline rules** and **35,110 startup rules**. Today, Trips, step sheet, Ready, Welcome and SignIn coverage is now guarded. No profile was hand-edited. The saved guard patch has already been applied; do not apply it again.
+
+The subsequent `make perf` and three `make perf-timeline` runs use Partial(Require) successfully (R1–R4 below), completing the profile proof. `make targeted ONLY="app:BaselineProfileFilesTest"` is included in the worker's final targeted validation. This completes the original profile task at c8e7cfb3. The later launch-clock fix 89f3dd7f requires a fresh host `make baseline-profile` and performance verification; the plan records that refresh as open. Earlier preparation checks: four planted post-generation coverage cases passed; the existing thirteen runner fixture cases pass after the Bash 3 array correction. Physical generation still requires PERF_CLEAR=1.
+
+## RN comparison protocol
+
+Native `net.chronoflow.app.native` and RN `net.chronoflow.app` use the same parameterized LaunchComparisonBenchmark harness: signed out, data cleared before every iteration, StartupMode.COLD, ten measured iterations, StartupTimingMetric / FrameTimingMetric / MemoryUsageMetric(Max), a fixed 0–3.5 s capture, and Partial(UseIfAvailable) for each APK's embedded profile. Native budget suites retain Require. Clearing RN data removes the research demo sign-in. This is the OQ-13-16 default: StartupBenchmark stays native-only because its native trace metrics cannot exist in RN.
+
+The existing prebuilt RN release APK was verified read-only by the worker on 2026-11-22: SHA-256 `4ee240d3754a7bba12761ddcb4b8317b15d7131f3c55f93f314d64e89df3b1f5` (125,310,093 B; applicationId net.chronoflow.app, version 1.0.0 / 1, research 12 §1). `make perf-rn` reads and installs only this existing APK after the hash check, or a user-supplied RN_APK/RN_APK_SHA pair. A missing/mismatched APK refuses before installation with OQ-A591. No RN build is part of the recipe.
+
+TTID median and memory median must be below RN on reference/low-end devices; emulator comparisons report. Overrun P99 and TTID P90 report. P90 is the linearly interpolated 90th percentile of the ten raw TTID samples. Every missing/non-finite metric fails; signed frame overrun remains valid. History rows have the exact twelve-column schema below and a twelve-character verified APK hash.
+
+Host commands (the first is the normal run; use fallbacks only for the stated tooling condition):
+
+```sh
+make perf-rn
+# If Macrobenchmark rejects the known non-profileable RN APK:
+RN_NOT_PROFILEABLE=1 make perf-rn
+# If RN StartupTimingMetric is still missing after that:
+RN_NOT_PROFILEABLE=1 RN_AM_START_FALLBACK=1 make perf-rn
+```
+
+The last command additionally records ten RN-only `am start -W -S` TotalTime samples as `rnAmStartTotalTimeMs`, report only, with raw JSONL in the archive. Those values are a different harness and never become a below-RN TTID verdict; missing comparison metrics keep the command failing/open. No fallback has been exercised on a device yet. Physical runs require `PERF_CLEAR=1`; no device/perf tier was run by the worker.
+
+Worker validation (local host, 2026-11-22): `python3 -I -m unittest discover -s Scripts/tests -p test_check_benchmarks.py`: **64 PASS, 2.56 s wall**; after isolating the session fixture's other reference values, its targeted case passed in **0.07 s**. `test_perf_compare_rn.py`: **8 PASS, 2.01 s wall**, including the fallback with fake adb only. `:benchmark:assembleBenchmarkRelease -Pkotlin.compiler.execution.strategy=in-process`: **PASS, 1.71 s wall**. The new sessionFirstMs budget is exactly plan.md's 50/100 ms (emulator report); existing budget values are unchanged.
+
+## RN comparison
+
+| Date | Commit | Class | Device | API | RN APK sha256 | Metric | Stat | Native | RN | Δ % | Verdict |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| 2026-11-22 | c8e7cfb3-dirty | emulator | sdk_gphone64_arm64 | 36 | 4ee240d3754a | timeToInitialDisplayMs | median | 125.7 | 471.3 | -73.3% | REPORT |
+| 2026-11-22 | c8e7cfb3-dirty | emulator | sdk_gphone64_arm64 | 36 | 4ee240d3754a | memoryRssAnonMaxKb | median | 47930.0 | 197084.0 | -75.7% | REPORT |
+| 2026-11-22 | c8e7cfb3-dirty | emulator | sdk_gphone64_arm64 | 36 | 4ee240d3754a | frameOverrunMs | P99 | 21.8 | 35.8 | -39.1% | REPORT |
+| 2026-11-22 | c8e7cfb3-dirty | emulator | sdk_gphone64_arm64 | 36 | 4ee240d3754a | timeToInitialDisplayMs | P90 | 130.3 | 487.1 | -73.3% | REPORT |
+
+Host comparison results above come from R5 (`make perf-rn`, `t13-rn.log`) with the normal Macrobenchmark harness and verified RN APK. No non-profileable suppression or am-start fallback was needed. Research's am-start TotalTime values remain context only. All four emulator comparison values report; below-RN device gates remain open.
+
+## Phase 13
+
+Status: profiles and R1–R5 host emulator runs are recorded below, including the scripts' existing auto-recorded history rows, which are retained unchanged. These are emulator regression measurements, never device claims. Release-check, corrected minified smoke, signingReport, the split-enabled failure proof, restored normal size and a standalone make check have now passed. R9 proves the quick median; its third timed check failed the early launch-clock deadline, fixed in 89f3dd7f. The complete check median and post-fix launch/profile verification remain open, along with all physical rows.
+
+Host evidence: 2026-11-22, `c8e7cfb3-dirty` as recorded by the scripts, pixel / sdk_gphone64_arm64, Android 16 / API 36, 60 Hz, GPU host, animator scales 1, host on AC power. Font 1.0/light unless the command states otherwise. Startup/timeline use benchmarkRelease, Partial(Require); profile collection uses nonMinifiedRelease. RN comparison uses Partial(UseIfAvailable) for both apps. Source logs are archived under `build/phase13-host-evidence/`; benchmark JSON, XML and traces retain the script archives below. These measurements predate the launch-clock fix 89f3dd7f.
+
+| Evidence | Log | Raw JSON and traces under build/ |
+|---|---|---|
+| Profiles | `bp-13b.log` | Committed profiles/guards in c8e7cfb3; source collection output also retained in R1's previous-output/ |
+| R1 startup | `t13-perf.log` | `build/perf/startup/20261122T092852Z-c8e7cfb3-dirty-light-1.0.brcLZ9/` |
+| R5 comparison | `t13-rn.log` | `build/perf/compare/20261122T101118Z-c8e7cfb3-dirty-light-1.0.G6HiJ9/` |
+
+The archive's `androidTest-results/` and `connected_android_test_additional_output/` retain the XML, benchmark JSON and Perfetto traces. R1 took **241.10 s** command wall; R5 **162.93 s**. The logs show CF_UPLOAD_* absent, so the reported perf APKs use debug signing; the inherited-upload defect did not affect these runs.
+
+| Run | Exact host command | Evidence/current result |
+|---|---|---|
+| R1 | `make perf` | PASS functional emulator checks; startup/launch values below, t13-perf.log |
+| R5 | `make perf-rn` | PASS comparison execution; all four emulator values REPORT, t13-rn.log; RN SHA verified by recipe |
+| R7 | `make release-check` | Host PASS: release tests, manifest, 7,768-class APK scan and 4,156,988 B size; `build/phase13-host-evidence/t13-release-check.log` |
+| R8 | `make release-smoke` | Host PASS after 40ba540f: tabs 3.381 s, sheet 8.606 s, wizard 6.778 s; all < 10 s, unchanged pids and crash checks pass; `build/phase13-host-evidence/release-smoke/` |
+| R9 | `Scripts/measure-tiers.sh` | Host after 4df62c45–27693223, 22 min 35 s: warm-up quick/check PASS; quick 81.86 / 44.33 / 43.83 s, median 44.33 s PASS; check 245.89 / 284.79 s PASS, third check FAIL in LaunchHandOffTest. No three-run check median; build/tier-timings.json not regenerated (still 2026-11-16). `build/phase13-host-evidence/t13-tiers4.log` and archived tier times |
+| R10 | `PERF_CLEAR=1 DEVICE_CLASS=reference make perf` and `PERF_CLEAR=1 DEVICE_CLASS=reference make perf-rn` | Open: device only (OQ-A22); repeat with DEVICE_CLASS=lowEnd for the selected low-end device |
+
+Startup row-to-verdict inventory (plan.md, including R14's complete mapping):
+
+| Budget row | Source / command | Phase 13 value | Verdict |
+|---|---|---|---|
+| Cold TTID, signed out | startupCold / R1; comparison median / R5 | R1 median 133.9 ms (min/max 120.7/146.0); R5 native/RN 125.7/471.3 ms | REPORT, emulator; device hard rows open OQ-A22 |
+| Warm TTID | startupWarm / R1 | 38.6 ms median | REPORT, emulator |
+| onCreate → overlay frame 0 | first-commitFirstMs / R1 | 51.6 ms median | REPORT, emulator; reference 50 ms remains a device gate |
+| Overlay frame pacing | launchCold frameCount + display Hz / R1 | 189–194 frames per iteration, display 60 Hz; capture extends through intro | REPORT, emulator; do not infer physical 95% pacing from this capture |
+| First animated change | LaunchTimelineTests / final quick | 5 cases PASS, 0.007 s suite | PASS, JVM functional guard |
+| Launch jank, frame count | launchCold frameOverrunMs P99, frameCount minimum / R1 | Overrun P99 8.5 ms; jank 1.0–100.0%/iteration (mean 88.5%, max 100%); frameCount min 189 | Jank REPORT; functional minimum 75 frames PASS |
+| Main thread before hand-off | debug StrictMode AppLaunchSmokeTest / `make check` | Host standalone check and R9 warm-up PASS | PASS at 27693223; post-fix check pending |
+| Stall behavior | LaunchStallTest / `make check` | Host standalone check and R9 warm-up PASS | PASS at 27693223; post-fix check pending |
+| Session known, signed out | startupCold sessionFirstMs median / R1 | 17.5 ms | REPORT, emulator; reference/low-end 50/100 ms remain device gates |
+| Hand-off end | LaunchHandOffTimelineTests / quick; LaunchHandOffTest / `make check` | Earlier standalone check PASS; R9 third check FAIL: exitStart 3499.573168 ms, below 3500 ms. 89f3dd7f rechecks the monotonic deadline; 29 targeted JVM cases PASS | Post-fix emulator verification pending; existing window unchanged |
+| Welcome interactive | welcomeInteractiveMs each / R1 | 2550.3–2566.7 ms, ten samples | PASS emulator bound 2584.333 ms; device-only one-frame rule remains open |
+| Last intro item | introLastItemMs each / R1 | 3200.5–3203.7 ms, ten samples | PASS emulator bound 3217.667 ms |
+| TTFD, signed out/in | startupCold / startupColdSignedIn / R1 | 2710.8 / 2060.2 ms median; signed-in FixtureTodaySource | REPORT, emulator; both finite |
+| Peak memory to Welcome | LaunchComparisonBenchmark memoryRssAnonMaxKb median / R5 | Native 47,930 KiB; RN 197,084 KiB; native −75.7% | REPORT, emulator; below-RN device gate open |
+| RN TTID median/P90 and overrun P99 | LaunchComparisonBenchmark / R5 | TTID median 125.7/471.3 ms; P90 130.3/487.1 ms; overrun P99 21.8/35.8 ms (native/RN) | REPORT, emulator; all required metrics present |
+| Download size | release-check → `make size`, arm64/xxhdpi/en | Host 4,156,988 B (4.16 MB), allowed native lib only, no language split; enableSplit=true rejected splits/base-en.apk, then restored false | PASS normal gate and real negative proof |
+| make quick < 60 s warm | R9 archived .tier-quick.times / t13-tiers4.log | 81.86 / 44.33 / 43.83 s; median 44.33 s | PASS, three host runs; old tier-timings.json is not this evidence |
+| make check < 300 s warm | R9, including reminders-permission tier | Two passing runs 245.89 / 284.79 s; third FAIL at LaunchHandOffTest | Incomplete: no three-run median; rerun `Scripts/measure-tiers.sh` after the fix |
+
+Device startup rows remain **open: device only (OQ-A22)** until R10 supplies physical evidence. Every host row must retain its raw result directory and metric. A missed hard gate creates a fix task, followed by the permitted one re-run; no budget is loosened or waived. Record a ±25% trend flag with its observed cause rather than editing the prior row. This R1 cold TTID is +1.6% against the preceding 131.8 ms history row; no startup/timeline ±25% flag appears in the supplied logs. Launch jank remains reported at the high values above, without a device verdict.
+
+
+Earlier worker check (2026-11-22, source 17527208 plus documentation, local macOS host, JDK 21 tests): the single `make quick` passed its test tiers in **102.34 s wall**, above the 60 s warm target. No repeat or budget change was made. All individual test budget checks passed. The subsequent host quick median above supersedes this single-run evidence; R9's complete check series is still required. The final `make release-check` passed in **60.19 s**, reporting **4,147,961 B (4.15 MB)**; this supersedes the earlier size samples for that worker source; the later host result above is 4,156,988 B. See [tooling notes](release.md#tooling-notes) for exact commands and outputs. These are host JVM/build results, not device performance evidence.
+
+## Phase 13 wizard profile repair (2026-11-22)
+
+The host ran `make baseline-profile` on pixel, AC power and a quiet host, against 62cb4ccb. It failed (reported command wall 10 min 15 s). The connected nonMinifiedRelease XML records startup 42.353 s, startupSignedIn 57.499 s, startupSignedOut 57.386 s, tripJourney 123.838 s, timelineLarge60 183.272 s and timelineWide 88.216 s passing; wizardToReady failed at 16.635 s with `wizard.fine-tune.continue never became enabled`. This is a failed profile run, not verified generated-profile coverage. At that failed run the strict guard patch remained unapplied; c8e7cfb3 subsequently committed it with successfully generated profiles.
+
+The journey opened its wizard while fresh sign-in's first account pull was still pending. `SessionController.performAccept` publishes SignedIn and then requests sync. `MemberWizardStore.initialDraft` reads local settings; before FullPull commits them, `sleepAnswered` and the saved profile are absent. `PerfWizardJourney.apply` deliberately preserves that base's `sleepNeeded=true` and empty profile. Choosing One way therefore opens **Sleep**, with bedtime, wake time and chronotype unanswered and Continue disabled. Fine-tune is not reached. Its actual enable condition is no active review, no closing and no persistence failure; optional prompts do not disable it. The flight dates remain thirty days ahead of the injected clock.
+
+The repair belongs to 45793880. Wizard profile setup now signs in without the wizard extra, then waits structurally for `today.trip`: FullPull stores the account settings and trip cards in the same pull transaction. Setup happens once before collection so later iterations can retain their quiet wizard recovery. Each collected iteration still kills the process, launches with the real perf wizard extra, taps One way, taps enabled fine-tune Continue and reaches Ready. It uses the existing 60 s setup and 120 s journey budgets, with bounded waits and no sleeps. No product code, seed field, validation rule or step is bypassed or changed.
+
+`PerfWizardViewModelTest` uses the same perf draft, a fake clock, in-memory persistence, real mock review source and a single test scheduler. The initial regression probe expecting fine-tune before settings sync fails with `expected:<fineTune> but was:<sleep>` (3.40 s command wall). The retained cases prove that the pre-snapshot draft requires Sleep with all three answers missing and Continue disabled, while the post-snapshot draft reaches enabled fine-tune and continues to enabled Ready. The existing full draft equality test against 9g remains unchanged.
+
+Worker command `env 'ORG_GRADLE_PROJECT_kotlin.compiler.execution.strategy=in-process' make targeted ONLY='app:PerfWizardViewModelTest app:PerfWizardJourneyTest'`: **3 cases PASS, 3.74 s wall**. New ViewModel cases take 0.106 / 0.007 s, with seed initialization warmed once and recorded separately. No graph, activity or composable is used. Local fixture compile/setup mistakes were corrected before the regression probe; their logs remain `/tmp/cf13-wizard-repro.log`, `/tmp/cf13-wizard-repro2.log` and `/tmp/cf13-wizard-targeted.log`.
+
+At the repair hand-off, the worker left device generation to the host. The subsequent successful `make baseline-profile` run and c8e7cfb3 resolved that profile/guard gap, as recorded above. The remaining performance/functional gates stay open.
+
+Final local validation for the repair (2026-11-22, macOS worker, JDK 17 Gradle / JDK 21 tests): `./gradlew spotlessApply :benchmark:assembleNonMinifiedRelease -Pkotlin.compiler.execution.strategy=in-process` **PASS, 17.29 s wall**; this builds the profile test APK without running a device. Spotless is root-scoped: the first attempt with `:app:spotlessKotlinApply` failed with `Cannot locate tasks that match ':app:spotlessKotlinApply' as task 'spotlessKotlinApply' not found in project ':app'.` (2.98 s wall), then the corrected root task above passed. The earlier `make format` passed in 21.94 s.
+
+`env 'ORG_GRADLE_PROJECT_kotlin.compiler.execution.strategy=in-process' make quick` ran **once**, **PASS for all test stages, 66.66 s command wall**. Its duration exceeds the 60 s warm target, which remains open under R9; no repeat or budget change was made. The tier reports have zero test-budget overruns, errors or hangs and certify reused unchanged results (including build-logic and serial timing). In this full app run the two new ViewModel methods took 0.018 / 0.003 s, with seed initialization recorded separately. Logs: `/tmp/cf13-wizard-targeted2.log`, `/tmp/cf13-wizard-build2.log`, `/tmp/cf13-wizard-quick.log`. No device, emulator or perf tier was run by the worker.
+
+
+Host follow-up after c8e7cfb3: the successful profile generation and strict guard commit resolve the earlier missing-coverage/patch instructions in this document. No new profile generation is required by the signing/checker/smoke-test review corrections: they change build signing and validation code, not the startup, wizard or timeline product paths. The smoke/window correction belongs to 0feca5ee and is verified by the passing host rerun after 40ba540f. Signing, normal/split-enabled size, release-check and a standalone make check are also verified. R9 quick median is 44.33 s; its check series remains incomplete as recorded above. The subsequent clock fix requires the launch/profile commands listed in release.md before closing the remaining gate.
+
+
+## Phase 13 monotonic launch deadline repair (2026-11-22)
+
+The third timed host check after 4df62c45–27693223 failed `LaunchHandOffTest.slowShowsStatusAndHandsOffAfterReady`: exitStart **3499.573168 ms**, below its **3500 ms** readiness seed. This is a clock deadline defect, not a frame-timestamp comparison. `LaunchScreenTest.exitStartMillis` reads `LaunchState.exitStart`, set from `LaunchCoordinator`'s `clock.now`; `MediaLaunchClock` derives that from continuous `System.nanoTime`. The test reads no vsync timestamp for this value. The frame interval supplies only the completion/dispatch upper allowance.
+
+The contract stays unchanged. Plan.md “Performance budget” requires an early-ready hand-off end at **1900 ms ± one frame from t0**; Phase 3b brief §5 defines late readiness R as exit **R → R + 400 ms**. At iOS pin f391a1fa, `Packages/ChronoFlowKit/Sources/AppCore/LaunchReadiness.swift:165–172` sets exitStart to max(1500 ms, clock.now), `Sources/Launch/LaunchTimeline+Ready.swift:5–13` adds the 400 ms exit, and `Sources/AppCore/LaunchClock.swift` sleeps until the monotonic deadline. Pinned iOS plan.md “Performance budget” has the same 1900 ms ± one-frame row.
+
+The resolved coroutines 1.11.0 bytecode rounds Duration delays up to whole milliseconds, then Android Handler.postDelayed schedules against whole SystemClock.uptimeMillis. That timer's clock quantization can still resume before the nanosecond deadline. The old MediaLaunchClock read the remaining duration only once. 89f3dd7f (correcting 8447437a's clock, used by Phase 3b's 4ad6f65f checks) rechecks remaining time after each wake and preserves cancellation. No test window, target or animation duration was widened.
+
+A JVM test injects the reported early wake and fails before the fix: sleepUntil(3500 ms) has already returned at 3499.573168 ms. After the fix it stays suspended, then returns at 3500.573168 ms. A second test cancels between those wakes and proves no return. `make targeted ONLY='feature:launch:LaunchClockTests feature:launch:LaunchCoordinatorTests feature:launch:LaunchHandOffTimelineTests'` passes **29 cases, 14.01 s tier wall**, no budget overruns; the new regression itself takes **1 ms**. Launch layout passes **100 cases, 15.32 s tier wall**; app/launch lint passes (**23 s Gradle wall**). Red/green XML, logs and timings are archived under `build/phase13-host-evidence/launch-clock/`.
+
+Post-fix host evidence remains pending: `make targeted ONLY="app:LaunchHandOffTest#slowShowsStatusAndHandsOffAfterReady"`, `Scripts/measure-tiers.sh`, `make check`, `make baseline-profile`, `make perf` and `make perf-timeline` (also THEME=dark and FONT_SCALE=1.3). The prior host measurements above stay attributed to their measured source. No emulator/perf command was run by this worker.
+
+
+Post-clock-fix worker validation (2026-11-22, 89f3dd7f, macOS host; JDK 17 Gradle / JDK 21 tests): the single `env 'ORG_GRADLE_PROJECT_kotlin.compiler.execution.strategy=in-process' make quick` invocation passes in **92.51 s command wall**. Its quick tier takes **54.28 s**, reports 6,312 cases (4,402 freshly measured; the remaining unchanged outputs certified), with zero budget overruns/errors/hangs. Build-logic's 64 cases and the serial timing tier's seven cases pass using certified unchanged results. This single command duration exceeds the warm target; it does not replace the host's three-run quick median (44.33 s) or complete R9's failed check series. No second quick run was made. Exact command, log, XML and timings: `build/phase13-host-evidence/launch-clock/quick-command.json`, `quick.log` and its `quick/`, `build-logic/`, `timing/` directories. The old build/tier-timings.json remains byte-for-byte unchanged.

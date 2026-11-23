@@ -123,6 +123,10 @@ How the harness works:
 | `make tokens` / `make fonts` / `make assets` | Generates the tokens / copies the fonts and checks their hash manifest / rasterizes the launch moon and builds the icons. |
 | `make strings` / `make plan-copy` / `make contracts` | Generates the en and nl strings from the iOS catalogs / copies `plan_copy.json` and checks its hash / generates the Kotlin contracts. |
 | `make generators-check` | Regenerates into `build/`, diffs against every committed output, and runs the generator tests. |
+| `make release-check` | Assembles release and checks release unit tests, manifest, APK content and size. |
+| `make release-smoke` | Runs the minified release smoke on pixel under the device lock. |
+| `make perf-rn` | Compares native/RN launch with a SHA-verified existing RN release APK. |
+| `make version-bump PART=build\|patch\|minor\|major` | Bumps the next upload version; use the Python script’s --dry-run to preview. |
 | `make size` | Release bundle size for arm64, xxhdpi and en. Warns above 8 MB; fails above 12 MB or on any `.so` file except the OQ-0a-22 allow-list (plan.md). |
 | `make emu` / `make emu-down` | Boots the headless `pixel` emulator with the functional device prep / stops every running emulator. |
 | `make emu-clean` | Wipes the `pixel` data. Refuses while tests run. |

@@ -1,0 +1,219 @@
+{
+  "context": {
+    "build": {
+      "model": "sdk_gphone64_arm64",
+      "version": {
+        "sdk": 36
+      }
+    }
+  },
+  "benchmarks": [
+    {
+      "name": "startupCold",
+      "className": "net.chronoflow.benchmark.StartupBenchmark",
+      "metrics": {
+        "timeToInitialDisplayMs": {
+          "median": 300.0,
+          "minimum": 300.0,
+          "maximum": 300.0,
+          "runs": [
+            300.0,
+            300.0,
+            300.0,
+            300.0,
+            300.0,
+            300.0,
+            300.0,
+            300.0,
+            300.0,
+            300.0
+          ]
+        },
+        "first-commitFirstMs": {
+          "median": 20.0,
+          "minimum": 20.0,
+          "maximum": 20.0,
+          "runs": [
+            20.0,
+            20.0,
+            20.0,
+            20.0,
+            20.0,
+            20.0,
+            20.0,
+            20.0,
+            20.0,
+            20.0
+          ]
+        },
+        "timeToFullDisplayMs": {
+          "median": 2650.0,
+          "minimum": 2650.0,
+          "maximum": 2650.0,
+          "runs": [
+            2650.0,
+            2650.0,
+            2650.0,
+            2650.0,
+            2650.0,
+            2650.0,
+            2650.0,
+            2650.0,
+            2650.0,
+            2650.0
+          ]
+        },
+        "readyFirstMs": {
+          "median": 80.0,
+          "minimum": 80.0,
+          "maximum": 80.0,
+          "runs": [
+            80.0,
+            80.0,
+            80.0,
+            80.0,
+            80.0,
+            80.0,
+            80.0,
+            80.0,
+            80.0,
+            80.0
+          ]
+        },
+        "exitFirstMs": {
+          "median": 950.0,
+          "minimum": 950.0,
+          "maximum": 950.0,
+          "runs": [
+            950.0,
+            950.0,
+            950.0,
+            950.0,
+            950.0,
+            950.0,
+            950.0,
+            950.0,
+            950.0,
+            950.0
+          ]
+        },
+        "welcomeInteractiveMs": {
+          "minimum": 2560.0,
+          "maximum": 2560.0,
+          "median": 2560.0,
+          "runs": [
+            2560.0,
+            2560.0,
+            2560.0,
+            2560.0,
+            2560.0,
+            2560.0,
+            2560.0,
+            2560.0,
+            2560.0,
+            2560.0
+          ]
+        },
+        "introLastItemMs": {
+          "minimum": 3210.0,
+          "maximum": 3210.0,
+          "median": 3210.0,
+          "runs": [
+            3210.0,
+            3210.0,
+            3210.0,
+            3210.0,
+            3210.0,
+            3210.0,
+            3210.0,
+            3210.0,
+            3210.0,
+            3210.0
+          ]
+        },
+        "sessionFirstMs": {
+          "median": 51.0,
+          "minimum": 51.0,
+          "maximum": 51.0,
+          "runs": [
+            51.0,
+            51.0,
+            51.0,
+            51.0,
+            51.0,
+            51.0,
+            51.0,
+            51.0,
+            51.0,
+            51.0
+          ]
+        }
+      },
+      "sampledMetrics": {}
+    },
+    {
+      "name": "startupWarm",
+      "className": "net.chronoflow.benchmark.StartupBenchmark",
+      "metrics": {
+        "timeToInitialDisplayMs": {
+          "median": 100.0,
+          "minimum": 100.0,
+          "maximum": 100.0,
+          "runs": [
+            100.0,
+            100.0,
+            100.0,
+            100.0,
+            100.0,
+            100.0,
+            100.0,
+            100.0,
+            100.0,
+            100.0
+          ]
+        }
+      },
+      "sampledMetrics": {}
+    },
+    {
+      "name": "startupColdSignedIn",
+      "className": "net.chronoflow.benchmark.StartupBenchmark",
+      "metrics": {
+        "timeToInitialDisplayMs": {
+          "median": 300.0,
+          "minimum": 300.0,
+          "maximum": 300.0,
+          "runs": [
+            300.0,
+            300.0,
+            300.0,
+            300.0,
+            300.0,
+            300.0,
+            300.0,
+            300.0,
+            300.0,
+            300.0
+          ]
+        },
+        "timeToFullDisplayMs": {
+          "minimum": 2200.0,
+          "maximum": 2200.0,
+          "median": 2200.0,
+          "runs": [
+            2200.0,
+            2200.0,
+            2200.0,
+            2200.0,
+            2200.0,
+            2200.0,
+            2200.0,
+            2200.0,
+            2200.0,
+            2200.0
+          ]
+        }
+      }
+    }
+  ]
+}

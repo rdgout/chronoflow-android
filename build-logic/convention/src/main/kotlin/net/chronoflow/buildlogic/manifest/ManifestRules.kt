@@ -16,6 +16,9 @@ enum class Rule {
     DIRECT_BOOT,
     STARTUP_INITIALIZER,
     APP_LINK,
+    REQUIRED_PERMISSION_MISSING,
+    SDK_LEVELS,
+    VERSION_MISMATCH,
 }
 
 data class ManifestViolation(
@@ -29,30 +32,28 @@ object ManifestRules {
     private const val ANDROID_NS = "http://schemas.android.com/apk/res/android"
     private const val APP_NAMESPACE = "net.chronoflow.app"
     private const val MAIN_ACTIVITY = "net.chronoflow.app.MainActivity"
-    private const val DUMP = "android.permission.DUMP"
     private val startupInitializers =
         setOf(
             "androidx.lifecycle.ProcessLifecycleInitializer",
             "androidx.profileinstaller.ProfileInstallerInitializer",
         )
     private val componentTags = setOf("activity", "activity-alias", "service", "receiver", "provider")
-    private val basePermissions =
-        setOf(
-            "android.permission.INTERNET",
-            "android.permission.ACCESS_NETWORK_STATE",
-            "android.permission.POST_NOTIFICATIONS",
-            "android.permission.RECEIVE_BOOT_COMPLETED",
-            "android.permission.WAKE_LOCK",
-        )
 
     fun check(
         manifestXml: String,
         applicationId: String,
         allowedExportedComponents: Set<String>,
+        requiredPermissions: Set<String> = ReleaseManifestAllowlist.PERMISSIONS_REQUIRED,
+        minSdk: Int = 29,
+        targetSdk: Int = 36,
+        versionCode: Int = 10000,
+        versionName: String = "0.1.0",
     ): List<ManifestViolation> {
         val document = parse(manifestXml)
         val violations = mutableListOf<ManifestViolation>()
-        val allowedPermissions = basePermissions + "$applicationId.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+        val allowedPermissions =
+            ReleaseManifestAllowlist.PERMISSIONS_REQUIRED +
+                ReleaseManifestAllowlist.PERMISSIONS_OPTIONAL.map { "$applicationId.$it" }
 
         val manifest = document.documentElement
         manifest
@@ -61,6 +62,28 @@ object ManifestRules {
             .map { it.android("name") }
             .filter { it !in allowedPermissions }
             .forEach { violations += ManifestViolation(Rule.PERMISSION, it) }
+
+        val presentPermissions =
+            manifest
+                .childElements("uses-permission")
+                .plus(manifest.childElements("uses-permission-sdk-23"))
+                .map { it.android("name") }
+                .toSet()
+        (requiredPermissions - presentPermissions).forEach {
+            violations += ManifestViolation(Rule.REQUIRED_PERMISSION_MISSING, it)
+        }
+        val sdk = manifest.childElements("uses-sdk").singleOrNull()
+        if (sdk?.android("minSdkVersion") != minSdk.toString() ||
+            sdk.android("targetSdkVersion") != targetSdk.toString()
+        ) {
+            violations += ManifestViolation(Rule.SDK_LEVELS, "expected minSdk=$minSdk targetSdk=$targetSdk")
+        }
+        if (manifest.android("versionCode") != versionCode.toString() ||
+            manifest.android("versionName") != versionName
+        ) {
+            violations +=
+                ManifestViolation(Rule.VERSION_MISMATCH, "expected versionCode=$versionCode versionName=$versionName")
+        }
 
         val application = manifest.childElements("application").firstOrNull()
         if (application != null) {
@@ -91,8 +114,10 @@ object ManifestRules {
             application.childElements().filter { it.tagName in componentTags }.forEach { component ->
                 val name = qualify(component.android("name"))
                 val exported = component.android("exported") == "true"
-                val guarded = component.android("permission") == DUMP
-                if (exported && name != MAIN_ACTIVITY && !guarded && name !in allowedExportedComponents) {
+                val guarded = component.android("permission") in ReleaseManifestAllowlist.GUARD_PERMISSIONS
+                if (exported && name !in ReleaseManifestAllowlist.EXPORTED && !guarded &&
+                    name !in allowedExportedComponents
+                ) {
                     violations += ManifestViolation(Rule.EXPORTED_COMPONENT, name)
                 }
             }

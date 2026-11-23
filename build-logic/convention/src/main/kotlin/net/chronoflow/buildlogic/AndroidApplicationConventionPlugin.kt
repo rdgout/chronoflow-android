@@ -3,11 +3,15 @@ package net.chronoflow.buildlogic
 import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension
+import net.chronoflow.buildlogic.manifest.ReleaseManifestAllowlist
 import net.chronoflow.buildlogic.manifest.VerifyReleaseManifestTask
+import net.chronoflow.buildlogic.signing.PerfSigning
+import net.chronoflow.buildlogic.signing.UploadSigningResolver
 import net.chronoflow.buildlogic.size.MeasureBundleSizeTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.configure
+import java.io.File
 
 class AndroidApplicationConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) =
@@ -20,6 +24,17 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
                 VersionProperties.parse(
                     providers.fileContents(rootProject.layout.projectDirectory.file("version.properties")).asText.get(),
                 )
+            val uploadSigning =
+                UploadSigningResolver.resolve(
+                    values =
+                        UploadSigningResolver.KEYS.associateWith { key ->
+                            providers.gradleProperty(key).orElse(providers.environmentVariable(key)).orNull
+                        },
+                    repoRoot = rootProject.projectDir,
+                    home = File(providers.systemProperty("user.home").get()),
+                    exists = File::isFile,
+                )
+            if (uploadSigning == null) logger.lifecycle("release is unsigned: CF_UPLOAD_* not set")
             extensions.configure<ApplicationExtension> {
                 compileSdk = 37
                 defaultConfig {
@@ -41,12 +56,23 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
                     keyAlias = "androiddebugkey"
                     keyPassword = "android"
                 }
+                val uploadConfig =
+                    uploadSigning?.let { upload ->
+                        signingConfigs.create("upload") {
+                            storeFile = upload.storeFile
+                            storePassword = upload.storePassword
+                            keyAlias = upload.keyAlias
+                            keyPassword = upload.keyPassword
+                            storeType = "PKCS12"
+                        }
+                    }
                 buildTypes {
                     debug {
                         applicationIdSuffix = ".debug"
                     }
                     release {
                         optimization.enable = true
+                        signingConfig = uploadConfig
                     }
                 }
                 bundle.language.enableSplit = false
@@ -60,12 +86,36 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
             val bundletool = configurations.create("bundletool") { isCanBeConsumed = false }
             addDependency("bundletool", libs.library("bundletool"))
             extensions.configure<ApplicationAndroidComponentsExtension> {
+                // Baseline Profile's earlier callback clones release with initWith, including its upload key.
+                finalizeDsl { android ->
+                    PerfSigning.buildTypes.forEach { type ->
+                        android.buildTypes.getByName(type).signingConfig = android.signingConfigs.getByName("debug")
+                    }
+                }
+                onVariants { variant ->
+                    PerfSigning.verify(
+                        variant.buildType,
+                        variant.buildType?.let { type ->
+                            extensions
+                                .getByType(ApplicationExtension::class.java)
+                                .buildTypes
+                                .getByName(type)
+                                .signingConfig
+                                ?.name
+                        },
+                    )
+                }
                 onVariants(selector().withBuildType("release")) { variant ->
                     verifyTasks +=
                         tasks.register("verifyReleaseManifest", VerifyReleaseManifestTask::class.java) {
                             mergedManifest.set(variant.artifacts.get(SingleArtifact.MERGED_MANIFEST))
                             applicationId.set(variant.applicationId)
                             allowedExportedComponents.set(emptySet())
+                            requiredPermissions.set(ReleaseManifestAllowlist.PERMISSIONS_REQUIRED)
+                            minSdk.set(29)
+                            targetSdk.set(36)
+                            versionCode.set(version.code)
+                            versionName.set(version.name)
                             report.set(layout.buildDirectory.file("reports/verifyReleaseManifest.txt"))
                         }
                     tasks.register("measureBundleSize", MeasureBundleSizeTask::class.java) {

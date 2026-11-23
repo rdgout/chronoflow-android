@@ -19,8 +19,12 @@ class MediaLaunchClock(
     override val now: Duration get() = (nanoTime() - t0Nanos).coerceAtLeast(0).nanoseconds
 
     override suspend fun sleepUntil(deadline: Duration) {
-        val remaining = deadline - now
-        if (remaining > Duration.ZERO) delay(remaining)
+        var remaining = deadline - now
+        // Android's millisecond timer can resume before the nanosecond clock reaches the deadline.
+        while (remaining > Duration.ZERO) {
+            delay(remaining)
+            remaining = deadline - now
+        }
         currentCoroutineContext().ensureActive()
     }
 }

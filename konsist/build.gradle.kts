@@ -12,7 +12,7 @@ tasks.test {
     inputs
         .files(
             fileTree(rootDir) {
-                include("**/*.kt", "**/*.kts", "**/src/*/res/values*/*.xml")
+                include("**/*.kt", "**/*.kts", "**/src/*/res/values*/*.xml", "app/src/*/keepRules/**")
                 exclude("**/build/**", "**/.gradle/**", "**/.kotlin/**", "_design/**", "docs/**")
             },
         ).withPathSensitivity(PathSensitivity.RELATIVE)

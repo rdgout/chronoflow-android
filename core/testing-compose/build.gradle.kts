@@ -7,6 +7,7 @@ android {
 }
 
 dependencies {
+    compileOnly(project(":core:testing-junit"))
     api(project(":core:testing"))
     api(project(":core:ui"))
     api(project(":core:model"))

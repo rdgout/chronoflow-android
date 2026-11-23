@@ -8,9 +8,11 @@ import android.view.MotionEvent
 import androidx.benchmark.macro.MacrobenchmarkScope
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
+import androidx.test.uiautomator.Direction
 import androidx.test.uiautomator.StaleObjectException
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
+import net.chronoflow.core.testing.BoundedProfileInput
 import net.chronoflow.core.testing.LargeTimelineFixtures
 import java.util.regex.Pattern
 
@@ -126,10 +128,55 @@ fun MacrobenchmarkScope.topDay(): String? =
 fun MacrobenchmarkScope.topDayIndex(): Int = large60DayTags.indexOf(topDay())
 
 /** Five fixed drags travel about 2,750 dp on pixel; no accessibility scroll-end event wait. */
-fun UiDevice.swipeTimeline(bounds: Rect) {
+fun UiDevice.swipeTimeline(
+    bounds: Rect,
+    reverse: Boolean = false,
+) {
     val x = bounds.left + bounds.width() * 8 / 100
     repeat(5) {
-        check(swipe(x, bounds.top + bounds.height() * 85 / 100, x, bounds.top + bounds.height() * 15 / 100, 26))
+        val start = if (reverse) 15 else 85
+        val end = if (reverse) 85 else 15
+        check(swipe(x, bounds.top + bounds.height() * start / 100, x, bounds.top + bounds.height() * end / 100, 26))
         waitForIdle()
+    }
+}
+
+fun UiDevice.jumpToLastDay(input: BoundedProfileInput? = null) {
+    fun <T> step(
+        label: String,
+        action: () -> T,
+    ): T = if (input == null) action() else input.step(label, action)
+    val entry = Pattern.compile("trip\\.dayMenu\\.day\\.\\d+")
+    step("open last-day menu") { requireTag("trip.dayMenu").click() }
+    step("last-day menu ready") {
+        check(wait(Until.hasObject(By.res(entry)), 5000)) { "the day menu did not open" }
+    }
+    val menu = step("last-day menu bounds") { findObject(By.scrollable(true).hasDescendant(By.res(entry))) }
+    var scrolls = 0
+    while (!step("day 59 visible") { hasObject(By.res("trip.dayMenu.day.59")) } && scrolls < 12) {
+        step("last-day menu scroll ${scrolls + 1}/12") {
+            if (menu != null) {
+                menu.scroll(Direction.DOWN, 1f)
+            } else {
+                swipe(displayWidth / 2, displayHeight * 9 / 10, displayWidth / 2, displayHeight / 10, 20)
+            }
+        }
+        scrolls++
+    }
+    step("select day 59") {
+        checkNotNull(findObject(By.res("trip.dayMenu.day.59"))) { "trip.dayMenu.day.59 not reachable" }.click()
+    }
+    step("last-day menu closed") {
+        check(wait(Until.gone(By.res(entry)), 5000)) { "the day menu did not close" }
+    }
+    step("last day ready") { requireTag(LAST_DAY_TAG, 10_000) }
+    val page = step("last day page") { requireTag("trip.page").also { it.setGestureMargin(displayWidth / 5) } }
+    var gestures = 0
+    while (!step("plan end visible") { hasObject(By.res("trip.plan.end")) } && gestures < 6) {
+        step("last-day gesture ${gestures + 1}/6") { swipeTimeline(page.visibleBounds) }
+        gestures++
+    }
+    step("last day ends") {
+        check(hasObject(By.res("trip.plan.end"))) { "trip.plan.end not reached in 6 bounded gestures" }
     }
 }

@@ -434,3 +434,87 @@ python3 -I Scripts/device_lock.py -- "$ANDROID_HOME/platform-tools/adb" -s emula
 ```
 
 Run the real dialog journey alone with `make targeted ONLY="app:RemindersPermissionDeviceTest"`. It installs the APKs, revokes/clears flags outside instrumentation under the device lock, runs exactly that class, and writes `build/reminders-permission/result.xml` plus the tier timing report. `REUSE_BUILD=1` skips installation. In `make check`, the main smoke run excludes this class and keeps the APKs installed, then the same isolated runner executes it. A missing APK, missing metric or instrumentation failure fails the tier. Permission is never revoked inside a test process.
+
+## Phase 13
+
+Worker commands use ANDROID_HOME `/opt/homebrew/share/android-commandlinetools`, JDK 17 for Gradle and the provisioned JDK 21 test launcher. Detailed per-task commands, outcomes and wall times are in [release evidence](release.md) and the two performance documents. No device/emulator/perf tier was run by the worker; no Play key was created. The pre-existing pixel emulator is left running.
+
+Completed host runs: baseline profiles, startup, light/dark/font-1.3 timeline, RN comparison, release-check, corrected minified release-smoke after 40ba540f, throwaway-key signingReport after fbd51e30, the real enableSplit=true failure proof, restored normal size and a standalone make check. Commands/results and build archives are in the performance/release documents. After 4df62c45–27693223, R9 quick meets its median target; the check series stops at the third run's early launch-clock deadline failure, corrected in 89f3dd7f. The post-fix emulator check, complete R9 check median and launch/profile refresh remain open. Physical variants require PERF_CLEAR=1 when clearing data; reference/low-end rows remain open: device only.
+
+| R9 measurement | Runs / median | Budget | Status |
+|---|---|---:|---|
+| warm make quick, three runs | 81.86 / 44.33 / 43.83 s; median 44.33 s | < 60 s median | PASS, host after 4df62c45–27693223 |
+| warm make check, three runs | 245.89 / 284.79 s PASS; third FAIL at LaunchHandOffTest | < 300 s median | Incomplete; no three-run median |
+| slowest ten quick cases | Saved last host quick report under build/phase13-host-evidence/host-last-quick/timings.json; table below | warm cases < 1 s | PASS; cold/class allowances recorded separately |
+
+The R9 invocation took 22 min 35 s; warm-up quick and check passed. It exited before rewriting build/tier-timings.json, which still dates to 2026-11-16. Do not use that old JSON as Phase 13 evidence or hand-write a replacement. The original logs, two tier time files and unchanged old JSON are archived under build/phase13-host-evidence/. The earlier worker run below is historical and does not replace the host series.
+
+Verified tooling outcomes:
+
+- Gradle provider-based upload signing builds both signed and unsigned bundles; the throwaway key is deleted. Configuration remains cache-compatible.
+- AGP writes SDK/version fields in the merged manifest and writes all four R8 diagnostic files; the analyzer exists. The final release/benchmarkRelease directive comparison is empty after removing unused coroutine-test runtime dependencies from perf.
+- Bundletool's normal APK-set entries are toc.pb, base-arm64_v8a, base-master and base-xxhdpi; there is no language split. The real split-enabled proof rejects `splits/base-en.apk`; the plugin is restored and normal size passes at 4,156,988 B.
+- Apkanalyzer's mapped defined-class output works. Dexdump emits modified UTF-8, handled with byte-preserving decoding; planted checks reject seed markers despite those bytes.
+- Robolectric 4.18's supported exit-info builder is nested in ShadowActivityManager; the old four-argument helper is deprecated. Three logger cases pass without booting the app graph.
+- Bash 3 under nounset rejects an empty optional array expansion; the baseline runner now expands a non-empty full argument array. Profile-specific fixtures pass.
+- The Kotlin daemon cannot write its timestamp marker outside the sandbox's writable roots. In-process compilation avoids the path. Two release builds reached three minutes without R8 output in a reused daemon; each was stopped once and its one retry passed. Fresh single-use release builds completed without the stall. The exact logs and outputs are in release.md; no hang was hidden by a larger cap.
+- The host normal-harness RN comparison and profile collection pass. The optional non-profileable and am-start fallbacks remain unexercised on a real device; named fallbacks preserve missing-evidence failures.
+
+
+Earlier worker validation, 2026-11-22, source 17527208 plus documentation, local macOS host:
+
+| Check | Result | Wall time |
+|---|---|---:|
+| Single `make quick` | All test stages PASS; whole-command duration exceeds the 60 s warm target | 102.34 s |
+| quick JVM/Robolectric tier | 6,304 cases; zero test-budget overruns/hangs | 61.75 s |
+| build-logic tier | 58 cases; zero test-budget overruns | 7.08 s |
+| Serial timing tier | 7 cases; zero test-budget overruns | 4.09 s |
+| Python tooling | Scripts 256, contracts 26, l10n 49, icons 11; all PASS | 28.636 / 0.115 / 0.017 / 0.090 s unittest times |
+| `:app:lintDebug` | PASS, including dependency-module lint | 66.25 s |
+| App layout tier | 76 cases; zero test-budget overruns | 13.21 s wrapper / 13.16 s tier |
+| Final `make release-check` | 293 release cases + manifest/APK/size PASS | 60.19 s |
+| Final `make format` | PASS; no tracked source changes | 232.05 s |
+
+Quick was run exactly once. Compilation and cold workers were present in this run; only the host's measured warm medians can establish R9. The run is retained as above-target evidence, without rerunning, loosening a budget or claiming a warm pass. Raw reports remain under `build/test-results/`; command log `/tmp/cf13-final-quick.log`. Formatting printed ten existing unresolved-auto-fix warnings and completed successfully. Two `./gradlew help --configuration-cache` runs confirmed `Reusing configuration cache.` on the second run.
+
+Earlier worker slowest ten **warm** cases from `build/test-results/quick/timings.json` (all ≤ 1,000 ms):
+
+| Class.method | ms |
+|---|---:|
+| `TestHangWatchdogTest.aDebuggerLeavesTheWatchdogDisarmed` | 869 |
+| `MockSeedRefreshTests.restoresTenDayOldSeedWithoutLosingUserStateCurrentAnchor` | 672 |
+| `TestHangWatchdogTest.eachRobolectricSdkGetsItsOwnColdAllowance` | 640 |
+| `DecodeRecoveryTests.badCardIsSkippedWhileOtherTripsKeepUpdating` | 585 |
+| `LargeTimelineFixtureTests.templatesAreUnchanged` | 576 |
+| `DataSourceParityTests.invalidSettingsReturnEveryFieldReminders` | 565 |
+| `DeleteAccountSheetTest.sheetSurvivesRecreationWithoutThePassword` | 551 |
+| `AccountStorageLifecycleTests.failedCreationLeavesNoPartialTable` | 537 |
+| `AccountStorageLifecycleTests.corruptFileIsKeptAndReportedUnavailable` | 536 |
+| `HapticsRulesTest.noHapticsInLaunch` | 528 |
+
+Cold Robolectric initialization is recorded separately by the timing harness. The ten largest first-SDK cases in the same run were 6,713 / 6,547 / 6,454 / 6,360 / 6,039 / 5,993 / 5,750 / 5,673 / 5,417 / 4,863 ms (SDK 36, each below its 20,000 ms cold allowance). These are not warm-case measurements. Per-class explicit warm-ups are in the same report's `warmups` array; no allowance or watchdog cap changed.
+
+
+Host evidence after 4df62c45–27693223 (2026-11-22): build-logic limits concurrent test tasks to four worker slots on this 14-logical-core host and one fork per task. The listener still counts the entire test lifecycle; warm-up labels deduct no time and the regression guard rejects slow bodies even when a warm-up is recorded. Terms/CfBanner use the lighter direct-activity fixture and explicit recorded native-text warm-up. GuestContinuationRepositoryTest uses the smallest settings snapshot that proves the write. No budget, allowance or tier was changed. Local tuning evidence: `build/phase13-test-tuning/evidence.json`. Host R9 evidence: `build/phase13-host-evidence/t13-tiers4.log` and the archived tier time files.
+
+With a quiet host, warm daemon and the quick JVM/Robolectric test tasks forced to rerun, default heaps measured **45.5 / 45.0 / 44.3 / 44.5 s**, versus **44.7 s** on the first run after the configuration change and **42.5 / 42.3 s** with **3 GB per Test task**, now applied including `timingTest`. TermsScreenTest's first case improved from **1029–1171 to 1009–1055 ms**, and CfBannerTest's from **900–965 to 885–928 ms**, with no test outcome change; forks, workers, budgets and hang caps remain unchanged.
+
+Slowest ten warm cases in the saved last host quick report, before this task (cold SDK/class allowances excluded; reused unchanged results retain their original measured provenance):
+
+| Class.method | ms |
+|---|---:|
+| `AccountStorageLifecycleTests.failedCreationLeavesNoPartialTable` | 533 |
+| `AccountStorageLifecycleTests.corruptFileIsKeptAndReportedUnavailable` | 526 |
+| `ResetRecreationTest.localeRecreationDropsPasswordsKeepsTheLinkAndSavesNoSecrets` | 359 |
+| `WizardAnswerSheetTest.busyPickingUsesTheFourDialogsAndWritesOnlyAtTheEnd` | 353 |
+| `TripPageTest.menuJumpReachesTheEnd` | 350 |
+| `DeleteAccountSheetTest.sheetSurvivesRecreationWithoutThePassword` | 338 |
+| `BodyClockScreenTest.openTimeSheetUsesTheSharedPickerWindow` | 263 |
+| `TwoFactorRoutingTest.systemBackDiscardsChallenge` | 236 |
+| `ForgotRecreationTest.recreationKeepsTheFormEmailAndProcessModel` | 229 |
+| `SessionActivationTest.backgroundCancelsAFlightAndForegroundReenablesAndResumes` | 217 |
+
+The check failure is distinct from the earlier worker-contention failures: LaunchHandOffTest measures a continuous `System.nanoTime` duration, and the seeded readiness clock's single Android Handler delay could resume before its nanosecond deadline. 89f3dd7f rechecks that deadline without changing the assertion window. Its JVM regression reproduces 3499.573168 ms before the fix and passes afterwards; the complete host check series must still be rerun. Exact commands are in release.md.
+
+
+Post-clock-fix worker validation (2026-11-22, 89f3dd7f, macOS host; JDK 17 Gradle / JDK 21 tests): the single `env 'ORG_GRADLE_PROJECT_kotlin.compiler.execution.strategy=in-process' make quick` invocation passes in **92.51 s command wall**. Its quick tier takes **54.28 s**, reports 6,312 cases (4,402 freshly measured; the remaining unchanged outputs certified), with zero budget overruns/errors/hangs. Build-logic's 64 cases and the serial timing tier's seven cases pass using certified unchanged results. This single command duration exceeds the warm target; it does not replace the host's three-run quick median (44.33 s) or complete R9's failed check series. No second quick run was made. Exact command, log, XML and timings: `build/phase13-host-evidence/launch-clock/quick-command.json`, `quick.log` and its `quick/`, `build-logic/`, `timing/` directories. The old build/tier-timings.json remains byte-for-byte unchanged.

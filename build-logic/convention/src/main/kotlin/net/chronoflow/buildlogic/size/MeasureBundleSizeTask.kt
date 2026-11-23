@@ -69,6 +69,12 @@ abstract class MeasureBundleSizeTask : DefaultTask() {
             "--aapt2=${aapt2.get().asFile.absolutePath}",
             "--overwrite",
         )
+        val entries = ZipFile(apks).use { zip -> zip.entries().toList().map { it.name } }
+        out.resolve("apks-entries.txt").writeText(entries.joinToString("\n", postfix = "\n"))
+        val languageSplits = BundleSize.languageSplits(entries)
+        if (languageSplits.isNotEmpty()) {
+            throw GradleException("language split present: ${languageSplits.joinToString(", ")}")
+        }
         val csv =
             runBundletool("get-size", "total", "--apks=${apks.absolutePath}", "--device-spec=${spec.absolutePath}")
 

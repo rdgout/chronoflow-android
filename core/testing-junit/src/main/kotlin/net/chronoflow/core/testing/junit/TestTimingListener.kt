@@ -37,7 +37,9 @@ private val sdkMarker = Regex("""\[(\d+)](?=\[|$)""")
 
 internal fun sdkFromDisplayName(name: String): String = sdkMarker.find(name)?.groupValues?.get(1) ?: "default"
 
-class TestTimingListener : TestExecutionListener {
+class TestTimingListener(
+    private val nowNanos: () -> Long = System::nanoTime,
+) : TestExecutionListener {
     private data class TestStart(
         val nanos: Long,
         val source: MethodSource?,
@@ -74,7 +76,7 @@ class TestTimingListener : TestExecutionListener {
             val sdk = sdkFromDisplayName(identifier.displayName)
             val first = clazz?.isRobolectric() == true && seenSdks.add(sdk)
             val firstForClass = clazz?.isRobolectric() == true && seenClassSdks.add(clazz.name to sdk)
-            starts[identifier.uniqueId] = TestStart(System.nanoTime(), source, clazz, sdk, first, firstForClass)
+            starts[identifier.uniqueId] = TestStart(nowNanos(), source, clazz, sdk, first, firstForClass)
             watchdog?.started(identifier.uniqueId, first)
         }
     }
@@ -86,7 +88,8 @@ class TestTimingListener : TestExecutionListener {
         if (!identifier.isTest) return
         watchdog?.finished(identifier.uniqueId)
         val start = starts.remove(identifier.uniqueId) ?: return
-        val ms = (System.nanoTime() - start.nanos) / 1_000_000
+        val ended = nowNanos()
+        val ms = (ended - start.nanos) / 1_000_000
         val source = start.source ?: return
         val clazz = start.testClass ?: return
         val kind = if (clazz.isRobolectric()) "robolectric" else "jvm"
@@ -97,7 +100,7 @@ class TestTimingListener : TestExecutionListener {
         val (budget, status) = classify(kind, sdk, ms, exempt, start.firstForSdk, start.firstForClass)
         entries +=
             "{\"class\":${quote(source.className)},\"method\":${quote(source.methodName)},\"kind\":\"$kind\"," +
-            "\"sdk\":\"$sdk\",\"ms\":$ms,\"budgetMs\":${budget ?: "null"},\"status\":\"$status\"}"
+            "\"sdk\":\"$sdk\",\"ms\":$ms,\"budgetMs\":${budget ?: "null"},\"status\":\"$status\",\"startedNanos\":${start.nanos},\"endedNanos\":$ended}"
     }
 
     override fun testPlanExecutionFinished(testPlan: TestPlan) {

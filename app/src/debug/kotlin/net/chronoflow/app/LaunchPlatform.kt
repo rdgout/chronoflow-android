@@ -8,6 +8,10 @@ import net.chronoflow.debug.DebugRouteLabel
 import net.chronoflow.feature.launch.LaunchController
 
 internal object LaunchPlatform {
+    fun onFirstCommit(app: android.app.Application) =
+        net.chronoflow.debug.ExitInfoLogger
+            .logPrevious(app)
+
     val deleteSheetSeed: Boolean get() =
         net.chronoflow.debug.DebugSeedRouting.current
             ?.settingsRoute == "delete"

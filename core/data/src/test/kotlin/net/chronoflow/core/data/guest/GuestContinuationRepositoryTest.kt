@@ -4,20 +4,22 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import net.chronoflow.core.data.repository.SettingsRepository
 import net.chronoflow.core.data.store.StoreApplication
 import net.chronoflow.core.data.wizard.support.WIZARD_ACCOUNT
 import net.chronoflow.core.data.wizard.support.WizardStore
 import net.chronoflow.core.database.store.fetchSetting
 import net.chronoflow.core.database.store.saveAccount
-import net.chronoflow.core.datamock.MockAppSeed
 import net.chronoflow.core.model.AccountID
+import net.chronoflow.core.model.api.AccountPolicies
+import net.chronoflow.core.model.api.AccountSettings
 import net.chronoflow.core.model.api.AccountSnapshot
 import net.chronoflow.core.model.auth.GuestSessionContinuation
 import net.chronoflow.core.model.launch.Gate
 import net.chronoflow.core.model.store.AccountRecord
 import net.chronoflow.core.model.store.SettingsRecord
-import net.chronoflow.core.testing.wizard.WizardTestClock
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -85,12 +87,16 @@ class GuestContinuationRepositoryTest {
     @Test fun snapshotApplicationKeepsTheRow() =
         runTest(timeout = 60.seconds) {
             withStore {
-                val snapshot =
-                    MockAppSeed
-                        .make(WizardTestClock().now)
-                        .accounts.values
-                        .first()
-                        .snapshot
+                val empty = JsonObject(emptyMap())
+                val settings =
+                    AccountSettings(
+                        bodyClock = empty,
+                        sleepAnswered = false,
+                        preferences = empty,
+                        reminders = empty,
+                        planCredits = JsonObject(mapOf("credits" to JsonPrimitive(3))),
+                        policies = AccountPolicies("1", "1"),
+                    )
                 val id = AccountID.of(WIZARD_ACCOUNT)
                 val repository = GuestContinuationRepository(database)
                 repository.store(GuestSessionContinuation.Trip("t"))
@@ -99,19 +105,20 @@ class GuestContinuationRepositoryTest {
                     StoreApplication.snapshot(
                         AccountSnapshot(
                             WIZARD_ACCOUNT,
-                            snapshot.name,
-                            snapshot.email,
-                            snapshot.hasVerifiedEmail,
-                            snapshot.settings,
-                            snapshot.readiness,
-                            snapshot.billing,
-                            snapshot.security,
+                            "Traveller",
+                            "test@example.com",
+                            true,
+                            settings,
+                            empty,
+                            empty,
+                            empty,
                         ),
                         id,
                         it,
                     )
                 }
                 assertEquals(GuestSessionContinuation.Trip("t"), repository.values().first())
+                assertEquals("""{"credits":3}""", database.read { it.fetchSetting("planCredits")?.value })
             }
         }
 

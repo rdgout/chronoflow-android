@@ -34,6 +34,7 @@ internal class CfTestArguments(
 
 internal fun Project.configureTestLauncher() {
     configureTestTimingOutputs()
+    configureTestConcurrency()
     val toolchains = extensions.getByType<JavaToolchainService>()
     val requestedTier = providers.gradleProperty("cf.tier").orElse("quick")
     val hangCapSeconds =
@@ -49,8 +50,6 @@ internal fun Project.configureTestLauncher() {
     tasks.withType<Test>().configureEach {
         val taskName = name
         javaLauncher.set(toolchains.launcherFor { languageVersion.set(JavaLanguageVersion.of(21)) })
-        maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1)
-        if (taskName.endsWith("UnitTest")) maxParallelForks = 1
         useJUnitPlatform()
         failOnNoDiscoveredTests.set(false)
         timeout.set(Duration.ofMinutes(10))

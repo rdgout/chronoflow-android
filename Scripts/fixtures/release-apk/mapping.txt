@@ -1,0 +1,3 @@
+net.chronoflow.app.X -> a.b:
+androidx.core.Y -> c.d:
+net.chronoflow.app.perf.TripPageEntry -> e.f:
