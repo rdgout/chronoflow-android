@@ -143,6 +143,10 @@ internal fun SettingsBoardFixture(
         ) {
             CompositionLocalProvider(LocalSafeInsets provides contentInsets) {
                 when {
+                    state in SettingsAccountPlanBoardStates.states -> {
+                        SettingsAccountPlanBoard(state)
+                    }
+
                     SettingsSecurityBoardStates.handles(state) -> {
                         SettingsSecurityBoard(state)
                     }

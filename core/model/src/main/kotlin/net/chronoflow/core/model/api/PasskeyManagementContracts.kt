@@ -25,8 +25,7 @@ data class ApiPasskeyRegistrationChallenge(
     val challengeId: String,
     val options: ApiPasskeyCreationOptions,
 ) {
-    override fun toString(): String =
-        "ApiPasskeyRegistrationChallenge(challengeId=${redacted(challengeId)}, options=$options)"
+    override fun toString(): String = "ApiPasskeyRegistrationChallenge(***)"
 }
 
 @Serializable
@@ -39,7 +38,9 @@ data class ApiPasskeyCreationOptions(
     val authenticatorSelection: ApiPasskeyAuthenticatorSelection,
     val attestation: String,
     val excludeCredentials: List<ApiPasskeyCredentialDescriptor>,
-)
+) {
+    override fun toString(): String = "ApiPasskeyCreationOptions(***)"
+}
 
 @Serializable
 data class ApiPasskeyRelyingParty(
@@ -52,7 +53,9 @@ data class ApiPasskeyUserEntity(
     val id: String,
     val name: String,
     val displayName: String,
-)
+) {
+    override fun toString(): String = "ApiPasskeyUserEntity(***)"
+}
 
 @Serializable
 data class ApiPasskeyCredentialParameters(
@@ -71,7 +74,9 @@ data class ApiPasskeyAuthenticatorSelection(
 data class ApiPasskeyCredentialDescriptor(
     val type: CredentialType,
     val id: String,
-)
+) {
+    override fun toString(): String = "ApiPasskeyCredentialDescriptor(***)"
+}
 
 @Serializable
 data class ApiPasskeyAttestation(
@@ -79,14 +84,18 @@ data class ApiPasskeyAttestation(
     val rawId: String,
     val type: CredentialType,
     val response: ApiPasskeyAttestationResponse,
-)
+) {
+    override fun toString(): String = "ApiPasskeyAttestation(***)"
+}
 
 @Serializable
 data class ApiPasskeyAttestationResponse(
     val clientDataJSON: String,
     val attestationObject: String,
     val transports: List<String>? = null,
-)
+) {
+    override fun toString(): String = "ApiPasskeyAttestationResponse(***)"
+}
 
 @Serializable
 data class ApiPasskeyRegistrationInput(
@@ -94,6 +103,5 @@ data class ApiPasskeyRegistrationInput(
     val name: String,
     val credential: ApiPasskeyAttestation,
 ) {
-    override fun toString(): String =
-        "ApiPasskeyRegistrationInput(challengeId=${redacted(challengeId)}, name=$name, credential=$credential)"
+    override fun toString(): String = "ApiPasskeyRegistrationInput(***)"
 }

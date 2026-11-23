@@ -5,12 +5,15 @@ import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
 import net.chronoflow.core.model.store.AccountRecord
 import net.chronoflow.core.testing.tiers.Logic
 import net.chronoflow.feature.settings.SettingsPagesState
+import net.chronoflow.feature.settings.account.AccountEvent
 import net.chronoflow.feature.settings.account.AccountScreen
 import net.chronoflow.feature.settings.account.AccountScreenState
 import net.chronoflow.feature.settings.support.SettingsScreenTest
+import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -25,10 +28,12 @@ class AccountProfileScreenTest : SettingsScreenTest() {
     private val account = AccountRecord("account", "Rick Gout", "rick@example.com")
 
     @Test fun accountHasProfileAndLanguageRows() {
-        show { AccountScreen(AccountScreenState(SettingsPagesState(account = account, loaded = true)), {}) }
+        val events = mutableListOf<AccountEvent>()
+        show { AccountScreen(AccountScreenState(SettingsPagesState(account = account, loaded = true)), events::add) }
         compose.onNodeWithTag("settings.account.profile").assertExists()
         compose.onNodeWithTag("settings.account.language").assertExists()
-        compose.onNodeWithTag("settings.account.delete").assertDoesNotExist()
+        compose.onNodeWithTag("settings.account.delete").performClick()
+        assertEquals(listOf(AccountEvent.Delete), events)
     }
 
     @Test fun emailHasNoEditingAction() {

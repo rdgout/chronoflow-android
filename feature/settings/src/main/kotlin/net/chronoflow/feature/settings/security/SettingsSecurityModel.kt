@@ -10,7 +10,12 @@ import net.chronoflow.core.model.DataFailure
 import net.chronoflow.core.model.FieldMessage
 import net.chronoflow.core.model.api.AccountSecurityChange
 import net.chronoflow.core.model.api.AccountSecurityResult
+import net.chronoflow.core.model.api.ApiPasskey
+import net.chronoflow.core.model.api.ApiPasskeyRegistrationInput
 import net.chronoflow.core.model.api.ApiTwoFactorSetup
+import net.chronoflow.core.model.passkey.Base64URL
+import net.chronoflow.core.model.passkey.PasskeyFailure
+import net.chronoflow.core.model.passkey.PasskeyRegistrationProviding
 import net.chronoflow.core.model.session.StaleSessionException
 import java.time.Duration
 import java.time.Instant
@@ -34,7 +39,7 @@ enum class SettingsSecurityPrompt(
     ),
     ;
 
-    val destructive: Boolean get() = this == Disable
+    val destructive: Boolean get() = this == Disable || this == RemovePasskey
 
     fun change(password: String): AccountSecurityChange? =
         when (this) {
@@ -57,20 +62,28 @@ data class SecurityState(
     val retryAt: Instant? = null,
     val offline: Boolean = false,
     val feedbackRevision: Long = 0,
+    val passkeys: List<ApiPasskey>? = null,
+    val passkeysUnavailable: Boolean = false,
+    val removal: ApiPasskey? = null,
 ) {
     val twoFactorActivationFailed: Boolean get() = message == "Couldn't turn on two-factor."
 
     override fun toString(): String =
-        "SecurityState(prompt=$prompt, setup=***, codes=***, busy=$busy, retryAt=$retryAt)"
+        "SecurityState(prompt=$prompt, setup=***, codes=***, busy=$busy, retryAt=$retryAt, " +
+            "passkeyCount=${passkeys?.size}, removalId=${removal?.id})"
 }
 
 class SettingsSecurityModel(
     private val perform: suspend (AccountSecurityChange) -> AccountSecurityResult,
     private val now: () -> Instant,
+    private val registration: PasskeyRegistrationProviding? = null,
+    private val deviceName: suspend () -> String = { "Android" },
 ) {
     private val mutableState = MutableStateFlow(SecurityState())
     val state = mutableState.asStateFlow()
     private var generation = 0L
+    private var registrationCanceled = false
+    val canRegisterPasskey: Boolean get() = registration != null && PASSKEY_REGISTRATION_SUPPORTED
     val locked: Boolean get() = state.value.retryAt?.isAfter(now()) == true
 
     fun remaining(at: Instant): Int = remainingSeconds(state.value.retryAt, at)
@@ -103,20 +116,30 @@ class SettingsSecurityModel(
         if (run(AccountSecurityChange.Password(old, next, repeated))) message("Password updated")
     }
 
-    fun showPrompt(action: SettingsSecurityPrompt) {
+    fun showPrompt(
+        action: SettingsSecurityPrompt,
+        removing: ApiPasskey? = null,
+    ) {
         if (state.value.busy) return
-        mutableState.update { it.copy(errors = emptyMap(), message = null, prompt = action) }
+        mutableState.update { it.copy(errors = emptyMap(), message = null, prompt = action, removal = removing) }
     }
 
     fun cancelPrompt() {
         if (state.value.busy) return
-        mutableState.update { it.copy(prompt = null, errors = emptyMap(), message = null) }
+        mutableState.update { it.copy(prompt = null, removal = null, errors = emptyMap(), message = null) }
     }
 
     suspend fun submitPrompt(password: SecretField) {
         val action = state.value.prompt
         val value = password.read()
         if (action == null || value.isEmpty() || state.value.busy || locked) return
+        if (action == SettingsSecurityPrompt.AddPasskey || action == SettingsSecurityPrompt.RemovePasskey) {
+            if (action == SettingsSecurityPrompt.RemovePasskey) password.clear()
+            submitPasskeyPrompt(action, value)
+            if (action == SettingsSecurityPrompt.AddPasskey && !registrationCanceled) password.clear()
+            registrationCanceled = false
+            return
+        }
         password.clear()
         val change = action.change(value) ?: return
         if (run(change)) mutableState.update { it.copy(prompt = null) }
@@ -140,20 +163,129 @@ class SettingsSecurityModel(
         if (run(AccountSecurityChange.RequestPasswordReset(email))) message("Check your inbox.")
     }
 
-    private suspend fun run(change: AccountSecurityChange): Boolean {
+    suspend fun loadPasskeys() {
+        val started = generation
+        try {
+            val result = perform(AccountSecurityChange.ListPasskeys)
+            currentCoroutineContext().ensureActive()
+            if (generation != started || result !is AccountSecurityResult.Passkeys) return
+            mutableState.update { it.copy(passkeys = result.passkeys, passkeysUnavailable = false, offline = false) }
+        } catch (_: StaleSessionException) {
+            currentCoroutineContext().ensureActive()
+        } catch (failure: CancellationException) {
+            throw failure
+        } catch (failure: DataFailure) {
+            if (generation == started) {
+                mutableState.update {
+                    it.copy(
+                        offline = it.offline || failure == DataFailure.Offline,
+                        passkeysUnavailable =
+                            it.passkeys == null,
+                    )
+                }
+            }
+        }
+    }
+
+    private suspend fun submitPasskeyPrompt(
+        prompt: SettingsSecurityPrompt,
+        password: String,
+    ) {
+        when (prompt) {
+            SettingsSecurityPrompt.RemovePasskey -> {
+                val target = state.value.removal ?: return
+                if (!run(AccountSecurityChange.RemovePasskey(target.id, password))) return
+                mutableState.update {
+                    it.copy(
+                        prompt = null,
+                        removal = null,
+                        passkeys =
+                            it.passkeys?.filterNot { key ->
+                                key.id ==
+                                    target.id
+                            },
+                    )
+                }
+                message("Passkey removed")
+                loadPasskeys()
+            }
+
+            SettingsSecurityPrompt.AddPasskey -> {
+                registrationCanceled = false
+                val done = run(AccountSecurityChange.PasskeyCreationOptions(password)) { register(password) }
+                if (done) {
+                    mutableState.update { it.copy(prompt = null) }
+                    message("Passkey added")
+                    loadPasskeys()
+                } else if (!registrationCanceled &&
+                    (state.value.message == REGISTRATION_FAILURE || state.value.message == REGISTRATION_EXPIRED)
+                ) {
+                    mutableState.update { it.copy(prompt = null) }
+                }
+            }
+
+            else -> {
+                return
+            }
+        }
+    }
+
+    private suspend fun register(password: String): AccountSecurityResult {
+        val provider = registration ?: throw PasskeyFailure.Unavailable
+        val result = perform(AccountSecurityChange.PasskeyCreationOptions(password))
+        val challenge = (result as? AccountSecurityResult.PasskeyCreation)?.challenge ?: throw DataFailure.Server(null)
+        Base64URL.decode(challenge.options.challenge)
+        Base64URL.decode(challenge.options.user.id)
+        if (challenge.options.rp.id
+                .isEmpty()
+        ) {
+            throw PasskeyFailure.Unavailable
+        }
+        currentCoroutineContext().ensureActive()
+        val attestation = provider.registration(challenge)
+        currentCoroutineContext().ensureActive()
+        return perform(
+            AccountSecurityChange.AddPasskey(
+                ApiPasskeyRegistrationInput(challenge.challengeId, passkeyName(deviceName()), attestation),
+            ),
+        )
+    }
+
+    private suspend fun run(
+        change: AccountSecurityChange,
+        work: (suspend () -> AccountSecurityResult)? = null,
+    ): Boolean {
         val started = generation
         mutableState.update { it.copy(busy = true, errors = emptyMap(), message = null) }
         try {
-            val result = perform(change)
+            val result = work?.invoke() ?: perform(change)
             currentCoroutineContext().ensureActive()
             if (generation != started) return false
             mutableState.update { old ->
                 val next = old.copy(retryAt = null, offline = false)
                 when (result) {
-                    is AccountSecurityResult.Setup -> next.copy(setup = result.setup, codes = emptyList())
-                    is AccountSecurityResult.Codes -> next.copy(codes = result.codes.recoveryCodes, setup = null)
-                    is AccountSecurityResult.Snapshot -> next.copy(setup = null, codes = emptyList())
-                    else -> next
+                    is AccountSecurityResult.Setup -> {
+                        next.copy(setup = result.setup, codes = emptyList())
+                    }
+
+                    is AccountSecurityResult.Codes -> {
+                        next.copy(codes = result.codes.recoveryCodes, setup = null)
+                    }
+
+                    is AccountSecurityResult.Snapshot -> {
+                        next.copy(setup = null, codes = emptyList())
+                    }
+
+                    is AccountSecurityResult.Passkeys -> {
+                        next.copy(
+                            passkeys = result.passkeys,
+                            passkeysUnavailable = false,
+                        )
+                    }
+
+                    else -> {
+                        next
+                    }
                 }
             }
             return true
@@ -162,6 +294,11 @@ class SettingsSecurityModel(
             return false
         } catch (failure: CancellationException) {
             throw failure
+        } catch (failure: PasskeyFailure) {
+            if (generation == started) {
+                if (failure == PasskeyFailure.Canceled) registrationCanceled = true else message(failureMessage(change))
+            }
+            return false
         } catch (failure: DataFailure) {
             if (generation != started) return false
             when (failure) {
@@ -208,7 +345,7 @@ class SettingsSecurityModel(
             }
 
             "challengeId" -> {
-                message("The passkey registration request expired. Please try again.")
+                message(REGISTRATION_EXPIRED)
                 return
             }
         }
@@ -274,6 +411,7 @@ class SettingsSecurityModel(
                 setup = null,
                 codes = emptyList(),
                 prompt = null,
+                removal = null,
             )
         }
     }
@@ -290,8 +428,18 @@ class SettingsSecurityModel(
         }
 
     companion object {
-        private const val REGISTRATION_FAILURE = "We couldn't register that passkey. Please try again."
+        internal const val REGISTRATION_FAILURE = "We couldn't register that passkey. Please try again."
+        internal const val REGISTRATION_EXPIRED = "The passkey registration request expired. Please try again."
+        const val PASSKEY_REGISTRATION_SUPPORTED = true
     }
+}
+
+internal fun passkeyName(raw: String): String {
+    val trimmed = raw.trim()
+    return trimmed.substring(
+        0,
+        trimmed.offsetByCodePoints(0, trimmed.codePointCount(0, trimmed.length).coerceAtMost(255)),
+    )
 }
 
 internal fun remainingSeconds(

@@ -236,6 +236,11 @@
       "source": "board",
       "board": "SetSecurity",
       "first": "<rect width=\"14\" height=\"20\" x=\"5\" y=\"2\" rx=\"2\" ry=\"2\">"
+    },
+    "trash": {
+      "source": "board",
+      "board": "SetPasskeys",
+      "first": "M3 6h18"
     }
   }
 }

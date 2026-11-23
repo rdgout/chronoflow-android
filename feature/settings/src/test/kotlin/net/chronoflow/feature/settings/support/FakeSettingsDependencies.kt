@@ -21,11 +21,17 @@ import net.chronoflow.core.model.store.SettingsRecord
 import net.chronoflow.core.sync.SyncEvent
 import net.chronoflow.core.testing.FakePlanClock
 import net.chronoflow.feature.settings.SettingsDependencies
+import java.time.ZoneId
 import java.time.ZoneOffset
 
 class FakeSettingsDependencies(
     private val clipboardScope: kotlinx.coroutines.CoroutineScope? = null,
 ) : SettingsDependencies {
+    override var passkeyCapability = net.chronoflow.core.model.passkey.PasskeyCapability.Shipped
+    override var passkeyRegistration: net.chronoflow.core.model.passkey.PasskeyRegistrationProviding? = null
+
+    override suspend fun deviceName() = "Android"
+
     override val securityScope by lazy {
         val owner = checkNotNull(clipboardScope)
         CoroutineScope(owner.coroutineContext + SupervisorJob(owner.coroutineContext.job))
@@ -36,6 +42,15 @@ class FakeSettingsDependencies(
     }
 
     override suspend fun requestSecurity(change: net.chronoflow.core.model.api.AccountSecurityChange) = security(change)
+
+    var refresh: suspend () -> Unit = {}
+
+    override suspend fun refreshNow() = refresh()
+
+    override var deleteSheetSeed = false
+    var delete: suspend (String) -> Unit = {}
+
+    override suspend fun deleteAccount(password: String) = delete(password)
 
     override var passwordPromptSeed: String? = null
     val clipboardPort = RecordingClipboardPort()
@@ -105,7 +120,7 @@ class FakeSettingsDependencies(
     }
 
     override val clock = FakePlanClock(settingsNow)
-    override val zone = ZoneOffset.UTC
+    override var zone: ZoneId = ZoneOffset.UTC
 
     var makeFormatter: suspend () -> net.chronoflow.core.plan.CopyLineFormatter = {
         net.chronoflow.core.plan

@@ -8,6 +8,9 @@ import net.chronoflow.debug.DebugRouteLabel
 import net.chronoflow.feature.launch.LaunchController
 
 internal object LaunchPlatform {
+    val deleteSheetSeed: Boolean get() =
+        net.chronoflow.debug.DebugSeedRouting.current
+            ?.settingsRoute == "delete"
     val passwordPromptSeed: String? get() =
         if (net.chronoflow.debug.DebugSeedRouting.current
                 ?.settingsRoute == "twoFactorSetup"

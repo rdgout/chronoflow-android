@@ -8,6 +8,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import net.chronoflow.feature.settings.SettingsDependencies
 import net.chronoflow.feature.settings.SettingsDependenciesKey
@@ -22,6 +23,16 @@ class AccountViewModel(
     ) {
     private val model = SettingsPagesModel(deps, viewModelScope)
     val ui = model.ui
+    private val mutableShowingDelete = kotlinx.coroutines.flow.MutableStateFlow(deps.deleteSheetSeed)
+    val showingDelete = mutableShowingDelete.asStateFlow()
+
+    fun showDelete() {
+        mutableShowingDelete.value = true
+    }
+
+    fun dismissDelete() {
+        mutableShowingDelete.value = false
+    }
 
     init {
         model.start()

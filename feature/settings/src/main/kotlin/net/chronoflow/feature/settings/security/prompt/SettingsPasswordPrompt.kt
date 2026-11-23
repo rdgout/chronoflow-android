@@ -87,6 +87,9 @@ internal fun SettingsPasswordPrompt(
     detailArgs: Map<String, String> = emptyMap(),
     errorArgs: Map<String, String> = emptyMap(),
     identifier: String = "settings.security.prompt",
+    fieldTag: String = "$identifier.password",
+    submitTag: String = "$identifier.submit",
+    errorTag: String = "$identifier.error",
 ) {
     val title = securityText("Confirm it's you")
     var showingReset by remember { mutableStateOf(false) }
@@ -178,7 +181,7 @@ internal fun SettingsPasswordPrompt(
                                 1f,
                             ).heightIn(
                                 min = SettingsTokens.promptFieldHeight.dp,
-                            ).testTag("$identifier.password")
+                            ).testTag(fieldTag)
                             .semantics {
                                 contentDescription = label
                                 contentType = ContentType.Password
@@ -225,7 +228,7 @@ internal fun SettingsPasswordPrompt(
             }
             if (alert != null) {
                 Row(
-                    Modifier.testTag("$identifier.error").semantics { liveRegion = LiveRegionMode.Polite },
+                    Modifier.testTag(errorTag).semantics { liveRegion = LiveRegionMode.Polite },
                     horizontalArrangement = Arrangement.spacedBy(SettingsTokens.pillGap.dp),
                 ) {
                     Icon(
@@ -286,7 +289,7 @@ internal fun SettingsPasswordPrompt(
                 keyboard?.hide()
                 onSubmit()
             },
-            modifier = Modifier.testTag("$identifier.submit"),
+            modifier = Modifier.testTag(submitTag),
             style = if (destructive) CfButtonStyle.Destructive else CfButtonStyle.Primary,
             enabled = canSubmit,
             loading = busy,

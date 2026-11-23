@@ -221,7 +221,7 @@ class SessionSettingsSecurityTests : SettingsFixtureTest() {
                         .SettingsPagesModel(f.deps, backgroundScope)
                 pages.start()
                 runCurrent()
-                val model = SettingsSecurityModel(f.deps::performSecurity) { f.clock.now }
+                val model = SettingsSecurityModel(f.deps::performSecurity, now = { f.clock.now })
                 model.showPrompt(SettingsSecurityPrompt.Enable)
                 model.submitPrompt(FakeSecretField("password"))
                 assertNotNull(model.state.value.setup)

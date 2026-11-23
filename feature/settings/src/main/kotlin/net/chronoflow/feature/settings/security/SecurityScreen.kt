@@ -19,7 +19,7 @@ data class SecurityScreenState(
     val summary: SecuritySummary? = null,
     val loaded: Boolean = false,
     val failed: Boolean = false,
-    val showUnbuilt: Boolean = false,
+    val passkeysEnabled: Boolean = false,
 )
 
 sealed interface SecurityEvent {
@@ -52,7 +52,7 @@ fun SecurityScreen(
                     onClick = { onEvent(SecurityEvent.Navigate(Route.Password)) },
                 )
                 CfDivider()
-                if (summary.passkeyCount != null && state.showUnbuilt) {
+                if (summary.passkeyCount != null && state.passkeysEnabled) {
                     CfRow(
                         securityText("Passkeys"),
                         subtitle =
@@ -84,14 +84,14 @@ fun SecurityScreen(
 @Composable
 fun SecurityRoute(
     viewModel: SecurityViewModel,
-    showUnbuilt: Boolean,
+    passkeysEnabled: Boolean,
     onBack: () -> Unit,
     onNavigate: (Route) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
     SecurityScreen(
-        SecurityScreenState(ui.summary, ui.pages.settingsLoaded, ui.pages.failed, showUnbuilt),
+        SecurityScreenState(ui.summary, ui.pages.settingsLoaded, ui.pages.failed, passkeysEnabled),
         { event ->
             when (event) {
                 SecurityEvent.Back -> onBack()

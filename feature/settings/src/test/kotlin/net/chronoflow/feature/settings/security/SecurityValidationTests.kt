@@ -35,7 +35,7 @@ class SecurityValidationTests(
                         ),
                         422,
                     )
-                }) { Instant.ofEpochSecond(100) }
+                }, now = { Instant.ofEpochSecond(100) })
             model.showPrompt(SettingsSecurityPrompt.Reveal)
             model.submitPrompt(FakeSecretField("pw"))
             assertEquals(expected, model.state.value.errors[field] ?: model.state.value.message)
